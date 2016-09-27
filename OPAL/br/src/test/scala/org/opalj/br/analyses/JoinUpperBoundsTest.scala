@@ -52,7 +52,9 @@ class JoinUpperBoundsTest extends FunSpec with Matchers {
 
     implicit def stringToUIDSetObjectType(str: String) = UIDSet(ObjectType(str))
 
-    implicit def setToUIDSet(s: Set[String]) = UIDSet(s.map(ObjectType.apply))
+    implicit def setToUIDSet(s: Set[String]): UIDSet[ObjectType] = {
+        s.map(ObjectType.apply)(UIDSet.canBuildUIDSet)
+    }
 
     def testJoinUpperTypeBounds(
         param1:    UIDSet[ObjectType],

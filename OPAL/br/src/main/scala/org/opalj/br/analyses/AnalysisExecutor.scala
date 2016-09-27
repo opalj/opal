@@ -32,11 +32,10 @@ package analyses
 
 import java.net.URL
 import java.io.File
+
 import scala.util.control.ControlThrowable
 import com.typesafe.config.ConfigFactory
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java8FrameworkWithCaching
-import org.opalj.br.reader.Java8LibraryFramework
+import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -96,8 +95,9 @@ trait AnalysisExecutor {
      * issues if it can't validate all arguments.
      * The default behavior is to check that there are no additional parameters.
      */
-    def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] =
+    def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         if (parameters.isEmpty) Nil else parameters.map("unknown parameter: "+_)
+    }
 
     /**
      * Prints out general information how to use this analysis. Printed whenever
@@ -112,6 +112,7 @@ trait AnalysisExecutor {
                 "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
                 "[-libcp=<Directories or JAR/class files>]\n"+
                 "[-analysisMode=<the kind of project ("+analysisModes+")>]\n"+
+                "[-completelyLoadLibraries=<true|false> (The default is false.)]\n"+
                 analysisSpecificParametersDescription
         )
         OPALLogger.info("general", "description: "+analysis.description)
@@ -222,9 +223,26 @@ trait AnalysisExecutor {
         }
         OPALLogger.info("project configuration", s"the analysis mode is $analysisMode")
 
-        if (args3.nonEmpty)
-            OPALLogger.info("project configuration", "analysis specific paramters: "+args3.mkString(","))
-        val issues = checkAnalysisSpecificParameters(args3)
+        val (completelyLoadLibraries, args4) = try {
+            args3.partition(_.startsWith("-completelyLoadLibraries=")) match {
+                case (Array(), args4) ⇒
+                    (false, args4)
+                case (Array(completelyLoadLibrariesParameter), args4) ⇒
+                    val completelyLoadLibraries: Boolean = completelyLoadLibrariesParameter.substring(25).toBoolean
+                    (completelyLoadLibraries, args4)
+            }
+
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct;
+            case t: Throwable ⇒
+                OPALLogger.error("project configuration", "failed parsing completelyLoadLibraries", t)
+                printUsage
+                sys.exit(2)
+        }
+
+        if (args4.nonEmpty)
+            OPALLogger.info("project configuration", "analysis specific paramters: "+args4.mkString(","))
+        val issues = checkAnalysisSpecificParameters(args4)
         if (issues.nonEmpty) {
             issues.foreach { i ⇒ OPALLogger.error("project configuration", i) }
             printUsage
@@ -235,7 +253,7 @@ trait AnalysisExecutor {
         // 2. setup project context
         //
         val project: Project[URL] = try {
-            setupProject(cpFiles, libcpFiles, analysisMode)
+            setupProject(cpFiles, libcpFiles, completelyLoadLibraries, analysisMode)
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
@@ -267,19 +285,23 @@ trait AnalysisExecutor {
     }
 
     def setupProject(
-        cpFiles:      Iterable[File],
-        libcpFiles:   Iterable[File],
-        analysisMode: AnalysisMode
+        cpFiles:                 Iterable[File],
+        libcpFiles:              Iterable[File],
+        completelyLoadLibraries: Boolean,
+        analysisMode:            AnalysisMode
     )(implicit initialLogContext: LogContext): Project[URL] = {
 
+        val analysisModeSpecification = s"${AnalysisMode.ConfigKey} = $analysisMode"
+        val analysisModeConfig = ConfigFactory.parseString(analysisModeSpecification)
+        val configuredConfig = analysisModeConfig.withFallback(ConfigFactory.load())
+
         OPALLogger.info("creating project", "reading project class files")
-        val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
-        val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
+        val JavaClassFileReader = Project.JavaClassFileReader(theConfig = configuredConfig)
 
         val (classFiles, exceptions1) =
             reader.readClassFiles(
                 cpFiles,
-                Java8ClassFileReader.ClassFiles,
+                JavaClassFileReader.ClassFiles,
                 (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
             )
 
@@ -288,24 +310,25 @@ trait AnalysisExecutor {
                 OPALLogger.info("creating project", "reading library class files")
                 reader.readClassFiles(
                     libcpFiles,
-                    Java8LibraryFramework.ClassFiles,
+                    if (completelyLoadLibraries) {
+                        JavaClassFileReader.ClassFiles
+                    } else {
+                        Java9LibraryFramework.ClassFiles
+                    },
                     (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
                 )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
         }
-        val config =
-            ConfigFactory.parseString(s"${AnalysisMode.ConfigKey} = $analysisMode").
-                withFallback(ConfigFactory.load())
         val project =
             Project(
                 classFiles,
                 libraryClassFiles,
-                libraryClassFilesAreInterfacesOnly = true,
+                libraryClassFilesAreInterfacesOnly = !completelyLoadLibraries,
                 Traversable.empty
             )(
-                config = config
+                config = configuredConfig
             )
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 

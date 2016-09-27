@@ -54,6 +54,8 @@ case class PUTSTATIC(
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
+    final def stackSlotsChange: Int = -fieldType.computationalType.operandSize
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

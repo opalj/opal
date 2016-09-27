@@ -33,6 +33,7 @@ package reader
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.io.IOException
@@ -48,22 +49,20 @@ import scala.concurrent.Future
 
 import org.apache.commons.lang3.StringUtils.getLevenshteinDistance
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 import org.opalj.control.repeat
+import org.opalj.io.process
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.io.process
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
-import java.io.ByteArrayInputStream
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
  * several convenience methods are defined to read in class files from various
  * sources (Streams, Files, JAR archives).
  *
- * This library supports class files from version 45 (Java 1.1) up to
- * version 53 (Java 9).
+ * This library supports class files from version 45 (Java 1.1) up to version 53 (Java 9).
  *
  * ==Notes for Implementors==
  * Reading of the class file's major structures: the constant pool, fields, methods
@@ -74,7 +73,7 @@ import java.io.ByteArrayInputStream
  *
  * @author Michael Eichberg
  */
-trait ClassFileReader extends Constant_PoolAbstractions {
+trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbstractions {
 
     import ClassFileReader.{ExceptionHandler, defaultExceptionHandler}
 
@@ -230,10 +229,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * }
      * </pre>
      *
-     * @param in The `DataInputStream from which the class file will be read. The
-     *    stream is not closed by this method.
-     *    '''It is highly recommended that the stream is buffered; otherwise the
-     *    performance will be terrible!'''
+     * @param in 	The `DataInputStream from which the class file will be read. The
+     *    			stream is not closed by this method.
+     *    			'''It is highly recommended that the stream is buffered; otherwise the
+     *    			performance will be terrible!'''
      */
     def ClassFile(in: DataInputStream): List[ClassFile] = {
         // magic
@@ -444,10 +443,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                                 val classFiles = ClassFile(jarFile, jarEntry)
                                 classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
                             } catch {
-                                case ct: ControlThrowable ⇒
-                                    throw ct
-                                case t: Throwable ⇒
-                                    exceptionHandler(jarEntryName, t)
+                                case ct: ControlThrowable ⇒ throw ct
+                                case t: Throwable         ⇒ exceptionHandler(jarEntryName, t)
                             }
                         } else if (jarEntryName.endsWith(".jar")) {
                             innerJarEntries.add(jarEntry)
@@ -490,9 +487,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         try {
             val jarFile = File.createTempFile(entry, ".zip")
 
-            process { new java.io.FileOutputStream(jarFile) } { fout ⇒
-                fout.write(jarData)
-            }
+            process { new java.io.FileOutputStream(jarFile) } { fout ⇒ fout.write(jarData) }
             ClassFiles(jarFileURL, new ZipFile(jarFile), classFileHandler, exceptionHandler)
 
             jarFile.delete()
@@ -626,4 +621,5 @@ object ClassFileReader {
             t
         )(GlobalLogContext)
     }
+
 }

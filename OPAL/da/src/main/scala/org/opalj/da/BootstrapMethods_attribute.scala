@@ -44,7 +44,10 @@ case class BootstrapMethods_attribute(
         bootstrap_methods:    Seq[BootstrapMethod]
 ) extends Attribute {
 
-    override def attribute_length = 2 /* num_bootstrap_methods */ + bootstrap_methods.view.map(_.size).sum
+    override def attribute_length = {
+        2 /* num_bootstrap_methods */ +
+            bootstrap_methods.view.map(_.size).sum
+    }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
@@ -61,9 +64,10 @@ case class BootstrapMethod(method_ref: Constant_Pool_Index, arguments: Seq[Boots
     /**
      * Number of bytes to store the bootstrap method.
      */
-    def size: Int = 2 /* bootstrap_method_ref */ +
-        2 + /* num_bootstrap_arguments */
-        arguments.length * 2 /* bootstrap_arguments */
+    def size: Int = {
+        2 /* bootstrap_method_ref */ + 2 + /* num_bootstrap_arguments */
+            arguments.length * 2 /* bootstrap_arguments */
+    }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="nested_details">

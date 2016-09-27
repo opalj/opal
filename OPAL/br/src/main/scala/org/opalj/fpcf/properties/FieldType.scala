@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,38 +27,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package reader
+package fpcf
+package properties
 
-/**
- * This attribute stores references to [[ClassFile]] objects that have been generated
- * while parsing the annotated ClassFile.
- *
- * For example, to represent proxy types that have been created
- * by JDK8 lambda or method reference expressions.
- *
- * This attribute is typically only present while the class file is processed/read
- * and will be removed from the attributes table before any analysis sees the
- * "final" class file.
- *
- * This attribute may occur multiple times in the attributes table of a class file structure.
- *
- * @author Arne Lottmann
- * @author Michael Eichberg
- */
-case class SynthesizedClassFiles(classFiles: Seq[ClassFile]) extends Attribute {
-
-    final override val kindId = SynthesizedClassFiles.KindId
-
-    override def toString: String = {
-        classFiles.map(_.thisType.toJava).mkString(
-            "SynthesizedClassFiles(",
-            ", ",
-            ")"
-        )
-    }
-}
-
-object SynthesizedClassFiles {
-    final val KindId = 1002
-}
+//sealed trait FieldTypePropertyMetaInformation extends PropertyMetaInformation {
+//
+//    final type Self = FieldType
+//
+//}
+//
+///**
+// * Specifies the type of the values stored in a field. In the worst case the type is
+// * equivalent to the declared type. 
+// * 
+// * @author Michael Eichberg
+// */
+//sealed trait FieldType        extends OrderedProperty        with FieldTypePropertyMetaInformation {
+//
+//    final def key = FieldType.key
+//}
+///**
+// * Common constants use by all [[FieldType]] properties associated with methods.
+// */
+//object FieldType extends FieldTypePropertyMetaInformation {
+//
+//    final val key: PropertyKey[FieldType] = PropertyKey.create(
+//        "FieldType",
+//    )
+//}
+//
+//case object TheDeclaredType extends FieldType {
+//    final val isRefineable = true
+//
+//    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+//        if (other == UnknownObjectImmutability)
+//            None
+//        else
+//            Some(s"impossible refinement of $other to $this")
+//    }
+//
+//    def isMutable: Answer = Unknown
+//}

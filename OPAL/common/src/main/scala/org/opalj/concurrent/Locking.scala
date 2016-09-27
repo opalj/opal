@@ -33,6 +33,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
  * A basic facility to model shared and exclusive access to some functionality/data
@@ -84,15 +86,15 @@ object Locking {
      * Acquires all given locks in the given order and then executes the given function `f`.
      * Afterwards all locks are released in reverse order.
      */
-    @inline final def withWriteLocks[T](rwLocks: Traversable[ReentrantReadWriteLock])(f: ⇒ T): T = {
-        var acquiredRWLocks: List[WriteLock] = Nil
+    @inline final def withWriteLocks[T](rwLocks: TraversableOnce[ReentrantReadWriteLock])(f: ⇒ T): T = {
+        var acquiredRWLocks: Chain[WriteLock] = Naught
         var error: Throwable = null
         val allLocked =
             rwLocks.forall { rwLock ⇒
                 try {
                     val l = rwLock.writeLock
                     l.lock
-                    acquiredRWLocks = l :: acquiredRWLocks
+                    acquiredRWLocks :&:= l
                     true
                 } catch {
                     case t: Throwable ⇒
@@ -111,7 +113,7 @@ object Locking {
                 // penalty of throwing an exception and immediately catching it, is a no-brainer...
                 throw error;
         } finally {
-            acquiredRWLocks.foreach { rwLock ⇒
+            acquiredRWLocks foreach { rwLock ⇒
                 try { rwLock.unlock() } catch { case t: Throwable ⇒ if (error eq null) error = t }
             }
             if (error ne null) throw error;

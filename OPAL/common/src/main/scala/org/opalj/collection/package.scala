@@ -77,9 +77,9 @@ package object collection {
      * returned. Otherwise, the given function `f` is evaluated and that value is
      * stored in the map and also returned.
      *
-     * @note It is possible that `f` is evaluated but the result is not used, if
-     *      another thread has already associated a value with the respective key.
-     *      In that case the result of the evaluation of `f` is completely thrown away.
+     * @note 	It is possible that `f` is evaluated but the result is not used, if
+     * 			another thread has already associated a value with the respective key.
+     *      	In that case the result of the evaluation of `f` is completely thrown away.
      */
     def putIfAbsentAndGet[K, V](map: ConcurrentHashMap[K, V], key: K, f: ⇒ V): V = {
         val value = map.get(key)
@@ -109,24 +109,16 @@ package object collection {
         map: ConcurrentHashMap[K, ConcurrentHashMap[SubK, V]]
     ): Map[K, Map[SubK, V]] = {
 
-        val entries =
-            for {
-                aDep ← map.entrySet.asScala
-                source = aDep.getKey()
-                value = aDep.getValue()
-            } yield {
-                (
-                    source,
-                    HashMap.empty ++ (
-                        for {
-                            target ← value.entrySet.asScala
-                            key = target.getKey()
-                            value = target.getValue()
-                        } yield (key, value)
-                    )
-                )
-            }
+        map.entrySet.asScala.foldLeft(HashMap.empty[K, Map[SubK, V]]) { (c, n) ⇒
+            val key = n.getKey()
+            val values = n.getValue().entrySet.asScala
+            val entry = (
+                key,
+                values.foldLeft(HashMap.empty[SubK, V])((c, n) ⇒ c + ((n.getKey, n.getValue)))
+            )
+            c + entry
 
-        HashMap.empty ++ entries
+        }
+
     }
 }

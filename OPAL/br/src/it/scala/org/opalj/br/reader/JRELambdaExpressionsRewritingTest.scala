@@ -37,6 +37,7 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.bi.isCurrentJREAtLeastJava8
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
@@ -53,6 +54,7 @@ import org.opalj.log.OPALLogger
 class JRELambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     describe("the Java8LambdaExpressionsRewriting framework") {
+
         describe("should rewrite all invokedynamic instructions found in the JRE") {
             val jrePath = org.opalj.bytecode.JRELibraryFolder
             val baseConfig: Config = ConfigFactory.load()
@@ -60,7 +62,8 @@ class JRELambdaExpressionsRewritingTest extends FunSpec with Matchers {
             val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
             val config = baseConfig.
                 withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
-                withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
+                withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)) /*.
+                withValue(SynthesizedClassFiles., ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))*/
 
             val logContext = new DefaultLogContext
             OPALLogger.register(logContext)

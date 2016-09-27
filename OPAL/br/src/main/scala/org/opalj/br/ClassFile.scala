@@ -83,13 +83,14 @@ import org.opalj.collection.immutable.UShortPair
  *    - TODO ''TargetPlatform_attribute''
  *
  *    The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
- *    is, however, resolved and is not part of the attributes table of the class file.
+ *    may, however, be resolved and is then no longer part of the attributes table of
+ *    the class file.
  *    The ''BootstrapMethods'' attribute is basically the container for the bootstrap
  *    methods referred to by the [[org.opalj.br.instructions.INVOKEDYNAMIC]]
  *    instructions.
  *
- * @note Equality of `ClassFile` objects is reference based and a class file's hash code
- *    is the same as `thisType`'s hash code.
+ * @note	Equality of `ClassFile` objects is reference based and a class file's hash code
+ *    		is the same as `thisType`'s hash code.
  *
  * @author Michael Eichberg
  */
@@ -103,6 +104,26 @@ final class ClassFile private (
         val methods:        Methods,
         val attributes:     Attributes
 ) extends ConcreteSourceElement {
+
+    /**
+     * Creates a shallow copy of this class file object.
+     */
+    def copy(
+        version:        UShortPair         = this.version,
+        accessFlags:    Int                = this.accessFlags,
+        thisType:       ObjectType         = this.thisType,
+        superclassType: Option[ObjectType] = this.superclassType,
+        interfaceTypes: Seq[ObjectType]    = this.interfaceTypes,
+        fields:         Fields             = this.fields,
+        methods:        Methods            = this.methods,
+        attributes:     Attributes         = this.attributes
+    ): ClassFile = {
+        new ClassFile(
+            version, accessFlags,
+            thisType, superclassType, interfaceTypes,
+            fields, methods, attributes
+        )
+    }
 
     import ClassFile._
 
@@ -181,12 +202,28 @@ final class ClassFile private (
      */
     def isVirtualType: Boolean = attributes.contains(VirtualTypeFlag)
 
-    def module: Option[Module] = {
-        attributes collectFirst { case m: Module ⇒ m }
-    }
+    def module: Option[Module] = { attributes collectFirst { case m: Module ⇒ m } }
 
     def enclosingMethod: Option[EnclosingMethod] = {
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
+    }
+
+    /**
+     * Returns this class file's bootstrap method table.
+     *
+     * @note	A class file's bootstrap method table may be removed at load time if
+     * 			the corresponding [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions
+     * 			are rewritten.
+     */
+    def bootstrapMethodTable: Option[BootstrapMethodTable] = {
+        attributes collectFirst { case bmt: BootstrapMethodTable ⇒ bmt }
+    }
+
+    /**
+     * Returns OPAL's [[SynthesizedClassFiles]] attribute if it is defined.
+     */
+    def synthesizedClassFiles: Option[SynthesizedClassFiles] = {
+        attributes collectFirst { case scf: SynthesizedClassFiles ⇒ scf }
     }
 
     /**
@@ -199,8 +236,9 @@ final class ClassFile private (
      *      of this class, use the method nested classes.
      * @see [[nestedClasses]]
      */
-    def innerClasses: Option[InnerClasses] =
+    def innerClasses: Option[InnerClasses] = {
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
+    }
 
     /**
      * Returns `true` if this class file defines an anonymous inner class.
@@ -406,13 +444,13 @@ final class ClassFile private (
      */
     def constructors: Iterator[Method] = {
         new Iterator[Method] {
-            var i = -1
+            private var i = -1
 
             private def lookupNextConstructor(): Unit = {
                 i += 1
-                if (i >= methods.size)
+                if (i >= methods.size) {
                     i = -1
-                else {
+                } else {
                     val methodName = methods(i).name
                     val r = methodName.compareTo("<init>")
                     if (r < 0 /*methodName < "<init>"*/ )
@@ -434,6 +472,14 @@ final class ClassFile private (
         }
     }
 
+    /**
+     * Returns `true` if this class defines a so-called default constructor. A
+     * default constructor needs to be present, e.g., when the class is serializable.
+     *
+     * The default constructor is the constructor that takes no parameters.
+     *
+     * @note The result is recomputed.
+     */
     def hasDefaultConstructor: Boolean = constructors exists { _.parametersCount == 0 }
 
     /**
@@ -483,6 +529,7 @@ final class ClassFile private (
      * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
     def findField(name: String): Option[Field] = {
+        // IMPROVE Define a macro to perform a binary search on an array.
         @tailrec @inline def findField(low: Int, high: Int): Option[Field] = {
             if (high < low)
                 return None;
@@ -510,6 +557,7 @@ final class ClassFile private (
      * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
     def findMethod(name: String): Option[Method] = {
+        // IMPROVE Define a macro to perform a binary search on an array.
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
             if (high < low)
                 return None;
@@ -536,7 +584,7 @@ final class ClassFile private (
      * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
      */
     def findMethod(name: String, descriptor: MethodDescriptor): Option[Method] = {
-
+        // IMPROVE Define a macro to perform a binary search on an array.
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
             if (high < low)
                 return None;
@@ -605,23 +653,6 @@ final class ClassFile private (
                 val error = s"toString for ${thisType.toJava} failed"
                 throw new RuntimeException(error, e)
         }
-    }
-
-    def copy(
-        version:        UShortPair         = this.version,
-        accessFlags:    Int                = this.accessFlags,
-        thisType:       ObjectType         = this.thisType,
-        superclassType: Option[ObjectType] = this.superclassType,
-        interfaceTypes: Seq[ObjectType]    = this.interfaceTypes,
-        fields:         Fields             = this.fields,
-        methods:        Methods            = this.methods,
-        attributes:     Attributes         = this.attributes
-    ): ClassFile = {
-        new ClassFile(
-            version, accessFlags,
-            thisType, superclassType, interfaceTypes,
-            fields, methods, attributes
-        )
     }
 
 }

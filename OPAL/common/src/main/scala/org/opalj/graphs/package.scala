@@ -42,20 +42,20 @@ import scala.collection.mutable
 package object graphs {
 
     /**
-     * Generates a string that describes a (multi-)graph using the ".dot" file format
+     * Generates a string that describes a (multi-)graph using the ".dot/.gv" file format
      * [[http://graphviz.org/pdf/dotguide.pdf]].
      * The graph is defined by the given set of nodes.
      *
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def toDot(
-        nodes:    Set[_ <: Node],
-        dir:      String         = "forward",
-        ranksep:  String         = "1.0",
-        fontname: String         = "Helvetica",
-        rankdir:  String         = "TB"
+        rootNodes: Set[_ <: Node],
+        dir:       String         = "forward",
+        ranksep:   String         = "1.0",
+        fontname:  String         = "Helvetica",
+        rankdir:   String         = "TB"
     ): String = {
-        var nodesToProcess = Set.empty[Node] ++ nodes
+        var nodesToProcess = Set.empty[Node] ++ rootNodes
         var processedNodes = Set.empty[Node]
 
         var s = "digraph G {\n"+

@@ -1316,7 +1316,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     thisUpperTypeBound != refinedValue.upperTypeBound &&
                     classHierarchy.isSubtypeOf(thisUpperTypeBound, refinedValue.upperTypeBound).isYes) {
                     if (thisUpperTypeBound.isSingletonSet)
-                        refinedValue = refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.first()).asInstanceOf[DomainSingleOriginReferenceValue]
+                        refinedValue = refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.first).asInstanceOf[DomainSingleOriginReferenceValue]
                     else
                         refinedValue =
                             ObjectValue(
@@ -1879,7 +1879,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue =
         ArrayValue(pc, No, true, arrayType, nextT())
 
-    override def NewArray(pc: PC, counts: List[DomainValue], arrayType: ArrayType): DomainArrayValue =
+    override def NewArray(pc: PC, counts: Operands, arrayType: ArrayType): DomainArrayValue =
         ArrayValue(pc, No, true, arrayType, nextT())
 
     override protected[domain] def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue = {
@@ -1988,4 +1988,3 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     ): DomainMultipleReferenceValues
 
 }
-

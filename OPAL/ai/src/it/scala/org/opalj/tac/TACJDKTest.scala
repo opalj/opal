@@ -35,9 +35,16 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.br.reader
 import java.io.File
 import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.analyses.Project
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.ai.Domain
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Tests that all methods of the JDK can be converted to a three address representation.
@@ -48,45 +55,53 @@ import org.opalj.bi.TestSupport.locateTestResources
 @RunWith(classOf[JUnitRunner])
 class TACJDKTest extends FunSpec with Matchers {
 
-    describe("creating the three-address representation") {
-        val jreLibFolder: File = JRELibraryFolder
-        val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
+    val jreLibFolder: File = JRELibraryFolder
+    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
-        def checkFolder(folder: File): Unit = {
+    describe("creating the three-address representation") {
+
+        def checkFolder(
+            folder:        File,
+            domainFactory: Option[(SomeProject, ClassFile, Method) ⇒ Domain] = None
+        ): Unit = {
             var errors: List[(String, Throwable)] = Nil
             val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
             val mutex = new Object
             for {
                 file ← folder.listFiles()
                 if file.isFile && file.canRead && file.getName.endsWith(".jar")
+                project = Project(file)
+                ch = project.classHierarchy
+                cf ← project.allProjectClassFiles.par
+                m ← cf.methods
+                if m.body.isDefined
+                aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
             } {
-                reader.Java8Framework.ClassFiles(file).par foreach { cs ⇒
-                    val (cf, _) = cs
-                    cf.methods.filter(_.body.isDefined) foreach { m ⇒
-                        try {
-                            val quadruples = AsQuadruples(
-                                method = m,
-                                optimizations = AllOptimizations, aiResult = None
-                            )
-                            ToJavaLike(quadruples._1)
-                            successfullyCompleted.incrementAndGet()
-                        } catch {
-                            case e: Throwable ⇒ this.synchronized {
-                                val methodSignature = m.toJava(cf)
-                                mutex.synchronized {
-                                    println(methodSignature)
-                                    e.printStackTrace()
-                                    if (e.getCause != null) {
-                                        println("\tcause:")
-                                        e.getCause.printStackTrace()
-                                    }
-                                    println("\n")
-                                    errors ::= ((file+":"+methodSignature, e))
-                                }
+                try {
+                    val (tacCode, _) = AsQuadruples(
+                        method = m,
+                        classHierarchy = project.classHierarchy,
+                        optimizations = AllOptimizations,
+                        aiResult = aiResult
+                    )
+                    ToJavaLike(tacCode)
+                } catch {
+                    case e: Throwable ⇒ this.synchronized {
+                        val methodSignature = m.toJava(cf)
+                        mutex.synchronized {
+                            println(methodSignature)
+                            e.printStackTrace()
+                            if (e.getCause != null) {
+                                println("\tcause:")
+                                e.getCause.printStackTrace()
                             }
+                            println("\n")
+                            println(m.body.get.toString)
+                            errors ::= ((file+":"+methodSignature, e))
                         }
                     }
                 }
+                successfullyCompleted.incrementAndGet()
             }
             if (errors.nonEmpty) {
                 val message =
@@ -101,11 +116,37 @@ class TACJDKTest extends FunSpec with Matchers {
                 fail(message)
             }
         }
-        it("should be able to convert all methods of the JDK to three-address code") {
-            checkFolder(jreLibFolder)
+
+        describe("using the results of an abstract interpretation") {
+
+            val domainFactory = Some((p: SomeProject, cf: ClassFile, m: Method) ⇒ {
+                new DefaultDomainWithCFGAndDefUse(p, cf, m)
+            })
+
+            it("it should be able to create a fully types three address representation for the JDK") {
+                time {
+                    checkFolder(jreLibFolder, domainFactory)
+                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
+
+            it("it should be able to convert all methods of the set of collected class files") {
+                time {
+                    checkFolder(biClassfilesFolder, domainFactory)
+                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
+
         }
-        it("should be able to convert all methods of the set of collected class files") {
-            checkFolder(biClassfilesFolder)
+
+        describe("plain transformation") {
+
+            it("it should be able to convert all methods of the JDK") {
+                time { checkFolder(jreLibFolder) } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
+
+            it("it should be able to convert all methods of the set of collected class files") {
+                time { checkFolder(biClassfilesFolder) } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
+
         }
     }
 }

@@ -55,6 +55,5 @@ case class BootstrapMethod(
         arguments: BootstrapArguments
 ) {
 
-    def toJava: String = handle.toJava + arguments.map(_.toJava).mkString("(", ",", ")")
+    def toJava: String = arguments.map(_.toJava).mkString(handle.toJava+"(", ",", ")")
 }
-

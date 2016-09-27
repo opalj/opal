@@ -34,6 +34,9 @@ package org.opalj
 package ai
 package domain
 
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
+
 /**
  * Provides the generic infrastructure to register a function that updates the operands
  * and locals associated with an instruction that will be evaluated "next".
@@ -114,11 +117,11 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
     }
 
     def registerOnRegularControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
-        onRegularControlFlow = f :: onRegularControlFlow
+        onRegularControlFlow :&:= f
     }
 
     def registerOnExceptionalControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
-        onExceptionalControlFlow = f :: onExceptionalControlFlow
+        onExceptionalControlFlow :&:= f
     }
 
     /**

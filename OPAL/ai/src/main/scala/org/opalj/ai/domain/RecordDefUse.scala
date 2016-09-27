@@ -36,11 +36,13 @@ import scala.xml.Node
 import scala.collection.BitSet
 import scala.collection.mutable
 
-import org.opalj.control.forFirstN
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.collection.mutable.SmallValuesSet
+import org.opalj.collection.immutable.:&:
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
@@ -124,7 +126,7 @@ trait RecordDefUse extends RecordCFG {
 
     // This array contains the information where each operand value found at a
     // specific instruction was defined.
-    private[this] var defOps: Array[List[ValueOrigins]] = _
+    private[this] var defOps: Array[Chain[ValueOrigins]] = _
     // This array contains the information where each local is defined;
     // negative values indicate that the values are parameters.
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _
@@ -141,8 +143,8 @@ trait RecordDefUse extends RecordCFG {
         // use of a SmallValuesArray that can actually store larger values than
         // necessary; however, this will occur only in a very small number of cases.
         val absoluteMin = -code.maxLocals
-        val defOps = new Array[List[ValueOrigins]](codeSize)
-        defOps(0) = Nil // the operand stack is empty...
+        val defOps = new Array[Chain[ValueOrigins]](codeSize)
+        defOps(0) = Naught // the operand stack is empty...
         this.defOps = defOps
 
         // initialize initial def-use information based on the parameters
@@ -275,7 +277,7 @@ trait RecordDefUse extends RecordCFG {
         }
 
         // 2. check instructions
-        code.foreach { (pc, instruction) ⇒
+        code.iterate { (pc, instruction) ⇒
             if (instruction.opcode != CHECKCAST.opcode) {
                 // a checkcast instruction is already a use
                 instruction.expressionResult match {
@@ -408,19 +410,19 @@ trait RecordDefUse extends RecordCFG {
         }
 
         def propagate(
-            newDefOps:    List[ValueOrigins],
+            newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
             if (joinInstructions.contains(successorPC) && (defLocals(successorPC) ne null)) {
 
                 // we now also have to perform a join...
                 @annotation.tailrec def joinDefOps(
-                    oldDefOps:     List[ValueOrigins],
-                    lDefOps:       List[ValueOrigins],
-                    rDefOps:       List[ValueOrigins],
-                    oldIsSuperset: Boolean            = true,
-                    joinedDefOps:  List[ValueOrigins] = Nil
-                ): List[ValueOrigins] = {
+                    oldDefOps:     Chain[ValueOrigins],
+                    lDefOps:       Chain[ValueOrigins],
+                    rDefOps:       Chain[ValueOrigins],
+                    oldIsSuperset: Boolean             = true,
+                    joinedDefOps:  Chain[ValueOrigins] = Naught
+                ): Chain[ValueOrigins] = {
                     if (lDefOps.isEmpty) {
                         // assert(rDefOps.isEmpty)
                         return if (oldIsSuperset) oldDefOps else joinedDefOps.reverse;
@@ -436,7 +438,7 @@ trait RecordDefUse extends RecordCFG {
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
-                            oldIsSuperset, oldHead :: joinedDefOps
+                            oldIsSuperset, oldHead :&: joinedDefOps
                         )
                     else {
                         val joinedHead = (newHead ++ oldHead)
@@ -446,7 +448,7 @@ trait RecordDefUse extends RecordCFG {
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
-                            false, joinedHead :: joinedDefOps
+                            false, joinedHead :&: joinedDefOps
                         )
                     }
                 }
@@ -491,7 +493,7 @@ trait RecordDefUse extends RecordCFG {
                     // variables (there is no load without a previous store).
                     var newUsage = false
                     val joinedDefLocals =
-                        oldDefLocals.merge(
+                        oldDefLocals.fuse(
                             newDefLocals,
                             { (o, n) ⇒
                                 // In general, if n or o equals null, then
@@ -556,15 +558,13 @@ trait RecordDefUse extends RecordCFG {
          * Specifies that the given number of stack values is used and also popped from
          * the stack and that – optionally – a new value is pushed onto the stack (and
          * associated with a new variable).
-         * 
+         *
          * Usage is independent of the question whether the usage resulted in an
          * exceptional control flow.
          */
         def stackOp(usedValues: Int, pushesValue: Boolean): Boolean = {
             val currentDefOps = defOps(currentPC)
-            forFirstN(currentDefOps, usedValues) { op ⇒
-                updateUsageInformation(op, currentPC)
-            }
+            currentDefOps.forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currentPC) }
 
             val newDefOps =
                 if (isExceptionalControlFlow) {
@@ -574,14 +574,14 @@ trait RecordDefUse extends RecordCFG {
                     // (Whether we had a join or not is irrelevant.)
                     val successorDefOps = defOps(successorPC)
                     if (successorDefOps eq null)
-                        List(ValueOrigins(origin = successorPC))
+                        Chain.singleton(ValueOrigins(origin = successorPC))
                     else {
                         // assert(successorDefOps.tail.isEmpty)
                         successorDefOps
                     }
                 } else {
                     if (pushesValue)
-                        ValueOrigins(origin = currentPC) :: currentDefOps.drop(usedValues)
+                        ValueOrigins(origin = currentPC) :&: currentDefOps.drop(usedValues)
                     else
                         currentDefOps.drop(usedValues)
                 }
@@ -592,7 +592,7 @@ trait RecordDefUse extends RecordCFG {
         def load(index: Int): Boolean = {
             // there will never be an exceptional control flow ...
             val currentLocals = defLocals(currentPC)
-            propagate(currentLocals(index) :: defOps(currentPC), currentLocals)
+            propagate(currentLocals(index) :&: defOps(currentPC), currentLocals)
         }
 
         def store(index: Int): Boolean = {
@@ -779,52 +779,52 @@ trait RecordDefUse extends RecordCFG {
             //
             case 89 /*dup*/ ⇒
                 val oldDefOps = defOps(currentPC)
-                propagate(oldDefOps.head :: oldDefOps, defLocals(currentPC))
+                propagate(oldDefOps.head :&: oldDefOps, defLocals(currentPC))
             case 90 /*dup_x1*/ ⇒
-                val v1 :: v2 :: rest = defOps(currentPC)
-                propagate(v1 :: v2 :: v1 :: rest, defLocals(currentPC))
+                val v1 :&: v2 :&: rest = defOps(currentPC)
+                propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
             case 91 /*dup_x2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 /*@ CTC1()*/ ) :: (v2 @ CTC1()) :: _ ⇒
-                        val (v1 :: v2 :: v3 :: rest) = defOps(currentPC)
-                        propagate(v1 :: v2 :: v3 :: v1 :: rest, defLocals(currentPC))
+                    case (v1 /*@ CTC1()*/ ) :&: (v2 @ CTC1()) :&: _ ⇒
+                        val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
+                        propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
                     case _ ⇒
-                        val (v1 :: v2 :: rest) = defOps(currentPC)
-                        propagate(v1 :: v2 :: v1 :: rest, defLocals(currentPC))
+                        val (v1 :&: v2 :&: rest) = defOps(currentPC)
+                        propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
                 }
             case 92 /*dup2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :: _ ⇒
+                    case (v1 @ CTC1()) :&: _ ⇒
                         val currentDefOps = defOps(currentPC)
-                        val (v1 :: v2 :: _) = currentDefOps
-                        propagate(v1 :: v2 :: currentDefOps, defLocals(currentPC))
+                        val (v1 :&: v2 :&: _) = currentDefOps
+                        propagate(v1 :&: v2 :&: currentDefOps, defLocals(currentPC))
                     case _ ⇒
                         val oldDefOps = defOps(currentPC)
-                        propagate(oldDefOps.head :: defOps(currentPC), defLocals(currentPC))
+                        propagate(oldDefOps.head :&: defOps(currentPC), defLocals(currentPC))
                 }
             case 93 /*dup2_x1*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :: _ ⇒
-                        val (v1 :: v2 :: v3 :: rest) = defOps(currentPC)
-                        propagate(v1 :: v2 :: v3 :: v1 :: v2 :: rest, defLocals(currentPC))
+                    case (v1 @ CTC1()) :&: _ ⇒
+                        val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
+                        propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
                     case _ ⇒
-                        val (v1 :: v2 :: rest) = defOps(currentPC)
-                        propagate(v1 :: v2 :: v1 :: rest, defLocals(currentPC))
+                        val (v1 :&: v2 :&: rest) = defOps(currentPC)
+                        propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
                 }
             case 94 /*dup2_x2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: _ ⇒
-                        val (v1 :: v2 :: v3 :: v4 :: rest) = defOps(currentPC)
-                        propagate(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest, defLocals(currentPC))
-                    case (v1 @ CTC1()) :: (v2 @ CTC1()) :: _ ⇒
-                        val (v1 :: v2 :: v3 :: rest) = defOps(currentPC)
-                        propagate(v1 :: v2 :: v3 :: v1 :: v2 :: rest, defLocals(currentPC))
-                    case (v1 /* @ CTC2()*/ ) :: (v2 @ CTC1()) :: _ ⇒
-                        val (v1 :: v2 :: v3 :: rest) = defOps(currentPC)
-                        propagate(v1 :: v2 :: v3 :: v1 :: rest, defLocals(currentPC))
+                    case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: _ ⇒
+                        val (v1 :&: v2 :&: v3 :&: v4 :&: rest) = defOps(currentPC)
+                        propagate(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
+                    case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: _ ⇒
+                        val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
+                        propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
+                    case (v1 /* @ CTC2()*/ ) :&: (v2 @ CTC1()) :&: _ ⇒
+                        val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
+                        propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
                     case _ ⇒
-                        val (v1 :: v2 :: rest) = defOps(currentPC)
-                        propagate(v1 :: v2 :: v1 :: rest, defLocals(currentPC))
+                        val (v1 :&: v2 :&: rest) = defOps(currentPC)
+                        propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
                 }
 
             case 87 /*pop*/ ⇒
@@ -836,8 +836,8 @@ trait RecordDefUse extends RecordCFG {
                     propagate(defOps(currentPC).tail, defLocals(currentPC))
 
             case 95 /*swap*/ ⇒ {
-                val v1 :: v2 :: rest = defOps(currentPC)
-                propagate(v2 :: v1 :: rest, defLocals(currentPC))
+                val v1 :&: v2 :&: rest = defOps(currentPC)
+                propagate(v2 :&: v1 :&: rest, defLocals(currentPC))
             }
 
             //
@@ -858,7 +858,7 @@ trait RecordDefUse extends RecordCFG {
                     if (isExceptionalControlFlow) {
                         val successorDefOps = defOps(successorPC)
                         if (successorDefOps eq null)
-                            List(ValueOrigins(origin = successorPC))
+                            Chain.singleton(ValueOrigins(origin = successorPC))
                         else
                             successorDefOps
                     } else {

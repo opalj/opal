@@ -50,8 +50,10 @@ import org.opalj.br.analyses.Project
 @RunWith(classOf[JUnitRunner])
 class DefaultDomainTest extends DomainTestInfrastructure("l2.DefaultDomain") {
 
-    def Domain(project: Project[URL], classFile: ClassFile, method: Method): l2.DefaultDomain[URL] =
+    type AnalyzedDomain = l2.DefaultDomain[URL]
+
+    def Domain(project: Project[URL], classFile: ClassFile, method: Method): AnalyzedDomain = {
         new l2.DefaultDomain(project, classFile, method)
+    }
 
 }
-

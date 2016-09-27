@@ -46,6 +46,8 @@ case object MONITOREXIT extends SynchronizationInstruction {
     final val jvmExceptions: List[ObjectType] =
         List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
 
+    final def stackSlotsChange: Int = -1
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

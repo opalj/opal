@@ -44,4 +44,5 @@ case object ACONST_NULL extends LoadConstantInstruction[Null] with ImplicitValue
     final val opcode = 1
 
     final val mnemonic = "aconst_null"
+
 }

@@ -56,8 +56,20 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
      */
     def methodDescriptor: MethodDescriptor
 
+    /**
+     * Returns `true` if this method takes an implicit parameter "this".
+     */
+    def isInstanceMethod: Boolean
+
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
         if (methodDescriptor.returnType.isVoidType) 0 else 1
+    }
+
+    final def stackSlotsChange: Int = {
+        val returnType = methodDescriptor.returnType
+        (if (isInstanceMethod) -1 /* pop "receiver object */ else 0) -
+            methodDescriptor.parameterTypes.foldLeft(0)(_ + _.computationalType.operandSize) +
+            (if (returnType.isVoidType) 0 else returnType.computationalType.operandSize)
     }
 
     final def expressionResult: ExpressionResultLocation = {

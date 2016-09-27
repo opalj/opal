@@ -2,27 +2,32 @@ import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 name := "OPAL Library"
 
-//version := "0.1" // LAST RELEASE
-version := "0.9-SNAPSHOT"
-
+version in ThisBuild := "0.9-SNAPSHOT"
 organization in ThisBuild := "de.opal-project"
-
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
-
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
 scalaVersion in ThisBuild := "2.11.8"
+//scalaVersion in ThisBuild := "2.12.0-M5"
 
 scalacOptions in ThisBuild ++= Seq(
-	"-deprecation", "-feature", "-unchecked", "-Xlint", "-Xfuture", "-Xfatal-warnings", 
-	"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
-	"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code" )
+		"-target:jvm-1.8",
+		"-deprecation", "-feature", "-unchecked", 
+		"-Xlint", "-Xfuture", "-Xfatal-warnings", 
+		"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
+		"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code"
+	)
 
-parallelExecution in ThisBuild := false // the tests/analysis are already parallelized
+scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
+scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
+	
+resolvers in ThisBuild += Resolver.jcenterRepo
 
-parallelExecution in Global := false // the tests/analysis are already parallelized
+// the tests/analysis are already parallelized
+parallelExecution in ThisBuild := false 
+parallelExecution in Global := false 
 
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
@@ -33,20 +38,17 @@ testOptions in ThisBuild <<=
 
 testOptions in ThisBuild += Tests.Argument("-o")
 
-scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
-
-scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
-
 // Required to get relative links in the generated source code documentation.
 scalacOptions in (ScalaUnidoc, unidoc) <<=
-  baseDirectory map {
-    bd => Seq ("-sourcepath", bd.getAbsolutePath)
-  }
+	baseDirectory map {
+    	bd => Seq ("-sourcepath", bd.getAbsolutePath)
+  	}
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=
-  Opts.doc.sourceUrl(
-	"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?at=master"
-  )
+	Opts.doc.sourceUrl( 
+		"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?"+
+			(if (isSnapshot.value) "at=develop" else "at=master")
+    )
 
 javaOptions in ThisBuild ++= Seq(
 	  "-Xmx3G", "-Xms1024m", "-Xnoclassgc",
@@ -54,9 +56,12 @@ javaOptions in ThisBuild ++= Seq(
 
 addCommandAlias("compileAll","; test:compile ; it:scalariformFormat ; it:compile")
 
-//EclipseKeys.createSrc := EclipseCreateSrc.Default 
+addCommandAlias("cleanAll","; clean ; cleanFiles ; cleanCache ; cleanLocal ")
+
+addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; eclipse ; compileAll ; unidoc ;  publishLocal ")
 
 EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource)
+//EclipseKeys.createSrc := EclipseCreateSrc.Default 
 
 EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17)
 

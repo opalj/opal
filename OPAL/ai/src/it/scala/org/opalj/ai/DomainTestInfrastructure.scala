@@ -31,39 +31,72 @@ package ai
 package domain
 
 import java.net.URL
+import java.util.concurrent.ConcurrentLinkedQueue
+
+import scala.util.control.ControlThrowable
+import scala.xml.NodeSeq
+
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import scala.util.control.ControlThrowable
+
+import org.opalj.util.PerformanceEvaluation
 import org.opalj.io.writeAndOpen
+import org.opalj.log.GlobalLogContext
+import org.opalj.bi.{TestSupport ⇒ BITestSupport}
+import org.opalj.br.{TestSupport ⇒ BRTestSupport}
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.ai.util.XHTML
 import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.log.GlobalLogContext
 import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.ai.util.XHTML
 
 /**
- * Infrastructure to just load a very large number of class files and performs
- * an abstract interpretation of all methods. It basically tests if we can load and
- * process a large number of different classes without exceptions.
+ * Provides the basic infrastructure to just load a very large number of class files and to perform
+ * an abstract interpretation of all methods.
  *
- * @author Michael Eichberg
+ * The primary mechanism to adapt this framework is to override the `analyzeAIResult` method
+ * and to throw some exception if an expected property is violated.
+ *
+ * @param 	domainName A descriptive name of the domain.
+ *
+ * @author 	Michael Eichberg
  */
 abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec with Matchers {
 
     private[this] implicit val logContext = GlobalLogContext
 
-    def Domain(project: Project[URL], classFile: ClassFile, method: Method): Domain
+    type AnalyzedDomain <: Domain
 
+    def Domain(project: Project[URL], classFile: ClassFile, method: Method): AnalyzedDomain
+
+    /**
+     * Called for each method that was successfully analyzed.
+     */
+    def analyzeAIResult(
+        classFile: ClassFile,
+        method:    Method,
+        result:    AIResult { val domain: AnalyzedDomain }
+    ): Unit = {
+        // validate that we can get the computational type of each value stored on the stack
+        // (this test will fail by throwing an exception)
+        result.operandsArray.forall { ops ⇒
+            (ops eq null) || { ops.foreach(op ⇒ op.computationalType); true }
+        }
+    }
+
+    /**
+     * Performs an abstract interpretation of all concrete methods of the
+     * project and records and reports the exceptions thrown while doing so.
+     */
     def analyzeProject(
         projectName:         String,
         project:             Project[URL],
         maxEvaluationFactor: Double
     ): Unit = {
 
-        val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
+        val performanceEvaluationContext = new PerformanceEvaluation
         import performanceEvaluationContext.{time, getTime}
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
@@ -72,22 +105,18 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
             classFile: ClassFile,
             method:    Method
         ): Option[(String, ClassFile, Method, Throwable)] = {
-
             val body = method.body.get
             try {
                 time('AI) {
-                    val ai =
-                        new InstructionCountBoundedAI[Domain](
-                            body,
-                            maxEvaluationFactor
-                        )
-                    val result =
-                        ai.apply(classFile, method, Domain(project, classFile, method))
+                    val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor)
+                    val result = ai(classFile, method, Domain(project, classFile, method))
                     if (result.wasAborted) {
                         throw new InterruptedException(
-                            "evaluation bound (max="+ai.maxEvaluationCount +
-                                s") exceeded (maxStack=${body.maxStack}; maxLocals=${body.maxLocals})"
+                            s"evaluation bound (max=${ai.maxEvaluationCount} exceeded"+
+                                s" (maxStack=${body.maxStack}; maxLocals=${body.maxLocals})"
                         )
+                    } else {
+                        analyzeAIResult(classFile, method, result)
                     }
                 }
                 methodsCount.incrementAndGet()
@@ -96,23 +125,24 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                 case ct: ControlThrowable ⇒ throw ct
                 case t: Throwable ⇒
                     // basically, we want to catch everything!
-                    val source = project.source(classFile.thisType).get.toString
-                    Some((source, classFile, method, t))
+                    Some((project.source(classFile).get.toString, classFile, method, t))
             }
         }
 
+        // Interpret Methods
+        //
         val collectedExceptions = time('OVERALL) {
-            val exceptions = new java.util.concurrent.ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
+            val exceptions = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { (m) ⇒
                 val MethodInfo(source, classFile, method) = m
-                analyzeClassFile(source.toString, classFile, method) foreach {
-                    exceptions.add(_)
-                }
+                analyzeClassFile(source.toString, classFile, method) foreach { exceptions.add(_) }
             }
             import scala.collection.JavaConverters._
             exceptions.asScala
         }
 
+        // Create Report
+        //
         if (collectedExceptions.nonEmpty) {
             val body =
                 for ((exResource, exInstances) ← collectedExceptions.groupBy(e ⇒ e._1)) yield {
@@ -133,17 +163,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                         { exDetails }
                     </section>
                 }
-
-            val node =
-                XHTML.createXHTML(
-                    Some("Exceptions Thrown During Interpretation"),
-                    scala.xml.NodeSeq.fromSeq(body.toSeq)
-                )
-            val file =
-                writeAndOpen(
-                    node,
-                    "CrashedAbstractInterpretationsReportFor"+projectName, ".html"
-                )
+            val node = XHTML.createXHTML(Some("Thrown Exceptions"), NodeSeq.fromSeq(body.toSeq))
+            val file = writeAndOpen(node, "FailedAbstractInterpretations-"+projectName, ".html")
 
             fail(
                 projectName+": "+
@@ -156,8 +177,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
             )
         } else {
             info(
-                projectName+": "+
-                    "No exceptions occured during the interpretation of "+
+                s"$projectName: no exceptions occured during the interpretation of "+
                     methodsCount.get+" methods (of "+project.methodsCount+") in "+
                     project.classFilesCount+" classes (real time: "+getTime('OVERALL)+
                     ", ai (∑CPU Times): "+getTime('AI)+")"
@@ -165,30 +185,29 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         }
     }
 
-    val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
+    //
+    // The Configured Projects
+    //
+
+    val cache = new BytecodeInstructionsCache
+    val reader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
 
     behavior of domainName
 
-    it should ("be able to perform an abstract interpretation of the JRE's classes") in {
-        val project = org.opalj.br.TestSupport.createJREProject
+    it should ("be useable to perform an abstract interpretation of the JRE's classes") in {
+        val project = BRTestSupport.createJREProject
 
         analyzeProject("JDK", project, 4d)
     }
 
-    it should ("be able to perform an abstract interpretation of the OPAL 0.3 snapshot") in {
-        val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-        val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
-
-        analyzeProject("OPAL-0.3", project, 2.5d)
-    }
-
-    it should ("be able to perform an abstract interpretation of the project OPAL-08-14-2014 snapshot") in {
+    it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-08-14-2014") in {
 
         import reader.AllClassFiles
-        val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
+        val classFilesFolder = BITestSupport.locateTestResources("classfiles", "bi")
         val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
-            def accept(dir: java.io.File, name: String) =
+            def accept(dir: java.io.File, name: String) = {
                 name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")
+            }
         })
         info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
         opalJARs.size should not be (0)
@@ -197,5 +216,11 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         analyzeProject("OPAL-SNAPSHOT-08-14-2014", project, 1.5d)
     }
 
-}
+    it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-0.3.jar") in {
+        val classFiles = BITestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+        val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
 
+        analyzeProject("OPAL-0.3", project, 2.5d)
+    }
+
+}

@@ -31,22 +31,23 @@ package tac
 
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
-import org.opalj.ai.AIResult
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CFG
+import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordCFG
 
 /**
  * Converts the bytecode of a method into a three address representation using quadruples.
  * The converted method has an isomorophic CFG when compared to the original method,
- *  but may contain more instructions.
+ * but may contain more instructions.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -57,8 +58,8 @@ object AsQuadruples {
      * Converts the bytecode of a method into a quadruples based three address representation using
      * the result of a bytecode based abstract interpretation of the method.
      *
-     * @param method A method with a body. I.e., a non-native, non-abstract method.
-     * @param aiResult The result of an abstract interpretation of the respective method.
+     * @param   method A method with a body. I.e., a non-native, non-abstract method.
+     * @param   aiResult The result of an abstract interpretation of the respective method.
      *
      * @return The array with the generated statements.
      */
@@ -79,9 +80,9 @@ object AsQuadruples {
         val instructions = code.instructions
         val codeSize = instructions.size
 
-        // only strictly needed if we find jsr/ret instructions or want to do optimizations
+        // used if we find jsr/ret instructions or want to do optimizations
         var theCFG: CFG = null
-        def cfg(): CFG = {
+        def cfg: CFG = {
             if (theCFG eq null) {
                 if (aiResult.isDefined && aiResult.get.domain.isInstanceOf[RecordCFG]) {
                     theCFG = aiResult.get.domain.asInstanceOf[RecordCFG].bbCFG
@@ -492,7 +493,7 @@ object AsQuadruples {
                     INVOKESPECIAL.opcode |
                     INVOKEVIRTUAL.opcode ⇒
                     val invoke = as[MethodInvocationInstruction](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
                     val (params, List(receiver)) = operands.splitAt(numOps - 1)
                     import invoke.{methodDescriptor, declaringClass, name}
@@ -532,7 +533,7 @@ object AsQuadruples {
 
                 case INVOKESTATIC.opcode ⇒
                     val invoke = as[INVOKESTATIC](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (params, rest) = stack.splitAt(numOps)
                     import invoke.{declaringClass, methodDescriptor, name}
                     val returnType = methodDescriptor.returnType
@@ -559,7 +560,7 @@ object AsQuadruples {
 
                 case INVOKEDYNAMIC.opcode ⇒
                     val invoke = as[INVOKEDYNAMIC](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
                     val returnType = invoke.methodDescriptor.returnType
                     val target: Var = OperandVar(returnType.computationalType, rest)
@@ -804,7 +805,7 @@ object AsQuadruples {
             val sourceParam = Param(cTpe, varName)
             finalStatements += Assignment(-1, targetVar, sourceParam)
             index += 1
-            registerIndex += cTpe.category
+            registerIndex += cTpe.operandSize
         }
 
         var currentPC = 0
@@ -818,22 +819,23 @@ object AsQuadruples {
                         pcToIndex(currentPC) = index
                     index += 1
                 }
+            } else {
+                // Required by subsequent tranformations to identifiy that some pcs
+                // are related to dead code!
+                pcToIndex(currentPC) = Int.MinValue
             }
             currentPC += 1
         }
 
-        if (forceCFGCreation || optimizations.nonEmpty) cfg();
+        if (forceCFGCreation || optimizations.nonEmpty) cfg;
         var tacCFG = Option(theCFG).map(cfg ⇒ cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1))
 
         finalStatements.foreach(_.remapIndexes(pcToIndex))
         var tacCode = finalStatements.toArray
 
         if (optimizations.nonEmpty) {
-            val initialTAC = TACOptimizationResult(tacCode, tacCFG.get, false)
-            val result =
-                optimizations.foldLeft(initialTAC) {
-                    (currentTAC, optimization) ⇒ optimization.optimize(currentTAC)
-                }
+            val baseTAC = TACOptimizationResult(tacCode, tacCFG.get, false)
+            val result = optimizations.foldLeft(baseTAC) { (tac, optimization) ⇒ optimization(tac) }
             tacCode = result.code
             tacCFG = Some(result.cfg)
         }
@@ -851,7 +853,7 @@ object AsQuadruples {
  * case v @ CTC1() => ...
  * }}}
  */
-private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.category == 1 }
+private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 1 }
 
 /**
  * Facilitates matching against values of computational type category 2.
@@ -861,4 +863,4 @@ private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categor
  * case v @ CTC2() => ...
  * }}}
  */
-private[tac] object CTC2 { def unapply(value: Var): Boolean = value.cTpe.category == 2 }
+private[tac] object CTC2 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 2 }

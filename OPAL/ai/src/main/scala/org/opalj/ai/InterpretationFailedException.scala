@@ -29,11 +29,17 @@
 package org.opalj
 package ai
 
+import org.opalj.collection.immutable.{Chain ⇒ List}
+
 /**
  * Exception that is thrown by the abstract interpreter when the abstract
  * interpretation of a method's implementation failed.
  *
  * To create an instance use the companion object [[InterpretationFailedException$]].
+ *
+ * @param 	pc The program counter of the instruction for which the interpretation failed.
+ * 			If `pc == code.length` then the interpretation completed successfully,
+ * 			but the post-processing failed.
  *
  * @author Michael Eichberg
  */
@@ -83,4 +89,3 @@ object InterpretationFailedException {
 
     }
 }
-

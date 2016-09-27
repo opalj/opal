@@ -31,6 +31,9 @@ package ai
 
 import scala.annotation.tailrec
 
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
+
 /**
  * Common utility functionality.
  *
@@ -53,16 +56,16 @@ package object util {
     )(
         test: PC ⇒ Boolean
     ): List[PC] = {
-        var newWorklist: List[PC] = List.empty
+        var newWorklist: List[PC] = Nil
         var remainingWorklist = worklist
         while (remainingWorklist.nonEmpty) {
             val thePC = remainingWorklist.head
             if (test(thePC))
                 return worklist
             if (thePC == pc)
-                return newWorklist.reverse ::: remainingWorklist.tail
+                return newWorklist.reverse :&:: remainingWorklist.tail
 
-            newWorklist = thePC :: newWorklist
+            newWorklist :&:= thePC
             remainingWorklist = remainingWorklist.tail
         }
         worklist
@@ -107,18 +110,18 @@ package object util {
             if (headWorklist.isEmpty)
                 tailWorklist
             else
-                prepend(headWorklist.tail, headWorklist.head :: tailWorklist)
+                prepend(headWorklist.tail, headWorklist.head :&: tailWorklist)
         }
 
         @tailrec def add(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
             if (tailWorklist.isEmpty)
-                (pc :: headWorklist).reverse
+                (pc :&: headWorklist).reverse
             else {
                 val nextPC = tailWorklist.head
                 if (nextPC == prefixEnd)
-                    prepend(headWorklist, pc :: tailWorklist)
+                    prepend(headWorklist, pc :&: tailWorklist)
                 else
-                    add(nextPC :: headWorklist, tailWorklist.tail)
+                    add(nextPC :&: headWorklist, tailWorklist.tail)
             }
         }
 
@@ -141,20 +144,20 @@ package object util {
             if (headWorklist.isEmpty)
                 tailWorklist
             else
-                prepend(headWorklist.tail, headWorklist.head :: tailWorklist)
+                prepend(headWorklist.tail, headWorklist.head :&: tailWorklist)
         }
 
         @tailrec def add(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
             if (tailWorklist.isEmpty)
-                (pc :: headWorklist).reverse
+                (pc :&: headWorklist).reverse
             else {
                 val nextPC = tailWorklist.head
                 if (nextPC == pc)
                     return worklist; // unchanged
                 else if (nextPC == prefixEnd)
-                    prepend(headWorklist, pc :: tailWorklist)
+                    prepend(headWorklist, pc :&: tailWorklist)
                 else
-                    add(nextPC :: headWorklist, tailWorklist.tail)
+                    add(nextPC :&: headWorklist, tailWorklist.tail)
             }
 
         }
@@ -174,9 +177,9 @@ package object util {
         while (remainingWorklist.nonEmpty) {
             val thePC = remainingWorklist.head
             if (thePC == pc) {
-                return newWorklist.reverse ::: remainingWorklist.tail
+                return newWorklist.reverse :&:: remainingWorklist.tail
             } else {
-                newWorklist = thePC :: newWorklist
+                newWorklist = thePC :&: newWorklist
             }
             remainingWorklist = remainingWorklist.tail
         }

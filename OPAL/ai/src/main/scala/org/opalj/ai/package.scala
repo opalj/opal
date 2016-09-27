@@ -29,12 +29,14 @@
 package org.opalj
 
 import scala.language.existentials
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
+import org.opalj.collection.immutable.Chain
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -227,7 +229,7 @@ package object ai {
      */
     final val SUBROUTINE = -90000009 // some value smaller than -2^16
 
-    type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
+    type Operands[T >: Null <: ValuesDomain#DomainValue] = Chain[T]
     type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
     type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
 
@@ -437,7 +439,7 @@ package object ai {
     )(
         code: Code, operandsArray: domain.OperandsArray
     )(
-        f: Function3[PC, Instruction, domain.Operands, U]
+        f: (PC, Instruction, domain.Operands) ⇒ U
     ): Unit = {
         val instructions = code.instructions
         val max_pc = instructions.size

@@ -34,6 +34,8 @@ import scala.annotation.tailrec
 import scala.collection.BitSet
 import scala.collection.mutable
 import org.opalj.br.instructions._
+import scala.collection.generic.FilterMonadic
+import scala.collection.generic.CanBuildFrom
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -55,12 +57,77 @@ import org.opalj.br.instructions._
  * @author Michael Eichberg
  */
 final class Code private (
-        val maxStack:          Int,
-        val maxLocals:         Int,
-        val instructions:      Array[Instruction],
-        val exceptionHandlers: ExceptionHandlers,
-        val attributes:        Attributes
-) extends Attribute with CommonAttributes with InstructionsContainer {
+    val maxStack:          Int,
+    val maxLocals:         Int,
+    val instructions:      Array[Instruction],
+    val exceptionHandlers: ExceptionHandlers,
+    val attributes:        Attributes
+) extends Attribute
+        with CommonAttributes
+        with InstructionsContainer
+        with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
+
+    class FilteredCode( final val p: ((PC, Instruction)) ⇒ Boolean)
+            extends FilterMonadic[(PC, Instruction), Nothing] {
+
+        def map[B, That](
+            f: ((PC, Instruction)) ⇒ B
+        )(
+            implicit
+            bf: CanBuildFrom[Nothing, B, That]
+        ): That = {
+            val that = bf()
+            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+                if (p(pcInstruction)) that += f(pcInstruction)
+            }
+            that.result
+        }
+
+        def flatMap[B, That](
+            f: ((PC, Instruction)) ⇒ scala.collection.GenTraversableOnce[B]
+        )(
+            implicit
+            bf: CanBuildFrom[Nothing, B, That]
+        ): That = {
+            val that = bf()
+            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+                if (p(pcInstruction)) that ++= f(pcInstruction).seq
+            }
+            that.result
+        }
+
+        def foreach[U](f: ((PC, Instruction)) ⇒ U): Unit = {
+            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+                if (p(pcInstruction)) f((pcInstruction))
+            }
+        }
+
+        def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilterMonadic[(PC, Instruction), Nothing] =
+            new FilteredCode(
+                (pcInstruction: (PC, Instruction)) ⇒ this.p(pcInstruction) && p((pcInstruction))
+            )
+    }
+
+    def map[B, That](f: ((PC, Instruction)) ⇒ B)(implicit bf: CanBuildFrom[Nothing, B, That]): That = {
+        val that = bf()
+        code.foreach(that += f(_))
+        that.result
+    }
+
+    def flatMap[B, That](
+        f: ((PC, Instruction)) ⇒ scala.collection.GenTraversableOnce[B]
+    )(
+        implicit
+        bf: CanBuildFrom[Nothing, B, That]
+    ): That = {
+        val that = bf()
+        code.foreach(pcInstruction ⇒ that ++= f(pcInstruction).seq)
+        that.result
+    }
+
+    def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilterMonadic[(PC, Instruction), Nothing] = {
+        new FilteredCode(p)
+    }
 
     override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 
@@ -108,8 +175,8 @@ final class Code private (
      * contexts that need to be reset in case of an exception in a subroutine.
      *
      * @note Calling this method only makes sense for Java bytecode that actually contains
-     * 		[[org.opalj.br.instructions.JSR]] and [[org.opalj.br.instructions.RET]]
-     * 		instructions.
+     *         [[org.opalj.br.instructions.JSR]] and [[org.opalj.br.instructions.RET]]
+     *         instructions.
      *
      * @return Basically a map that maps the `pc` of each instruction to the id of the
      *      subroutine.
@@ -218,16 +285,16 @@ final class Code private (
      *
      * ==Example==
      * {{{
-     * 	0: iload_1
-     * 	1: ifgt	6
-     * 	2: iconst_1
-     * 	5: goto 10
-     * 	6: ...
-     * 	9: iload_1
+     *     0: iload_1
+     *     1: ifgt    6
+     *     2: iconst_1
+     *     5: goto 10
+     *     6: ...
+     *     9: iload_1
      *  10:return // <= JOIN INSTRUCTION: the predecessors are the instructions 5 and 9.
      * }}}
      *
-     * In case of exceptions handlers the sound over approximation is made that
+     * In case of exception handlers the sound overapproximation is made that
      * all exception handlers may be reached on multiple paths.
      */
     def joinInstructions: BitSet = {
@@ -296,12 +363,22 @@ final class Code private (
      * Iterates over all instructions and calls the given function `f`
      * for every instruction.
      */
-    @inline final def foreach(f: (PC, Instruction) ⇒ Unit): Unit = {
+    @inline final def iterate[U](f: (PC, Instruction) ⇒ U): Unit = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
             f(pc, instruction)
+            pc = pcOfNextInstruction(pc)
+        }
+    }
+
+    @inline final def foreach[U](f: ((PC, Instruction)) ⇒ U): Unit = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            f((pc, instruction))
             pc = pcOfNextInstruction(pc)
         }
     }
@@ -531,7 +608,7 @@ final class Code private (
      *      tables are merged into one by OPAL at class loading time.
      *
      * @note Depending on the configuration of the reader for `ClassFile`s this
-     * 	    attribute may not be reified.
+     *         attribute may not be reified.
      */
     def localVariableTable: Option[LocalVariables] = {
         attributes collectFirst { case LocalVariableTable(lvt) ⇒ lvt }
@@ -580,7 +657,7 @@ final class Code private (
      * Collects all local variable type tables.
      *
      * @note Depending on the configuration of the reader for `ClassFile`s this
-     * 	    attribute may not be reified.
+     *         attribute may not be reified.
      */
     def localVariableTypeTable: Seq[LocalVariableTypes] = {
         attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
@@ -601,7 +678,7 @@ final class Code private (
      * StackMapTable attribute.
      *
      * @note Depending on the configuration of the reader for `ClassFile`s this
-     * 	    attribute may not be reified.
+     *         attribute may not be reified.
      */
     def stackMapTable: Option[StackMapFrames] = {
         attributes collectFirst { case StackMapTable(smf) ⇒ smf }
@@ -660,8 +737,8 @@ final class Code private (
      * is not defined.
      *
      * @return The program counter of the instruction for which the given partial function was
-     * 		not defined along with the list of previous results. '''The results are sorted in
-     * 		descending order w.r.t. the PC'''.
+     *         not defined along with the list of previous results. '''The results are sorted in
+     *         descending order w.r.t. the PC'''.
      */
     def collectUntil[B](f: PartialFunction[(PC, Instruction), B]): (PC, Seq[B]) = {
         val max_pc = instructions.size
@@ -1046,7 +1123,7 @@ final class Code private (
      * certain analyses to detect.
      *
      * @note If complex control flows should also be considered it is possible to compute
-     * 		a methods [[org.opalj.br.cfg.CFG]] and use that one.
+     *         a methods [[org.opalj.br.cfg.CFG]] and use that one.
      *
      * @param pc The program counter of an instruction that strictly dominates all
      *      succeeding instructions up until the next join instruction (as determined
@@ -1066,9 +1143,9 @@ final class Code private (
      *      return with the result of this call.
      *
      * @return `true` if the bytecode sequence starting with the instruction with the
-     * 		given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction.
-     * 		`false` in all other cases (i.e., the sequence does not end with an `athrow`
-     * 		instruction or the control flow is more complex.)
+     *         given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction.
+     *         `false` in all other cases (i.e., the sequence does not end with an `athrow`
+     *         instruction or the control flow is more complex.)
      */
     @inline def alwaysResultsInException(
         pc:               PC,
@@ -1132,10 +1209,8 @@ final class Code private (
      * attributes, etc.).
      */
     override def toString = {
-        "Code_attribute("+
-            "maxStack="+maxStack+
-            ", maxLocals="+maxLocals+","+
-            (instructions.zipWithIndex.filter(_._1 ne null).deep.toString) +
+        s"Code_attribute(maxStack=$maxStack, maxLocals=$maxLocals, "+
+            (instructions.zipWithIndex.filter(_._1 ne null).map(_.swap).deep.toString) +
             (exceptionHandlers.toString)+","+
             (attributes.toString)+
             ")"
@@ -1220,4 +1295,165 @@ object Code {
      * thrown by an instruction.
      */
     val preDefinedClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
+
+    /**
+     * The maximum number of registers required to execute the code - independent
+     * of the number of parameters.
+     *
+     * @note    The method's descriptor may actually require
+     */
+    def maxRegistersRequiredByCode(instructions: Array[Instruction]): Int = {
+
+        val maxPC = instructions.length
+        var pc = 0
+        var maxRegisters = 0
+        var modifiedByWide = false
+        do {
+            val i: Instruction = instructions(pc)
+            if (i == WIDE) {
+                modifiedByWide
+                pc += 1
+            } else {
+                modifiedByWide = false
+                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters)
+                    maxRegisters = i.indexOfWrittenLocal
+                pc = i.indexOfNextInstruction(pc, modifiedByWide)
+            }
+
+        } while (pc < maxPC)
+        maxRegisters
+    }
+
+    def maxRegisters(
+        isInstanceMethod: Boolean,
+        descriptor:       MethodDescriptor,
+        instructions:     Array[Instruction]
+    ): Int = {
+        Math.max(
+            maxRegistersRequiredByCode(instructions),
+            descriptor.parameterTypes.foldLeft(if (isInstanceMethod) 1 else 0) { (c, n) ⇒
+                c + n.computationalType.operandSize
+            }
+        )
+    }
+
+    /**
+     * Calculates the maximum stack size required during execution of this code
+     * block.
+     *
+     * @throws java.lang.ClassFormatError If the stack size differs between execution paths.
+     */
+    @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
+    def computeMaxStack(
+        instructions:      Array[Instruction],
+        exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty
+    ): Int = {
+        ???
+        /*
+         * THE ALGORITHM
+         * Start with the first instruction and a stack size of zero.
+         * While instruction is valid (this means it is not null):
+         * Get the stack change by the current instruction and calculate max_stack.
+         * Push every jump target with the current stack size onto a target stack;
+         * if the target was not already pushed onto the stack. If the current instruction terminates the
+         * execution, set instruction to null. If instruction is not null set
+         * instruction to the next instruction otherwise pop a jump target from
+         * the stack, set the current instruction to the jump's target
+         * instruction and set the stack depth. Return the maximum stack size.
+         * (Note this algorithm works because for every instruction the stack
+         * depth must always be the same regardless of the taken execution path.
+         * See JVM spec. for details.)
+         */
+        /*
+        var maxStackDepth : Int = 0;
+        var stackDepth : Int = 0;
+
+        var jumpTargets : Chain[(PC,Int)]  = Naught
+
+        exceptionHandlers.
+
+        Code_JumpTargets jumpTargets = new Code_JumpTargets();
+
+        // We have to make sure, that all exception handlers are evaluated for
+        // max_stack, if an exception is catched, the stack size is always 1 -
+        // containing the exception itself.
+        for (ExceptionHandler exceptionHandler : getExceptionHandlers()) {
+            jumpTargets.push(new Code_JumpTarget(exceptionHandler
+                .getHandlerInstruction(), 1));
+        }
+
+        /*
+         * Evaluate max_stack.
+         */
+        int maxStackDepth = 0;
+        int stackDepth = 0;
+
+        Instruction instruction = anchorInstruction.getNextInstruction();
+        while (instruction != null) {
+            // every method must always end with a "return" instruction, so
+            // NoInstruction (<=> anchorInstruction) should never be reached!
+            if (instruction == anchorInstruction)
+                throw new ClassFormatError(
+                        "Method does not end with a return instruction.");
+
+            stackDepth += instruction.getStackChange();
+
+            if (stackDepth > maxStackDepth)
+                maxStackDepth = stackDepth;
+
+            if (instruction.isJumpInstruction()) {
+                JumpInstruction jInstr = (JumpInstruction) instruction;
+
+                if (jInstr.isSingleJumpTargetInstruction()) {
+                    jumpTargets.push(new Code_JumpTarget(
+                            ((SingleTargetJumpInstruction) jInstr)
+                                .getJumpTarget().getTargetInstruction(),
+                            stackDepth));
+                }
+                else {
+                    for (JumpTarget jumpTarget : ((MultipleTargetsJumpInstruction) jInstr)
+                        .getJumpTargets()) {
+                        jumpTargets.push(new Code_JumpTarget(jumpTarget
+                            .getTargetInstruction(), stackDepth));
+                    }
+                }
+
+                int opcode = jInstr.getVirtualOpcode();
+
+                if (opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_TABLESWITCH
+                        || opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_LOOKUPSWITCH
+                        || opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_GOTO)
+                    // the next instruction is determined by jump target
+                    instruction = null;
+
+                if (opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_JSR) {
+                    // after returning the normal execution is continued, but
+                    // the stack_depth is reduced by one; to handle this case
+                    // the next instruction is also pushed onto the stack with
+                    // the appropriate stack_depth size.
+                    jumpTargets.push(new Code_JumpTarget(instruction
+                        .getNextInstruction(), stackDepth - 1));
+                    instruction = null;
+                }
+
+            }
+            else if (instruction.isReturnInstruction())
+                // "ret" is also a return instruction!
+                instruction = null;
+
+            if (instruction != null)
+                instruction = instruction.getNextInstruction();
+            else {
+                Code_JumpTarget jumpTarget = jumpTargets.pop();
+                if (jumpTarget != null) {
+                    instruction = jumpTarget.targetInstruction;
+                    stackDepth = jumpTarget.stackDepth;
+                }
+            }
+        }
+
+        return maxStackDepth;
+        */
+    }
+
 }

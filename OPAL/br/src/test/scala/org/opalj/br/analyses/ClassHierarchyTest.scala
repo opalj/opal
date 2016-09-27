@@ -379,11 +379,11 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         val supertypesOfString = javaLangCH.allSupertypes(ObjectType.String, false)
 
         javaLangCH.leafTypes(supertypesOfString) should be(
-            UIDSet(List(
+            UIDSet(
                 ObjectType.Serializable,
                 ObjectType("java/lang/Comparable"),
                 ObjectType("java/lang/CharSequence")
-            ))
+            )
         )
     }
 
@@ -500,25 +500,25 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
 
     it should "return the given upper type bound if it just contains a single type" in {
         import typesProject.classHierarchy.directSubtypesOf
-        directSubtypesOf(UIDSet[ObjectType](cRootType)) should be(Set(cRootType))
-        directSubtypesOf(UIDSet[ObjectType](iRootAType)) should be(Set(iRootAType))
-        directSubtypesOf(UIDSet[ObjectType](cRootAAABBCType)) should be(Set(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](cRootType)) should be(UIDSet(cRootType))
+        directSubtypesOf(UIDSet[ObjectType](iRootAType)) should be(UIDSet(iRootAType))
+        directSubtypesOf(UIDSet[ObjectType](cRootAAABBCType)) should be(UIDSet(cRootAAABBCType))
     }
 
     it should "return the type that is the subtype of all types of the bound" in {
         import typesProject.classHierarchy.directSubtypesOf
-        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootBType)) should be(Set(cRootAABType))
-        directSubtypesOf(UIDSet[ObjectType](cRootAType, iRootBType)) should be(Set(cRootAABType))
-        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootCType)) should be(Set(cRootAAABBCType))
-        directSubtypesOf(UIDSet[ObjectType](Seq(iRootAType, iRootBType, iRootCType))) should be(Set(cRootAAABBCType))
-        directSubtypesOf(UIDSet[ObjectType](iRootBType, iRootCType)) should be(Set(cRootAAABBCType))
-        directSubtypesOf(UIDSet[ObjectType](cRootAType, iRootCType)) should be(Set(cRootAAABBCType))
-        directSubtypesOf(UIDSet[ObjectType](cRootAABType, iRootCType)) should be(Set(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootBType)) should be(UIDSet(cRootAABType))
+        directSubtypesOf(UIDSet[ObjectType](cRootAType, iRootBType)) should be(UIDSet(cRootAABType))
+        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootBType, iRootCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](iRootBType, iRootCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](cRootAType, iRootCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](cRootAABType, iRootCType)) should be(UIDSet(cRootAAABBCType))
     }
 
     it should "not fail if no common subtype exists" in {
         import typesProject.classHierarchy.directSubtypesOf
-        directSubtypesOf(UIDSet[ObjectType](cRootType, iRootBType)) should be(Set.empty)
+        directSubtypesOf(UIDSet[ObjectType](cRootType, iRootBType)) should be(UIDSet.empty)
     }
 
     behavior of "the ClassHierarchy's allSubclassTypes method"
@@ -540,7 +540,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
 
     it should "return all subclasses (non-reflexive) of a leaf-type in the complete type hierarchy" in {
         import typesProject.classHierarchy.allSubclassTypes
-        allSubclassTypes(cRootType, false).toSet should be(Set())
+        allSubclassTypes(cRootType, false).toSet should be(Set.empty)
     }
 
     it should "return all subclasses in the complete type hierarchy" in {
@@ -746,7 +746,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     it should "be possible to get all supertypes, even if not all information is available" in {
 
         val mi = ObjectType("org/apache/tools/ant/taskdefs/MacroInstance")
-        apacheANTCH.allSupertypes(mi) should be(Set(
+        apacheANTCH.allSupertypes(mi) should be(UIDSet(
             ObjectType("org/apache/tools/ant/Task"),
             ObjectType("org/apache/tools/ant/TaskContainer"),
             ObjectType("org/apache/tools/ant/DynamicAttribute")

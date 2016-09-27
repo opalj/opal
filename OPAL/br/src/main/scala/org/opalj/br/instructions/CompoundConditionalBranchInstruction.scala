@@ -53,5 +53,6 @@ abstract class CompoundConditionalBranchInstruction extends ConditionalBranchIns
 
     def caseValues: Seq[Int]
 
-}
+    final def stackSlotsChange: Int = -1
 
+}

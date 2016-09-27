@@ -266,6 +266,6 @@ private object ConstantPoolBuilderTest {
     val daClassFiles = ClassFileReader.ClassFiles(RTJar)
 
     val brProject = {
-        Project(RTJar,GlobalLogContext,Java8LambdaExpressionsRewriting.defaultConfig(false,true))
+        Project(RTJar, GlobalLogContext, Java8LambdaExpressionsRewriting.defaultConfig(false, true))
     }
 }

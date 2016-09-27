@@ -72,7 +72,11 @@ object CFGFactory {
      * associated with exactly one [[CatchNode]] and all instructions that may throw
      * a corresponding exception will have the respective [[CatchNode]] as a successor.
      *
-     * @note The algorithm supports all Java bytecode instructions.
+     * @note  The algorithm supports all Java bytecode instructions. (In particular JSR/RET)
+     *
+     * @note  The code is only parsed linearly and the graph is therefore constructed implicitly.
+     * 		  Hence, it is possible that the graph contains node that cannot be reached from
+     *        the start node.
      *
      * @param method A method with a body (i.e., with some code.)
      * @param classHierarchy The class hierarchy that will be used to determine
@@ -123,7 +127,7 @@ object CFGFactory {
         var runningBB: BasicBlock = null
         var previousPC: PC = 0
         var subroutineReturnPCs = HashMap.empty[PC, UShortSet]
-        code.foreach { (pc, instruction) ⇒
+        code.iterate { (pc, instruction) ⇒
             if (runningBB eq null) {
                 runningBB = bbs(pc)
                 if (runningBB eq null)

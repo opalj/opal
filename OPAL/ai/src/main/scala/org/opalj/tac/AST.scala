@@ -32,6 +32,10 @@ package tac
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 
+/**
+ * Defines nodes used by statements and expressions.
+ */
+
 trait Call {
     def declaringClass: ReferenceType
     def name: String

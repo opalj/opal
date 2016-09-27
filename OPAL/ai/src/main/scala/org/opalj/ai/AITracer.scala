@@ -29,6 +29,7 @@
 package org.opalj
 package ai
 
+import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 

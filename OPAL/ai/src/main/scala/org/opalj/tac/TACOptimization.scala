@@ -42,7 +42,7 @@ trait TACOptimization {
     /**
      * Transforms the given code to the target code.
      */
-    def optimize(tac: TACOptimizationResult): TACOptimizationResult
+    def apply(tac: TACOptimizationResult): TACOptimizationResult
 }
 
 /**
@@ -63,12 +63,12 @@ case class TACOptimizationResult(
  */
 object SimplePropagation extends TACOptimization {
 
-    def optimize(tac: TACOptimizationResult): TACOptimizationResult = {
+    def apply(tac: TACOptimizationResult): TACOptimizationResult = {
 
         val bbs = tac.cfg.allBBs
         val code = tac.code
         var wasTransformed = false
-        bbs.filter(bb ⇒ bb.startPC < bb.endPC).foreach { bb ⇒
+        bbs.withFilter(bb ⇒ bb.startPC < bb.endPC).foreach { bb ⇒
             var index = bb.startPC
             val max = bb.endPC
             while (index < max) {
@@ -110,8 +110,7 @@ object SimplePropagation extends TACOptimization {
                             case Assignment(
                                 nextPC,
                                 nextTrgtVar,
-                                BinaryExpr(
-                                    exprPC, cTpe, op, `trgtVar`, right)
+                                BinaryExpr(exprPC, cTpe, op, `trgtVar`, right)
                                 ) ⇒
                                 wasTransformed = true
                                 if (nextTrgtVar == trgtVar /*immediate kill*/ ) code(index) = Nop(pc)
@@ -121,8 +120,7 @@ object SimplePropagation extends TACOptimization {
                             case Assignment(
                                 nextPC,
                                 nextTrgtVar,
-                                BinaryExpr(
-                                    exprPC, cTpe, op, left, `trgtVar`)
+                                BinaryExpr(exprPC, cTpe, op, left, `trgtVar`)
                                 ) ⇒
                                 wasTransformed = true
                                 if (nextTrgtVar == trgtVar /*immediate kill*/ ) code(index) = Nop(pc)

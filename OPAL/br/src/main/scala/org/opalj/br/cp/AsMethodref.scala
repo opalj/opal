@@ -32,6 +32,9 @@ package br
 package cp
 
 /**
+ * Common super trait of all constant pool entries that represent method refs.
+ *
+ * The created `MethodRef` is cached.
  *
  * @author Michael Eichberg
  * @author Andre Pacak

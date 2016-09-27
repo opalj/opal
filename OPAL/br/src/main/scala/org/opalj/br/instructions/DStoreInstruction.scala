@@ -39,6 +39,7 @@ trait DStoreInstruction extends StoreLocalVariableInstruction {
 
     def computationalType: ComputationalType = ComputationalTypeDouble
 
+    final def stackSlotsChange: Int = -2
 }
 
 object DStoreInstruction {

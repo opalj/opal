@@ -39,6 +39,7 @@ trait LLoadInstruction extends LoadLocalVariableInstruction {
 
     final def computationalType: ComputationalType = ComputationalTypeLong
 
+    final def stackSlotsChange: Int = 2
 }
 object LLoadInstruction {
 

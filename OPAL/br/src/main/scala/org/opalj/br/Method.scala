@@ -76,6 +76,16 @@ final class Method private (
         val attributes:  Attributes
 ) extends ClassMember with Ordered[Method] with InstructionsContainer {
 
+    def copy(
+        accessFlags: Int              = this.accessFlags,
+        name:        String           = this.name,
+        descriptor:  MethodDescriptor = this.descriptor,
+        body:        Option[Code]     = this.body,
+        attributes:  Attributes       = this.attributes
+    ): Method = {
+        new Method(accessFlags, name, descriptor, body, attributes)
+    }
+
     final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
 
     final override def isMethod = true
@@ -88,6 +98,14 @@ final class Method private (
 
     def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod = {
         VirtualMethod(declaringClassType, name, descriptor)
+    }
+
+    /**
+     * The number of registers required to store this method's parameters (
+     * including the self reference if necessary).
+     */
+    def requiredRegisters: Int = {
+        descriptor.requiredRegisters + (if (isStatic) 0 else 1)
     }
 
     /**
@@ -231,16 +249,6 @@ final class Method private (
         descriptor.toJava(declaringClassType.toJava+"."+name)
     }
 
-    def copy(
-        accessFlags: Int              = this.accessFlags,
-        name:        String           = this.name,
-        descriptor:  MethodDescriptor = this.descriptor,
-        body:        Option[Code]     = this.body,
-        attributes:  Attributes       = this.attributes
-    ): Method = {
-        new Method(accessFlags, name, descriptor, body, attributes)
-    }
-
     override def toString(): String = {
         import AccessFlagsContexts.METHOD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
@@ -292,10 +300,10 @@ object Method {
     ): Boolean = {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
-        import MethodDescriptor.readObjectDescriptor
-        import MethodDescriptor.writeObjectDescriptor
-        import MethodDescriptor.readObjectInputDescriptor
-        import MethodDescriptor.writeObjectOutputDescriptor
+        import MethodDescriptor.ReadObjectDescriptor
+        import MethodDescriptor.WriteObjectDescriptor
+        import MethodDescriptor.ReadObjectInputDescriptor
+        import MethodDescriptor.WriteObjectOutputDescriptor
 
         val name = method.name
         val descriptor = method.descriptor
@@ -305,14 +313,14 @@ object Method {
             (name == "readResolve" && descriptor == JustReturnsObject) ||
             (name == "writeReplace" && descriptor == JustReturnsObject) ||
             ((
-                (name == "readObject" && descriptor == readObjectDescriptor) ||
-                (name == "writeObject" && descriptor == writeObjectDescriptor)
+                (name == "readObject" && descriptor == ReadObjectDescriptor) ||
+                (name == "writeObject" && descriptor == WriteObjectDescriptor)
             ) && isInheritedBySerializableOnlyClass.isYesOrUnknown) ||
                 (
                     method.isPublic /*we are implementing an interface...*/ &&
                     (
-                        (name == "readExternal" && descriptor == readObjectInputDescriptor) ||
-                        (name == "writeExternal" && descriptor == writeObjectOutputDescriptor)
+                        (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
+                        (name == "writeExternal" && descriptor == WriteObjectOutputDescriptor)
                     ) &&
                         isInheritedByExternalizableClass.isYesOrUnknown
                 )
@@ -324,9 +332,9 @@ object Method {
     }
 
     /**
-     * @param name The name of the method. In case of a constructor the method
-     *      name has to be "<init>". In case of a static initializer the name has to
-     *      be "<clinit>".
+     * @param 	name The name of the method. In case of a constructor the method
+     *      	name has to be "<init>". In case of a static initializer the name has to
+     *      	be "<clinit>".
      */
     def apply(
         accessFlags: Int,

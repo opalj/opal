@@ -1,8 +1,6 @@
 name := "Bytecode Infrastructure"
 
-//version := "0.8.1" // LAST RELEASE
-version := "0.9.0-SNAPSHOT"
-
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure") 
+scalacOptions in (Compile, console) := Seq("-deprecation")
 
 libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.4"

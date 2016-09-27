@@ -32,6 +32,8 @@ package util
 
 import scala.xml.Node
 import scala.xml.NodeSeq
+
+import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.io.process
 import org.opalj.br._
 
@@ -93,15 +95,14 @@ object XHTML {
 
     def htmlify(s: String): Node = {
         scala.xml.Unparsed(
-            s.replace("<", "&lt;").
-                replace(">", "&gt;").
-                replace("\n", "<br>").
+            s.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>").
                 replace("\t", "&nbsp;&nbsp;")
         )
     }
 
-    def valueToString(value: AnyRef)(implicit ids: Option[AnyRef ⇒ Int]): String =
+    def valueToString(value: AnyRef)(implicit ids: Option[AnyRef ⇒ Int]): String = {
         value.toString + ids.map("@"+_.apply(value)).getOrElse("")
+    }
 
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
         val node =
@@ -175,4 +176,3 @@ object XHTML {
                 footer+"</div>"
     }
 }
-

@@ -99,7 +99,7 @@ sealed trait MethodCallMethodHandle extends MethodHandle {
     def methodDescriptor: MethodDescriptor
 
     override def toJava: String = {
-        s"${getClass.getSimpleName}: ${receiverType.toJava}.$name${methodDescriptor.toUMLNotation}"
+        s"${getClass.getSimpleName}: ${methodDescriptor.toJava(receiverType.toJava, name)}"
     }
 
     def opcodeOfUnderlyingInstruction: Opcode
@@ -118,7 +118,7 @@ case class InvokeVirtualMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    override val opcodeOfUnderlyingInstruction = instructions.INVOKEVIRTUAL.opcode
+    override def opcodeOfUnderlyingInstruction = instructions.INVOKEVIRTUAL.opcode
 }
 
 case class InvokeStaticMethodHandle(
@@ -128,7 +128,7 @@ case class InvokeStaticMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    override val opcodeOfUnderlyingInstruction = instructions.INVOKESTATIC.opcode
+    override def opcodeOfUnderlyingInstruction = instructions.INVOKESTATIC.opcode
 
     final override def isInvokeStaticMethodHandle: Boolean = true
 }
@@ -140,7 +140,7 @@ case class InvokeSpecialMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    override val opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
+    override def opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
 }
 
 case class NewInvokeSpecialMethodHandle(
@@ -149,7 +149,7 @@ case class NewInvokeSpecialMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    override val opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
+    override def opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
 }
 
 case class InvokeInterfaceMethodHandle(

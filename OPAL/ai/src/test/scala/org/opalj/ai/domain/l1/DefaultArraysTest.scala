@@ -353,31 +353,31 @@ class DefaultArraysTest extends FunSpec with Matchers {
                     returnIndex,
                     IntegerValue(20, 2),
                     varray
-                ).result.computationalType.computationalTypeCategory.id should be(1)
+                ).result.computationalType.category.id should be(1)
 
                 arrayload(
                     returnIndex,
                     IntegerValue(13, 1),
                     varray
-                ).result.computationalType.computationalTypeCategory.id should be(1)
+                ).result.computationalType.category.id should be(1)
 
                 arrayload(
                     returnIndex,
                     IntegerValue(6, 0),
                     varray
-                ).result.computationalType.computationalTypeCategory.id should be(1)
+                ).result.computationalType.category.id should be(1)
 
                 arrayload(
                     returnIndex,
                     IntegerValue(29, 3),
                     varray
-                ).result.computationalType.computationalTypeCategory.id should be(1)
+                ).result.computationalType.category.id should be(1)
 
                 arrayload(
                     returnIndex,
                     IntegerValue(36, 4),
                     varray
-                ).result.computationalType.computationalTypeCategory.id should be(1)
+                ).result.computationalType.category.id should be(1)
 
             }
         }

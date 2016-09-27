@@ -30,208 +30,286 @@ package org.opalj
 package collection
 package immutable
 
-import java.util.{Arrays ⇒ JArrays}
-import UIDSet.Relation
+import scala.collection.GenTraversableOnce
+import scala.collection.generic.CanBuildFrom
+import scala.collection.generic.FilterMonadic
+import scala.collection.mutable.Builder
+
+import org.opalj.collection.UID.areEqual
+import org.opalj.collection.immutable.Chain.ChainBuilder
 
 /**
- * An immutable, sorted set of elements of type `UID`.
+ * An immutable set of elements of type `UID`. Underlying the implementation
+ * is a modified binary search tree. The primary use case of this structure is its
+ * use for small(er) sets or sets where the order of additions of elements is
+ * very unlikely to be accidentially ordered.
  *
  * Contains checks etc. are based on the element's unique id.
  *
- * [[UIDSet$]]s are constructed using the factory methods of the companion object.
+ * [[UIDSet$]]s are constructed using the factory methods of the companion object and
+ * are generally expected to be small.
  *
  * @author Michael Eichberg
  */
-sealed trait UIDSet[+T <: UID] { thisSet ⇒
+/*
+NOTE: SETS OF SIZE [0..4] are always represented using one of the following
+canonical representations.
+*/
+sealed trait UIDSet[+T <: UID]
+        extends TraversableOnce[T]
+        with FilterMonadic[T, UIDSet[T]]
+        with Serializable { self ⇒
 
     /**
-     * Number of elements of this set (Complexity O(1)).
+     * Represents a filtered [[UIDSet]]. Instances of [[UIDSetWithFilter]] are typically
+     * created by [[UIDSet]]'s `withFilter` method.
      */
-    /* ABSTRACT */ def size: Int
+    class UIDSetWithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, UIDSet[T]] {
 
-    /**
-     * Returns `true` if this list is empty, `false` otherwise.
-     */
-    /* ABSTRACT */ def isEmpty: Boolean
+        def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[UIDSet[T], B, That]): That = {
+            val set = self
+            val b = bf(set)
+            set.foreach { e ⇒ if (p(e)) b += f(e) }
+            b.result
+        }
 
-    /**
-     * Returns `false` if this list is empty, `true` otherwise.
-     */
-    def nonEmpty: Boolean = !isEmpty
+        def flatMap[B, That](
+            f: T ⇒ GenTraversableOnce[B]
+        )(
+            implicit
+            bf: CanBuildFrom[UIDSet[T], B, That]
+        ): That = {
+            val set = self
+            val b = bf(set)
+            set.foreach { e ⇒ if (p(e)) b ++= f(e).seq }
+            b.result
+        }
+
+        def foreach[U](f: T ⇒ U): Unit = self.foreach { e ⇒ if (p(e)) f(e) }
+
+        def withFilter(q: T ⇒ Boolean): UIDSetWithFilter = {
+            new UIDSetWithFilter(x ⇒ p(x) && q(x))
+        }
+    }
+
+    //
+    // 1: QUERY THE PROPERTIES OF THIS SET OR THE PROPPERTIES OF ITS ELEMENTS
+    //
+
+    final def hasDefiniteSize: Boolean = true
+
+    final def isTraversableAgain: Boolean = true
 
     /**
      * Tests if the size of this set is "1" (Guaranteed complexity O(1)).
      */
-    def isSingletonSet: Boolean = false
-
-    /**
-     * Adds the given element, if the element is not already stored in
-     * this set. Otherwise, a new set is created and the element is added to it.
-     * If the element is already in this set, `this` set is returned.
-     */
-    /* ABSTRACT */ def +[X >: T <: UID](e: X): UIDSet[X]
-
-    @inline protected[UIDSet] final def cmpEs(thisE: UID, thatE: UID): Boolean = {
-        (thisE eq thatE) || thisE.id == thatE.id
-    }
-
-    /**
-     * Adds the given elements to this set. Each new element is added using the primitive
-     * [[+]] operation.
-     */
-    def ++[X >: T <: UID](es: UIDSet[X]): UIDSet[X] = {
-        es.foldLeft[UIDSet[X]](this)((c, v) ⇒ c + v)
-    }
-
-    /**
-     * Adds the given elements to this set. Each new element is added using the primitive
-     * [[+]] operation.
-     */
-    def ++[X >: T <: UID](es: Traversable[X]): UIDSet[X] = {
-        es.foldLeft[UIDSet[X]](this)((c, v) ⇒ c + v)
-    }
+    def isSingletonSet: Boolean
 
     /**
      * Returns the first element of this set. I.e., the element with the smallest
      * unique id.
      */
-    /* ABSTRACT */ @throws[NoSuchElementException]("If the set is empty.")
-    def first(): T
+    @throws[NoSuchElementException]("If the set is empty.") def head: T
 
-    def head: T = first()
+    /**
+     * Returns the first element of this set. I.e., the element with the smallest
+     * unique id.
+     */
+    @throws[NoSuchElementException]("If the set is empty.") final def first: T = head
+
+    /**
+     * Returns the last element of this set. I.e., the element with the largest
+     * unique id.
+     */
+    @throws[NoSuchElementException]("If the set is empty.") def last: T
+
+    /**
+     * Returns `true` if an element with the same id as the given element is already
+     * in this list, `false` otherwise.
+     */
+    def contains[X <: UID](o: X): Boolean
+
+    /**
+     * Performs a qualified comparison of this set with the given set.
+     */
+    def compare[X >: T <: UID](that: UIDSet[X]): SetRelation = {
+        val thisSize = this.size
+        val thatSize = that.size
+
+        if (thisSize < thatSize) {
+            if (this.forall { that.contains(_) })
+                return StrictSubset;
+        } else if (thisSize == thatSize) {
+            if (this == that)
+                return EqualSets;
+        } else /*this.size > that.size*/ {
+            if (that.forall { this.contains(_) })
+                return StrictSuperset;
+        }
+
+        UncomparableSets
+    }
+
+    //
+    // 2: PROCESS THE ELEMENTS OF THIS SET
+    //
+
+    // def foreach ...
+    // def foldLeft ...
+
+    //
+    // 3: EXTEND THIS SET
+    //
+
+    /**
+     * Adds the given value to this set if the value is not already stored in
+     * this set.
+     */
+    def +[X >: T <: UID](e: X): UIDSet[X]
+
+    /**
+     * Adds the given elements to this set. Each new element is added using the primitive
+     * [[+]] operation.
+     */
+    def ++[X >: T <: UID](es: TraversableOnce[X]): UIDSet[X] = {
+        es.foldLeft[UIDSet[X]](this)((c, v) ⇒ c + v)
+    }
+
+    //
+    // 4: SELECT (MULTIPLE ELEMENTS)
+    //
 
     /**
      * Returns the remaining elements of this set. This operation has linear complexity.
      */
-    /* ABSTRACT */ @throws[NoSuchElementException]("If the set is empty.")
-    def tail(): UIDSet[T]
-
-    /**
-     * Passes all elements of this list to the given function.
-     */
-    /* ABSTRACT */ def foreach[U](f: T ⇒ U): Unit
-
-    /**
-     * Returns `true` if all elements satisfy the given predicate, `false` otherwise.
-     */
-    def forall[X >: T](f: X ⇒ Boolean): Boolean = {
-        foreach { e ⇒ if (!f(e)) return false }
-        true
-    }
-
-    /**
-     * Returns `true` if an element satisfies the given predicate, `false` otherwise.
-     */
-    def exists[X >: T](f: X ⇒ Boolean): Boolean
-
-    /**
-     * Returns `true` if the given element is already in this list, `false` otherwise.
-     */
-    def contains[X >: T <: UID](o: X): Boolean
-
-    /**
-     * Returns the first element that satisfies the given predicate.
-     */
-    def find[X >: T](f: X ⇒ Boolean): Option[T] = {
-        foreach { e ⇒ if (f(e)) return Some(e) }
-        None
-    }
-
-    /**
-     * Creates a new set which contains the mapped values as specified by the given
-     * function `f`.
-     */
-    def map[X](f: T ⇒ X): Set[X] = foldLeft(Set.empty[X])((s, e) ⇒ s + f(e))
-
-    def mapToList[X](f: T ⇒ X): List[X] = foldLeft(List.empty[X])((l, e) ⇒ f(e) :: l)
+    @throws[NoSuchElementException]("If the set is empty.") def tail(): UIDSet[T]
 
     /**
      * Returns a new `UIDSet` that contains all elements which satisfy the given
      * predicate.
      */
-    def filter[X >: T](f: X ⇒ Boolean): UIDSet[T] = {
-        foldLeft[UIDSet[T]](UIDSet0)((s, e) ⇒ if (f(e)) s + e else s)
-    }
+    def filter(p: T ⇒ Boolean): UIDSet[T]
 
     /**
      * Returns a new `UIDList` that contains all elements which '''do not satisfy'''
      * the given predicate.
      */
-    def filterNot[X >: T](f: X ⇒ Boolean): UIDSet[T] = {
-        foldLeft[UIDSet[T]](UIDSet0)((s, e) ⇒ if (!f(e)) s + e else s)
-    }
+    final def filterNot(p: T ⇒ Boolean): UIDSet[T] = filter((e) ⇒ !p(e))
 
-    /**
-     * Compares this set with the given set.
-     */
-    def compare[X >: T <: UID](that: UIDSet[X]): Relation = {
-        val thisSize = this.size
-        val thatSize = that.size
-        if (thisSize < thatSize) {
-            if (this.forall { that.contains(_) })
-                return UIDSet.StrictSubset;
-        } else if (this.size == that.size) {
-            if (this == that)
-                return UIDSet.Equal;
-        } else /*this.size > that.size*/ {
-            if (that.forall { this.contains(_) })
-                return UIDSet.StrictSuperset;
+    def withFilter(p: T ⇒ Boolean): UIDSetWithFilter = new UIDSetWithFilter(p)
+
+    override def copyToArray[B >: T](xs: Array[B], start: Int, len: Int): Unit = {
+        if (len == 0)
+            return ;
+
+        val max = xs.length
+        var index = -1
+        foreach { e ⇒
+            index += 1
+            if (index < len && start + index < max) {
+                xs(start + index) = e
+            } else {
+                return ;
+            }
         }
-
-        UIDSet.Uncomparable
     }
 
-    def foldLeft[B](b: B)(op: (B, T) ⇒ B): B
-    //    /**
-    //     * Performs a fold left over all elements of this set.
-    //     */
-    //    def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = {
-    //        var result: B = b
-    //        foreach { elem ⇒ result = op(result, elem) }
-    //        result
-    //    }
-
-    /**
-     * Reduces the elements of this set using the given operator. This
-     * operation is undefined if this set is empty. If it only contains one
-     * element that element is returned.
-     */
-    def reduce[X >: T](op: (X, X) ⇒ X): X
-
-    /**
-     * Converts this set into a sequence. The elements are sorted in ascending order
-     * using the unique ids of the elements.
-     */
-    def toSeq: Seq[T] = foldLeft(List.empty[T])((l, e) ⇒ e :: l)
-
-    /*ABSTRACT*/ override def equals(other: Any): Boolean
-
-    override def hashCode: Int = {
-        var hc = 1
-        foreach { e ⇒ hc = hc * 41 + e.hashCode }
-        hc
-    }
-
-    def mkString(start: String, sep: String, end: String): String = {
-        var s = ""
-        var pre = start
-        for { e ← this } {
-            s = s + pre + e.id+":"+e.toString()
-            pre = sep
+    def intersect[X >: T <: UID](that: UIDSet[X]): UIDSet[X] = {
+        val thisIt = this.toIterator
+        val thatIt = that.toIterator
+        var result: UIDSet[X] = UIDSet0
+        while (thisIt.hasNext && thatIt.hasNext) {
+            var thisNext = thisIt.next
+            var thisNextId = thisNext.id
+            var thatNext = thatIt.next
+            var thatNextId = thatNext.id
+            do {
+                while (thisNextId < thatNextId && thisIt.hasNext) {
+                    thisNext = thisIt.next
+                    thisNextId = thisNext.id
+                }
+                while (thatNextId < thisNextId && thatIt.hasNext) {
+                    thatNext = thatIt.next
+                    thatNextId = thatNext.id
+                }
+            } while (thisNextId != thatNextId &&
+                (thisIt.hasNext && thisNextId < thatNextId) ||
+                (thatIt.hasNext && thatNextId < thisNextId))
+            if (thisNextId == thatNextId) {
+                result += thisNext
+            }
         }
-        if (s == "")
-            start + end
-        else
-            s + end
+        result
     }
 
-    override def toString: String = mkString("UIDSet(", ",", ")")
+    //
+    // 5: TRANSFORM
+    //
+    final def seq: this.type = this
 
+    /**
+     * Creates a new `(UID)Set` which contains the mapped values as specified by the given
+     * function `f`.
+     *
+     * @example
+     * 		This class predefines two implicit functions create either UIDSets or regular sets.
+     * 		If the compiler is not able to select the correct one, it is usually sufficient
+     * 		to explicitly specify the target type.
+     * {{{
+     * scala> case class MyUID(val id : Int) extends org.opalj.collection.UID
+     * scala> var us = UIDSet(MyUID(1),MyUID(2)) + MyUID(-3)
+     * scala> us.map(e => MyUID(e.id+1))
+     * 		  <console>:21: error: ambiguous implicit values:
+     * 		  both method canBuildFrom in object UIDSet of type ...
+     * 		  and method canBuildSetFromUIDSet in object UIDSet of type ...
+     * 		  match expected type ...
+     * 		  us.map(e => MyUID(e.id+1))
+     * 		  ^
+     * scala> // this problem is easily fixed by; e.g., specifying the type of the target
+     * scala> // collection (e.g. by assigning the list to an appropriately typed variable)
+     * scala> us = us.map(e => MyUID(e.id+1))
+     * us: org.opalj.collection.immutable.UIDSet[MyUID] = UIDSet(MyUID(-2), MyUID(2), MyUID(3))
+     * scala> val s : Set[MyUID] = us.map(e => MyUID(e.id+1))
+     * s: scala.collection.immutable.Set[MyUID] = Set(MyUID(-2), MyUID(2), MyUID(3))
+     * }}}
+     */
+    def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[UIDSet[T], B, That]): That = {
+        val b = bf(this)
+        foreach { e ⇒ b += f(e) }
+        b.result
+    }
+
+    def flatMap[B, That](
+        f: T ⇒ GenTraversableOnce[B]
+    )(
+        implicit
+        bf: CanBuildFrom[UIDSet[T], B, That]
+    ): That = {
+        val set = self
+        val b = bf(set)
+        set.foreach { e ⇒ b ++= f(e).seq }
+        b.result
+    }
+
+    override def toStream: Stream[T] = toIterator.toStream
+
+    override def toTraversable: Traversable[T] = {
+        new Traversable[T] { def foreach[U](f: T ⇒ U): Unit = self.foreach(f) }
+    }
+
+    override def toString: String = mkString("UIDSet(", ", ", ")")
+
+    //
+    // 6: Other
+    //
+
+    // DO NOT FORGET TO OVERRIDE:
+    def equals(other: Any): Boolean
+    def hashCode: Int
 }
 
 /**
- * Representation of the empty set of `UID` elements. To get a "correctly typed
- * [[UIDSet]]" use the factory method of [[UIDSet$]].
+ * Representation of the empty set of `UID` elements.
  *
  * @author Michael Eichberg
  */
@@ -243,107 +321,162 @@ object UIDSet0 extends UIDSet[Nothing] {
 
     override def nonEmpty = false
 
-    override def +[X <: UID](e: X): UIDSet[X] = UIDSet(e)
+    override def isSingletonSet = false
 
-    override def first: Nothing = throw new NoSuchElementException
+    override def head: Nothing = throw new NoSuchElementException("the set is empty")
 
-    override def tail: UIDSet[Nothing] = throw new NoSuchElementException
+    override def last: Nothing = throw new NoSuchElementException("the set is empty")
+
+    override def exists(p: Nothing ⇒ Boolean): Boolean = false
+
+    override def forall(p: Nothing ⇒ Boolean) = true
+
+    override def contains[X <: UID](o: X): Boolean = false
+
+    override def find(p: Nothing ⇒ Boolean): None.type = None
 
     override def foreach[U](f: Nothing ⇒ U): Unit = {}
 
-    override def exists[X >: Nothing](f: X ⇒ Boolean): Boolean = false
-
-    override def forall[X >: Nothing](f: X ⇒ Boolean) = true
-
-    override def filter[X >: Nothing](f: X ⇒ Boolean): this.type = this
-
-    override def filterNot[X >: Nothing](f: X ⇒ Boolean): this.type = this
-
-    override def contains[X >: Nothing <: UID](o: X): Boolean = false
-
-    override def compare[X >: Nothing <: UID](that: UIDSet[X]): Relation =
-        if (that.isEmpty) UIDSet.Equal else UIDSet.StrictSubset
-
     override def foldLeft[B](b: B)(op: (B, Nothing) ⇒ B): B = b
 
-    override def reduce[X >: Nothing](op: (X, X) ⇒ X): X = throw new UnsupportedOperationException
+    override def +[X <: UID](e: X): UIDSet[X] = new UIDSet1(e)
 
-    override def toSeq = Seq.empty[Nothing]
+    override def tail: UIDSet[Nothing] = throw new NoSuchElementException("the set is empty")
+
+    override def filter(p: Nothing ⇒ Boolean): this.type = this
+
+    override def toIterator: Iterator[Nothing] = Iterator.empty
+
+    override def ++[X >: Nothing <: UID](es: TraversableOnce[X]): UIDSet[X] = {
+        es match {
+            case s: UIDSet[X] ⇒ s
+            case _            ⇒ super.++[X](es)
+        }
+    }
+
+    override def intersect[X >: Nothing <: UID](that: UIDSet[X]): UIDSet[X] = this
+
+    override def compare[X >: Nothing <: UID](that: UIDSet[X]): SetRelation = {
+        if (that eq this)
+            EqualSets
+        else
+            StrictSubset
+    }
 
     override def equals(other: Any): Boolean = other.isInstanceOf[UIDSet0.type]
 
-    override def hashCode: Int = 1
+    override def hashCode: Int = 34237
 
-    def unapply(s: UIDSet[_]): Boolean = s.isEmpty
+    def unapply(s: UIDSet[_]): Boolean = /*s.isEmpty*/ s eq this
 }
 
 private[collection] trait NonEmptyUIDSet[+T <: UID] extends UIDSet[T] {
-
     final override def isEmpty = false
-
     final override def nonEmpty = true
+
+    /** This nodes value. */
+    private[collection] val e: T
+
+    private[collection] def left: NonEmptyUIDSet[T]
+    private[collection] def right: NonEmptyUIDSet[T]
+
+    /** Creates a internally mutable shallow copy. */
+    private[collection] def copy[X >: T <: UID](
+        left:  NonEmptyUIDSet[X] = this.left,
+        e:     X                 = this.e,
+        right: NonEmptyUIDSet[X] = this.right,
+        size:  Int               = this.size
+    ): UIDSetNode[X] = {
+        new UIDSetNode[X](left, e, right, size)
+    }
+
 }
 
 /**
  * A [[UIDSet]] that contains a single element.
+ *
+ * @author Michael Eichberg
  */
 final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisSet ⇒
 
-    final override def size = 1
+    private[collection] def left: NonEmptyUIDSet[T] = null
+    private[collection] def right: NonEmptyUIDSet[T] = null
 
-    final override def isSingletonSet: Boolean = true
+    override def size = 1
+
+    override def isSingletonSet: Boolean = true
 
     override def +[X >: T <: UID](o: X): UIDSet[X] = {
+        val e = this.e
+        if (o eq e)
+            return this;
+
         val oId = o.id
         val eId = e.id
         if (oId == eId)
             this
         else if (oId < eId)
-            new UIDSet2(o, e)
+            new UIDSetNode(null, o, this, 2)
         else
-            new UIDSet2(e, o)
+            new UIDSetNode(this, o, null, 2)
     }
 
-    override def first = e
+    override def head: T = e
+
+    override def last: T = e
 
     override def tail: UIDSet[T] = UIDSet0
 
     override def foreach[U](f: T ⇒ U): Unit = f(e)
 
-    override def forall[X >: T](f: X ⇒ Boolean): Boolean = f(e)
+    override def forall(f: T ⇒ Boolean): Boolean = f(e)
 
-    override def exists[X >: T](f: X ⇒ Boolean): Boolean = f(e)
+    override def exists(f: T ⇒ Boolean): Boolean = f(e)
 
-    override def contains[X >: T <: UID](o: X): Boolean = e.id == o.id
+    override def contains[X <: UID](o: X): Boolean = UID.areEqual(e, o)
 
-    override def find[X >: T](f: X ⇒ Boolean): Option[T] = if (f(e)) Some(e) else None
+    override def find(f: T ⇒ Boolean): Option[T] = {
+        val e = this.e
+        if (f(e)) Some(e) else None
+    }
 
-    override def map[X](f: T ⇒ X): Set[X] = Set.empty + (f(e))
-
-    override def filter[X >: T](f: X ⇒ Boolean): UIDSet[T] =
-        if (f(e)) this else UIDSet0
-
-    override def filterNot[X >: T](f: X ⇒ Boolean): UIDSet[T] =
-        if (!f(e)) this else UIDSet0
+    override def filter(f: T ⇒ Boolean): UIDSet[T] = if (f(e)) this else UIDSet0
 
     override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = op(b, e)
 
     override def reduce[X >: T](op: (X, X) ⇒ X): X = e
 
-    override def toSeq = Seq(e)
+    override def toSeq = e :: Nil
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: UIDSet1[T] ⇒
-                val thisE = this.e
-                val thatE = that.e
-                (thisE eq thatE) || thisE.id == thatE.id
-            case _ ⇒
-                false
+    override def toIterator: Iterator[T] = Iterator.single(e)
+
+    override def ++[X >: T <: UID](es: TraversableOnce[X]): UIDSet[X] = {
+        es match {
+            case s: UIDSet[X] ⇒ if (s.isEmpty) this else s + this.head
+            case _            ⇒ super.++(es)
         }
     }
 
-    override def hashCode: Int = 41 + e.id
+    override def intersect[X >: T <: UID](that: UIDSet[X]): UIDSet[X] = {
+        if (that.contains(this.head)) this else UIDSet0
+    }
+
+    override def compare[X >: T <: UID](that: UIDSet[X]): SetRelation = {
+        that.size match {
+            case 0 ⇒ StrictSuperset
+            case 1 ⇒ if (that.head.id == this.head.id) EqualSets else UncomparableSets
+            case _ ⇒ if (that.contains(this.head)) StrictSubset else UncomparableSets
+        }
+    }
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: UIDSet[T] ⇒ that.isSingletonSet && areEqual(this.e, that.head)
+            case _               ⇒ false
+        }
+    }
+
+    override def hashCode: Int = e.id * 41
 
 }
 /**
@@ -355,368 +488,203 @@ object UIDSet1 {
 
 }
 
-/**
- * A [[UIDSet]] that contains two elements that have different unique ids.
- * To create an instance use the [[UIDSet]] object.
- *
- * @author Michael Eichberg
- */
-final class UIDSet2[T <: UID] private[collection] (
-        final val e1: T,
-        final val e2: T
+private[collection] final class UIDSetNode[T <: UID] private[collection] (
+        var left:          NonEmptyUIDSet[T], // can be null
+        val e:             T, // left.last.id < pivot.id < right.first.id
+        var right:         NonEmptyUIDSet[T], // can be null
+        override val size: Int
 ) extends NonEmptyUIDSet[T] { thisSet ⇒
 
-    override def size = 2
+    /**
+     * Traverses all nodes in tree order until the given function fails.
+     *
+     * @param cont A function that is called to determine if the traversal of the tree
+     *              should be continued.
+     * @return `true` if all nodes were processed.
+     */
+    private[collection] def traverse(cont: T ⇒ Boolean): Boolean = {
+        var nodes = Chain[NonEmptyUIDSet[T]](this)
+        while (nodes.nonEmpty) {
+            var currentNode = nodes.head
+            nodes = nodes.tail
+            do {
+                if (!cont(currentNode.e))
+                    return false;
 
-    override def +[X >: T <: UID](o: X): UIDSet[X] = {
-        val oId = o.id
-        val e1Id = e1.id
-        if (oId < e1Id)
-            new UIDSet3(o, e1, e2)
-        else if (oId == e1Id)
-            this
-        else {
-            val e2Id = e2.id
-            if (oId < e2Id)
-                new UIDSet3(e1, o, e2)
-            else if (oId == e2Id)
-                this
-            else
-                new UIDSet3(e1, e2, o)
+                val left = currentNode.left
+                val right = currentNode.right
+                if (left ne null) {
+                    if (right ne null)
+                        nodes :&:= right
+                    currentNode = left
+                } else {
+                    currentNode = right
+                }
+            } while (currentNode ne null)
         }
+        true
     }
 
-    override def first: T = e1
+    override def isSingletonSet = size == 1
 
-    override def tail: UIDSet[T] = new UIDSet1(e2)
-
-    override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2) }
-
-    override def forall[X >: T](f: X ⇒ Boolean): Boolean = f(e1) && f(e2)
-
-    override def exists[X >: T](f: X ⇒ Boolean): Boolean = f(e1) || f(e2)
-
-    override def contains[X >: T <: UID](o: X): Boolean = {
-        val oId = o.id
-        e1.id == oId || e2.id == oId
+    override def head: T = {
+        var currentNode: NonEmptyUIDSet[T] = this
+        while (currentNode.left ne null) currentNode = currentNode.left
+        currentNode.e
     }
 
-    override def find[X >: T](f: X ⇒ Boolean): Option[T] =
-        if (f(e1))
-            Some(e1)
-        else if (f(e2))
-            Some(e2)
-        else
-            None
-
-    override def map[X](f: T ⇒ X): Set[X] = Set.empty + f(e1) + f(e2)
-
-    override def filter[X >: T](f: X ⇒ Boolean): UIDSet[T] = {
-        if (f(e1)) {
-            if (f(e2)) {
-                this
-            } else {
-                new UIDSet1(e1)
-            }
-        } else if (f(e2)) {
-            new UIDSet1(e2)
-        } else
-            UIDSet0
+    override def last: T = {
+        var currentNode: NonEmptyUIDSet[T] = this
+        while (currentNode.right ne null) currentNode = currentNode.right
+        currentNode.e
     }
 
-    override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = op(op(b, e1), e2)
+    override def exists(p: T ⇒ Boolean): Boolean = !traverse(t ⇒ !p(t))
 
-    override def reduce[X >: T](op: (X, X) ⇒ X): X = op(e1, e2)
+    override def forall(p: T ⇒ Boolean) = traverse(p)
 
-    override def toSeq = Seq(e1, e2)
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: UIDSet2[T] ⇒
-                cmpEs(this.e1, that.e1) && cmpEs(this.e2, that.e2)
-            case _ ⇒
-                false
-        }
+    override def contains[X <: UID](o: X): Boolean = {
+        val oid = o.id
+        !traverse(t ⇒ t.id != oid)
     }
 
-    override def hashCode: Int = (41 + e1.id) * 41 + e2.id
-
-}
-
-/**
- * A set of three elements with different unique ids.
- */
-final class UIDSet3[T <: UID] private[collection] (
-        final val e1: T,
-        final val e2: T,
-        final val e3: T
-) extends NonEmptyUIDSet[T] { thisSet ⇒
-
-    override def size = 3
-
-    override def +[X >: T <: UID](o: X): UIDSet[X] = {
-        val oId = o.id
-        val e1Id = e1.id
-        if (oId < e1Id)
-            new UIDSet4(o, e1, e2, e3)
-        else if (oId == e1Id)
-            this
-        else {
-            val e2Id = e2.id
-            if (oId < e2Id)
-                new UIDSet4(e1, o, e2, e3)
-            else if (oId == e2Id)
-                this
-            else {
-                val e3Id = e3.id
-                if (oId < e3Id)
-                    new UIDSet4(e1, e2, o, e3)
-                else if (oId == e3Id)
-                    this
-                else
-                    new UIDSet4(e1, e2, e3, o)
-            }
-        }
-    }
-
-    override def first = e1
-
-    override def tail = new UIDSet2(e2, e3)
-
-    override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2); f(e3) }
-
-    override def forall[X >: T](f: X ⇒ Boolean): Boolean = f(e1) && f(e2) && f(e3)
-
-    override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = op(op(op(b, e1), e2), e3)
-
-    override def exists[X >: T](f: X ⇒ Boolean): Boolean = f(e1) || f(e2) || f(e3)
-
-    override def contains[X >: T <: UID](o: X): Boolean = {
-        val oId = o.id
-        e1.id == oId || e2.id == oId || e3.id == oId
-    }
-
-    override def find[X >: T](f: X ⇒ Boolean): Option[T] = {
-        if (f(e1))
-            Some(e1)
-        else if (f(e2))
-            Some(e2)
-        else if (f(e3))
-            Some(e3)
-        else
-            None
-    }
-
-    override def map[X](f: T ⇒ X): Set[X] = Set.empty + f(e1) + f(e2) + f(e3)
-
-    override def reduce[X >: T](op: (X, X) ⇒ X): X = op(op(e1, e2), e3)
-
-    override def toSeq = Seq(e1, e2, e3)
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: UIDSet3[T] ⇒
-                this.e1.id == that.e1.id &&
-                    this.e2.id == that.e2.id &&
-                    this.e3.id == that.e3.id
-            case _ ⇒
-                false
-        }
-    }
-
-    override def hashCode: Int = ((41 + e1.id) * 41 + e2.id) * 41 + e3.id
-
-}
-
-/**
- * A set of four elements with different unique ids.
- */
-final class UIDSet4[T <: UID] private[collection] (
-        final val e1: T,
-        final val e2: T,
-        final val e3: T,
-        final val e4: T
-) extends NonEmptyUIDSet[T] { thisSet ⇒
-
-    override def size = 4
-
-    override def +[X >: T <: UID](o: X): UIDSet[X] = {
-        val oId = o.id
-        val e1Id = e1.id
-        val e2Id = e2.id
-        val e3Id = e3.id
-        val e4Id = e4.id
-        if (oId < e1Id)
-            new UIDArraySet(o, e1, e2, e3, e4)
-        else if (oId == e1Id)
-            this
-        else if (oId < e2Id)
-            new UIDArraySet(e1, o, e2, e3, e4)
-        else if (oId == e2Id)
-            this
-        else if (oId < e3Id)
-            new UIDArraySet(e1, e2, o, e3, e4)
-        else if (oId == e3Id)
-            this
-        else if (oId < e4Id)
-            new UIDArraySet(e1, e2, e3, o, e4)
-        else if (oId == e4Id)
-            this
-        else
-            new UIDArraySet(e1, e2, e3, e4, o)
-    }
-
-    override def first = e1
-
-    override def tail = new UIDSet3(e2, e3, e4)
-
-    override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2); f(e3); f(e4) }
-
-    override def reduce[X >: T](op: (X, X) ⇒ X): X = op(op(op(e1, e2), e3), e4)
-
-    override def forall[X >: T](f: X ⇒ Boolean): Boolean = f(e1) && f(e2) && f(e3) && f(e4)
-
-    override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = op(op(op(op(b, e1), e2), e3), e4)
-
-    override def exists[X >: T](f: X ⇒ Boolean): Boolean = f(e1) || f(e2) || f(e3) || f(e4)
-
-    override def contains[X >: T <: UID](o: X): Boolean = {
-        val oId = o.id
-        e1.id == oId || e2.id == oId || e3.id == oId || e4.id == oId
-    }
-
-    override def find[X >: T](f: X ⇒ Boolean): Option[T] = {
-        if (f(e1))
-            Some(e1)
-        else if (f(e2))
-            Some(e2)
-        else if (f(e3))
-            Some(e3)
-        else if (f(e4))
-            Some(e4)
-        else
-            None
-    }
-
-    override def map[X](f: T ⇒ X): Set[X] = Set.empty + f(e1) + f(e2) + f(e3) + f(e4)
-
-    override def toSeq = Seq(e1, e2, e3, e4)
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: UIDSet4[T] ⇒
-                this.e1.id == that.e1.id &&
-                    this.e2.id == that.e2.id &&
-                    this.e3.id == that.e3.id &&
-                    this.e4.id == that.e4.id
-            case _ ⇒
-                false
-        }
-    }
-
-    override def hashCode: Int = (((41 + e1.id) * 41 + e2.id) * 41 + e3.id) * 41 + e4.id
-
-}
-
-private final class UIDArraySet[T <: UID](
-        private final val es: Array[UID]
-) extends NonEmptyUIDSet[T] { thisSet ⇒
-
-    def this(e1: T, e2: T, e3: T, e4: T, e5: T) {
-        this(Array(e1, e2, e3, e4, e5))
-    }
-
-    override def size = es.size
-
-    override def foreach[U](f: T ⇒ U): Unit = { es.foreach(e ⇒ f(e.asInstanceOf[T])) }
-
-    override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = {
-        var r = op(b, es(0).asInstanceOf[T])
-        var i = 1
-        while (i < es.length) {
-            r = op(r, es(i).asInstanceOf[T])
-            i += 1
-        }
-        r
-    }
-
-    override def first = es(0).asInstanceOf[T]
-
-    def last = es(es.length - 1).asInstanceOf[T]
-
-    override def tail = {
-        if (es.size == 5)
-            new UIDSet4(
-                es(1).asInstanceOf[T],
-                es(2).asInstanceOf[T],
-                es(3).asInstanceOf[T],
-                es(4).asInstanceOf[T]
-            )
-        else {
-            val newLength = es.length - 1
-            val newEs = new Array[UID](newLength)
-            System.arraycopy(es, 0, newEs, 1, newLength)
-            new UIDArraySet(newEs)
-        }
-    }
-
-    override def +[X >: T <: UID](o: X): UIDSet[X] = {
-        val index = JArrays.binarySearch(es, o, UID.UIDBasedOrdering)
-        if (index >= 0)
-            this
-        else {
-            val newOIndex = -index - 1
-            val newEs = new Array[UID](es.length + 1)
-            System.arraycopy(es, 0, newEs, 0, newOIndex)
-            newEs(newOIndex) = o
-            System.arraycopy(es, newOIndex, newEs, newOIndex + 1, es.length - newOIndex)
-            new UIDArraySet(newEs)
-        }
-    }
-
-    override def exists[X >: T](f: X ⇒ Boolean): Boolean = es.exists { e ⇒ f(e.asInstanceOf[T]) }
-
-    override def contains[X >: T <: UID](o: X): Boolean = {
-        val index = JArrays.binarySearch(es, o, UID.UIDBasedOrdering)
-        index >= 0
-    }
-
-    override def reduce[X >: T](op: (X, X) ⇒ X): X = {
-        val max = es.length
-        var result: X = es(0).asInstanceOf[T]
-        var i = 1
-        while (i < max) {
-            result = op(result, es(i).asInstanceOf[T])
-            i += 1
-        }
+    override def find(p: T ⇒ Boolean): Option[T] = {
+        var result: Option[T] = None
+        traverse { t ⇒ if (p(t)) { result = Some(t); false } else true }
         result
     }
 
+    override def foreach[U](f: T ⇒ U): Unit = toIterator foreach { t ⇒ f(t); true }
+
+    override def +[X >: T <: UID](o: X): UIDSet[X] = {
+        // The idea is to find the way to the node to which we need to attach the value
+        // update the internal nodes on the way down.
+        val oId = o.id
+        val newRoot = this.copy[X](size = size + 1)
+
+        var lastNew = newRoot
+        var current: NonEmptyUIDSet[T] = this
+        var result: UIDSet[X] = null
+        do {
+            val eId = current.e.id
+            if (oId < eId) {
+                val nextLeft = current.left
+                if (nextLeft eq null) {
+                    lastNew.left = new UIDSet1(o)
+                    result = newRoot
+                } else {
+                    current = nextLeft
+                    val newNode = current.copy[X](size = current.size + 1)
+                    lastNew.left = newNode
+                    lastNew = newNode
+                }
+            } else if (oId > eId) {
+                val nextRight = current.right
+                if (nextRight eq null) {
+                    lastNew.right = new UIDSet1(o)
+                    result = newRoot
+                } else {
+                    current = nextRight
+                    val newNode = current.copy[X](size = current.size + 1)
+                    lastNew.right = newNode
+                    lastNew = newNode
+                }
+            } else {
+                result = this; // the node was/is already in the set...
+            }
+        } while (result eq null)
+        result
+    }
+
+    override def toIterator: Iterator[T] = {
+        // conceptually: (left.toIterator + e) ++ right.toIterator
+        new Iterator[T] {
+            var nodesToProcess: Chain[NonEmptyUIDSet[T]] = Naught
+
+            private[this] def buildStack(n: NonEmptyUIDSet[T]) = {
+                nodesToProcess :&:= n
+                var left = n.left
+                while (left ne null) {
+                    nodesToProcess :&:= left
+                    left = left.left
+                }
+            }
+
+            buildStack(thisSet)
+
+            def hasNext: Boolean = nodesToProcess.nonEmpty
+
+            def next: T = {
+                val current = nodesToProcess.head
+                nodesToProcess = nodesToProcess.tail
+                val right = current.right
+                if (right ne null) buildStack(right)
+                current.e
+            }
+        }
+    }
+
+    override def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[UIDSet[T], B, That]): That = {
+        val b = bf(this)
+        traverse { e ⇒ b += f(e); true }
+        b.result
+    }
+
+    override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = toIterator.foldLeft(b)(op)
+
+    override def tail: UIDSet[T] = {
+        if (this.left eq null) {
+            if (this.right eq null)
+                return UIDSet0;
+            else
+                return right;
+        }
+
+        val newRoot = this.copy[T](size = size - 1)
+        var lastNew = newRoot
+        var current = this.left
+        while (current.left ne null) {
+            val newNode = current.copy(size = current.size - 1)
+            lastNew.left = newNode
+            lastNew = newNode
+            current = current.left
+        }
+        if (current.right ne null)
+            lastNew.left = current.right
+        else
+            lastNew.left = null
+        newRoot
+    }
+
+    override def filter(p: T ⇒ Boolean): UIDSet[T] = {
+        // IMPROVE Try to reuse the existing structure to enable sharing.
+        var newRoot: UIDSet[T] = UIDSet0
+        // we have to use traverse to avoid that we add the values in ascending order,
+        // this would lead to a heavily unbalanced tree
+        traverse { e ⇒ if (p(e)) newRoot += e; true }
+        if (newRoot.size == this.size)
+            this // reuse this instance to potentially save memory...
+        else
+            newRoot
+    }
+
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UIDArraySet[T] ⇒
-                val thisEs = this.es
-                val thatEs = that.es
-                val max = thisEs.length
-
-                if (max != thatEs.length)
-                    return false;
-
-                var i = 0
-                while (i < max) {
-                    val thisE = thisEs(i)
-                    val thatE = thatEs(i)
-                    if (!((thisE eq thatE) || thisE.id == thatE.id))
-                        return false;
-                    i += 1
-                }
-                true
+            case that: UIDSetNode[T] ⇒
+                val thisIt = this.toIterator
+                val thatIt = that.toIterator
+                while (thisIt.hasNext && thatIt.hasNext && thisIt.next == thatIt.next) { ; }
+                !thisIt.hasNext && !thatIt.hasNext
             case _ ⇒
                 false
         }
     }
 
-    override def hashCode: Int = es.foldLeft(41)(_ * 47 + _.id)
+    override def hashCode: Int = {
+        (if (left ne null) left.hashCode else 0) * 13 +
+            (if (right ne null) right.hashCode else 0)
+    }
+
 }
 
 /**
@@ -726,12 +694,45 @@ private final class UIDArraySet[T <: UID](
  */
 object UIDSet {
 
-    sealed trait Relation
+    class UIDSetBuilder[T <: UID] extends Builder[T, UIDSet[T]] {
+        private var uidSet: UIDSet[T] = UIDSet0
+        def +=(elem: T): this.type = {
+            uidSet += elem
+            this
+        }
+        def clear(): Unit = uidSet = UIDSet0
+        def result(): UIDSet[T] = uidSet
+    }
 
-    final object StrictSubset extends Relation
-    final object Equal extends Relation
-    final object StrictSuperset extends Relation
-    final object Uncomparable extends Relation
+    implicit def canBuildFrom[A <: UID]: CanBuildFrom[UIDSet[_], A, UIDSet[A]] = {
+        new CanBuildFrom[UIDSet[_], A, UIDSet[A]] {
+            def apply(from: UIDSet[_]) = new UIDSetBuilder[A]
+            def apply() = new UIDSetBuilder[A]
+        }
+    }
+
+    implicit def canBuildSetFromUIDSet[A]: CanBuildFrom[UIDSet[_], A, Set[A]] = {
+        new CanBuildFrom[UIDSet[_], A, Set[A]] {
+            def apply(from: UIDSet[_]) = Set.newBuilder[A]
+            def apply() = Set.newBuilder[A]
+        }
+    }
+
+    implicit def canBuildChainFromUIDSet[A]: CanBuildFrom[UIDSet[_], Int, Chain[Int]] = {
+        new CanBuildFrom[UIDSet[_], Int, Chain[Int]] {
+            def apply(from: UIDSet[_]) = new ChainBuilder[Int]
+            def apply() = new ChainBuilder[Int]
+        }
+    }
+
+    def canBuildUIDSet[T <: UID]: CanBuildFrom[AnyRef, T, UIDSet[T]] = {
+        new CanBuildFrom[AnyRef, T, UIDSet[T]] {
+            def apply(from: AnyRef) = new UIDSetBuilder[T]
+            def apply() = new UIDSetBuilder[T]
+        }
+    }
+
+    def newBuilder[T <: UID]: UIDSetBuilder[T] = new UIDSetBuilder[T]
 
     /**
      * Returns an empty [[UIDSet]].
@@ -754,14 +755,7 @@ object UIDSet {
      * @param e2 A non-null value of the created list (if it is not a duplicate).
      */
     def apply[T <: UID](e1: T, e2: T): UIDSet[T] = {
-        val e1Id = e1.id
-        val e2Id = e2.id
-        if (e1Id < e2Id)
-            new UIDSet2(e1, e2)
-        else if (e1Id == e2Id)
-            new UIDSet1(e1)
-        else
-            new UIDSet2(e2, e1)
+        new UIDSet1(e1) + e2
     }
 
     /**
@@ -773,12 +767,8 @@ object UIDSet {
      *      based on the element's unique id and the given set contains two
      *      or more elements that share the same id.
      */
-    def apply[T <: UID](set: scala.collection.TraversableOnce[T]): UIDSet[T] = {
-        set.foldLeft[UIDSet[T]](UIDSet0)((s, e) ⇒ s + e)
+    def apply[T <: UID](e1: T, e2: T, elems: T*): UIDSet[T] = {
+        new UIDSet1(e1) + e2 ++ elems
     }
-
-    //     def apply[T <: UID](set: Set[T]): UIDSet[T] = {
-    //        set.foldLeft[UIDSet[T]](UIDSet0)((s, e) ⇒ s + e)
-    //    }
 
 }

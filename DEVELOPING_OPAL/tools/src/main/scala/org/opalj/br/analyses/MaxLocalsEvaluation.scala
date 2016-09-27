@@ -33,14 +33,16 @@ import java.net.URL
 import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 
 /**
- * Evaluates the number of locals (Local Variables/Registers) required to evaluate a method.
+ * Computes some statistics related to the number of parameters and locals
+ * (Local Variables/Registers) defined/specified by each method.
  *
  * @author Michael Eichberg
  */
 object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
 
-    override def description: String =
+    override def description: String = {
         "Collects information about the maxium number of registers required per method."
+    }
 
     def doAnalyze(
         project:       Project[URL],
@@ -55,22 +57,16 @@ object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
         for {
             classFile ← project.allProjectClassFiles
             method @ MethodWithBody(body) ← classFile.methods
+            descriptor = method.descriptor
         } {
-            val parametersCount =
-                method.descriptor.parametersCount +
-                    (if (method.isStatic) 0 else 1)
+            val parametersCount = descriptor.parametersCount + (if (method.isStatic) 0 else 1)
 
+            val methodParametersFrequency = methodParametersDistribution.getOrElse(parametersCount, 0) + 1
             methodParametersDistribution =
-                methodParametersDistribution.updated(
-                    parametersCount,
-                    methodParametersDistribution.getOrElse(parametersCount, 0) + 1
-                )
+                methodParametersDistribution.updated(parametersCount, methodParametersFrequency)
 
-            maxLocalsDistrbution =
-                maxLocalsDistrbution.updated(
-                    body.maxLocals,
-                    maxLocalsDistrbution.getOrElse(body.maxLocals, 0) + 1
-                )
+            val newMaxLocalsCount = maxLocalsDistrbution.getOrElse(body.maxLocals, 0) + 1
+            maxLocalsDistrbution = maxLocalsDistrbution.updated(body.maxLocals, newMaxLocalsCount)
         }
 
         BasicReport("Results\n\n"+

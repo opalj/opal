@@ -42,8 +42,9 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 // Demonstrates how to do pattern matching of instructions and how to use the `AnalysisExecutor`.
 object CountClassForNameCalls extends DefaultOneStepAnalysis {
 
-    override def description: String =
+    override def description: String = {
         "Counts the number of times Class.forName is called."
+    }
 
     def doAnalyze(
         project:       Project[URL],

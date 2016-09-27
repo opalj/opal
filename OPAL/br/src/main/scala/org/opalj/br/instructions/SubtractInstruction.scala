@@ -47,6 +47,8 @@ abstract class SubtractInstruction
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def stackSlotsChange: Int = -computationalType.operandSize
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

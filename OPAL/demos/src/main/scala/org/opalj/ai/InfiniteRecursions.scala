@@ -30,10 +30,13 @@ package org.opalj
 package ai
 
 import java.net.URL
+
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
 import scala.language.existentials
+
+import org.opalj.collection.immutable.Chain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
@@ -157,7 +160,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                 BaseAI.performInterpretation(
                     strictfp, body, domain
                 )(
-                    List.empty, parameters
+                    Chain.empty, parameters
                 )
             val operandsArray = aiResult.operandsArray
             val localsArray = aiResult.localsArray
@@ -244,14 +247,14 @@ class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
 case class InfiniteRecursion(
         classFile: ClassFile,
         method:    Method,
-        operands:  Iterable[_]
+        operands:  Chain[_ <: AnyRef]
 ) {
 
     override def toString: String = {
         val declaringClassOfMethod = classFile.thisType.toJava
 
         "infinite recursion in "+BOLD + BLUE +
-            declaringClassOfMethod + RESET+
-            "{ "+method.toJava+"{ "+operands.mkString(", ")+" }}"
+            declaringClassOfMethod + RESET +
+            operands.mkString(s"{ ${method.toJava(classFile)}{ ", ", ", " }}")
     }
 }

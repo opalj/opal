@@ -34,7 +34,7 @@ import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 import org.opalj.br.analyses.StringConstantsInformationKey
 
 /**
- * Prints out the string constants found in the code.
+ * Prints out all string constants found in the bytecode.
  *
  * @author Michael Eichberg
  */
@@ -62,7 +62,7 @@ object StringConstants extends DefaultOneStepAnalysis {
             }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
         }
 
-        val report = mappedData.mkString("\n") + s"Found ${data.size} string constants."
+        val report = mappedData.mkString("Strings:\n", "\n", s"Found ${data.size} string constants.")
 
         BasicReport(report)
     }

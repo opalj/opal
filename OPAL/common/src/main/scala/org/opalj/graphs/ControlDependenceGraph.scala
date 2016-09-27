@@ -46,9 +46,10 @@ import org.opalj.collection.mutable.IntArrayStack
  * exception, which may result in a different control-flow, is also a `predicate` additionally to
  * all ifs and switches.
  *
- * @param controlDependentOn Contains for each node of the graph (represented by its positive,
- * 			unique int id) the information on which node it is directly dependent on or -1 if
+ * @param 	controlDependentOn Contains for each node of the graph (represented by its positive,
+ * 			unique int id) the information on which node it is directly dependent on or `-1` if
  * 			the instruction is not control dependent on any other node.
+ *
  * @author Michael Eichberg
  */
 final class ControlDependencies private[graphs] (val dominanceFrontiers: DominanceFrontiers) {
@@ -81,7 +82,7 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
         while (worklist.nonEmpty) {
             //  val x = worklist.head
             //worklist = worklist.tail
-            val x = worklist.pop
+            val x = worklist.pop()
 
             dominanceFrontiers(x).foreach { y ⇒
                 if (!seen.contains(y)) {
@@ -162,10 +163,10 @@ object ControlDependenceGraph {
     }
 
     /**
-     * @param pdtf A DominatorTreeFactory that creates the post dominator tree.
-     * @param rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
-     * 		the post dominator tree computed by the `pdtf`.
-     * @see [[PostDominatorTree$]] and [[DominanceFrontiers]]
+     * @param 	pdtf A DominatorTreeFactory that creates the post dominator tree.
+     * @param 	rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
+     * 			the post dominator tree computed by the `pdtf`.
+     * @see 	[[PostDominatorTree$]] and [[DominanceFrontiers]]
      */
     def apply(
         pdtf:        DominatorTreeFactory,
@@ -175,10 +176,10 @@ object ControlDependenceGraph {
     }
 
     /**
-     * @param pdtf A DominatorTreeFactory that creates the post dominator tree.
-     * @param rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
-     * 		the post dominator tree computed by the `pdtf`.
-     * @see [[PostDominatorTree$]] and [[DominanceFrontiers]]
+     * @param 	pdtf A DominatorTreeFactory that creates the post dominator tree.
+     * @param 	rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
+     * 			the post dominator tree computed by the `pdtf`.
+     * @see 	[[PostDominatorTree$]] and [[DominanceFrontiers]]
      */
     def apply(
         pdtf: DominatorTreeFactory,

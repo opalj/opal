@@ -30,6 +30,7 @@ package org.opalj
 package ai
 
 import scala.util.control.ControlThrowable
+
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.ai.domain.l0.BaseDomain
@@ -290,15 +291,12 @@ object InterpretMethod {
                     }
                 }
 
-                val resultHeader =
-                    Some(causeToString(ife, false))
+                val resultHeader = Some(causeToString(ife, false))
                 val evaluationDump =
                     dump(
                         Some(classFile), Some(method), method.body.get,
                         resultHeader, ife.domain
-                    )(
-                            ife.operandsArray, ife.localsArray
-                        )
+                    )(ife.operandsArray, ife.localsArray)
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife
         }

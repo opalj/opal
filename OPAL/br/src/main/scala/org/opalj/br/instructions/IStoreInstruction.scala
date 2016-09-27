@@ -34,6 +34,7 @@ trait IStoreInstruction extends StoreLocalVariableInstruction {
 
     final def computationalType: ComputationalType = ComputationalTypeInt
 
+    final def stackSlotsChange: Int = -1
 }
 
 object IStoreInstruction {

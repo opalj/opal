@@ -55,6 +55,8 @@ import org.opalj.bi.AccessFlagsContexts
  */
 package object br {
 
+    final val ConfigKeyPrefix = "org.opalj.br."
+
     private[this] final val checkAssert: Boolean = {
         implicit val logContext = GlobalLogContext
         try {

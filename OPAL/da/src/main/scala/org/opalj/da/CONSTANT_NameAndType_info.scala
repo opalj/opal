@@ -66,9 +66,9 @@ case class CONSTANT_NameAndType_info(
                 if (descriptor.charAt(0) != '(') {
                     <span class="fqn">{ parseFieldType(cp(descriptor_index).asString).javaTypeName } </span>
                     <span class="identifier">{ cp(name_index).toString(cp) } </span>
-                } else
+                } else {
                     methodDescriptorAsInlineNode(cp(name_index).asString, cp(descriptor_index).asString)
-
+                }
             }
         </span>
 
@@ -81,4 +81,3 @@ case class CONSTANT_NameAndType_info(
     }
 
 }
-

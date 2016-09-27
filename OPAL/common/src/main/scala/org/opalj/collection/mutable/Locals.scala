@@ -102,7 +102,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * @param other Another `Locals` data-structure that has the the same number of
      *      elements as this `Locals` data-structure.
      */
-    /* ABSTRACT */ def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals[T]
+    /* ABSTRACT */ def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals[T]
 
     /* ABSTRACT */ def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals[X]
 
@@ -317,12 +317,13 @@ private[mutable] final object Locals0 extends Locals[Null] {
     override def updated(index: Int, newValue: Null): Locals0.type =
         throw new IndexOutOfBoundsException("there are no locals")
 
-    def merge(other: Locals[Null], onDiff: (Null, Null) ⇒ Null): this.type =
+    def fuse(other: Locals[Null], onDiff: (Null, Null) ⇒ Null): this.type = {
         if (this eq other)
             this
         else
             // thrown to make the exception homogeneous
             throw new ClassCastException(other+" cannot be cast to Locals0")
+    }
 
     override def foreach(f: Null ⇒ Unit): Unit = { /*nothing to do*/ }
 
@@ -397,7 +398,7 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         new Locals1(newValue)
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals1[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals1[T] = {
         val that = other.asInstanceOf[Locals1[T]]
         val thisV = this.v
         val thatV = that.v
@@ -484,7 +485,7 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
         }
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals2[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals2[T] = {
         val that = other.asInstanceOf[Locals2[T]]
         var useThis = true
         var useThat = true
@@ -592,7 +593,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
         }
     }
 
-    def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals3[T] = {
+    def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals3[T] = {
         val that = other.asInstanceOf[Locals3[T]]
         var useThis = true
         var useThat = true
@@ -727,7 +728,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
         }
     }
 
-    def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals4[T] = {
+    def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals4[T] = {
         val that = other.asInstanceOf[Locals4[T]]
         var useThis = true
         var useThat = true
@@ -855,7 +856,7 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
             new Locals5(vs1, vs2.updated(index - 2, newValue))
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals5[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals5[T] = {
         val that = other.asInstanceOf[Locals5[T]]
         var useThis = true
         var useThat = true
@@ -865,7 +866,7 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
             if (thisVs1 eq thatVs1)
                 thisVs1
             else {
-                val newVs = thisVs1.merge(thatVs1, onDiff)
+                val newVs = thisVs1.fuse(thatVs1, onDiff)
                 if (newVs ne thisVs1) useThis = false
                 if (newVs ne thatVs1) useThat = false
                 newVs
@@ -877,7 +878,7 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
             if (thisVs2 eq thatVs2)
                 thisVs2
             else {
-                val newVs = thisVs2.merge(thatVs2, onDiff)
+                val newVs = thisVs2.fuse(thatVs2, onDiff)
                 if (newVs ne thisVs2) useThis = false
                 if (newVs ne thatVs2) useThat = false
                 newVs
@@ -958,7 +959,7 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
         vs1.foreachReverse(f)
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals6[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals6[T] = {
         val that = other.asInstanceOf[Locals6[T]]
         var useThis = true
         var useThat = true
@@ -968,7 +969,7 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
             if (thisVs1 eq thatVs1)
                 thisVs1
             else {
-                val newV = thisVs1.merge(thatVs1, onDiff)
+                val newV = thisVs1.fuse(thatVs1, onDiff)
                 if (newV ne thisVs1) useThis = false
                 if (newV ne thatVs1) useThat = false
                 newV
@@ -980,7 +981,7 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
             if (thisVs2 eq thatVs2)
                 thisVs2
             else {
-                val newV = thisVs2.merge(thatVs2, onDiff)
+                val newV = thisVs2.fuse(thatVs2, onDiff)
                 if (newV ne thisVs2) useThis = false
                 if (newV ne thatVs2) useThat = false
                 newV
@@ -1054,7 +1055,7 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
         vs1.foreachReverse(f)
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals7[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals7[T] = {
         val that = other.asInstanceOf[Locals7[T]]
         var useThis = true
         var useThat = true
@@ -1064,7 +1065,7 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
             if (thisVs1 eq thatVs1)
                 thisVs1
             else {
-                val newV = thisVs1.merge(thatVs1, onDiff)
+                val newV = thisVs1.fuse(thatVs1, onDiff)
                 if (newV ne thisVs1) useThis = false
                 if (newV ne thatVs1) useThat = false
                 newV
@@ -1076,7 +1077,7 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
             if (thisVs2 eq thatVs2)
                 thisVs2
             else {
-                val newV = thisVs2.merge(thatVs2, onDiff)
+                val newV = thisVs2.fuse(thatVs2, onDiff)
                 if (newV ne thisVs2) useThis = false
                 if (newV ne thatVs2) useThat = false
                 newV
@@ -1172,7 +1173,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
         vs1.foreachReverse(f)
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals8[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals8[T] = {
         val that = other.asInstanceOf[Locals8[T]]
         var useThis = true
         var useThat = true
@@ -1182,7 +1183,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             if (thisVs1 eq thatVs1)
                 thisVs1
             else {
-                val newV = thisVs1.merge(thatVs1, onDiff)
+                val newV = thisVs1.fuse(thatVs1, onDiff)
                 if (newV ne thisVs1) useThis = false
                 if (newV ne thatVs1) useThat = false
                 newV
@@ -1194,7 +1195,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             if (thisVs2 eq thatVs2)
                 thisVs2
             else {
-                val newV = thisVs2.merge(thatVs2, onDiff)
+                val newV = thisVs2.fuse(thatVs2, onDiff)
                 if (newV ne thisVs2) useThis = false
                 if (newV ne thatVs2) useThat = false
                 newV
@@ -1206,7 +1207,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             if (thisVs3 eq thatVs3)
                 thisVs3
             else {
-                val newV = thisVs3.merge(thatVs3, onDiff)
+                val newV = thisVs3.fuse(thatVs3, onDiff)
                 if (newV ne thisVs3) useThis = false
                 if (newV ne thatVs3) useThat = false
                 newV
@@ -1308,7 +1309,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
         vs1.foreachReverse(f)
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals9[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals9[T] = {
         val that = other.asInstanceOf[Locals9[T]]
         var useThis = true
         var useThat = true
@@ -1318,7 +1319,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             if (thisVs1 eq thatVs1)
                 thisVs1
             else {
-                val newV = thisVs1.merge(thatVs1, onDiff)
+                val newV = thisVs1.fuse(thatVs1, onDiff)
                 if (newV ne thisVs1) useThis = false
                 if (newV ne thatVs1) useThat = false
                 newV
@@ -1330,7 +1331,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             if (thisVs2 eq thatVs2)
                 thisVs2
             else {
-                val newV = thisVs2.merge(thatVs2, onDiff)
+                val newV = thisVs2.fuse(thatVs2, onDiff)
                 if (newV ne thisVs2) useThis = false
                 if (newV ne thatVs2) useThat = false
                 newV
@@ -1342,7 +1343,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             if (thisVs3 eq thatVs3)
                 thisVs3
             else {
-                val newV = thisVs3.merge(thatVs3, onDiff)
+                val newV = thisVs3.fuse(thatVs3, onDiff)
                 if (newV ne thisVs3) useThis = false
                 if (newV ne thatVs3) useThat = false
                 newV
@@ -1444,7 +1445,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
         vs1.foreachReverse(f)
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals10[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals10[T] = {
         val that = other.asInstanceOf[Locals10[T]]
         var useThis = true
         var useThat = true
@@ -1454,7 +1455,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             if (thisVs1 eq thatVs1)
                 thisVs1
             else {
-                val newV = thisVs1.merge(thatVs1, onDiff)
+                val newV = thisVs1.fuse(thatVs1, onDiff)
                 if (newV ne thisVs1) useThis = false
                 if (newV ne thatVs1) useThat = false
                 newV
@@ -1466,7 +1467,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             if (thisVs2 eq thatVs2)
                 thisVs2
             else {
-                val newV = thisVs2.merge(thatVs2, onDiff)
+                val newV = thisVs2.fuse(thatVs2, onDiff)
                 if (newV ne thisVs2) useThis = false
                 if (newV ne thatVs2) useThat = false
                 newV
@@ -1478,7 +1479,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             if (thisVs3 eq thatVs3)
                 thisVs3
             else {
-                val newV = thisVs3.merge(thatVs3, onDiff)
+                val newV = thisVs3.fuse(thatVs3, onDiff)
                 if (newV ne thisVs3) useThis = false
                 if (newV ne thatVs3) useThat = false
                 newV
@@ -1577,7 +1578,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
         vs1.foreachReverse(f)
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals11[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals11[T] = {
         val that = other.asInstanceOf[Locals11[T]]
         var useThis = true
         var useThat = true
@@ -1587,7 +1588,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             if (thisVs1 eq thatVs1)
                 thisVs1
             else {
-                val newV = thisVs1.merge(thatVs1, onDiff)
+                val newV = thisVs1.fuse(thatVs1, onDiff)
                 if (newV ne thisVs1) useThis = false
                 if (newV ne thatVs1) useThat = false
                 newV
@@ -1599,7 +1600,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             if (thisVs2 eq thatVs2)
                 thisVs2
             else {
-                val newV = thisVs2.merge(thatVs2, onDiff)
+                val newV = thisVs2.fuse(thatVs2, onDiff)
                 if (newV ne thisVs2) useThis = false
                 if (newV ne thatVs2) useThat = false
                 newV
@@ -1611,7 +1612,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             if (thisVs3 eq thatVs3)
                 thisVs3
             else {
-                val newV = thisVs3.merge(thatVs3, onDiff)
+                val newV = thisVs3.fuse(thatVs3, onDiff)
                 if (newV ne thisVs3) useThis = false
                 if (newV ne thatVs3) useThat = false
                 newV
@@ -1716,7 +1717,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         vs11.foreachReverse(f)
     }
 
-    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals12_N[T] = {
+    override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals12_N[T] = {
         val that = other.asInstanceOf[Locals12_N[T]]
         var useThis = true
         var useThat = true
@@ -1726,7 +1727,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
             if (thisVs11 eq thatVs11)
                 thisVs11
             else {
-                val newVs = thisVs11.merge(thatVs11, onDiff)
+                val newVs = thisVs11.fuse(thatVs11, onDiff)
                 if (newVs ne thisVs11) useThis = false
                 if (newVs ne thatVs11) useThat = false
                 newVs

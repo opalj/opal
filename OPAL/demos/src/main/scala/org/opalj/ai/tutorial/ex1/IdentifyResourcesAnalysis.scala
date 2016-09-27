@@ -29,11 +29,12 @@
 package org.opalj.ai.tutorial.ex1
 
 import java.net.URL
+import org.opalj.collection.immutable.:&:
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
 import org.opalj.ai._
-import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * @author Michael Eichberg
@@ -102,7 +103,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
                 (cf, m, pcs) ← callSites
                 result = BaseAI(cf, m, new AnalysisDomain(theProject, m))
                 (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
-                    case (pc, result.domain.StringValue(value) :: _) ⇒ (pc, value)
+                    case (pc, result.domain.StringValue(value) :&: _) ⇒ (pc, value)
                 }
             } yield (cf, m, pc, value)
         } { ns ⇒ println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
@@ -122,4 +123,3 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
     }
 
 }
-

@@ -158,41 +158,53 @@ sealed abstract class Type extends UID with Ordered[Type] {
     )
     def computationalType: ComputationalType
 
+    /**
+     * The number of operand stack slots/registers required to store
+     * a single value of this type. In case of `VoidType` `0` is returned.
+     */
+    def operandSize: Int = computationalType.operandSize.toInt
+
     @throws[ClassCastException]("if this type is not a reference type")
-    def asReferenceType: ReferenceType =
+    def asReferenceType: ReferenceType = {
         throw new ClassCastException(this.toJava+" cannot be cast to a ReferenceType")
+    }
 
     @throws[ClassCastException]("if this type is not an array type")
-    def asArrayType: ArrayType =
+    def asArrayType: ArrayType = {
         throw new ClassCastException(this.toJava+" cannot be cast to an ArrayType")
+    }
 
     @throws[ClassCastException]("if this type is not an object type")
-    def asObjectType: ObjectType =
+    def asObjectType: ObjectType = {
         throw new ClassCastException(this.toJava+" cannot be cast to an ObjectType")
+    }
 
     @throws[ClassCastException]("if this type is not a base type")
-    def asBaseType: BaseType =
+    def asBaseType: BaseType = {
         throw new ClassCastException(
             "a "+this.getClass.getSimpleName+" cannot be cast to a BaseType"
         )
+    }
 
     @throws[ClassCastException]("if this type is not a field type")
-    def asFieldType: FieldType =
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to a FieldType"
-        )
+    def asFieldType: FieldType = {
+        val message = s"a ${this.getClass.getSimpleName} cannot be cast to a FieldType"
+        throw new ClassCastException(message)
+    }
 
     @throws[ClassCastException]("if this is not a numeric type")
-    def asNumericType: NumericType =
+    def asNumericType: NumericType = {
         throw new ClassCastException(
             "a "+this.getClass.getSimpleName+" cannot be cast to a NumericType"
         )
+    }
 
     @throws[ClassCastException]("if this is not a numeric type")
-    def asIntLikeType: IntLikeType =
+    def asIntLikeType: IntLikeType = {
         throw new ClassCastException(
             "a "+this.getClass.getSimpleName+" cannot be cast to an IntLikeType"
         )
+    }
 
     /**
      * A String representation of this type as it would be used in Java source code.
@@ -308,6 +320,8 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     final override def computationalType: ComputationalType =
         throw new UnsupportedOperationException("void does not have a computational type")
+
+    final override def operandSize: Int = 0
 
     final override def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
@@ -984,6 +998,8 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         ObjectType.unboxValue(targetType)
     }
 
+    // The default equals and hashCode methods are a perfect fit.
+
     override def toString = "ObjectType("+fqn+")"
 
 }
@@ -1171,8 +1187,9 @@ object ObjectType {
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.
      */
-    final val SerializableAndCloneable: UIDSet[ObjectType] =
+    final val SerializableAndCloneable: UIDSet[ObjectType] = {
         UIDSet(ObjectType.Serializable, ObjectType.Cloneable)
+    }
 
     private final val javaLangBooleanId = Boolean.id
     private final val javaLangDoubleId = Double.id
@@ -1440,4 +1457,3 @@ object NotVoid {
     def unapply(someType: Type): Boolean = someType ne VoidType
 
 }
-

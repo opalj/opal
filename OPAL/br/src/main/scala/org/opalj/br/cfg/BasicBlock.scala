@@ -41,16 +41,26 @@ import org.opalj.br.Code
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-class BasicBlock(val startPC: PC) extends CFGNode {
-
-    def this(startPC: PC, endPC: PC) {
-        this(startPC)
-        this.endPC = endPC
-    }
+class BasicBlock(
+        val startPC:             PC, // immutable, because it determines this basic blocks' hash value!
+        private[cfg] var _endPC: PC = Int.MinValue
+) extends CFGNode {
 
     def this(startPC: PC, successors: Set[CFGNode]) {
-        this(startPC)
-        setSuccessors(successors)
+        this(startPC, Int.MinValue)
+        this.setSuccessors(successors)
+    }
+
+    def copy(
+        startPC:      Int          = this.startPC,
+        endPC:        Int          = this.endPC,
+        predecessors: Set[CFGNode] = this.predecessors,
+        successors:   Set[CFGNode] = this.successors
+    ): BasicBlock = {
+        val newBB = new BasicBlock(startPC, endPC)
+        newBB.setPredecessors(predecessors)
+        newBB.setSuccessors(successors)
+        newBB
     }
 
     final override def isCatchNode: Boolean = false
@@ -59,9 +69,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
     final override def isBasicBlock: Boolean = true
     final override def asBasicBlock: this.type = this
 
-    private[this] var _endPC: PC = 0 // will be initialized at construction time
     def endPC_=(pc: PC): Unit = {
-        assert(pc >= startPC, s"the endPc $pc is smaller than the startPC $startPC")
         _endPC = pc
     }
     /**
@@ -87,7 +95,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
      * will be 4.
      *
      * @param pc The program counter of the instruction for which the index is needed.
-     * 	`pc` has to satisfy: `startPC <= pc <= endPC`.
+     *     `pc` has to satisfy: `startPC <= pc <= endPC`.
      * @param code The code to which this basic block belongs.
      */
     def index(pc: PC)(implicit code: Code): Int = {
@@ -106,9 +114,9 @@ class BasicBlock(val startPC: PC) extends CFGNode {
      * Calls the function `f` for all instructions - identified by their respective
      * pcs - of a basic block.
      *
-     * @param 	f The function that will be called.
-     * @param 	code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
-     * 			belongs.
+     * @param     f The function that will be called.
+     * @param     code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
+     *             belongs.
      */
     def foreach[U](f: PC ⇒ U)(implicit code: Code): Unit = {
         val instructions = code.instructions
