@@ -80,7 +80,7 @@ object AsQuadruples {
         val instructions = code.instructions
         val codeSize = instructions.size
 
-        // only strictly needed if we find jsr/ret instructions or want to do optimizations
+        // used if we find jsr/ret instructions or want to do optimizations
         var theCFG: CFG = null
         def cfg: CFG = {
             if (theCFG eq null) {

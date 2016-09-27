@@ -52,6 +52,14 @@ sealed abstract class MethodDescriptor
 
     def parametersCount: Int
 
+    /**
+     * The number of registers required to store the method parameters.
+     *
+     * @note An additional register may be required for storing the self
+     *          reference `this`.
+     */
+    def requiredRegisters: Int = parameterTypes.foldLeft(0)(_ + _.operandSize)
+
     def returnType: Type
 
     def toJVMDescriptor: String = {
