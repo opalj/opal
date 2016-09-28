@@ -192,6 +192,60 @@ trait RecordDefUse extends RecordCFG {
     }
 
     /**
+     * Returns the instructions which use the value with the given value origin.
+     */
+    def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
+
+    /**
+     * Returns the union of the set of unused parameters and the set of all instructions which
+     * compute a value that is not used in the following.
+     */
+    def unused(): ValueOrigins = {
+        var unused = SmallValuesSet.empty(min, max)
+
+        // 1. check if the parameters are used...
+        val parametersOffset = this.parametersOffset
+        val defLocals0 = defLocals(0)
+        var parameterIndex = 0
+        while (parameterIndex < parametersOffset) {
+
+            if (defLocals0(parameterIndex) ne null) /*we may have parameters with comp. type 2*/ {
+                val unusedParameter = -parameterIndex - 1
+                val usedBy = this.usedBy(unusedParameter)
+                if (usedBy eq null) { unused = unusedParameter +≈: unused }
+            }
+            parameterIndex += 1
+        }
+
+        // 2. check instructions
+        code.iterate { (pc, instruction) ⇒
+            if (instruction.opcode != CHECKCAST.opcode) {
+                // a checkcast instruction is already a use
+                instruction.expressionResult match {
+                    case NoExpression        ⇒ // nothing to do
+                    case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused = pc +≈: unused }
+                }
+            }
+        }
+
+        unused
+    }
+
+    /**
+     * Returns the instruction(s) which defined the value used by the instruction with the given `pc`
+     * and which is stored at the stack position with the given stackIndex. The first/top value on
+     * the stack has index 0 and the second value - if it exists - has index two; independent of
+     * the category of the value.
+     */
+    def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
+
+    /**
+     * Returns the instruction(s) which define the value found in the register variable with
+     * index `registerIndex` and the program counter `pc`.
+     */
+    def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
+
+    /**
      * Creates an XHTML document that contains information about the def-/use
      * information.
      */
@@ -249,60 +303,6 @@ trait RecordDefUse extends RecordCFG {
             </table>
         </div>
     }
-
-    /**
-     * Returns the instructions which use the value with the given value origin.
-     */
-    def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
-
-    /**
-     * Returns the union of the set of unused parameters and the set of all instructions which
-     * compute a value that is not used in the following.
-     */
-    def unused(): ValueOrigins = {
-        var unused = SmallValuesSet.empty(min, max)
-
-        // 1. check if the parameters are used...
-        val parametersOffset = this.parametersOffset
-        val defLocals0 = defLocals(0)
-        var parameterIndex = 0
-        while (parameterIndex < parametersOffset) {
-
-            if (defLocals0(parameterIndex) ne null) /*we may have parameters with comp. type 2*/ {
-                val unusedParameter = -parameterIndex - 1
-                val usedBy = this.usedBy(unusedParameter)
-                if (usedBy eq null) { unused = unusedParameter +≈: unused }
-            }
-            parameterIndex += 1
-        }
-
-        // 2. check instructions
-        code.iterate { (pc, instruction) ⇒
-            if (instruction.opcode != CHECKCAST.opcode) {
-                // a checkcast instruction is already a use
-                instruction.expressionResult match {
-                    case NoExpression        ⇒ // nothing to do
-                    case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused = pc +≈: unused }
-                }
-            }
-        }
-
-        unused
-    }
-
-    /**
-     * Returns the instruction(s) which defined the value used by the instruction with the given `pc`
-     * and which is stored at the stack position with the given stackIndex. The first/top value on
-     * the stack has index 0 and the second value - if it exists - has index two; independent of
-     * the category of the value.
-     */
-    def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
-
-    /**
-     * Returns the instruction(s) which define the value found in the register variable with
-     * index `registerIndex` and the program counter `pc`.
-     */
-    def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     /**
      * Creates a multi-graph that represents the method's def-use information. I.e.,
