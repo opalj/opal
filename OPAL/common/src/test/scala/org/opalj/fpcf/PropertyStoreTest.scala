@@ -72,6 +72,20 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         ps
     }
 
+    var psStringsAndSetsOfStrings: PropertyStore = initPSStringsAndSetsOfStrings()
+    def initPSStringsAndSetsOfStrings(): PropertyStore = {
+        val contextObject = "StringAndSetOfStringsEntities"
+        implicit val logContext = GlobalLogContext
+        val ps = PropertyStore(
+            stringEntities ++ stringEntities.toSet.subsets,
+            () ⇒ false,
+            debug = false,
+            context = contextObject
+        )
+        assert(ps.context[String] === contextObject)
+        ps
+    }
+
     final val PalindromeKey = {
         PropertyKey.create[PalindromeProperty](
             "Palindrome",
@@ -296,7 +310,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
     describe("the property store") {
 
-        it("should be in the deault state after calling reset") {
+        it("should be in the initial state after calling reset") {
             val ps = psStrings
 
             // let's fill the property store with:
@@ -578,6 +592,33 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 )
                 results(Palindrome) should be(expectedResult)
             }
+        }
+
+        describe("computations which derive a primary result and also secondary results") {
+
+            it("should be possible to store some \"final\" information about some properties concurrently") {
+                val ps = psStringsAndSetsOfStrings
+                ps <||< (
+                    { case s: Set[String @unchecked] ⇒ s },
+                    { (s: Set[String]) ⇒
+                        // the following property is derived concurrently and multiple
+                        // times
+                        s.foreach { e ⇒
+                            ps.put(e, if (e.toString.reverse == e.toString) Palindrome else NoPalindrome)
+                        }
+                        ImmediateResult(s, BitsProperty(Integer.bitCount(s.size)))
+                    }
+                )
+                ps.waitOnPropertyComputationCompletion(true)
+
+                val expectedResult = Set(
+                    "aabbcbbaa", "aa", "c", "aea",
+                    "aaa", "aaaffffffaaa",
+                    "aaaffffffffffffffffaaa", "cc", "a", "bb", "b"
+                )
+                ps.entities(Palindrome).toSet should be(expectedResult)
+            }
+
         }
 
         describe("computations waiting on a specific property") {
