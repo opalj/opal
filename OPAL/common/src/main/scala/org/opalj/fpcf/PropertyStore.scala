@@ -2173,6 +2173,29 @@ class PropertyStore private (
                         update(dependerE, dependerP, IntermediateUpdate)
                     }
 
+                case ConcurrentResult.id ⇒
+                    val ConcurrentResult(e, pk, f) = r
+                    // e: Entity,
+                    // pk: PropertyKey[P],
+                    // f: (e: Entity, Option[P]) => Option[(P,UpdateType)]
+
+                    val pkId = pk.id
+                    val eps = data.get(e)
+                    withWriteLock(eps.l) {
+                        val ps = eps.ps
+                        val pos = ps(pkId)
+                        if ((pos eq null) || (pos.p eq null)) {
+                            // we don't have a property
+                            val (p, updateType) = f(e, None).get
+                            update(e, p, updateType)
+                        } else {
+                            f(e, Some(pos.p)).map { result ⇒
+                                val (newP, updateType) = result
+                                update(e, newP, updateType)
+                            }
+                        }
+                    }
+
                 case SuspendedPC.id ⇒
                     val suspended @ SuspendedPC(dependerE, dependerPK, dependeeE, dependeePK) = r
                     // CONCEPT
