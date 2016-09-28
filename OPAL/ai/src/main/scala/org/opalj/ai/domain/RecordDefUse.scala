@@ -212,9 +212,9 @@ trait RecordDefUse extends RecordCFG {
                         if (os eq null)
                             <i>{ "N/A" }</i>
                         else
-                            os map { o ⇒
+                            os.map { o ⇒
                                 <li>{ if (o eq null) "N/A" else o.mkString("{", ",", "}") }</li>
-                            }
+                            }.toList
 
                     val locals =
                         if (ls eq null)
