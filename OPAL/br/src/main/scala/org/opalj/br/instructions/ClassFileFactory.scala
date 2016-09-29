@@ -484,17 +484,10 @@ object ClassFileFactory {
             currentPC = instruction.indexOfNextInstruction(currentPC, false)
         }
         instructions(currentPC) =
-            INVOKESPECIAL(
-                typeToCreate, false,
-                "<init>", MethodDescriptor(fieldTypes, VoidType)
-            )
+            INVOKESPECIAL(typeToCreate, false, "<init>", MethodDescriptor(fieldTypes, VoidType))
         currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
         instructions(currentPC) = ARETURN
-        val body = Code(
-            maxStack, maxLocals,
-            instructions,
-            IndexedSeq.empty, Seq.empty
-        )
+        val body = Code(maxStack, maxLocals, instructions)
 
         Method(
             bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
@@ -655,10 +648,15 @@ object ClassFileFactory {
 
         val returnValueStackSize = methodDescriptor.returnType.operandSize
 
-        val maxStack = math.max(receiverObjectStackSize + parametersStackSize, returnValueStackSize)
+        val maxStack =
+            1 + // Required if, e.g., we first have to create and initialize an object;
+                // which is done by "dup"licating the new created, but not yet initialized
+                // object reference on the stack.
+                math.max(receiverObjectStackSize + parametersStackSize, returnValueStackSize)
 
-        val maxLocals = 1 + receiverObjectStackSize + parametersStackSize +
-            returnValueStackSize
+        val maxLocals =
+            1 +
+                receiverObjectStackSize + parametersStackSize + returnValueStackSize
 
         Code(maxStack, maxLocals, bytecodeInstructions, IndexedSeq.empty, Seq.empty)
     }
@@ -975,19 +973,8 @@ object ClassFileFactory {
         val returnInstruction = ReturnInstruction(bridgeMethodDescriptor.returnType)
         instructions(currentPC) = returnInstruction
 
-        val maxStack =
-            targetMethodDescriptor.parameterTypes.map(
-                _.computationalType.operandSize
-            ).sum + 1
-        val maxLocals =
-            maxStack +
-                {
-                    val returnType = targetMethodDescriptor.returnType
-                    if (!returnType.isVoidType)
-                        returnType.computationalType.operandSize.toInt
-                    else
-                        0
-                }
+        val maxStack = targetMethodDescriptor.requiredRegisters + 1 //<= the receiver
+        val maxLocals = maxStack + targetMethodDescriptor.returnType.operandSize
 
         Method(
             ACC_PUBLIC.mask | ACC_BRIDGE.mask | ACC_SYNTHETIC.mask,

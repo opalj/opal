@@ -780,8 +780,7 @@ object AsQuadruples {
                     statements(pc) = List(Nop(pc))
                     schedule(pcOfNextInstruction(pc), stack)
 
-                case opcode ⇒
-                    throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
+                case opcode ⇒ throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
             }
         }
 

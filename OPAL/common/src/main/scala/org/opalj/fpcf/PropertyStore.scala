@@ -94,8 +94,12 @@ import org.opalj.collection.immutable.UIDSet
  *      that derives properties of a specific kind related to a class file's methods must ensure
  *      that the same analysis running concurrently on two different class files do not derive
  *      information about the same method.
+ *      (Property computations that derive '''simple''' information about other entities may
+ *      use [[put]] to store these information while continuing the computation of the
+ *      primary property.)
  *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new) property for
- *      a specific element then the result must be more specific.
+ *      a specific element then the result must be more specific within one execution
+ *      phase.
  *
  * ===Cyclic Dependencies===
  * In general, it may happen that some analyses cannot make any progress, because
@@ -516,6 +520,9 @@ class PropertyStore private (
      * If the given entity already has the associated property nothing will happen;
      * if not, we will immediately schedule the execution of all functions that
      * are interested in this property.
+     *
+     * @param e Some entity. This entity can be independent of the entities managed
+     *          by the store.
      */
     // Locks: Set Property Observers (read), Set Property
     def add[E <: AnyRef](sp: SetProperty[E], e: E, answer: Answer): Unit = {
@@ -960,7 +967,12 @@ class PropertyStore private (
      * computes the property `p` for `e`'''.
      *
      * A use case is an analysis that does not use the property store for executing the analysis,
-     * but wants to store some results in the store (and to use the store's propagation mechanism.)
+     * but wants to store some results in the store.
+     *
+     * If a property is already associated with the given entity, an exception is thrown
+     * to prevent programming errors.
+     *
+     * @see [[put]] For further information regarding the usage of `set` and `put`.
      */
     // Locks: accessEntity and this.update(...): Entity
     def set(e: Entity, p: Property): Unit = {
@@ -972,14 +984,13 @@ class PropertyStore private (
             withWriteLock(el) {
                 val pos = ps(pkId)
                 // Check that there is no property and no property is currently computed.
-                if ((pos eq null) || (pos.p eq null))
+                if ((pos eq null) || (pos.p eq null)) {
                     // we do not have a property...
                     handleResult(ImmediateResult(e, p))
-                else
-                    logWarn(
-                        "analysis progress",
-                        s"$e: did not set the property $p because it already has ${pos.p}"
-                    )
+                } else {
+                    val message = s"$e: property $p is ignored because it already has ${pos.p}"
+                    throw new AssertionError(message)
+                }
             }
         }
     }
@@ -993,6 +1004,64 @@ class PropertyStore private (
      */
     // Locks (indirectly): set(Entity,Property): accessEntity, Entity(write), this.update(...): Entity(write)
     def set(ps: Traversable[SomeEP]): Unit = ps foreach { ep ⇒ set(ep.e, ep.p) }
+
+    /**
+     * Associates the given entity `e` with the given property `p`.
+     *
+     * It is generally not possible to use `put` for those properties for which the
+     * property store manages the property computations; i.e., where there might be
+     * another computation that assumes that it is the only one potentially deriving this
+     * property. In other words, all computations that derive this property have to
+     * use `put` or none.
+     *
+     * @note 	The property store offers two methods to directly associate a property with
+     * 			an entity: `set` and `put`.
+     *          `set` is intended to be used if the respective
+     * 			property is computed independent of the computations managed
+     * 			by the store. Therefore, setting an already set property will throw an
+     * 			exception!
+     *          `put` is intended to be used if the respective property is potentially
+     *          computed concurrently by multiple (independent) computations and if
+     *          all computations are guaranteed to derive the same property!
+     *
+     * @param 	e An entity stored in the property store.
+     * 			If the entity `e` is unknown the behavior and state of the property
+     * 			store is undefined after calling this method. Furthermore, the current
+     * 			behavior in this special case may change arbitrarily.
+     * @param 	p Some arbitrary property. (The property `p` must not be `final`; however any
+     * 			further updates cannot be done using `put` to prevent some very
+     *          nasty concurrency bugs.)
+     * @return	`true` if the property was associated with the entity `e` and `false` if the
+     * 			property (the same object) was already associated with the entity.
+     */
+    def put(e: Entity, p: Property): Boolean = {
+        val pkId = p.key.id
+        val eps = data.get(e)
+        val el = eps.l
+        val ps = eps.ps
+        accessEntity {
+            withWriteLock(el) {
+                val pos = ps(pkId)
+                // Check that there is no property and no property is currently computed.
+                if (pos eq null) {
+                    handleResult(ImmediateResult(e, p))
+                    true
+                } else {
+                    val currentP = pos.p
+                    if (currentP eq null) {
+                        handleResult(ImmediateResult(e, p))
+                        true
+                    } else if (currentP ne p) {
+                        val message = s"$e:illegal property update: $currentP => $p"
+                        throw new AssertionError(message)
+                    } else {
+                        // ... the property is the same; let's ignore it (idempotent update)
+                        false
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * Registers the function `f` that is called whenever an element `e` is associated with
@@ -1103,25 +1172,25 @@ class PropertyStore private (
     }
 
     /**
-     * Registers a direct property computation (dpc) function that is executed in the caller's
+     * Registers a direct property computation (DPC) function that is executed in the caller's
      * thread when the property is requested for the first time. After that the computed value
      * is cached and returned the next time the property is requested.
      *
      * I.e., compared to a lazy computation the caller can always immediately get the final
-     * result and the dpc function just computes a `Property`. However, an dpc has to satisfy
+     * result and the DPC function just computes a `Property`. However, a DPC has to satisfy
      * the following constraints:
-     *  - a dpc may depend on other properties that are computed
-     *    using dpcs if and only if the other properties are guaranteed to never have a direct or
+     *  - a DPC may depend on other properties that are computed
+     *    using DPCs if and only if the other properties are guaranteed to never have a direct or
      *    indirect dependency on the computed property. (This in particular excludes cyclic
      *    property dependencies. However, hierarchical property dependencies are supported. For
-     *    example, if the computation of property for a specific class is done using a dpc that
+     *    example, if the computation of property for a specific class is done using a DPC that
      *    requires only information about the subclasses (or the superclasses, but not both at the
-     *    same time) then it is possible to use a dpc.
-     *    (A dpc may use all properties that are fully computed before the computation is registered.)
+     *    same time) then it is possible to use a DPC.
+     *    (A DPC may use all properties that are fully computed before the computation is registered.)
      *  - the computation must not create dependencies (i.e., an ImmediateResult)
      *
-     * @note In general, using dpcs is most useful for analyses that have no notion of more/less
-     * 		precise/sound. In this case client's of properties computed using dpcs can query the
+     * @note In general, using DPCs is most useful for analyses that have no notion of more/less
+     * 		precise/sound. In this case client's of properties computed using DPCs can query the
      * 		store and will get the answer; i.e., a client that wants to know the property `P`
      * 		of an entity `e` with property key `pk` computed using a dpc can write:
      * 		{{{
@@ -1154,7 +1223,7 @@ class PropertyStore private (
      * Hence, a first request of such a property will always first return the result "None".
      *
      * The computation is triggered by a(n in)direct call of this store's `apply` method. I.e.,
-     * the allHaveProperty and the apply mehod will trigger the computation if necessary.
+     * the [[allHaveProperty]] and the `apply` method will trigger the computation if necessary.
      * The methods
      *
      * This store ensures that the property computation function `pc` is never invoked more
@@ -1212,13 +1281,17 @@ class PropertyStore private (
     def <||<[E <: Entity](pf: PartialFunction[Entity, E], c: PropertyComputation[E]): Unit = {
         val es = keysList.collect(pf)
         if (es.isEmpty) {
-            logWarn("project", s"an entity selector function $pf did not select any entity")
+            logWarn("project", s"the entity selector function $pf did not select any entity")
         }
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
 
     def <|<<[E <: Entity](es: Traversable[E], c: PropertyComputation[E]): Unit = {
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
+    }
+
+    def schedulePropertyComputation[E <: Entity](e: E, pc: SomePropertyComputation): Unit = {
+        if (!isInterrupted()) scheduleComputation(e, pc)
     }
 
     /**
@@ -1681,6 +1754,7 @@ class PropertyStore private (
 
         /*
     	 * The core method that actually submits runnables to the thread pool.
+
     	 * @note	tastStarted is called immediately and taskCompleted is called when the
     	 * 			task has finished.
     	 */
@@ -1802,9 +1876,11 @@ class PropertyStore private (
 
             val updateTypeId = updateType.id
             val eps = data.get(e)
-            val ps = eps.ps
 
             val os = withWriteLock(eps.l) {
+
+                val ps = eps.ps
+
                 // we first need to acquire the lock to avoid that a scheduled "on property change
                 // computation" is run before the property is actually updated
                 onPropertyComputations foreach { opc ⇒ scheduleRunnable { opc(e, p) } }
@@ -2097,6 +2173,29 @@ class PropertyStore private (
                         update(dependerE, dependerP, IntermediateUpdate)
                     }
 
+                case ConcurrentResult.id ⇒
+                    val ConcurrentResult(e, pk, f) = r
+                    // e: Entity,
+                    // pk: PropertyKey[P],
+                    // f: (e: Entity, Option[P]) => Option[(P,UpdateType)]
+
+                    val pkId = pk.id
+                    val eps = data.get(e)
+                    withWriteLock(eps.l) {
+                        val ps = eps.ps
+                        val pos = ps(pkId)
+                        if ((pos eq null) || (pos.p eq null)) {
+                            // we don't have a property
+                            val (p, updateType) = f(e, None).get
+                            update(e, p, updateType)
+                        } else {
+                            f(e, Some(pos.p)).map { result ⇒
+                                val (newP, updateType) = result
+                                update(e, newP, updateType)
+                            }
+                        }
+                    }
+
                 case SuspendedPC.id ⇒
                     val suspended @ SuspendedPC(dependerE, dependerPK, dependeeE, dependeePK) = r
                     // CONCEPT
@@ -2200,6 +2299,9 @@ object PropertyStore {
      *          the running/scheduled computations should be aborted.
      *          It is important that this function is efficient as it is frequently called.
      * @param debug `true` if debug output should be generated.
+     * @param context A collection of objects which are of different types and which
+     *        can be queried later on to get information about the property store's
+     *        context.
      * @param logContext The [[org.opalj.log.LogContext]] that will be used for debug etc. messages.
      * @return The newly created [[PropertyStore]].
      */

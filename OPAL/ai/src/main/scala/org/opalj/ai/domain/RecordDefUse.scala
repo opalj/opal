@@ -192,65 +192,6 @@ trait RecordDefUse extends RecordCFG {
     }
 
     /**
-     * Creates an XHTML document that contains information about the def-/use
-     * information.
-     */
-    def dumpDefUseInfo(): Node = {
-        XHTML.createXHTML(Some("Definition/Use Information"), dumpDefUseTable())
-    }
-
-    /**
-     * Creates an XHTML table node which contains the def/use information.
-     */
-    def dumpDefUseTable(): Node = {
-        val perInstruction =
-            defOps.zip(defLocals).zipWithIndex.
-                filter(e ⇒ (e._1._1 != null || e._1._2 != null)).
-                map { e ⇒
-                    val ((os, ls), i) = e
-                    val operands =
-                        if (os eq null)
-                            <i>{ "N/A" }</i>
-                        else
-                            os map { o ⇒
-                                <li>{ if (o eq null) "N/A" else o.mkString("{", ",", "}") }</li>
-                            }
-
-                    val locals =
-                        if (ls eq null)
-                            <i>{ "N/A" }</i>
-                        else
-                            ls.toSeq.reverse.map { e ⇒
-                                <li>{ if (e eq null) "N/A" else e.mkString("{", ",", "}") }</li>
-                            }
-
-                    val used = this.used(i + parametersOffset)
-                    val usedBy = if (used eq null) "N/A" else used.mkString("{", ", ", "}")
-                    <tr>
-                        <td>{ i }<br/>{ instructions(i).toString(i) }</td>
-                        <td>{ usedBy }</td>
-                        <td><ul class="Stack">{ operands }</ul></td>
-                        <td><ol start="0" class="registers">{ locals }</ol></td>
-                    </tr>
-                }
-
-        <div>
-            <h1>Unused</h1>
-            { unused().mkString("", ", ", "") }
-            <h1>Overview</h1>
-            <table>
-                <tr>
-                    <th class="pc">PC</th>
-                    <th class="pc">Used By</th>
-                    <th class="stack">Stack</th>
-                    <th class="registers">Locals</th>
-                </tr>
-                { perInstruction }
-            </table>
-        </div>
-    }
-
-    /**
      * Returns the instructions which use the value with the given value origin.
      */
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
@@ -303,6 +244,65 @@ trait RecordDefUse extends RecordCFG {
      * index `registerIndex` and the program counter `pc`.
      */
     def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
+
+    /**
+     * Creates an XHTML document that contains information about the def-/use
+     * information.
+     */
+    def dumpDefUseInfo(): Node = {
+        XHTML.createXHTML(Some("Definition/Use Information"), dumpDefUseTable())
+    }
+
+    /**
+     * Creates an XHTML table node which contains the def/use information.
+     */
+    def dumpDefUseTable(): Node = {
+        val perInstruction =
+            defOps.zip(defLocals).zipWithIndex.
+                filter(e ⇒ (e._1._1 != null || e._1._2 != null)).
+                map { e ⇒
+                    val ((os, ls), i) = e
+                    val operands =
+                        if (os eq null)
+                            <i>{ "N/A" }</i>
+                        else
+                            os.map { o ⇒
+                                <li>{ if (o eq null) "N/A" else o.mkString("{", ",", "}") }</li>
+                            }.toList
+
+                    val locals =
+                        if (ls eq null)
+                            <i>{ "N/A" }</i>
+                        else
+                            ls.toSeq.reverse.map { e ⇒
+                                <li>{ if (e eq null) "N/A" else e.mkString("{", ",", "}") }</li>
+                            }
+
+                    val used = this.used(i + parametersOffset)
+                    val usedBy = if (used eq null) "N/A" else used.mkString("{", ", ", "}")
+                    <tr>
+                        <td>{ i }<br/>{ instructions(i).toString(i) }</td>
+                        <td>{ usedBy }</td>
+                        <td><ul class="Stack">{ operands }</ul></td>
+                        <td><ol start="0" class="registers">{ locals }</ol></td>
+                    </tr>
+                }
+
+        <div>
+            <h1>Unused</h1>
+            { unused().mkString("", ", ", "") }
+            <h1>Overview</h1>
+            <table>
+                <tr>
+                    <th class="pc">PC</th>
+                    <th class="pc">Used By</th>
+                    <th class="stack">Stack</th>
+                    <th class="registers">Locals</th>
+                </tr>
+                { perInstruction }
+            </table>
+        </div>
+    }
 
     /**
      * Creates a multi-graph that represents the method's def-use information. I.e.,

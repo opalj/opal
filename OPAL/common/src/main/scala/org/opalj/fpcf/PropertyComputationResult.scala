@@ -190,12 +190,52 @@ case class IncrementalResult[E <: Entity](
 
 private[fpcf] object IncrementalResult { private[fpcf] final val id = 7 }
 
-case class Results(results: List[PropertyComputationResult]) extends PropertyComputationResult {
+case class Results(
+        results: TraversableOnce[PropertyComputationResult]
+) extends PropertyComputationResult {
 
     private[fpcf] final def id = Results.id
 
 }
-private[fpcf] object Results { private[fpcf] final val id = 8 }
+private[fpcf] object Results {
+    private[fpcf] final val id = 8
+
+    def apply(results: PropertyComputationResult*): Results = {
+        new Results(results)
+    }
+
+}
+
+/**
+ * Encapsulates the incremental result of the computation of a property that may have
+ * been computed concurrently. I.e., it may be the case that multiple analyses did derive some
+ * knowledge concurrently; this generally happens if during the analysis of an
+ * entity A some knowledge may be derived about an entity B and if there maybe an entity
+ * C, which when analyzed, will also derive the same knowledge about B.
+ *
+ * @note 	In simple cases, i.e., where a property is always unknown or has one specific
+ * 			value it may be easier and more efficient to just `set` or `put` the value directly.
+ *
+ * @param   f A function that is given the current property associated with e and
+ *          which computes the new property or leaves the property unchanged.
+ *          `f` is guaranteed to be the only function that is currently processing
+ *          e's property and every other function that may query e's property later
+ *          will receive the updated value.
+ *          '''`f` is not expected to query the propert store; the behavior is undefined!'''
+ *          `f` must return some property if e is currently not associated with a
+ *          property. Furthermore, the value must be more precise.
+ */
+case class ConcurrentResult[E <: Entity, P <: Property](
+        e:  E,
+        pk: PropertyKey[P],
+        f:  (E, Option[P]) ⇒ Option[(P, UpdateType)]
+) extends PropertyComputationResult {
+
+    private[fpcf] final def id = ConcurrentResult.id
+
+}
+
+private[fpcf] object ConcurrentResult { private[fpcf] final val id = 9 }
 
 //
 //
@@ -236,7 +276,7 @@ abstract class SuspendedPC[DependeeP <: Property] private[fpcf] (
  */
 private[fpcf] object SuspendedPC {
 
-    private[fpcf] final val id = 9
+    private[fpcf] final val id = 10
 
     def unapply[DependeeP <: Property](
         c: SuspendedPC[DependeeP]

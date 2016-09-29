@@ -338,13 +338,14 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          * @return Throws a `DomainException` that states that this method is not supported.
          */
         @throws[DomainException]("Always thrown because isValueSubtypeOf is not defined on \"null\" values.")
-        final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
-            throw DomainException("the \"isValueSubtypeOf\" relation is not defined on \"null\" values")
+        final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing = {
+            val message = "the \"isValueSubtypeOf\" relation is not defined on \"null\" values"
+            throw DomainException(message)
+        }
 
         override def summarize(pc: PC): this.type = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
-            target.NullValue(pc)
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = target.NullValue(pc)
 
         override def toString: String = "ReferenceValue(null)"
     }

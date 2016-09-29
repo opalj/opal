@@ -30,14 +30,17 @@ package org.opalj
 package fpcf
 
 import org.junit.runner.RunWith
-import scala.collection.JavaConverters._
-import scala.collection.mutable
-import scala.collection.{Set ⇒ SomeSet}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-import org.opalj.log.GlobalLogContext
 import org.scalatest.BeforeAndAfterEach
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.collection.{Set ⇒ SomeSet}
+
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.log.GlobalLogContext
 
 /**
  * Tests the property store.
@@ -56,10 +59,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
     final val stringEntities: List[String] = List(
         "a", "b", "c",
-        "aa", "bb", "cc",
-        "ab", "bc", "cd",
-        "aaa",
-        "aea",
+        "aa", "bb", "cc", "ab", "bc", "cd",
+        "aaa", "aea",
         "aabbcbbaa",
         "aaaffffffaaa", "aaaffffffffffffffffaaa"
     )
@@ -68,6 +69,26 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         val contextObject = "StringEntities"
         implicit val logContext = GlobalLogContext
         val ps = PropertyStore(stringEntities, () ⇒ false, debug = false, context = contextObject)
+        assert(ps.context[String] === contextObject)
+        ps
+    }
+
+    // The resulting collection has > 200 000 entities!
+    val stringsAndSetsOfStrings = {
+        val rawEntities = stringEntities ++ List("d", "e", "f", "g")
+        rawEntities ++ rawEntities.toSet.subsets
+    }
+    var psStringsAndSetsOfStrings: PropertyStore = initPSStringsAndSetsOfStrings()
+    def initPSStringsAndSetsOfStrings(): PropertyStore = {
+        val contextObject = "StringAndSetOfStringsEntities"
+        implicit val logContext = GlobalLogContext
+
+        val ps = PropertyStore(
+            stringsAndSetsOfStrings,
+            () ⇒ false,
+            debug = false,
+            context = contextObject
+        )
         assert(ps.context[String] === contextObject)
         ps
     }
@@ -273,6 +294,14 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             psStrings.reset()
         }
 
+        if (psStringsAndSetsOfStrings.isShutdown) {
+            info("reinitializing string entities property store")
+            initPSStringsAndSetsOfStrings()
+        } else {
+            psStringsAndSetsOfStrings.waitOnPropertyComputationCompletion(false)
+            psStringsAndSetsOfStrings.reset()
+        }
+
         if (psNodes.isShutdown) {
             info("reinitializing graph nodes property store")
             initPSNodes()
@@ -296,7 +325,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
     describe("the property store") {
 
-        it("should be in the deault state after calling reset") {
+        it("should be in the initial state after calling reset") {
             val ps = psStrings
 
             // let's fill the property store with:
@@ -578,6 +607,88 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 )
                 results(Palindrome) should be(expectedResult)
             }
+        }
+
+        describe("computations which derive a primary result and also secondary results") {
+
+            it("should be possible to store some \"final\" information about some properties concurrently") {
+                val ps = psStringsAndSetsOfStrings
+                ps <||< (
+                    { case s: Set[String @unchecked] ⇒ s },
+                    { (s: Set[String]) ⇒
+                        // the following property is derived concurrently and multiple
+                        // times
+                        s.foreach { e ⇒
+                            ps.put(e, if (e.toString.reverse == e.toString) Palindrome else NoPalindrome)
+                        }
+                        ImmediateResult(s, BitsProperty(Integer.bitCount(s.size)))
+                    }
+                )
+                ps.waitOnPropertyComputationCompletion(true)
+
+                val expectedResult = mutable.SortedSet(
+                    "a", "b", "c", "d", "e", "f", "g",
+                    "aa", "cc", "bb",
+                    "aaa", "aea",
+                    "aabbcbbaa",
+                    "aaaffffffaaa",
+                    "aaaffffffffffffffffaaa"
+                )
+                mutable.SortedSet.empty[String] ++ ps.entities(Palindrome) should be(expectedResult)
+            }
+
+            it("should be possible to compute the information about some properties collaboratively and concurrently") {
+                val ps = psStringsAndSetsOfStrings
+                time {
+
+                    ps <||< (
+                        { case s: Set[String @unchecked] ⇒ s },
+                        { (s: Set[String]) ⇒
+                            // the following property is derived concurrently and multiple
+                            // times
+                            val count = s.foldLeft(0) { (c, e) ⇒
+                                c + e.foldLeft(0) { (c, n) ⇒ c + (if (n == 'a') 1 else 0) }
+                            }
+                            val primaryResult = ImmediateResult(s, BitsProperty(Integer.bitCount(s.size)))
+
+                            if (count == 0)
+                                primaryResult
+                            else {
+                                val secondaryResult = ConcurrentResult[String, StringLength](
+                                    "a",
+                                    StringLengthKey,
+                                    { (e, pOpt) ⇒
+                                        pOpt match {
+                                            case Some(StringLength(oldCount)) ⇒
+                                                Some((
+                                                    StringLength(oldCount + count),
+                                                    IntermediateUpdate
+                                                ))
+                                            case None ⇒
+                                                Some((
+                                                    StringLength(count),
+                                                    IntermediateUpdate
+                                                ))
+                                        }
+                                    }
+                                )
+                                Results(primaryResult, secondaryResult)
+                            }
+                        }
+                    )
+                    ps.waitOnPropertyComputationCompletion(true)
+                } { t ⇒ info(s"the analysis took:${t.toSeconds}") }
+                // the expected result is computed sequentiall using:
+                // allEntities.
+                //      filter(_.isInstanceOf[Set[String]]).
+                //      map(s => s.asInstanceOf[Set[String]].foldLeft(0) { (c, e) ⇒
+                //               c + e.foldLeft(0) { (c, n) ⇒ c + (if (n == 'a') 1 else 0) }
+                //          }
+                //      ).
+                //      sum
+                ps.entities(StringLengthKey).map(_.p.length).sum should be(3276800)
+            }
+
         }
 
         describe("computations waiting on a specific property") {

@@ -306,14 +306,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         (if (calleeTypeAndMethod._2.isStatic) 0 else 1 /* for `this`*/ ) +
                             method.parameterTypes.map(_.computationalType.operandSize).sum
 
-                    val returnSize: Int =
-                        if (method.returnType != VoidType) {
-                            method.returnType.computationalType.operandSize.toInt
-                        } else {
-                            0
-                        }
+                    val returnSize: Int = method.returnType.operandSize
                     val stackSize = math.max(operandsSize, returnSize)
-                    body.maxStack should be(stackSize)
+                    body.maxStack should be >= (stackSize)
                     body.maxLocals should be(1 + operandsSize + returnSize)
                 }
             }
@@ -337,7 +332,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     val (calleeType, calleeMethod) = calleeTypeAndMethod
                     val body = method.body.get
                     val instructions = body.instructions
-                    body.maxStack should be(13)
+                    body.maxStack should be >= (13)
                     body.maxLocals should be(14)
                     instructions should be(Array(
                         ALOAD_0,
@@ -385,8 +380,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     val (calleeType, calleeMethod) = calleeTypeAndMethod
                     val body = method.body.get
                     val instructions = body.instructions
+                    body.maxStack should be >= (12)
                     body.maxLocals should be(13)
-                    body.maxStack should be(12)
                     instructions should be(Array(
                         DLOAD_1,
                         FLOAD_3,
@@ -442,7 +437,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 val method = collectTheForwardingMethod(proxy)
                 val body = method.body.get
                 val instructions = body.instructions
-                body.maxStack should be(10)
+                body.maxStack should be >= (10)
                 body.maxLocals should be(11)
                 instructions should be(Array(
                     DLOAD_1,

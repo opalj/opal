@@ -170,8 +170,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                 projectName+": "+
                     "During the interpretation of "+
                     methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                    project.classFilesCount+" classes (real time: "+getTime('OVERALL)+
-                    ", ai (∑CPU Times): "+getTime('AI)+
+                    project.classFilesCount+" classes (real time: "+getTime('OVERALL).toSeconds+
+                    ", ai (∑CPU Times): "+getTime('AI).toSeconds+
                     ")"+collectedExceptions.size+
                     " exceptions occured (details: "+file.toString+")."
             )
@@ -179,8 +179,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
             info(
                 s"$projectName: no exceptions occured during the interpretation of "+
                     methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                    project.classFilesCount+" classes (real time: "+getTime('OVERALL)+
-                    ", ai (∑CPU Times): "+getTime('AI)+")"
+                    project.classFilesCount+" classes (real time: "+getTime('OVERALL).toSeconds+
+                    ", ai (∑CPU Times): "+getTime('AI).toSeconds+")"
             )
         }
     }
