@@ -254,8 +254,7 @@ trait IsAReferenceValue {
  */
 object IsAReferenceValue {
 
-    def unapply(value: IsAReferenceValue): Option[UpperTypeBound] =
-        Some(value.upperTypeBound)
+    def unapply(value: IsAReferenceValue): Option[UpperTypeBound] = Some(value.upperTypeBound)
 }
 
 /**
