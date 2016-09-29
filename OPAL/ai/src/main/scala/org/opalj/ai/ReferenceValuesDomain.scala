@@ -128,7 +128,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * E.g., after a [[org.opalj.br.instructions.CHECKCAST]] that fails unless the
      * value is "null".
      *
-     * '''This method can be ignored'''; i.e., the return value can be `(operands,locals)`.
+     * This method can be ignored; i.e., the return value can be `(operands,locals)`.
      * However, a domain that is able to identify
      * aliases can use this information to propagate
      * the information to the other aliases.

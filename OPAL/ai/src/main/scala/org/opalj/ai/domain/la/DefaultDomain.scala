@@ -59,8 +59,7 @@ class DefaultDomain(
     val project:         SomeProject,
     val classFile:       ClassFile,
     override val method: Method
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l0.DefaultTypeLevelFloatValues
@@ -96,7 +95,8 @@ class DefaultDomain(
 
     val methodReturnValueInformation: MethodReturnValueInformation = project.get(MethodReturnValuesKey)
 
-    val cache: CallGraphCache[MethodSignature, Set[Method]] =
+    val cache: CallGraphCache[MethodSignature, Set[Method]] = {
         new CallGraphCache[MethodSignature, Set[Method]](project)
+    }
 
 }

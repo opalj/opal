@@ -263,11 +263,8 @@ trait DefaultTypeLevelReferenceValues
     }
 
     protected class SObjectValue(
-        override val theUpperTypeBound: ObjectType
-    )
-            extends ObjectValue
-            with SReferenceValue[ObjectType] {
-        this: DomainObjectValue ⇒
+            override val theUpperTypeBound: ObjectType
+    ) extends ObjectValue with SReferenceValue[ObjectType] { this: DomainObjectValue ⇒
 
         /**
          * @inheritdoc
@@ -363,15 +360,13 @@ trait DefaultTypeLevelReferenceValues
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
                 case MObjectValue(thatUpperTypeBound) ⇒
-                    classHierarchy.isSubtypeOf(
-                        thatUpperTypeBound,
-                        this.theUpperTypeBound
-                    ).isYes
+                    classHierarchy.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
             }
         }
 
-        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
             target.ReferenceValue(origin, theUpperTypeBound)
+        }
 
     }
 
@@ -386,10 +381,8 @@ trait DefaultTypeLevelReferenceValues
      *      the same time.
      */
     protected class MObjectValue(
-        override val upperTypeBound: UIDSet[ObjectType]
-    )
-            extends ObjectValue {
-        value: DomainObjectValue ⇒
+            override val upperTypeBound: UIDSet[ObjectType]
+    ) extends ObjectValue { value: DomainObjectValue ⇒
 
         assert(upperTypeBound.size > 1)
 
@@ -471,20 +464,19 @@ trait DefaultTypeLevelReferenceValues
         override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             target match {
                 case td: TypeLevelReferenceValues ⇒
-                    td.ObjectValue(origin, upperTypeBound).
-                        asInstanceOf[target.DomainValue]
+                    td.ObjectValue(origin, upperTypeBound).asInstanceOf[target.DomainValue]
                 case _ ⇒
                     super.adapt(target, origin)
             }
 
         override def summarize(origin: ValueOrigin): this.type = this
 
-        override def toString() =
-            "ReferenceValue("+upperTypeBound.map(_.toJava).mkString(" with ")+")"
+        override def toString() = {
+            upperTypeBound.map(_.toJava).mkString("ReferenceValue(", " with ", ")")
+        }
     }
 
     object MObjectValue {
-        def unapply(that: MObjectValue): Option[UIDSet[ObjectType]] =
-            Some(that.upperTypeBound)
+        def unapply(that: MObjectValue): Option[UIDSet[ObjectType]] = Some(that.upperTypeBound)
     }
 }

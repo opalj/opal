@@ -129,7 +129,7 @@ class TACJDKTest extends FunSpec with Matchers {
                 } { t ⇒ info(s"conversion took ${t.toSeconds}") }
             }
 
-            it("it should be able to create a fully typed three address representation for the JDK") {
+            it("it should be able to convert all methods of the set of collected class files") {
                 time {
                     checkFolder(biClassfilesFolder, domainFactory)
                 } { t ⇒ info(s"conversion took ${t.toSeconds}") }

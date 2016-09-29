@@ -475,7 +475,9 @@ trait ValuesDomain {
         throw new DomainException(message)
     }
 
-    trait ReturnAddressValues extends Value { this: DomainReturnAddressValue ⇒
+    // an implementation trait for return addresses
+    trait RETValue extends Value { this: DomainValue ⇒
+
         final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
         @throws[DomainException]("Summarizing return address values is meaningless.")
@@ -484,7 +486,33 @@ trait ValuesDomain {
         }
     }
 
-    // val MultipleReturnAddressValues: ReturnAddressValues
+    type DomainReturnAddressValues <: ReturnAddressValues with DomainValue
+
+    class ReturnAddressValues extends RETValue { this: DomainReturnAddressValues ⇒
+
+        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+            other match {
+                case _: RETValue ⇒ NoUpdate
+                case _           ⇒ MetaInformationUpdateIllegalValue
+                // Note that "Value" already handles the case
+                // where this value is joined with itself.
+
+            }
+        }
+
+        // Adaptation is supported to support on-the-fly domain up-/downcasts.
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
+            target.TheReturnAddressValues
+        }
+
+        override def toString = "ReturnAddresses"
+
+    }
+
+    /**
+     *  The singleton instance of `ReturnAddressValues`
+     */
+    val TheReturnAddressValues: DomainReturnAddressValues
 
     /**
      * Stores a single return address (i.e., a program counter/index into the code array).
@@ -498,14 +526,18 @@ trait ValuesDomain {
      */
     class ReturnAddressValue(
             val address: PC
-    ) extends ReturnAddressValues { this: DomainReturnAddressValue ⇒
+    ) extends RETValue { this: DomainReturnAddressValue ⇒
 
         private[ai] final override def asReturnAddressValue: Int = address
 
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
-            // Note that "Value" already handles the case where this
-            // value is joined with itself.
-            MetaInformationUpdateIllegalValue
+            other match {
+                case _: RETValue ⇒ StructuralUpdate(TheReturnAddressValues)
+                case _           ⇒ MetaInformationUpdateIllegalValue
+                // Note that "Value" already handles the case where this
+                // value is joined with itself.
+
+            }
         }
 
         // Adaptation is supported to support on-the-fly domain up-/downcasts.
