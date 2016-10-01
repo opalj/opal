@@ -107,6 +107,8 @@ package object fpcf {
      */
     type ComputationResults = Traversable[SomeEP]
 
+    type PropertyKeyID = Int
+
     //
     //
     // IMPLEMENTATION SPECIFIC TYPES
