@@ -172,6 +172,19 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         final def isRefineable = false
     }
 
+    final val CountKey: PropertyKey[Count] = {
+        PropertyKey.create(
+            "Count",
+            (ps: PropertyStore, e: Entity) ⇒ ???,
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+        )
+    }
+    case class Count(count: Int) extends Property {
+        final type Self = Count
+        final def key = CountKey
+        final def isRefineable = true
+    }
+
     final val PurityKey: PropertyKey[Purity] = {
         PropertyKey.create(
             "Purity",
@@ -640,7 +653,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             it("should be possible to compute the information about some properties collaboratively and concurrently") {
                 val ps = psStringsAndSetsOfStrings
                 time {
-
                     ps <||< (
                         { case s: Set[String @unchecked] ⇒ s },
                         { (s: Set[String]) ⇒
@@ -654,19 +666,19 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             if (count == 0)
                                 primaryResult
                             else {
-                                val secondaryResult = ConcurrentResult[String, StringLength](
+                                val secondaryResult = ConcurrentResult[String, Count](
                                     "a",
-                                    StringLengthKey,
+                                    CountKey,
                                     { (e, pOpt) ⇒
                                         pOpt match {
-                                            case Some(StringLength(oldCount)) ⇒
+                                            case Some(Count(oldCount)) ⇒
                                                 Some((
-                                                    StringLength(oldCount + count),
+                                                    Count(oldCount + count),
                                                     IntermediateUpdate
                                                 ))
                                             case None ⇒
                                                 Some((
-                                                    StringLength(count),
+                                                    Count(count),
                                                     IntermediateUpdate
                                                 ))
                                         }
@@ -686,7 +698,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 //          }
                 //      ).
                 //      sum
-                ps.entities(StringLengthKey).map(_.p.length).sum should be(3276800)
+                ps.entities(CountKey).map(_.p.count).sum should be(3276800)
             }
 
         }
