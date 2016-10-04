@@ -43,7 +43,7 @@ import scala.collection.generic.FilterMonadic
  * case of `drop` and `take` etc. if the size of the list is smaller than expected.
  * Furthermore, all directly implemented methods use `while` loops for maxium
  * efficiency and the list is also specialized for primitive `int` values which
- * makes this list far more efficient when used; e.g., for storing lists of int values.
+ * makes this list far more efficient when use for storing lists of int values.
  *
  * @note    In most cases a `Chain` can be used as a drop-in replacement for a standard
  *             Scala List.
@@ -262,7 +262,11 @@ sealed trait Chain[@specialized(Int) +T]
      * Prepends the given list to '''this list''' by setting the end of the given list to
      * this list.
      *
-     * @note     '''This mutates the given list.'''
+     * @note     '''This mutates the given list unless the given list is empty; hence
+     *           The return value ''must not be ignored''.'''
+     *
+     * @note    Using this function is save if and only if no alias of this list
+     *          or the given list exists.
      */
     private[opalj] def ++!:[X >: T](x: Chain[X]): Chain[X] = {
         if (x.isEmpty)
@@ -276,6 +280,9 @@ sealed trait Chain[@specialized(Int) +T]
         x
     }
 
+    /**
+     * @see [[++!:]]
+     */
     private[opalj] def ++![X >: T](x: Chain[X]): Chain[X] = x.++!:(this)
 
     /**
