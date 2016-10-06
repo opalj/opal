@@ -38,8 +38,8 @@ import org.junit.runner.RunWith
 import org.opalj.br._
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l1.DefaultDomain
+//import org.opalj.ai.BaseAI
+//import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
  * Tests the conversion of parsed methods to a quadruple representation
@@ -117,7 +117,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect the equals case") {
-                val statements = AsQuadruples(method = IfACMPEQMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = IfACMPEQMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -129,7 +129,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the not-equals case") {
-                val statements = AsQuadruples(method = IfACMPNEMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = IfACMPNEMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -141,7 +141,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the non-null case") {
-                val statements = AsQuadruples(method = IfNonNullMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = IfNonNullMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -153,7 +153,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the is-null case") {
-                val statements = AsQuadruples(method = IfNullMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = IfNullMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -165,6 +165,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             }
         }
 
+        /*
         describe("using AI results") {
 
             def binaryResultAST(stmt: Stmt, expr1: Expr, expr2: Expr): Array[Stmt] = Array(
@@ -284,6 +285,6 @@ class RefCmpIfTest extends FunSpec with Matchers {
                     "5: return op_0 /*_ <: java.lang.Object[@-2;t=102]*/;"
                 ))
             }
-        }
+        }*/
     }
 }

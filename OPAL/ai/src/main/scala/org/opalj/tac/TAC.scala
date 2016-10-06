@@ -88,17 +88,16 @@ object TAC {
 
             { // USING AI
                 val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
-                val aiResult = Some(BaseAI(classFile, method, domain))
+                val aiResult = BaseAI(classFile, method, domain)
                 val aiCFGFile = writeAndOpen(
-                    toDot(Set(aiResult.get.domain.cfgAsGraph())),
+                    toDot(Set(aiResult.domain.cfgAsGraph())),
                     "AICFG-"+method.name, ".ai.cfg.gv"
                 )
                 println(s"Generated ai CFG (input) $aiCFGFile.")
-                val aiBRCFGFile = writeAndOpen(aiResult.get.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
+                val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
                 println(s"Generated the reified ai CFG $aiBRCFGFile.")
-                val (code, cfg) =
-                    AsQuadruples(method, ch, aiResult, AllOptimizations, forceCFGCreation = true)
-                val graph = cfg.get.toDot
+                val (code, cfg) = AsQuadruples(method, project.classHierarchy, aiResult, AllOptimizations)
+                val graph = cfg.toDot
                 val tacCFGFile = writeAndOpen(graph, "TACCFG-"+method.name, ".tac.cfg.gv")
                 println(s"Generated the tac cfg file $tacCFGFile.")
                 val tac = ToJavaLike(code)
@@ -108,8 +107,7 @@ object TAC {
             }
 
             { // USING NO AI
-                val (code, _) =
-                    AsQuadruples(method, ch, None, AllOptimizations, forceCFGCreation = true)
+                val (code, _) = AsQuadruples(method, ch, AllOptimizations, forceCFGCreation = true)
 
                 val tac = ToJavaLike(code)
                 val fileNamePrefix = classFile.thisType.toJava+"."+method.name

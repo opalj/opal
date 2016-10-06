@@ -38,8 +38,8 @@ import org.junit.runner.RunWith
 import org.opalj.br._
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l1.DefaultDomain
+//import org.opalj.ai.BaseAI
+//import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
  * Tests the conversion of parsed methods to a quadruple representation
@@ -131,7 +131,7 @@ class CastTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect the instanceof Object instruction") {
-                val statements = AsQuadruples(method = TypecheckStringMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = TypecheckStringMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -141,7 +141,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the instanceof List instruction") {
-                val statements = AsQuadruples(method = TypecheckListMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = TypecheckListMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -152,7 +152,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the checkcast instruction") {
-                val statements = AsQuadruples(method = CheckcastMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = CheckcastMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -177,7 +177,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the d2f instruction") {
-                val statements = AsQuadruples(method = D2FMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = D2FMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -187,7 +187,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the d2i instruction") {
-                val statements = AsQuadruples(method = D2IMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = D2IMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -197,7 +197,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the d2l instruction") {
-                val statements = AsQuadruples(method = D2LMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = D2LMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -207,7 +207,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the f2d instruction") {
-                val statements = AsQuadruples(method = F2DMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = F2DMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -217,7 +217,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the f2l instruction") {
-                val statements = AsQuadruples(method = F2LMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = F2LMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -227,7 +227,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the f2i instruction") {
-                val statements = AsQuadruples(method = F2IMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = F2IMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -237,7 +237,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the l2d instruction") {
-                val statements = AsQuadruples(method = L2DMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = L2DMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -247,7 +247,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the l2f instruction") {
-                val statements = AsQuadruples(method = L2FMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = L2FMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -257,7 +257,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the l2i instruction") {
-                val statements = AsQuadruples(method = L2IMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = L2IMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -267,7 +267,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the i2d instruction") {
-                val statements = AsQuadruples(method = I2DMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = I2DMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -277,7 +277,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the i2l instruction") {
-                val statements = AsQuadruples(method = I2LMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = I2LMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -287,7 +287,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the i2f instruction") {
-                val statements = AsQuadruples(method = I2FMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = I2FMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -297,7 +297,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the i2c instruction") {
-                val statements = AsQuadruples(method = I2CMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = I2CMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -307,7 +307,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the i2b instruction") {
-                val statements = AsQuadruples(method = I2BMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = I2BMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -317,7 +317,7 @@ class CastTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the i2s instruction") {
-                val statements = AsQuadruples(method = I2SMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = I2SMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -327,6 +327,7 @@ class CastTest extends FunSpec with Matchers {
             }
         }
 
+        /*
         describe("using AI results") {
 
             def longResultJLC(strg: String) = Array(
@@ -611,6 +612,6 @@ class CastTest extends FunSpec with Matchers {
                 statements.shouldEqual(castResultAST(ComputationalTypeInt, ShortType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (short) op_0;"))
             }
-        }
+        }*/
     }
 }

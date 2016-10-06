@@ -38,8 +38,8 @@ import org.junit.runner.RunWith
 import org.opalj.br._
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l1.DefaultDomain
+//import org.opalj.ai.BaseAI
+//import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
  * Tests the conversion of parsed methods to a quadruple representation
@@ -93,7 +93,7 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect addition") {
-                val statements = AsQuadruples(method = DoubleAddMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = DoubleAddMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -106,7 +106,7 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect division") {
-                val statements = AsQuadruples(method = DoubleDivMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = DoubleDivMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -119,7 +119,7 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect negation") {
-                val statements = AsQuadruples(method = DoubleNegMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = DoubleNegMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -144,7 +144,7 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect multiplication") {
-                val statements = AsQuadruples(method = DoubleMulMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = DoubleMulMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -157,7 +157,7 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect modulo") {
-                val statements = AsQuadruples(method = DoubleRemMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = DoubleRemMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -170,7 +170,7 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect subtraction") {
-                val statements = AsQuadruples(method = DoubleSubMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = DoubleSubMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -182,7 +182,7 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
             }
         }
-
+        /*
         describe("using AI results") {
             def binaryJLC(strg: String) = Array(
                 "0: r_0 = this;",
@@ -311,5 +311,6 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
             }
         }
+        */
     }
 }

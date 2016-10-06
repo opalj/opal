@@ -37,10 +37,10 @@ import org.opalj.br._
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
-sealed trait Stmt {
+sealed trait Stmt extends ASTNode {
 
     /**
-     * The program counter of the original underyling bytecode instruction.
+     * The program counter of the original '''underyling bytecode instruction'''.
      *
      * This `pc` is independent of the (implicit) `index` of the statement
      * in the generated statements array! This pc is, e.g., useful for
@@ -71,6 +71,8 @@ case class If(
         private[tac] var target: Int
 ) extends Stmt {
 
+    final def astID = If.ASTID
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = target = pcToIndex(target)
 
     /**
@@ -81,6 +83,9 @@ case class If(
      */
     def targetStmt: Int = target
 }
+object If {
+    final val ASTID = 0
+}
 
 /**
  * @param target First the `pc` (absolute) of the target instruction in the
@@ -88,6 +93,8 @@ case class If(
  *          instruction.
  */
 case class Goto(pc: PC, private var target: Int) extends Stmt {
+
+    final def astID = Goto.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
@@ -101,9 +108,19 @@ case class Goto(pc: PC, private var target: Int) extends Stmt {
     def targetStmt: Int = target
 
 }
+object Goto {
+    final val ASTID = 1
+}
 
 case class Ret(pc: PC, private var returnAddressVar: Var) extends Stmt {
+
+    final def astID = Ret.ASTID
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+
+}
+object Ret {
+    final val ASTID = 2
 }
 
 /**
@@ -118,6 +135,8 @@ case class Ret(pc: PC, private var returnAddressVar: Var) extends Stmt {
  */
 case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
 
+    final def astID = JumpToSubroutine.ASTID
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
     }
@@ -131,6 +150,9 @@ case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
     def targetStmt: Int = target
 
 }
+object JumpToSubroutine {
+    final val ASTID = 3
+}
 
 case class Switch(
         pc:                        PC,
@@ -138,6 +160,8 @@ case class Switch(
         index:                     Var,
         private var npairs:        IndexedSeq[(Int, PC)]
 ) extends Stmt {
+
+    final def astID = Switch.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
@@ -152,6 +176,25 @@ case class Switch(
     // is created and the remapping of pcs to instruction indexes has happened!
     def defaultStmt: Int = defaultTarget
 }
+object Switch {
+    final val ASTID = 4
+}
+
+case class Assignment(pc: PC, targetVar: Var, expr: Expr) extends Stmt {
+    final def astID = Assignment.ASTID
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+}
+object Assignment {
+    final val ASTID = 5
+}
+
+case class ReturnValue(pc: PC, expr: Expr) extends Stmt {
+    final def astID = ReturnValue.ASTID
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+}
+object ReturnValue {
+    final val ASTID = 6
+}
 
 sealed trait SimpleStmt extends Stmt {
 
@@ -161,85 +204,174 @@ sealed trait SimpleStmt extends Stmt {
     final private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 }
 
-case class Assignment(pc: PC, targetVar: Var, expr: Expr) extends SimpleStmt
+case class Return(pc: PC) extends SimpleStmt {
+    final def astID = Return.ASTID
+}
+object Return {
+    final val ASTID = 7
+}
 
-case class ReturnValue(pc: PC, expr: Expr) extends SimpleStmt
+case class Nop(pc: PC) extends SimpleStmt {
+    final def astID = Nop.ASTID
+}
+object Nop {
+    final val ASTID = 8
+}
 
-case class Return(pc: PC) extends SimpleStmt
+sealed trait SynchronizationStmt extends Stmt {
+    def objRef: Expr
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = objRef.remapIndexes(pcToIndex)
+}
 
-case class Nop(pc: PC) extends SimpleStmt
+case class MonitorEnter(pc: PC, objRef: Expr) extends SynchronizationStmt {
+    final def astID = MonitorEnter.ASTID
+}
+object MonitorEnter {
+    final val ASTID = 9
+}
 
-sealed trait SynchronizationStmt extends SimpleStmt
-
-case class MonitorEnter(pc: PC, objRef: Expr) extends SynchronizationStmt
-
-case class MonitorExit(pc: PC, objRef: Expr) extends SynchronizationStmt
+case class MonitorExit(pc: PC, objRef: Expr) extends SynchronizationStmt {
+    final def astID = MonitorExit.ASTID
+}
+object MonitorExit {
+    final val ASTID = 10
+}
 
 case class ArrayStore(
-    pc:       PC,
-    arrayRef: Expr,
-    index:    Expr,
-    value:    Expr
-) extends SimpleStmt
+        pc:       PC,
+        arrayRef: Expr,
+        index:    Expr,
+        value:    Expr
+) extends Stmt {
+    final def astID = ArrayStore.ASTID
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        arrayRef.remapIndexes(pcToIndex)
+        index.remapIndexes(pcToIndex)
+        value.remapIndexes(pcToIndex)
+    }
+}
+object ArrayStore {
+    final val ASTID = 11
+}
 
-case class Throw(pc: PC, exception: Expr) extends SimpleStmt
+case class Throw(pc: PC, exception: Expr) extends Stmt {
+    final def astID = Throw.ASTID
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        exception.remapIndexes(pcToIndex)
+    }
+}
+object Throw {
+    final val ASTID = 12
+}
 
-sealed trait FieldAccessStmt extends SimpleStmt
+sealed trait FieldAccessStmt extends Stmt
 
 case class PutStatic(
-    pc:             PC,
-    declaringClass: ObjectType, name: String,
-    value: Expr
-) extends FieldAccessStmt
+        pc:             PC,
+        declaringClass: ObjectType, name: String,
+        value: Expr
+) extends FieldAccessStmt {
+    final def astID = PutStatic.ASTID
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        value.remapIndexes(pcToIndex)
+    }
+
+}
+object PutStatic {
+    final val ASTID = 13
+}
 
 case class PutField(
-    pc:             PC,
-    declaringClass: ObjectType, name: String,
-    objRef: Expr,
-    value:  Expr
-) extends FieldAccessStmt
+        pc:             PC,
+        declaringClass: ObjectType, name: String,
+        objRef: Expr,
+        value:  Expr
+) extends FieldAccessStmt {
+    final def astID = PutField.ASTID
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        objRef.remapIndexes(pcToIndex)
+        value.remapIndexes(pcToIndex)
+    }
 
-sealed trait MethodCall extends Call with SimpleStmt
+}
+object PutField {
+    final val ASTID = 14
+}
+
+sealed trait MethodCall extends Call with Stmt
 
 sealed trait InstanceMethodCall extends MethodCall {
     def receiver: Expr
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        receiver.remapIndexes(pcToIndex)
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    }
 }
 
 object InstanceMethodCall {
 
-    def unapply(call: InstanceMethodCall): Some[(PC, ReferenceType, String, MethodDescriptor, Expr, List[Expr])] = {
+    def unapply(
+        call: InstanceMethodCall
+    ): Some[(PC, ReferenceType, String, MethodDescriptor, Expr, Seq[Expr])] = {
         import call._
-        Some((
-            pc,
-            declaringClass, name, descriptor,
-            receiver,
-            params
-        ))
+        Some((pc, declaringClass, name, descriptor, receiver, params))
     }
 }
 
 case class NonVirtualMethodCall(
-    pc:             PC,
-    declaringClass: ReferenceType,
-    name:           String,
-    descriptor:     MethodDescriptor,
-    receiver:       Expr,
-    params:         List[Expr]
-) extends InstanceMethodCall
+        pc:             PC,
+        declaringClass: ReferenceType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        receiver:       Expr,
+        params:         Seq[Expr]
+) extends InstanceMethodCall {
+    final def astID = NonVirtualMethodCall.ASTID
+}
+object NonVirtualMethodCall {
+    final val ASTID = 15
+}
 
 case class VirtualMethodCall(
-    pc:             PC,
-    declaringClass: ReferenceType,
-    name:           String,
-    descriptor:     MethodDescriptor,
-    receiver:       Expr,
-    params:         List[Expr]
-) extends InstanceMethodCall
+        pc:             PC,
+        declaringClass: ReferenceType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        receiver:       Expr,
+        params:         Seq[Expr]
+) extends InstanceMethodCall {
+    final def astID = VirtualMethodCall.ASTID
+}
+object VirtualMethodCall {
+    final val ASTID = 16
+}
 
 case class StaticMethodCall(
-    pc:             PC,
-    declaringClass: ReferenceType,
-    name:           String,
-    descriptor:     MethodDescriptor,
-    params:         List[Expr]
-) extends MethodCall
+        pc:             PC,
+        declaringClass: ReferenceType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        params:         Seq[Expr]
+) extends MethodCall {
+    final def astID = StaticMethodCall.ASTID
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    }
+}
+object StaticMethodCall {
+    final val ASTID = 17
+}
+
+/**
+ * The underlying expression will always throw an exception.
+ */
+case class FailingExpression(
+        pc:   PC,
+        expr: Expr
+) extends Stmt {
+    final def astID = FailingExpression.ASTID
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+}
+object FailingExpression {
+    final val ASTID = 18
+}

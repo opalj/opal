@@ -38,8 +38,8 @@ import org.junit.runner.RunWith
 import org.opalj.br._
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l1.DefaultDomain
+//import org.opalj.ai.BaseAI
+//import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
  * Tests the conversion of parsed methods to a quadruple representation
@@ -97,7 +97,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect the not-equals case") {
-                val statements = AsQuadruples(method = ICMPNEMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = ICMPNEMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -109,7 +109,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the equals case") {
-                val statements = AsQuadruples(method = ICMPEQMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = ICMPEQMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -121,7 +121,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the greater-equals case") {
-                val statements = AsQuadruples(method = ICMPGEMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = ICMPGEMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -133,7 +133,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the less-then case") {
-                val statements = AsQuadruples(method = ICMPLTMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = ICMPLTMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -145,7 +145,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the less-equals case") {
-                val statements = AsQuadruples(method = ICMPLEMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = ICMPLEMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -157,7 +157,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the greater-then case") {
-                val statements = AsQuadruples(method = ICMPGTMethod, aiResult = None)._1
+                val statements = AsQuadruples(method = ICMPGTMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -168,7 +168,7 @@ class IntegerIfTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(resultJLC("5: if(op_0 > op_1) goto 8;"))
             }
         }
-
+        /*
         describe("using AI results") {
 
             def resultJLC(strg1: String, strg2: String, strg3: String) = Array(
@@ -328,6 +328,6 @@ class IntegerIfTest extends FunSpec with Matchers {
                     "9: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+(Integer.MAX_VALUE - 1)+"]*/;"
                 ))
             }
-        }
+        }*/
     }
 }

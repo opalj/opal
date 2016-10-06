@@ -36,11 +36,21 @@ import org.opalj.br.ReferenceType
  * Defines nodes used by statements and expressions.
  */
 
+trait ASTNode {
+
+    /**
+     * Each type of node is assigned a different id to make it easily possible
+     * to do a switch over all nodes.
+     */
+    def astID: Int
+
+}
+
 trait Call {
     def declaringClass: ReferenceType
     def name: String
     def descriptor: MethodDescriptor
-    def params: List[Expr]
+    def params: Seq[Expr]
 }
 
 object Call {
@@ -49,4 +59,3 @@ object Call {
         Some((call.declaringClass, call.name, call.descriptor))
     }
 }
-

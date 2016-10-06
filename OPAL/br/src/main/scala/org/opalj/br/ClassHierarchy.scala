@@ -655,8 +655,6 @@ class ClassHierarchy private (
      * Calls the given function `f` for each of the given type's supertypes.
      * It is possible that the same super interface type `I` is passed multiple
      * times to `f` when `I` is implemented multiple times by the given type's supertypes.
-     *
-     * This method will
      */
     def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
         if (isUnknown(objectType))
@@ -693,7 +691,9 @@ class ClassHierarchy private (
      *             is not complete. In this case an [[org.opalj.collection.IncompleteCollection]]
      *          will be returned.
      */
-    def allSuperclassTypesInInitializationOrder(objectType: ObjectType): QualifiedCollection[Chain[ObjectType]] = {
+    def allSuperclassTypesInInitializationOrder(
+        objectType: ObjectType
+    ): QualifiedCollection[Chain[ObjectType]] = {
         if (objectType eq ObjectType.Object)
             return CompleteEmptyChain;
 
@@ -2534,6 +2534,17 @@ class ClassHierarchy private (
             upperTypeBound reduce { (c, n) ⇒ joinObjectTypesUntilSingleUpperBound(c, n, true) }
     }
 
+    def joinReferenceTypesUntilSingleUpperBound(
+        upperTypeBound: UIDSet[ReferenceType]
+    ): ReferenceType = {
+        if (upperTypeBound.isSingletonSet)
+            return upperTypeBound.first;
+
+        // Note that the upper type bound must never consist of more than one array type.
+        // The type hierarchy related to arrays is "hard coded"
+        joinObjectTypesUntilSingleUpperBound(upperTypeBound.asInstanceOf[UIDSet[ObjectType]]) // type erasure also has its benefits...
+    }
+
     def joinUpperTypeBounds(utbA: UpperTypeBound, utbB: UpperTypeBound): UpperTypeBound = {
         if (utbA == utbB)
             utbA
@@ -2554,20 +2565,14 @@ class ClassHierarchy private (
                         case Right(upperTypeBound) ⇒ upperTypeBound
                     }
                 } else {
-                    joinAnyArrayTypeWithObjectType(
-                        utbB.first.asInstanceOf[ObjectType]
-                    )
+                    joinAnyArrayTypeWithObjectType(utbB.first.asInstanceOf[ObjectType])
                 }
             } else {
-                joinAnyArrayTypeWithMultipleTypesBound(
-                    utbB.asInstanceOf[UIDSet[ObjectType]]
-                )
+                joinAnyArrayTypeWithMultipleTypesBound(utbB.asInstanceOf[UIDSet[ObjectType]])
             }
         } else if (utbB.isSingletonSet) {
             if (utbB.first.isArrayType) {
-                joinAnyArrayTypeWithMultipleTypesBound(
-                    utbA.asInstanceOf[UIDSet[ObjectType]]
-                )
+                joinAnyArrayTypeWithMultipleTypesBound(utbA.asInstanceOf[UIDSet[ObjectType]])
             } else {
                 joinObjectTypes(
                     utbB.first.asObjectType,
