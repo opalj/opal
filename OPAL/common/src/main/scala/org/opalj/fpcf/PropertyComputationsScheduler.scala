@@ -47,8 +47,6 @@ abstract class ComputationSpecification(
         val name:    String,
         val uses:    Set[PropertyKeyID],
         val derives: Set[PropertyKeyID]
-// if an analysis derives a property incrementally, then it is most likely much
-// better to schedule subsequent analyses in a seond phase.
 ) {
 
     if (derives.isEmpty) {
@@ -189,6 +187,7 @@ case class Schedule(
         batches.foreach { batch ⇒
             batch.foreach { fpc ⇒ fpc.schedule(ps) }
             ps.waitOnPropertyComputationCompletion(true)
+            // ps.freeze
         }
     }
 
