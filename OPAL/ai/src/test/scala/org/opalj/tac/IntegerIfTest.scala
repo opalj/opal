@@ -60,12 +60,12 @@ class IntegerIfTest extends FunSpec with Matchers {
 
     import RelationalOperators._
 
-    val ICMPNEMethod = ControlSequencesClassFile.findMethod("icmpne").get
-    val ICMPEQMethod = ControlSequencesClassFile.findMethod("icmpeq").get
-    val ICMPGEMethod = ControlSequencesClassFile.findMethod("icmpge").get
-    val ICMPLTMethod = ControlSequencesClassFile.findMethod("icmplt").get
-    val ICMPLEMethod = ControlSequencesClassFile.findMethod("icmple").get
-    val ICMPGTMethod = ControlSequencesClassFile.findMethod("icmpgt").get
+    val ICMPNEMethod = ControlSequencesClassFile.findMethod("icmpne").head
+    val ICMPEQMethod = ControlSequencesClassFile.findMethod("icmpeq").head
+    val ICMPGEMethod = ControlSequencesClassFile.findMethod("icmpge").head
+    val ICMPLTMethod = ControlSequencesClassFile.findMethod("icmplt").head
+    val ICMPLEMethod = ControlSequencesClassFile.findMethod("icmple").head
+    val ICMPGTMethod = ControlSequencesClassFile.findMethod("icmpgt").head
 
     describe("The quadruples representation of integer if instructions") {
         describe("using no AI results") {

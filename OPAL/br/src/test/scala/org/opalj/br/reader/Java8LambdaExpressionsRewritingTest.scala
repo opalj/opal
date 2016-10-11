@@ -125,7 +125,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
                 ElementValuePair("name", StringValue(methodName)) ← pairs
                 classFile ← project.classFile(receiverType.asObjectType)
             } yield {
-                classFile.findMethod(methodName)
+                classFile.findMethod(methodName).headOption
             }
         ).head
     }

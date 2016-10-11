@@ -61,18 +61,18 @@ class LongArithmeticTest extends FunSpec with Matchers {
     import BinaryArithmeticOperators._
     import UnaryArithmeticOperators._
 
-    val LongAddMethod = ArithmeticExpressionsClassFile.findMethod("longAdd").get
-    val LongAndMethod = ArithmeticExpressionsClassFile.findMethod("longAnd").get
-    val LongDivMethod = ArithmeticExpressionsClassFile.findMethod("longDiv").get
-    val LongNegMethod = ArithmeticExpressionsClassFile.findMethod("longNeg").get
-    val LongMulMethod = ArithmeticExpressionsClassFile.findMethod("longMul").get
-    val LongOrMethod = ArithmeticExpressionsClassFile.findMethod("longOr").get
-    val LongRemMethod = ArithmeticExpressionsClassFile.findMethod("longRem").get
-    val LongShRMethod = ArithmeticExpressionsClassFile.findMethod("longShR").get
-    val LongShLMethod = ArithmeticExpressionsClassFile.findMethod("longShL").get
-    val LongSubMethod = ArithmeticExpressionsClassFile.findMethod("longSub").get
-    val LongAShMethod = ArithmeticExpressionsClassFile.findMethod("longASh").get
-    val LongXOrMethod = ArithmeticExpressionsClassFile.findMethod("longXOr").get
+    val LongAddMethod = ArithmeticExpressionsClassFile.findMethod("longAdd").head
+    val LongAndMethod = ArithmeticExpressionsClassFile.findMethod("longAnd").head
+    val LongDivMethod = ArithmeticExpressionsClassFile.findMethod("longDiv").head
+    val LongNegMethod = ArithmeticExpressionsClassFile.findMethod("longNeg").head
+    val LongMulMethod = ArithmeticExpressionsClassFile.findMethod("longMul").head
+    val LongOrMethod = ArithmeticExpressionsClassFile.findMethod("longOr").head
+    val LongRemMethod = ArithmeticExpressionsClassFile.findMethod("longRem").head
+    val LongShRMethod = ArithmeticExpressionsClassFile.findMethod("longShR").head
+    val LongShLMethod = ArithmeticExpressionsClassFile.findMethod("longShL").head
+    val LongSubMethod = ArithmeticExpressionsClassFile.findMethod("longSub").head
+    val LongAShMethod = ArithmeticExpressionsClassFile.findMethod("longASh").head
+    val LongXOrMethod = ArithmeticExpressionsClassFile.findMethod("longXOr").head
 
     describe("The quadruples representation of long operations") {
 

@@ -115,19 +115,19 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                     }
                 }
 
-                val proxyMethod = proxy.findMethod(proxyMethodName).get
+                val proxyMethod = proxy.findMethod(proxyMethodName).head
                 it("should produce a correct forwarding method") {
                     verifyMethod(proxy, proxyMethod)
                 }
 
-                val constructor = proxy.findMethod("<init>").get
+                val constructor = proxy.findMethod("<init>").head
                 it("should produce a correct constructor") {
                     verifyMethod(proxy, constructor)
                 }
 
                 val factoryMethod =
-                    proxy.findMethod("$newInstance").getOrElse(
-                        proxy.findMethod("$createInstance").get
+                    proxy.findMethod("$newInstance").headOption.getOrElse(
+                        proxy.findMethod("$createInstance").head
                     )
                 it("should produce a correct factory method") {
                     verifyMethod(proxy, factoryMethod)

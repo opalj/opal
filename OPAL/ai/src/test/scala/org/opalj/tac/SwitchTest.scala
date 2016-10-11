@@ -55,8 +55,8 @@ class SwitchTest extends TACTest {
 
     val SwitchStatementsClassFile = project.classFile(SwitchStatementsType).get
 
-    val TableSwitchMethod = SwitchStatementsClassFile.findMethod("tableSwitch").get
-    val LookupSwitchMethod = SwitchStatementsClassFile.findMethod("lookupSwitch").get
+    val TableSwitchMethod = SwitchStatementsClassFile.findMethod("tableSwitch").head
+    val LookupSwitchMethod = SwitchStatementsClassFile.findMethod("lookupSwitch").head
 
     describe("The quadruples representation of switch instructions") {
         describe("using no AI results") {

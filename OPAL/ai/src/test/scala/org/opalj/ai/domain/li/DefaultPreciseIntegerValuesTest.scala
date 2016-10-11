@@ -122,7 +122,7 @@ class DefaultPreciseIntegerValuesTest extends FlatSpec with Matchers {
 
     it should ("be able to analyze a method when we pass in concrete values") in {
         val domain = new DefaultPreciseIntegerValuesTest.TestDomain
-        val method = ConditionalMath.findMethod("m1").get
+        val method = ConditionalMath.findMethod("m1").head
         /*val result =*/ BaseAI.perform(ConditionalMath, method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 100))))
         domain.allReturnedValues should not be (empty)
         domain.allReturnedValues.head should be((29, domain.IntegerValue(SomePC, 10)))

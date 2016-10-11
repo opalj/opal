@@ -60,12 +60,12 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
     import RelationalOperators._
 
-    val IfNEMethod = ControlSequencesClassFile.findMethod("ifne").get
-    val IfEQMethod = ControlSequencesClassFile.findMethod("ifeq").get
-    val IfGEMethod = ControlSequencesClassFile.findMethod("ifge").get
-    val IfLTMethod = ControlSequencesClassFile.findMethod("iflt").get
-    val IfLEMethod = ControlSequencesClassFile.findMethod("ifle").get
-    val IfGTMethod = ControlSequencesClassFile.findMethod("ifgt").get
+    val IfNEMethod = ControlSequencesClassFile.findMethod("ifne").head
+    val IfEQMethod = ControlSequencesClassFile.findMethod("ifeq").head
+    val IfGEMethod = ControlSequencesClassFile.findMethod("ifge").head
+    val IfLTMethod = ControlSequencesClassFile.findMethod("iflt").head
+    val IfLEMethod = ControlSequencesClassFile.findMethod("ifle").head
+    val IfGTMethod = ControlSequencesClassFile.findMethod("ifgt").head
 
     describe("The quadruples representation of compare to zero if instructions") {
 

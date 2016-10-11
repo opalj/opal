@@ -64,7 +64,7 @@ class FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAna
                         // class hierarchy since we are only concerned about private
                         // fields so far... so we don't have to do a full
                         // resolution of the field reference.
-                        val field = classFile.findField(fieldName)
+                        val field = classFile.findField(fieldName, fieldType)
                         if (field.isDefined) { effectivelyFinalFields -= field.get }
 
                         effectivelyFinalFields.isEmpty // <=> true will abort the querying of the code

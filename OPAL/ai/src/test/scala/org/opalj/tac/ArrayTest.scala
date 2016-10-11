@@ -54,15 +54,15 @@ class ArrayTest extends TACTest {
 
     val ArrayInstructionsClassFile = project.classFile(ArrayInstructionsType).get
 
-    val RefArrayMethod = ArrayInstructionsClassFile.findMethod("refArray").get
-    val MultidimArrayMethod = ArrayInstructionsClassFile.findMethod("multidimArray").get
-    val DoubleArrayMethod = ArrayInstructionsClassFile.findMethod("doubleArray").get
-    val FloatArrayMethod = ArrayInstructionsClassFile.findMethod("floatArray").get
-    val IntArrayMethod = ArrayInstructionsClassFile.findMethod("intArray").get
-    val LongArrayMethod = ArrayInstructionsClassFile.findMethod("longArray").get
-    val ShortArrayMethod = ArrayInstructionsClassFile.findMethod("shortArray").get
-    val ByteArrayMethod = ArrayInstructionsClassFile.findMethod("byteArray").get
-    val CharArrayMethod = ArrayInstructionsClassFile.findMethod("charArray").get
+    val RefArrayMethod = ArrayInstructionsClassFile.findMethod("refArray").head
+    val MultidimArrayMethod = ArrayInstructionsClassFile.findMethod("multidimArray").head
+    val DoubleArrayMethod = ArrayInstructionsClassFile.findMethod("doubleArray").head
+    val FloatArrayMethod = ArrayInstructionsClassFile.findMethod("floatArray").head
+    val IntArrayMethod = ArrayInstructionsClassFile.findMethod("intArray").head
+    val LongArrayMethod = ArrayInstructionsClassFile.findMethod("longArray").head
+    val ShortArrayMethod = ArrayInstructionsClassFile.findMethod("shortArray").head
+    val ByteArrayMethod = ArrayInstructionsClassFile.findMethod("byteArray").head
+    val CharArrayMethod = ArrayInstructionsClassFile.findMethod("charArray").head
 
     describe("The quadruples representation of array creation and manipulation instructions") {
 

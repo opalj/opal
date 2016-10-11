@@ -43,6 +43,8 @@ import org.opalj.bi.ACC_MODULE
 import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -528,17 +530,27 @@ final class ClassFile private (
      *
      * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
-    def findField(name: String): Option[Field] = {
-        // IMPROVE Define a macro to perform a binary search on an array.
-        @tailrec @inline def findField(low: Int, high: Int): Option[Field] = {
+    def findField(name: String): Chain[Field] = {
+        @tailrec @inline def findField(low: Int, high: Int): Chain[Field] = {
             if (high < low)
-                return None;
+                return Naught;
 
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 fields)
             val field = fields(mid)
             val fieldNameComparison = field.name.compareTo(name)
             if (fieldNameComparison == 0) {
-                Some(field)
+                var theFields = Chain(field)
+                var d = mid - 1
+                while (low <= d && fields(d).name.compareTo(name) == 0) {
+                    theFields :&:= fields(d)
+                    d -= 1
+                }
+                var u = mid + 1
+                while (u <= high && fields(u).name.compareTo(name) == 0) {
+                    theFields :&:= fields(u)
+                    u += 1
+                }
+                theFields
             } else if (fieldNameComparison < 0) {
                 findField(mid + 1, high)
             } else {
@@ -550,23 +562,38 @@ final class ClassFile private (
     }
 
     /**
-     * Returns the method with the given name, if any.
+     * Returns the field with the given name and type.
+     */
+    def findField(name: String, fieldType: FieldType): Option[Field] = {
+        findField(name).find(f ⇒ f.fieldType eq fieldType)
+    }
+
+    /**
+     * Returns the methods with the given name, if any.
      *
-     * @note Though the methods are sorted, no guarantee is given which method is
-     *      returned if multiple methods are defined with the same name.
      * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
-    def findMethod(name: String): Option[Method] = {
-        // IMPROVE Define a macro to perform a binary search on an array.
-        @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
+    def findMethod(name: String): Chain[Method] = {
+        @tailrec @inline def findMethod(low: Int, high: Int): Chain[Method] = {
             if (high < low)
-                return None;
+                return Naught;
 
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
             val method = methods(mid)
             val methodName = method.name
             if (methodName == name) {
-                Some(method)
+                var theMethods = Chain(method)
+                var d = mid - 1
+                while (low <= d && methods(d).name.compareTo(name) == 0) {
+                    theMethods :&:= methods(d)
+                    d -= 1
+                }
+                var u = mid + 1
+                while (u <= high && methods(u).name.compareTo(name) == 0) {
+                    theMethods :&:= methods(u)
+                    u += 1
+                }
+                theMethods
             } else if (methodName.compareTo(name) < 0) {
                 findMethod(mid + 1, high)
             } else {
@@ -584,7 +611,6 @@ final class ClassFile private (
      * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
      */
     def findMethod(name: String, descriptor: MethodDescriptor): Option[Method] = {
-        // IMPROVE Define a macro to perform a binary search on an array.
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
             if (high < low)
                 return None;

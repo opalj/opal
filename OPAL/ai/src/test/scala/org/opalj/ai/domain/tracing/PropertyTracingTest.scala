@@ -104,7 +104,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
          * parameter to a method) is always sanitized (within the method.) I.e.,
          * that the value is passed to a function called sanitizer.
          */
-        val method = classFile.findMethod(name).get
+        val method = classFile.findMethod(name).head
         val domain = new AnalysisDomain(method)
         val code = method.body.get
         val result = BaseAI(classFile, method, domain)

@@ -60,28 +60,28 @@ class CastTest extends FunSpec with Matchers {
 
         val CastInstructionsClassFile = project.classFile(CastInstructionsType).get
 
-        val TypecheckStringMethod = CastInstructionsClassFile.findMethod("typecheckString").get
-        val TypecheckListMethod = CastInstructionsClassFile.findMethod("typecheckList").get
-        val CheckcastMethod = CastInstructionsClassFile.findMethod("checkcast").get
+        val TypecheckStringMethod = CastInstructionsClassFile.findMethod("typecheckString").head
+        val TypecheckListMethod = CastInstructionsClassFile.findMethod("typecheckList").head
+        val CheckcastMethod = CastInstructionsClassFile.findMethod("checkcast").head
 
-        val D2FMethod = CastInstructionsClassFile.findMethod("d2f").get
-        val D2LMethod = CastInstructionsClassFile.findMethod("d2l").get
-        val D2IMethod = CastInstructionsClassFile.findMethod("d2i").get
+        val D2FMethod = CastInstructionsClassFile.findMethod("d2f").head
+        val D2LMethod = CastInstructionsClassFile.findMethod("d2l").head
+        val D2IMethod = CastInstructionsClassFile.findMethod("d2i").head
 
-        val F2DMethod = CastInstructionsClassFile.findMethod("f2d").get
-        val F2IMethod = CastInstructionsClassFile.findMethod("f2i").get
-        val F2LMethod = CastInstructionsClassFile.findMethod("f2l").get
+        val F2DMethod = CastInstructionsClassFile.findMethod("f2d").head
+        val F2IMethod = CastInstructionsClassFile.findMethod("f2i").head
+        val F2LMethod = CastInstructionsClassFile.findMethod("f2l").head
 
-        val L2DMethod = CastInstructionsClassFile.findMethod("l2d").get
-        val L2IMethod = CastInstructionsClassFile.findMethod("l2i").get
-        val L2FMethod = CastInstructionsClassFile.findMethod("l2f").get
+        val L2DMethod = CastInstructionsClassFile.findMethod("l2d").head
+        val L2IMethod = CastInstructionsClassFile.findMethod("l2i").head
+        val L2FMethod = CastInstructionsClassFile.findMethod("l2f").head
 
-        val I2DMethod = CastInstructionsClassFile.findMethod("i2d").get
-        val I2LMethod = CastInstructionsClassFile.findMethod("i2l").get
-        val I2FMethod = CastInstructionsClassFile.findMethod("i2f").get
-        val I2SMethod = CastInstructionsClassFile.findMethod("i2s").get
-        val I2BMethod = CastInstructionsClassFile.findMethod("i2b").get
-        val I2CMethod = CastInstructionsClassFile.findMethod("i2c").get
+        val I2DMethod = CastInstructionsClassFile.findMethod("i2d").head
+        val I2LMethod = CastInstructionsClassFile.findMethod("i2l").head
+        val I2FMethod = CastInstructionsClassFile.findMethod("i2f").head
+        val I2SMethod = CastInstructionsClassFile.findMethod("i2s").head
+        val I2BMethod = CastInstructionsClassFile.findMethod("i2b").head
+        val I2CMethod = CastInstructionsClassFile.findMethod("i2c").head
 
         describe("using no AI results") {
 
