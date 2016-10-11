@@ -759,12 +759,10 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     //
     // -----------------------------------------------------------------------------------
 
-    val clusteringProject =
-        Project(
-            ClassFiles(locateTestResources("classfiles/ClusteringTestProject.jar", "bi")),
-            Traversable.empty,
-            true
-        )
+    val clusteringProject = {
+        val classFiles = ClassFiles(locateTestResources("classfiles/ClusteringTestProject.jar", "bi"))
+        Project(classFiles, Traversable.empty, true)
+    }
 
     behavior of "the ClassHierarchy's method to traverse the class hierarchy"
 
@@ -787,154 +785,17 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
             fail(s"SimpleWindow is not among the subtypes: $subtypes; "+
                 s"SimpleWindow <: ${classHierarchy.allSupertypes(simpleWindow)}; "+
                 s"Window >: ${classHierarchy.allSubtypes(window, false)}\n"+
-                classHierarchy.structure)
+                classHierarchy.asTSV)
 
-        clusteringProject.classFile(simpleWindow).get.methods.find(method ⇒
-            method.name == "draw" &&
-                method.descriptor == MethodDescriptor.NoArgsAndReturnVoid) should be('defined)
+        clusteringProject.classFile(simpleWindow).get.methods find { method ⇒
+            method.name == "draw" && method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
+        } should be('defined)
 
-        classHierarchy.lookupImplementingMethods(
-            window,
-            "draw",
-            MethodDescriptor.NoArgsAndReturnVoid,
-            clusteringProject,
-            (cf) ⇒ true
+        clusteringProject.lookupImplementingMethods(
+            window, "draw", MethodDescriptor.NoArgsAndReturnVoid, (cf) ⇒ true
         ) should be('nonEmpty)
     }
 
-    // -----------------------------------------------------------------------------------
-    //
-    // TESTING THE RESOLVING OF FIELD REFERENCES
-    //
-    // -----------------------------------------------------------------------------------
-
-    val fieldsProject =
-        Project(
-            ClassFiles(locateTestResources("classfiles/Fields.jar", "bi")),
-            Traversable.empty,
-            true
-        )
-    import fieldsProject.classFile
-
-    val SuperSuperType = ObjectType("fields/SuperSuper")
-    val SuperSuperClass = classFile(SuperSuperType).get
-    val SuperType = ObjectType("fields/Super")
-    val SuperClass = classFile(SuperType).get
-
-    val SuperIType = ObjectType("fields/SuperI")
-    val SuperIClass = classFile(SuperIType).get
-    val SubIType = ObjectType("fields/SubI")
-    val SubIClass = classFile(SubIType).get
-
-    val SubType = ObjectType("fields/Sub")
-    val SubClass = classFile(SubType).get
-    val SubSubType = ObjectType("fields/SubSub")
-    val SubSubClass = classFile(SubSubType).get
-
-    behavior of "the ClassHierarchy's method to resolve field references"
-
-    import fieldsProject.classHierarchy.resolveFieldReference
-
-    it should "correctly resolve a reference to a static field in a superclass" in {
-        resolveFieldReference(SuperType, "x", IntegerType, fieldsProject) should be(
-            Some(SuperSuperClass.fields(0))
-        )
-    }
-
-    it should "correctly resolve a reference to a field defined in an interface" in {
-        resolveFieldReference(SubIType, "THE_SUB_I", IntegerType, fieldsProject) should be(
-            Some(SubIClass.fields(0))
-        )
-    }
-
-    it should "correctly resolve a reference to a field defined in a superinterface of an interface" in {
-        resolveFieldReference(SubIType, "THE_I", IntegerType, fieldsProject) should be(
-            Some(SuperIClass.fields(0))
-        )
-    }
-
-    it should "correctly resolve a reference to a field defined in a superinterface" in {
-        resolveFieldReference(SubType, "THE_I", IntegerType, fieldsProject) should be(
-            Some(SuperIClass.fields(0))
-        )
-    }
-
-    it should "correctly resolve a reference to a field defined in a superclass" in {
-        resolveFieldReference(SubSubType, "x", IntegerType, fieldsProject) should be(
-            Some(SubClass.fields(0))
-        )
-    }
-
-    it should "correctly resolve a reference to a private field defined in a superclass" in {
-        resolveFieldReference(SubSubType, "y", IntegerType, fieldsProject) should be(
-            Some(SuperClass.fields(0))
-        )
-    }
-
-    it should "not fail (throw an exception) if the field cannot be found" in {
-        resolveFieldReference(SubSubType, "NOT_DEFINED", IntegerType, fieldsProject) should be(
-            None
-        )
-    }
-
-    it should "not fail if the type cannot be found" in {
-        resolveFieldReference(
-            ObjectType("NOT/DEFINED"),
-            "NOT_DEFINED",
-            IntegerType,
-            fieldsProject
-        ) should be(None)
-    }
-
-    // -----------------------------------------------------------------------------------
-    //
-    // TESTING THE RESOLVING OF METHOD REFERENCES
-    //
-    // -----------------------------------------------------------------------------------
-
-    val methodsProject =
-        Project(
-            ClassFiles(locateTestResources("classfiles/Methods.jar", "bi")),
-            Traversable.empty,
-            true
-        )
-
-    val superI = ObjectType("methods/b/SuperI")
-    val directSub = ObjectType("methods/b/DirectSub")
-    val directSubClassFile = methodsProject.classFile(directSub).get
-
-    behavior of "the ClassHierarchy's methods to resolve method references"
-
-    it should "handle the case if an interface has no implementing class" in {
-        val implementingMethods =
-            methodsProject.classHierarchy.lookupImplementingMethods(
-                superI,
-                "someMethod",
-                MethodDescriptor.NoArgsAndReturnVoid,
-                methodsProject,
-                (cf) ⇒ true
-            )
-
-        implementingMethods.size should be(0)
-    }
-
-    it should "find a method in a super class" in {
-        val classType = ObjectType("methods/b/B")
-        val implementingMethods =
-            methodsProject.classHierarchy.lookupImplementingMethods(
-                classType,
-                "publicMethod",
-                MethodDescriptor.NoArgsAndReturnVoid,
-                methodsProject,
-                (cf) ⇒ true
-            )
-
-        implementingMethods.size should be(1)
-        implementingMethods.head should have(
-            'name("publicMethod"),
-            'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
-        )
-    }
 }
 
 object ClassHierarchyTest {

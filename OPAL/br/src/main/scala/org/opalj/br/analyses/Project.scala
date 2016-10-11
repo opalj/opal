@@ -133,7 +133,7 @@ class Project[Source] private (
         implicit
         final val logContext: LogContext,
         final val config:     Config
-) extends ClassFileRepository {
+) extends ProjectLike {
 
     assert(
         !libraryClassFilesAreInterfacesOnly || libraryClassFiles.forall(_.methods.forall(_.body.isEmpty)),
@@ -363,6 +363,10 @@ class Project[Source] private (
      */
     def packagesCount = packages.size
 
+    /**
+     * Distributes the all class which define methods with bodies across a given number of
+     * groups.
+     */
     def groupedClassFilesWithMethodsWithBody(groupsCount: Int): Array[Buffer[ClassFile]] = {
         var nextGroupId = 0
         val groups = Array.fill[Buffer[ClassFile]](groupsCount) {
@@ -1155,11 +1159,11 @@ object Project {
      * Performs some fundamental validations to make sure that subsequent analyses don't have
      * to deal with completely broken projects!
      */
-    private[this] def validate(p: SomeProject): Seq[InconsistentProjectException] = {
+    private[this] def validate(project: SomeProject): Seq[InconsistentProjectException] = {
 
         val disclaimer = "(this inconsistency may lead to completely useless results)"
 
-        val ch = p.classHierarchy
+        val ch = project.classHierarchy
 
         var exs = List.empty[InconsistentProjectException]
         val exsMutex = new Object
@@ -1167,7 +1171,7 @@ object Project {
             exsMutex.synchronized { exs = ex :: exs }
         }
 
-        p.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
+        project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
             val BasicMethodInfo(c: ClassFile, m: Method) = e
             m.body.get.iterate { (pc, instruction) ⇒
                 (instruction.opcode: @scala.annotation.switch) match {
@@ -1185,7 +1189,7 @@ object Project {
 
                     case INVOKESTATIC.opcode ⇒
                         val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
-                        ch.lookupMethodDefinition(invokestatic, p) foreach { m ⇒
+                        project.lookupMethodDefinition(invokestatic) foreach { m ⇒
                             if (!m.isStatic) {
                                 val ex = InconsistentProjectException(
                                     s"static method call $invokestatic of an instance method in "+
@@ -1198,7 +1202,7 @@ object Project {
 
                     case INVOKEVIRTUAL.opcode | INVOKESPECIAL.opcode | INVOKEINTERFACE.opcode ⇒
                         val invocation = instruction.asInstanceOf[MethodInvocationInstruction]
-                        ch.lookupMethodDefinition(invocation, p) foreach { m ⇒
+                        project.lookupMethodDefinition(invocation) foreach { m ⇒
                             if (m.isStatic) {
                                 val method = invocation.methodDescriptor.toJava(invocation.name)
                                 val ex = InconsistentProjectException(

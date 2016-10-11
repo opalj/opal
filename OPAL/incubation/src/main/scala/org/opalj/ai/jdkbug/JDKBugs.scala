@@ -526,11 +526,8 @@ trait TaintAnalysisDomain[Source]
         // with a relevant parameter that is not our final sink...
 
         val method: Method =
-            classHierarchy.lookupMethodDefinition(
-                declaringClass.asObjectType,
-                methodName,
-                methodDescriptor,
-                project
+            project.lookupMethodDefinition(
+                declaringClass.asObjectType, methodName, methodDescriptor
             ).getOrElse {
                 return doTypeLevelInvoke
             }
@@ -565,11 +562,8 @@ trait TaintAnalysisDomain[Source]
         // If we reach this point, we have an invocation of a relevant method
         // with a relevant parameter that is not our final sink...
         val method: Method =
-            classHierarchy.resolveMethodReference(
-                declaringClass.asObjectType,
-                methodName,
-                methodDescriptor,
-                project
+            project.resolveMethodReference(
+                declaringClass, methodName, methodDescriptor
             ).getOrElse {
                 return doTypeLevelInvoke
             }
@@ -608,11 +602,10 @@ trait TaintAnalysisDomain[Source]
         // If we reach this point, we have an invocation of a relevant method
         // with a relevant parameter that is not our final sink...
         val method: Method =
-            classHierarchy.resolveMethodReference(
+            project.resolveMethodReference(
                 declaringClass.asObjectType,
                 methodName,
-                methodDescriptor,
-                project
+                methodDescriptor
             ).getOrElse {
                 return doTypeLevelInvoke
             }
@@ -662,11 +655,10 @@ trait TaintAnalysisDomain[Source]
 
                 taintedFields = name :: taintedFields
 
-                val thisField: Field = classHierarchy.resolveFieldReference(
+                val thisField: Field = project.resolveFieldReference(
                     declaringClass,
                     name,
-                    fieldType,
-                    project
+                    fieldType
                 ).get
 
                 val classFile: ClassFile = project.classFile(thisField)
@@ -973,4 +965,3 @@ class CalledTaintAnalysisDomain[Source](
 
     }
 }
-

@@ -53,9 +53,11 @@ trait CallGraphExtractor { extractor ⇒
      * This method may be executed concurrently for multiple different methods.
      */
     def extract(
-        project:   SomeProject,
         classFile: ClassFile,
         method:    Method
+    )(
+        implicit
+        project: SomeProject
     ): LocalCallGraphInformation
 
     def cache: CallGraphCache[MethodSignature, Set[Method]]
@@ -82,8 +84,7 @@ trait CallGraphExtractor { extractor ⇒
         ): Unit = {
             unresolvableMethodCalls =
                 new UnresolvedMethodCall(
-                    callerClass, caller, pc,
-                    calleeClass, calleeName, calleeDescriptor
+                    callerClass, caller, pc, calleeClass, calleeName, calleeDescriptor
                 ) :: unresolvableMethodCalls
         }
 
@@ -95,7 +96,6 @@ trait CallGraphExtractor { extractor ⇒
             pc:      PC,
             callees: Set[Method]
         ): Unit = {
-
             if (callEdgesMap.contains(pc)) {
                 callEdgesMap(pc) ++= callees
             } else {
@@ -128,4 +128,3 @@ object CallGraphExtractor {
     type LocalCallGraphInformation = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall])
 
 }
-
