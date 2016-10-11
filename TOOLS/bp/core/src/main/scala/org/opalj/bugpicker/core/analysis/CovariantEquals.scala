@@ -87,15 +87,15 @@ object CovariantEquals {
         project: SomeProject
     ): Boolean = {
 
-        if ((classFile.thisType eq ObjectType.Object) ||
-            (classFile.superclassType.get eq ObjectType.Object))
+        if (classFile.thisType eq ObjectType.Object)
+                return false;
+
+        val superclassType = classFile.superclassType.get
+           if (superclassType eq ObjectType.Object)
             return false;
 
-        project.classHierarchy.lookupMethodDefinition(
-            classFile.superclassType.get,
-            "hashCode", MethodDescriptor.JustReturnsInteger,
-            project
-        ) match {
+        import MethodDescriptor.JustReturnsInteger
+        project.lookupMethodDefinition(superclassType, "hashCode", JustReturnsInteger        ) match {
                 case Some(m) ⇒ project.classFile(m).thisType ne ObjectType.Object
                 case _       ⇒ false
             }

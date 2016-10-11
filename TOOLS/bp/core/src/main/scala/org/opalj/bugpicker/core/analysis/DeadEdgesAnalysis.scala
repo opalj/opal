@@ -65,6 +65,8 @@ import org.opalj.issues.MethodReturnValues
 import org.opalj.issues.FieldValues
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.cg.Callees
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain
 
 /**
  * Identifies dead edges in code.
@@ -296,11 +298,11 @@ object DeadEdgesAnalysis {
                             result.joinInstructions,
                             zDomain
                         )(
-                            /*initialWorkList =*/ List(nextPC),
-                            /*alreadyEvaluated =*/ List(),
+                            /*initialWorkList =*/ Chain(nextPC),
+                            /*alreadyEvaluated =*/ Naught,
                             zOperandsArray,
                             zLocalsArray,
-                            List.empty, null, null // we don't care about the state of subroutines
+                            Naught, null, null // we don't care about the state of subroutines
                         )
                         val exceptionValue = zOperandsArray(athrowPC).head
                         val throwsError =
@@ -319,7 +321,7 @@ object DeadEdgesAnalysis {
 
             val poppedOperandsCount =
                 instruction.numberOfPoppedOperands { index ⇒
-                    allOperands(index).computationalType.computationalTypeCategory
+                    allOperands(index).computationalType.category
                 }
             val operands = allOperands.take(poppedOperandsCount)
 

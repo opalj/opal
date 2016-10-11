@@ -100,8 +100,11 @@ object GuardedAndUnguardedAccessAnalysis {
 
         // TODO We should also log those that are assertions related!
 
-        code foreach { (pc, instr) ⇒
-            if ((operandsArray(pc) ne null) && instr.isInstanceOf[IFXNullInstruction]) {
+        for {
+            (pc,instr : IFXNullInstruction) <- code
+            if operandsArray(pc) ne null
+            }{
+
                 import code.instructions
                 import code.pcOfNextInstruction
                 // let's check if the guard is related to an assert statement
@@ -123,7 +126,7 @@ object GuardedAndUnguardedAccessAnalysis {
                         case domain.DomainMultipleReferenceValues(mov) ⇒
                             timestamps += ((mov.t, pc))
                     }
-            }
+
         }
 
         if (origins.isEmpty && timestamps.isEmpty)
@@ -208,4 +211,3 @@ object GuardedAndUnguardedAccessAnalysis {
     }
 
 }
-

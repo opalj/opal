@@ -31,6 +31,7 @@ package bugpicker
 package core
 package analysis
 
+import org.opalj.collection.immutable.:&:
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.ai.collectPCWithOperands
@@ -85,7 +86,7 @@ object UselessReComputationsAnalysis {
                 case (
                     pc,
                     IStoreInstruction(index),
-                    Seq(ConcreteIntegerValue(a), _*)
+                    ConcreteIntegerValue(a) :&: _
                     ) if localsArray(pc) != null &&
                     domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
                     code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
@@ -94,7 +95,7 @@ object UselessReComputationsAnalysis {
                 case (
                     pc,
                     LStoreInstruction(index),
-                    Seq(ConcreteLongValue(a), _*)
+                    ConcreteLongValue(a) :&: _
                     ) if localsArray(pc) != null &&
                     domain.longValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
                     code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
