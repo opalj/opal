@@ -1,3 +1,2 @@
 #Overview
-The Bytecode Toolkit (BT) is a scalable, adaptable library for processing Java bytecode.
-
+The Bytecode Representation (BR) is a scalable, adaptable representation of Java bytecode.
