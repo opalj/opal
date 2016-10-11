@@ -2,23 +2,23 @@ import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 name := "OPAL Library"
 
-version in ThisBuild := "0.9-SNAPSHOT"
-organization in ThisBuild := "de.opal-project"
-homepage in ThisBuild := Some(url("http://www.opal-project.de"))
-licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
+version 		in ThisBuild := "0.9-SNAPSHOT"
+organization 	in ThisBuild := "de.opal-project"
+homepage 		in ThisBuild := Some(url("http://www.opal-project.de"))
+licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
-scalaVersion in ThisBuild := "2.11.8"
-//scalaVersion in ThisBuild := "2.12.0-M5"
+scalaVersion 	in ThisBuild := "2.11.8"
+//scalaVersion 	in ThisBuild := "2.12.0-M5"
 
-scalacOptions in ThisBuild ++= Seq(
+scalacOptions 	in ThisBuild ++= Seq(
 		"-target:jvm-1.8",
 		"-deprecation", "-feature", "-unchecked", 
 		"-Xlint", "-Xfuture", "-Xfatal-warnings", 
 		"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
 		"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code"
-	)
+)
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
@@ -32,9 +32,9 @@ parallelExecution in Global := false
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
 testOptions in ThisBuild <<=
-  baseDirectory map { bd =>
-    Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
-  }
+	baseDirectory map { bd =>
+    	Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
+	}
 
 testOptions in ThisBuild += Tests.Argument("-o")
 
@@ -83,11 +83,11 @@ EclipseKeys.withSource := true
 publishMavenStyle in ThisBuild := true
 
 publishTo in ThisBuild := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+	val nexus = "https://oss.sonatype.org/"
+	if (isSnapshot.value)
+		Some("snapshots" at nexus + "content/repositories/snapshots")
+	else
+		Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
 publishArtifact in Test := false
@@ -107,4 +107,5 @@ pomExtra in ThisBuild := (
       <id>reif</id>
       <name>Michael Reif</name>
     </developer>	
-  </developers>)
+  </developers>
+)
