@@ -168,6 +168,8 @@ sealed trait Chain[@specialized(Int) +T]
 
     def head: T
 
+    def headOption: Option[T]
+
     def tail: Chain[T]
 
     def last: T = {
@@ -605,6 +607,7 @@ case object Naught extends Chain[Nothing] {
     private def listIsEmpty = new NoSuchElementException("the list is empty")
 
     def head: Nothing = throw listIsEmpty
+    def headOption: Option[Nothing] = None
     def tail: Nothing = throw listIsEmpty
     def isEmpty: Boolean = true
     override def nonEmpty: Boolean = false
@@ -634,6 +637,8 @@ final case class :&:[@specialized(Int) T](
         head:                    T,
         private[opalj] var rest: Chain[T] = Naught
 ) extends Chain[T] {
+
+    def headOption: Option[T] = Some(head)
 
     def tail: Chain[T] = rest
 
@@ -764,11 +769,11 @@ final case class :&:[@specialized(Int) T](
 
     /**
      * @note    The `merge` function first calls the given function and then checks if the
-     *             result is reference equal to the element of the first list while fuse first
+     *             result is reference equal to the element of the first list while `fuse` first
      *             checks the reference equality of the members before it calls the given function.
      *             Therefore `fuse` can abort checking all further values when the
      *             remaining list fragments are reference equal because both lists are immutable.
-     *             In other words: fuse is an optimized version of merge where the function f
+     *             In other words: `fuse` is an optimized version of `merge` where the function `f`
      *             has the following shape: `(x,y) => if(x eq y) x else /*whatever*/`.
      */
     def fuse[X >: T <: AnyRef](
