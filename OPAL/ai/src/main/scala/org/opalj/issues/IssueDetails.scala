@@ -45,6 +45,7 @@ import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.AIResult
+import org.opalj.collection.immutable.Chain
 
 trait ClassComprehension {
 
@@ -184,7 +185,7 @@ class LocalVariables(
 class Operands(
         val code:           Code,
         val pc:             PC,
-        val operands:       List[_ <: AnyRef],
+        val operands:       Chain[_ <: AnyRef],
         val localVariables: Locals[_ <: AnyRef]
 ) extends IssueDetails with CodeComprehension {
 
@@ -216,7 +217,7 @@ class Operands(
             case smi: StackManagementInstruction ⇒
                 val representation =
                     <span class="keyword">{ smi.mnemonic } </span> ::
-                        operands.map(op ⇒ <span class="value">{ op } </span>)
+                        (operands.map(op ⇒ <span class="value">{ op } </span>).to[List])
                 representation
 
             case IINC(lvIndex, constValue) ⇒
@@ -363,4 +364,3 @@ class MethodReturnValues(
 
     def toIDL: String = "" // TODO Support a better representation
 }
-
