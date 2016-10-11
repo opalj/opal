@@ -63,7 +63,7 @@ addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; eclipse ; compileAll ;
 EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource)
 //EclipseKeys.createSrc := EclipseCreateSrc.Default 
 
-EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17)
+EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18)
 
 EclipseKeys.withSource := true
 
