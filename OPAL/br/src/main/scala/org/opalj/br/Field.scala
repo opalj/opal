@@ -129,7 +129,7 @@ final class Field private (
      */
     def compare(other: Field): Int = {
         if (this.name eq other.name) {
-            this.fieldType.compare(other.fieldType)
+            this.fieldType compare other.fieldType
         } else if (this.name < other.name) {
             -1
         } else {

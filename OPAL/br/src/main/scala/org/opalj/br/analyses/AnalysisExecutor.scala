@@ -289,7 +289,9 @@ trait AnalysisExecutor {
         libcpFiles:              Iterable[File],
         completelyLoadLibraries: Boolean,
         analysisMode:            AnalysisMode
-    )(implicit initialLogContext: LogContext): Project[URL] = {
+    )(
+            implicit initialLogContext: LogContext
+            ): Project[URL] = {
 
         val analysisModeSpecification = s"${AnalysisMode.ConfigKey} = $analysisMode"
         val analysisModeConfig = ConfigFactory.parseString(analysisModeSpecification)

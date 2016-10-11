@@ -52,6 +52,8 @@ class InjectedClassesInformation(val injectedTypes: Set[ObjectType]) {
 
 /**
  * Factory to create [[InjectedClassesInformation]].
+ *
+ * @author Michael Reif
  */
 object InjectedClassesInformationAnalysis {
 

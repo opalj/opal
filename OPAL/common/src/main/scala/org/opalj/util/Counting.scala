@@ -34,7 +34,7 @@ import org.opalj.concurrent.Locking
 import scala.collection.mutable
 
 /**
- * Enables a simple counting mechanism that sum up several integer in a given context.
+ * Enables a simple counting mechanism that sums up several integer in a given context.
  *
  * Examples:
  *   - How often is a function called during runtime?
