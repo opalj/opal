@@ -247,6 +247,11 @@ object ChainProperties extends Properties("Chain") {
 
     }
 
+    property("headOption") = forAll { l: List[String] ⇒
+        val fl = Chain(l: _*)
+        fl.headOption == l.headOption
+    }
+
     property("tail") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*)
         (l.nonEmpty && Chain(l.tail: _*) == fl.tail) ||
