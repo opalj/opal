@@ -70,7 +70,7 @@ object UselessReComputationsAnalysis {
 
         if (!domain.code.localVariableTable.isDefined)
             // This analysis requires debug information to increase the likelihood
-            // the we identify the correct local variable re-assignments. Otherwise
+            // that we identify the correct local variable re-assignments. Otherwise
             // we are not able to distinguish the reuse of a "register variable"/
             // local variable for a new/different purpose or the situation where
             // the same variable is updated the second time using the same

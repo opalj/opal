@@ -33,16 +33,16 @@ package ui
 import java.io.File
 import java.net.URL
 
+import scalafx.collections.ObservableBuffer
+import scalafx.stage.Stage
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.{BytecodeInstructionsCache, Java9LibraryFramework}
 import org.opalj.br.ClassFile
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.log.OPALLogger
 
-import scalafx.collections.ObservableBuffer
-import scalafx.stage.Stage
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 
 object ProjectHelper {
