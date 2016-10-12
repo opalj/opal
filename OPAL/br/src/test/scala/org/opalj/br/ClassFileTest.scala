@@ -30,10 +30,11 @@ package org.opalj
 package br
 
 import org.scalatest.FunSuite
-
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
 import scala.util.control.ControlThrowable
+
+import org.opalj.collection.immutable.Naught
+import org.opalj.bi.TestSupport.locateTestResources
 
 /**
  * @author Michael Eichberg
