@@ -68,17 +68,13 @@ class BasicVTACallGraphAlgorithmConfiguration(
         project: SomeProject
 ) extends VTACallGraphAlgorithmConfiguration(project) {
 
-    def Domain[Source](
-        classFile: ClassFile,
-        method:    Method
-    ) =
+    def Domain[Source](classFile: ClassFile, method: Method) =
         new BasicVTACallGraphDomain(project, cache, classFile, method)
 }
 
 abstract class VTAWithPreAnalysisCallGraphAlgorithmConfiguration(
-    project: SomeProject
-)
-        extends VTACallGraphAlgorithmConfiguration(project) {
+        project: SomeProject
+) extends VTACallGraphAlgorithmConfiguration(project) {
 
     val fieldValueInformation = project.get(FieldValuesKey)
 
@@ -90,10 +86,7 @@ class BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration(
         project: SomeProject
 ) extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
-    def Domain[Source](
-        classFile: ClassFile,
-        method:    Method
-    ) =
+    def Domain[Source](classFile: ClassFile, method: Method) =
         new BasicVTAWithPreAnalysisCallGraphDomain(
             project, fieldValueInformation, methodReturnValueInformation,
             cache,
@@ -105,10 +98,7 @@ class DefaultVTACallGraphAlgorithmConfiguration(
         project: SomeProject
 ) extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
-    def Domain[Source](
-        classFile: ClassFile,
-        method:    Method
-    ) =
+    def Domain[Source](classFile: ClassFile, method: Method) =
         new DefaultVTACallGraphDomain(
             project, fieldValueInformation, methodReturnValueInformation,
             cache,
@@ -120,14 +110,10 @@ class ExtVTACallGraphAlgorithmConfiguration(
         project: SomeProject
 ) extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
-    def Domain[Source](
-        classFile: ClassFile,
-        method:    Method
-    ) =
+    def Domain[Source](classFile: ClassFile, method: Method) =
         new ExtVTACallGraphDomain(
             project, fieldValueInformation, methodReturnValueInformation,
             cache,
             classFile, method
         )
 }
-

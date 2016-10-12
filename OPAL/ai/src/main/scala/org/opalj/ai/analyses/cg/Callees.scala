@@ -44,7 +44,7 @@ trait Callees {
 
     implicit def project: SomeProject
 
-    final private[this] val instantiableClasses = project.get(InstantiableClassesKey)
+    final private[this] lazy val instantiableClasses = project.get(InstantiableClassesKey)
 
     final private[this] def classHierarchy: ClassHierarchy = project.classHierarchy
 
@@ -73,9 +73,11 @@ trait Callees {
                 )
 
             case No ⇒
-                project.lookupImplementingMethods(
+                val result = project.lookupImplementingMethods(
                     declaringClassType, name, descriptor, classesFilter
                 )
+                println(result)
+                result
 
             case /*Unknown <=> the type is unknown */ _ ⇒
                 Set.empty
