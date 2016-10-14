@@ -43,7 +43,7 @@ case class Method_Info(
         access_flags:     Int,
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes
+        attributes:       Attributes          = IndexedSeq.empty
 ) {
 
     /**

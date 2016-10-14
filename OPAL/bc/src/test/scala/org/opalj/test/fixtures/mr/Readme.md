@@ -9,7 +9,6 @@ class C implements Intf {
 }
 
 class Helper {
-
     public static void println(java.lang.String s) {
         System.out.println(s);
     }
@@ -42,4 +41,29 @@ interface Intf extends SuperIntf {
     // will call the default method.
     static void m(){ Helper.println("Intf.m"); };
 }
+```
+
+##MaximallySpecificInterfaceMethods
+The following is **pseudo-code** to facilitate comprehension of the test case:
+***(The code is not valid Java code!)*** 
+
+The engineered classes are found in `bc/test/resources/MaximallySpecificInterfaceMethods/mr`.
+
+```
+interface S0_1 {
+    default void m(){ Helper.println("S0_1.m"); };
+}
+interface S0_2 {
+    default void m(){ Helper.println("S0_2.m"); };
+}
+interface S1_a extends S0_1 {
+    void m();
+}
+interface S1_c extends S0_1, S0_2 {
+    // this is the maximally specific method w.r.t. Intf.m()
+    default void m(){ Helper.println("S0_2.m"); };
+}
+/* Won't compile in Java due to conflicting methods: */ interface S2_1 extends S1_a, S1_c { }
+interface S2_2 extends S0_2 { }
+/* Won't compile in Java due to conflicting methods: */ interface Intf extends S2_1, S2_2 { }
 ```
