@@ -29,7 +29,7 @@ The following is **pseudo-code** to facilitate comprehension of the test case:
 
 The engineered classes are found in `bc/test/resources/StaticAndDefaultInterfaceMethods/mr`.
 
-```
+```java
 interface SuperIntf {
     default void m(){ Helper.println("SuperIntf.m"); };
 }
