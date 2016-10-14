@@ -184,6 +184,10 @@ sealed trait UIDSet[+T <: UID]
      */
     @throws[NoSuchElementException]("If the set is empty.") def tail(): UIDSet[T]
 
+    def -[X >: T <: UID](t: X): UIDSet[T] = filter(_.id != t.id)
+
+    def --[X >: T <: UID](ts: UIDSet[X]): UIDSet[T] = filter(!ts.contains(_))
+
     /**
      * Returns a new `UIDSet` that contains all elements which satisfy the given
      * predicate.
