@@ -3,7 +3,7 @@ This package contains code to engineer classes to test method resolution in
 those cases that are not possible to create using Java source code.
 
 The following is the generic stub used by the subsequent examples.
-```
+```java
 class C implements Intf {
     public void f(){ this.m(); }
 }
@@ -49,7 +49,7 @@ The following is **pseudo-code** to facilitate comprehension of the test case:
 
 The engineered classes are found in `bc/test/resources/MaximallySpecificInterfaceMethods/mr`.
 
-```
+```java
 interface S0_1 {
     default void m(){ Helper.println("S0_1.m"); };
 }
