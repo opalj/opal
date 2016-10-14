@@ -178,6 +178,8 @@ sealed trait Chain[@specialized(Int) +T]
         rest.head
     }
 
+    def isSingletonList: Boolean
+
     override def nonEmpty: Boolean
 
     /**
@@ -610,6 +612,7 @@ case object Naught extends Chain[Nothing] {
     def headOption: Option[Nothing] = None
     def tail: Nothing = throw listIsEmpty
     def isEmpty: Boolean = true
+    def isSingletonList: Boolean = false
     override def nonEmpty: Boolean = false
     def :&::[X >: Nothing](x: Chain[X]): Chain[X] = x
     def take(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
@@ -641,6 +644,8 @@ final case class :&:[@specialized(Int) T](
     def headOption: Option[T] = Some(head)
 
     def tail: Chain[T] = rest
+
+    def isSingletonList: Boolean = rest eq Naught
 
     def isEmpty: Boolean = false
 

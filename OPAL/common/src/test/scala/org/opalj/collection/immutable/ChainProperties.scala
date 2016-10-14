@@ -310,6 +310,11 @@ object ChainProperties extends Properties("Chain") {
         l.size == fl.size
     }
 
+    property("isSingletonList") = forAll { l: List[String] ⇒
+        val fl = Chain(l: _*)
+        (l.size == 1) == (fl.isSingletonList)
+    }
+
     property(":&:") = forAll { (l: List[String], es: List[String]) ⇒
         var fle = Chain(l: _*)
         var le = l
