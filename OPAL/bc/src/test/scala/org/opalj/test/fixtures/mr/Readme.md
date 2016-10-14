@@ -61,7 +61,7 @@ interface S1_a extends S0_1 {
 }
 interface S1_c extends S0_1, S0_2 {
     // this is the maximally specific method w.r.t. Intf.m()
-    default void m(){ Helper.println("S0_2.m"); };
+    default void m(){ Helper.println("S1_c.m"); };
 }
 /* Won't compile in Java due to conflicting methods: */ interface S2_1 extends S1_a, S1_c { }
 interface S2_2 extends S0_2 { }
