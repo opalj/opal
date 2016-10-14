@@ -975,7 +975,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     def simpleName: String = ObjectType.simpleName(fqn)
 
-    def packageName: String = ObjectType.packageName(fqn)
+    final val packageName: String = ObjectType.packageName(fqn).intern()
 
     override def toJava: String = fqn.replace('/', '.')
 
