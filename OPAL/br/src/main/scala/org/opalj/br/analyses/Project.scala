@@ -142,6 +142,8 @@ class Project[Source] private (
 
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
+    val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
+
     /**
      * Creates a new `Project` which also includes the given class files.
      */
