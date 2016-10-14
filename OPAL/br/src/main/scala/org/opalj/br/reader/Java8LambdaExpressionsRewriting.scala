@@ -188,9 +188,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             )
             val factoryMethod = {
                 if (functionalInterfaceMethodName == ClassFileFactory.DefaultFactoryMethodName)
-                    proxy.findMethod(ClassFileFactory.AlternativeFactoryMethodName).get
+                    proxy.findMethod(ClassFileFactory.AlternativeFactoryMethodName).head
                 else
-                    proxy.findMethod(ClassFileFactory.DefaultFactoryMethodName).get
+                    proxy.findMethod(ClassFileFactory.DefaultFactoryMethodName).head
             }
 
             val newInvokestatic = INVOKESTATIC(

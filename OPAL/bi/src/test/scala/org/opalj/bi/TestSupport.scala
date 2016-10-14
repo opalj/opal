@@ -45,9 +45,9 @@ object TestSupport {
      * I.e., when the test suite is executed, the current folder may be either Eclipse's
      * `bin` bolder or OPAL's root folder when we use sbt to build the project.
      *
-     * @param resourceName The name of the resource relative to the test/resources
-     *      folder. The name must not begin with a "/".
-     * @param subProjectFoler The root folder of the OPAL subproject; e.g., "ai".
+     * @param	resourceName The name of the resource relative to the test/resources
+     *      	folder. The name must not begin with a "/".
+     * @param 	subProjectFoler The root folder of the OPAL subproject; e.g., "ai".
      */
     def locateTestResources(resourceName: String, subProjectFolder: String): File = {
         val resourceFile = subProjectFolder+"/src/test/resources/"+resourceName

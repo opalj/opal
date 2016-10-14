@@ -43,7 +43,7 @@ import scala.collection.generic.FilterMonadic
  * case of `drop` and `take` etc. if the size of the list is smaller than expected.
  * Furthermore, all directly implemented methods use `while` loops for maxium
  * efficiency and the list is also specialized for primitive `int` values which
- * makes this list far more efficient when used; e.g., for storing lists of int values.
+ * makes this list far more efficient when use for storing lists of int values.
  *
  * @note    In most cases a `Chain` can be used as a drop-in replacement for a standard
  *             Scala List.
@@ -168,6 +168,8 @@ sealed trait Chain[@specialized(Int) +T]
 
     def head: T
 
+    def headOption: Option[T]
+
     def tail: Chain[T]
 
     def last: T = {
@@ -262,7 +264,11 @@ sealed trait Chain[@specialized(Int) +T]
      * Prepends the given list to '''this list''' by setting the end of the given list to
      * this list.
      *
-     * @note     '''This mutates the given list.'''
+     * @note     '''This mutates the given list unless the given list is empty; hence
+     *           The return value ''must not be ignored''.'''
+     *
+     * @note    Using this function is save if and only if no alias of this list
+     *          or the given list exists.
      */
     private[opalj] def ++!:[X >: T](x: Chain[X]): Chain[X] = {
         if (x.isEmpty)
@@ -276,6 +282,9 @@ sealed trait Chain[@specialized(Int) +T]
         x
     }
 
+    /**
+     * @see [[++!:]]
+     */
     private[opalj] def ++![X >: T](x: Chain[X]): Chain[X] = x.++!:(this)
 
     /**
@@ -598,6 +607,7 @@ case object Naught extends Chain[Nothing] {
     private def listIsEmpty = new NoSuchElementException("the list is empty")
 
     def head: Nothing = throw listIsEmpty
+    def headOption: Option[Nothing] = None
     def tail: Nothing = throw listIsEmpty
     def isEmpty: Boolean = true
     override def nonEmpty: Boolean = false
@@ -627,6 +637,8 @@ final case class :&:[@specialized(Int) T](
         head:                    T,
         private[opalj] var rest: Chain[T] = Naught
 ) extends Chain[T] {
+
+    def headOption: Option[T] = Some(head)
 
     def tail: Chain[T] = rest
 
@@ -757,11 +769,11 @@ final case class :&:[@specialized(Int) T](
 
     /**
      * @note    The `merge` function first calls the given function and then checks if the
-     *             result is reference equal to the element of the first list while fuse first
+     *             result is reference equal to the element of the first list while `fuse` first
      *             checks the reference equality of the members before it calls the given function.
      *             Therefore `fuse` can abort checking all further values when the
      *             remaining list fragments are reference equal because both lists are immutable.
-     *             In other words: fuse is an optimized version of merge where the function f
+     *             In other words: `fuse` is an optimized version of `merge` where the function `f`
      *             has the following shape: `(x,y) => if(x eq y) x else /*whatever*/`.
      */
     def fuse[X >: T <: AnyRef](

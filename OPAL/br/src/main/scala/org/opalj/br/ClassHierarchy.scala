@@ -33,8 +33,9 @@ import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.annotation.tailrec
-import scala.collection.mutable
 import scala.io.BufferedSource
+import scala.collection.mutable
+import scala.collection.immutable.HashSet
 
 import org.opalj.control.foreachNonNullValue
 import org.opalj.io.processSource
@@ -52,8 +53,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ObjectType.Object
-import org.opalj.br.instructions.FieldAccess
-import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.QualifiedCollection
@@ -65,27 +64,35 @@ import org.opalj.collection.IncompleteCollection
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
  * information about those classes that were explicitly added to it except of
  * `java.lang.Object`; the type `java.lang.Object` is always part of the class hierarchy.
+ * Hence, the class hierarchy may contain holes.
  *
  * ==Thread safety==
- * This class is effectively immutable. Hence, concurrent access to the class hierarchy is supported.
+ * This class is effectively immutable; concurrent access to the class hierarchy is supported.
  *
- * @note Java 9 module definitions are completely ignored.
+ * @note 	Java 9 module definitions are completely ignored.
  *
- * @param interfaceTypesMap `true` iff the type is an interface otherwise `false`.
- * @param isKnownToBeFinalMap `true` if the class is known to be `final`.
- * @param superclassTypeMap Contains type information about a type's immediate superclass.
- *      This value is always defined (i.e., not null) unless the key identifies the
- *      object type `java.lang.Object` or when the respective class file was not
- *      analyzed and the respective type was only seen in the declaration of another class.
- * @param superinterfaceTypesMap Contains type information about a type's directly
- *      implemented interfaces; if any.
- * @param subclassTypesMap Contains type information about a type's subclasses; if any.
- * @param subinterfaceTypesMap Contains type information about a type's subinterfaces.
- *      They only ''class type'' that is allowed to have a non-empty set of subinterfaces
- *      is `java.lang.Object`.
- * @note Unless explicitly documented, it is an error to pass an instance of `ObjectType`
- *      to any method if the `ObjectType` was not previously added. If in doubt, first
- *      check if the type is known (`isKnown`/`ifKnown`).
+ * @note 	Unless explicitly documented, it is an error to pass an instance of `ObjectType`
+ *      	to any method if the `ObjectType` was not previously added. If in doubt, first
+ *      	check if the type is known (`isKnown`/`ifKnown`).
+ *
+ * @param 	knownTypesMap A mapping between the id of an object type and the object type;
+ * 			implicitly encodes which types are known.
+ * @param 	interfaceTypesMap `true` iff the type is an interface otherwise `false`;
+ * 			'''only defined for those types that are known'''.
+ * @param 	isKnownToBeFinalMap `true` if the class is known to be `final`. I.e.,
+ * 			if the class is final `isFinal(ClassFile(objectType)) =>
+ * 			isFinal(classHierachy(objectType))`.
+ * @param 	superclassTypeMap Contains type information about a type's immediate superclass.
+ *      	This value is always defined (i.e., not null) unless the key identifies the
+ *      	object type `java.lang.Object` or when the respective class file was not
+ *      	analyzed and the respective type was only seen in the declaration of another class.
+ * @param 	superinterfaceTypesMap Contains type information about a type's directly
+ *      	implemented interfaces; if any.
+ * @param 	subclassTypesMap Contains type information about a type's subclasses; if any.
+ * @param 	subinterfaceTypesMap Contains type information about a type's subinterfaces.
+ *      	They only ''class type'' that is allowed to have a non-empty set of subinterfaces
+ *      	is `java.lang.Object`.
+ *
  * @author Michael Eichberg
  */
 class ClassHierarchy private (
@@ -136,70 +143,41 @@ class ClassHierarchy private (
     )
 
     /**
-     * The set of all types which have no super type; that is all (pseudo) root types;
-     * if the class hierarchy is complete then this set contains exactly one element and
+     * The set of ''all types'' which have no super type or for which we have no further supertype
+     * information; that is all (pseudo) root types.
+     * If the class hierarchy is complete then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
      *
-     * @note
-     *    If we load an application and all the jars used to implement it or a library
-     *    and all the library it depends on then the class hierarchy '''should not'''
-     *    contain multiple root types. However, the (complete) JDK contains some references
-     *    to Eclipse classes which are not part of the JDK.
+     * @note	If we load an application and all the jars used to implement it or a library
+     *    		and all the library it depends on then the class hierarchy '''should not'''
+     *    		contain multiple root types. However, the (complete) JDK already contains
+     *    		some references to Eclipse classes which are not part of the JDK.
+     * @return 	A Set of all object types which have no supertype or for which the
+     * 			information is incomplete.
      */
     val rootTypes: Set[ObjectType] = {
-        val rootTypes = knownTypesMap.view filter { objectType ⇒
-            (objectType ne null) && (superclassTypeMap(objectType.id) eq null)
+        knownTypesMap.foldLeft(HashSet.empty[ObjectType]) { (rootTypes, objectType) ⇒
+            if ((objectType ne null) && (superclassTypeMap(objectType.id) eq null))
+                rootTypes + objectType
+            else
+                rootTypes
         }
-        rootTypes.toSet
     }
 
-    /**
-     * The set of all class types (excluding interfaces) which have no super type;
-     * that is all (pseudo) root types;
-     * if the class hierarchy is complete then this set contains exactly one element and
-     * that element must identify `java.lang.Object`.
-     *
-     * @note
-     *    If we load an application and all the jars used to implement it or a library
-     *    and all the library it depends on then the class hierarchy '''should not'''
-     *    contain multiple root types. However, the (complete) JDK contains some references
-     *    to Eclipse classes which are not part of the JDK.
-     */
-    def rootClassTypes: Traversable[ObjectType] = {
-        knownTypesMap.view filter { objectType ⇒
-            (objectType ne null) && {
+    val leafTypes: Set[ObjectType] = {
+        knownTypesMap.foldLeft(HashSet.empty[ObjectType]) { (leafTypes, objectType) ⇒
+            if ((objectType ne null) && {
                 val oid = objectType.id
-                (superclassTypeMap(oid) eq null) && !interfaceTypesMap(oid)
-            }
+                subclassTypesMap(oid).isEmpty && subinterfaceTypesMap(oid).isEmpty
+            })
+                leafTypes + objectType
+            else
+                leafTypes
         }
     }
 
-    val leafTypes: Iterator[ObjectType] = {
-        knownTypesMap.iterator.
-            filter { t ⇒
-                (t ne null) && {
-                    val oid = t.id
-                    subclassTypesMap(oid).isEmpty && subinterfaceTypesMap(oid).isEmpty
-                }
-            }
-    }
-
-    def leafClassTypes: Iterator[ObjectType] = {
-        knownTypesMap.iterator.
-            filter { t ⇒
-                (t ne null) && {
-                    val oid = t.id
-                    subclassTypesMap(oid).isEmpty && !interfaceTypesMap(oid)
-                }
-            }
-    }
-
     /**
-     * Returns `true` if the supertype information for the given type and all its
-     * supertypes (class and interface types) is complete.
-     *
-     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
-     *      `ClassHierarchy.ifKnown` for further details).
+     * A map which stores for each ''known type'' if its supertype information is complete.
      */
     private[this] val isSupertypeInformationCompleteMap: Array[Boolean] = {
         val isSupertypeInformationCompleteMap: Array[Boolean] = new Array(knownTypesMap.length)
@@ -210,7 +188,6 @@ class ClassHierarchy private (
         for {
             rootType ← rootTypes
             if rootType ne ObjectType.Object
-
         } {
             foreachSubtype(rootType) { subtype ⇒
                 isSupertypeInformationCompleteMap(subtype.id) = false
@@ -219,38 +196,43 @@ class ClassHierarchy private (
         isSupertypeInformationCompleteMap
     }
 
+    /**
+     * Checks if the class hierarchy is self-consistent and fixes related issues
+     * if possible. All issues and fixes are logged.
+     */
     private[this] def validateClassHierarchy(): Unit = {
-        val rootTypes = this.rootTypes
-        if (rootTypes.size > 1)
-            OPALLogger.log(Warn(
+        val unexpectedRootTypes = this.rootTypes.iterator filterNot (_ eq ObjectType.Object)
+        if (unexpectedRootTypes.hasNext) {
+            OPALLogger.warn(
                 "project configuration - class hierarchy",
                 "supertype information incomplete:\n\t"+
-                    rootTypes.filterNot(_ eq ObjectType.Object).
+                    unexpectedRootTypes.
                     map(rt ⇒ (if (isInterface(rt)) "interface " else "class ") + rt.toJava).
                     toList.sorted.mkString("\n\t")
-            ))
+            )
+        }
 
         isKnownToBeFinalMap.zipWithIndex foreach { e ⇒
-            val (isFinal, index) = e
+            val (isFinal, oid) = e
             if (isFinal) {
-                if (subclassTypesMap(index).nonEmpty) {
-                    OPALLogger.log(Warn(
+                if (subclassTypesMap(oid).nonEmpty) {
+                    OPALLogger.warn(
                         "project configuration - class hierarchy",
-                        s"the final type ${knownTypesMap(index).toJava} "+
-                            "has subclasses: "+subclassTypesMap(index)+
+                        s"the final type ${knownTypesMap(oid).toJava} "+
+                            "has subclasses: "+subclassTypesMap(oid)+
                             "; resetting the \"is final\" property."
-                    ))
-                    isKnownToBeFinalMap(index) = false
+                    )
+                    isKnownToBeFinalMap(oid) = false
                 }
 
-                if (subinterfaceTypesMap(index).nonEmpty) {
-                    OPALLogger.log(Warn(
+                if (subinterfaceTypesMap(oid).nonEmpty) {
+                    OPALLogger.warn(
                         "project configuration - class hierarchy",
-                        s"the final type ${knownTypesMap(index).toJava} "+
-                            "has subinterfaces: "+subclassTypesMap(index)+
+                        s"the final type ${knownTypesMap(oid).toJava} "+
+                            "has subinterfaces: "+subclassTypesMap(oid)+
                             "; resetting the \"is final\" property."
-                    ))
-                    isKnownToBeFinalMap(index) = false
+                    )
+                    isKnownToBeFinalMap(oid) = false
                 }
             }
         }
@@ -258,17 +240,53 @@ class ClassHierarchy private (
 
     validateClassHierarchy()
 
+    // TODO Precompute all subTypes/subclassTypes/subinterfaceTypes; subTypesCF/subclassTypesCF/subinterfaceTypesCF
+    // TODO Precompute all superTypes/superclassTypes/superinterfaceTypes; superTypesCF/superclassTypesCF/superinterfaceTypesCF
+
+    /**
+     * The set of ''all class types'' (excluding interfaces) which have no super type or
+     * for which the supertype information is incomplete; that is all (pseudo) root types.
+     * If the class hierarchy is complete then this set contains exactly one element and
+     * that element must identify `java.lang.Object`.
+     *
+     * @note	If we load an application and all the jars used to implement it or a library
+     *    		and all the library it depends on then the class hierarchy '''should not'''
+     * 		   	contain multiple root types. However, the (complete) JDK contains some references
+     *    		to Eclipse classes which are not part of the JDK.
+     */
+    def rootClassTypes: Iterator[ObjectType] = {
+        rootTypes.iterator filter { objectType ⇒ !interfaceTypesMap(objectType.id) }
+    }
+
+    def leafClassTypes: Iterator[ObjectType] = {
+        leafTypes.iterator filter { objectType ⇒ !interfaceTypesMap(objectType.id) }
+    }
+
     /**
      * A dump of the class hierarchy information in TSV format.
+     * The following information will be dumped:
+     *  - type
+     *  - id
+     *  - (is) interface
+     *  - (is) final
+     *  - (is) root type
+     *  - (is) leaf type
+     *  - (is) supertype information complete
+     *  - super class
+     *  - super interfaces
+     *  - sub classes
+     *  - sub interfaces
      */
-    def structure: String = {
+    def asTSV: String = {
         import scala.language.implicitConversions
 
-        implicit def objectTypeToString(ot: ObjectType): String =
+        implicit def objectTypeToString(ot: ObjectType): String = {
             if (ot ne null) ot.toJava else "N/A"
+        }
 
-        implicit def objectTypesToString(ots: UIDSet[ObjectType]): String =
+        implicit def objectTypesToString(ots: UIDSet[ObjectType]): String = {
             if (ots ne null) ots.map(_.toJava).mkString("{", ",", "}") else "N/A"
+        }
 
         case class TypeInfo(
                 objectType:                     String,
@@ -290,6 +308,7 @@ class ClassHierarchy private (
             }
         }
 
+        val rootTypes = this.rootTypes.toSet
         val typeInfos =
             (0 until knownTypesMap.length) filter { i ⇒ knownTypesMap(i) ne null } map { i ⇒
                 val t = knownTypesMap(i)
@@ -305,15 +324,14 @@ class ClassHierarchy private (
                     superinterfaceTypesMap(i),
                     subclassTypesMap(i),
                     subinterfaceTypesMap(i)
-                )
+                ).toString
             }
 
-        typeInfos.map(_.toString).sorted.mkString(
-            "type \tid \tinterface \tfinal \troot type \tleaf type \tsupertype information complete"+
-                "\tsuper class \tsuper interfaces \tsub classes \tsub interfaces\n",
-            "\n",
-            "\n"
-        )
+        val header =
+            "type \tid \tinterface \tfinal"+
+                " \troot type \tleaf type \tsupertype information complete"+
+                " \tsuper class \tsuper interfaces \tsub classes \tsub interfaces\n"
+        typeInfos.sorted.mkString(header, "\n", "\n")
     }
 
     //
@@ -354,8 +372,9 @@ class ClassHierarchy private (
         readLock.lock()
         try {
             val ot = objectTypesMap(objectTypeId)
-            if (ot eq null)
+            if (ot eq null) {
                 throw new IllegalArgumentException("ObjectType id invalid: "+objectTypeId)
+            }
             ot
         } finally {
             readLock.unlock()
@@ -409,10 +428,19 @@ class ClassHierarchy private (
     }
 
     /**
+     * Calls the given function `f` for each type that is known to the class hierarchy.
+     */
+    def foreachKnownType[T](f: ObjectType ⇒ T): Unit = {
+        foreachNonNullValue(knownTypesMap)((index, t) ⇒ f(t))
+    }
+
+    /**
      * Returns `true` if the given type is `final`. I.e., the declaring class
      * was explicitly declared `final` and no subtypes exist.
      *
-     * `false` is returned if:
+     * @note No explicit `isKnown` check is required.
+     *
+     * @return  `false` is returned if:
      *  - the object type is unknown,
      *  - the object type is known not to be final or
      *  - the information is incomplete
@@ -422,11 +450,13 @@ class ClassHierarchy private (
     }
 
     /**
-     * Returns `true` if the given type is `final`. I.e., the declaring class
+     * Returns `true` if the given type is known and is `final`. I.e., the declaring class
      * was explicitly declared final or – if the type identifies an array type –
      * the component type is either known to be final or is a primitive/base type.
      *
-     * `false` is returned if:
+     * @note No explicit `isKnown` check is required.
+     *
+     * @return `false` is returned if:
      *  - the object type/component type is unknown,
      *  - the object type/component type is known not to be final or
      *  - the information about the object type/component type is incomplete
@@ -442,15 +472,15 @@ class ClassHierarchy private (
     }
 
     /**
-     * Returns `true` if the given `objectType` defines an interface type.
+     * Returns `true` if the given `objectType` is known and defines an interface type.
      *
-     * `false` is returned if:
+     * @note No explicit `isKnown` check is required.
+     *
+     * @param objectType An `ObjectType`.
+     * @return `false` is returned if:
      *  - the object type is unknown,
      *  - the object type is known not to be final or
      *  - the information is incomplete
-     *
-     * @param objectType An `ObjectType`.
-     * @note See `isKnown`, `ifKnown` for further details.
      */
     @inline def isInterface(objectType: ObjectType): Boolean = {
         isKnown(objectType) && interfaceTypesMap(objectType.id)
@@ -459,12 +489,20 @@ class ClassHierarchy private (
     /**
      * Returns `true` if the type hierarchy information related to the given type's
      * supertypes is complete.
+     *
+     * @note No explicit `isKnown` check is required.
      */
     @inline def isDirectSuperclassTypeInformationComplete(objectType: ObjectType): Boolean = {
         (objectType eq Object) ||
             (isKnown(objectType) && (superclassTypeMap(objectType.id) ne null))
     }
 
+    /**
+     * Returns `true` if the type hierarchy has complete information about all supertypes
+     * of the given type.
+     *
+     * @note No explicit `isKnown` check is required.
+     */
     @inline final def isSupertypeInformationComplete(objectType: ObjectType): Boolean = {
         isKnown(objectType) && isSupertypeInformationCompleteMap(objectType.id)
     }
@@ -473,14 +511,14 @@ class ClassHierarchy private (
      * Retuns `Yes` if the class hierarchy contains subtypes of the given type and `No` if
      * it contains no subtypes. `Unknown` is returned if the given type is not known.
      *
-     * Please note, that the answer maybe `No` even though the (running) project will
-     * contain (in)direct subtypes of the given type.
-     * For example, this will be the case if the class hierarchy is not
-     * complete, because not all class files (libraries) used by the project that is
-     * analyzed are also analyzed. A second case is that some class files are generated
-     * at runtime that inherit from the given `ObjectType`.
+     * Please note, that the answer will be `No` even though the (running) project contains
+     * (in)direct subtypes of the given type, but  the class hierarchy is not
+     * complete. I.e., not all class files (libraries) used by the project are analyzed.
+     * A second case is that some class files are generated at runtime that inherit from
+     * the given `ObjectType`.
      *
-     * @param objectType Some `ObjectType`.
+     * @note    No explicit `isKnown` check is required.
+     * @param   objectType Some `ObjectType`.
      */
     def hasSubtypes(objectType: ObjectType): Answer = {
         if (isUnknown(objectType)) {
@@ -495,15 +533,17 @@ class ClassHierarchy private (
      * The set of all class- and interface-types that (directly or indirectly)
      * inherit from the given type.
      *
-     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
-     *      `ClassHierarchy.ifKnown` for further details).
-     * @param reflexive If `true` the given type is also included in the returned
-     *      set.
-     * @return The set of all direct and indirect subtypes of the given type.
-     * @note If you don't need the set, it is more efficient to use `foreachSubtype`.
-     * @note If the type hierarchy is not complete the answer may not be correct.
-     *         E.g., if x inherits from y and y inherits from z, but y is not known to the
-     *         class hierarchy then x will not be in the set of all (known) subtypes of z.
+     * @note    No explicit `isKnown` check is required; if the type is unknown the
+     *          returned set will be empty.
+     * @note    If you don't need the set, it is more efficient to use `foreachSubtype`.
+     * @note    If the type hierarchy is not complete the answer may also be incomplete.
+     *          E.g., if x inherits from y and y inherits from z, but y is not known to the
+     *          class hierarchy then x will not be in the set of all (known) subtypes of z.
+     *
+     * @param   objectType An `ObjectType`.
+     * @param   reflexive If `true` the given type is also included in the returned
+     *          set.
+     * @return  The set of all direct and indirect subtypes of the given type.
      */
     def allSubtypes(objectType: ObjectType, reflexive: Boolean): mutable.Set[ObjectType] = {
         val subtypes =
@@ -520,8 +560,11 @@ class ClassHierarchy private (
      * If the given `objectType` identifies an interface type then it is possible
      * that `f` is passed the same `ObjectType` multiple times.
      *
-     * @param objectType A known `ObjectType`. (See `isKnown`,`ifKnown` for further details).
-     * @note For details regarding incomplete class hierarchies see [[allSubtypes]].
+     * @note    No explicit `isKnown` check is required; if the type is unknown nothing
+     *          will happen.
+     * @note    For details regarding incomplete class hierarchies see [[allSubtypes]].
+     * *
+     * @param   objectType An `ObjectType`.
      */
     def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
         if (isUnknown(objectType))
@@ -553,10 +596,13 @@ class ClassHierarchy private (
     /**
      * Executes the given function `f` for each subclass of the given `ObjectType`.
      * In this case the subclass relation is '''not reflexive'''. Furthermore, it may be
-     * possible the f is invoked multiple times using the same `ClassFile` object.
+     * possible that f is invoked multiple times using the same `ClassFile` object if
+     * the given objectType identifies an interface.
      *
      * Subtypes for which no `ClassFile` object is available are ignored.
      *
+     * @note    No explicit `isKnown` check is required; if the type is unknown nothing
+     *          will happen.
      * @note For details regarding incomplete class hierarchies see [[foreachSubtype]].
      */
     def foreachSubclass(
@@ -565,11 +611,14 @@ class ClassHierarchy private (
     )(
         f: ClassFile ⇒ Unit
     ): Unit = {
-        foreachSubtype(objectType) { objectType ⇒ project.classFile(objectType) foreach (f) }
+        foreachSubtype(objectType) { subtype ⇒ project.classFile(subtype) foreach (f) }
     }
 
     /**
      * Returns all (direct and indirect) subclasses of the given class type.
+     *
+     * @note    No explicit `isKnown` check is required; if the type is unknown an empty
+     *          iterator is returned.
      */
     def allSubclassTypes(objectType: ObjectType, reflexive: Boolean): Iterator[ObjectType] = {
         if (isUnknown(objectType))
@@ -618,35 +667,42 @@ class ClassHierarchy private (
      * the given object type are ignored.
      *
      * Subtypes for which no `ClassFile` object is available are ignored.
+     *
+     * @note    No explicit `isKnown` check is required; if the type is unknown nothing
+     *          will happen.
      */
     def foreachDirectSubclassType[T](
         objectType: ObjectType,
         project:    ClassFileRepository
     )(
-        f: ClassFile ⇒ T
+        f: (ClassFile) ⇒ T
     ): Unit = {
-        if (isKnown(objectType)) {
-            subclassTypesMap(objectType.id) foreach { ot ⇒ project.classFile(ot) foreach (f) }
-        }
+        if (isUnknown(objectType))
+            return ;
+
+        import project.classFile
+        subclassTypesMap(objectType.id) foreach { subtype ⇒ classFile(subtype) foreach (f) }
     }
 
     /**
-     * Tests if a subtype of the given `ObjectType` exists that has the given property.
+     * Tests if a subtype of the given `ObjectType` exists that satisfies the given predicate.
      * In this case the subtype relation is '''not reflexive'''.
      *
      * Subtypes for which no `ClassFile` object is available are ignored.
+     *
+     * @note    No explicit `isKnown` check is required; if the type is unknown nothing
+     *          will happen.
      */
     def existsSubclass(
         objectType: ObjectType,
         project:    ClassFileRepository
     )(
-        f: ClassFile ⇒ Boolean
+        p: (ClassFile) ⇒ Boolean
     ): Boolean = {
         foreachSubtype(objectType) { objectType ⇒
-            project.classFile(objectType) foreach { cf ⇒
-                if (f(cf))
-                    return true;
-            }
+            val cfOption = project.classFile(objectType)
+            if (cfOption.isDefined && p(cfOption.get))
+                return true;
         }
         false
     }
@@ -679,7 +735,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * Returns a list which contains all super types in initialization order.
+     * Returns the list of all super types in initialization order.
      * I.e., it will return the top level super class first - i.e., `java.lang.Object`
      * and then all sub class types.
      *
@@ -693,19 +749,21 @@ class ClassHierarchy private (
      *             is not complete. In this case an [[org.opalj.collection.IncompleteCollection]]
      *          will be returned.
      */
-    def allSuperclassTypesInInitializationOrder(objectType: ObjectType): QualifiedCollection[Chain[ObjectType]] = {
+    def allSuperclassTypesInInitializationOrder(
+        objectType: ObjectType
+    ): QualifiedCollection[Chain[ObjectType]] = {
         if (objectType eq ObjectType.Object)
             return CompleteEmptyChain;
 
-        val objectTypeId = objectType.id
+        val oid = objectType.id
 
-        if (isUnknown(objectTypeId))
+        if (isUnknown(oid))
             return IncompleteEmptyChain;
 
         var allTypes: Chain[ObjectType] = Naught
 
         val superclassTypeMap = this.superclassTypeMap
-        var superclassType = superclassTypeMap(objectTypeId)
+        var superclassType = superclassTypeMap(oid)
         while (superclassType ne null) {
             allTypes :&:= superclassType
             superclassType = superclassTypeMap(superclassType.id)
@@ -785,23 +843,19 @@ class ClassHierarchy private (
         project:    ClassFileRepository
     )(
         f: ClassFile ⇒ Unit
-    ): Unit =
-        foreachSupertype(objectType) { supertype ⇒
-            project.classFile(supertype) match {
-                case Some(classFile) ⇒ f(classFile)
-                case _               ⇒ /*Do nothing*/
-            }
-        }
+    ): Unit = {
+        foreachSupertype(objectType) { supertype ⇒ project.classFile(supertype).foreach(f) }
+    }
 
     /**
      * Returns the set of all classes/interfaces from which the given type inherits
      * and for which the respective class file is available.
      *
-     * @return An `Iterable` over all class files of all super types of the given
-     *      `objectType` that pass the given filter and for which the class file
-     *      is available.
-     * @note It may be more efficient to use `foreachSuperclass(ObjectType,
-     *      ObjectType ⇒ Option[ClassFile])(ClassFile => Unit)`
+     * @return  An `Iterable` over all class files of all super types of the given
+     *          `objectType` that pass the given filter and for which the class file
+     *          is available.
+     * @note    It may be more efficient to use `foreachSuperclass(ObjectType,
+     *          ObjectType ⇒ Option[ClassFile])(ClassFile => Unit)`
      */
     def superclasses(
         objectType: ObjectType,
@@ -853,6 +907,17 @@ class ClassHierarchy private (
             None
     }
 
+    /**
+     * Returns the supertype of the object type identified by the given object type id or `null`
+     * if the type is unknown or if the type has no supertype.
+     */
+    def superclassType(objectTypeId: Int): ObjectType = {
+        if (isKnown(objectTypeId))
+            superclassTypeMap(objectTypeId) // may also be null
+        else
+            null
+    }
+
     def supertypes(objectType: ObjectType): UIDSet[ObjectType] = {
         superinterfaceTypes(objectType) match {
             case None                      ⇒ superclassType(objectType).map(UIDSet(_)).getOrElse(UIDSet0)
@@ -861,22 +926,53 @@ class ClassHierarchy private (
     }
 
     /**
+     * The direct subtypes of the given type (not reflexive).
+     */
+    def directSubtypesOf(objectType: ObjectType): UIDSet[ObjectType] = {
+        if (isUnknown(objectType))
+            return UIDSet0;
+
+        val oid = objectType.id
+        this.subclassTypesMap(oid) ++ this.subinterfaceTypesMap(oid)
+    }
+
+    def directSubclassesOf(objectType: ObjectType): UIDSet[ObjectType] = {
+        if (isUnknown(objectType))
+            return UIDSet0;
+
+        this.subclassTypesMap(objectType.id)
+    }
+
+    def directSubinterfacesOf(objectType: ObjectType): UIDSet[ObjectType] = {
+        if (isUnknown(objectType))
+            return UIDSet0;
+
+        this.subinterfaceTypesMap(objectType.id)
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    //
+    // "HIGHER-LEVEL" QUERIES RELATED TO THE JVM/JAVA SPECIFICATION
+    //
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    /**
      * Determines if a value of type `elementValueType` can be stored in an array of
      * type `arrayType`. E.g. a value of type `IntegerType` can be stored in an
      * array (one-dimensional) of type `ArrayType(IntegerType)`. This method takes
      * the fact that a type may just model an upper type bound into account.
      *
-     * @param elementValueType The type of the value that should be stored in the
-     *             array. This type is compared against the component type of the array.
-     * @param elementValueTypeIsPrecise Specifies if the type information is precise;
-     *           i.e., whether elementValueType models the precise runtime type (`true`)
-     *           or just an upper bound (`false`). If the `elementValueType` is a base/
-     *             primitive type then this value should be `true`; but actually it is
-     *             ignored.
-     * @param arrayType The type of the array.
-     * @param arrayTypeIsPrecise Specifies if the type information is precise;
-     *           i.e., whether arrayType models the precise runtime type (`true`)
-     *           or just an upper bound (`false`).
+     * @param   elementValueType The type of the value that should be stored in the
+     *          array. This type is compared against the component type of the array.
+     * @param   elementValueTypeIsPrecise Specifies if the type information is precise;
+     *          i.e., whether `elementValueType` models the precise runtime type (`true`)
+     *          or just an upper bound (`false`). If the `elementValueType` is a base/
+     *          primitive type then this value should be `true`; but actually it is
+     *          ignored.
+     * @param   arrayType The type of the array.
+     * @param   arrayTypeIsPrecise Specifies if the type information is precise;
+     *          i.e., whether arrayType models the precise runtime type (`true`)
+     *          or just an upper bound (`false`).
      */
     @tailrec final def canBeStoredIn(
         elementValueType:          FieldType,
@@ -898,19 +994,12 @@ class ClassHierarchy private (
                 No
             } else /*arrayType.componentType.isObjectType*/ {
                 val componentObjectType = arrayType.componentType.asObjectType
+                // Recall that `isSubtypeOf` completely handles all cases that make
+                // it possible to store an array in a value of type ObjectType.
                 isSubtypeOf(elementValueType.asArrayType, componentObjectType) match {
-                    case Yes ⇒
-                        if (arrayTypeIsPrecise) Yes else Unknown
-                    case No ⇒
-                        // Recall that isSubtypeOf completely handles all cases
-                        // that make it possible to store an array in a value of
-                        // type ObjectType.
-                        No
-                    case _ ⇒
-                        throw new AssertionError(
-                            "an isSubtypeOf query where the subtype is an array type "+
-                                "should never return Unknown"
-                        )
+                    case Yes ⇒ if (arrayTypeIsPrecise) Yes else Unknown
+                    case No  ⇒ No
+                    case _   ⇒ throw new AssertionError("some array type <: some object type failed")
                 }
             }
         } else /* the type of the element value is an ObjectType*/ {
@@ -921,8 +1010,7 @@ class ClassHierarchy private (
                 val arrayComponentReferenceType = arrayType.componentType.asReferenceType
                 isSubtypeOf(elementValueObjectType, arrayComponentReferenceType) match {
                     case Yes ⇒
-                        if (arrayTypeIsPrecise ||
-                            isKnownToBeFinal(elementValueObjectType))
+                        if (arrayTypeIsPrecise || isKnownToBeFinal(elementValueObjectType))
                             Yes
                         else
                             Unknown
@@ -946,19 +1034,21 @@ class ClassHierarchy private (
      * for handling `null` values and for considering the runtime type needs to be
      * implemented by the caller of this method.
      *
-     * @note This method performs an upwards search only. E.g., given the following
-     *      type hierarchy:
-     *      `class D inherits from C`
-     *      `class E inherits from D`
-     *      and the query isSubtypeOf(D,E) the answer will be `Unknown` if `C` is
-     *      `Unknown` and `No` otherwise.
-     * @param subtype Any `ObjectType`.
-     * @param theSupertype Any `ObjectType`.
-     * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
-     *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
-     *      not conclusive. The latter can happen if the class hierarchy is not
-     *      complete and hence precise information about a type's supertypes
-     *      is not available.
+     * @note    This method performs an upwards search only. E.g., given the following
+     *          type hierarchy:
+     *          `class D inherits from C`
+     *          `class E inherits from D`
+     *          and the query `isSubtypeOf(D,E)`, the answer will be `Unknown` if `C` is
+     *          `Unknown` and `No` otherwise.
+     * @note    No explicit `isKnown` check is required; if the type is unknown an empty
+     *          iterator is returned.
+     * @param   subtype Any `ObjectType`.
+     * @param   theSupertype Any `ObjectType`.
+     * @return  `Yes` if `subtype` is a subtype of the given `supertype`. `No`
+     *          if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
+     *          not conclusive. The latter can happen if the class hierarchy is not
+     *          complete and hence precise information about a type's supertypes
+     *          is not available.
      *
      */
     def isSubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Answer = {
@@ -1011,6 +1101,7 @@ class ClassHierarchy private (
                 No
             } else {
                 var answer: Answer = No
+                // TODO Use/Implement something like "foldLeftWhile for UIDSets"
                 val superTypesIterator = superinterfaceTypes.toIterator
                 while (superTypesIterator.hasNext) {
                     val intermediateType = superTypesIterator.next()
@@ -1079,26 +1170,26 @@ class ClassHierarchy private (
      * for handling `null` values and for considering the runtime type needs to be
      * implemented by the caller of this method.
      *
-     * @param subtype Any class, interface  or array type.
-     * @param supertype Any class, interface or array type.
-     * @return `Yes` if `subtype` is indeed a subtype of the given `supertype`. `No`
-     *    if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
-     *    not conclusive. The latter can happen if the class hierarchy is not
-     *    completely available and hence precise information about a type's supertypes
-     *    is not available.
-     * @note The answer `No` does not necessarily imply that two '''runtime values''' for
-     *    which the given types are only upper bounds are not (w.r.t. their
-     *    runtime types) in a subtype relation. E.g., if `subtype` denotes the type
-     *    `java.util.List` and `supertype` denotes the type `java.util.ArrayList` then
-     *    the answer is clearly `No`. But, at runtime, this may not be the case. I.e.,
-     *    only the answer `Yes` is conclusive. In case of `No` further information
-     *    needs to be taken into account by the caller to determine what it means that
-     *    the (upper) type (bounds) of the underlying values are not in an inheritance
-     *    relation.
+     * @note    The answer `No` does not necessarily imply that two '''runtime values''' for
+     *          which the given types are only upper bounds are not (w.r.t. '''their
+     *          runtime types''') in a subtype relation. E.g., if `subtype` denotes the type
+     *          `java.util.List` and `supertype` denotes the type `java.util.ArrayList` then
+     *          the answer is clearly `No`. But, at runtime, this may not be the case. I.e.,
+     *          only the answer `Yes` is conclusive. In case of `No` further information
+     *          needs to be taken into account by the caller to determine what it means that
+     *          the (upper) type (bounds) of the underlying values are not in an inheritance
+     *          relation.
+     * @param   subtype Any class, interface  or array type.
+     * @param   supertype Any class, interface or array type.
+     * @return  `Yes` if `subtype` is indeed a subtype of the given `supertype`. `No`
+     *          if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
+     *          not conclusive. The latter can happen if the class hierarchy is not
+     *          completely available and hence precise information about a type's supertypes
+     *          is not available.
      */
     @tailrec final def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
 
-        // The following two tests are particulary relevant in case on incomplete
+        // The following two tests are particulary relevant in case of incomplete
         // class hierarchies since they allow to give definitive answers in some
         // cases of missing type information.
         if ((subtype eq supertype) || (supertype eq Object))
@@ -1127,8 +1218,10 @@ class ClassHierarchy private (
                 if (superComponentType.isBaseType || componentType.isBaseType)
                     No
                 // The case:
-                //    componentType eq superComponentType
-                // is already handled by the very first test subtype eq supertype because
+                //
+                //    `componentType eq superComponentType`
+                //
+                // is already handled by the very first test `subtype eq supertype` because
                 // ArrayTypes are internalized.
                 else
                     isSubtypeOf(componentType.asReferenceType, superComponentType.asReferenceType)
@@ -1138,13 +1231,13 @@ class ClassHierarchy private (
 
     /**
      * Determines if the type described by the first set of upper type bounds is
-     * a subtype of the second type. I.e., it checks if for all types of the
-     * subtypes upper type bound a type in the supertypes type exists that is a
-     * supertype of the respective subtype.
+     * a subtype of the second type. I.e., it checks, if for all types of the
+     * `subtypes` upper type bound, a type in the `supertypes` type exists that is a
+     * supertype of the respective subtype. If `subtypes` is empty, `Yes` will be
+     * returned; an empty upper type bound is expected to model `null`.
      */
     def isSubtypeOf(subtypes: UpperTypeBound, supertypes: UpperTypeBound): Answer = {
-        if (subtypes.isEmpty /*the upper type bound of "null" values*/ ||
-            subtypes == supertypes)
+        if (subtypes.isEmpty /*the upper type bound of "null" values*/ || subtypes == supertypes)
             return Yes;
 
         Answer(
@@ -1180,7 +1273,7 @@ class ClassHierarchy private (
         supertypes foreach { supertype ⇒
             isSubtypeOf(subtype, supertype) match {
                 case Yes     ⇒ /*Nothing to do*/
-                case Unknown ⇒ return Unknown;
+                case Unknown ⇒ return Unknown; // FIXME No should have precedence over Unknown even if some supertypes are Unknown...
                 case No      ⇒ return No;
             }
         }
@@ -1189,28 +1282,81 @@ class ClassHierarchy private (
     }
 
     def isSubtypeOf(subtypes: UpperTypeBound, supertype: ReferenceType): Answer = {
-
         if (subtypes.isEmpty) /*the upper type bound of "null" values*/
             return Yes;
 
-        var subtypingRelationUnknown = false
+        var subtypeRelationUnknown = false
         val subtypeExists =
             subtypes exists { subtype ⇒
                 this.isSubtypeOf(subtype, supertype) match {
                     case Yes ⇒ true
                     case Unknown ⇒
-                        subtypingRelationUnknown = true
-                        false /* let's continue the search */
+                        subtypeRelationUnknown = true; false /* continue searching */
                     case No ⇒ false
                 }
             }
         if (subtypeExists)
             Yes
-        else if (subtypingRelationUnknown)
+        else if (subtypeRelationUnknown)
             Unknown;
         else
             No
 
+    }
+
+    /**
+     * Computes the set of types which are subtypes (reflexive) of all types identified by the
+     * given `upper type bound`. E.g.,  the class X which implements I and J,
+     * would be a direct subtype of the upper type bound consisting of I and J.
+     * If the bound consists of only one type then the bound is returned.
+     *
+     * @param   upperTypeBound A set of types that are in no inheritance relationship.
+     *          `upperTypeBound` must not be empty.
+     */
+    def directSubtypesOf(upperTypeBound: UIDSet[ObjectType]): UIDSet[ObjectType] = {
+        if (upperTypeBound.isSingletonSet)
+            return upperTypeBound;
+
+        val firstType = upperTypeBound.first
+        val remainingTypeBounds = upperTypeBound.tail
+
+        // Basic Idea: let's do a breadth-first search and for every candidate type
+        // we check whether the type is a subtype of all types in the bound.
+        // If so, the type is added to the result set and the search terminates
+        // for this particular type.
+
+        // The analysis is complicated by the fact that an interface may be
+        // implemented multiple times, e.g.,:
+        // interface I
+        // interface J extends I
+        // class X implements I,J
+        // class Y implements J
+
+        var directSubtypes = UIDSet.empty[ObjectType]
+        var processedTypes = UIDSet.empty[ObjectType]
+        val typesToProcess = new mutable.Queue ++= directSubtypesOf(firstType)
+        while (typesToProcess.nonEmpty) {
+            val candidateType = typesToProcess.dequeue
+            processedTypes += candidateType
+            val isCommonSubtype =
+                remainingTypeBounds.forall { (otherTypeBound: ObjectType) ⇒
+                    isSubtypeOf(candidateType, otherTypeBound).isYesOrUnknown
+                }
+            if (isCommonSubtype) {
+                directSubtypes =
+                    directSubtypes.filter { candidateDirectSubtype ⇒
+                        isSubtypeOf(candidateDirectSubtype, candidateType).isNoOrUnknown
+                    } +
+                        candidateType
+            } else {
+                directSubtypesOf(candidateType).foreach { candidateType ⇒
+                    if (!processedTypes.contains(candidateType))
+                        typesToProcess += candidateType
+                }
+            }
+        }
+
+        directSubtypes
     }
 
     //
@@ -1322,10 +1468,12 @@ class ClassHierarchy private (
     }
 
     /**
-     * Returns an [[Option]] of [[ClassSignature]] according to the given [[ObjectType]]. Is the
-     * given ObjectType not resolvable by the project, [[None]] is returned.
+     * Returns the object type's class signature if the class files is availabe and
+     * a class signature is defined.
      */
-    @inline private[this] final def getClassSignature(ot: ObjectType)(
+    @inline private[this] final def getClassSignature(
+        ot: ObjectType
+    )(
         implicit
         project: ClassFileRepository
     ): Option[ClassSignature] = {
@@ -1548,14 +1696,14 @@ class ClassHierarchy private (
      * fulfilled if the subtype is a subtype of the class bound and/or all interface types
      * that are prescribed by the formal type specification.
      *
-     * @note This method does consider generics types specified within the [[FormalTypeParameter]].
-     * @param subtype Any `ClassTypeSignature`.
-     * @param supertype Any `FormalTypeParameter`.
+     * @note    This method does consider generics types specified within the [[FormalTypeParameter]].
+     * @param   subtype Any `ClassTypeSignature`.
+     * @param   supertype Any `FormalTypeParameter`.
      * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
-     *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
-     *      not conclusive. The latter can happen if the class hierarchy is not
-     *      complete and hence precise information about a type's supertypes
-     *      is not available.
+     *          if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
+     *          not conclusive. The latter can happen if the class hierarchy is not
+     *          complete and hence precise information about a type's supertypes
+     *          is not available.
      *
      */
     def isSubtypeOf(
@@ -1568,7 +1716,7 @@ class ClassHierarchy private (
 
         // IMPROVE Avoid creating the list by using an inner function (def).
         (supertype.classBound.toList ++ supertype.interfaceBound).
-            collect({ case s: ClassTypeSignature ⇒ s }).
+            collect { case s: ClassTypeSignature ⇒ s }.
             foldLeft(Yes: Answer) { (a, superCTS) ⇒
                 (a, isSubtypeOf(subtype, superCTS)) match {
                     case (_, Unknown)     ⇒ return Unknown;
@@ -1576,461 +1724,6 @@ class ClassHierarchy private (
                     case (x, _ /*x*/ )    ⇒ x
                 }
             }
-    }
-
-    //
-    //
-    // RESOLVING FIELD AND METHOD REFERENCES
-    //
-    //
-
-    /**
-     * Resolves a symbolic reference to a field. Basically, the search starts with
-     * the given class `c` and then continues with `c`'s superinterfaces before the
-     * search is continued with `c`'s superclass (as prescribed by the JVM specification
-     * for the resolution of unresolved symbolic references.)
-     *
-     * Resolving a symbolic reference is particularly required to, e.g., get a field's
-     * annotations or to get a field's value (if it is `static`, `final` and has a
-     * constant value).
-     *
-     * @note This implementation does not check for `IllegalAccessError`. This check
-     *      needs to be done by the caller. The same applies for the check that the
-     *      field is non-static if get-/putfield is used and static if a get/putstatic is
-     *      used to access the field. In the latter case the JVM would throw a
-     *      `LinkingException`.
-     *      Furthermore, if the field cannot be found, it is the responsibility of the
-     *      caller to handle that situation.
-     * @note Resolution is final. I.e., either this algorithm has found the defining field
-     *      or the field is not defined by one of the loaded classes. Searching for the
-     *      field in subclasses is not meaningful as it is not possible to override
-     *      fields.
-     * @param declaringClassType The class (or a superclass thereof) that is expected
-     *      to define the reference field.
-     * @param fieldName The name of the accessed field.
-     * @param fieldType The type of the accessed field (the field descriptor).
-     * @param project The project associated with this class hierarchy.
-     * @return The field that is referred to; if any. To get the defining `ClassFile`
-     *      you can use the `project`.
-     */
-    def resolveFieldReference(
-        declaringClassType: ObjectType,
-        fieldName:          String,
-        fieldType:          FieldType,
-        project:            ClassFileRepository
-    ): Option[Field] = {
-        // More details: JVM 7 Spec. Section 5.4.3.2
-        project.classFile(declaringClassType) flatMap { classFile ⇒
-            classFile.fields find { field ⇒
-                (field.fieldType eq fieldType) && (field.name == fieldName)
-            } orElse {
-                classFile.interfaceTypes collectFirst { supertype ⇒
-                    resolveFieldReference(supertype, fieldName, fieldType, project) match {
-                        case Some(resolvedFieldReference) ⇒ resolvedFieldReference
-                    }
-                } orElse {
-                    classFile.superclassType flatMap { supertype ⇒
-                        resolveFieldReference(supertype, fieldName, fieldType, project)
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * @see `resolveFieldReference(org.opalj.br.ObjectType,java.lang.String,org.opalj.br.FieldType,org.opalj.br.ClassFileRepository):scala.Option[org.opalj.br.Field]`
-     */
-    final def resolveFieldReference(
-        fieldAccess: FieldAccess,
-        project:     ClassFileRepository
-    ): Option[Field] = {
-        resolveFieldReference(
-            fieldAccess.declaringClass,
-            fieldAccess.name,
-            fieldAccess.fieldType,
-            project
-        )
-    }
-
-    /**
-     * Tries to resolve a method reference as specified by the JVM specification.
-     * I.e., the algorithm tries to find the class that actually declares the referenced
-     * method. Resolution of '''signature polymorphic''' method calls is also
-     * supported; for details see `lookupMethodDefinition`).
-     *
-     * This method is the basis for the implementation of the semantics
-     * of the `invokeXXX` instructions. However, it does not check whether the resolved
-     * method can be accessed by the caller or if it is abstract. Additionally, it is still
-     * necessary that the caller makes a distinction between the statically
-     * (at compile time) identified declaring class and the dynamic type of the receiver
-     * in case of `invokevirtual` and `invokeinterface` instructions. I.e.,
-     * additional processing is necessary on the client side.
-     *
-     * @note Generally, if the type of the receiver is not precise the receiver object's
-     *    subtypes should also be searched for method implementations (at least those
-     *    classes should be taken into consideration that may be instantiated).
-     * @note This method just resolves a method reference. Additional checks,
-     *    such as whether the resolved method is accessible, may be necessary.
-     * @param receiverType The type of the object that receives the method call. The
-     *      type must be a class type and must not be an interface type.
-     * @return The resolved method `Some(`'''METHOD'''`)` or `None`.
-     *      To get the defining class file use the project's respective method.
-     */
-    def resolveMethodReference(
-        receiverType:     ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        project:          ClassFileRepository
-    ): Option[Method] = {
-
-        project.classFile(receiverType) flatMap { classFile ⇒
-
-            lookupMethodDefinition(
-                receiverType,
-                methodName,
-                methodDescriptor,
-                project
-            ) orElse
-                lookupMethodInSuperinterfaces(
-                    classFile,
-                    methodName,
-                    methodDescriptor,
-                    project
-                )
-        }
-    }
-
-    def resolveInterfaceMethodReference(
-        receiverType:     ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        project:          ClassFileRepository
-    ): Option[Method] = {
-
-        project.classFile(receiverType) flatMap { classFile ⇒
-            assert(classFile.isInterfaceDeclaration)
-
-            {
-                lookupMethodInInterface(
-                    classFile,
-                    methodName,
-                    methodDescriptor,
-                    project
-                )
-            } orElse {
-                lookupMethodDefinition(
-                    ObjectType.Object,
-                    methodName,
-                    methodDescriptor,
-                    project
-                )
-            }
-        }
-    }
-
-    def lookupMethodInInterface(
-        classFile:        ClassFile,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        project:          ClassFileRepository
-    ): Option[Method] = {
-        classFile.findMethod(methodName, methodDescriptor) orElse
-            lookupMethodInSuperinterfaces(classFile, methodName, methodDescriptor, project)
-    }
-
-    def lookupMethodInSuperinterfaces(
-        classFile:        ClassFile,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        project:          ClassFileRepository
-    ): Option[Method] = {
-
-        classFile.interfaceTypes foreach { superinterface: ObjectType ⇒
-            project.classFile(superinterface) foreach { superclass ⇒
-                val result =
-                    lookupMethodInInterface(
-                        superclass,
-                        methodName,
-                        methodDescriptor,
-                        project
-                    )
-                if (result.isDefined)
-                    return result;
-            }
-        }
-        None
-    }
-
-    /**
-     * @see `lookupMethodDefinition(ObjectType,String,MethodDescriptor,ClassFileRepository)`
-     */
-    def lookupMethodDefinition(
-        invocation: MethodInvocationInstruction,
-        project:    ClassFileRepository
-    ): Option[Method] = {
-        val receiverType = invocation.declaringClass match {
-            case ot: ObjectType ⇒ ot
-            case at: ArrayType  ⇒ ObjectType.Object
-        }
-
-        lookupMethodDefinition(
-            receiverType,
-            invocation.name,
-            invocation.methodDescriptor,
-            project
-        )
-    }
-
-    /**
-     * Looks up the class file and method which actually defines the method that is
-     * referred to by the given receiver type, method name and method descriptor. Given
-     * that we are searching for method definitions the search is limited to the
-     * superclasses of the class of the given receiver type.
-     *
-     * This method does not take visibility modifiers or the static modifier into account.
-     * If necessary, such checks need to be done by the caller.
-     *
-     * This method supports resolution of `signature polymorphic methods`
-     * (in this case however, it needs to be checked that the respective invoke
-     * instruction is an `invokevirtual` instruction.)
-     *
-     * @note In case that you ''analyze static source code dependencies'' and if an invoke
-     *    instruction refers to a method that is not defined by the receiver's class, then
-     *    it might be more meaningful to still create a dependency to the receiver's class
-     *    than to look up the actual definition in one of the receiver's super classes.
-     * @return `Some(Method)` if the method is found. `None` if the method
-     *    is not found. This can basically happen under two circumstances:
-     *    First, not all class files referred to/used by the project are (yet) analyzed;
-     *    i.e., we do not have all class files belonging to the project.
-     *    Second, the analyzed class files do not belong together (they either belong to
-     *    different projects or to incompatible versions of the same project.)
-     *
-     *    To get the method's defining class file use the project's respective method.
-     */
-    def lookupMethodDefinition(
-        receiverType:     ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        project:          ClassFileRepository
-    ): Option[Method] = {
-
-        // TODO [Java8] Support Extension Methods!
-        assert(
-            !isInterface(receiverType),
-            s"${receiverType.toJava} is classified as an interface (looking up ${methodDescriptor.toJava(methodName)}); "+
-                project.classFile(receiverType).map(_.toString).getOrElse("<precise information missing>")
-        )
-
-        @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
-            import MethodDescriptor.SignaturePolymorphicMethod
-
-            val classFileOption = project.classFile(receiverType)
-            if (classFileOption.isEmpty)
-                return None;
-            val classFile = classFileOption.get
-
-            val methodOption =
-                classFile.findMethod(methodName, methodDescriptor).orElse {
-                    /* FROM THE SPECIFICATION:
-                         * Method resolution attempts to look up the referenced method in C and
-                         * its superclasses:
-                         * If C declares exactly one method with the name specified by the
-                         * method reference, and the declaration is a signature polymorphic
-                         * method, then method lookup succeeds.
-                         * [...]
-                         *
-                         * A method is signature polymorphic if:
-                         * - It is declared in the java.lang.invoke.MethodHandle class.
-                         * - It has a single formal parameter of type Object[].
-                         * - It has a return type of Object.
-                         * - It has the ACC_VARARGS and ACC_NATIVE flags set.
-                         */
-                    if (receiverType eq ObjectType.MethodHandle)
-                        classFile.findMethod(methodName, SignaturePolymorphicMethod).find(
-                            _.isNativeAndVarargs
-                        )
-                    else
-                        None
-                }
-
-            if (methodOption.isDefined)
-                methodOption
-            else {
-                val superclassType = superclassTypeMap(receiverType.id)
-                if (superclassType ne null)
-                    lookupMethodDefinition(superclassType)
-                else
-                    None
-            }
-        }
-
-        lookupMethodDefinition(receiverType)
-    }
-
-    /**
-     * Returns all classes that implement the given method by searching all subclasses
-     * of `receiverType` for implementations of the given method and also considering
-     * the superclasses of the `receiverType` up until the class (not interface) that
-     * defines the respective method.
-     *
-     *  @param receiverType An upper bound of the runtime type of some value. __If the type
-     *       is known to  be precise (i.e., it is no approximation of the runtime type)
-     *       then it is far more meaningful to directly call `lookupMethodDefinition`.__
-     *  @param methodName The name of the method.
-     *  @param methodDescriptor The method's descriptor.
-     *  @param project Required to get a type's implementing class file.
-     *       This method expects unrestricted access to the pool of all class files.
-     *  @param classesFilter A function that returns `true`, if the runtime type of
-     *       the `receiverType` may be of the type defined by the given object type. For
-     *       example, if you analyze a project and perform a lookup of all methods that
-     *       implement the method `toString`, then this set would probably be very large.
-     *       But, if you know that only instances of the class (e.g.) `ArrayList` have
-     *       been created so far
-     *       (up to the point in your analysis where you call this method), it is
-     *       meaningful to sort out all other classes (such as `Vector`).
-     */
-    def lookupImplementingMethods(
-        receiverType:     ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        project:          ClassFileRepository,
-        classesFilter:    ObjectType ⇒ Boolean
-    ): Set[Method] = {
-
-        val receiverIsInterface = isInterface(receiverType)
-        // TODO [Improvement] Implement an "UnsafeListSet" that does not check for the set property if (by construction) it has to be clear that all elements are unique
-        var implementingMethods: Set[Method] =
-            {
-                if (receiverIsInterface)
-                    lookupMethodDefinition(
-                        ObjectType.Object, // to handle calls such as toString on a (e.g.) "java.util.List"
-                        methodName,
-                        methodDescriptor,
-                        project
-                    )
-                else
-                    lookupMethodDefinition(
-                        receiverType,
-                        methodName,
-                        methodDescriptor,
-                        project
-                    )
-            } match {
-                case Some(method) if !method.isAbstract ⇒ Set(method)
-                case _                                  ⇒ Set.empty
-            }
-
-        // Search all subclasses
-        val seenSubtypes = mutable.HashSet.empty[ObjectType]
-        foreachSubtype(receiverType) { (subtype: ObjectType) ⇒
-            if (!isInterface(subtype) && !seenSubtypes.contains(subtype)) {
-                seenSubtypes += subtype
-                if (classesFilter(subtype)) {
-                    project.classFile(subtype) foreach { classFile ⇒
-                        val methodOption =
-                            if (receiverIsInterface) {
-                                lookupMethodDefinition(subtype, methodName, methodDescriptor, project)
-                            } else {
-                                classFile.findMethod(methodName, methodDescriptor)
-                            }
-                        if (methodOption.isDefined) {
-                            val method = methodOption.get
-                            if (!method.isAbstract)
-                                implementingMethods += method
-                        }
-                    }
-                }
-            }
-        }
-
-        implementingMethods
-    }
-
-    /**
-     * The direct subtypes of the given type (not reflexive).
-     */
-    def directSubtypesOf(objectType: ObjectType): UIDSet[ObjectType] = {
-        if (isUnknown(objectType))
-            return UIDSet0;
-
-        val oid = objectType.id
-        this.subclassTypesMap(oid) ++ this.subinterfaceTypesMap(oid)
-    }
-
-    def directSubclassesOf(objectType: ObjectType): UIDSet[ObjectType] = {
-        if (isUnknown(objectType))
-            return UIDSet0;
-
-        this.subclassTypesMap(objectType.id)
-    }
-
-    def directSubinterfacesOf(objectType: ObjectType): UIDSet[ObjectType] = {
-        if (isUnknown(objectType))
-            return UIDSet0;
-
-        this.subinterfaceTypesMap(objectType.id)
-    }
-
-    /**
-     * Computes the set of types which are subtypes (reflexive) of all types identified by the
-     * given `upper type bound`. E.g., a the class X which implements I and J,
-     * would be a direct subtype of the upper type bound consisting of I and J.
-     * If the bound consists of only one type then the bound is returned.
-     *
-     * @param     upperTypeBound A set of types that are in no inheritance relationship.
-     *             `upperTypeBound` must not be empty.
-     */
-    def directSubtypesOf(upperTypeBound: UIDSet[ObjectType]): UIDSet[ObjectType] = {
-        if (upperTypeBound.isSingletonSet)
-            return upperTypeBound;
-
-        val firstType = upperTypeBound.first
-        val remainingTypeBounds = upperTypeBound.tail
-
-        // Basic Idea: let's do a breadth-first search and for every candidate type
-        // we check whether the type is a subtype of all types in the bound.
-        // If so, the type is added to the result set and the search terminates
-        // for this particular type.
-
-        // The analysis is complicated by the fact that an interface may be
-        // implemented multiple times, e.g.,:
-        // interface I
-        // interface J extends I
-        // class X implements I,J
-        // class Y implements J
-
-        var directSubtypes = UIDSet.empty[ObjectType]
-        var processedTypes = UIDSet.empty[ObjectType]
-        val typesToProcess = new mutable.Queue ++= directSubtypesOf(firstType)
-        while (typesToProcess.nonEmpty) {
-            val candidateType = typesToProcess.dequeue
-            processedTypes += candidateType
-            val isCommonSubtype =
-                remainingTypeBounds.forall { (otherTypeBound: ObjectType) ⇒
-                    isSubtypeOf(candidateType, otherTypeBound).isYesOrUnknown
-                }
-            if (isCommonSubtype) {
-                directSubtypes =
-                    directSubtypes.filter { candidateDirectSubtype ⇒
-                        isSubtypeOf(candidateDirectSubtype, candidateType).isNoOrUnknown
-                    } +
-                        candidateType
-            } else {
-                directSubtypesOf(candidateType).foreach { candidateType ⇒
-                    if (!processedTypes.contains(candidateType))
-                        typesToProcess += candidateType
-                }
-            }
-        }
-
-        directSubtypes
-    }
-
-    /**
-     * Calls the given function `f` for each type that is known to the class hierarchy.
-     */
-    def foreachKnownType[T](f: ObjectType ⇒ T): Unit = {
-        foreachNonNullValue(knownTypesMap)((index, t) ⇒ f(t))
     }
 
     /**
@@ -2072,9 +1765,7 @@ class ClassHierarchy private (
                             )
                         }
                         def foreachSuccessor(f: Node ⇒ Unit): Unit = {
-                            directSubtypes foreach { subtype ⇒
-                                f(nodes(subtype))
-                            }
+                            directSubtypes foreach { subtype ⇒ f(nodes(subtype)) }
                         }
                         def hasSuccessors: Boolean = directSubtypes.nonEmpty
                     }
@@ -2126,10 +1817,10 @@ class ClassHierarchy private (
 
     /**
      * Selects all types of the given set of types that '''do not have any subtype
-     * in the given set'''. If the given set is empty a containing `java.lang.Object`
+     * in the given set'''. If the given set is empty a set containing `java.lang.Object`
      * is returned. A set which contains only one type will directly be returned.
      *
-     * @param     types A set of types that contains '''for each type stored in the
+     * @param   types A set of types that contains '''for each type stored in the
      *          set all direct and indirect supertypes or none'''. For example, the intersection
      *          of the sets of all supertypes (as returned, e.g., by
      *          `ClassHiearchy.allSupertypes`) of two (independent) types satisfies this

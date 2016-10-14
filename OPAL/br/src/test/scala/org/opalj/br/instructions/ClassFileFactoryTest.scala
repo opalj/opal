@@ -315,11 +315,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             val methodWithManyParametersAndNoReturnValue = testProject.
                 classFile(InstanceMethods).get.
-                findMethod("methodWithManyParametersAndNoReturnValue").get
+                findMethod("methodWithManyParametersAndNoReturnValue").head
 
             val staticMethodWithManyParametersAndNoReturnValue = testProject.
                 classFile(StaticMethods).get.
-                findMethod("methodWithManyParametersAndNoReturnValue").get
+                findMethod("methodWithManyParametersAndNoReturnValue").head
 
             it("and produces correctly indexed load instructions") {
                 testMethod(
@@ -417,7 +417,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 val methodWithFiveDoubleParameters = testProject.
                     classFile(StaticMethods).get.findMethod(
                         "doubleDoubleDoubleDoubleDoubleAndNoReturnValue"
-                    ).get
+                    ).head
                 val proxy =
                     ClassFileFactory.Proxy(
                         TypeDeclaration(
@@ -702,7 +702,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             describe("references to constructors") {
                 it("should be correctly identified") {
-                    val newValueMethod = MethodReferences.findMethod("newValue").get
+                    val newValueMethod = MethodReferences.findMethod("newValue").head
                     val body = newValueMethod.body.get
                     val indy = body.collectFirstWithIndex { case (pc, i: INVOKEDYNAMIC) ⇒ i } match {
                         case Some(i) ⇒ i
@@ -732,7 +732,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     INVOKESPECIAL.opcode
                 )
 
-                val proxyMethod = proxy.findMethod("get").get
+                val proxyMethod = proxy.findMethod("get").head
 
                 it("should result in a proxy method that creates an instance of the object first") {
                     proxyMethod.body.get.instructions.slice(0, 4) should be(
@@ -750,7 +750,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 it("should be correctly identified") {
                     val filterOutEmptyValuesMethod = MethodReferences.findMethod(
                         "filterOutEmptyValues"
-                    ).get
+                    ).head
                     val invokedynamic = filterOutEmptyValuesMethod.body.get.instructions.
                         find(_.isInstanceOf[INVOKEDYNAMIC]).get.asInstanceOf[INVOKEDYNAMIC]
                     val targetMethodHandle = invokedynamic.bootstrapMethod.
@@ -782,7 +782,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 )
 
                 it("and result in a proxy method that passes in the explicit this") {
-                    val proxyMethod = proxy.findMethod("isFull").get
+                    val proxyMethod = proxy.findMethod("isFull").head
                     val instructions = proxyMethod.body.get.instructions
                     instructions(0) should be(ALOAD_1)
                     instructions(1) should be(INVOKEVIRTUAL(

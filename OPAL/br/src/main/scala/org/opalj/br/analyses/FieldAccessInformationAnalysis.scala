@@ -50,17 +50,16 @@ import org.opalj.br.instructions.PUTSTATIC
  * val accessInformation = project.get(FieldAccessInformationKey)
  * }}}
  *
- * @note The analysis does not take reflective field accesses into account.
- * @note The analysis is internally parallelized and should not be run with other analyses in
- *      parallel.
+ * @note 	The analysis does not take reflective field accesses into account.
+ * @note 	The analysis is internally parallelized and should not be run with other analyses in
+ *      	parallel.
  *
  * @author Michael Eichberg
  */
 object FieldAccessInformationAnalysis {
 
     def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): FieldAccessInformation = {
-
-        val classHierarchy = project.classHierarchy
+        import project.resolveFieldReference
 
         val allReadAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
         val allWriteAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
@@ -71,13 +70,13 @@ object FieldAccessInformationAnalysis {
 
             val readAccesses = AnyRefMap.empty[Field, UShortSet]
             val writeAccesses = AnyRefMap.empty[Field, UShortSet]
-            val unresolved = UShortSet.empty
+            var unresolved = UShortSet.empty
             method.body.get.iterate { (pc, instruction) ⇒
                 instruction.opcode match {
 
                     case GETFIELD.opcode | GETSTATIC.opcode ⇒
                         val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
-                        classHierarchy.resolveFieldReference(fieldReadAccess, project) match {
+                        resolveFieldReference(fieldReadAccess) match {
                             case Some(field) ⇒
                                 val key = field
                                 readAccesses.update(
@@ -85,12 +84,12 @@ object FieldAccessInformationAnalysis {
                                     pc +≈: readAccesses.getOrElse(key, UShortSet.empty)
                                 )
                             case None ⇒
-                                pc +≈: unresolved
+                                unresolved = pc +≈: unresolved
                         }
 
                     case PUTFIELD.opcode | PUTSTATIC.opcode ⇒
                         val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
-                        classHierarchy.resolveFieldReference(fieldWriteAccess, project) match {
+                        resolveFieldReference(fieldWriteAccess) match {
                             case Some(field) ⇒
                                 val key = field
                                 writeAccesses.update(
@@ -98,7 +97,7 @@ object FieldAccessInformationAnalysis {
                                     pc +≈: writeAccesses.getOrElse(key, UShortSet.empty)
                                 )
                             case None ⇒
-                                pc +≈: unresolved
+                                unresolved = pc +≈: unresolved
                         }
 
                     case _ ⇒ /*nothing to do*/

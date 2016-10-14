@@ -222,7 +222,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
     protected[this] def doInvokeNonVirtual(
         pc:                 PC,
-        declaringClassType: ObjectType,
+        declaringClassType: ObjectType, // ... arrays do not have any static/special methods
         methodName:         String,
         methodDescriptor:   MethodDescriptor,
         operands:           Operands,
@@ -231,16 +231,9 @@ trait PerformInvocations extends MethodCallsHandling {
 
         val methodOption =
             try {
-                classHierarchy.resolveMethodReference(
-                    // the cast is safe since arrays do not have any static/special methods
-                    declaringClassType.asObjectType,
-                    methodName,
-                    methodDescriptor,
-                    project
-                )
+                project.resolveMethodReference(declaringClassType, methodName, methodDescriptor)
             } catch {
-                case ct: ControlThrowable ⇒
-                    throw ct;
+                case ct: ControlThrowable ⇒ throw ct;
 
                 case e: AssertionError ⇒
                     OPALLogger.logOnce(Error(
@@ -314,12 +307,8 @@ trait PerformInvocations extends MethodCallsHandling {
         descriptor:     MethodDescriptor,
         operands:       Operands
     ): MethodCallResult = {
-
-        def fallback() =
-            super.invokevirtual(pc, declaringClass, name, descriptor, operands)
-
+        def fallback() = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
         doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback)
-
     }
 
     abstract override def invokeinterface(
@@ -329,27 +318,19 @@ trait PerformInvocations extends MethodCallsHandling {
         descriptor:     MethodDescriptor,
         operands:       Operands
     ): MethodCallResult = {
-
-        def fallback() =
-            super.invokeinterface(pc, declaringClass, name, descriptor, operands)
-
+        def fallback() = super.invokeinterface(pc, declaringClass, name, descriptor, operands)
         doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback)
     }
 
     abstract override def invokespecial(
-        pc:               PC,
-        declaringClass:   ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:             PC,
+        declaringClass: ObjectType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
     ): MethodCallResult = {
-
-        def fallback() =
-            super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
-
-        doInvokeNonVirtual(
-            pc, declaringClass, methodName, methodDescriptor, operands, fallback
-        )
+        def fallback() = super.invokespecial(pc, declaringClass, name, descriptor, operands)
+        doInvokeNonVirtual(pc, declaringClass, name, descriptor, operands, fallback)
     }
 
     /**
@@ -358,19 +339,16 @@ trait PerformInvocations extends MethodCallsHandling {
      * if we have a recursive invocation, the super implementation is called.
      */
     abstract override def invokestatic(
-        pc:               PC,
-        declaringClass:   ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:             PC,
+        declaringClass: ObjectType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
     ): MethodCallResult = {
 
-        def fallback() =
-            super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+        def fallback() = super.invokestatic(pc, declaringClass, name, descriptor, operands)
 
-        doInvokeNonVirtual(
-            pc, declaringClass, methodName, methodDescriptor, operands, fallback
-        )
+        doInvokeNonVirtual(pc, declaringClass, name, descriptor, operands, fallback)
     }
 
 }

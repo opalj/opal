@@ -65,12 +65,15 @@ class CHACallGraphExtractorWithCBS(
 ) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(
-            val project:   SomeProject,
             val classFile: ClassFile,
             val method:    Method
+    )(
+            implicit
+            val project: SomeProject
     ) extends super.AnalysisContext {
 
         val classHierarchy = project.classHierarchy
+        import project.lookupMethodDefinition
 
         def staticCall(
             pc:                 PC,
@@ -81,22 +84,13 @@ class CHACallGraphExtractorWithCBS(
 
             def handleUnresolvedMethodCall() = {
                 addUnresolvedMethodCall(
-                    classFile.thisType, method, pc,
-                    declaringClassType, name, descriptor
+                    classFile.thisType, method, pc, declaringClassType, name, descriptor
                 )
             }
 
-            if (classHierarchy.isKnown(declaringClassType)) {
-                classHierarchy.lookupMethodDefinition(
-                    declaringClassType, name, descriptor, project
-                ) match {
-                    case Some(callee) ⇒
-                        addCallEdge(pc, HashSet(callee))
-                    case None ⇒
-                        handleUnresolvedMethodCall()
-                }
-            } else {
-                handleUnresolvedMethodCall()
+            lookupMethodDefinition(declaringClassType, name, descriptor) match {
+                case Some(callee) ⇒ addCallEdge(pc, HashSet(callee))
+                case None         ⇒ handleUnresolvedMethodCall()
             }
         }
 
@@ -109,24 +103,15 @@ class CHACallGraphExtractorWithCBS(
 
             def handleUnresolvedMethodCall(): Unit = {
                 addUnresolvedMethodCall(
-                    classFile.thisType, method, pc,
-                    declaringClassType, name, descriptor
+                    classFile.thisType, method, pc, declaringClassType, name, descriptor
                 )
             }
 
-            if (classHierarchy.isKnown(declaringClassType)) {
-                classHierarchy.lookupMethodDefinition(
-                    declaringClassType, name, descriptor, project
-                ) match {
-                    case Some(callee) ⇒
-                        val callees = HashSet(callee)
-                        addCallEdge(pc, callees)
-                    case None ⇒
-                        handleUnresolvedMethodCall()
-                }
-            } else {
-                handleUnresolvedMethodCall()
+            lookupMethodDefinition(declaringClassType, name, descriptor) match {
+                case Some(callee) ⇒ addCallEdge(pc, HashSet(callee))
+                case None         ⇒ handleUnresolvedMethodCall()
             }
+
         }
 
         /**
@@ -143,8 +128,9 @@ class CHACallGraphExtractorWithCBS(
             receiverIsNull:     Answer
         ): Unit = {
 
-            if (receiverIsNull.isYesOrUnknown)
+            if (receiverIsNull.isYesOrUnknown) {
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+            }
 
             doNonVirtualCall(pc, declaringClassType, name, descriptor)
         }
@@ -185,8 +171,7 @@ class CHACallGraphExtractorWithCBS(
 
             if (callees.isEmpty && cbsCalls.isEmpty) {
                 addUnresolvedMethodCall(
-                    classFile.thisType, method, pc,
-                    declaringClassType, name, descriptor
+                    classFile.thisType, method, pc, declaringClassType, name, descriptor
                 )
             } else {
                 addCallEdge(pc, callees ++ cbsCalls)
@@ -198,35 +183,27 @@ class CHACallGraphExtractorWithCBS(
             name:               String,
             descriptor:         MethodDescriptor
         ): Set[Method] = {
-            val cbsMethods = cbsIndex.findMethods(
-                name,
-                descriptor,
-                declaringClassType
-            )
-
-            cbsMethods
+            cbsIndex.findMethods(name, descriptor, declaringClassType)
         }
     }
 
     def extract(
-        project:   SomeProject,
         classFile: ClassFile,
         method:    Method
+    )(
+        implicit
+        project: SomeProject
     ): CallGraphExtractor.LocalCallGraphInformation = {
-        val context = new AnalysisContext(project, classFile, method)
+        val context = new AnalysisContext(classFile, method)
 
         method.body.get.iterate { (pc, instruction) ⇒
             instruction.opcode match {
                 case INVOKEVIRTUAL.opcode ⇒
                     val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
                     if (declaringClass.isArrayType) {
-                        context.nonVirtualCall(
-                            pc, ObjectType.Object, name, descriptor, Unknown
-                        )
+                        context.nonVirtualCall(pc, ObjectType.Object, name, descriptor, Unknown)
                     } else {
-                        context.virtualCall(
-                            pc, declaringClass.asObjectType, name, descriptor
-                        )
+                        context.virtualCall(pc, declaringClass.asObjectType, name, descriptor)
                     }
                 case INVOKEINTERFACE.opcode ⇒
                     val INVOKEINTERFACE(declaringClass, name, descriptor) = instruction

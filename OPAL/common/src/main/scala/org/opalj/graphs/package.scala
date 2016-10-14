@@ -49,11 +49,11 @@ package object graphs {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def toDot(
-        rootNodes: Set[_ <: Node],
-        dir:       String         = "forward",
-        ranksep:   String         = "1.0",
-        fontname:  String         = "Helvetica",
-        rankdir:   String         = "TB"
+        rootNodes: Traversable[_ <: Node],
+        dir:       String                 = "forward",
+        ranksep:   String                 = "1.0",
+        fontname:  String                 = "Helvetica",
+        rankdir:   String                 = "TB"
     ): String = {
         var nodesToProcess = Set.empty[Node] ++ rootNodes
         var processedNodes = Set.empty[Node]
@@ -102,7 +102,7 @@ package object graphs {
     // ---------------------------------------------------------------------------------------
 
     final def closedSCCs[N >: Null <: AnyRef](g: Graph[N]): List[Iterable[N]] = {
-        closedSCCs(g.vertices, g)
+        closedSCCs(g.vertices, g.asTraversable)
     }
 
     private type DFSNum = Int // always a positive number >= 0

@@ -29,39 +29,76 @@
 package org.opalj
 package graphs
 
+import scala.language.implicitConversions
+
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
 import scala.collection.{Map ⇒ AMap}
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
- * A very simple representation of a mutable graph with ordered edges.
+ * Represents a mutable (multi-)graph with ordered edges.
  *
  * @author Michael Eichberg
  */
 class Graph[@specialized(Int) N] private (
         val vertices:     Set[N],
-        val successors:   LinkedHashMap[N, List[N]],
-        val predecessors: LinkedHashMap[N, List[N]]
-) extends (N ⇒ Traversable[N]) {
+        val successors:   LinkedHashMap[N, Chain[N]],
+        val predecessors: LinkedHashMap[N, Chain[N]]
+) extends (N ⇒ Chain[N]) {
 
-    def apply(s: N): Traversable[N] = successors.getOrElse(s, List.empty)
+    def nonEmpty: Boolean = vertices.nonEmpty
 
+    def apply(s: N): Chain[N] = successors.getOrElse(s, Naught)
+
+    def asTraversable: N ⇒ Traversable[N] = (n: N) ⇒ { this(n).toTraversable }
+
+    /**
+     * Adds a new vertice.
+     */
     def +=(n: N): this.type = {
         vertices += n
         this
     }
 
-    def +=(e: Tuple2[N, N]): this.type = {
+    /**
+     * Adds a new edge between the given vertices.
+     *
+     * (If the vertices were not previously added, they will be added.)
+     */
+    def +=(e: (N, N)): this.type = {
         val (s, t) = e
         this += (s, t)
     }
 
+    /**
+     * Adds a new edge between the given vertices.
+     *
+     * (If the vertices were not previously added, they will be added.)
+     */
     def +=(s: N, t: N): this.type = {
         vertices += s += t
-        successors += ((s, t :: successors.getOrElse(s, List.empty)))
-        predecessors += ((t, s :: predecessors.getOrElse(t, List.empty)))
+        successors += ((s, t :&: successors.getOrElse(s, Naught)))
+        predecessors += ((t, s :&: predecessors.getOrElse(t, Naught)))
         this
     }
+
+    /**
+     * Removes the given vertice from this graph.
+     */
+    def -=(v: N): this.type = {
+        vertices -= v
+        val oldSuccessorsOpt = successors.get(v)
+        oldSuccessorsOpt.foreach(_ foreach { s ⇒ predecessors(s) = predecessors(s) filter (_ != v) })
+        val oldPredecessorsOpt = predecessors.get(v)
+        oldPredecessorsOpt.foreach(_ foreach { s ⇒ successors(s) = successors(s) filter (_ != v) })
+        successors -= v
+        predecessors -= v
+        this
+    }
+
+    def --=(vs: TraversableOnce[N]): this.type = { vs foreach { v ⇒ this -= v }; this }
 
     /**
      * Returns the set of nodes with no incoming dependencies; self-dependencies are optionally
@@ -71,6 +108,7 @@ class Graph[@specialized(Int) N] private (
      * 			This means that nodes that have a self dependency are considered as being root
      * 			nodes if they have no further incoming dependencies.
      *
+     * @return	The set of root nodes which can be freely mutated.
      * @example
      * {{{
      * scala> val g = org.opalj.graphs.Graph.empty[AnyRef] +=
@@ -108,18 +146,27 @@ class Graph[@specialized(Int) N] private (
         rootNodes
     }
 
+    /**
+     * All nodes which only have incoming dependencies.
+     */
+    def leafNodes: Set[N] = vertices.filter(v ⇒ !successors.contains(v) || successors(v).isEmpty)
+
+    //
+    // GENERATE VARIOUS KINDS OF DEBUG OUTPUTS
+    //
+
     override def toString: String = {
-        "Graph{\n"+
-            vertices.map { v ⇒
-                v.toString() +
-                    successors.getOrElse(v, List.empty).mkString(" => {", ",", "}")
-            }.mkString("\n")+
-            "\n}"
+        val vertices = this.vertices map { v ⇒
+            successors.getOrElse(v, Nil).mkString(v.toString()+" => {", ",", "}")
+        }
+        vertices.mkString("Graph{\n\t", "\n\t", "\n}")
     }
 
     def toNodes: Iterable[Node] = {
-        val nodesMap: Map[N, DefaultMutableNode[String]] =
+
+        val nodesMap: Map[N, DefaultMutableNode[String]] = {
             vertices.map(v ⇒ (v, new DefaultMutableNode(v.toString()))).toMap
+        }
 
         vertices.foreach { v ⇒
             val node = nodesMap(v)
@@ -130,12 +177,8 @@ class Graph[@specialized(Int) N] private (
         nodesMap.values
     }
 
-    def toDot(
-        dir:     String = "forward",
-        ranksep: String = "1.0",
-        rankdir: String = "TB"
-    ): String = {
-        org.opalj.graphs.toDot(toNodes.toSet, dir, ranksep, rankdir = rankdir)
+    def toDot(dir: String = "forward", ranksep: String = "1.0", rankdir: String = "TB"): String = {
+        org.opalj.graphs.toDot(toNodes, dir, ranksep, rankdir = rankdir)
     }
 }
 
@@ -143,6 +186,10 @@ class Graph[@specialized(Int) N] private (
  * Defines factory methods to create simple graphs.
  */
 object Graph {
+
+    implicit def intToInteger(i: Int): Integer = Integer.valueOf(i)
+
+    implicit def AnyRefToAnyRef(o: AnyRef): AnyRef = o
 
     def empty[N]: Graph[N] = new Graph[N](Set.empty, LinkedHashMap.empty, LinkedHashMap.empty)
 

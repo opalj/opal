@@ -244,7 +244,11 @@ object ChainProperties extends Properties("Chain") {
         (l.nonEmpty && l.head == fl.head) ||
             // if the list is empty, an exception needs to be thrown
             { try { fl.head; false } catch { case _: Throwable ⇒ true } }
+    }
 
+    property("headOption") = forAll { l: List[String] ⇒
+        val fl = Chain(l: _*)
+        fl.headOption == l.headOption
     }
 
     property("tail") = forAll { l: List[String] ⇒

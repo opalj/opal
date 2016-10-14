@@ -58,12 +58,12 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
 
     val StackAndSynchronizeClassFile = project.classFile(StackAndSynchronizeType).get
 
-    val PopMethod = StackAndSynchronizeClassFile.findMethod("pop").get
-    val Pop2Case2Method = StackAndSynchronizeClassFile.findMethod("pop2case2").get
-    val DupMethod = StackAndSynchronizeClassFile.findMethod("dup").get
-    val MonitorEnterAndExitMethod = StackAndSynchronizeClassFile.findMethod("monitorEnterAndExit").get
-    val InvokeStaticMethod = StackAndSynchronizeClassFile.findMethod("invokeStatic").get
-    val InvokeInterfaceMethod = StackAndSynchronizeClassFile.findMethod("invokeInterface").get
+    val PopMethod = StackAndSynchronizeClassFile.findMethod("pop").head
+    val Pop2Case2Method = StackAndSynchronizeClassFile.findMethod("pop2case2").head
+    val DupMethod = StackAndSynchronizeClassFile.findMethod("dup").head
+    val MonitorEnterAndExitMethod = StackAndSynchronizeClassFile.findMethod("monitorEnterAndExit").head
+    val InvokeStaticMethod = StackAndSynchronizeClassFile.findMethod("invokeStatic").head
+    val InvokeInterfaceMethod = StackAndSynchronizeClassFile.findMethod("invokeInterface").head
 
     describe("The quadruples representation of stack manipulation and synchronization instructions") {
 

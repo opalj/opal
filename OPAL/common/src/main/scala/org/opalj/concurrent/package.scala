@@ -293,7 +293,7 @@ package object concurrent {
                         schedule();
                         futuresCountMutex.synchronized {
                             futuresCount -= 1
-                            futuresCountMutex.notify()
+                            if (futuresCount == 0) futuresCountMutex.notify()
                         }
                     }(executionContext)
                 }

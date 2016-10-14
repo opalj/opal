@@ -106,6 +106,8 @@ object CallGraphFactory {
      */
     def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
 
+        implicit val logContext = project.logContext
+
         val instantiableClasses = project.get(InstantiableClassesKey)
 
         /*  TODO Filter methods that are impossible entry points...
@@ -137,10 +139,8 @@ object CallGraphFactory {
             } else if (isImplicitlyUsed) {
                 methods.add(method)
             } else if (isNonPrivate) {
-                OPALLogger.info(
-                    "analysis result",
-                    "non-private instance method found in a class which cannot be instantiated "+method.toJava(classFile)
-                )(project.logContext)
+                val m = "non-instantiable class contains instance method: "+method.toJava(classFile)
+                OPALLogger.info("analysis result", m)
             }
         }
         import scala.collection.JavaConverters._
@@ -155,15 +155,15 @@ object CallGraphFactory {
      * the call graph algorithm (and its used cache) have to be thread-safe.
      */
     def create(
-        theProject:      SomeProject,
+        project:         SomeProject,
         findEntryPoints: () ⇒ Iterable[Method],
         configuration:   CallGraphAlgorithmConfiguration
     ): ComputedCallGraph = {
-        implicit val logContext = theProject.logContext
+        implicit val logContext = project.logContext
 
         val entryPoints = findEntryPoints()
         if (entryPoints.isEmpty)
-            return ComputedCallGraph.empty(theProject)
+            return ComputedCallGraph.empty(project)
 
         import scala.collection.{Map, Set}
         type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
@@ -178,11 +178,10 @@ object CallGraphFactory {
         def doAnalyzeMethod(method: Method): Callable[MethodAnalysisResult] =
             new Callable[MethodAnalysisResult] {
                 def call(): MethodAnalysisResult = {
-                    val classFile = theProject.classFile(method)
+                    val classFile = project.classFile(method)
                     try {
-                        val (callEdges, unresolveableMethodCalls) =
-                            extract(theProject, classFile, method)
-                        (callEdges, unresolveableMethodCalls, None)
+                        val (callEdges, unresolveableCalls) = extract(classFile, method)(project)
+                        (callEdges, unresolveableCalls, None)
                     } catch {
                         case ct: scala.util.control.ControlThrowable ⇒ throw ct
                         case t: Throwable ⇒
@@ -199,7 +198,7 @@ object CallGraphFactory {
         var futuresCount = 0
         val methodSubmitted: scala.collection.mutable.HashSet[Method] =
             new scala.collection.mutable.HashSet[Method]() {
-                override def initialSize: Int = theProject.methodsCount
+                override def initialSize: Int = project.methodsCount
             }
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](
@@ -217,7 +216,8 @@ object CallGraphFactory {
             // - call to a static method without args (3 bytes)
             // - a return (void or the result of the static method call)
             val instructions = method.body.get.instructions
-            if (instructions.size < minimumSize)
+            val instructionsLength = instructions.length
+            if (instructionsLength < minimumSize)
                 return ;
 
             if (instructions(0).opcode != INVOKESTATIC.opcode) {
@@ -226,10 +226,11 @@ object CallGraphFactory {
                 if (secondInstruction != null && (
                     secondInstruction.opcode < 182 ||
                     secondInstruction.opcode > 186
-                ))
+                )) {
                     minimumSize = 6
+                }
             }
-            if (instructions.size < minimumSize)
+            if (instructionsLength < minimumSize)
                 return ;
 
             futuresCount += 1
@@ -239,7 +240,7 @@ object CallGraphFactory {
         // Initialization
         entryPoints foreach { method ⇒ submitMethod(method) }
 
-        val builder = new CallGraphBuilder(theProject)
+        val builder = new CallGraphBuilder(project)
         var exceptions = List.empty[CallGraphConstructionException]
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         var analyzedMethods = 0
@@ -251,10 +252,7 @@ object CallGraphFactory {
             analyzedMethods += 1
 
             if (debug && (analyzedMethods % 1000 == 0)) {
-                OPALLogger.info(
-                    "progress - call graph",
-                    s"analyzed: $analyzedMethods methods"
-                )
+                OPALLogger.info("progress - call graph", s"analyzed: $analyzedMethods methods")
             }
 
             // 2. ENQUE NEXT METHODS
@@ -279,11 +277,10 @@ object CallGraphFactory {
             builder.addCallEdges(callSite)
         }
 
-        if (debug)
-            OPALLogger.info(
-                "progress - call graph",
-                "finished analzying the bytecode, constructing the final call graph"
-            )
+        if (debug) {
+            val m = "finished analzying the bytecode, constructing the final call graph"
+            OPALLogger.info("progress - call graph", m)
+        }
 
         ComputedCallGraph(
             builder.buildCallGraph,

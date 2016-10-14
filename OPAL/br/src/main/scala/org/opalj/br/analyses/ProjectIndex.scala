@@ -67,6 +67,9 @@ class ProjectIndex private (
         methods.get(name).map(_.values.flatten).getOrElse(Iterable.empty)
     }
 
+    /**
+     * Returns a map of some basic statistical information, such as the most often used field/method name.
+     */
     def statistics(): Map[String, Any] = {
 
         def getMostOftenUsed(
@@ -183,4 +186,3 @@ object ProjectIndex {
     }
 
 }
-

@@ -56,7 +56,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     // This primarily tests that mixing in the PerformInvocations trait does
     // not cause any immediate harm.
     it should ("be able to analyze a simple static method that does nothing") in {
-        val method = StaticCalls.findMethod("doNothing").get
+        val method = StaticCalls.findMethod("doNothing").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         result.domain.returnedNormally should be(true)
@@ -65,7 +65,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     // This primarily tests that mixing in the PerformInvocations trait does
     // not cause any immediate harm.
     it should ("be able to analyze a simple static method that always throws an exception") in {
-        val method = StaticCalls.findMethod("throwException").get
+        val method = StaticCalls.findMethod("throwException").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(false)
@@ -83,7 +83,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     }
 
     it should ("be able to analyze a static method that calls another static method that my fail") in {
-        val method = StaticCalls.findMethod("mayFail").get
+        val method = StaticCalls.findMethod("mayFail").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
@@ -101,7 +101,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     }
 
     it should ("be able to analyze a static method that calls another static method") in {
-        val method = StaticCalls.findMethod("performCalculation").get
+        val method = StaticCalls.findMethod("performCalculation").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
@@ -110,7 +110,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     }
 
     it should ("be able to analyze a static method that calls multiple other static methods") in {
-        val method = StaticCalls.findMethod("doStuff").get
+        val method = StaticCalls.findMethod("doStuff").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
@@ -119,7 +119,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     }
 
     it should ("be able to analyze a static method that processes the results of other static methods") in {
-        val method = StaticCalls.findMethod("callComplexMult").get
+        val method = StaticCalls.findMethod("callComplexMult").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         /*val result =*/ BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
@@ -128,7 +128,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     }
 
     it should ("be able to analyze a static method that throws different exceptions using the same throws statement") in {
-        val method = StaticCalls.findMethod("throwMultipleExceptions").get
+        val method = StaticCalls.findMethod("throwMultipleExceptions").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(false)
@@ -164,7 +164,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     }
 
     it should ("be able to analyze a static method that calls another static method that calls ...") in {
-        val method = StaticCalls.findMethod("aLongerCallChain").get
+        val method = StaticCalls.findMethod("aLongerCallChain").head
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
@@ -175,7 +175,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     }
 
     it should ("be able to analyze a method that analyzes the correlation between values") in {
-        val method = StaticCalls.findMethod("callAreEqual").get
+        val method = StaticCalls.findMethod("callAreEqual").head
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
         /*val result =*/ BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
@@ -188,7 +188,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
     }
 
     it should ("be able to identify the situation where a passed value is returned as is") in {
-        val method = StaticCalls.findMethod("uselessReferenceTest").get
+        val method = StaticCalls.findMethod("uselessReferenceTest").head
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
         /*val result =*/ BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)

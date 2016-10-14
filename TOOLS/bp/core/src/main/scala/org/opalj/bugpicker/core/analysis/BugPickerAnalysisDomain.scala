@@ -54,6 +54,7 @@ import org.opalj.ai.domain.l2.ChildPerformInvocationsWithRecursionDetection
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.l2.CalledMethodsStore
 import org.opalj.ai.analyses.cg.CallGraphCache
+import org.opalj.collection.immutable.Chain
 
 /**
  * The base domain that is shared by all domains that are used to perform abstract
@@ -279,8 +280,8 @@ class RootBugPickerAnalysisDomain(
     // in time the initial operands are available!
     lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
-            localsArray(0).foldLeft(List.empty[DomainValue])((l, n) ⇒
-                if (n ne null) n :: l else l)
+            localsArray(0).foldLeft(Chain.empty[DomainValue])((l, n) ⇒
+                if (n ne null) n :&: l else l)
         CalledMethodsStore(coordinatingDomain, frequentEvaluationWarningLevel)(
             method, mapOperands(operands, coordinatingDomain)
         )
@@ -302,4 +303,3 @@ class RootBugPickerAnalysisDomain(
         )
 
 }
-

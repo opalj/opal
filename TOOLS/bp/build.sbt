@@ -1,14 +1,10 @@
 name := "BugPicker"
 
-organization in ThisBuild := "de.opal-project"
-
-homepage in ThisBuild := Some(url("http://www.opal-project.de/tools/bugpicker/"))
-
-licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
-
-version in ThisBuild := "1.3.0-Snapshot"
-
-scalaVersion in ThisBuild := "2.11.8"
+organization	in ThisBuild := "de.opal-project"
+homepage 		in ThisBuild := Some(url("http://www.opal-project.de/tools/bugpicker/"))
+licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
+version 		in ThisBuild := "1.3.0-Snapshot"
+scalaVersion 	in ThisBuild := "2.11.8"
 
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
@@ -17,16 +13,14 @@ scalacOptions in ThisBuild ++= Seq(
 	"-Ywarn-numeric-widen", "-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-nullary-unit", "-Ywarn-nullary-override", "-Ywarn-dead-code", "-Xfatal-warnings" )
 
 
-// [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
+crossPaths in ThisBuild := false
 
 fork in run := true
 
 javaOptions in run += "-Xmx8G" // BETTER: javaOptions in run += "-Xmx16G"
-
 javaOptions in run += "-Xms4G"
 
 mainClass in LocalProject("bp") in Compile := (mainClass in LocalProject("BugPickerUI") in Compile).value
-
 fullClasspath in LocalProject("bp") in Runtime ++= (fullClasspath in LocalProject("BugPickerUI") in Runtime).value
 
 val zipAllSrc = taskKey[Unit]("Creates a zip file of all source files (including the build script etc.).")

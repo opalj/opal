@@ -54,14 +54,14 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     behavior of "PerformInvocationsWithRecursionDetection"
 
     it should ("be able to analyze a simple static, recursive method") in {
-        val method = StaticCalls.findMethod("simpleRecursion").get
+        val method = StaticCalls.findMethod("simpleRecursion").head
         val domain = new InvocationDomain(project, method)
         val result = BaseAI(StaticCalls, method, domain)
         result.domain.returnedNormally should be(true)
     }
 
     it should ("be able to analyze a method that is self-recursive and which will never abort") in {
-        val method = StaticCalls.findMethod("endless").get
+        val method = StaticCalls.findMethod("endless").head
         val domain = new InvocationDomain(project, method)
         BaseAI(StaticCalls, method, domain)
         if (domain.allReturnedValues.nonEmpty)
@@ -73,7 +73,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     }
 
     it should ("be able to analyze a method that is self-recursive and which will never abort due to exception handling") in {
-        val method = StaticCalls.findMethod("endlessDueToExceptionHandling").get
+        val method = StaticCalls.findMethod("endlessDueToExceptionHandling").head
         val domain = new InvocationDomain(project, method)
         BaseAI(StaticCalls, method, domain)
         if (domain.allReturnedValues.nonEmpty)
@@ -85,7 +85,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     }
 
     it should ("be able to analyze some methods with mutual recursion") in {
-        val method = StaticCalls.findMethod("mutualRecursionA").get
+        val method = StaticCalls.findMethod("mutualRecursionA").head
         val domain = new InvocationDomain(project, method)
         BaseAI(StaticCalls, method, domain)
 
@@ -93,7 +93,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     }
 
     it should ("be able to analyze a static method that uses recursion to calculate the factorial of a small concrete number") in {
-        val method = StaticCalls.findMethod("fak").get
+        val method = StaticCalls.findMethod("fak").head
         val domain = new InvocationDomain(project, method)
         BaseAI.perform(StaticCalls, method, domain)(
             Some(IndexedSeq(domain.IntegerValue(-1, 3)))
@@ -103,7 +103,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     }
 
     it should ("issue a warning if a method is called very often using different operands") in {
-        val method = StaticCalls.findMethod("fak").get
+        val method = StaticCalls.findMethod("fak").head
         val domain = new InvocationDomain(project, method, 1)
         BaseAI.perform(StaticCalls, method, domain)(
             Some(IndexedSeq(domain.IntegerValue(-1, 11)))

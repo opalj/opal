@@ -30,10 +30,11 @@ package org.opalj
 package br
 
 import org.scalatest.FunSuite
-
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
 import scala.util.control.ControlThrowable
+
+import org.opalj.collection.immutable.Naught
+import org.opalj.bi.TestSupport.locateTestResources
 
 /**
  * @author Michael Eichberg
@@ -50,10 +51,7 @@ class ClassFileTest extends FunSuite with Matchers {
 
     test("test that it can find the first constructor") {
         assert(
-            immutableList.findMethod(
-            "<init>",
-            MethodDescriptor(ObjectType.Object, VoidType)
-        ).isDefined
+            immutableList.findMethod("<init>", MethodDescriptor(ObjectType.Object, VoidType)).isDefined
         )
     }
 
@@ -62,8 +60,7 @@ class ClassFileTest extends FunSuite with Matchers {
             immutableList.findMethod(
             "<init>",
             MethodDescriptor(
-                IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")),
-                VoidType
+                IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
             )
         ).isDefined
         )
@@ -76,29 +73,25 @@ class ClassFileTest extends FunSuite with Matchers {
     test("test that it can find all other methods") {
         assert(
             immutableList.findMethod(
-            "getNext",
-            MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
+            "getNext", MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
         ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-            "prepend",
-            MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
+            "prepend", MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
         ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-            "getIterator",
-            MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
+            "getIterator", MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
         ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-            "get",
-            MethodDescriptor(IndexedSeq(), ObjectType.Object)
+            "get", MethodDescriptor(IndexedSeq(), ObjectType.Object)
         ).isDefined
         )
 
@@ -107,29 +100,29 @@ class ClassFileTest extends FunSuite with Matchers {
 
     test("that findField on a class without fields does not fail") {
         quicksort.fields should be(empty)
-        quicksort.findField("DoesNotExist") should be(None)
+        quicksort.findField("DoesNotExist") should be(Naught)
     }
 
     test("that findField finds all fields") {
         if (boundedBuffer.fields.size != 5)
             fail("expected five fields; found: "+boundedBuffer.fields)
 
-        boundedBuffer.findField("buffer") should be('defined)
-        boundedBuffer.findField("first") should be('defined)
-        boundedBuffer.findField("last") should be('defined)
-        boundedBuffer.findField("size") should be('defined)
-        boundedBuffer.findField("numberInBuffer") should be('defined)
+        boundedBuffer.findField("buffer") should not be ('empty)
+        boundedBuffer.findField("first") should not be ('empty)
+        boundedBuffer.findField("last") should not be ('empty)
+        boundedBuffer.findField("size") should not be ('empty)
+        boundedBuffer.findField("numberInBuffer") should not be ('empty)
     }
 
     test("that findField does not find non-existing fields") {
         if (boundedBuffer.fields.size != 5)
             fail("expected five fields; found: "+boundedBuffer.fields)
 
-        boundedBuffer.findField("BUFFER") should be(None)
-        boundedBuffer.findField("firsT") should be(None)
-        boundedBuffer.findField("lAst") should be(None)
-        boundedBuffer.findField("Size") should be(None)
-        boundedBuffer.findField("AnumberInBuffers") should be(None)
+        boundedBuffer.findField("BUFFER") should be(Naught)
+        boundedBuffer.findField("firsT") should be(Naught)
+        boundedBuffer.findField("lAst") should be(Naught)
+        boundedBuffer.findField("Size") should be(Naught)
+        boundedBuffer.findField("AnumberInBuffers") should be(Naught)
     }
 
     val innerclassesJARFile = locateTestResources("classfiles/Innerclasses.jar", "bi")

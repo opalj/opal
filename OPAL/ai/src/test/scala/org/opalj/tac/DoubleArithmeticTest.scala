@@ -61,12 +61,12 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
     import BinaryArithmeticOperators._
     import UnaryArithmeticOperators._
 
-    val DoubleAddMethod = ArithmeticExpressionsClassFile.findMethod("doubleAdd").get
-    val DoubleDivMethod = ArithmeticExpressionsClassFile.findMethod("doubleDiv").get
-    val DoubleNegMethod = ArithmeticExpressionsClassFile.findMethod("doubleNeg").get
-    val DoubleMulMethod = ArithmeticExpressionsClassFile.findMethod("doubleMul").get
-    val DoubleRemMethod = ArithmeticExpressionsClassFile.findMethod("doubleRem").get
-    val DoubleSubMethod = ArithmeticExpressionsClassFile.findMethod("doubleSub").get
+    val DoubleAddMethod = ArithmeticExpressionsClassFile.findMethod("doubleAdd").head
+    val DoubleDivMethod = ArithmeticExpressionsClassFile.findMethod("doubleDiv").head
+    val DoubleNegMethod = ArithmeticExpressionsClassFile.findMethod("doubleNeg").head
+    val DoubleMulMethod = ArithmeticExpressionsClassFile.findMethod("doubleMul").head
+    val DoubleRemMethod = ArithmeticExpressionsClassFile.findMethod("doubleRem").head
+    val DoubleSubMethod = ArithmeticExpressionsClassFile.findMethod("doubleSub").head
     //            val DoubleCmpMethod = ArithmeticExpressionsClassFile.findMethod("doubleCmp").get
 
     describe("The quadruples representation of double operations") {

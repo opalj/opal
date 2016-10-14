@@ -42,9 +42,9 @@ import org.opalj.br.analyses.InstantiableClassesKey
 
 trait Callees {
 
-    def project: SomeProject
+    implicit def project: SomeProject
 
-    final private[this] def instantiableClasses = project.get(InstantiableClassesKey)
+    final private[this] lazy val instantiableClasses = project.get(InstantiableClassesKey)
 
     final private[this] def classHierarchy: ClassHierarchy = project.classHierarchy
 
@@ -56,28 +56,28 @@ trait Callees {
         descriptor:         MethodDescriptor
     ): Set[Method] = {
 
+        // FIXME Only correct if the code that we are analyzing is an app
+        val classesFilter = (t: ObjectType) ⇒ !instantiableClasses.isNotInstantiable(t)
+
         classHierarchy.hasSubtypes(declaringClassType) match {
 
             case Yes ⇒
                 val methodSignature = new MethodSignature(name, descriptor)
                 cache.getOrElseUpdate(declaringClassType, methodSignature)(
                     {
-                        classHierarchy.lookupImplementingMethods(
-                            declaringClassType, name, descriptor,
-                            project,
-                            // FIXME Only correct if the code that we are analyzing is an app
-                            classesFilter = (cf) ⇒ !instantiableClasses.isNotInstantiable(cf)
+                        project.lookupImplementingMethods(
+                            declaringClassType, name, descriptor, classesFilter
                         )
                     },
                     syncOnEvaluation = true //false
                 )
 
             case No ⇒
-                classHierarchy.lookupImplementingMethods(
-                    declaringClassType, name, descriptor,
-                    project,
-                    classesFilter = (cf) ⇒ !instantiableClasses.isNotInstantiable(cf)
+                val result = project.lookupImplementingMethods(
+                    declaringClassType, name, descriptor, classesFilter
                 )
+                println(result)
+                result
 
             case /*Unknown <=> the type is unknown */ _ ⇒
                 Set.empty

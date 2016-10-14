@@ -33,7 +33,7 @@ package analyses
 import scala.collection.Map
 
 /**
- * Stores the information where each field is read and written. If the type project
+ * Stores the information where each field is read and written. If the project
  * is incomplete the results are also necessary incomplete.
  *
  * @author Michael Eichberg
@@ -77,6 +77,9 @@ class FieldAccessInformation(
         accesses(allReadAccesses, declaringClassType, fieldName)
     }
 
+    /**
+     * Basic statistics about the number of field reads and writes.
+     */
     def statistics: Map[String, Int] =
         Map(
             "field reads" → allReadAccesses.values.map(_.map(_._2.size).sum).sum,

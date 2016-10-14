@@ -150,8 +150,7 @@ object PerformanceEvaluation {
     /**
      * Converts the specified number of nanoseconds into milliseconds.
      */
-    final def ns2ms(nanoseconds: Long): Double =
-        nanoseconds.toDouble / 1000.0d / 1000.0d
+    final def ns2ms(nanoseconds: Long): Double = nanoseconds.toDouble / 1000.0d / 1000.0d
 
     /** Tries it best to run the garbage collector. */
     final def gc(memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean): Unit = {

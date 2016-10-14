@@ -78,7 +78,7 @@ object GetCallees {
             return ;
         }
 
-        val project =
+        implicit val project =
             try {
                 Project(file)
             } catch {
@@ -146,7 +146,7 @@ object GetCallees {
             }
 
         try {
-            val (allCallEdges, allUnresolvableMethodCalls) = extractor.extract(project, classFile, method)
+            val (allCallEdges, allUnresolvableMethodCalls) = extractor.extract(classFile, method)
             val (_, callees) = allCallEdges
             for ((pc, methods) ← callees) {
                 println("\n"+pc+":"+method.body.get.instructions(pc)+" calls: ")
