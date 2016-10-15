@@ -47,7 +47,7 @@ import org.opalj.da.Code
 import org.opalj.bi.ACC_INTERFACE
 
 /**
- * Generates multiple intefaces with default methods and abstract
+ * Generates multiple interfaces with default methods and abstract
  * methods to test method resolution w.r.t. the selection of the
  * maximally specific method.
  *
