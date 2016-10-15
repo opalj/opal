@@ -43,7 +43,7 @@ import org.opalj.collection.immutable.Success
 import org.opalj.collection.immutable.Empty
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0
-import org.opalj.br.instructions.INVOKESTATIC
+//import org.opalj.br.instructions.INVOKESTATIC
 
 /**
  * Enables project wide lookups of methods and fields.
@@ -143,6 +143,21 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     //
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    /**
+     * Stores for each non-private, non-final instance method which is not an instance
+     * initialization method the set of methods which override the specific method. To safe
+     * memory, methods which are not overridden are not stored in the may.
+     */
+    protected[this] val overridingMethods : Map[Method,Seq[Method]]
+
+    def overriddenBy (m : Method) : Seq[Method] = {
+        assert(!m.isPrivate,s"private method $m cannot be overridden")
+        assert(!m.isStatic,s"static method $m cannot be overridden")
+        assert(!m.isInitializer,s"initializer $m cannot be overridden")
+
+        overridingMethods.get(m).getOrElse(Seq.empty)
+    }
+
     /* GENERAL NOTES
      *
      * (Accessibilty checks are done by the JVM when the method is resolved; this is, however not
@@ -171,7 +186,6 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * Invokeinterface 	=>	the resolved interface method just defines an upper bound; the
      * 						called method is determined as in case of invokevirtual; but
      * 						signature polymorphic calls are not relevant
-     *
      */
 
     /**

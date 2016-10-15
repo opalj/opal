@@ -144,14 +144,23 @@ class Project[Source] private (
 
     val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
 
+    
+        protected[this] val overridingMethods : Map[Method,Seq[Method]] = {
+
+        methodToClassFile.iterator filter{m_cf => 
+            val (m,cf) = m_cf
+            !m.isStatic && !m.isPrivate && !m.isFinal && 
+            !m.isInitializer && !m.isStaticInitializer // before Java 8 the static initializer was not required to be ACC_STATIC
+            }
+        
+    }
+
+    
     /**
      * Creates a new `Project` which also includes the given class files.
      */
     def extend(projectClassFilesWithSources: Iterable[(ClassFile, Source)]): Project[Source] = {
-        Project.extend[Source](
-            this,
-            projectClassFilesWithSources
-        )
+        Project.extend[Source](            this,            projectClassFilesWithSources        )
     }
 
     /**
@@ -159,16 +168,16 @@ class Project[Source] private (
      * class files.
      */
     def extend(other: Project[Source]): Project[Source] = {
-        if (this.analysisMode != other.analysisMode)
-            throw new IllegalArgumentException("the projects have different analysis modes")
+        if (this.analysisMode != other.analysisMode) {
+            throw new IllegalArgumentException("the projects have different analysis modes");        }
 
-        if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly)
-            throw new IllegalArgumentException("the projects libraries are loaded differently")
+
+        if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly){
+            throw new IllegalArgumentException("the projects libraries are loaded differently");
+        }
 
         Project.extend[Source](
-            this,
-            other.projectClassFilesWithSources,
-            other.libraryClassFilesWithSources
+            this,other.projectClassFilesWithSources,other.libraryClassFilesWithSources
         )
     }
 
