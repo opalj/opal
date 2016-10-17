@@ -143,8 +143,8 @@ class ClassHierarchy private (
     )
 
     /**
-     * The set of ''all types'' which have no super type or for which we have no further supertype
-     * information; that is all (pseudo) root types.
+     * The set of ''all types'' for which we have no further
+     * supertype information because of an incomplete project; that is all (pseudo) root types.
      * If the class hierarchy is complete then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
      *
@@ -157,7 +157,14 @@ class ClassHierarchy private (
      */
     val rootTypes: Set[ObjectType] = {
         knownTypesMap.foldLeft(HashSet.empty[ObjectType]) { (rootTypes, objectType) ⇒
-            if ((objectType ne null) && (superclassTypeMap(objectType.id) eq null))
+            if ((objectType ne null) && {
+                val oid = objectType.id
+                (superclassTypeMap(oid) eq null) &&
+                    {
+                        val superinterfaceTypes = superinterfaceTypesMap(oid)
+                        (superinterfaceTypes eq null) || superinterfaceTypes.isEmpty
+                    }
+            })
                 rootTypes + objectType
             else
                 rootTypes
@@ -707,6 +714,30 @@ class ClassHierarchy private (
         false
     }
 
+    def foreachDirectSupertypeCF[U](
+        objectType: ObjectType
+    )(
+        f: (ClassFile) ⇒ U
+    )(
+        implicit
+        project: ClassFileRepository
+    ): Unit = {
+        if (isUnknown(objectType))
+            return ;
+
+        val superinterfaceTypes = superinterfaceTypesMap(objectType.id)
+        if (superinterfaceTypes ne null) {
+            superinterfaceTypes foreach { t ⇒
+                project.classFile(t).foreach(f)
+            }
+        }
+
+        val superclassType = superclassTypeMap(objectType.id)
+        if (superclassType ne null) {
+            project.classFile(superclassType).foreach(f)
+        }
+    }
+
     /**
      * Calls the given function `f` for each of the given type's supertypes.
      * It is possible that the same super interface type `I` is passed multiple
@@ -923,6 +954,15 @@ class ClassHierarchy private (
             case None                      ⇒ superclassType(objectType).map(UIDSet(_)).getOrElse(UIDSet0)
             case Some(superinterfaceTypes) ⇒ superinterfaceTypes ++ superclassType(objectType)
         }
+    }
+
+    def foreachDirectSubtypeOf[U](objectType: ObjectType)(f: (ObjectType) ⇒ U): Unit = {
+        if (isUnknown(objectType))
+            return ;
+
+        val oid = objectType.id
+        this.subclassTypesMap(oid).foreach(f)
+        this.subinterfaceTypesMap(oid).foreach(f)
     }
 
     /**
