@@ -32,20 +32,30 @@ package analyses
 
 import java.net.URL
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
+
+import scala.collection.JavaConverters._
 import scala.collection.{Set, Map}
 import scala.collection.mutable.{AnyRefMap, OpenHashMap}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
+import scala.collection.immutable
+import scala.collection.immutable.SortedSet
 import scala.collection.SortedMap
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+
+import org.opalj.concurrent.Tasks
+import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.DefaultLogContext
@@ -57,6 +67,7 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.log.GlobalLogContext
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -144,23 +155,149 @@ class Project[Source] private (
 
     val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
 
-    
-        protected[this] val overridingMethods : Map[Method,Seq[Method]] = {
-
-        methodToClassFile.iterator filter{m_cf => 
-            val (m,cf) = m_cf
-            !m.isStatic && !m.isPrivate && !m.isFinal && 
-            !m.isInitializer && !m.isStaticInitializer // before Java 8 the static initializer was not required to be ACC_STATIC
-            }
-        
+    val overridingMethods: Map[Method, Seq[Method]] = {
+        /*
+        methodToClassFile.iterator filter { m_cf ⇒
+            val (m, cf) = m_cf
+            !m.isStatic && !m.isPrivate && !m.isFinal &&
+                !m.isInitializer && !m.isStaticInitializer // before Java 8 the static initializer was not required to be ACC_STATIC
+        }
+        */
+        null
     }
 
-    
+    /**
+     * Returns the set of all non-private, non-abstract, non-static methods which are not initializers
+     * and which are potentially callable by clients (e.g., using invokevirtual or
+     * invokeinterface).
+     */
+    val instanceMethods: Map[ObjectType, immutable.SortedSet[MethodDeclarationContext]] = time {
+        // Idea: process the type hierarchy starting with the root type(s) to ensure that all method
+        // information about all super types is available (already stored in instanceMethods)
+        // when we process the subtype. If not all information is already available, which
+        // can happen in the following case if the processing of C would be scheduled before B:
+        //      interface A; interface B extends A; interface C extends A, B
+        // we postpone the processing of C until the information is available.
+
+        val methods: ConcurrentHashMap[ObjectType, SortedSet[MethodDeclarationContext]] = {
+            new ConcurrentHashMap(ObjectType.objectTypesCount)
+        }
+
+        /* Returns `true` if the potentially available information is actually available. */
+        def isAvailable(
+            objectType: ObjectType,
+            methods:    Set[MethodDeclarationContext]
+        ): Boolean = {
+            (methods ne null) || !objectTypeToClassFile.contains(objectType)
+        }
+
+        def computeDeclaredMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
+            // Due to the fact that we may inherit from multiple interfaces,
+            // the computation may have been scheduled multiple times.
+            if (methods.get(objectType) ne null)
+                return ;
+
+            var inheritedClassMethods: SortedSet[MethodDeclarationContext] = null
+            val superclassType = classHierarchy.superclassType(objectType)
+            if (superclassType.isDefined) {
+                val theSuperclassType = superclassType.get
+                val superclassTypeMethods = methods.get(theSuperclassType)
+                if (!isAvailable(theSuperclassType, superclassTypeMethods)) {
+                    // let's postpone the processing of this object type
+                    // because we will get some result in the future
+                    tasks.submit(objectType)
+                    return ;
+                }
+                inheritedClassMethods = superclassTypeMethods
+            }
+            if (inheritedClassMethods eq null) {
+                inheritedClassMethods =
+                    SortedSet.empty[MethodDeclarationContext](MethodDeclarationContextOrdering)
+            }
+
+            var inheritedInterfacesMethods: Chain[SortedSet[MethodDeclarationContext]] = Naught
+            for {
+                superinterfaceTypes ← classHierarchy.superinterfaceTypes(objectType)
+                superinterfaceType ← superinterfaceTypes
+                superinterfaceTypeMethods = methods.get(superinterfaceType)
+            } {
+                if (!isAvailable(superinterfaceType, superinterfaceTypeMethods)) {
+                    tasks.submit(objectType)
+                    return ;
+                }
+                if ((superinterfaceTypeMethods ne null) && superinterfaceTypeMethods.nonEmpty) {
+                    inheritedInterfacesMethods :&:= superinterfaceTypeMethods
+                }
+            }
+
+            // When we reach this point, we have collected all methods inherited by the
+            // current type.
+
+            // We now have to select the most maximally specific methods, recall that:
+            //  -   methods defined by a class have precedence over concrete methods defined
+            //      by interfaces (e.g., default methods).
+            //  -   we assume that the project is valid; i.e., there is
+            //      always at most one maximally specific method and if not, then
+            //      the subclass resolves the conflict by defining the method.
+            var definedMethods: SortedSet[MethodDeclarationContext] = inheritedClassMethods
+            for {
+                inheritedInterfaceMethods ← inheritedInterfacesMethods
+                inheritedInterfaceMethod ← inheritedInterfaceMethods
+            } {
+                // The relevant interface methods are public, hence, the package
+                // name is not relevant!
+                // IMPROVE: By using a Sorted... we could avoid the linear traversable done by exists.
+                if (!definedMethods.exists { definedMethod ⇒
+                    definedMethod.name == inheritedInterfaceMethod.name &&
+                        definedMethod.descriptor == inheritedInterfaceMethod.descriptor
+                })
+                    definedMethods += inheritedInterfaceMethod
+            }
+
+            classFile(objectType) match {
+                case Some(classFile) ⇒
+                    val packageName = objectType.packageName
+                    for {
+                        declaredMethod ← classFile.methods
+                        if declaredMethod.isVirtualMethodDeclaration
+                        declaredMethodContext = MethodDeclarationContext(declaredMethod, packageName)
+                    } {
+                        // We have to filter multiple methods, if we inherit (w.r.t. the visibility)
+                        // multiple conflicting methods!
+                        // IMPROVE: By using a Sorted... we could avoid the linear traversable!
+                        definedMethods = definedMethods.filterNot(declaredMethodContext.directlyOverrides)
+
+                        // Recall that it is possible to make a method "abstract" again...
+                        if (declaredMethod.isNotAbstract) {
+                            definedMethods += declaredMethodContext
+                        }
+                    }
+                case None ⇒
+                // this point is only reached in case of a rather incomplete project...
+            }
+            methods.put(objectType, definedMethods)
+            classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
+        }
+
+        val tasks = Tasks[ObjectType](computeDeclaredMethods)(OPALExecutionContext)
+        classHierarchy.rootTypes foreach { t ⇒ tasks.submit(t) }
+        val exceptions = tasks.join()
+
+        exceptions foreach { e ⇒
+            OPALLogger.error(
+                "project configuration", "computing the defined methods failed", e
+            )
+        }
+        new AnyRefMap[ObjectType, SortedSet[MethodDeclarationContext]](methods.size) ++ methods.asScala
+    } { t ⇒
+        OPALLogger.info("project setup", s"computing defined methods took ${t.toSeconds}")
+    }
+
     /**
      * Creates a new `Project` which also includes the given class files.
      */
     def extend(projectClassFilesWithSources: Iterable[(ClassFile, Source)]): Project[Source] = {
-        Project.extend[Source](            this,            projectClassFilesWithSources        )
+        Project.extend[Source](this, projectClassFilesWithSources)
     }
 
     /**
@@ -169,15 +306,15 @@ class Project[Source] private (
      */
     def extend(other: Project[Source]): Project[Source] = {
         if (this.analysisMode != other.analysisMode) {
-            throw new IllegalArgumentException("the projects have different analysis modes");        }
+            throw new IllegalArgumentException("the projects have different analysis modes");
+        }
 
-
-        if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly){
+        if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly) {
             throw new IllegalArgumentException("the projects libraries are loaded differently");
         }
 
         Project.extend[Source](
-            this,other.projectClassFilesWithSources,other.libraryClassFilesWithSources
+            this, other.projectClassFilesWithSources, other.libraryClassFilesWithSources
         )
     }
 
@@ -983,7 +1120,7 @@ object Project {
         handleInconsistentProject:          HandleInconsistenProject,
         config:                             Config,
         logContext:                         LogContext
-    ): Project[Source] = {
+    ): Project[Source] = time {
         implicit val projectConfig = config
         implicit val projectLogContext = logContext
 
@@ -1150,13 +1287,15 @@ object Project {
                 libraryClassFilesAreInterfacesOnly
             )
 
-            val issues = validate(project)
-            issues foreach { handleInconsistentProject(logContext, _) }
-            OPALLogger.info(
-                "project configuration",
-                s"project validation revealed ${issues.size} significant issues"+
-                    (if (issues.size > 0) "; validate the configured libraries for inconsistencies" else "")
-            )
+            time {
+                val issues = validate(project)
+                issues foreach { handleInconsistentProject(logContext, _) }
+                OPALLogger.info(
+                    "project configuration",
+                    s"project validation revealed ${issues.size} significant issues"+
+                        (if (issues.size > 0) "; validate the configured libraries for inconsistencies" else "")
+                )
+            } { t ⇒ OPALLogger.info("project setup", s"validating the project took ${t.toSeconds}") }
 
             project
         } catch {
@@ -1164,6 +1303,8 @@ object Project {
                 OPALLogger.unregister(logContext)
                 throw t
         }
+    } { t ⇒
+        OPALLogger.info("project setup", s"creating the project took ${t.toSeconds}")(logContext)
     }
 
     /**
