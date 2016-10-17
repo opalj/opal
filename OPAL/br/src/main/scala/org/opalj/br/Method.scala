@@ -201,6 +201,22 @@ final class Method private (
 
     final def isInitializer: Boolean = isConstructor || isStaticInitializer
 
+    /**
+     * Returns true if this method is a potential target of a virtual call
+     * by means of an invokevirtual or invokeinterface instruction; i.e.,
+     * if the method is not an initializer, is not abstract, is not private
+     * and is not static.
+     */
+    final def isVirtualCallTarget: Boolean = {
+        isNotAbstract && !isPrivate && !isStatic && !isInitializer
+    }
+
+    /**
+     * Returns true if this method declares a virtual method. This method
+     * may be abstract!
+     */
+    final def isVirtualMethodDeclaration: Boolean = !isPrivate && !isStatic && !isInitializer
+
     def returnType = descriptor.returnType
 
     def parameterTypes = descriptor.parameterTypes
