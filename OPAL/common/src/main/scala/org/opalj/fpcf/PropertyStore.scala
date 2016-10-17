@@ -672,7 +672,7 @@ class PropertyStore private (
         val lock = eps.l
 
         @inline def awaitComputationResult(p: PropertyIsDirectlyComputed): FinalEP[e.type, P] = {
-            // This also establishes the happen before relation!
+            // This also establishes the happens before relation!
             p.await()
             FinalEP(e, ps(pkId).p.asInstanceOf[P])
         }
