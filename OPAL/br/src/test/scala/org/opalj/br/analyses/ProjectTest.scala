@@ -154,13 +154,19 @@ class ProjectTest extends FlatSpec with Matchers {
     }
 
     it should "find a method declared by a directly implemented interface" in {
-        val r = resolveMethodReference(AbstractB, "someSubMethod", MethodDescriptor("()V"))
+        val r = resolveMethodReference(
+            AbstractB, "someSubMethod", MethodDescriptor("()V"),
+            lookupInSuperinterfacesOnFailure = true
+        )
         r should be('Defined)
         assert(project.classFile(r.get).thisType === ObjectType("methods/b/SubI"))
     }
 
     it should "find a method declared by an indirectly implemented interface" in {
-        val r = resolveMethodReference(AbstractB, "someMethod", MethodDescriptor("()V"))
+        val r = resolveMethodReference(
+            AbstractB, "someMethod", MethodDescriptor("()V"),
+            lookupInSuperinterfacesOnFailure = true
+        )
         r should be('Defined)
         assert(project.classFile(r.get).thisType === ObjectType("methods/b/SuperI"))
     }

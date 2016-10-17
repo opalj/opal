@@ -144,16 +144,16 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     /**
-     * Stores for each non-private, non-final instance method which is not an instance
+     * Stores for each non-private, non-final instance method that is not an instance
      * initialization method the set of methods which override the specific method. To safe
      * memory, methods which are not overridden are not stored in the may.
      */
-    protected[this] val overridingMethods : Map[Method,Seq[Method]]
+    protected[this] val overridingMethods: scala.collection.Map[Method, Seq[Method]]
 
-    def overriddenBy (m : Method) : Seq[Method] = {
-        assert(!m.isPrivate,s"private method $m cannot be overridden")
-        assert(!m.isStatic,s"static method $m cannot be overridden")
-        assert(!m.isInitializer,s"initializer $m cannot be overridden")
+    def overriddenBy(m: Method): Seq[Method] = {
+        assert(!m.isPrivate, s"private method $m cannot be overridden")
+        assert(!m.isStatic, s"static method $m cannot be overridden")
+        assert(!m.isInitializer, s"initializer $m cannot be overridden")
 
         overridingMethods.get(m).getOrElse(Seq.empty)
     }
@@ -202,20 +202,25 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * in case of `invokevirtual` and `invokeinterface` instructions. I.e.,
      * additional processing is necessary on the client side.
      *
-     * @note This method just resolves a method reference. Additional checks,
-     *    such as whether the resolved method is accessible, may be necessary.
+     * @note    This method just resolves a method reference. Additional checks,
+     *          such as whether the resolved method is accessible, may be necessary.
      *
-     * @param receiverType The type of the object that receives the method call. The
-     *      type must be a class type and must not be an interface type.
-     *      I.e., no check w.r.t. a potential `IncompatibleClassChangeError` is done
-     *      by this method.
-     * @return The resolved method `Some(`'''METHOD'''`)` or `None`.
-     *      To get the defining class file use the project's respective method.
+     * @param   receiverType The type of the object that receives the method call. The
+     *          type must be a class type and must not be an interface type.
+     *          I.e., no check w.r.t. a potential `IncompatibleClassChangeError` is done
+     *          by this method.
+     * @param   lookupInSuperinterfacesOnFailure If true (default: false) the method tries
+     *          to look up the method in a super interface if it can't find it in the available
+     *          super classes. (This setting is only relevant if the class hierarchy is not
+     *          complete.)
+     * @return  The resolved method `Some(`'''METHOD'''`)` or `None`.
+     *          To get the defining class file use the project's respective method.
      */
     def resolveMethodReference(
-        receiverType: ObjectType,
-        name:         String,
-        descriptor:   MethodDescriptor
+        receiverType:                     ObjectType,
+        name:                             String,
+        descriptor:                       MethodDescriptor,
+        lookupInSuperinterfacesOnFailure: Boolean          = false
     ): Option[Method] = {
         /*
         project.classFile(receiverType) flatMap { classFile ⇒
@@ -228,9 +233,9 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         }
         */
         resolveClassMethodReference(receiverType, name, descriptor) match {
-            case Success(method) ⇒ Some(method)
-            case Failure         ⇒ None
-            case Empty ⇒
+            case Success(method)                              ⇒ Some(method)
+            case Failure if !lookupInSuperinterfacesOnFailure ⇒ None
+            case _ /*Empty | (Failure && lookupInSuperinterfacesOnFailure) */ ⇒
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(receiverType).get
                 val (_, methods) =
                     findMaximallySpecificSuperinterfaceMethods(
@@ -451,12 +456,12 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         }
     }
 
-//    invokestaticTarget(i : INVOKESTATIC) : Option[Method] = {
-//        declaringClass:   ObjectType, // a class type to be precise
-//        isInterface:      Boolean,
-//        name:             String,
-//        methodDescriptor: MethodDescriptor
-//    }
+    //    invokestaticTarget(i : INVOKESTATIC) : Option[Method] = {
+    //        declaringClass:   ObjectType, // a class type to be precise
+    //        isInterface:      Boolean,
+    //        name:             String,
+    //        methodDescriptor: MethodDescriptor
+    //    }
 
     /////////// OLD OLD OLD OLD OLD OLD //////////
     /////////// OLD OLD OLD OLD OLD OLD //////////
