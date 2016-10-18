@@ -33,6 +33,8 @@ package analyses
 import java.net.URL
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.collection.JavaConverters._
 import scala.collection.Set
@@ -46,7 +48,10 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
+import org.opalj.control.find
 import org.opalj.concurrent.Tasks
+import org.opalj.concurrent.Locking.withReadLock
+import org.opalj.concurrent.Locking.withWriteLock
 import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -146,12 +151,22 @@ class Project[Source] private (
         final val config:     Config
 ) extends ProjectLike {
 
+    private[this] final implicit val thisProject: this.type = this
+
     assert(
         !libraryClassFilesAreInterfacesOnly || libraryClassFiles.forall(_.methods.forall(_.body.isEmpty)),
         "the library's methods contain bodies though libraryClassFilesAreInterfacesOnly is true"
     )
 
-    val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
+    /* ------------------------------------------------------------------------------------------ *\
+    |                                                                                              |
+    |                                                                                              |
+    |                                     PROJECT STATE                                            |
+    |                                                                                              |
+    |                                                                                              |
+    \* ------------------------------------------------------------------------------------------ */
+
+    final val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
 
     /**
      * The number of classes (including inner and annoymous classes as well as
@@ -320,6 +335,121 @@ class Project[Source] private (
     }
 
     /**
+     * Returns for a given virtual method the set of all non-abstract virtual methods which
+     * overrides it.
+     *
+     * This method takes the visibility of the methods and the defining context into consideration.
+     * @see [[Method]]`.isVirtualMethodDeclaration` for further details.
+     */
+    lazy val overridingMethods: Map[Method, immutable.Set[Method]] = time {
+        // IDEA
+        // 0.   We start with the leaf nodes of the class hierarchy and store for each method
+        //      the set of overriding methods (recall that the overrides relation is reflexive).
+        //      Hence, initially the set contains the method it self.
+        //
+        // 1.   After that the direct superclass is scheduled to be analyzed. The superclass then
+        //      tests for each overridable method if it is overridden in the sublcasses and, if so,
+        //      looks up the respective sets of overriding methods and joins them.
+        //      A method is overridden by a subclass if the set of instance methods of the
+        //      subclass does not contain the super class' method.
+        //
+        // 2.   Continue with 1.
+
+        val processedTypesLock = new ReentrantReadWriteLock()
+        var processedTypes = immutable.HashSet.empty[ObjectType]
+        val submittedTypesLock = new Object
+        var submittedTypes = immutable.HashSet.empty[ObjectType]
+
+        val methods = new ConcurrentHashMap[Method, immutable.Set[Method]](virtualMethodsCount)
+
+        def computeOverridingMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
+            withReadLock(processedTypesLock) {
+                classHierarchy.foreachDirectSubtypeOf(objectType) { subtype ⇒
+                    if (!processedTypes.contains(subtype)) {
+                        tasks.submit(objectType)
+                        return ;
+                    }
+                }
+            }
+
+            val declaredMethodPackageName = objectType.packageName
+            val methodsOption = classFile(objectType).map(cf ⇒ cf.methods)
+            // If we don't know anything about the methods, we just do
+            // nothing; instanceMethods will also just reuse the information
+            // derived from the superclasses.
+
+            try {
+                for {
+                    declaredMethods ← methodsOption
+                    declaredMethod ← declaredMethods
+                    if declaredMethod.isVirtualMethodDeclaration
+                } {
+                    if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
+                        methods.put(declaredMethod, immutable.HashSet(declaredMethod))
+                    } else {
+                        var overridingMethods: immutable.Set[Method] = immutable.HashSet.empty[Method]
+                        // let's join the results of all subtypes
+                        classHierarchy.foreachSubtypeCF(objectType) { subtypeClassFile ⇒
+                            subtypeClassFile.findDirectlyOverridingMethod(
+                                declaredMethodPackageName,
+                                declaredMethod
+                            ) match {
+                                case None ⇒ true
+                                case Some(overridingMethod) ⇒
+                                    if (overridingMethods.isEmpty) {
+                                        overridingMethods = methods.get(overridingMethod)
+                                    } else {
+                                        overridingMethods ++= methods.get(overridingMethod)
+                                    }
+                                    false // we don't have to analyze subsequent subtypes.
+                            }
+                        }
+
+                        if (declaredMethod.isNotAbstract) overridingMethods += declaredMethod
+
+                        methods.put(declaredMethod, overridingMethods)
+                    }
+                }
+            } finally {
+                // The try-finally is a safety net to ensure that this method at least
+                // terminates and the exceptions can be reported!
+                withWriteLock(processedTypesLock) { processedTypes += objectType }
+                classHierarchy.foreachDirectSupertype(objectType) { supertype ⇒
+                    if (!submittedTypes.contains(supertype)) {
+                        submittedTypesLock.synchronized {
+                            if (!submittedTypes.contains(supertype)) {
+                                submittedTypes += supertype
+                                tasks.submit(supertype)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val tasks = Tasks[ObjectType](computeOverridingMethods)(OPALExecutionContext)
+        classHierarchy.leafTypes foreach { t ⇒ tasks.submit(t) }
+        val exceptions = tasks.join()
+        exceptions foreach { e ⇒
+            OPALLogger.error("project configuration", "computing the overriding methods failed", e)
+        }
+
+        OpenHashMap.empty ++ methods.asScala
+    } { t ⇒
+        OPALLogger.info("project setup", s"computing overriding information took ${t.toSeconds}")
+    }
+
+    OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
+
+    /* ------------------------------------------------------------------------------------------ *\
+    |                                                                                              |
+    |                                                                                              |
+    |                                    INSTANCE METHODS                                          |
+    |                                                                                              |
+    |                                                                                              |
+    \* ------------------------------------------------------------------------------------------ */
+
+    /**
      * Creates a new `Project` which also includes the given class files.
      */
     def extend(projectClassFilesWithSources: Iterable[(ClassFile, Source)]): Project[Source] = {
@@ -368,6 +498,8 @@ class Project[Source] private (
             else {
                 val methodComparison = mdcMethod compare method
                 if (methodComparison == 0)
+                    // We may have multiple methods with the same signature, but which belong
+                    // to different packages!
                     mdc.packageName compare classFile(method).thisType.packageName
                 else
                     methodComparison

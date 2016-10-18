@@ -148,14 +148,14 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * initialization method the set of methods which override the specific method. To safe
      * memory, methods which are not overridden are not stored in the may.
      */
-    protected[this] val overridingMethods: scala.collection.Map[Method, Seq[Method]]
+    protected[this] val overridingMethods: scala.collection.Map[Method, Set[Method]]
 
-    def overriddenBy(m: Method): Seq[Method] = {
+    def overriddenBy(m: Method): Set[Method] = {
         assert(!m.isPrivate, s"private method $m cannot be overridden")
         assert(!m.isStatic, s"static method $m cannot be overridden")
         assert(!m.isInitializer, s"initializer $m cannot be overridden")
 
-        overridingMethods.get(m).getOrElse(Seq.empty)
+        overridingMethods.get(m).getOrElse(Set.empty)
     }
 
     /* GENERAL NOTES
