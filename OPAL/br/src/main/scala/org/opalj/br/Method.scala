@@ -208,14 +208,18 @@ final class Method private (
      * and is not static.
      */
     final def isVirtualCallTarget: Boolean = {
-        isNotAbstract && !isPrivate && !isStatic && !isInitializer
+        isNotAbstract && !isPrivate && !isStatic && !isInitializer &&
+            !isStaticInitializer // before Java 8 <clinit> was not required to be static
     }
 
     /**
      * Returns true if this method declares a virtual method. This method
      * may be abstract!
      */
-    final def isVirtualMethodDeclaration: Boolean = !isPrivate && !isStatic && !isInitializer
+    final def isVirtualMethodDeclaration: Boolean = {
+        !isPrivate && !isStatic && !isInitializer &&
+            !isStaticInitializer // before Java 8 <clinit> was not required to be static
+    }
 
     def returnType = descriptor.returnType
 
