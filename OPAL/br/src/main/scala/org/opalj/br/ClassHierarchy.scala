@@ -171,15 +171,19 @@ class ClassHierarchy private (
         }
     }
 
+    /**
+     * The set of all types which have no subtypes.
+     */
     val leafTypes: Set[ObjectType] = {
         knownTypesMap.foldLeft(HashSet.empty[ObjectType]) { (leafTypes, objectType) ⇒
             if ((objectType ne null) && {
                 val oid = objectType.id
                 subclassTypesMap(oid).isEmpty && subinterfaceTypesMap(oid).isEmpty
-            })
+            }) {
                 leafTypes + objectType
-            else
+            } else {
                 leafTypes
+            }
         }
     }
 
@@ -725,17 +729,26 @@ class ClassHierarchy private (
         if (isUnknown(objectType))
             return ;
 
-        val superinterfaceTypes = superinterfaceTypesMap(objectType.id)
+        val oid = objectType.id
+        val superinterfaceTypes = superinterfaceTypesMap(oid)
         if (superinterfaceTypes ne null) {
-            superinterfaceTypes foreach { t ⇒
-                project.classFile(t).foreach(f)
-            }
+            superinterfaceTypes foreach { t ⇒ project.classFile(t).foreach(f) }
         }
 
-        val superclassType = superclassTypeMap(objectType.id)
-        if (superclassType ne null) {
-            project.classFile(superclassType).foreach(f)
-        }
+        val superclassType = superclassTypeMap(oid)
+        if (superclassType ne null) project.classFile(superclassType).foreach(f)
+
+    }
+
+    def foreachDirectSupertype(objectType: ObjectType)(f: (ClassFile) ⇒ Unit): Unit = {
+        if (isUnknown(objectType))
+            return ;
+
+        val oid = objectType.id
+        val superinterfaceTypes = superinterfaceTypesMap(oid)
+        if (superinterfaceTypes ne null) superinterfaceTypes.foreach(f)
+        val superclassType = superclassTypeMap(oid)
+        if (superclassType ne null) f(superclassType)
     }
 
     /**
