@@ -431,6 +431,12 @@ object ChainProperties extends Properties("Chain") {
         fl.filter(filter) == Chain(l.filter(filter): _*)
     }
 
+    property("filterNot") = forAll { (l: List[String], c: Int) ⇒
+        def filter(s: String): Boolean = s.length() >= c
+        val fl = Chain(l: _*)
+        fl.filterNot(filter) == Chain(l.filterNot(filter): _*)
+    }
+
     property("drop") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒
         val (l, count) = listAndCount
         val fl = Chain(l: _*)

@@ -348,6 +348,8 @@ sealed trait Chain[@specialized(Int) +T]
 
     def filter(f: T ⇒ Boolean): Chain[T]
 
+    def filterNot(f: T ⇒ Boolean): Chain[T] = filter(t ⇒ !f(t))
+
     def drop(n: Int): Chain[T]
 
     def dropWhile(f: T ⇒ Boolean): Chain[T] = {
