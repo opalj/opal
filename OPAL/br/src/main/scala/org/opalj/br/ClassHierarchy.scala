@@ -605,6 +605,69 @@ class ClassHierarchy private (
     }
 
     /**
+     * Iterates over all subtypes of the given type, by first iterating over the subclass types
+     * and then iterating over the subinterface types (if the given object type defines an
+     * interface type or identifies `java.lang.Object`).
+     *
+     * @param    process The process function will be called for each subtype of the given type.
+     *           If process returns false, subtypes of the current type will no longer be traversed.
+     *           However, if a subtype of the current type is reachable via another path (by means
+     *           of interface inheritance) then that subtype will be processed.
+     *
+     * @note    Classes are always traversed first.
+     */
+    def foreachSubtype(
+        objectType: ObjectType,
+        reflexive:  Boolean    = false
+    )(
+        process: ObjectType ⇒ Boolean
+    ): Unit = {
+        if (isUnknown(objectType))
+            return ;
+
+        // TODO Replace by UIDSet as soon as it is efficient for large sets...
+        var processed = HashSet.empty[ObjectType]
+
+        def foreachSubtype(objectType: ObjectType): Unit = {
+            if (processed.contains(objectType))
+                return ;
+
+            processed += objectType
+
+            if (process(objectType)) {
+                val oid = objectType.id
+                subclassTypesMap(oid) foreach { foreachSubtype }
+                subinterfaceTypesMap(oid) foreach { foreachSubtype }
+            }
+        }
+
+        if (reflexive)
+            foreachSubtype(objectType)
+        else {
+            val oid = objectType.id
+            subclassTypesMap(oid) foreach { foreachSubtype }
+            subinterfaceTypesMap(oid) foreach { foreachSubtype }
+        }
+    }
+
+    def foreachSubtypeCF(
+        objectType: ObjectType,
+        reflexive:  Boolean    = false
+    )(
+        process: ClassFile ⇒ Boolean
+    )(
+        implicit
+        project: ClassFileRepository
+    ): Unit = {
+        foreachSubtype(objectType, reflexive) { subtype ⇒
+            project.classFile(subtype) match {
+                case None            ⇒ true
+                case Some(classFile) ⇒ process(classFile)
+            }
+        }
+    }
+
+    /**
      * Executes the given function `f` for each subclass of the given `ObjectType`.
      * In this case the subclass relation is '''not reflexive'''. Furthermore, it may be
      * possible that f is invoked multiple times using the same `ClassFile` object if
@@ -740,7 +803,7 @@ class ClassHierarchy private (
 
     }
 
-    def foreachDirectSupertype(objectType: ObjectType)(f: (ClassFile) ⇒ Unit): Unit = {
+    def foreachDirectSupertype(objectType: ObjectType)(f: (ObjectType) ⇒ Unit): Unit = {
         if (isUnknown(objectType))
             return ;
 
