@@ -37,10 +37,10 @@ import org.opalj.bi.ACC_ENUM
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.VisibilityModifier
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.ACC_MODULE
-import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.immutable.Chain
@@ -50,49 +50,49 @@ import org.opalj.collection.immutable.Naught
  * Represents a single class file which either defines a class type or an interface type.
  * (`Annotation` types are also interface types and `Enum`s are class types.)
  *
- * @param minorVersion The minor part of this class file's version number.
- * @param majorVersion The major part of this class file's version number.
- * @param accessFlags The access flags of this class. To further analyze the access flags
- *  either use the corresponding convenience methods (e.g., isEnumDeclaration())
- *  or the class [[org.opalj.bi.AccessFlagsIterator]] or the classes which
- *  inherit from [[org.opalj.bi.AccessFlag]].
- * @param thisType The type implemented by this class file.
- * @param superclassType The class type from which this class inherits. `None` if this
- *      class file defines `java.lang.Object` or a module.
- * @param interfaceTypes The set of implemented interfaces. May be empty.
- * @param fields The declared fields. May be empty. The list is sorted by name.
- * @param methods The declared methods. May be empty. The list is first sorted by name,
- *      and then by method descriptor.
- * @param attributes This class file's reified attributes. Which attributes
- *    are reified depends on the configuration of the class file reader; e.g.,
- *    [[org.opalj.br.reader.Java8Framework]].
- *    The JVM specification defines the following attributes:
- *    - ''InnerClasses''
- *    - ''EnclosingMethod''
- *    - ''Synthetic''
- *    - ''Signature''
- *    - ''SourceFile''
- *    - ''SourceDebugExtension''
- *    - ''Deprecated''
- *    - ''RuntimeVisibleAnnotations''
- *    - ''RuntimeInvisibleAnnotations''
- *    In case of Java 9 ([[org.opalj.br.reader.Java9Framework]]) the following
- *    attributes are added:
- *    - ''Module_attribute''
- *    - TODO ''ConcealedPackages_attribute''
- *    - TODO ''Version_attribute''
- *    - TODO ''MainClass_attribute''
- *    - TODO ''TargetPlatform_attribute''
+ * @param   minorVersion The minor part of this class file's version number.
+ * @param   majorVersion The major part of this class file's version number.
+ * @param   accessFlags The access flags of this class. To further analyze the access flags
+ *          either use the corresponding convenience methods (e.g., isEnumDeclaration())
+ *          or the class [[org.opalj.bi.AccessFlagsIterator]] or the classes which
+ *          inherit from [[org.opalj.bi.AccessFlag]].
+ * @param   thisType The type implemented by this class file.
+ * @param   superclassType The class type from which this class inherits. `None` if this
+ *          class file defines `java.lang.Object` or a module.
+ * @param   interfaceTypes The set of implemented interfaces. May be empty.
+ * @param   fields The declared fields. May be empty. The list is sorted by name.
+ * @param   methods The declared methods. May be empty. The list is first sorted by name,
+ *          and then by method descriptor.
+ * @param   attributes This class file's reified attributes. Which attributes
+ *          are reified depends on the configuration of the class file reader; e.g.,
+ *          [[org.opalj.br.reader.Java8Framework]].
+ *          The JVM specification defines the following attributes:
+ *           - ''InnerClasses''
+ *           - ''EnclosingMethod''
+ *           - ''Synthetic''
+ *           - ''Signature''
+ *           - ''SourceFile''
+ *           - ''SourceDebugExtension''
+ *           - ''Deprecated''
+ *           - ''RuntimeVisibleAnnotations''
+ *           - ''RuntimeInvisibleAnnotations''
+ *          In case of Java 9 ([[org.opalj.br.reader.Java9Framework]]) the following
+ *          attributes are added:
+ *           - ''Module_attribute''
+ *           - TODO ''ConcealedPackages_attribute''
+ *           - TODO ''Version_attribute''
+ *           - TODO ''MainClass_attribute''
+ *           - TODO ''TargetPlatform_attribute''
  *
- *    The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
- *    may, however, be resolved and is then no longer part of the attributes table of
- *    the class file.
- *    The ''BootstrapMethods'' attribute is basically the container for the bootstrap
- *    methods referred to by the [[org.opalj.br.instructions.INVOKEDYNAMIC]]
- *    instructions.
+ *          The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
+ *          may, however, be resolved and is then no longer part of the attributes table of
+ *          the class file.
+ *          The ''BootstrapMethods'' attribute is basically the container for the bootstrap
+ *          methods referred to by the [[org.opalj.br.instructions.INVOKEDYNAMIC]]
+ *          instructions.
  *
  * @note	Equality of `ClassFile` objects is reference based and a class file's hash code
- *    		is the same as `thisType`'s hash code.
+ *    		is the same as the underlying [[ObjectType]]'s hash code; i.e., ' `thisType`'s hash code.
  *
  * @author Michael Eichberg
  */
@@ -173,7 +173,7 @@ final class ClassFile private (
      * `true` if the class file has package visibility. If `false` the method `isPublic`
      * will return `true`.
      *
-     * @note There is no private or protected visibility.
+     * @note    A class file cannot have private or protected visibility.
      */
     def isPackageVisible: Boolean = !isPublic
 
@@ -331,7 +331,7 @@ final class ClassFile private (
                                     nestedTypes ++= classFile.nestedClasses(classFileRepository)
                                 case None ⇒
                                     OPALLogger.warn(
-                                        "project information",
+                                        "project configuration",
                                         "cannot get informaton about "+objectType.toJava+
                                             "; the inner classes information may be incomplete"
                                     )
@@ -360,15 +360,14 @@ final class ClassFile private (
                     val filteredNestedClasses = nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains(_))
                     return filteredNestedClasses;
                 case None ⇒
+                    val disclaimer = "; the inner classes information may be incomplete"
                     OPALLogger.warn(
-                        "project information",
-                        "cannot identify outer type of "+thisType.toJava+
-                            "; the inner classes information may be incomplete"
+                        "project configuration",
+                        s"cannot identify the outer type of ${thisType.toJava}$disclaimer"
                     )
 
                     return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn));
             }
-
         }
 
         nestedClassesCandidates
@@ -636,6 +635,34 @@ final class ClassFile private (
         findMethod(0, methods.size - 1)
     }
 
+    /**
+     * Returns the method which directly overrides a method with the given properties.
+     *
+     * @note    This method is only defined for proper virtual methods.
+     */
+    def findDirectlyOverridingMethod(
+        packageName: String,
+        visibility:  Option[VisibilityModifier],
+        name:        String,
+        descriptor:  MethodDescriptor
+    ): Option[Method] = {
+        findMethod(name, descriptor).flatMap { candidateMethod ⇒
+            if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName))
+                Some(candidateMethod)
+            else
+                None
+        }
+    }
+
+    final def findDirectlyOverridingMethod(packageName: String, method: Method): Option[Method] = {
+        findDirectlyOverridingMethod(
+            packageName,
+            method.visibilityModifier,
+            method.name,
+            method.descriptor
+        )
+    }
+
     def findMethod(
         name:       String,
         descriptor: MethodDescriptor,
@@ -658,27 +685,21 @@ final class ClassFile private (
     }
 
     override def toString: String = {
-        try {
-            val superIntefaces =
-                if (interfaceTypes.nonEmpty)
-                    interfaceTypes.map(_.toJava).mkString("\t\twith ", " with ", "\n")
-                else
-                    ""
+        val superIntefaces =
+            if (interfaceTypes.nonEmpty)
+                interfaceTypes.map(_.toJava).mkString("\t\twith ", " with ", "\n")
+            else
+                ""
 
-            "ClassFile(\n\t"+
-                AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
-                thisType.toJava+"\n"+
-                superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
-                superIntefaces +
-                annotationsToJava(runtimeVisibleAnnotations, "\t@{ ", " }\n") +
-                annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n")+
-                "\t[version="+majorVersion+"."+minorVersion+"]\n)"
-        } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case e: Exception ⇒
-                val error = s"toString for ${thisType.toJava} failed"
-                throw new RuntimeException(error, e)
-        }
+        "ClassFile(\n\t"+
+            AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
+            thisType.toJava+"\n"+
+            superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
+            superIntefaces +
+            annotationsToJava(runtimeVisibleAnnotations, "\t@{ ", " }\n") +
+            annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n")+
+            "\t[version="+majorVersion+"."+minorVersion+"]\n)"
+
     }
 
 }
