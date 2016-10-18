@@ -35,13 +35,13 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
-import scala.collection.{Set, Map}
+import scala.collection.Set
+import scala.collection.Map
+import scala.collection.SortedMap
+import scala.collection.immutable
 import scala.collection.mutable.{AnyRefMap, OpenHashMap}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
-import scala.collection.immutable
-import scala.collection.immutable.SortedSet
-import scala.collection.SortedMap
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -167,37 +167,46 @@ class Project[Source] private (
     }
 
     /**
-     * Returns the set of all non-private, non-abstract, non-static methods which are not initializers
-     * and which are potentially callable by clients (e.g., using invokevirtual or
+     * Returns the set of all non-private, non-abstract, non-static methods that are not
+     * initializers and which are potentially callable by clients (e.g., using invokevirtual or
      * invokeinterface).
+     *
+     * The referenced arrays must not be mutated!
+     *
+     * The array of methods is sorted using the [[MethodDeclarationContextOrdering]] to
+     * enable the fast look-up of the target method.
      */
-    val instanceMethods: Map[ObjectType, immutable.SortedSet[MethodDeclarationContext]] = time {
-        // Idea: process the type hierarchy starting with the root type(s) to ensure that all method
+    val instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]] = time {
+
+        // IMPROVE Instead of an Array/Chain use a sorted trie (set) or something similar which is always sorted.
+
+        // IDEA
+        // Process the type hierarchy starting with the root type(s) to ensure that all method
         // information about all super types is available (already stored in instanceMethods)
         // when we process the subtype. If not all information is already available, which
         // can happen in the following case if the processing of C would be scheduled before B:
         //      interface A; interface B extends A; interface C extends A, B
         // we postpone the processing of C until the information is available.
 
-        val methods: ConcurrentHashMap[ObjectType, SortedSet[MethodDeclarationContext]] = {
+        val methods: ConcurrentHashMap[ObjectType, Chain[MethodDeclarationContext]] = {
             new ConcurrentHashMap(ObjectType.objectTypesCount)
         }
 
         /* Returns `true` if the potentially available information is actually available. */
-        def isAvailable(
+        @inline def isAvailable(
             objectType: ObjectType,
-            methods:    Set[MethodDeclarationContext]
+            methods:    Chain[MethodDeclarationContext]
         ): Boolean = {
             (methods ne null) || !objectTypeToClassFile.contains(objectType)
         }
 
-        def computeDeclaredMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
+        def computeDefinedMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
             // Due to the fact that we may inherit from multiple interfaces,
             // the computation may have been scheduled multiple times.
             if (methods.get(objectType) ne null)
                 return ;
 
-            var inheritedClassMethods: SortedSet[MethodDeclarationContext] = null
+            var inheritedClassMethods: Chain[MethodDeclarationContext] = null
             val superclassType = classHierarchy.superclassType(objectType)
             if (superclassType.isDefined) {
                 val theSuperclassType = superclassType.get
@@ -211,11 +220,10 @@ class Project[Source] private (
                 inheritedClassMethods = superclassTypeMethods
             }
             if (inheritedClassMethods eq null) {
-                inheritedClassMethods =
-                    SortedSet.empty[MethodDeclarationContext](MethodDeclarationContextOrdering)
+                inheritedClassMethods = Naught
             }
 
-            var inheritedInterfacesMethods: Chain[SortedSet[MethodDeclarationContext]] = Naught
+            var inheritedInterfacesMethods: Chain[Chain[MethodDeclarationContext]] = Naught
             for {
                 superinterfaceTypes ← classHierarchy.superinterfaceTypes(objectType)
                 superinterfaceType ← superinterfaceTypes
@@ -239,19 +247,19 @@ class Project[Source] private (
             //  -   we assume that the project is valid; i.e., there is
             //      always at most one maximally specific method and if not, then
             //      the subclass resolves the conflict by defining the method.
-            var definedMethods: SortedSet[MethodDeclarationContext] = inheritedClassMethods
+            var definedMethods: Chain[MethodDeclarationContext] = inheritedClassMethods
             for {
                 inheritedInterfaceMethods ← inheritedInterfacesMethods
                 inheritedInterfaceMethod ← inheritedInterfaceMethods
             } {
                 // The relevant interface methods are public, hence, the package
                 // name is not relevant!
-                // IMPROVE: By using a Sorted... we could avoid the linear traversable done by exists.
                 if (!definedMethods.exists { definedMethod ⇒
-                    definedMethod.name == inheritedInterfaceMethod.name &&
-                        definedMethod.descriptor == inheritedInterfaceMethod.descriptor
+                    definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
+                        definedMethod.name == inheritedInterfaceMethod.name
+
                 })
-                    definedMethods += inheritedInterfaceMethod
+                    definedMethods :&:= inheritedInterfaceMethod
             }
 
             classFile(objectType) match {
@@ -262,14 +270,13 @@ class Project[Source] private (
                         if declaredMethod.isVirtualMethodDeclaration
                         declaredMethodContext = MethodDeclarationContext(declaredMethod, packageName)
                     } {
-                        // We have to filter multiple methods, if we inherit (w.r.t. the visibility)
+                        // We have to filter multiple methods when we inherit (w.r.t. the visibility)
                         // multiple conflicting methods!
-                        // IMPROVE: By using a Sorted... we could avoid the linear traversable!
                         definedMethods = definedMethods.filterNot(declaredMethodContext.directlyOverrides)
 
                         // Recall that it is possible to make a method "abstract" again...
                         if (declaredMethod.isNotAbstract) {
-                            definedMethods += declaredMethodContext
+                            definedMethods :&:= declaredMethodContext
                         }
                     }
                 case None ⇒
@@ -279,16 +286,22 @@ class Project[Source] private (
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
         }
 
-        val tasks = Tasks[ObjectType](computeDeclaredMethods)(OPALExecutionContext)
+        val tasks = Tasks[ObjectType](computeDefinedMethods)(OPALExecutionContext)
         classHierarchy.rootTypes foreach { t ⇒ tasks.submit(t) }
         val exceptions = tasks.join()
-
         exceptions foreach { e ⇒
-            OPALLogger.error(
-                "project configuration", "computing the defined methods failed", e
-            )
+            OPALLogger.error("project configuration", "computing the defined methods failed", e)
         }
-        new AnyRefMap[ObjectType, SortedSet[MethodDeclarationContext]](methods.size) ++ methods.asScala
+
+        val result = new AnyRefMap[ObjectType, Array[MethodDeclarationContext]](methods.size)
+        methods.asScala.foreach { e ⇒
+            val (objectType, methods) = e
+            val sortedMethods = methods.toArray
+            java.util.Arrays.sort(sortedMethods, MethodDeclarationContextOrdering)
+            result.+=(objectType, sortedMethods)
+        }
+        result
+        //new AnyRefMap[ObjectType, Chain[MethodDeclarationContext]](methods.size) ++ methods.asScala
     } { t ⇒
         OPALLogger.info("project setup", s"computing defined methods took ${t.toSeconds}")
     }
