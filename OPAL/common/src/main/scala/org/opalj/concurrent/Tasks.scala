@@ -79,6 +79,12 @@ class Tasks[T](
         }(executionContext)
     }
 
+// TODO delaySubmit
+
+    /**
+     * Blocks the calling thread until all sumitted tasks as well as those tasks
+     * that are created while processing tasks have been processed.
+     */
     def join(): List[Throwable] = {
 
         if (tasksCount.get != 0) {
