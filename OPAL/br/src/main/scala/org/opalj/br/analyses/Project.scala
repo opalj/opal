@@ -151,19 +151,32 @@ class Project[Source] private (
         "the library's methods contain bodies though libraryClassFilesAreInterfacesOnly is true"
     )
 
-    OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
-
     val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
 
-    val overridingMethods: Map[Method, Seq[Method]] = {
-        /*
-        methodToClassFile.iterator filter { m_cf ⇒
-            val (m, cf) = m_cf
-            !m.isStatic && !m.isPrivate && !m.isFinal &&
-                !m.isInitializer && !m.isStaticInitializer // before Java 8 the static initializer was not required to be ACC_STATIC
-        }
-        */
-        null
+    /**
+     * The number of classes (including inner and annoymous classes as well as
+     * interfaces, annotations, etc.) defined in libraries and in the analyzed project.
+     */
+    final val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
+
+    /**
+     * The number of methods defined in libraries and in the analyzed project.
+     */
+    final val methodsCount: Int = projectMethodsCount + libraryMethodsCount
+
+    /**
+     * The number of field defined in libraries and in the analyzed project.
+     */
+    final val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
+
+    final val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
+
+    final val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles
+
+    final val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
+
+    final val virtualMethodsCount: Int = {
+        methodsSortedBySize.count(m ⇒ m.isVirtualMethodDeclaration)
     }
 
     /**
@@ -326,26 +339,42 @@ class Project[Source] private (
             throw new IllegalArgumentException("the projects libraries are loaded differently");
         }
 
-        Project.extend[Source](
-            this, other.projectClassFilesWithSources, other.libraryClassFilesWithSources
-        )
+        val otherClassFiles = other.projectClassFilesWithSources
+        val otherLibraryClassFiles = other.libraryClassFilesWithSources
+        Project.extend[Source](this, otherClassFiles, otherLibraryClassFiles)
     }
 
     /**
-     * The number of classes (including inner and annoymous classes as well as
-     * interfaces, annotations, etc.) defined in libraries and in the analyzed project.
+     * Tests if the given method belongs to the interface of the given object type.
+     * I.e., returns `true` if a virtual method call, where the receiver type is known
+     * to be the given object type, would lead to the invokation of the given method.
+     * The given method can be an inherited method, but it will never return `Yes` if
+     * the given method is overridden by objectType or a supertype of it.
+     *
+     * @note The computation is based on the computed set of [[instanceMethods]].
      */
-    final val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
+    def hasInstanceMethod(objectType: ObjectType, method: Method): Answer = {
+        // RECALL val instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]]
+        val definedMethodsOption = instanceMethods.get(objectType)
+        if (definedMethodsOption.isEmpty)
+            return Unknown;
 
-    /**
-     * The number of methods defined in libraries and in the analyzed project.
-     */
-    final val methodsCount: Int = projectMethodsCount + libraryMethodsCount
+        val definedMethods: Array[MethodDeclarationContext] = definedMethodsOption.get
 
-    /**
-     * The number of field defined in libraries and in the analyzed project.
-     */
-    final val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
+        val result = find(definedMethods) { mdc ⇒
+            val mdcMethod = mdc.method
+            if (mdcMethod eq method)
+                0
+            else {
+                val methodComparison = mdcMethod compare method
+                if (methodComparison == 0)
+                    mdc.packageName compare classFile(method).thisType.packageName
+                else
+                    methodComparison
+            }
+        }
+        Answer(result)
+    }
 
     /**
      * The number of all source elements (fields, methods and class files).
@@ -358,8 +387,6 @@ class Project[Source] private (
      * all class files.
      */
     def allSourceElements: Iterable[SourceElement] = methods() ++ fields() ++ allClassFiles
-
-    val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
 
     private[this] def doParForeachClassFile[T](
         classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean
@@ -382,8 +409,6 @@ class Project[Source] private (
         doParForeachClassFile(this.projectClassFiles, isInterrupted)(f)
     }
 
-    val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles
-
     def parForeachLibraryClassFile[T](
         isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
@@ -391,8 +416,6 @@ class Project[Source] private (
     ): List[Throwable] = {
         doParForeachClassFile(this.libraryClassFiles, isInterrupted)(f)
     }
-
-    val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
 
     def parForeachClassFile[T](
         isInterrupted: () ⇒ Boolean = defaultIsInterrupted
@@ -642,7 +665,7 @@ class Project[Source] private (
             ("ProjectPackages" → projectPackages.size),
             ("LibraryPackages" → libraryPackages.size),
             ("ProjectInstructions" →
-                projectClassFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).
+                projectClassFiles.foldLeft(0)(_ + _.methods.view.filter(_.body.isDefined).
                     foldLeft(0)(_ + _.body.get.instructions.count(_ != null))))
         )
     }
@@ -742,9 +765,9 @@ class Project[Source] private (
         )
     }
 
-    // ----------------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
     //
-    // CODE TO MAKE IT POSSIBLE TO ATTACH SOME INFORMATION TO A PROJECT (ON DEMAND)
+    //    CODE TO MAKE IT POSSIBLE TO ATTACH SOME INFORMATION TO A PROJECT (ON DEMAND)
     //
     // ----------------------------------------------------------------------------------
 
@@ -804,7 +827,7 @@ class Project[Source] private (
         val projectInformation = this.projectInformation
         if (pikUId < projectInformation.length()) {
             val pi = projectInformation.get(pikUId)
-            if (pi != null) {
+            if (pi ne null) {
                 pi.asInstanceOf[T]
             } else {
                 this.synchronized {
@@ -812,7 +835,7 @@ class Project[Source] private (
                     val projectInformation = this.projectInformation
                     // double-checked locking (works with Java >=6)
                     val pi = projectInformation.get(pikUId)
-                    if (pi != null) {
+                    if (pi ne null) {
                         pi.asInstanceOf[T]
                     } else {
                         derive(projectInformation)
@@ -867,9 +890,7 @@ class Project[Source] private (
      */
     override protected def finalize(): Unit = {
         OPALLogger.debug("project", "finalized ("+logContext+")")
-        if (logContext != GlobalLogContext) {
-            OPALLogger.unregister(logContext)
-        }
+        if (logContext != GlobalLogContext) { OPALLogger.unregister(logContext) }
 
         super.finalize()
     }
@@ -882,9 +903,11 @@ class Project[Source] private (
  */
 object Project {
 
-    private[this] def cache = new BytecodeInstructionsCache
+    lazy val GlobalConfig = ConfigFactory.load()
 
-    private lazy val GlobalConfig = ConfigFactory.load()
+    lazy val JavaLibraryClassFileReader = Java9LibraryFramework
+
+    private[this] def cache = new BytecodeInstructionsCache
 
     def JavaClassFileReader(
         theLogContext: LogContext = GlobalLogContext,
@@ -897,8 +920,6 @@ object Project {
         } with Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
         new ConfiguredFramework
     }
-
-    lazy val JavaLibraryClassFileReader = Java9LibraryFramework
 
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
@@ -1150,10 +1171,8 @@ object Project {
                         OPALLogger.info("project configuration", "the JDK is part of the analysis")
                         ClassHierarchy.noDefaultTypeHierarchyDefinitions
                     } else {
-                        OPALLogger.info(
-                            "project configuration",
-                            "the JDK is not configured; using the preconfigured type hierarchy for the most relevant types"
-                        )
+                        val message = "JDK classes not found; using the preconfigured type hierarchy java.lang classes"
+                        OPALLogger.info("project configuration", message)
                         ClassHierarchy.defaultTypeHierarchyDefinitions
                     }
 
@@ -1326,7 +1345,7 @@ object Project {
      */
     private[this] def validate(project: SomeProject): Seq[InconsistentProjectException] = {
 
-        val disclaimer = "(this inconsistency may lead to completely useless results)"
+        val disclaimer = "(this inconsistency may lead to useless/wrong results)"
 
         val ch = project.classHierarchy
 
