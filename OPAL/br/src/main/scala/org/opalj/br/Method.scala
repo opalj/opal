@@ -40,6 +40,8 @@ import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.VisibilityModifier
 import org.opalj.br.instructions.Instruction
 
@@ -349,6 +351,25 @@ object Method {
     private def isNativeAndVarargs(accessFlags: Int) = {
         import AccessFlagsMatcher.ACC_NATIVEAndVARARGS
         (accessFlags & ACC_NATIVEAndVARARGS) == ACC_NATIVEAndVARARGS
+    }
+
+    /**
+     * Returns `true` if a method declared by a subclass in the package
+     * `declaringPackageOfSubclassMethod` can directly override a method which has the
+     *  given visibility and package.
+     */
+    def canDirectlyOverride(
+        declaringPackageOfSubclassMethod:   String,
+        superclassMethodVisibility:         Option[VisibilityModifier],
+        declaringPackageOfSuperclassMethod: String
+    ): Boolean = {
+        superclassMethodVisibility match {
+            case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) ⇒ true
+            case Some(ACC_PRIVATE)                      ⇒ false
+
+            case None ⇒
+                declaringPackageOfSubclassMethod == declaringPackageOfSuperclassMethod
+        }
     }
 
     /**
