@@ -676,7 +676,7 @@ class ClassHierarchy private (
      *
      * @note    No explicit `isKnown` check is required; if the type is unknown nothing
      *          will happen.
-     * @note For details regarding incomplete class hierarchies see [[foreachSubtype]].
+     * @note 	For details regarding incomplete class hierarchies see `foreachSubtype`.
      */
     def foreachSubclass(
         objectType: ObjectType,

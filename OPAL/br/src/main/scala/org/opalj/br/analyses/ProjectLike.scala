@@ -53,7 +53,7 @@ import org.opalj.collection.immutable.UIDSet0
  * 			One example would be, if we have two interfaces which define a non-abstract method
  * 			with the same signature and both interfaces are implemented by a third interface
  * 			which does not override these methods. In this case the result of a
- * 			[[resolveMethodCall]] is not defined, because the code base as a whole is not
+ * 			[[resolveMethodReference]] is not defined, because the code base as a whole is not
  * 			valid.
  *
  * @note
