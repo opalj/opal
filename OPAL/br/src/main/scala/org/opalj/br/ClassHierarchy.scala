@@ -144,12 +144,13 @@ class ClassHierarchy private (
 
     /**
      * The set of ''all types'' for which we have no further
-     * supertype information because of an incomplete project; that is all (pseudo) root types.
+     * supertype information at all because of an incomplete project or because the identified object
+     * is `java.lang.Object`.
      * If the class hierarchy is complete then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
      *
      * @note	If we load an application and all the jars used to implement it or a library
-     *    		and all the library it depends on then the class hierarchy '''should not'''
+     *    		and all the libraries it depends on, then the class hierarchy '''should not'''
      *    		contain multiple root types. However, the (complete) JDK already contains
      *    		some references to Eclipse classes which are not part of the JDK.
      * @return 	A Set of all object types which have no supertype or for which the
@@ -159,11 +160,7 @@ class ClassHierarchy private (
         knownTypesMap.foldLeft(HashSet.empty[ObjectType]) { (rootTypes, objectType) ⇒
             if ((objectType ne null) && {
                 val oid = objectType.id
-                (superclassTypeMap(oid) eq null) &&
-                    {
-                        val superinterfaceTypes = superinterfaceTypesMap(oid)
-                        (superinterfaceTypes eq null) || superinterfaceTypes.isEmpty
-                    }
+                (superclassTypeMap(oid) eq null) && superinterfaceTypesMap(oid).isEmpty
             })
                 rootTypes + objectType
             else
@@ -194,8 +191,8 @@ class ClassHierarchy private (
         val isSupertypeInformationCompleteMap: Array[Boolean] = new Array(knownTypesMap.length)
         java.util.Arrays.fill(isSupertypeInformationCompleteMap, true)
 
-        // NOTE: The supertype information for each type that inherits from java.lang.Object
-        // is not necessarily complete, the type may still implement an unknown interface.
+        // NOTE: The supertype information for each type that directly inherits from java.lang.Object
+        // is still not necessarily complete as the type may implement an unknown interface.
         for {
             rootType ← rootTypes
             if rootType ne ObjectType.Object
@@ -212,7 +209,7 @@ class ClassHierarchy private (
      * if possible. All issues and fixes are logged.
      */
     private[this] def validateClassHierarchy(): Unit = {
-        val unexpectedRootTypes = this.rootTypes.iterator filterNot (_ eq ObjectType.Object)
+        val unexpectedRootTypes = this.rootTypes.iterator filter (_ ne ObjectType.Object)
         if (unexpectedRootTypes.hasNext) {
             OPALLogger.warn(
                 "project configuration - class hierarchy",
@@ -223,7 +220,7 @@ class ClassHierarchy private (
             )
         }
 
-        isKnownToBeFinalMap.zipWithIndex foreach { e ⇒
+        isKnownToBeFinalMap.iterator.zipWithIndex foreach { e ⇒
             val (isFinal, oid) = e
             if (isFinal) {
                 if (subclassTypesMap(oid).nonEmpty) {
@@ -250,9 +247,6 @@ class ClassHierarchy private (
     }
 
     validateClassHierarchy()
-
-    // TODO Precompute all subTypes/subclassTypes/subinterfaceTypes; subTypesCF/subclassTypesCF/subinterfaceTypesCF
-    // TODO Precompute all superTypes/superclassTypes/superinterfaceTypes; superTypesCF/superclassTypesCF/superinterfaceTypesCF
 
     /**
      * The set of ''all class types'' (excluding interfaces) which have no super type or
@@ -346,7 +340,9 @@ class ClassHierarchy private (
     }
 
     //
+    //
     // IMPLEMENTS THE MAPPING BETWEEN AN ObjectType AND IT'S ID
+    //
     //
 
     private[this] var objectTypesMap: Array[ObjectType] = new Array(ObjectType.objectTypesCount)
@@ -397,6 +393,9 @@ class ClassHierarchy private (
     // REGULAR METHODS
     //
     //
+
+    // TODO Precompute all subTypes/subclassTypes/subinterfaceTypes; subTypesCF/subclassTypesCF/subinterfaceTypesCF
+    // TODO Precompute all superTypes/superclassTypes/superinterfaceTypes; superTypesCF/superclassTypesCF/superinterfaceTypesCF
 
     /**
      * Returns `true` if the class hierarchy has some information about the given
@@ -476,8 +475,8 @@ class ClassHierarchy private (
         referenceType match {
             case objectType: ObjectType ⇒
                 isKnownToBeFinal(objectType)
-            case at: ArrayType ⇒
-                val elementType = at.elementType
+            case arrayType: ArrayType ⇒
+                val elementType = arrayType.elementType
                 elementType.isBaseType || isKnownToBeFinal(elementType.asObjectType)
         }
     }
@@ -751,11 +750,23 @@ class ClassHierarchy private (
     )(
         f: (ClassFile) ⇒ T
     ): Unit = {
-        if (isUnknown(objectType))
+        val oid = objectType.id
+        if (isUnknown(oid))
             return ;
 
         import project.classFile
-        subclassTypesMap(objectType.id) foreach { subtype ⇒ classFile(subtype) foreach (f) }
+        subclassTypesMap(oid) foreach { subtype ⇒ classFile(subtype) foreach (f) }
+    }
+
+    def directSubtypesCount(objectType: ObjectType): Int = {
+        directSubtypesCount(objectType.id)
+    }
+
+    def directSubtypesCount(objectTypeId: Int): Int = {
+        if (isUnknown(objectTypeId))
+            return 0;
+
+        subclassTypesMap(objectTypeId).size + subinterfaceTypesMap(objectTypeId).size
     }
 
     /**
@@ -2531,8 +2542,7 @@ object ClassHierarchy {
             }
 
             def ensureHasSet(data: Array[UIDSet[ObjectType]], index: Int) = {
-                val objectTypes: UIDSet[ObjectType] = data(index)
-                if (objectTypes eq null) {
+                if (data(index) eq null) {
                     data(index) = UIDSet0
                 }
             }
@@ -2585,7 +2595,6 @@ object ClassHierarchy {
                     assert(subclassTypesMap(aSuperinterfaceTypeId).contains(objectType))
                     ensureHasSet(subinterfaceTypesMap, aSuperinterfaceTypeId)
                 }
-
             }
         }
 
