@@ -33,8 +33,9 @@ package analyses
 import java.net.URL
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.locks.ReentrantReadWriteLock
+//import java.util.concurrent.ConcurrentLinkedQueue
+//import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.concurrent.atomic.AtomicIntegerArray
 
 import scala.collection.JavaConverters._
 import scala.collection.Set
@@ -50,8 +51,8 @@ import net.ceedubs.ficus.Ficus._
 
 import org.opalj.control.find
 import org.opalj.concurrent.Tasks
-import org.opalj.concurrent.Locking.withReadLock
-import org.opalj.concurrent.Locking.withWriteLock
+//import org.opalj.concurrent.Locking.withReadLock
+//import org.opalj.concurrent.Locking.withWriteLock
 import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -108,19 +109,19 @@ import org.opalj.util.PerformanceEvaluation.time
  * project.methods.filter(_.parameterTypes.exists(_.isIntegerType)).size
  * }}}
  *
- * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File`,
- *      a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
- *      presenting users meaningful messages w.r.t. the location of issues.
- *      We abstract over the type of the resource to facilitate the embedding in existing
- *      tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
- *      location of a resource (e.g., a source or class file.)
+ * @tparam  Source The type of the source of the class file. E.g., a `URL`, a `File`,
+ *          a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
+ *          presenting users meaningful messages w.r.t. the location of issues.
+ *          We abstract over the type of the resource to facilitate the embedding in existing
+ *          tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
+ *          location of a resource (e.g., a source or class file.)
  *
- * @param logContext The logging context associated with this project. Using the logging
- *      context after the project is no longer referenced (garbage collected) is not
- *      possible.
+ * @param   logContext The logging context associated with this project. Using the logging
+ *          context after the project is no longer referenced (garbage collected) is not
+ *          possible.
  *
- * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
- * 		of the methods of the library's classes is available.
+ * @param   libraryClassFilesAreInterfacesOnly If `true` then only the public interface
+ * 		   of the methods of the library's classes is available.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -328,6 +329,7 @@ class Project[Source] private (
             java.util.Arrays.sort(sortedMethods, MethodDeclarationContextOrdering)
             result.+=(objectType, sortedMethods)
         }
+        result.repack
         result
         //new AnyRefMap[ObjectType, Chain[MethodDeclarationContext]](methods.size) ++ methods.asScala
     } { t ⇒
@@ -355,14 +357,24 @@ class Project[Source] private (
         //
         // 2.   Continue with 1.
 
+        // Stores foreach type the number of subtypes that still need to be processed.
+        val subtypesToProcessCounts = new AtomicIntegerArray(ObjectType.objectTypesCount)
+        classHierarchy.foreachKnownType { objectType ⇒
+            val oid = objectType.id
+            subtypesToProcessCounts.set(oid, classHierarchy.directSubtypesCount(oid))
+        }
+
+        /*
         val processedTypesLock = new ReentrantReadWriteLock()
         var processedTypes = immutable.HashSet.empty[ObjectType]
         val submittedTypesLock = new Object
         var submittedTypes = immutable.HashSet.empty[ObjectType]
+        */
 
-        val methods = new ConcurrentHashMap[Method, immutable.Set[Method]](virtualMethodsCount)
+        val methods = new ConcurrentHashMap[Method, immutable.HashSet[Method]](virtualMethodsCount)
 
         def computeOverridingMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
+            /*
             withReadLock(processedTypesLock) {
                 classHierarchy.foreachDirectSubtypeOf(objectType) { subtype ⇒
                     if (!processedTypes.contains(subtype)) {
@@ -371,23 +383,22 @@ class Project[Source] private (
                     }
                 }
             }
+            */
 
             val declaredMethodPackageName = objectType.packageName
-            val methodsOption = classFile(objectType).map(cf ⇒ cf.methods)
-            // If we don't know anything about the methods, we just do
-            // nothing; instanceMethods will also just reuse the information
-            // derived from the superclasses.
 
+            // If we don't know anything about the methods, we just do nothing;
+            // instanceMethods will also just reuse the information derived from the superclasses.
             try {
                 for {
-                    declaredMethods ← methodsOption
+                    declaredMethods ← classFile(objectType).map(cf ⇒ cf.methods)
                     declaredMethod ← declaredMethods
                     if declaredMethod.isVirtualMethodDeclaration
                 } {
                     if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
                         methods.put(declaredMethod, immutable.HashSet(declaredMethod))
                     } else {
-                        var overridingMethods: immutable.Set[Method] = immutable.HashSet.empty[Method]
+                        var overridingMethods = immutable.HashSet.empty[Method]
                         // let's join the results of all subtypes
                         classHierarchy.foreachSubtypeCF(objectType) { subtypeClassFile ⇒
                             subtypeClassFile.findDirectlyOverridingMethod(
@@ -413,9 +424,11 @@ class Project[Source] private (
             } finally {
                 // The try-finally is a safety net to ensure that this method at least
                 // terminates and the exceptions can be reported!
-                withWriteLock(processedTypesLock) { processedTypes += objectType }
+                //                withWriteLock(processedTypesLock) { processedTypes += objectType }
+
+                // IDEA Only submit a supertype if all subtypes are processed; this can be done using a simple counter...
                 classHierarchy.foreachDirectSupertype(objectType) { supertype ⇒
-                    if (!submittedTypes.contains(supertype)) {
+                    /*    if (!submittedTypes.contains(supertype)) {
                         submittedTypesLock.synchronized {
                             if (!submittedTypes.contains(supertype)) {
                                 submittedTypes += supertype
@@ -423,6 +436,9 @@ class Project[Source] private (
                             }
                         }
                     }
+                    */
+                    if (subtypesToProcessCounts.decrementAndGet(supertype.id) == 0)
+                        tasks.submit(supertype)
                 }
             }
         }
@@ -434,7 +450,10 @@ class Project[Source] private (
             OPALLogger.error("project configuration", "computing the overriding methods failed", e)
         }
 
-        OpenHashMap.empty ++ methods.asScala
+        val result = new AnyRefMap[Method, immutable.Set[Method]](methods.size)
+        result ++ methods.asScala
+        result.repack
+        result
     } { t ⇒
         OPALLogger.info("project setup", s"computing overriding information took ${t.toSeconds}")
     }
