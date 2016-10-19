@@ -33,8 +33,6 @@ package analyses
 import java.net.URL
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-//import java.util.concurrent.ConcurrentLinkedQueue
-//import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.atomic.AtomicIntegerArray
 
 import scala.collection.JavaConverters._
@@ -51,8 +49,6 @@ import net.ceedubs.ficus.Ficus._
 
 import org.opalj.control.find
 import org.opalj.concurrent.Tasks
-//import org.opalj.concurrent.Locking.withReadLock
-//import org.opalj.concurrent.Locking.withWriteLock
 import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -451,7 +447,7 @@ class Project[Source] private (
         }
 
         val result = new AnyRefMap[Method, immutable.Set[Method]](methods.size)
-        result ++ methods.asScala
+        result ++= methods.asScala
         result.repack
         result
     } { t ⇒
