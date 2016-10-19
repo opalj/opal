@@ -193,8 +193,8 @@ class Project[Source] private (
 
     /**
      * Returns the set of all non-private, non-abstract, non-static methods that are not
-     * initializers and which are potentially callable by clients (e.g., using invokevirtual or
-     * invokeinterface).
+     * initializers and which are potentially callable by clients when we have an object that
+     * has the specified type (e.g., using invokevirtual or invokeinterface).
      *
      * The referenced arrays must not be mutated!
      *
