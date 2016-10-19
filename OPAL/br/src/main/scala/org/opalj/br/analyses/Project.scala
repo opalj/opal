@@ -360,27 +360,9 @@ class Project[Source] private (
             subtypesToProcessCounts.set(oid, classHierarchy.directSubtypesCount(oid))
         }
 
-        /*
-        val processedTypesLock = new ReentrantReadWriteLock()
-        var processedTypes = immutable.HashSet.empty[ObjectType]
-        val submittedTypesLock = new Object
-        var submittedTypes = immutable.HashSet.empty[ObjectType]
-        */
-
         val methods = new ConcurrentHashMap[Method, immutable.HashSet[Method]](virtualMethodsCount)
 
         def computeOverridingMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
-            /*
-            withReadLock(processedTypesLock) {
-                classHierarchy.foreachDirectSubtypeOf(objectType) { subtype ⇒
-                    if (!processedTypes.contains(subtype)) {
-                        tasks.submit(objectType)
-                        return ;
-                    }
-                }
-            }
-            */
-
             val declaredMethodPackageName = objectType.packageName
 
             // If we don't know anything about the methods, we just do nothing;
@@ -420,19 +402,7 @@ class Project[Source] private (
             } finally {
                 // The try-finally is a safety net to ensure that this method at least
                 // terminates and the exceptions can be reported!
-                //                withWriteLock(processedTypesLock) { processedTypes += objectType }
-
-                // IDEA Only submit a supertype if all subtypes are processed; this can be done using a simple counter...
                 classHierarchy.foreachDirectSupertype(objectType) { supertype ⇒
-                    /*    if (!submittedTypes.contains(supertype)) {
-                        submittedTypesLock.synchronized {
-                            if (!submittedTypes.contains(supertype)) {
-                                submittedTypes += supertype
-                                tasks.submit(supertype)
-                            }
-                        }
-                    }
-                    */
                     if (subtypesToProcessCounts.decrementAndGet(supertype.id) == 0)
                         tasks.submit(supertype)
                 }
