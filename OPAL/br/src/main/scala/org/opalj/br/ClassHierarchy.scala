@@ -160,7 +160,11 @@ class ClassHierarchy private (
         knownTypesMap.foldLeft(HashSet.empty[ObjectType]) { (rootTypes, objectType) ⇒
             if ((objectType ne null) && {
                 val oid = objectType.id
-                (superclassTypeMap(oid) eq null) && superinterfaceTypesMap(oid).isEmpty
+                (superclassTypeMap(oid) eq null) &&
+                    {
+                        val superinterfaceTypes = superinterfaceTypesMap(oid)
+                        (superinterfaceTypes eq null) || superinterfaceTypes.isEmpty
+                    }
             })
                 rootTypes + objectType
             else
