@@ -550,7 +550,7 @@ class Project[Source] private (
      * The set of all method names of the given types.
      */
     def methodNames(objectTypes: Traversable[ObjectType]): Set[String] = {
-        objectTypes.flatMap(ot => classFile(ot)).flatMap(cf => cf.methods.map(m => m.name)).toSet
+        objectTypes.flatMap(ot ⇒ classFile(ot)).flatMap(cf ⇒ cf.methods.map(m ⇒ m.name)).toSet
     }
 
     /**
