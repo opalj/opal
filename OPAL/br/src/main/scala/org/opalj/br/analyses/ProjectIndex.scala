@@ -39,7 +39,8 @@ import scala.collection.Map
  *
  * Basically an index of the source elements (methods and fields) of a project.
  *
- * This index can be used, e.g., to resolve method calls based on the methods names.
+ * This index can be used, e.g., to resolve method calls based on the method's names and/or
+ * descriptors.
  *
  * To get an instance of a project index call [[Project.get]] and pass in
  * the [[ProjectIndexKey]] object.
@@ -133,9 +134,9 @@ object ProjectIndex {
         import ExecutionContext.Implicits.global
 
         val fieldsFuture: Future[AnyRefMap[String, AnyRefMap[FieldType, List[Field]]]] = Future {
-            val estimatedFieldsCount = project.fields.size * 2 / 3
+            val estimatedFieldsCount = project.fieldsCount
             val fields = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](estimatedFieldsCount)
-            for (field ← project.fields) {
+            for (field ← project.allFields) {
                 val fieldName = field.name
                 val fieldType = field.fieldType
                 fields.get(fieldName) match {
@@ -158,9 +159,9 @@ object ProjectIndex {
         }
 
         val methods: AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]] = {
-            val estimatedMethodsCount = project.methods.size * 2 / 3
+            val estimatedMethodsCount = project.methodsCount
             val methods = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](estimatedMethodsCount)
-            for (method ← project.methods) {
+            for (method ← project.allMethods) {
                 val methodName = method.name
                 val methodDescriptor = method.descriptor
                 methods.get(methodName) match {

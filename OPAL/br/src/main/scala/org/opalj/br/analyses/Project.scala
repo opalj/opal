@@ -123,25 +123,25 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Marco Torsello
  */
 class Project[Source] private (
-        private[this] val projectClassFiles:              Array[ClassFile],
-        private[this] val libraryClassFiles:              Array[ClassFile],
-        private[this] val methodsSortedBySize:            Array[Method], // the concrete methods, sorted by size in descending order
-        private[this] val projectTypes:                   Set[ObjectType], // the types defined by the class files belonging to the project's code
-        private[this] val fieldToClassFile:               AnyRefMap[Field, ClassFile],
-        private[this] val methodToClassFile:              AnyRefMap[Method, ClassFile],
-        private[this] val objectTypeToClassFile:          OpenHashMap[ObjectType, ClassFile],
-        private[this] val sources:                        OpenHashMap[ObjectType, Source],
-        private[this] val methodsWithClassFilesAndSource: Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
-        final val projectClassFilesCount:                 Int,
-        final val projectMethodsCount:                    Int,
-        final val projectFieldsCount:                     Int,
-        final val libraryClassFilesCount:                 Int,
-        final val libraryMethodsCount:                    Int,
-        final val libraryFieldsCount:                     Int,
-        final val codeSize:                               Long,
-        final val classHierarchy:                         ClassHierarchy,
-        final val analysisMode:                           AnalysisMode,
-        final val libraryClassFilesAreInterfacesOnly:     Boolean
+        private[this] val projectClassFiles:          Array[ClassFile],
+        private[this] val libraryClassFiles:          Array[ClassFile],
+        private[this] val methodsWithBody:            Array[Method], // methods with bodies sorted by size
+        private[this] val projectTypes:               Set[ObjectType], // the types defined by the class files belonging to the project's code
+        private[this] val fieldToClassFile:           AnyRefMap[Field, ClassFile],
+        private[this] val methodToClassFile:          AnyRefMap[Method, ClassFile],
+        private[this] val objectTypeToClassFile:      OpenHashMap[ObjectType, ClassFile],
+        private[this] val sources:                    OpenHashMap[ObjectType, Source],
+        private[this] val methodsWithBodyAndContext:  Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
+        final val projectClassFilesCount:             Int,
+        final val projectMethodsCount:                Int,
+        final val projectFieldsCount:                 Int,
+        final val libraryClassFilesCount:             Int,
+        final val libraryMethodsCount:                Int,
+        final val libraryFieldsCount:                 Int,
+        final val codeSize:                           Long,
+        final val classHierarchy:                     ClassHierarchy,
+        final val analysisMode:                       AnalysisMode,
+        final val libraryClassFilesAreInterfacesOnly: Boolean
 )(
         implicit
         final val logContext: LogContext,
@@ -181,9 +181,9 @@ class Project[Source] private (
      */
     final val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
-    final val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
+    final val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles.toIterable
 
-    final val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles
+    final val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles.toIterable
 
     final val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
 
@@ -194,11 +194,12 @@ class Project[Source] private (
     /**
      * Returns the set of all non-private, non-abstract, non-static methods that are not
      * initializers and which are potentially callable by clients when we have an object that
-     * has the specified type (e.g., using invokevirtual or invokeinterface).
+     * has the specified type and a method is called using
+     * [[org.opalj.br.instructions.INVOKEINTERFACE]] or [[org.opalj.br.instructions.INVOKEVIRTUAL]].
      *
-     * The referenced arrays must not be mutated!
+     * The returned array must not be mutated!
      *
-     * The array of methods is sorted using the [[MethodDeclarationContextOrdering]] to
+     * The array of methods is sorted using [[MethodDeclarationContextOrdering]] to
      * enable the fast look-up of the target method.
      */
     val instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]] = time {
@@ -345,9 +346,10 @@ class Project[Source] private (
         //      the set of overriding methods (recall that the overrides relation is reflexive).
         //      Hence, initially the set contains the method it self.
         //
-        // 1.   After that the direct superclass is scheduled to be analyzed. The superclass then
-        //      tests for each overridable method if it is overridden in the sublcasses and, if so,
-        //      looks up the respective sets of overriding methods and joins them.
+        // 1.   After that the direct superclass is scheduled to be analyzed if all subclasses
+        //      are analyzed. The superclass then tests for each overridable method if it is
+        //      overridden in the sublcasses and, if so, looks up the respective sets of overriding
+        //      methods and joins them.
         //      A method is overridden by a subclass if the set of instance methods of the
         //      subclass does not contain the super class' method.
         //
@@ -401,7 +403,7 @@ class Project[Source] private (
                 }
             } finally {
                 // The try-finally is a safety net to ensure that this method at least
-                // terminates and the exceptions can be reported!
+                // terminates and that exceptions can be reported!
                 classHierarchy.foreachDirectSupertype(objectType) { supertype ⇒
                     if (subtypesToProcessCounts.decrementAndGet(supertype.id) == 0)
                         tasks.submit(supertype)
@@ -464,7 +466,8 @@ class Project[Source] private (
      * I.e., returns `true` if a virtual method call, where the receiver type is known
      * to be the given object type, would lead to the invokation of the given method.
      * The given method can be an inherited method, but it will never return `Yes` if
-     * the given method is overridden by objectType or a supertype of it.
+     * the given method is overridden by `objectType` or a supertype of it which is a
+     * sub type of the declaring type of `method`.
      *
      * @note The computation is based on the computed set of [[instanceMethods]].
      */
@@ -476,16 +479,16 @@ class Project[Source] private (
 
         val definedMethods: Array[MethodDeclarationContext] = definedMethodsOption.get
 
-        val result = find(definedMethods) { mdc ⇒
-            val mdcMethod = mdc.method
-            if (mdcMethod eq method)
+        val result: Option[MethodDeclarationContext] = find(definedMethods) { definedMethodContext ⇒
+            val definedMethod = definedMethodContext.method
+            if (definedMethod eq method)
                 0
             else {
-                val methodComparison = mdcMethod compare method
+                val methodComparison = definedMethod compare method
                 if (methodComparison == 0)
                     // We may have multiple methods with the same signature, but which belong
                     // to different packages!
-                    mdc.packageName compare classFile(method).thisType.packageName
+                    definedMethodContext.packageName compare classFile(method).thisType.packageName
                 else
                     methodComparison
             }
@@ -503,7 +506,7 @@ class Project[Source] private (
      * of all source elements consists of (in this order): all methods + all fields +
      * all class files.
      */
-    def allSourceElements: Iterable[SourceElement] = methods() ++ fields() ++ allClassFiles
+    def allSourceElements: Iterable[SourceElement] = allMethods ++ allFields ++ allClassFiles
 
     private[this] def doParForeachClassFile[T](
         classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean
@@ -547,7 +550,7 @@ class Project[Source] private (
      * The set of all method names of the given types.
      */
     def methodNames(objectTypes: Traversable[ObjectType]): Set[String] = {
-        objectTypes.map(classFile(_)).flatten.map(_.methods.map(_.name)).flatten.toSet
+        objectTypes.flatMap(ot => classFile(ot)).flatMap(cf => cf.methods.map(m => m.name)).toSet
     }
 
     /**
@@ -562,7 +565,7 @@ class Project[Source] private (
     def packages: Set[String] = projectPackages ++ libraryPackages
 
     /**
-     * Returns the list of all project packages that contain at least one class.
+     * Returns the set of all project packages that contain at least one class.
      *
      * For example, in case of the JDK the package `java` does not directly contain
      * any class – only its subclasses. This package is, hence, not returned by this
@@ -575,7 +578,7 @@ class Project[Source] private (
     }
 
     /**
-     * Returns the list of all library packages that contain at least one class.
+     * Returns the set of all library packages that contain at least one class.
      *
      * For example, in case of the JDK the package `java` does not directly contain
      * any class – only its subclasses. This package is, hence, not returned by this
@@ -587,7 +590,8 @@ class Project[Source] private (
         libraryClassFiles.foldLeft(Set.empty[String])(_ + _.thisType.packageName)
     }
 
-    def methodsWithBody: Iterable[Method] = this.methodsWithClassFilesAndSource.view.map(_.method)
+    def allMethodsWithBody: Iterable[Method] = this.methodsWithBody.toIterable
+
 
     /**
      * Iterates over all methods with a body in parallel.
@@ -603,11 +607,11 @@ class Project[Source] private (
     )(
         f: MethodInfo[Source] ⇒ T
     ): List[Throwable] = {
-        val methods = this.methodsWithClassFilesAndSource
-        if (methods.length == 0)
+        val concreteMethods = this.methodsWithBodyAndContext
+        if (concreteMethods.length == 0)
             return Nil;
 
-        parForeachArrayElement(methods, parallelizationLevel, isInterrupted)(f)
+        parForeachArrayElement(concreteMethods, parallelizationLevel, isInterrupted)(f)
     }
 
     /**
@@ -665,8 +669,8 @@ class Project[Source] private (
     def packagesCount = packages.size
 
     /**
-     * Distributes the all class which define methods with bodies across a given number of
-     * groups.
+     * Distributes all classes which define methods with bodies across a given number of
+     * groups. Afterwards these groups can, e.g., be processed in parallel.
      */
     def groupedClassFilesWithMethodsWithBody(groupsCount: Int): Array[Buffer[ClassFile]] = {
         var nextGroupId = 0
@@ -686,20 +690,15 @@ class Project[Source] private (
         groups
     }
 
-    def classFilesWithSources: Iterable[(ClassFile, Source)] = {
-        projectClassFiles.view.map(cf ⇒ (cf, sources(cf.thisType))) ++
-            libraryClassFiles.view.map(cf ⇒ (cf, sources(cf.thisType)))
-    }
-
     /**
      * All methods defined by this project as well as the visible methods defined by the libraries.
      */
-    def methods(): Iterable[Method] = methodToClassFile.keys
+    def allMethods: Iterable[Method] = methodToClassFile.keys
 
     /**
      * All fields defined by this project as well as the visible fields defined by the libraries.
      */
-    def fields(): Iterable[Field] = fieldToClassFile.keys
+    def allFields: Iterable[Field] = fieldToClassFile.keys
 
     def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         projectClassFiles.view.map { classFile ⇒ (classFile, sources(classFile.thisType)) }
@@ -707,6 +706,10 @@ class Project[Source] private (
 
     def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         libraryClassFiles.view.map { classFile ⇒ (classFile, sources(classFile.thisType)) }
+    }
+
+    def classFilesWithSources: Iterable[(ClassFile, Source)] = {
+        projectClassFilesWithSources ++ libraryClassFilesWithSources
     }
 
     /**
@@ -791,30 +794,14 @@ class Project[Source] private (
      * Returns the (number of) (non-synthetic) methods per method length
      * (size in length of the method's code array).
      */
-    def projectMethodsLengthDistribution: Map[Int, (Int, Set[Method])] = {
-        //        val data = Array.fill(UShort.MaxValue) { new AtomicInteger(0) }
-        //
-        //        parForeachMethodWithBody(() ⇒ defaultIsInterrupted) { entity ⇒
-        //            val (_ /*source*/ , _ /*classFile*/ , method) = entity
-        //            if (!method.isSynthetic) {
-        //                data(method.body.get.instructions.length).incrementAndGet()
-        //            }
-        //        }
-        //        val result = LinkedHashMap.empty[Int, Int]
-        //        for (i ← 0 until UShort.MaxValue) {
-        //            val count = data(i).get
-        //            if (count > 0)
-        //                result += ((i, count))
-        //        }
-        //        result
-
-        var data = SortedMap.empty[Int, (Int, Set[Method])]
-        methodsSortedBySize.view.filterNot(_.isSynthetic).foreach { method ⇒
-            val size = method.body.get.instructions.length
-            val (count, methods) = data.getOrElse(size, (0, Set.empty[Method]))
-            data += ((size, (count + 1, methods + method)))
+    def projectMethodsLengthDistribution: Map[Int, Set[Method]] = {
+        val nonSyntheticMethodsWithBody: Traversable[Method] = methodsWithBody.view.filterNot(_.isSynthetic)
+        val data = SortedMap.empty[Int, Set[Method]]
+        nonSyntheticMethodsWithBody.foldLeft(data) { (data, method) ⇒
+            val methodLength = method.body.get.instructions.length
+            val methods = data.getOrElse(methodLength, Set.empty[Method])
+            data + ((methodLength, methods + method))
         }
-        data
     }
 
     /**
@@ -822,16 +809,18 @@ class Project[Source] private (
      * The number of class members of nested classes is also taken into consideration.
      * I.e., the map's key identifies the category and the value is a pair where the first value
      * is the count and the value is the names of the source elements.
+     *
+     * The count can be higher than the set of names of class members due to method overloading.
      */
     def projectClassMembersPerClassDistribution: Map[Int, (Int, Set[String])] = {
-        val data = OpenHashMap.empty[String, Int]
+        val data = AnyRefMap.empty[String, Int]
 
-        projectClassFiles.foreach { classFile ⇒
+        projectClassFiles foreach { classFile ⇒
             // we want to collect the size in relation to the source code;
             //i.e., across all nested classes
             val count =
-                classFile.methods.view.filterNot(_.isSynthetic).size +
-                    classFile.fields.view.filterNot(_.isSynthetic).size
+                classFile.methods.iterator.filterNot(_.isSynthetic).size +
+                    classFile.fields.iterator.filterNot(_.isSynthetic).size
 
             var key = classFile.thisType.toJava
             if (classFile.isInnerClass) {
@@ -841,7 +830,6 @@ class Project[Source] private (
                 }
             }
             data.update(key, data.getOrElse(key, 0) + count + 1 /*+1 for the inner class*/ )
-
         }
 
         var result = SortedMap.empty[Int, (Int, Set[String])]
@@ -886,7 +874,7 @@ class Project[Source] private (
     //
     //    CODE TO MAKE IT POSSIBLE TO ATTACH SOME INFORMATION TO A PROJECT (ON DEMAND)
     //
-    // ----------------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     import java.util.concurrent.atomic.AtomicReferenceArray
 
@@ -932,7 +920,7 @@ class Project[Source] private (
         val pikUId = pik.uniqueId
 
         def derive(projectInformation: AtomicReferenceArray[AnyRef]): T =
-            /* calls are externally synchronized! */ {
+            /* synchronization is done by the caller! */ {
                 for (requiredProjectInformationKey ← pik.getRequirements) {
                     get(requiredProjectInformationKey)
                 }
@@ -1288,8 +1276,8 @@ object Project {
                         OPALLogger.info("project configuration", "the JDK is part of the analysis")
                         ClassHierarchy.noDefaultTypeHierarchyDefinitions
                     } else {
-                        val message = "JDK classes not found; using the preconfigured type hierarchy java.lang classes"
-                        OPALLogger.info("project configuration", message)
+                        val alternative = "(using the preconfigured type hierarchy (based on Java 7) for classes belonging java.lang)"
+                        OPALLogger.info("project configuration", "JDK classes not found"+alternative)
                         ClassHierarchy.defaultTypeHierarchyDefinitions
                     }
 
@@ -1404,26 +1392,24 @@ object Project {
             fieldToClassFile.repack()
             methodToClassFile.repack()
 
-            val methodsSortedBySize =
-                methodToClassFile.keysIterator.filter(_.body.isDefined).toList.sortWith { (m1, m2) ⇒
-                    m1.body.get.instructions.size > m2.body.get.instructions.size
-                }.toArray
-
-            val methodsSortedBySizeWithClassFileAndSource =
-                methodToClassFile.filter(_._1.body.isDefined).toList.sortWith { (v1, v2) ⇒
-                    v1._1.body.get.instructions.size > v2._1.body.get.instructions.size
+            val methodsWithBodySortedBySizeWithContext =
+                methodToClassFile.view.filter(_._1.body.isDefined).toList.sortWith { (v1, v2) ⇒
+                    v1._1.body.get.instructions.length > v2._1.body.get.instructions.length
                 }.map(e ⇒ MethodInfo(sources(e._2.thisType), e._2, e._1)).toArray
+
+            val methodsWithBodySortedBySize: Array[Method] =
+                methodsWithBodySortedBySizeWithContext.view.map(mi ⇒ mi.method).toArray
 
             val project = new Project(
                 projectClassFiles.toArray,
                 libraryClassFiles.toArray,
-                methodsSortedBySize,
+                methodsWithBodySortedBySize,
                 projectTypes,
                 fieldToClassFile,
                 methodToClassFile,
                 objectTypeToClassFile,
                 sources,
-                methodsSortedBySizeWithClassFileAndSource,
+                methodsWithBodySortedBySizeWithContext,
                 projectClassFilesCount,
                 projectMethodsCount,
                 projectFieldsCount,
