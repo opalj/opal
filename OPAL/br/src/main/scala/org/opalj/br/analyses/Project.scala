@@ -188,7 +188,7 @@ class Project[Source] private (
     final val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
 
     final val virtualMethodsCount: Int = {
-        methodsSortedBySize.count(m ⇒ m.isVirtualMethodDeclaration)
+        methodToClassFile.keysIterator.count(m ⇒ m.isVirtualMethodDeclaration)
     }
 
     /**
