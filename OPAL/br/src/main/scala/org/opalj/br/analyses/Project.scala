@@ -592,6 +592,14 @@ class Project[Source] private (
 
     def allMethodsWithBody: Iterable[Method] = this.methodsWithBody.toIterable
 
+    def allMethodsWithBodyWithContext: Iterable[MethodInfo[Source]] = {
+        this.methodsWithBodyAndContext.toIterable
+    }
+
+    /**
+     * Iterable of all methods along along with its defining class file.
+     */
+    def allMethodsWithContext: Iterable[(Method, ClassFile)] = this.methodToClassFile.toIterable
 
     /**
      * Iterates over all methods with a body in parallel.
