@@ -323,8 +323,6 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         project: SomeProject
     ): CallGraphExtractor.LocalCallGraphInformation = {
 
-        println("extract:"+method.toJava(classFile))
-
         // The following optimization (which uses the plain CHA algorithm for all methods
         // that do not have virtual method calls) may lead to some additional edges (if
         // the underlying code contains dead code), but the improvement is worth the
