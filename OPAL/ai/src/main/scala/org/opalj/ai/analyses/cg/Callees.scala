@@ -76,7 +76,6 @@ trait Callees {
                 val result = project.lookupImplementingMethods(
                     declaringClassType, name, descriptor, classesFilter
                 )
-                println(result)
                 result
 
             case /*Unknown <=> the type is unknown */ _ ⇒
