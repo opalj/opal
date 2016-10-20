@@ -59,7 +59,7 @@ class Tasks[T](
 
     private[this] val latch = new CountDownLatch(1)
     private[this] val tasksCount = new AtomicInteger(0)
-    private[this] var exceptions = new ConcurrentLinkedQueue[Throwable]()
+    private[this] var exceptions: ConcurrentLinkedQueue[Throwable] = null
 
     def submit(t: T): Unit = {
         if (isInterrupted())
@@ -71,6 +71,11 @@ class Tasks[T](
             // the workQueue may contain one to many new entries to work on
             if (result.isFailure) {
                 val Failure(exception) = result
+                if (exceptions eq null) {
+                    Tasks.synchronized {
+                        if (exceptions eq null) exceptions = new ConcurrentLinkedQueue[Throwable]()
+                    }
+                }
                 exceptions.add(exception)
             }
             if (tasksCount.decrementAndGet() == 0) {
@@ -90,7 +95,7 @@ class Tasks[T](
             latch.await()
         }
 
-        if (!exceptions.isEmpty)
+        if (exceptions ne null)
             exceptions.asScala.toList
         else
             Nil
