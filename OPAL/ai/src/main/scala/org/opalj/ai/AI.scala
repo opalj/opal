@@ -1475,8 +1475,6 @@ trait AI[D <: Domain] {
                         val returnTarget = pcOfNextInstruction
                         val branchTarget = pc + as[JSRInstruction](instruction).branchoffset
                         evaluated :&:= SUBROUTINE_START
-                        // FIXME we have to make sure that "theOperands|LocalsArray" are used
-                        // to store the results of the main abstraction
                         memoryLayoutBeforeSubroutineCall :&:= (
                             (branchTarget, operandsArray.clone, localsArray.clone)
                         )
