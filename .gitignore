@@ -48,3 +48,4 @@ Test.class
 /build.sublime-workspace
 /OPAL.sublime-project
 /OPAL.sublime-workspace
+.ensime_cache
