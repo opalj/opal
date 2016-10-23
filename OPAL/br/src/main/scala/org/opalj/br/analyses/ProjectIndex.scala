@@ -50,24 +50,24 @@ import scala.collection.Map
  * @author Michael Eichberg
  */
 class ProjectIndex private (
-        val fields:  Map[String, Map[FieldType, Iterable[Field]]],
-        val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]
+        val fields:  Map[String, Map[FieldType, List[Field]]],
+        val methods: Map[String, Map[MethodDescriptor, List[Method]]]
 ) {
 
-    def findFields(name: String, fieldType: FieldType): Iterable[Field] = {
-        fields.get(name).flatMap(_.get(fieldType)).getOrElse(Iterable.empty)
+    def findFields(name: String, fieldType: FieldType): List[Field] = {
+        fields.get(name).flatMap(_.get(fieldType)).getOrElse(Nil)
     }
 
     def findFields(name: String): Iterable[Field] = {
-        fields.get(name).map(_.values.flatten).getOrElse(Iterable.empty)
+        fields.get(name).map(_.values.flatten).getOrElse(Nil)
     }
 
-    def findMethods(name: String, descriptor: MethodDescriptor): Iterable[Method] = {
-        methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty)
+    def findMethods(name: String, descriptor: MethodDescriptor): List[Method] = {
+        methods.get(name).flatMap(_.get(descriptor)).getOrElse(Nil)
     }
 
     def findMethods(name: String): Iterable[Method] = {
-        methods.get(name).map(_.values.flatten).getOrElse(Iterable.empty)
+        methods.get(name).map(_.values.flatten).getOrElse(Nil)
     }
 
     /**
