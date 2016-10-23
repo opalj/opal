@@ -38,7 +38,6 @@ package collection
  * are analyzing some library (but not the JDK). In this case the class hierarchy will be incomplete
  * and every analysis using it may compute incomplete information.
  *
- *
  * @author Michael Eichberg
  */
 sealed trait QualifiedCollection[+S] {

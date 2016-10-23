@@ -31,8 +31,9 @@ package collection
 package immutable
 
 /**
- * An option that either encapsulates some value, no value or the
- * information that the computation failed.
+ * Represents the result of some computation that either (a) succeeded and encapsulates some value,
+ * (b) succeeded, but has no value - because it was not possible to compute a value using the given
+ * information - or (c) that failed.
  *
  * @author Michael Eichberg
  */

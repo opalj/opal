@@ -35,7 +35,7 @@ import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.fpcf.PropertyStore
 
 /**
- * The ''key'' object to get access to the [[org.opalj.fpcf.PropertyStore]].
+ * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
  *
  * @note It is possible to set the project's `debug` flag using the project's
  * 		`org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
@@ -65,7 +65,7 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
     override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
     /**
-     * Creates a new empty property store.
+     * Creates a new empty property store using the current [[parallelismLevel]].
      */
     override protected def compute(project: SomeProject): PropertyStore = {
         val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)

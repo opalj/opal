@@ -44,13 +44,13 @@ package analyses
  * the (singleton) instance of the respective `ProjectInformationKey` to get
  * the respective project information.
  *
- * For example, let's assume that a call graph is needed. In this case the
- * code to get the respective call graph would be:
+ * For example, let's assume that an index of all fields and methods is needed. In this case the
+ * code to get the index would be:
  * {{{
- * import ...{ComputedCallGraph,CHACallGraphKey}
+ * import ...{ProjectIndex,ProjectIndexKey}
  * val project : Project = ???
- * val ComputedCallGraph(callGraph,unresolved,ex) = project.get(CHACallGraphKey)
- * // do something with the call graph
+ * val projectIndex = project.get(ProjectIndexKey)
+ * // do something with the index
  * }}}
  *
  * ==Providing Project Information/Implementing `ProjectInformationKey` ==
@@ -134,4 +134,3 @@ private object ProjectInformationKey {
     private[ProjectInformationKey] def nextId: Int = idGenerator.getAndIncrement()
 
 }
-

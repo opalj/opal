@@ -33,7 +33,8 @@ package analyses
 import java.net.URL
 
 /**
- * Default implementation of one step analysis.
+ * Default implementation of the [[AnalysisExecutor]] which facilitates the
+ * development of analyses which are executed in one step.
  *
  * @author Michael Eichberg
  */
@@ -44,4 +45,3 @@ abstract class DefaultOneStepAnalysis
     final override val analysis = this
 
 }
-

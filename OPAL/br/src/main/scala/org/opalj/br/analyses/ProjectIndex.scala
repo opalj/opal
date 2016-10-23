@@ -45,6 +45,8 @@ import scala.collection.Map
  * To get an instance of a project index call [[Project.get]] and pass in
  * the [[ProjectIndexKey]] object.
  *
+ * @see [[FieldAccessInformation]] to get the information where a field is accessed.
+ *
  * @author Michael Eichberg
  */
 class ProjectIndex private (

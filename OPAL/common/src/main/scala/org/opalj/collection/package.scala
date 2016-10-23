@@ -79,7 +79,7 @@ package object collection {
      *
      * @note 	It is possible that `f` is evaluated but the result is not used, if
      * 			another thread has already associated a value with the respective key.
-     *      	In that case the result of the evaluation of `f` is completely thrown away.
+     *      	In that case the result of the evaluation of `f` is thrown away.
      */
     def putIfAbsentAndGet[K, V](map: ConcurrentHashMap[K, V], key: K, f: ⇒ V): V = {
         val value = map.get(key)
@@ -117,8 +117,6 @@ package object collection {
                 values.foldLeft(HashMap.empty[SubK, V])((c, n) ⇒ c + ((n.getKey, n.getValue)))
             )
             c + entry
-
         }
-
     }
 }

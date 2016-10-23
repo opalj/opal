@@ -252,7 +252,7 @@ sealed trait UIDSet[+T <: UID]
     final def seq: this.type = this
 
     /**
-     * Creates a new `(UID)Set` which contains the mapped values as specified by the given
+     * Creates a new `collection` which contains the mapped values as specified by the given
      * function `f`.
      *
      * @example

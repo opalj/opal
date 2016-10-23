@@ -133,8 +133,11 @@ final class MethodDeclarationContext(
             case Some(ACC_PRIVATE)                      ⇒ false
         }
     }
-
 }
+
+/**
+ * Definition of factory and extractor methods for [[MethodDeclarationContext]] objects.
+ */
 object MethodDeclarationContext {
 
     def apply(method: Method, packageName: String): MethodDeclarationContext = {
