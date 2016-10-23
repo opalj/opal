@@ -927,15 +927,23 @@ class Project[Source] private (
     def get[T <: AnyRef](pik: ProjectInformationKey[T]): T = {
         val pikUId = pik.uniqueId
 
-        def derive(projectInformation: AtomicReferenceArray[AnyRef]): T =
-            /* synchronization is done by the caller! */ {
-                for (requiredProjectInformationKey ← pik.getRequirements) {
-                    get(requiredProjectInformationKey)
-                }
-                val pi = pik.doCompute(this)
-                projectInformation.set(pikUId, pi)
-                pi
+        /* synchronization is done by the caller! */
+        def derive(projectInformation: AtomicReferenceArray[AnyRef]): T = {
+            var className = pik.getClass().getSimpleName()
+            if (className.endsWith("Key"))
+                className = className.substring(0, className.length - 3)
+            else if (className.endsWith("Key$"))
+                className = className.substring(0, className.length - 4)
+
+            for (requiredProjectInformationKey ← pik.getRequirements) {
+                get(requiredProjectInformationKey)
             }
+            val pi = time {
+                pik.doCompute(this)
+            } { t ⇒ OPALLogger.info("project", s"initialization of $className took ${t.toSeconds}") }
+            projectInformation.set(pikUId, pi)
+            pi
+        }
 
         val projectInformation = this.projectInformation
         if (pikUId < projectInformation.length()) {
