@@ -31,6 +31,8 @@ package br
 package analyses
 
 import net.ceedubs.ficus.Ficus._
+
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.fpcf.PropertyStore
 
@@ -53,9 +55,7 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
      * The value must be larger than 0 and should be smaller or equal to the number
      * of (hyperthreaded) cores.
      */
-    @volatile var parallelismLevel: Int = {
-        Math.max(org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks, 2)
-    }
+    @volatile var parallelismLevel: Int = Math.max(NumberOfThreadsForCPUBoundTasks, 2)
 
     /**
      * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
