@@ -32,8 +32,8 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.collection.Map
 import scala.collection.JavaConverters._
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.br.instructions.LDCString
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.instructions.LDC
@@ -61,7 +61,7 @@ object StringConstantsInformationKey extends ProjectInformationKey[StringConstan
      * @note This analysis is internally parallelized. I.e., it is advantageous to run this
      * 		analysis in isolation.
      */
-    override protected def compute(project: SomeProject): Map[String, List[(Method, PC)]] = {
+    override protected def compute(project: SomeProject): Map[String, ConstArray[(Method, PC)]] = {
 
         val estimatedSize = project.methodsCount
         val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[(Method, PC)]](estimatedSize)
@@ -74,9 +74,12 @@ object StringConstantsInformationKey extends ProjectInformationKey[StringConstan
 
                     case LDC.opcode | LDC_W.opcode ⇒
                         val LDCString(value) = instruction
-                        var list = new ConcurrentLinkedQueue[(Method, PC)]();
-                        val previousList = map.putIfAbsent(value, list)
-                        if (previousList != null) list = previousList
+                        var list: ConcurrentLinkedQueue[(Method, PC)] = map.get(value)
+                        if (list eq null) {
+                            list = new ConcurrentLinkedQueue[(Method, PC)]()
+                            val previousList = map.putIfAbsent(value, list)
+                            if (previousList != null) list = previousList
+                        }
                         list.add((method, pc))
 
                     case _ ⇒ // we don't care
@@ -84,6 +87,11 @@ object StringConstantsInformationKey extends ProjectInformationKey[StringConstan
             }
         }
 
-        map.asScala.map(kv ⇒ (kv._1, kv._2.asScala.toList))
+        var result: Map[String, ConstArray[(Method, PC)]] = Map.empty
+        map.asScala foreach { kv ⇒
+            val (name, locations) = kv
+            result += ((name, ConstArray.from(locations.asScala.toArray)))
+        }
+        result
     }
 }
