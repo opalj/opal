@@ -33,6 +33,7 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable.AnyRefMap
+import org.opalj.log.OPALLogger
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
@@ -60,6 +61,7 @@ object FieldAccessInformationAnalysis {
 
     def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): FieldAccessInformation = {
         import project.resolveFieldReference
+        import project.logContext
 
         val allReadAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
         val allWriteAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
@@ -71,33 +73,31 @@ object FieldAccessInformationAnalysis {
             val readAccesses = AnyRefMap.empty[Field, UShortSet]
             val writeAccesses = AnyRefMap.empty[Field, UShortSet]
             var unresolved = UShortSet.empty
-            method.body.get.iterate { (pc, instruction) ⇒
+            method.body.get iterate { (pc, instruction) ⇒
                 instruction.opcode match {
 
                     case GETFIELD.opcode | GETSTATIC.opcode ⇒
                         val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
                         resolveFieldReference(fieldReadAccess) match {
                             case Some(field) ⇒
-                                val key = field
-                                readAccesses.update(
-                                    key,
-                                    pc +≈: readAccesses.getOrElse(key, UShortSet.empty)
-                                )
+                                val pcs = pc +≈: readAccesses.getOrElse(field, UShortSet.empty)
+                                readAccesses.update(field, pcs)
                             case None ⇒
-                                unresolved = pc +≈: unresolved
+                                val message = s"cannot resolve field read access: $instruction"
+                                OPALLogger.warn("project configuration", message)
+                                unresolved +≈:= pc
                         }
 
                     case PUTFIELD.opcode | PUTSTATIC.opcode ⇒
                         val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
                         resolveFieldReference(fieldWriteAccess) match {
                             case Some(field) ⇒
-                                val key = field
-                                writeAccesses.update(
-                                    key,
-                                    pc +≈: writeAccesses.getOrElse(key, UShortSet.empty)
-                                )
+                                val pcs = pc +≈: writeAccesses.getOrElse(field, UShortSet.empty)
+                                writeAccesses.update(field, pcs)
                             case None ⇒
-                                unresolved = pc +≈: unresolved
+                                val message = s"cannot resolve field write access: $instruction"
+                                OPALLogger.warn("project configuration", message)
+                                unresolved +≈:= pc
                         }
 
                     case _ ⇒ /*nothing to do*/
@@ -105,27 +105,28 @@ object FieldAccessInformationAnalysis {
             }
 
             // merge with the global store
-            readAccesses.foreach { e ⇒
+            readAccesses foreach { e ⇒
                 val (key @ field, pcs) = e
                 field.synchronized {
                     val currentAccesses = allReadAccesses.get(key)
-                    if (currentAccesses == null)
+                    if (currentAccesses eq null)
                         allReadAccesses.put(key, (method, pcs) :: Nil)
                     else
                         allReadAccesses.put(key, (method, pcs) :: currentAccesses)
                 }
             }
-            writeAccesses.foreach { e ⇒
+            writeAccesses foreach { e ⇒
                 val (key @ field, pcs) = e
                 field.synchronized {
                     val currentAccesses = allWriteAccesses.get(key)
-                    if (currentAccesses == null)
+                    if (currentAccesses eq null)
                         allWriteAccesses.put(key, (method, pcs) :: Nil)
                     else
                         allWriteAccesses.put(key, (method, pcs) :: currentAccesses)
                 }
             }
-            allUnresolved.add((method, unresolved))
+
+            if (unresolved.nonEmpty) allUnresolved.add((method, unresolved))
         }
 
         import scala.collection.JavaConverters._
@@ -133,6 +134,6 @@ object FieldAccessInformationAnalysis {
         ra.repack()
         val wa = (new AnyRefMap(allReadAccesses.size * 2) ++= allWriteAccesses.asScala)
         wa.repack()
-        new FieldAccessInformation(project, ra, wa, allUnresolved.asScala.toIndexedSeq)
+        new FieldAccessInformation(project, ra, wa, allUnresolved.asScala.toVector)
     }
 }
