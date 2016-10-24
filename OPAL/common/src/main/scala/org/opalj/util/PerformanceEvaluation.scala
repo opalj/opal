@@ -135,6 +135,9 @@ object GlobalPerformanceEvaluation extends PerformanceEvaluation
 object PerformanceEvaluation {
 
     def avg(ts: Traversable[Nanoseconds]): Nanoseconds = {
+        if (ts.isEmpty)
+            return Nanoseconds.None;
+
         Nanoseconds(ts.map(_.timeSpan).sum / ts.size)
     }
 
