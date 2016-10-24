@@ -204,6 +204,9 @@ final class ClassFile private (
      */
     def isVirtualType: Boolean = attributes.contains(VirtualTypeFlag)
 
+    /**
+     * Returns Java 9's module attribute if defined.
+     */
     def module: Option[Module] = { attributes collectFirst { case m: Module ⇒ m } }
 
     def enclosingMethod: Option[EnclosingMethod] = {
