@@ -30,16 +30,21 @@ package org.opalj
 package br
 
 import java.net.URL
+import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
+
 import scala.collection.JavaConversions._
 
+import com.typesafe.config.Config
+
+import org.opalj.log.LogContext
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.analyses.BasicMethodInfo
 import org.opalj.br.analyses.DefaultOneStepAnalysis
-
+import org.opalj.br.reader.Java8LambdaExpressionsRewriting.{defaultConfig ⇒ lambdasRewritingConfig}
 
 /**
  * Prints out the immediately available information about invokedynamic instructions.
@@ -49,18 +54,31 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
  */
 object InvokedynamicPrinter extends DefaultOneStepAnalysis {
 
+    // We have to adapt the configuration to ensure that invokedynamic instructions
+    // are nevery rewritten!
+    override def setupProject(
+        cpFiles:                 Iterable[File],
+        libcpFiles:              Iterable[File],
+        completelyLoadLibraries: Boolean,
+        analysisMode:            AnalysisMode,
+        fallbackConfiguration:   Config
+    )(
+        implicit
+        initialLogContext: LogContext
+    ): Project[URL] = {
+        val baseConfig = lambdasRewritingConfig(rewrite = false, logRewrites = true)
+        val config = baseConfig.withFallback(fallbackConfiguration)
+        super.setupProject(cpFiles, libcpFiles, completelyLoadLibraries, analysisMode, config)
+    }
+
     override def description: String = "Prints information about invokedynamic instructions."
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ) = {
+    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
         val invokedynamics = new ConcurrentLinkedQueue[String]()
         project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
-            val BasicMethodInfo(classFile, method) = methodInfo
+            val BasicMethodInfo(classFile, method @ MethodWithBody(body)) = methodInfo
             invokedynamics.addAll(
-                method.body.get.collectWithIndex {
+                body.collectWithIndex {
                     case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
                         classFile.thisType.toJava+" {\n  "+method.toJava()+"{ "+pc+": \n"+
                             s"    ${bootstrap.toJava}\n"+
@@ -71,7 +89,7 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
             )
         }
         val result = invokedynamics.toSeq.sorted
-        BasicReport(result.mkString(result.size+" invokedynamic instructions found:\n", "\n", "\n")        )
+        BasicReport(result.mkString(result.size+" invokedynamic instructions found:\n", "\n", "\n"))
     }
 
 }
