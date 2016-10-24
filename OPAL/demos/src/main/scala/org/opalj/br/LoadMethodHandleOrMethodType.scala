@@ -34,11 +34,9 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.LoadMethodHandle
 import org.opalj.br.instructions.LoadMethodHandle_W
@@ -48,12 +46,9 @@ import org.opalj.br.instructions.LoadMethodType_W
 /**
  * @author Michael Eichberg
  */
-object LoadConstantOfMethodHandlOrMethodType extends AnalysisExecutor {
+object LoadMethodHandleOrMethodType extends DefaultOneStepAnalysis {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
-
-        override def description: String =
-            "Prints information about loads of method handles and types."
+        override def description: String = "Prints information about loads of method handles and types."
 
         def doAnalyze(
             project:       Project[URL],
@@ -65,21 +60,20 @@ object LoadConstantOfMethodHandlOrMethodType extends AnalysisExecutor {
                 for {
                     classFile ← project.allProjectClassFiles.par
                     method @ MethodWithBody(code) ← classFile.methods
-                    (pc, instruction) ← code.collect({
+                    (pc, instruction) ← code.collect{
                         case LoadMethodHandle(mh)   ⇒ mh
                         case LoadMethodHandle_W(mh) ⇒ mh
                         case LoadMethodType(md)     ⇒ md
                         case LoadMethodType_W(md)   ⇒ md
-                    })
+                    }
                 } yield {
-                    classFile.fqn+" { "+
-                        method.toJava+
-                        "{ pc="+pc+
-                        ";load constant="+instruction.valueToString+" } }"+
-                        "<"+project.source(classFile.thisType)+">"
+                        method.toJava(
+                            classFile,
+                            s"pc=$pc;load constant=${instruction.valueToString}"
+                        )+s"<${project.source(classFile.thisType)}>"
                 }
 
             BasicReport(loads.seq.mkString("\n\t"))
-        }
+
     }
 }
