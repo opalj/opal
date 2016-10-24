@@ -63,23 +63,14 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
  */
 object MethodInvocationInstruction {
 
-    def unapply(instruction: Instruction): Option[(ReferenceType, String, MethodDescriptor)] = {
-        if (instruction eq null)
-            return None;
-
-        (instruction.opcode: @switch) match {
-            case INVOKEINTERFACE.opcode |
-                INVOKEVIRTUAL.opcode |
-                INVOKESTATIC.opcode |
-                INVOKESPECIAL.opcode ⇒
-                val invocationInstruction = instruction.asInstanceOf[MethodInvocationInstruction]
+    def unapply(
+        instruction: MethodInvocationInstruction
+    ): Option[(ReferenceType, String, MethodDescriptor)] = {
                 Some((
-                    invocationInstruction.declaringClass,
-                    invocationInstruction.name,
-                    invocationInstruction.methodDescriptor
+                    instruction.declaringClass,
+                    instruction.name,
+                    instruction.methodDescriptor
                 ))
-            case _ ⇒ None
-        }
     }
 
     val jvmExceptions = List(ObjectType.NullPointerException)
@@ -93,8 +84,9 @@ abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstru
 
     def isVirtualMethodCall: Boolean = true
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
         1 + methodDescriptor.parametersCount
+    }
 
 }
 
