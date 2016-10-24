@@ -46,11 +46,7 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
 
     override def description: String = "Counts the number of static and virtual method calls."
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String]  = List.empty,
-        isInterrupted: () ⇒ Boolean
-    ) = {
+    def doAnalyze(        project:       Project[URL],        params:    Seq[String] ,        isInterrupted: () ⇒ Boolean    ) = {
 
         var staticCalls = 0
         var virtualCalls = 0
@@ -61,7 +57,7 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
                 MethodWithBody(code) ← classFile.methods
                 instruction @ MethodInvocationInstruction(_, _, _) ← code.instructions
             } {
-                if (instruction.asInstanceOf[MethodInvocationInstruction].isVirtualMethodCall)
+                if (instruction.isVirtualMethodCall)
                     virtualCalls += 1
                 else
                     staticCalls += 1
@@ -69,9 +65,9 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
         } { t ⇒ executionTime = t }
 
         BasicReport(
-            "Total time: "+executionTime.toSeconds+"\n"+
-                "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
-                "Number of invokeinterface/invokevirtual instructions: "+virtualCalls
+            "The sequential analysis took: "+executionTime.toSeconds+"\n"+
+                "\tNumber of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
+                "\tNumber of invokeinterface/invokevirtual instructions: "+virtualCalls
         )
 
     }

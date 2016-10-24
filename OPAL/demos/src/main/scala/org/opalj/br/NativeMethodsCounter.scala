@@ -29,17 +29,17 @@
 package org.opalj
 package br
 
-import analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
 import java.net.URL
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of native methods.
  *
  * @author Michael Eichberg
  */
-object NativeMethodsCounter extends AnalysisExecutor {
-
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+object NativeMethodsCounter extends DefaultOneStepAnalysis {
 
         override def description: String = "Counts the number of native methods."
 
@@ -54,13 +54,12 @@ object NativeMethodsCounter extends AnalysisExecutor {
                         classFile ← project.allClassFiles.par
                         method ← classFile.methods
                         if method.isNative
-                    } yield classFile.thisType.toJava+"{ "+method.toJava+" }"
+                    } yield method.toJava(classFile)
                 ).seq
 
             BasicReport(
-                nativeMethods.size+" native methods found:"+
-                    nativeMethods.mkString("\n\t", "\n\t", "\n")
+
+                    nativeMethods.mkString(nativeMethods.size+" native methods found:\n\t", "\n\t", "\n")
             )
-        }
     }
 }

@@ -53,13 +53,9 @@ object MethodAnnotationsPrinter extends AnalysisExecutor {
 
         override def description: String = "Prints out the annotations of methods."
 
-        def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
-        ) = {
+        def doAnalyze(project: Project[URL], params: Seq[String],isInterrupted: () ⇒ Boolean) = {
             val annotations =
-                (
+
                     for {
                         classFile ← project.allClassFiles.par
                         method ← classFile.methods
@@ -70,11 +66,11 @@ object MethodAnnotationsPrinter extends AnalysisExecutor {
                             annotation.elementValuePairs.map(pair ⇒ "%-15s: %s".format(pair.name, pair.value.toJava)).
                             mkString("\t@"+annotation.annotationType.toJava+"\n\t", "\n\t", "\n")
                     }
-                ).seq
+
 
             BasicReport(
-                annotations.size+" annotations found: "+
-                    annotations.mkString("\n", "\n", "\n")
+
+                    annotations.mkString(s"${annotations.size} annotations found:\n", "\n", "\n")
             )
         }
     }

@@ -30,6 +30,8 @@ package org.opalj
 package br
 
 import java.net.URL
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.JavaConversions._
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
@@ -37,6 +39,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.analyses.BasicMethodInfo
 import org.opalj.br.analyses.DefaultOneStepAnalysis
+
 
 /**
  * Prints out the immediately available information about invokedynamic instructions.
@@ -53,8 +56,7 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ) = {
-        import scala.collection.JavaConversions._
-        val invokedynamics = new java.util.concurrent.ConcurrentLinkedQueue[String]
+        val invokedynamics = new ConcurrentLinkedQueue[String]()
         project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
             val BasicMethodInfo(classFile, method) = methodInfo
             invokedynamics.addAll(
@@ -69,9 +71,7 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
             )
         }
         val result = invokedynamics.toSeq.sorted
-        BasicReport(
-            result.mkString(result.size+" invokedynamic instructions found:\n", "\n", "\n")
-        )
+        BasicReport(result.mkString(result.size+" invokedynamic instructions found:\n", "\n", "\n")        )
     }
 
 }

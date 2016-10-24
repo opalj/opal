@@ -29,7 +29,7 @@
 package org.opalj
 package br
 
-import analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
+import analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 import java.net.URL
 import scala.collection.SortedSet
 
@@ -39,12 +39,13 @@ import scala.collection.SortedSet
  *
  * @author Michael Eichberg
  */
-object ClassesWithoutConcreteSubclasses extends AnalysisExecutor {
+object ClassesWithoutConcreteSubclasses extends DefaultOneStepAnalysis  {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+
 
         override def description: String =
             "Abstract classes and interfaces that have no concrete subclass in the given jars."
+
 
         def doAnalyze(
             project:       Project[URL],
@@ -65,5 +66,5 @@ object ClassesWithoutConcreteSubclasses extends AnalysisExecutor {
                     SortedSet(classTypes.seq).mkString("\n\t", "\n\t", "\n")
             )
         }
-    }
+
 }

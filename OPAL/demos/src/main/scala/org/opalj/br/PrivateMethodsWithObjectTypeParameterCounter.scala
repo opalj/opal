@@ -41,7 +41,9 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-object PrivateMethodsWithObjectTypeParameterCounter extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
+object PrivateMethodsWithObjectTypeParameterCounter
+ extends AnalysisExecutor
+ with OneStepAnalysis[URL, BasicReport] {
 
     val analysis = this
 
@@ -57,10 +59,8 @@ object PrivateMethodsWithObjectTypeParameterCounter extends AnalysisExecutor wit
                 if method.isPrivate //|| method.isPackagePrivate
                 if method.name != "readObject" && method.name != "writeObject"
                 potential = (method.descriptor.parameterTypes.collect {
-                    case ot: ObjectType ⇒
-                        project.classHierarchy.allSubtypes(ot, false).size
-                    case _ ⇒
-                        0
+                    case ot: ObjectType ⇒                        project.classHierarchy.allSubtypes(ot, false).size
+                    case _ ⇒                        0
                 }).sum
                 if potential >= 5
             } yield {

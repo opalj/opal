@@ -31,8 +31,7 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 
@@ -42,9 +41,7 @@ import org.opalj.br.analyses.Project
  * @author Daniel Klauer
  * @author Michael Eichberg
  */
-object ShowInnerClassesInformation extends AnalysisExecutor {
-
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+object ShowInnerClassesInformation extends DefaultOneStepAnalysis {
 
         override def description: String = "Prints out the inner classes tables."
 
@@ -62,16 +59,14 @@ object ShowInnerClassesInformation extends AnalysisExecutor {
                     } yield {
                         val header =
                             classFile.fqn+"(ver:"+classFile.majorVersion+")"+":\n\t"+(
-                                if (classFile.enclosingMethod.isDefined)
-                                    classFile.enclosingMethod.get.toString
-                                else
-                                    "<no enclosing method defined>"
-                            )+"\n\t"
+                                    classFile.enclosingMethod.
+                                    map(_.toString).
+                                    getOrElse(                                    "<no enclosing method defined>")                            )+"\n\t"
                         classFile.innerClasses.get.mkString(header, "\n\t", "\n")
                     }
                 ).seq
 
             BasicReport(messages.mkString("\n"))
         }
-    }
+
 }
