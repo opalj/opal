@@ -101,7 +101,7 @@ trait Counting extends Locking {
 
     /**
      * Resets everything. The effect is comparable to creating a new
-     * `IntStatistics` object, but is a bit more efficient.
+     * instance, but is more efficient.
      */
     def resetAll(): Unit = withWriteLock { doResetAll() }
 
@@ -116,7 +116,6 @@ trait Counting extends Locking {
 }
 
 /**
- *
  * Counts how often some piece of code is executed. Usually it is sufficient
  * to create an instance of this object and to execute some piece of code using
  * the function `time(Symbol)(=>T)`. Afterwards it is possible to query this object
