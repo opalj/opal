@@ -14,20 +14,21 @@ scalaVersion 	in ThisBuild := "2.11.8"
 
 scalacOptions 	in ThisBuild ++= Seq(
 		"-target:jvm-1.8",
-		"-deprecation", "-feature", "-unchecked", 
-		"-Xlint", "-Xfuture", "-Xfatal-warnings", 
+		"-deprecation", "-feature", "-unchecked",
+		"-Xlint", "-Xfuture", "-Xfatal-warnings",
 		"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
 		"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code"
 )
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
-	
+
 resolvers in ThisBuild += Resolver.jcenterRepo
+resolvers in ThisBuild += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 
 // the tests/analysis are already parallelized
-parallelExecution in ThisBuild := false 
-parallelExecution in Global := false 
+parallelExecution in ThisBuild := false
+parallelExecution in Global := false
 
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
@@ -45,7 +46,7 @@ scalacOptions in (ScalaUnidoc, unidoc) <<=
   	}
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=
-	Opts.doc.sourceUrl( 
+	Opts.doc.sourceUrl(
 		"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?"+
 			(if (isSnapshot.value) "at=develop" else "at=master")
     )
@@ -58,10 +59,10 @@ addCommandAlias("compileAll","; test:compile ; it:scalariformFormat ; it:compile
 
 addCommandAlias("cleanAll","; clean ; cleanFiles ; cleanCache ; cleanLocal ")
 
-addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; eclipse ; compileAll ; unidoc ;  publishLocal ")
+addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; compileAll ; unidoc ;  publishLocal ")
 
 EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource)
-//EclipseKeys.createSrc := EclipseCreateSrc.Default 
+//EclipseKeys.createSrc := EclipseCreateSrc.Default
 
 EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18)
 
@@ -106,6 +107,6 @@ pomExtra in ThisBuild := (
     <developer>
       <id>reif</id>
       <name>Michael Reif</name>
-    </developer>	
+    </developer>
   </developers>
 )
