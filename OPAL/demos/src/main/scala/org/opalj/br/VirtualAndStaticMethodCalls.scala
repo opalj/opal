@@ -46,7 +46,7 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
 
     override def description: String = "Counts the number of static and virtual method calls."
 
-    def doAnalyze(        project:       Project[URL],        params:    Seq[String] ,        isInterrupted: () ⇒ Boolean    ) = {
+    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
 
         var staticCalls = 0
         var virtualCalls = 0

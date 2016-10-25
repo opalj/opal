@@ -39,7 +39,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicMethodInfo
 
-
 /**
  * Shows the local variable type tables of given class files.
  *
@@ -49,10 +48,9 @@ object ShowLocalVariableTypeTables extends DefaultOneStepAnalysis {
 
     override def description: String = "Prints out the local variable type tables."
 
-    def doAnalyze(        project:       Project[URL],        params:    Seq[String],        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
+    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        val messages =new ConcurrentLinkedQueue[String]()
+        val messages = new ConcurrentLinkedQueue[String]()
         project.parForeachMethodWithBody(isInterrupted) { mi ⇒
             val BasicMethodInfo(cf, m) = mi
             val lvtt = m.body.get.localVariableTypeTable
