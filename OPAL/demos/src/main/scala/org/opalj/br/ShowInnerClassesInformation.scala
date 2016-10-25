@@ -43,30 +43,25 @@ import org.opalj.br.analyses.Project
  */
 object ShowInnerClassesInformation extends DefaultOneStepAnalysis {
 
-        override def description: String = "Prints out the inner classes tables."
+    override def description: String = "Prints out the inner classes tables."
 
-        def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
-        ): BasicReport = {
+    def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
 
-            val messages =
-                (
-                    for {
-                        classFile ← project.allClassFiles.par
-                        if classFile.innerClasses.isDefined
-                    } yield {
-                        val header =
-                            classFile.fqn+"(ver:"+classFile.majorVersion+")"+":\n\t"+(
-                                    classFile.enclosingMethod.
-                                    map(_.toString).
-                                    getOrElse(                                    "<no enclosing method defined>")                            )+"\n\t"
-                        classFile.innerClasses.get.mkString(header, "\n\t", "\n")
-                    }
-                ).seq
+        val messages =
+            for {
+                classFile ← p.allClassFiles.par
+                if classFile.innerClasses.isDefined
+            } yield {
+                val header =
+                    classFile.fqn+"(ver:"+classFile.majorVersion+")"+":\n\t"+(
+                        classFile.enclosingMethod.
+                        map(_.toString).
+                        getOrElse("<no enclosing method defined>")
+                    )+"\n\t"
+                classFile.innerClasses.get.mkString(header, "\n\t", "\n")
+            }
 
-            BasicReport(messages.mkString("\n"))
-        }
+        BasicReport(messages.mkString("\n"))
+    }
 
 }
