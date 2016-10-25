@@ -30,8 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import scala.annotation.switch
-
 /**
  * An instruction that invokes another method (does not consider invokedynamic
  * instructions.)
@@ -66,11 +64,11 @@ object MethodInvocationInstruction {
     def unapply(
         instruction: MethodInvocationInstruction
     ): Option[(ReferenceType, String, MethodDescriptor)] = {
-                Some((
-                    instruction.declaringClass,
-                    instruction.name,
-                    instruction.methodDescriptor
-                ))
+        Some((
+            instruction.declaringClass,
+            instruction.name,
+            instruction.methodDescriptor
+        ))
     }
 
     val jvmExceptions = List(ObjectType.NullPointerException)
