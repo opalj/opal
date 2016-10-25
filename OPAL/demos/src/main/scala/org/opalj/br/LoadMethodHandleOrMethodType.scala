@@ -48,32 +48,26 @@ import org.opalj.br.instructions.LoadMethodType_W
  */
 object LoadMethodHandleOrMethodType extends DefaultOneStepAnalysis {
 
-        override def description: String = "Prints information about loads of method handles and types."
+    override def description: String = "Prints information about loads of method handles and types."
 
-        def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
-        ) = {
+    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
 
-            val loads =
-                for {
-                    classFile ← project.allProjectClassFiles.par
-                    method @ MethodWithBody(code) ← classFile.methods
-                    (pc, instruction) ← code.collect{
-                        case LoadMethodHandle(mh)   ⇒ mh
-                        case LoadMethodHandle_W(mh) ⇒ mh
-                        case LoadMethodType(md)     ⇒ md
-                        case LoadMethodType_W(md)   ⇒ md
-                    }
-                } yield {
-                        method.toJava(
-                            classFile,
-                            s"pc=$pc;load constant=${instruction.valueToString}"
-                        )+s"<${project.source(classFile.thisType)}>"
+        val loads =
+            for {
+                classFile ← project.allProjectClassFiles.par
+                method @ MethodWithBody(code) ← classFile.methods
+                (pc, instruction) ← code collect {
+                    case LoadMethodHandle(mh)   ⇒ mh
+                    case LoadMethodHandle_W(mh) ⇒ mh
+                    case LoadMethodType(md)     ⇒ md
+                    case LoadMethodType_W(md)   ⇒ md
                 }
+            } yield {
+                method.toJava(classFile, s"pc=$pc;load constant=${instruction.valueToString}") +
+                    s"<${project.source(classFile.thisType).map(_.toString()).getOrElse("N/A")}>"
+            }
 
-            BasicReport(loads.seq.mkString("\n\t"))
+        BasicReport(loads.seq.mkString("Instances of LoadMethod(Type|Handle):\n\t", "\n\t", "\n"))
 
     }
 }
