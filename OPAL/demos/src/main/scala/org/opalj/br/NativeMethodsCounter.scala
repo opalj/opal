@@ -41,25 +41,25 @@ import org.opalj.br.analyses.Project
  */
 object NativeMethodsCounter extends DefaultOneStepAnalysis {
 
-        override def description: String = "Counts the number of native methods."
+    override def description: String = "Counts the number of native methods."
 
-        def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
-        ) = {
-            val nativeMethods =
-                (
-                    for {
-                        classFile ← project.allClassFiles.par
-                        method ← classFile.methods
-                        if method.isNative
-                    } yield method.toJava(classFile)
-                ).seq
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
+        val nativeMethods =
+            (
+                for {
+                    classFile ← project.allClassFiles.par
+                    method ← classFile.methods
+                    if method.isNative
+                } yield method.toJava(classFile)
+            ).seq
 
-            BasicReport(
+        BasicReport(
 
-                    nativeMethods.mkString(nativeMethods.size+" native methods found:\n\t", "\n\t", "\n")
-            )
+            nativeMethods.mkString(nativeMethods.size+" native methods found:\n\t", "\n\t", "\n")
+        )
     }
 }
