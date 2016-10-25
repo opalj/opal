@@ -49,7 +49,7 @@ class ProjectJDKTest extends FunSpec with Matchers {
 
         it(s"should return only those methods that have a body when using the mehod methodsWithBody") {
 
-            project.methodsWithBody.foreach { m ⇒
+            project.allMethodsWithBody.foreach { m ⇒
                 assert(m.body.isDefined)
             }
         }
