@@ -140,7 +140,6 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             operands:           domain.Operands
         ): Unit = {
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
-            println(callees.mkString(":", "; ", "."))
             if (callees.isEmpty) {
                 addUnresolvedMethodCall(
                     classFile.thisType, method, pc, declaringClassType, name, descriptor
