@@ -30,6 +30,7 @@ package org.opalj
 package br
 
 import java.net.URL
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 import org.opalj.br.analyses.StringConstantsInformationKey
 
@@ -49,7 +50,7 @@ object StringConstants extends DefaultOneStepAnalysis {
     ) = {
 
         val data = project.get(StringConstantsInformationKey)
-        val mappedData = data.map { kv ⇒
+        val mappedData: ConstArray[String] = data.map { kv ⇒
             val (string, locations) = kv
             val escapedString = string.
                 replace("\u001b", "\\u001b").
@@ -58,7 +59,7 @@ object StringConstants extends DefaultOneStepAnalysis {
                 replace("\"", "\\\"")
             locations.map { methodPc ⇒
                 val (method, pc) = methodPc
-                method.toJava(project.classFile(method))+": "+pc
+                method.toJava(project.classFile(method), s"pc=$pc")
             }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
         }
 
