@@ -143,9 +143,8 @@ class ClassHierarchy private (
     )
 
     /**
-     * The set of ''all types'' for which we have no further
-     * supertype information at all because of an incomplete project or because the identified object
-     * is `java.lang.Object`.
+     * The set of ''all types'' which have no supertypes or for which we have no further
+     * supertype information because of an incomplete project.
      * If the class hierarchy is complete then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
      *

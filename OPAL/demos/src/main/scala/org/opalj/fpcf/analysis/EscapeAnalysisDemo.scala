@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,6 +31,9 @@ package fpcf
 package analysis
 
 import java.net.URL
+
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
@@ -40,34 +43,30 @@ import org.opalj.fpcf.properties.SelfReferenceLeakage
 import org.opalj.fpcf.properties.DoesNotLeakSelfReference
 
 /**
- * Demonstrates how to run the purity analysis.
+ * Runs the default escape analysis.
  *
  * @author Michael Eichberg
  */
 object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "shallow escape analysis"
+    override def title: String = "shallow escape analysis"
 
-    override def description: String =
-        "determins escape information related to object belonging to a specific class"
+    override def description: String = {
+        "determins escape information related to objects belonging to a specific class"
+    }
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
+    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
 
-        var analysisTime = org.opalj.util.Seconds.None
-        org.opalj.util.PerformanceEvaluation.time {
+        var analysisTime = Seconds.None
+        time {
             EscapeAnalysis.analyze(project)
             projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
         val notLeakingEntities: Traversable[EP[Entity, SelfReferenceLeakage]] =
-            projectStore.entities(SelfReferenceLeakage.Key).filter { ep ⇒
+            projectStore.entities(SelfReferenceLeakage.Key) filter { ep ⇒
                 ep.p == DoesNotLeakSelfReference
             }
         val notLeakingClasses = notLeakingEntities.map { ep ⇒
@@ -86,10 +85,6 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
                 "\n",
                 s"\nTotal: ${notLeakingEntities.size}\n"
             )
-        BasicReport(
-            leakageInfo +
-                projectStore+
-                "\nAnalysis time: "+analysisTime
-        )
+        BasicReport(leakageInfo + projectStore+"\nAnalysis time: "+analysisTime)
     }
 }

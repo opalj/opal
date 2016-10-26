@@ -151,9 +151,9 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     protected[this] val overridingMethods: scala.collection.Map[Method, Set[Method]]
 
     def overriddenBy(m: Method): Set[Method] = {
-        assert(!m.isPrivate, s"private method $m cannot be overridden")
-        assert(!m.isStatic, s"static method $m cannot be overridden")
-        assert(!m.isInitializer, s"initializer $m cannot be overridden")
+        assert(!m.isPrivate, s"private methods $m cannot be overridden")
+        assert(!m.isStatic, s"static methods $m cannot be overridden")
+        assert(!m.isInitializer, s"initializers $m cannot be overridden")
 
         overridingMethods.get(m).getOrElse(Set.empty)
     }
@@ -161,7 +161,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     /* GENERAL NOTES
      *
      * (Accessibilty checks are done by the JVM when the method is resolved; this is, however not
-     * done by the following methods as it does not affect the search for the correct
+     * done by the following methods as it does not affect the search for the potential target
      * methods.)
      *
      * Invokestatic 	=> 	the resolved method is called (if it is accessible, static etc...)
@@ -222,16 +222,8 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         descriptor:                       MethodDescriptor,
         lookupInSuperinterfacesOnFailure: Boolean          = false
     ): Option[Method] = {
-        /*
-        project.classFile(receiverType) flatMap { classFile ⇒
+        assert(classHierarchy.isInterface(receiverType).isNoOrUnknown)
 
-            {
-                lookupMethodDefinition(receiverType, name, descriptor)
-            } orElse {
-                lookupMethodInSuperinterfaces(classFile, name, descriptor)
-            }
-        }
-        */
         resolveClassMethodReference(receiverType, name, descriptor) match {
             case Success(method)                              ⇒ Some(method)
             case Failure if !lookupInSuperinterfacesOnFailure ⇒ None
@@ -251,10 +243,11 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         name:         String,
         descriptor:   MethodDescriptor
     ): Option[Method] = {
+        assert(classHierarchy.isInterface(receiverType).isYesOrUnknown)
 
         def lookupInObject(): Option[Method] = {
             ObjectClassFile flatMap { classFile ⇒
-                classFile.findMethod(name, descriptor) filter (m ⇒ m.isPublic && !m.isStatic)
+                classFile.findMethod(name, descriptor) filter { m ⇒ m.isPublic && !m.isStatic }
             }
         }
 
@@ -333,7 +326,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * Computes the maximally specific superinterface method with the given name
      * and descriptor
      *
-     * @param interfaceTypes A set of interfaces which potentially declare a method
+     * @param   interfaceTypes A set of interfaces which potentially declare a method
      * 			with the given name and descriptor.
      */
     def findMaximallySpecificSuperinterfaceMethods(
@@ -342,7 +335,6 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         descriptor:                  MethodDescriptor,
         analyzedSuperinterfaceTypes: UIDSet[ObjectType]
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
-
         val anchor = ((analyzedSuperinterfaceTypes, Set.empty[Method]))
         superinterfaceTypes.foldLeft(anchor) { (currentResult, interfaceType) ⇒
             val (currentAnalyzedSuperinterfaceTypes, currentMethods) = currentResult

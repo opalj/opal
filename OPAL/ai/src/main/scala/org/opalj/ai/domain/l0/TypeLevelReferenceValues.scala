@@ -556,19 +556,18 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         }
     }
 
-    final override def isValueSubtypeOf(
-        value:     DomainValue,
-        supertype: ReferenceType
-    ): Answer =
+    final override def isValueSubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
         asReferenceValue(value).isValueSubtypeOf(supertype)
+    }
 
     /**
      * Determines the nullness-property of the given value.
      *
      * @param value A value of type `ReferenceValue`.
      */
-    final override def refIsNull(pc: PC, value: DomainValue): Answer =
+    final override def refIsNull(pc: PC, value: DomainValue): Answer = {
         asReferenceValue(value).isNull
+    }
 
     // -----------------------------------------------------------------------------------
     //

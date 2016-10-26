@@ -94,9 +94,7 @@ class ProjectIndex private (
         val mostOftenUsedFieldName = getMostOftenUsed(fieldsWithSharedName)
 
         val methodsWithSharedName =
-            methods.view.filter { kv ⇒
-                kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1
-            }
+            methods.view.filter(kv ⇒ kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1)
         val mostOftenUsedMethodName = getMostOftenUsed(methodsWithSharedName)
 
         Map(
