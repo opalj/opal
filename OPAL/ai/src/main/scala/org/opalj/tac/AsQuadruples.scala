@@ -42,9 +42,10 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CFG
 import org.opalj.ai.AIResult
-import org.opalj.ai.IsAReferenceValue
+/*import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.IsPrimitiveValue
 import org.opalj.ai.TypeUnknown
+*/
 import org.opalj.ai.domain.RecordDefUse
 
 /**
@@ -73,7 +74,8 @@ object AsQuadruples {
         aiResult:       AIResult { val domain: RecordDefUse },
         optimizations:  List[TACOptimization]
     ): (Array[Stmt], CFG) = {
-
+        ???
+        /*
         import BinaryArithmeticOperators._
         import RelationalOperators._
         import UnaryArithmeticOperators._
@@ -130,7 +132,7 @@ object AsQuadruples {
                 ???
             }
 
-            def VarUse(vos : ValueOrigins, v: aiResult.domain.DomainValue): VarUse = {
+            def VarUse(vos: ValueOrigins, v: aiResult.domain.DomainValue): VarUse = {
                 aiResult.domain.typeOfValue(v) match {
                     case refVal: IsAReferenceValue ⇒
                         val tpe = computeLeastCommonSuperType(refVal.upperTypeBound)
@@ -161,7 +163,6 @@ object AsQuadruples {
                         throw new BytecodeProcessingFailedException(s"the type of $v is unknown")
                 }
             }
-
 
             def arrayLoad(): Unit = {
                 val index = operandUse(0)
@@ -634,6 +635,7 @@ object AsQuadruples {
         }
 
         (tacCode, tacCFG)
+*/
     }
 
     /**
