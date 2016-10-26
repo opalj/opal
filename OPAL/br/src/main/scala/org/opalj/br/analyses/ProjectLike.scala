@@ -368,18 +368,17 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                     var addNewMethod = true
                     currentMaximallySpecificMethods = currentMaximallySpecificMethods.filter { method ⇒
                         val specificMethodDeclaringClassType = project.classFile(method).thisType
-                        if (classHierarchy.isSubtypeOf(specificMethodDeclaringClassType, newMethodDeclaringClassType).isYes) {
+                        if ((specificMethodDeclaringClassType isSubtyeOf newMethodDeclaringClassType).isYes) {
                             addNewMethod = false
                             true
-                        } else if (classHierarchy.isSubtypeOf(newMethodDeclaringClassType, specificMethodDeclaringClassType).isYes) {
+                        } else if ((newMethodDeclaringClassType isSubtyeOf specificMethodDeclaringClassType).isYes) {
                             false
                         } else {
                             //... we have an incomplete class hierarchy; let's keep both methods
                             true
                         }
                     }
-                    if (addNewMethod)
-                        additionalMaximallySpecificMethods += method
+                    if (addNewMethod) additionalMaximallySpecificMethods += method
                 }
                 currentMaximallySpecificMethods ++= additionalMaximallySpecificMethods
 
