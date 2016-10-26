@@ -129,6 +129,9 @@ object TAC {
             println(Usage)
             sys.exit(-1)
         }
+        /*
+        println("Sleeping for five seconds");         Thread.sleep(5000)
+        */
 
         val jarName = args(0)
         val classFiles = Java8Framework.ClassFiles(new java.io.File(jarName))
