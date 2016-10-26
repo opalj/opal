@@ -53,28 +53,21 @@ object MethodAnnotationsPrinter extends AnalysisExecutor {
 
         override def description: String = "Prints out the annotations of methods."
 
-        def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
-        ) = {
+        def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
             val annotations =
-                (
-                    for {
-                        classFile ← project.allClassFiles.par
-                        method ← classFile.methods
-                        annotation ← method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
-                    } yield {
-                        "on method: "+classFile.thisType.toJava+"."+method.name +
-                            method.parameterTypes.map(_.toJava).mkString("(", ",", ")\n") +
-                            annotation.elementValuePairs.map(pair ⇒ "%-15s: %s".format(pair.name, pair.value.toJava)).
-                            mkString("\t@"+annotation.annotationType.toJava+"\n\t", "\n\t", "\n")
-                    }
-                ).seq
+                for {
+                    classFile ← project.allClassFiles.par
+                    method ← classFile.methods
+                    annotation ← method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
+                } yield {
+                    method.toJava(classFile) +
+                        annotation.elementValuePairs.
+                        map { pair ⇒ "%-15s: %s".format(pair.name, pair.value.toJava) }.
+                        mkString(s"\n\t@${annotation.annotationType.toJava}\n\t", "\n\t", "\n")
+                }
 
             BasicReport(
-                annotations.size+" annotations found: "+
-                    annotations.mkString("\n", "\n", "\n")
+                annotations.mkString(s"${annotations.size} annotations found:\n", "\n", "\n")
             )
         }
     }

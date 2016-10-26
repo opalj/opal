@@ -34,7 +34,6 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.util.Nanoseconds
 
 /**
  * Basic field access information.
@@ -50,14 +49,17 @@ object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
 
     override def description: String = "Provides information about field accesses."
 
-    override def analysisSpecificParametersDescription: String =
-        "[-field=\"<The field for which we want read/write access information (e.g., -field=\"java.util.HashMap entrySet\">\"]"
+    override def analysisSpecificParametersDescription: String = {
+        "[-field=\"<The field for which we want read/write access information "+
+            "(e.g., -field=\"java.util.HashMap entrySet\">\"]"
+    }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] =
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
         if (parameters.isEmpty || (parameters.size == 1 && parameters.head.startsWith("-field=")))
             Seq.empty
         else
             Seq("unknown parameters: "+parameters.mkString(" "))
+    }
 
     def doAnalyze(
         project:       Project[URL],
@@ -65,15 +67,11 @@ object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ) = {
 
-        import org.opalj.util.PerformanceEvaluation.{time, memory, asMB}
-        var overallExecutionTime = Nanoseconds.None
-        var memoryUsageInMB = ""
-
+        import org.opalj.util.PerformanceEvaluation.{memory, asMB}
+        var memoryUsage = ""
         val accessInformation = memory {
-            time {
-                project.get(FieldAccessInformationKey)
-            } { t ⇒ overallExecutionTime += t }
-        } { memoryUsage ⇒ memoryUsageInMB = asMB(memoryUsage) }
+            project.get(FieldAccessInformationKey)
+        } { m ⇒ memoryUsage = asMB(m) }
 
         if (parameters.nonEmpty) {
             val Array(declaringClassName, fieldName) =
@@ -86,9 +84,7 @@ object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
                 (
                     data.map { e ⇒
                         val (method, pcs) = e
-                        project.classFile(method).thisType.toJava+" { "+
-                            method.toJava() + pcs.mkString("{ pcs: ", ", ", " }")+
-                            " }"
+                        method.toJava(project.classFile(method), pcs.mkString("pcs: ", ", ", ""))
                     }
                 ).mkString("\t ", "\n\t ", "\n")
             }
@@ -102,10 +98,7 @@ object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
         } else {
             BasicReport(
                 accessInformation.statistics.mkString(
-                    s"determing field access information took ${overallExecutionTime.toSeconds} "+
-                        s"and required $memoryUsageInMB:\n",
-                    "\n",
-                    "\n"
+                    s"determing field access information required $memoryUsage :\n", "\n", "\n"
                 )
             )
         }

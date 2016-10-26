@@ -51,6 +51,8 @@ sealed trait TypeInformation {
     @throws[DomainException]("if no type information is available")
     def isReferenceValue: Boolean
 
+    def asIsAReferenceValue: IsAReferenceValue
+
     @throws[DomainException]("if no type information is available")
     def isPrimitiveValue: Boolean
 
@@ -75,6 +77,10 @@ case object TypeUnknown extends TypeInformation {
 
     def isReferenceValue: Boolean = throw DomainException("the type is unknown")
 
+    final def asIsAReferenceValue: IsAReferenceValue = {
+        throw new ClassCastException("cannot cast TypeUnknown to IsAReferenceValue")
+    }
+
     def isPrimitiveValue: Boolean = throw DomainException("the type is unknown")
 }
 
@@ -86,6 +92,11 @@ sealed trait IsPrimitiveValue extends TypeInformation {
     final def unknown: Boolean = false
 
     final def isReferenceValue: Boolean = false
+
+    final def asIsAReferenceValue: IsAReferenceValue = {
+        val className = this.getClass().getName()
+        throw new ClassCastException(s"cannot cast $className to IsAReferenceValue")
+    }
 
     final def isPrimitiveValue: Boolean = true
 
@@ -245,6 +256,8 @@ trait IsAReferenceValue {
         "the given domain has to be equal to the domain that was used to creat this object"
     )
     def asDomainValue(implicit domain: Domain): domain.DomainReferenceValue
+
+    final def asIsAReferenceValue: this.type = this
 }
 
 /**

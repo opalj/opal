@@ -105,95 +105,68 @@ class ProjectTest extends FlatSpec with Matchers {
         overallProject.isLibraryType(ObjectType("code/Quicksort")) should be(false)
     }
 
-    behavior of "A Project's resolveMethodReference method"
+    behavior of "a Project's resolveMethodReference method"
 
-    import project.classHierarchy.resolveMethodReference
+    import project.resolveMethodReference
 
     it should "find a public method" in {
         resolveMethodReference(
-            SuperType,
-            "publicMethod",
-            MethodDescriptor("()V"),
-            project
+            SuperType, "publicMethod", MethodDescriptor("()V")
         ) should be('Defined)
     }
 
     it should "find a private method" in {
         resolveMethodReference(
-            SuperType,
-            "privateMethod",
-            MethodDescriptor("()V"),
-            project
+            SuperType, "privateMethod", MethodDescriptor("()V")
         ) should be('Defined)
     }
 
     it should "not find a method that does not exist" in {
         resolveMethodReference(
-            SuperType,
-            "doesNotExist",
-            MethodDescriptor("()V"),
-            project
+            SuperType, "doesNotExist", MethodDescriptor("()V")
         ) should be('Empty)
     }
 
     it should "find a method with default visibility" in {
         resolveMethodReference(
-            SuperType,
-            "defaultVisibilityMethod",
-            MethodDescriptor("()V"),
-            project
+            SuperType, "defaultVisibilityMethod", MethodDescriptor("()V")
         ) should be('Defined)
     }
 
     it should "find the super class' static method staticDefaultVisibilityMethod" in {
         // let's make sure the method exists...
         resolveMethodReference(
-            SuperType,
-            "staticDefaultVisibilityMethod",
-            MethodDescriptor("()V"),
-            project
+            SuperType, "staticDefaultVisibilityMethod", MethodDescriptor("()V")
         ) should be('Defined)
         // let's make sure the class is a super class
         project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(Yes)
 
         // let's test the resolving
         resolveMethodReference(
-            DirectSub,
-            "staticDefaultVisibilityMethod",
-            MethodDescriptor("()V"),
-            project
+            DirectSub, "staticDefaultVisibilityMethod", MethodDescriptor("()V")
         ) should be('Defined)
     }
 
     it should "not find Object's toString method, because we only have a partial view of the project" in {
         resolveMethodReference(
-            DirectSub,
-            "toString",
-            MethodDescriptor("()Ljava/lang/String;"),
-            project
+            DirectSub, "toString", MethodDescriptor("()Ljava/lang/String;")
         ) should be('Empty)
     }
 
     it should "find a method declared by a directly implemented interface" in {
         val r = resolveMethodReference(
-            AbstractB,
-            "someSubMethod",
-            MethodDescriptor("()V"),
-            project
+            AbstractB, "someSubMethod", MethodDescriptor("()V"),
+            lookupInSuperinterfacesOnFailure = true
         )
-
         r should be('Defined)
         assert(project.classFile(r.get).thisType === ObjectType("methods/b/SubI"))
     }
 
     it should "find a method declared by an indirectly implemented interface" in {
         val r = resolveMethodReference(
-            AbstractB,
-            "someMethod",
-            MethodDescriptor("()V"),
-            project
+            AbstractB, "someMethod", MethodDescriptor("()V"),
+            lookupInSuperinterfacesOnFailure = true
         )
-
         r should be('Defined)
         assert(project.classFile(r.get).thisType === ObjectType("methods/b/SuperI"))
     }
@@ -288,6 +261,128 @@ class ProjectTest extends FlatSpec with Matchers {
 
     it should "return all packages of a project that has libraries" in {
         project.packages should be(project.projectPackages ++ project.libraryPackages)
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // TESTING THE RESOLVING OF FIELD REFERENCES
+    //
+    // -----------------------------------------------------------------------------------
+
+    {
+        val fieldsProject = {
+            val classFiles = ClassFiles(locateTestResources("classfiles/Fields.jar", "bi"))
+            Project(classFiles, Traversable.empty, true)
+        }
+        import fieldsProject.classFile
+        import fieldsProject.resolveFieldReference
+
+        val SuperSuperType = ObjectType("fields/SuperSuper")
+        val SuperSuperClass = classFile(SuperSuperType).get
+        val SuperType = ObjectType("fields/Super")
+        val SuperClass = classFile(SuperType).get
+
+        val SuperIType = ObjectType("fields/SuperI")
+        val SuperIClass = classFile(SuperIType).get
+        val SubIType = ObjectType("fields/SubI")
+        val SubIClass = classFile(SubIType).get
+
+        val SubType = ObjectType("fields/Sub")
+        val SubClass = classFile(SubType).get
+        val SubSubType = ObjectType("fields/SubSub")
+        //val SubSubClass = classFile(SubSubType).get
+
+        behavior of "a Project's methods to resolve field references"
+
+        import fieldsProject.resolveFieldReference
+
+        it should "correctly resolve a reference to a static field in a superclass" in {
+            resolveFieldReference(SuperType, "x", IntegerType) should be(
+                Some(SuperSuperClass.fields(0))
+            )
+        }
+
+        it should "correctly resolve a reference to a field defined in an interface" in {
+            resolveFieldReference(SubIType, "THE_SUB_I", IntegerType) should be(
+                Some(SubIClass.fields(0))
+            )
+        }
+
+        it should "correctly resolve a reference to a field defined in a superinterface of an interface" in {
+            resolveFieldReference(SubIType, "THE_I", IntegerType) should be(
+                Some(SuperIClass.fields(0))
+            )
+        }
+
+        it should "correctly resolve a reference to a field defined in a superinterface" in {
+            resolveFieldReference(SubType, "THE_I", IntegerType) should be(
+                Some(SuperIClass.fields(0))
+            )
+        }
+
+        it should "correctly resolve a reference to a field defined in a superclass" in {
+            resolveFieldReference(SubSubType, "x", IntegerType) should be(
+                Some(SubClass.fields(0))
+            )
+        }
+
+        it should "correctly resolve a reference to a private field defined in a superclass" in {
+            resolveFieldReference(SubSubType, "y", IntegerType) should be(
+                Some(SuperClass.fields(0))
+            )
+        }
+
+        it should "not fail (throw an exception) if the field cannot be found" in {
+            resolveFieldReference(SubSubType, "NOT_DEFINED", IntegerType) should be(None)
+        }
+
+        it should "not fail if the type cannot be found" in {
+            resolveFieldReference(
+                ObjectType("NOT/DEFINED"), "NOT_DEFINED", IntegerType
+            ) should be(None)
+        }
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // TESTING THE RESOLVING OF METHOD REFERENCES
+    //
+    // -----------------------------------------------------------------------------------
+
+    {
+
+        val methodsProject = {
+            val classFiles = ClassFiles(locateTestResources("classfiles/Methods.jar", "bi"))
+            Project(classFiles, Traversable.empty, true)
+        }
+
+        val superI = ObjectType("methods/b/SuperI")
+        //val directSub = ObjectType("methods/b/DirectSub")
+        //val directSubClassFile = methodsProject.classFile(directSub).get
+
+        behavior of "a Project's methods to resolve method references"
+
+        it should "handle the case if an interface has no implementing class" in {
+            val implementingMethods =
+                methodsProject.lookupImplementingMethods(
+                    superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid, (cf) ⇒ true
+                )
+            implementingMethods.size should be(0)
+        }
+
+        it should "find a method in a super class" in {
+            val classType = ObjectType("methods/b/B")
+            val implementingMethods =
+                methodsProject.lookupImplementingMethods(
+                    classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid, (cf) ⇒ true
+                )
+
+            implementingMethods.size should be(1)
+            implementingMethods.head should have(
+                'name("publicMethod"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+            )
+        }
     }
 }
 

@@ -64,12 +64,15 @@ class CHACallGraphExtractor(
 ) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(
-            val project:   SomeProject,
             val classFile: ClassFile,
             val method:    Method
+    )(
+            implicit
+            val project: SomeProject
     ) extends super.AnalysisContext {
 
-        val classHierarchy = project.classHierarchy
+        implicit val classHierarchy = project.classHierarchy
+        import project.lookupMethodDefinition
 
         def staticCall(
             pc:                 PC,
@@ -85,17 +88,9 @@ class CHACallGraphExtractor(
                 )
             }
 
-            if (classHierarchy.isKnown(declaringClassType)) {
-                classHierarchy.lookupMethodDefinition(
-                    declaringClassType, name, descriptor, project
-                ) match {
-                    case Some(callee) ⇒
-                        addCallEdge(pc, HashSet(callee))
-                    case None ⇒
-                        handleUnresolvedMethodCall()
-                }
-            } else {
-                handleUnresolvedMethodCall()
+            lookupMethodDefinition(declaringClassType, name, descriptor) match {
+                case Some(callee) ⇒ addCallEdge(pc, HashSet(callee))
+                case None         ⇒ handleUnresolvedMethodCall()
             }
         }
 
@@ -113,19 +108,14 @@ class CHACallGraphExtractor(
                 )
             }
 
-            if (classHierarchy.isKnown(declaringClassType)) {
-                classHierarchy.lookupMethodDefinition(
-                    declaringClassType, name, descriptor, project
-                ) match {
-                    case Some(callee) ⇒
-                        val callees = HashSet(callee)
-                        addCallEdge(pc, callees)
-                    case None ⇒
-                        handleUnresolvedMethodCall()
-                }
-            } else {
-                handleUnresolvedMethodCall()
+            lookupMethodDefinition(declaringClassType, name, descriptor) match {
+                case Some(callee) ⇒
+                    val callees = HashSet(callee)
+                    addCallEdge(pc, callees)
+                case None ⇒
+                    handleUnresolvedMethodCall()
             }
+
         }
 
         /**
@@ -142,8 +132,9 @@ class CHACallGraphExtractor(
             receiverIsNull:     Answer
         ): Unit = {
 
-            if (receiverIsNull.isYesOrUnknown)
+            if (receiverIsNull.isYesOrUnknown) {
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+            }
 
             doNonVirtualCall(pc, declaringClassType, name, descriptor)
         }
@@ -166,8 +157,7 @@ class CHACallGraphExtractor(
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
             if (callees.isEmpty) {
                 addUnresolvedMethodCall(
-                    classFile.thisType, method, pc,
-                    declaringClassType, name, descriptor
+                    classFile.thisType, method, pc, declaringClassType, name, descriptor
                 )
             } else {
                 addCallEdge(pc, callees)
@@ -176,24 +166,22 @@ class CHACallGraphExtractor(
     }
 
     def extract(
-        project:   SomeProject,
         classFile: ClassFile,
         method:    Method
+    )(
+        implicit
+        project: SomeProject
     ): CallGraphExtractor.LocalCallGraphInformation = {
-        val context = new AnalysisContext(project, classFile, method)
+        val context = new AnalysisContext(classFile, method)
 
         method.body.get.iterate { (pc, instruction) ⇒
             instruction.opcode match {
                 case INVOKEVIRTUAL.opcode ⇒
                     val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
                     if (declaringClass.isArrayType) {
-                        context.nonVirtualCall(
-                            pc, ObjectType.Object, name, descriptor, Unknown
-                        )
+                        context.nonVirtualCall(pc, ObjectType.Object, name, descriptor, Unknown)
                     } else {
-                        context.virtualCall(
-                            pc, declaringClass.asObjectType, name, descriptor
-                        )
+                        context.virtualCall(pc, declaringClass.asObjectType, name, descriptor)
                     }
                 case INVOKEINTERFACE.opcode ⇒
                     val INVOKEINTERFACE(declaringClass, name, descriptor) = instruction
@@ -202,10 +190,8 @@ class CHACallGraphExtractor(
                 case INVOKESPECIAL.opcode ⇒
                     val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
                     // for invokespecial the dynamic type is not "relevant" (even for Java 8)
-                    context.nonVirtualCall(
-                        pc, declaringClass, name, descriptor,
-                        receiverIsNull = No /*the receiver is "this"*/
-                    )
+                    // "here", the receiver is this <=> non-null
+                    context.nonVirtualCall(pc, declaringClass, name, descriptor, receiverIsNull = No)
 
                 case INVOKESTATIC.opcode ⇒
                     val INVOKESTATIC(declaringClass, _, name, descriptor) = instruction
@@ -220,4 +206,3 @@ class CHACallGraphExtractor(
     }
 
 }
-

@@ -127,6 +127,9 @@ object TAC {
             println(Usage)
             sys.exit(-1)
         }
+        /*
+        println("Sleeping for five seconds");         Thread.sleep(5000)
+        */
 
         val jarName = args(0)
         val classFiles = Java8Framework.ClassFiles(new java.io.File(jarName))
@@ -138,14 +141,13 @@ object TAC {
             val methodName = args.drop(2).head
 
             val classFile = classFiles.find(e ⇒ e._1.thisType.toJava == clazzName).map(_._1).get
-            classFile.findMethod(methodName) match {
-                case Some(method) ⇒
-                    processMethod(project, classFile, method)
-                case _ ⇒
-                    println(
-                        s"cannot find the method: $methodName "+
-                            classFile.methods.map(_.name).mkString("(Available: ", ",", ")")
-                    )
+            val methods = classFile.findMethod(methodName)
+            if (methods.isEmpty) {
+                val methodNames = classFile.methods.map(_.name)
+                val messageHead = s"cannot find the method: $methodName (Available: "
+                println(methodNames.mkString(messageHead, ",", ")"))
+            } else {
+                methods.foreach { method ⇒ processMethod(project, classFile, method) }
             }
         }
     }

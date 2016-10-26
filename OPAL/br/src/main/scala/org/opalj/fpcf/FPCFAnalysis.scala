@@ -45,9 +45,9 @@ import AnalysisModes._
  */
 trait FPCFAnalysis {
 
-    implicit def project: SomeProject
+    implicit val project: SomeProject
 
-    final implicit def classHierarchy = project.classHierarchy
+    final implicit val classHierarchy = project.classHierarchy
 
     final implicit val propertyStore: PropertyStore = project.get(SourceElementsPropertyStoreKey)
 

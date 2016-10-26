@@ -58,12 +58,12 @@ class ConstantsTest extends FunSpec with Matchers {
 
     val ConstantsClassFile = project.classFile(ConstantsType).get
 
-    val IntConstsMethod = ConstantsClassFile.findMethod("intConsts").get
-    val LongConstsMethod = ConstantsClassFile.findMethod("longConsts").get
-    val FloatConstsMethod = ConstantsClassFile.findMethod("floatConsts").get
-    val DoubleConstsMethod = ConstantsClassFile.findMethod("doubleConsts").get
-    val NullRefConstMethod = ConstantsClassFile.findMethod("nullReferenceConst").get
-    val LoadConstsInstrMethod = ConstantsClassFile.findMethod("loadConstants").get
+    val IntConstsMethod = ConstantsClassFile.findMethod("intConsts").head
+    val LongConstsMethod = ConstantsClassFile.findMethod("longConsts").head
+    val FloatConstsMethod = ConstantsClassFile.findMethod("floatConsts").head
+    val DoubleConstsMethod = ConstantsClassFile.findMethod("doubleConsts").head
+    val NullRefConstMethod = ConstantsClassFile.findMethod("nullReferenceConst").head
+    val LoadConstsInstrMethod = ConstantsClassFile.findMethod("loadConstants").head
 
     describe("The quadruples representation of instructions loading constants") {
 

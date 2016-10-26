@@ -31,6 +31,7 @@ package bugpicker
 package core
 package analysis
 
+import org.opalj.collection.immutable.:&:
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.ai.collectPCWithOperands
@@ -69,7 +70,7 @@ object UselessReComputationsAnalysis {
 
         if (!domain.code.localVariableTable.isDefined)
             // This analysis requires debug information to increase the likelihood
-            // the we identify the correct local variable re-assignments. Otherwise
+            // that we identify the correct local variable re-assignments. Otherwise
             // we are not able to distinguish the reuse of a "register variable"/
             // local variable for a new/different purpose or the situation where
             // the same variable is updated the second time using the same
@@ -85,7 +86,7 @@ object UselessReComputationsAnalysis {
                 case (
                     pc,
                     IStoreInstruction(index),
-                    Seq(ConcreteIntegerValue(a), _*)
+                    ConcreteIntegerValue(a) :&: _
                     ) if localsArray(pc) != null &&
                     domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
                     code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
@@ -94,7 +95,7 @@ object UselessReComputationsAnalysis {
                 case (
                     pc,
                     LStoreInstruction(index),
-                    Seq(ConcreteLongValue(a), _*)
+                    ConcreteLongValue(a) :&: _
                     ) if localsArray(pc) != null &&
                     domain.longValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
                     code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒

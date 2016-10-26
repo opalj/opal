@@ -125,11 +125,10 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
                                     // one of the implemented observer interfaces defines the method
                                     implObsIntfs.exists(observerInterface ⇒
                                         project.classFile(observerInterface).isDefined &&
-                                            classHierarchy.lookupMethodInInterface(
+                                            project.lookupMethodInInterface(
                                                 project.classFile(observerInterface).get,
                                                 method.name,
-                                                method.descriptor,
-                                                project
+                                                method.descriptor
                                             ).isDefined)
                             }
                         )

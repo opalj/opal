@@ -61,19 +61,19 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
     import BinaryArithmeticOperators._
     import UnaryArithmeticOperators._
 
-    val IntegerAddMethod = ArithmeticExpressionsClassFile.findMethod("integerAdd").get
-    val IntegerAndMethod = ArithmeticExpressionsClassFile.findMethod("integerAnd").get
-    val IntegerDivMethod = ArithmeticExpressionsClassFile.findMethod("integerDiv").get
-    val IntegerIncMethod = ArithmeticExpressionsClassFile.findMethod("integerInc").get
-    val IntegerNegMethod = ArithmeticExpressionsClassFile.findMethod("integerNeg").get
-    val IntegerMulMethod = ArithmeticExpressionsClassFile.findMethod("integerMul").get
-    val IntegerOrMethod = ArithmeticExpressionsClassFile.findMethod("integerOr").get
-    val IntegerRemMethod = ArithmeticExpressionsClassFile.findMethod("integerRem").get
-    val IntegerShRMethod = ArithmeticExpressionsClassFile.findMethod("integerShR").get
-    val IntegerShLMethod = ArithmeticExpressionsClassFile.findMethod("integerShL").get
-    val IntegerSubMethod = ArithmeticExpressionsClassFile.findMethod("integerSub").get
-    val IntegerAShMethod = ArithmeticExpressionsClassFile.findMethod("integerASh").get
-    val IntegerXOrMethod = ArithmeticExpressionsClassFile.findMethod("integerXOr").get
+    val IntegerAddMethod = ArithmeticExpressionsClassFile.findMethod("integerAdd").head
+    val IntegerAndMethod = ArithmeticExpressionsClassFile.findMethod("integerAnd").head
+    val IntegerDivMethod = ArithmeticExpressionsClassFile.findMethod("integerDiv").head
+    val IntegerIncMethod = ArithmeticExpressionsClassFile.findMethod("integerInc").head
+    val IntegerNegMethod = ArithmeticExpressionsClassFile.findMethod("integerNeg").head
+    val IntegerMulMethod = ArithmeticExpressionsClassFile.findMethod("integerMul").head
+    val IntegerOrMethod = ArithmeticExpressionsClassFile.findMethod("integerOr").head
+    val IntegerRemMethod = ArithmeticExpressionsClassFile.findMethod("integerRem").head
+    val IntegerShRMethod = ArithmeticExpressionsClassFile.findMethod("integerShR").head
+    val IntegerShLMethod = ArithmeticExpressionsClassFile.findMethod("integerShL").head
+    val IntegerSubMethod = ArithmeticExpressionsClassFile.findMethod("integerSub").head
+    val IntegerAShMethod = ArithmeticExpressionsClassFile.findMethod("integerASh").head
+    val IntegerXOrMethod = ArithmeticExpressionsClassFile.findMethod("integerXOr").head
 
     describe("The quadruples representation of integer operations") {
 

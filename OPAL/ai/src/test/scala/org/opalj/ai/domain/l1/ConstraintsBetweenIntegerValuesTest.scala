@@ -76,7 +76,7 @@ class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers {
 
         it("it should handle cases where we constrain and compare unknown values (without join)") {
             val domain = new IntegerRangesWithInterIntegerConstraintsTestDomain(4)
-            val method = IntegerValues.findMethod("multipleConstraints1").get
+            val method = IntegerValues.findMethod("multipleConstraints1").head
             val result = BaseAI(IntegerValues, method, domain)
 
             result.operandsArray(29) should be(null)
@@ -84,7 +84,7 @@ class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers {
 
         it("it should handle cases where we constrain and compare unknown values (with join)") {
             val domain = new IntegerRangesWithInterIntegerConstraintsTestDomain(4)
-            val method = IntegerValues.findMethod("multipleConstraints2").get
+            val method = IntegerValues.findMethod("multipleConstraints2").head
             val result = BaseAI(IntegerValues, method, domain)
 
             result.operandsArray(25) should be(null)

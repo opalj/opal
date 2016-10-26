@@ -65,14 +65,14 @@ trait TheProject extends ClassHierarchy with LogContextProvider with TheProperty
     /**
      * Returns the project that is currently analyzed.
      */
-    def project: SomeProject
+    implicit def project: SomeProject
 
     final implicit def logContext: LogContext = project.logContext
 
     /**
      * Returns the project's class hierarchy.
      */
-    @inline final override def classHierarchy = project.classHierarchy
+    @inline final override implicit def classHierarchy = project.classHierarchy
 
     final override lazy val propertyStore = project.get(SourceElementsPropertyStoreKey)
 }

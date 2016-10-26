@@ -28,6 +28,7 @@
  */
 package org.opalj
 
+import scala.annotation.tailrec
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox.Context
 
@@ -129,6 +130,44 @@ package object control {
     )(
         f: Int ⇒ Unit
     ): Unit = macro ControlAbstractionsImplementation.iterateUntil
+
+    /**
+     * Finds the value identified by the given comparator, if any.
+     *
+     * @note    The comparator has to be able to handle `null` values if the given array may
+     *          contain null values.
+     *
+     * @note    The array must contain less than Int.MaxValue/2 values.
+     *
+     * @param   data An array sorted in ascending order according to the test done by the
+     *          comparator.
+     * @param   comparator A comparator which is used to search for the matching value.
+     *          If the comparator matches multiple values, the returned value is not
+     *          precisely specified.
+     */
+    def find[T <: AnyRef](data: Array[T], comparator: Comparator[T]): Option[T] = {
+        find(data)(comparator.evaluate)
+    }
+
+    def find[T <: AnyRef](data: Array[T])(evaluate: T ⇒ Int): Option[T] = {
+        @tailrec @inline def find(low: Int, high: Int): Option[T] = {
+            if (high < low)
+                return None;
+
+            val mid = (low + high) / 2 // <= will never overflow...(by constraint...)
+            val e = data(mid)
+            val eComparison = evaluate(e)
+            if (eComparison == 0) {
+                Some(e)
+            } else if (eComparison < 0) {
+                find(mid + 1, high)
+            } else {
+                find(low, mid - 1)
+            }
+        }
+
+        find(0, data.length - 1)
+    }
 }
 
 package control {

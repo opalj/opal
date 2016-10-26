@@ -244,7 +244,11 @@ object ChainProperties extends Properties("Chain") {
         (l.nonEmpty && l.head == fl.head) ||
             // if the list is empty, an exception needs to be thrown
             { try { fl.head; false } catch { case _: Throwable ⇒ true } }
+    }
 
+    property("headOption") = forAll { l: List[String] ⇒
+        val fl = Chain(l: _*)
+        fl.headOption == l.headOption
     }
 
     property("tail") = forAll { l: List[String] ⇒
@@ -304,6 +308,11 @@ object ChainProperties extends Properties("Chain") {
     property("size") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*)
         l.size == fl.size
+    }
+
+    property("isSingletonList") = forAll { l: List[String] ⇒
+        val fl = Chain(l: _*)
+        (l.size == 1) == (fl.isSingletonList)
     }
 
     property(":&:") = forAll { (l: List[String], es: List[String]) ⇒
@@ -420,6 +429,12 @@ object ChainProperties extends Properties("Chain") {
         def filter(s: String): Boolean = s.length() >= c
         val fl = Chain(l: _*)
         fl.filter(filter) == Chain(l.filter(filter): _*)
+    }
+
+    property("filterNot") = forAll { (l: List[String], c: Int) ⇒
+        def filter(s: String): Boolean = s.length() >= c
+        val fl = Chain(l: _*)
+        fl.filterNot(filter) == Chain(l.filterNot(filter): _*)
     }
 
     property("drop") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒

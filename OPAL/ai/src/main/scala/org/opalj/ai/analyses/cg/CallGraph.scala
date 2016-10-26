@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -87,9 +87,9 @@ class CallGraph private[opalj] (
      *
      * If this method does not call any methods an empty map is returned.
      */
-    // In case of the CHA Call Graph this could also be easily calculated on-demand, 
+    // In case of the CHA Call Graph this could also be easily calculated on-demand,
     // since we do not use any information that is not readily available.
-    // However, we collect/store that information for the time being to make the 
+    // However, we collect/store that information for the time being to make the
     // implementation more uniform.
     def calls(method: Method): Map[PC, Iterable[Method]] = {
         callsMap.getOrElse(method, Map.empty)
@@ -149,20 +149,22 @@ class CallGraph private[opalj] (
      * applications).
      */
     def callsStatistics(
-        maxNumberOfResults: Int = 65534 /*65534+1 for the header === max size for common spread sheet applications*/ ): String = {
+        maxNumberOfResults: Int = 65534 /*65534+1 for the header === max size for common spread sheet applications*/
+    ): String = {
 
         var result: List[(String, String, String, Int, Int)] = List.empty
-        project.methods foreach { (method: Method) ⇒
+        // IMPROVE Use methodsWithContext
+        project.allMethods foreach { (method: Method) ⇒
             val callSites = calls(method)
             callSites foreach { callSite ⇒
                 val (pc, targets) = callSite
-                result = (
+                result ::= ((
                     project.classFile(method).fqn,
                     "\""+method.toJava+"\"",
                     "\""+method.body.get.instructions(pc).toString(pc).replace('\n', ' ')+"\"",
                     pc,
                     targets.size
-                ) :: result
+                ))
             }
         }
         result = result.sortWith((a, b) ⇒ a._5 > b._5 || (a._5 == b._5 && a._4 < b._4))
@@ -171,7 +173,7 @@ class CallGraph private[opalj] (
             // add(prepend) the line with the column titles
             List("\"Class\"", "\"Method\"", "\"Callsite (PC)\"", "\"Invoke\"", "\"Targets\"") ::
                 result.map { e ⇒ e.productIterator.toList.map(_.toString()) }
-        resultsAsString.map(_.mkString("\t")).mkString("\n")
+        resultsAsString.view.map(_.mkString("\t")).mkString("\n")
     }
 
     /**
@@ -184,7 +186,7 @@ class CallGraph private[opalj] (
 
         var result: List[List[String]] = List.empty
         var resultCount = 0
-        project.methods forall { (method: Method) ⇒
+        project.allMethods forall { (method: Method) ⇒
             val callingSites = calledBy(method)
             callingSites forall { callingSite ⇒
                 val (callerMethod, callingInstructions) = callingSite
@@ -202,14 +204,14 @@ class CallGraph private[opalj] (
             resultCount < maxNumberOfResults
         }
         // add(prepend) the line with the column titles
-        result =
+        result ::=
             List(
                 "\"Class\"",
                 "\"Method\"",
                 "\"Class of calling Method\"",
                 "\"Calling Method\"",
                 "\"Calling Sites\""
-            ) :: result
-        result.map(_.mkString("\t")).mkString("\n")
+            )
+        result.view.map(_.mkString("\t")).mkString("\n")
     }
 }

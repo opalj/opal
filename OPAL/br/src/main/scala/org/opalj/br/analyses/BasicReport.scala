@@ -33,6 +33,7 @@ package analyses
 /**
  * Result of some analysis that just consists of some text.
  *
+ * @param toConsoleString A string printed to the console.
  * @author Michael Eichberg
  */
 case class BasicReport(toConsoleString: String) extends ReportableAnalysisResult
@@ -42,8 +43,6 @@ case class BasicReport(toConsoleString: String) extends ReportableAnalysisResult
  */
 object BasicReport {
 
-    def apply(messages: Iterable[String]): BasicReport = {
-        BasicReport(messages.mkString("\n"))
-    }
+    def apply(messages: Iterable[String]): BasicReport = BasicReport(messages.mkString("\n"))
 
 }

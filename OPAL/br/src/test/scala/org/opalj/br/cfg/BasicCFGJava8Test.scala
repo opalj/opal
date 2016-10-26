@@ -70,7 +70,7 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         val testClass = testProject.classFile(ObjectType("controlflow/BoringCode")).get
 
         it("a cfg with no control flow statemts should consists of a single basic block") {
-            val cfg = CFGFactory(testClass.findMethod("singleBlock").get.body.get)
+            val cfg = CFGFactory(testClass.findMethod("singleBlock").head.body.get)
             test("singleBlock", cfg) {
                 cfg.allBBs.size should be(1)
                 cfg.startBlock.successors.size should be(2)
@@ -80,7 +80,7 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         }
 
         it("a cfg with some simple control flow statemts should consists of respective single basic blocks") {
-            val cfg = CFGFactory(testClass.findMethod("conditionalOneReturn").get.body.get)
+            val cfg = CFGFactory(testClass.findMethod("conditionalOneReturn").head.body.get)
             test("conditionalOneReturn", cfg) {
                 cfg.allBBs.size should be(11)
                 cfg.startBlock.successors.size should be(2)
@@ -90,7 +90,7 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         }
 
         it("a cfg for a method with multiple return statements should have corresponding basic blocks") {
-            val cfg = CFGFactory(testClass.findMethod("conditionalTwoReturns").get.body.get)
+            val cfg = CFGFactory(testClass.findMethod("conditionalTwoReturns").head.body.get)
             test("conditionalTwoReturns", cfg) {
                 cfg.allBBs.size should be(6)
                 cfg.startBlock.successors.size should be(2)

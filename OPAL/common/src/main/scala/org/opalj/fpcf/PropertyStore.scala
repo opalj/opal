@@ -672,7 +672,7 @@ class PropertyStore private (
         val lock = eps.l
 
         @inline def awaitComputationResult(p: PropertyIsDirectlyComputed): FinalEP[e.type, P] = {
-            // This also establishes the happen before relation!
+            // This also establishes the happens before relation!
             p.await()
             FinalEP(e, ps(pkId).p.asInstanceOf[P])
         }
@@ -1223,7 +1223,7 @@ class PropertyStore private (
      * Hence, a first request of such a property will always first return the result "None".
      *
      * The computation is triggered by a(n in)direct call of this store's `apply` method. I.e.,
-     * the [[allHaveProperty]] and the `apply` method will trigger the computation if necessary.
+     * the `allHaveProperty` and the `apply` method will trigger the computation if necessary.
      * The methods
      *
      * This store ensures that the property computation function `pc` is never invoked more

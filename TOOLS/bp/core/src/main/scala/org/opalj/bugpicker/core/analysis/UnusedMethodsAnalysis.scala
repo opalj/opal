@@ -96,7 +96,7 @@ object UnusedMethodsAnalysis {
             if (name == "valueOf" && classFile.isEnumDeclaration)
                 return Relevance.Undetermined;
 
-            // 
+            //
             // Let's handle the standard methods...
             //
             if ((name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
@@ -104,7 +104,7 @@ object UnusedMethodsAnalysis {
                 return Relevance.VeryLow;
             }
 
-            // 
+            //
             // Let's handle standard getter and setter methods...
             //
             if (name.length() > 3 &&
@@ -113,9 +113,9 @@ object UnusedMethodsAnalysis {
                     {
                         val fieldNameCandidate = name.substring(3)
                         val fieldName = fieldNameCandidate.charAt(0).toLower + fieldNameCandidate.substring(1)
-                        classFile.findField(fieldName).isDefined ||
-                            classFile.findField('_' + fieldName).isDefined ||
-                            classFile.findField('_' + fieldNameCandidate).isDefined
+                        classFile.findField(fieldName).nonEmpty ||
+                            classFile.findField('_' + fieldName).nonEmpty ||
+                            classFile.findField('_' + fieldNameCandidate).nonEmpty
                     }) {
                 return Relevance.VeryLow;
             }
@@ -191,4 +191,3 @@ object UnusedMethodsAnalysis {
     }
 
 }
-

@@ -60,10 +60,10 @@ class RefCmpIfTest extends FunSpec with Matchers {
 
     import RelationalOperators._
 
-    val IfACMPEQMethod = ControlSequencesClassFile.findMethod("ifacmpeq").get
-    val IfACMPNEMethod = ControlSequencesClassFile.findMethod("ifacmpne").get
-    val IfNonNullMethod = ControlSequencesClassFile.findMethod("ifnonnull").get
-    val IfNullMethod = ControlSequencesClassFile.findMethod("ifnull").get
+    val IfACMPEQMethod = ControlSequencesClassFile.findMethod("ifacmpeq").head
+    val IfACMPNEMethod = ControlSequencesClassFile.findMethod("ifacmpne").head
+    val IfNonNullMethod = ControlSequencesClassFile.findMethod("ifnonnull").head
+    val IfNullMethod = ControlSequencesClassFile.findMethod("ifnull").head
 
     describe("The quadruples representation of reference comparison if instructions") {
         describe("using no AI results") {

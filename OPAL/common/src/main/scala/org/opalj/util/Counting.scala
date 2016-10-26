@@ -34,7 +34,7 @@ import org.opalj.concurrent.Locking
 import scala.collection.mutable
 
 /**
- * Enables a simple counting mechanism that sum up several integer in a given context.
+ * Enables a simple counting mechanism that sums up several integer in a given context.
  *
  * Examples:
  *   - How often is a function called during runtime?
@@ -101,7 +101,7 @@ trait Counting extends Locking {
 
     /**
      * Resets everything. The effect is comparable to creating a new
-     * `IntStatistics` object, but is a bit more efficient.
+     * instance, but is more efficient.
      */
     def resetAll(): Unit = withWriteLock { doResetAll() }
 
@@ -116,7 +116,6 @@ trait Counting extends Locking {
 }
 
 /**
- *
  * Counts how often some piece of code is executed. Usually it is sufficient
  * to create an instance of this object and to execute some piece of code using
  * the function `time(Symbol)(=>T)`. Afterwards it is possible to query this object

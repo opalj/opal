@@ -55,10 +55,7 @@ trait RefinedTypeLevelFieldAccessInstructions extends TypeLevelFieldAccessInstru
         fieldType:      FieldType
     ): Computation[DomainValue, ExceptionValue] = {
 
-        val field =
-            classHierarchy.resolveFieldReference(
-                declaringClass, fieldName, fieldType, project
-            )
+        val field = project.resolveFieldReference(declaringClass, fieldName, fieldType)
         if (field.isDefined) {
             val fieldValue = fieldValueInformation.get(field.get)
             if (fieldValue.isDefined) {
@@ -79,10 +76,7 @@ trait RefinedTypeLevelFieldAccessInstructions extends TypeLevelFieldAccessInstru
         fieldName:      String,
         fieldType:      FieldType
     ): Computation[DomainValue, Nothing] = {
-        val field =
-            classHierarchy.resolveFieldReference(
-                declaringClass, fieldName, fieldType, project
-            )
+        val field = project.resolveFieldReference(declaringClass, fieldName, fieldType)
         if (field.isDefined) {
             val fieldValue = fieldValueInformation.get(field.get)
             if (fieldValue.isDefined) {

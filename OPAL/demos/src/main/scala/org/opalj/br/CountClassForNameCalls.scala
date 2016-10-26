@@ -39,19 +39,11 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
  *
  * @author Michael Eichberg
  */
-// Demonstrates how to do pattern matching of instructions and how to use the `AnalysisExecutor`.
 object CountClassForNameCalls extends DefaultOneStepAnalysis {
 
-    override def description: String = {
-        "Counts the number of times Class.forName is called."
-    }
+    override def description: String = "Counts the number of times Class.forName is called."
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ) = {
-        var classForNameCount = 0
+    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
 
         import ObjectType.{String, Class}
         // Next, we create a descriptor of a method that takes a single parameter of
@@ -65,23 +57,14 @@ object CountClassForNameCalls extends DefaultOneStepAnalysis {
                 // concrete (non-native) implementation.
                 classFile ← project.allProjectClassFiles.par
                 method @ MethodWithBody(code) ← classFile.methods
-                // Associate each instruction with its index to make it possible
-                // to distinguish multiple invocations of "Class.forName" within
-                // the same method.
-                instructions = code.associateWithIndex
                 // Match all invocations of the method:
                 // Class.forName(String) : Class<?>
-                (pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) ← instructions
+                (pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) ← code
             } yield {
-                classForNameCount += 1
-                classFile.fqn+" { "+method.toJava+"{ pc="+pc+" } }"
+                method.toJava(classFile, s"pc=$pc")
             }
-        val uniqueInvokes = invokes.seq.toSet
-
-        BasicReport(
-            "Class.forName(String) was called: "+classForNameCount+" times.\n\t"+
-                uniqueInvokes.mkString("\n\t")
-        )
+        val header = s"found ${invokes.size} calls of Class.forName(String)\n\t"
+        BasicReport(invokes.seq.toList.sorted.mkString(header, "\n\t", "\n"))
     }
 
 }

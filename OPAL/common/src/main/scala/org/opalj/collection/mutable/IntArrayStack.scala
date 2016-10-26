@@ -31,7 +31,6 @@ package collection
 package mutable
 
 import scala.collection.mutable
-import scala.collection.mutable
 import scala.collection.generic
 import scala.collection.AbstractIterator
 

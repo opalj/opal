@@ -174,8 +174,8 @@ sealed abstract class MethodDescriptor
 
 //
 // To optimize the overall memory consumption and to facilitate the storage of
-// method descriptors in sets, we have specialized the MethodDescriptor
-// (Done after a study of the heap memory usage)
+// method descriptors in sets, we have specialized the MethodDescriptor.
+// (Done after a study of the heap memory usage.)
 //
 
 private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescriptor {
@@ -188,15 +188,14 @@ private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescript
 
     override def parametersCount: Int = 0
 
-    override def equalParameters(other: MethodDescriptor): Boolean =
+    override def equalParameters(other: MethodDescriptor): Boolean = {
         other.parametersCount == 0
+    }
 
     // the default equals and hashCode implementations are a perfect fit
 }
 
-private final class NoArgumentMethodDescriptor(
-        val returnType: Type
-) extends MethodDescriptor {
+private final class NoArgumentMethodDescriptor(val returnType: Type) extends MethodDescriptor {
 
     override def parameterTypes = IndexedSeq.empty
 
@@ -242,8 +241,7 @@ private final class SingleArgumentMethodDescriptor(
     override def equals(other: Any): Boolean = {
         other match {
             case that: SingleArgumentMethodDescriptor ⇒
-                (that.parameterType eq this.parameterType) &&
-                    (that.returnType eq this.returnType)
+                (that.parameterType eq this.parameterType) && (that.returnType eq this.returnType)
             case _ ⇒
                 false
         }
@@ -260,26 +258,24 @@ private final class TwoArgumentsMethodDescriptor(
 
     override def parameterType(index: Int): FieldType = {
         index match {
-            case 0 ⇒
-                firstParameterType
-            case 1 ⇒
-                secondParameterType
-            case _ ⇒
-                throw new IndexOutOfBoundsException()
+            case 0 ⇒ firstParameterType
+            case 1 ⇒ secondParameterType
+            case _ ⇒ throw new IndexOutOfBoundsException()
         }
     }
 
     override def parametersCount: Int = 2
 
-    override def equalParameters(other: MethodDescriptor): Boolean =
+    override def equalParameters(other: MethodDescriptor): Boolean = {
         (other.parametersCount == 2) &&
             (other.parameterType(0) == firstParameterType) &&
             (other.parameterType(1) == secondParameterType)
+    }
 
-    override lazy val hashCode: Int =
-        ((returnType.hashCode() * 61) +
-            firstParameterType.hashCode) * 13 +
-            secondParameterType.hashCode
+    override lazy val hashCode: Int = {
+        (firstParameterType.hashCode() * 13 + secondParameterType.hashCode) * 61 +
+            returnType.hashCode()
+    }
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -302,23 +298,23 @@ private final class MultiArgumentsMethodDescriptor(
 
     override def parametersCount: Int = parameterTypes.size
 
-    override def equalParameters(other: MethodDescriptor): Boolean =
+    override def equalParameters(other: MethodDescriptor): Boolean = {
         other.parameterTypes == this.parameterTypes
+    }
 
-    override lazy val hashCode: Int =
-        (returnType.hashCode() * 13) + parameterTypes.hashCode
+    override lazy val hashCode: Int = (returnType.hashCode() * 13) + parameterTypes.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
             case that: MethodDescriptor ⇒
-                this.parametersCount == that.parametersCount &&
-                    (this.returnType eq that.returnType) &&
+                (this.returnType eq that.returnType) &&
+                    this.parametersCount == that.parametersCount &&
                     {
                         var i = parametersCount
                         while (i > 0) {
                             i = i - 1
                             if (this.parameterTypes(i) ne that.parameterTypes(i))
-                                return false
+                                return false;
                         }
                         true
                     }
@@ -416,14 +412,17 @@ object MethodDescriptor {
 
     final val JustReturnsLong: MethodDescriptor = new NoArgumentMethodDescriptor(LongType)
 
-    final val JustReturnsObject: MethodDescriptor =
+    final val JustReturnsObject: MethodDescriptor = {
         new NoArgumentMethodDescriptor(ObjectType.Object)
+    }
 
-    final val JustReturnsClass: MethodDescriptor =
+    final val JustReturnsClass: MethodDescriptor = {
         new NoArgumentMethodDescriptor(ObjectType.Class)
+    }
 
-    final val JustReturnsString: MethodDescriptor =
+    final val JustReturnsString: MethodDescriptor = {
         new NoArgumentMethodDescriptor(ObjectType.String)
+    }
 
     final val JustTakesObject: MethodDescriptor = apply(ObjectType.Object, VoidType)
 
@@ -493,10 +492,7 @@ object MethodDescriptor {
         new SingleArgumentMethodDescriptor(parameterType, returnType)
     }
 
-    def apply(
-        parameterTypes: IndexedSeq[FieldType],
-        returnType:     Type
-    ): MethodDescriptor = {
+    def apply(parameterTypes: IndexedSeq[FieldType], returnType: Type): MethodDescriptor = {
         (parameterTypes.size: @annotation.switch) match {
             case 0 ⇒
                 withNoArgs(returnType)

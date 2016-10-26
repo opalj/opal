@@ -62,13 +62,13 @@ class FloatArithmeticTest extends FunSpec with Matchers {
     import RelationalOperators._
     import UnaryArithmeticOperators._
 
-    val FloatAddMethod = ArithmeticExpressionsClassFile.findMethod("floatAdd").get
-    val FloatDivMethod = ArithmeticExpressionsClassFile.findMethod("floatDiv").get
-    val FloatNegMethod = ArithmeticExpressionsClassFile.findMethod("floatNeg").get
-    val FloatMulMethod = ArithmeticExpressionsClassFile.findMethod("floatMul").get
-    val FloatRemMethod = ArithmeticExpressionsClassFile.findMethod("floatRem").get
-    val FloatSubMethod = ArithmeticExpressionsClassFile.findMethod("floatSub").get
-    val FloatCmpMethod = ArithmeticExpressionsClassFile.findMethod("floatCmp").get
+    val FloatAddMethod = ArithmeticExpressionsClassFile.findMethod("floatAdd").head
+    val FloatDivMethod = ArithmeticExpressionsClassFile.findMethod("floatDiv").head
+    val FloatNegMethod = ArithmeticExpressionsClassFile.findMethod("floatNeg").head
+    val FloatMulMethod = ArithmeticExpressionsClassFile.findMethod("floatMul").head
+    val FloatRemMethod = ArithmeticExpressionsClassFile.findMethod("floatRem").head
+    val FloatSubMethod = ArithmeticExpressionsClassFile.findMethod("floatSub").head
+    val FloatCmpMethod = ArithmeticExpressionsClassFile.findMethod("floatCmp").head
 
     describe("The quadruples representation of float operations") {
 

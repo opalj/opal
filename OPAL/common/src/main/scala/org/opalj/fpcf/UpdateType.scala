@@ -29,7 +29,7 @@
 package org.opalj.fpcf
 
 /**
- * The different types of updates distinguished by the FPCF.
+ * The different types of updates distinguished by the fixed-point computations framework.
  *
  * @author Michael Eichberg
  */

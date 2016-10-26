@@ -31,8 +31,7 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 
@@ -42,36 +41,27 @@ import org.opalj.br.analyses.Project
  * @author Daniel Klauer
  * @author Michael Eichberg
  */
-object ShowInnerClassesInformation extends AnalysisExecutor {
+object ShowInnerClassesInformation extends DefaultOneStepAnalysis {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    override def description: String = "Prints out the inner classes tables."
 
-        override def description: String = "Prints out the inner classes tables."
+    def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
-        ): BasicReport = {
+        val messages =
+            for {
+                classFile ← p.allClassFiles.par
+                if classFile.innerClasses.isDefined
+            } yield {
+                val header =
+                    classFile.fqn+"(ver:"+classFile.majorVersion+")"+":\n\t"+(
+                        classFile.enclosingMethod.
+                        map(_.toString).
+                        getOrElse("<no enclosing method defined>")
+                    )+"\n\t"
+                classFile.innerClasses.get.mkString(header, "\n\t", "\n")
+            }
 
-            val messages =
-                (
-                    for {
-                        classFile ← project.allClassFiles.par
-                        if classFile.innerClasses.isDefined
-                    } yield {
-                        val header =
-                            classFile.fqn+"(ver:"+classFile.majorVersion+")"+":\n\t"+(
-                                if (classFile.enclosingMethod.isDefined)
-                                    classFile.enclosingMethod.get.toString
-                                else
-                                    "<no enclosing method defined>"
-                            )+"\n\t"
-                        classFile.innerClasses.get.mkString(header, "\n\t", "\n")
-                    }
-                ).seq
-
-            BasicReport(messages.mkString("\n"))
-        }
+        BasicReport(messages.mkString("\n"))
     }
+
 }

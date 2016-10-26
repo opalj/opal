@@ -39,34 +39,40 @@ import scala.collection.Map
  *
  * Basically an index of the source elements (methods and fields) of a project.
  *
- * This index can be used, e.g., to resolve method calls based on the methods names.
+ * This index can be used, e.g., to resolve method calls based on the method's names and/or
+ * descriptors.
  *
  * To get an instance of a project index call [[Project.get]] and pass in
  * the [[ProjectIndexKey]] object.
  *
+ * @see [[FieldAccessInformation]] to get the information where a field is accessed.
+ *
  * @author Michael Eichberg
  */
 class ProjectIndex private (
-        val fields:  Map[String, Map[FieldType, Iterable[Field]]],
-        val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]
+        val fields:  Map[String, Map[FieldType, List[Field]]],
+        val methods: Map[String, Map[MethodDescriptor, List[Method]]]
 ) {
 
-    def findFields(name: String, fieldType: FieldType): Iterable[Field] = {
-        fields.get(name).flatMap(_.get(fieldType)).getOrElse(Iterable.empty)
+    def findFields(name: String, fieldType: FieldType): List[Field] = {
+        fields.get(name).flatMap(_.get(fieldType)).getOrElse(Nil)
     }
 
     def findFields(name: String): Iterable[Field] = {
-        fields.get(name).map(_.values.flatten).getOrElse(Iterable.empty)
+        fields.get(name).map(_.values.flatten).getOrElse(Nil)
     }
 
-    def findMethods(name: String, descriptor: MethodDescriptor): Iterable[Method] = {
-        methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty)
+    def findMethods(name: String, descriptor: MethodDescriptor): List[Method] = {
+        methods.get(name).flatMap(_.get(descriptor)).getOrElse(Nil)
     }
 
     def findMethods(name: String): Iterable[Method] = {
-        methods.get(name).map(_.values.flatten).getOrElse(Iterable.empty)
+        methods.get(name).map(_.values.flatten).getOrElse(Nil)
     }
 
+    /**
+     * Returns a map of some basic statistical information, such as the most often used field/method name.
+     */
     def statistics(): Map[String, Any] = {
 
         def getMostOftenUsed(
@@ -130,9 +136,9 @@ object ProjectIndex {
         import ExecutionContext.Implicits.global
 
         val fieldsFuture: Future[AnyRefMap[String, AnyRefMap[FieldType, List[Field]]]] = Future {
-            val estimatedFieldsCount = project.fields.size * 2 / 3
+            val estimatedFieldsCount = project.fieldsCount
             val fields = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](estimatedFieldsCount)
-            for (field ← project.fields) {
+            for (field ← project.allFields) {
                 val fieldName = field.name
                 val fieldType = field.fieldType
                 fields.get(fieldName) match {
@@ -155,9 +161,9 @@ object ProjectIndex {
         }
 
         val methods: AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]] = {
-            val estimatedMethodsCount = project.methods.size * 2 / 3
+            val estimatedMethodsCount = project.methodsCount
             val methods = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](estimatedMethodsCount)
-            for (method ← project.methods) {
+            for (method ← project.allMethods) {
                 val methodName = method.name
                 val methodDescriptor = method.descriptor
                 methods.get(methodName) match {
@@ -183,4 +189,3 @@ object ProjectIndex {
     }
 
 }
-

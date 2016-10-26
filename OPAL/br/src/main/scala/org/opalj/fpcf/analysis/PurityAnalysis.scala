@@ -116,7 +116,10 @@ import org.opalj.log.OPALLogger
  *
  * @author Michael Eichberg
  */
-class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
+class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
+
+    import project.resolveFieldReference
+    import project.lookupMethodDefinition
 
     /**
      * Determines the purity of the method starting with the instruction with the given
@@ -143,12 +146,11 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         var currentPC = pc
         while (currentPC < maxPC) {
             val instruction = instructions(currentPC)
-
             (instruction.opcode: @scala.annotation.switch) match {
                 case GETSTATIC.opcode ⇒
                     val GETSTATIC(declaringClass, fieldName, fieldType) = instruction
-                    import project.classHierarchy.resolveFieldReference
-                    resolveFieldReference(declaringClass, fieldName, fieldType, project) match {
+
+                    resolveFieldReference(declaringClass, fieldName, fieldType) match {
 
                         case Some(field) if field.isFinal ⇒
                         /* Nothing to do; constants do not impede purity! */
@@ -181,23 +183,16 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                     // Let's continue with the evaluation of the next instruction.
 
                     case MethodInvocationInstruction(declaringClassType, methodName, methodDescriptor) ⇒
-                        import project.classHierarchy.lookupMethodDefinition
 
                         val calleeOption =
                             try {
-                                lookupMethodDefinition(
-                                    declaringClassType.asObjectType /* this is safe...*/ ,
-                                    methodName,
-                                    methodDescriptor,
-                                    project
-                                )
+                                val receiverType = declaringClassType.asObjectType // This is safe!
+                                lookupMethodDefinition(receiverType, methodName, methodDescriptor)
                             } catch {
                                 case ct: ControlThrowable ⇒ throw ct
                                 case t: Throwable ⇒
-                                    OPALLogger.error(
-                                        "internal - recoverable", "method lookup failed",
-                                        t
-                                    )(project.logContext)
+                                    val category = "internal - recoverable"
+                                    OPALLogger.error(category, "method lookup failed", t)
                                     None
                             }
                         calleeOption match {
@@ -306,7 +301,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 }
 
 /**
- *
+ * @author Michael Eichberg
  */
 object PurityAnalysis extends FPCFAnalysisRunner {
 

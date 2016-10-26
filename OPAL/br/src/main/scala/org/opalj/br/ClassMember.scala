@@ -29,12 +29,12 @@
 package org.opalj
 package br
 
-import bi.ACC_FINAL
-import bi.ACC_PUBLIC
-import bi.ACC_PROTECTED
-import bi.ACC_PRIVATE
-import bi.ACC_STATIC
-import bi.VisibilityModifier
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_PROTECTED
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_STATIC
+import org.opalj.bi.VisibilityModifier
 import org.opalj.bi.ACC_SYNTHETIC
 
 /**

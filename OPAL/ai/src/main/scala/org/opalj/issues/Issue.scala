@@ -118,17 +118,15 @@ case class Issue(
 
     def toEclipseConsoleString: String = {
         locations.map(_.toEclipseConsoleString).mkString(
-            summary+" «"+analysis + relevance.toEclipseConsoleString+"» ",
-            " ",
-            ""
+            s"$summary«$analysis ${relevance.toEclipseConsoleString}» ", " ", ""
         )
     }
 
     def toIDL: String = {
         this.analysis+"\n"+
             "{"+"\n"+
-            "\tCategories: "+categories.mkString(", ")+"\n"+
-            "\tKinds: "+kinds.mkString(", ")+"\n"+
+            categories.mkString("\tCategories: ", ", ", "\n") +
+            kinds.mkString("\tKinds: ", ", ", "\n")+
             "\tRelevance: "+relevance.value.toString()+"\n"+
             "\tSummary: "+summary+"\n"+
             locations.map(_.toIDL).filter(_.nonEmpty).mkString("\n")+
@@ -136,4 +134,3 @@ case class Issue(
     }
 
 }
-

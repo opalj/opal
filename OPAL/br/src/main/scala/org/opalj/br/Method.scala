@@ -40,6 +40,8 @@ import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.VisibilityModifier
 import org.opalj.br.instructions.Instruction
 
@@ -201,6 +203,26 @@ final class Method private (
 
     final def isInitializer: Boolean = isConstructor || isStaticInitializer
 
+    /**
+     * Returns true if this method is a potential target of a virtual call
+     * by means of an invokevirtual or invokeinterface instruction; i.e.,
+     * if the method is not an initializer, is not abstract, is not private
+     * and is not static.
+     */
+    final def isVirtualCallTarget: Boolean = {
+        isNotAbstract && !isPrivate && !isStatic && !isInitializer &&
+            !isStaticInitializer // before Java 8 <clinit> was not required to be static
+    }
+
+    /**
+     * Returns true if this method declares a virtual method. This method
+     * may be abstract!
+     */
+    final def isVirtualMethodDeclaration: Boolean = {
+        !isPrivate && !isStatic && !isInitializer &&
+            !isStaticInitializer // before Java 8 <clinit> was not required to be static
+    }
+
     def returnType = descriptor.returnType
 
     def parameterTypes = descriptor.parameterTypes
@@ -244,6 +266,14 @@ final class Method private (
     def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
 
     def toJava(declaringType: ObjectType): String = s"${declaringType.toJava}{ $toJava }"
+
+    def toJava(declaringClass: ClassFile, methodInfo: String): String = {
+        toJava(declaringClass.thisType, methodInfo)
+    }
+
+    def toJava(declaringType: ObjectType, methodInfo: String): String = {
+        s"${declaringType.toJava}{ $toJava{ $methodInfo } }"
+    }
 
     def fullyQualifiedSignature(declaringClassType: ObjectType): String = {
         descriptor.toJava(declaringClassType.toJava+"."+name)
@@ -329,6 +359,25 @@ object Method {
     private def isNativeAndVarargs(accessFlags: Int) = {
         import AccessFlagsMatcher.ACC_NATIVEAndVARARGS
         (accessFlags & ACC_NATIVEAndVARARGS) == ACC_NATIVEAndVARARGS
+    }
+
+    /**
+     * Returns `true` if a method declared by a subclass in the package
+     * `declaringPackageOfSubclassMethod` can directly override a method which has the
+     *  given visibility and package.
+     */
+    def canDirectlyOverride(
+        declaringPackageOfSubclassMethod:   String,
+        superclassMethodVisibility:         Option[VisibilityModifier],
+        declaringPackageOfSuperclassMethod: String
+    ): Boolean = {
+        superclassMethodVisibility match {
+            case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) ⇒ true
+            case Some(ACC_PRIVATE)                      ⇒ false
+
+            case None ⇒
+                declaringPackageOfSubclassMethod == declaringPackageOfSuperclassMethod
+        }
     }
 
     /**

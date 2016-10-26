@@ -29,8 +29,10 @@
 package org.opalj
 package br
 
-import org.opalj.collection.QualifiedCollection
 import scala.collection.Map
+
+import org.opalj.collection.QualifiedCollection
+import org.opalj.collection.immutable.ConstArray
 
 /**
  * Defines commonly useful type aliases.
@@ -50,7 +52,7 @@ package object analyses {
 
     type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef]]
 
-    type StringConstantsInformation = Map[String, List[(Method, PC)]]
+    type StringConstantsInformation = Map[String, ConstArray[(Method, PC)]]
 
     /**
      * An analysis that may produce a result.
@@ -63,5 +65,10 @@ package object analyses {
      */
     type MultipleResultsAnalysis[Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
 
-}
+    implicit object MethodDeclarationContextOrdering extends Ordering[MethodDeclarationContext] {
+        def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = {
+            x compare y
+        }
+    }
 
+}

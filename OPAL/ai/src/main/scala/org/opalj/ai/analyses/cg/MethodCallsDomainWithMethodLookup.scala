@@ -73,9 +73,8 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         try {
             val receiver = operands.last.asInstanceOf[IsAReferenceValue]
             val receiverUTB = receiver.upperTypeBound
-            if (!receiverUTB.isSingletonSet ||
-                !receiver.upperTypeBound.first.isObjectType)
-                return fallback()
+            if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.first.isObjectType)
+                return fallback();
 
             val receiverType = receiverUTB.first.asObjectType
             // We can resolve (statically) all calls where the type information is precise
@@ -91,15 +90,14 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                 project.classFile(receiverType).map { receiverClassFile ⇒
                     if (receiverClassFile.isFinal)
                         doNonVirtualInvoke(
-                            pc,
-                            receiverType, methodName, methodDescriptor, operands, fallback
+                            pc, receiverType, methodName, methodDescriptor, operands, fallback
                         )
                     else {
                         val targetMethod =
                             if (receiverClassFile.isInterfaceDeclaration)
-                                classHierarchy.resolveInterfaceMethodReference(receiverType, methodName, methodDescriptor, project)
+                                project.resolveInterfaceMethodReference(receiverType, methodName, methodDescriptor)
                             else
-                                classHierarchy.resolveMethodReference(receiverType, methodName, methodDescriptor, project)
+                                project.resolveMethodReference(receiverType, methodName, methodDescriptor)
 
                         targetMethod match {
                             case Some(method) if method.isFinal ⇒
@@ -142,12 +140,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                 project.classFile(declaringClassType) match {
                     case Some(classFile) ⇒
                         if (classFile.isInterfaceDeclaration)
-                            classHierarchy.resolveInterfaceMethodReference(
-                                declaringClassType, methodName, methodDescriptor, project
+                            project.resolveInterfaceMethodReference(
+                                declaringClassType, methodName, methodDescriptor
                             )
                         else
-                            classHierarchy.resolveMethodReference(
-                                declaringClassType, methodName, methodDescriptor, project
+                            project.resolveMethodReference(
+                                declaringClassType, methodName, methodDescriptor
                             )
                     case _ ⇒
                         return fallback();
@@ -222,9 +220,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         def fallback() =
             super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        doVirtualInvoke(
-            pc, declaringClass, methodName, methodDescriptor, operands, fallback
-        )
+        doVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback)
     }
 
     abstract override def invokespecial(
@@ -238,9 +234,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         def fallback() =
             super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        doNonVirtualInvoke(
-            pc, declaringClass, methodName, methodDescriptor, operands, fallback
-        )
+        doNonVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback)
     }
 
     /**
@@ -259,10 +253,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         def fallback() =
             super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        doNonVirtualInvoke(
-            pc, declaringClass, methodName, methodDescriptor, operands, fallback
-        )
+        doNonVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback)
     }
 
 }
-

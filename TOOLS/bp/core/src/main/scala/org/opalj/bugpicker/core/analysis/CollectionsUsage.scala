@@ -80,7 +80,7 @@ object CollectionsUsage {
         val domain = result.domain
         val code = domain.code
         val instructions = code.instructions
-        code foreach { (pc, instruction) ⇒
+        code iterate { (pc, instruction) ⇒
             instruction match {
 
                 case INVOKESTATIC(Collections, false, "unmodifiableCollection", unmodifiableCollectionMethodDescriptor) ⇒

@@ -30,7 +30,10 @@ package org.opalj
 package br
 
 import java.net.URL
+import java.util.concurrent.ConcurrentLinkedQueue
+
 import scala.collection.JavaConverters
+
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DefaultOneStepAnalysis
@@ -45,13 +48,9 @@ object ShowLocalVariableTypeTables extends DefaultOneStepAnalysis {
 
     override def description: String = "Prints out the local variable type tables."
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
+    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        val messages = new java.util.concurrent.ConcurrentLinkedQueue[String]
+        val messages = new ConcurrentLinkedQueue[String]()
         project.parForeachMethodWithBody(isInterrupted) { mi ⇒
             val BasicMethodInfo(cf, m) = mi
             val lvtt = m.body.get.localVariableTypeTable
@@ -64,6 +63,5 @@ object ShowLocalVariableTypeTables extends DefaultOneStepAnalysis {
 
         import JavaConverters._
         BasicReport(messages.asScala.mkString("\n", "\n\n", "\n"))
-
     }
 }

@@ -29,9 +29,9 @@
 package org.opalj
 package br
 
-import analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
 import java.net.URL
-import scala.collection.SortedSet
+
+import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 
 /**
  * Lists all abstract classes and interfaces that have no concrete subclasses in
@@ -39,31 +39,34 @@ import scala.collection.SortedSet
  *
  * @author Michael Eichberg
  */
-object ClassesWithoutConcreteSubclasses extends AnalysisExecutor {
+object ClassesWithoutConcreteSubclasses extends DefaultOneStepAnalysis {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    override def description: String =
+        "Abstract classes and interfaces that have no concrete subclass in the given jars."
 
-        override def description: String =
-            "Abstract classes and interfaces that have no concrete subclass in the given jars."
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
+        val classHierarchy = project.classHierarchy
+        val abstractTypes =
+            for {
+                classFile ← project.allClassFiles.par
+                if classFile.isAbstract
+                thisType = classFile.thisType
+                if classHierarchy.directSubtypesOf(thisType).isEmpty
+            } yield {
+                (
+                    if (classFile.isInterfaceDeclaration)
+                        "interface "
+                    else
+                        "abstract class "
+                ) + thisType.toJava
+            }
 
-        def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
-        ) = {
-            val classHierarchy = project.classHierarchy
-            val classTypes =
-                for {
-                    classFile ← project.allClassFiles.par
-                    if classFile.isAbstract
-                    thisType = classFile.thisType
-                    if classHierarchy.directSubtypesOf(thisType).isEmpty
-                } yield thisType.toJava
-
-            BasicReport(
-                "Abstract classes and interfaces without concrete subclasses: "+
-                    SortedSet(classTypes.seq).mkString("\n\t", "\n\t", "\n")
-            )
-        }
+        val sortedAbstractTypes = abstractTypes.seq.toList.sorted
+        val header = "Abstract types without concrete subclasses:\n\t"
+        BasicReport(sortedAbstractTypes.mkString(header, "\n\t", "\n"))
     }
 }
