@@ -294,22 +294,24 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     /**
      * Reads in a class file.
      *
-     * @param create A function that creates a new `InputStream` and
-     *  which must not return `null`. If you already do have an open input stream
-     *  which should not be closed after reading the class file use
-     *  `...ClassFileReader.ClassFile(java.io.DataInputStream) : ClassFile` instead.
-     *  The (newly created) `InputStream` returned by calling `create` is closed by
-     *  this method.
-     *  The created input stream will automatically be wrapped by OPAL to enable
-     *  efficient reading of the class file.
+     * @param   create A function that creates a new `InputStream` and
+     *          which must not return `null`. If you already do have an open input stream
+     *          which should not be closed after reading the class file use
+     *          `...ClassFileReader.ClassFile(java.io.DataInputStream) : ClassFile` instead.
+     *          The (newly created) `InputStream` returned by calling `create` is closed by
+     *          this method.
+     *          The created input stream will automatically be wrapped by OPAL to enable
+     *          efficient reading of the class file.
      */
     def ClassFile(create: () ⇒ InputStream): List[ClassFile] = {
-        process(create() match {
-            case dis: DataInputStream      ⇒ dis
-            case bis: BufferedInputStream  ⇒ new DataInputStream(bis)
-            case bas: ByteArrayInputStream ⇒ new DataInputStream(bas)
-            case is                        ⇒ new DataInputStream(new BufferedInputStream(is))
-        }) { in ⇒ ClassFile(in) }
+        process(create()) {
+            case null                      ⇒ throw new IllegalArgumentException("the created stream is null")
+            case dis: DataInputStream      ⇒ ClassFile(dis)
+            case bis: BufferedInputStream  ⇒ ClassFile(new DataInputStream(bis))
+            case bas: ByteArrayInputStream ⇒ ClassFile(new DataInputStream(bas))
+            case is ⇒
+                ClassFile(new DataInputStream(new BufferedInputStream(is)))
+        }
     }
 
     protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): List[ClassFile] = {
