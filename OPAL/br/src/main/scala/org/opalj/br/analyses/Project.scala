@@ -1466,7 +1466,7 @@ object Project {
 
         val disclaimer = "(this inconsistency may lead to useless/wrong results)"
 
-        val ch = project.classHierarchy
+        import project.classHierarchy.isInterface
 
         var exs = List.empty[InconsistentProjectException]
         val exsMutex = new Object
@@ -1481,7 +1481,7 @@ object Project {
 
                     case NEW.opcode ⇒
                         val objectType = instruction.asInstanceOf[NEW].objectType
-                        if (ch.isInterface(objectType)) {
+                        if (isInterface(objectType).isYes) {
                             val ex = InconsistentProjectException(
                                 s"cannot create an instance of interface ${objectType.toJava} in "+
                                     m.toJava(c) + s"pc=$pc $disclaimer",
