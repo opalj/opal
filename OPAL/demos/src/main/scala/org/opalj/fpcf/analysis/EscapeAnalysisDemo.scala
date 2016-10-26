@@ -73,7 +73,7 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
             val classFile = ep.e.asInstanceOf[ClassFile]
             val classType = classFile.thisType
             val className = classFile.thisType.toJava
-            if (project.classHierarchy.isInterface(classType))
+            if (project.classHierarchy.isInterface(classType).isYes)
                 "interface "+className
             else
                 "class "+className

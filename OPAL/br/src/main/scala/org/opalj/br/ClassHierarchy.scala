@@ -218,7 +218,7 @@ class ClassHierarchy private (
                 "project configuration - class hierarchy",
                 "supertype information incomplete:\n\t"+
                     unexpectedRootTypes.
-                    map(rt ⇒ (if (isInterface(rt)) "interface " else "class ") + rt.toJava).
+                    map(rt ⇒ (if (isInterface(rt).isYes) "interface " else "class ") + rt.toJava).
                     toList.sorted.mkString("\n\t")
             )
         }
@@ -490,13 +490,12 @@ class ClassHierarchy private (
      * @note No explicit `isKnown` check is required.
      *
      * @param objectType An `ObjectType`.
-     * @return `false` is returned if:
-     *  - the object type is unknown,
-     *  - the object type is known not to be final or
-     *  - the information is incomplete
      */
-    @inline def isInterface(objectType: ObjectType): Boolean = {
-        isKnown(objectType) && interfaceTypesMap(objectType.id)
+    @inline def isInterface(objectType: ObjectType): Answer = {
+        if (!isKnown(objectType))
+            Unknown
+        else
+            Answer(interfaceTypesMap(objectType.id))
     }
 
     /**
@@ -941,8 +940,8 @@ class ClassHierarchy private (
         reflexive:  Boolean    = false
     ): UIDSet[ObjectType] = {
         var supertypes = UIDSet.empty[ObjectType]
-        foreachSupertype(objectType) { t ⇒ if (isInterface(t)) supertypes += t }
-        if (reflexive && isInterface(objectType)) supertypes += objectType
+        foreachSupertype(objectType) { t ⇒ if (isInterface(t).isYes) supertypes += t }
+        if (reflexive && isInterface(objectType).isYes) supertypes += objectType
         supertypes
     }
 
@@ -1206,8 +1205,8 @@ class ClassHierarchy private (
                 return Unknown;
         }
 
-        val subtypeIsInterface = isInterface(subtype)
-        val supertypeIsInterface = isInterface(theSupertype)
+        val subtypeIsInterface = isInterface(subtype).isYes
+        val supertypeIsInterface = isInterface(theSupertype).isYes
 
         if (subtypeIsInterface && !supertypeIsInterface)
             // An interface always (only) directly inherits from java.lang.Object
@@ -1888,7 +1887,7 @@ class ClassHierarchy private (
                         override def toHRR: Option[String] = Some(aType.toJava)
                         override val visualProperties: Map[String, String] = {
                             Map("shape" → "box") ++ (
-                                if (isInterface(aType))
+                                if (isInterface(aType).isYes)
                                     Map("fillcolor" → "aliceblue", "style" → "filled")
                                 else
                                     Map.empty

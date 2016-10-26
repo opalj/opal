@@ -547,8 +547,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                     // two interfaces that are not in an inheritance relation can
                     // still be implemented by the same class and, hence, the references
                     // can still be equal
-                    v1UTB.exists(t ⇒ t.isObjectType && !classHierarchy.isInterface(t.asObjectType)) &&
-                    v2UTB.exists(t ⇒ t.isObjectType && !classHierarchy.isInterface(t.asObjectType)))
+                    v1UTB.exists(t ⇒ t.isObjectType && classHierarchy.isInterface(t.asObjectType).isNo) &&
+                    v2UTB.exists(t ⇒ t.isObjectType && classHierarchy.isInterface(t.asObjectType).isNo))
                     No
                 else
                     Unknown

@@ -292,8 +292,8 @@ trait DefaultTypeLevelReferenceValues
                             supertype.isObjectType &&
                             classHierarchy.isKnown(supertype.asObjectType) &&
                             classHierarchy.isKnown(theUpperTypeBound) &&
-                            !classHierarchy.isInterface(supertype.asObjectType) &&
-                            !classHierarchy.isInterface(theUpperTypeBound) &&
+                            classHierarchy.isInterface(supertype.asObjectType).isNo &&
+                            classHierarchy.isInterface(theUpperTypeBound).isNo &&
                             domain.isSubtypeOf(supertype, theUpperTypeBound).isNo
                         ) ⇒
                     No

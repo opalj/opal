@@ -60,6 +60,7 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
         //val libTypes = libClassFiles.map(_.thisType).toSet
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
+        import classHierarchy.isInterface
 
         // PART 0 - Identifying Observers
         // Collect all classes that end with "Observer" or "Listener" or which are
@@ -84,13 +85,11 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
                         // a class as being observable, because it has a field of type,
                         // e.g., JButton (which is an observer, but for different
                         // elements.)
-                        if (classHierarchy.isInterface(objectType)) {
+                        if (isInterface(objectType).isYes) {
                             allObserverInterfaces += objectType
-                            if (appTypes.contains(objectType))
-                                appObserverInterfaces += objectType
+                            if (appTypes.contains(objectType)) appObserverInterfaces += objectType
                         } else {
-                            if (appTypes.contains(objectType))
-                                appObserverClasses += objectType
+                            if (appTypes.contains(objectType)) appObserverClasses += objectType
                         }
                     }
                 }

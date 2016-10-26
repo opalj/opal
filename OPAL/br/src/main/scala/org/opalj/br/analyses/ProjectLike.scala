@@ -556,7 +556,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
         // TODO [Java8] Support Extension Methods!
         assert(
-            !classHierarchy.isInterface(receiverType),
+            classHierarchy.isInterface(receiverType).isNoOrUnknown,
             s"${receiverType.toJava} is classified as an interface (looking up ${methodDescriptor.toJava(methodName)}); "+
                 project.classFile(receiverType).map(_.toString).getOrElse("<precise information missing>")
         )
@@ -636,7 +636,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         classesFilter:    ObjectType ⇒ Boolean
     ): Set[Method] = {
 
-        val receiverIsInterface = classHierarchy.isInterface(receiverType)
+        val receiverIsInterface = classHierarchy.isInterface(receiverType).isYes
         // TODO [Improvement] Implement an "UnsafeListSet" that does not check for the set property if (by construction) it has to be clear that all elements are unique
         var implementingMethods: Set[Method] =
             {
@@ -653,7 +653,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         // Search all subclasses
         val seenSubtypes = mutable.HashSet.empty[ObjectType]
         classHierarchy.foreachSubtype(receiverType) { (subtype: ObjectType) ⇒
-            if (!classHierarchy.isInterface(subtype) && !seenSubtypes.contains(subtype)) {
+            if (!classHierarchy.isInterface(subtype).isYes && !seenSubtypes.contains(subtype)) {
                 seenSubtypes += subtype
                 if (classesFilter(subtype)) {
                     classFile(subtype) foreach { classFile ⇒

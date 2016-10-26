@@ -401,7 +401,7 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
         // All classes that do not have complete superclass information are mutable
         // due to the lack of knowledge.
         val typesForWhichItMayBePossibleToComputeTheMutability = allSubtypes(ObjectType.Object, reflexive = true)
-        val unexpectedRootTypes = rootTypes.filter(rt ⇒ (rt ne ObjectType.Object) && !isInterface(rt))
+        val unexpectedRootTypes = rootTypes.filter(rt ⇒ (rt ne ObjectType.Object) && isInterface(rt).isNo)
         unexpectedRootTypes.map(rt ⇒ allSubtypes(rt, reflexive = true)).flatten.view.
             filter(ot ⇒ !typesForWhichItMayBePossibleToComputeTheMutability.contains(ot)).
             foreach(ot ⇒ project.classFile(ot) foreach { cf ⇒

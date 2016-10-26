@@ -83,7 +83,7 @@ object ClassHierarchyExtractor {
         val specLines = allRelevantSubtypes.map { aType ⇒
             var specLine =
                 (
-                    if (classHierarchy.isInterface(aType))
+                    if (classHierarchy.isInterface(aType).isYes)
                         "interface "
                     else
                         "class "
@@ -101,4 +101,3 @@ object ClassHierarchyExtractor {
         println(specLines.mkString("\n"))
     }
 }
-
