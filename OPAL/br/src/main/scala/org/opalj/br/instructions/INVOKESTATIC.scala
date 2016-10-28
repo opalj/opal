@@ -36,7 +36,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESTATIC(
-        declaringClass:   ObjectType, // a class type to be precise
+        declaringClass:   ObjectType, // a class or interface (Java 8) type 
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor
