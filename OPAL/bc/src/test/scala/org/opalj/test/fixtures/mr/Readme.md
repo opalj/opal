@@ -1,8 +1,8 @@
-#Overview
+# Overview
 This package contains code to engineer classes to test method resolution in
 those cases that are not possible to create using Java source code.
 
-The following is the generic stub used by the subsequent examples.
+The following code represents the generic stub used by the subsequent examples.
 ```java
 class C implements Intf {
     public void f(){ this.m(); }
@@ -23,9 +23,9 @@ public class Main {
 ```
 
 
-##StaticAndDefaultInterfaceMethods
+## StaticAndDefaultInterfaceMethods
 The following is **pseudo-code** to facilitate comprehension of the test case:
-***(The code is not valid Java code!)*** 
+***(The code is not valid Java code!)***
 
 The engineered classes are found in `bc/test/resources/StaticAndDefaultInterfaceMethods/mr`.
 
@@ -35,7 +35,7 @@ interface SuperIntf {
 }
 
 interface Intf extends SuperIntf {
-    // In Java it is not possible to have a subclass that defines a 
+    // In Java it is not possible to have a subclass that defines a
     // method with the same name and signature, but which is static.
     // This is, however, possible at the bytecode level and the JVM
     // will call the default method.
@@ -43,9 +43,9 @@ interface Intf extends SuperIntf {
 }
 ```
 
-##MaximallySpecificInterfaceMethods
+## MaximallySpecificInterfaceMethods
 The following is **pseudo-code** to facilitate comprehension of the test case:
-***(The code is not valid Java code!)*** 
+***(The code is not valid Java code!)***
 
 The engineered classes are found in `bc/test/resources/MaximallySpecificInterfaceMethods/mr`.
 
