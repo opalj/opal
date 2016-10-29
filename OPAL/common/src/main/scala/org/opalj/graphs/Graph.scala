@@ -104,17 +104,17 @@ class Graph[@specialized(Int) N] private (
      * Returns the set of nodes with no incoming dependencies; self-dependencies are optionally
      * ignored.
      *
-     * @param 	ignoreSelfRecursiveDependencies If true self-dependencies are ignored.
-     * 			This means that nodes that have a self dependency are considered as being root
-     * 			nodes if they have no further incoming dependencies.
+     * @param   ignoreSelfRecursiveDependencies If true self-dependencies are ignored.
+     *          This means that nodes that have a self dependency are considered as being root
+     *          nodes if they have no further incoming dependencies.
      *
-     * @return	The set of root nodes which can be freely mutated.
+     * @return  The set of root nodes which can be freely mutated.
      * @example
      * {{{
      * scala> val g = org.opalj.graphs.Graph.empty[AnyRef] +=
-     * 			("a" → "b") += ("b" → "c") += ("b" → "d") +=
-     * 			("a" → "e") += ("f" -> "e") += ("y" -> "y") +=
-     * 			("a" -> "f")
+     *          ("a" → "b") += ("b" → "c") += ("b" → "d") +=
+     *          ("a" → "e") += ("f" -> "e") += ("y" -> "y") +=
+     *          ("a" -> "f")
      * g: org.opalj.graphs.Graph[AnyRef] =
      * Graph{
      * d => {}

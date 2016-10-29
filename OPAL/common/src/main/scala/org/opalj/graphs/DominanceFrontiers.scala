@@ -66,11 +66,11 @@ final class DominanceFrontiers private (private final val dfs: Array[SmallValues
     /**
      * Creates a dot graph which depicts the underlying graphs dominance frontiers.
      *
-     * @param 	isNodeValid A function that returns true if the given int value
-     * 			identifies a valid node. If the underlying graph is not a sparse
-     * 			graph; i.e., if every index in the range [0...maxNode] identifies
-     * 			a valid node then the default function, which always returns `true`
-     * 			can be used.
+     * @param   isNodeValid A function that returns true if the given int value
+     *          identifies a valid node. If the underlying graph is not a sparse
+     *          graph; i.e., if every index in the range [0...maxNode] identifies
+     *          a valid node then the default function, which always returns `true`
+     *          can be used.
      */
     def toDot(isNodeValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
         val g = Graph.empty[Int]
@@ -118,12 +118,12 @@ object DominanceFrontiers {
      * val df = org.opalj.graphs.DominanceFrontiers(dtf,isValidNode)
      * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
      * }}}
-     * @param 	dt The dominator tree of the specified (flow) graph. In case of the reverse flow
-     * 			graph you have to give the [[DominatorTree]] computed using [[PostDominatorTree$]].
-     * @param 	isValidNode A function that returns `true` if the given id represents a node of the
-     * 			underlying graph. If the underlying graph contains a single, new artificial start
-     * 			node then this node may or may not be reported as a valid node; this is not relevant
-     * 			for this algorithm.
+     * @param   dt The dominator tree of the specified (flow) graph. In case of the reverse flow
+     *          graph you have to give the [[DominatorTree]] computed using [[PostDominatorTree$]].
+     * @param   isValidNode A function that returns `true` if the given id represents a node of the
+     *          underlying graph. If the underlying graph contains a single, new artificial start
+     *          node then this node may or may not be reported as a valid node; this is not relevant
+     *          for this algorithm.
      */
     def apply(
         dtf:         DominatorTreeFactory,

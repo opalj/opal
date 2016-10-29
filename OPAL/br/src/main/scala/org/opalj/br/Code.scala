@@ -563,7 +563,7 @@ final class Code private (
      * @note A code attribute is allowed to have multiple line number tables. However, all
      *      tables are merged into one by OPAL at class loading time.
      *
-     * @note Depending on the configuration of the reader for `ClassFile`s this
+	 * @note Depending on the configuration of the reader for `ClassFile`s this
      *      attribute may not be reified.
      */
     def lineNumberTable: Option[LineNumberTable] = {
@@ -630,7 +630,7 @@ final class Code private (
                     case lv @ LocalVariable(
                         startPC,
                         length,
-                        name,
+						name,
                         fieldType,
                         index
                         ) if startPC <= pc && startPC + length > pc ⇒
