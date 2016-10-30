@@ -55,7 +55,7 @@ class OPALThreadPoolExecutor(
     new LinkedBlockingQueue[Runnable](),
     new ThreadFactory {
 
-        val nextID = new AtomicLong(0l)
+        val nextID = new AtomicLong(0L)
 
         def newThread(r: Runnable): Thread = {
             val id = s"${nextID.incrementAndGet()}"

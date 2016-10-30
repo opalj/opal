@@ -168,8 +168,8 @@ object PerformanceEvaluation {
      * by `f` are measured.
      *
      * @note If large data structures are used by `f` that are
-     * 		not used anymore afterwards then it may happen that the used amount of memory
-     * 		is negative.
+     *      not used anymore afterwards then it may happen that the used amount of memory
+     *      is negative.
      */
     def memory[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
         val memoryMXBean = ManagementFactory.getMemoryMXBean

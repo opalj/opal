@@ -36,24 +36,27 @@ package util
  */
 class Milliseconds(val timeSpan: Long) extends AnyVal {
 
-    final def +(other: Milliseconds): Milliseconds =
+    final def +(other: Milliseconds): Milliseconds = {
         new Milliseconds(this.timeSpan + other.timeSpan)
+    }
 
-    final def -(other: Milliseconds): Milliseconds =
+    final def -(other: Milliseconds): Milliseconds = {
         new Milliseconds(this.timeSpan - other.timeSpan)
+    }
 
     /**
      * Converts the specified number of milliseconds into seconds.
      */
     final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d)
 
-    final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000l * 1000l)
+    final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000l * 1000L)
 
     def toString(withUnit: Boolean): String = {
-        if (withUnit)
+        if (withUnit) {
             timeSpan+" ms"
-        else
+        } else {
             timeSpan.toString
+        }
     }
 
     override def toString: String = toString(withUnit = true)

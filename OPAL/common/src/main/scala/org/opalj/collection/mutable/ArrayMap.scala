@@ -230,7 +230,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     override def hashCode: Int = {
         var hc = 1
         foreachValue { e ⇒
-            hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === System.identityHashCode(null) */ }
+            hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === identityHashCode(null) */ }
         }
         hc
     }

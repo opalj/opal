@@ -63,9 +63,9 @@ sealed trait QualifiedCollection[+S] {
 }
 
 case class CompleteCollection[+S](s: S) extends QualifiedCollection[S] {
-    final def isComplete = true
+    final def isComplete: Boolean = true
 }
 
 case class IncompleteCollection[+S](s: S) extends QualifiedCollection[S] {
-    final def isComplete = false
+    final def isComplete: Boolean = false
 }

@@ -98,7 +98,9 @@ private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
  *
  * @see [[FinalPropertyComputationResult]] for further information.
  */
-case class ImmediateMultiResult(properties: ComputationResults) extends FinalPropertyComputationResult {
+case class ImmediateMultiResult(
+        properties: ComputationResults
+) extends FinalPropertyComputationResult {
 
     private[fpcf] final def id = ImmediateMultiResult.id
 

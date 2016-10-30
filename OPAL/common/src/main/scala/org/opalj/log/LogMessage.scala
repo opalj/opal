@@ -90,12 +90,11 @@ trait LogMessage {
  * @author Michael Eichberg
  */
 case class BasicLogMessage(
-    level:   Level  = Info,
-    message: String
-)
-        extends LogMessage {
+        level:   Level  = Info,
+        message: String
+) extends LogMessage {
 
-    def category = None
+    def category: Option[String] = None
 }
 
 /**
@@ -107,16 +106,14 @@ case class StandardLogMessage(
     level:    Level          = Info,
     category: Option[String] = None,
     message:  String
-)
-        extends LogMessage
+) extends LogMessage
 
 case class ExceptionLogMessage(
-    level:       Level          = Info,
-    category:    Option[String] = None,
-    baseMessage: String,
-    t:           Throwable
-)
-        extends LogMessage {
+        level:       Level          = Info,
+        category:    Option[String] = None,
+        baseMessage: String,
+        t:           Throwable
+) extends LogMessage {
 
     def message = {
 

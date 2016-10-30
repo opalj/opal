@@ -69,7 +69,7 @@ class MutableNodeLike[I, N <: Node](
 
     def children: List[N] = this.synchronized(theChildren)
 
-    def updateIdentifier(newIdentifier: I) : Unit = this.synchronized(theIdentifier = newIdentifier)
+    def updateIdentifier(newIdentifier: I): Unit = this.synchronized(theIdentifier = newIdentifier)
 
     override def toHRR = Some(identifierToString(identifier))
 

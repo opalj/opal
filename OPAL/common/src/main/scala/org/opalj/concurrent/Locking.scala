@@ -86,7 +86,11 @@ object Locking {
      * Acquires all given locks in the given order and then executes the given function `f`.
      * Afterwards all locks are released in reverse order.
      */
-    @inline final def withWriteLocks[T](rwLocks: TraversableOnce[ReentrantReadWriteLock])(f: ⇒ T): T = {
+    @inline final def withWriteLocks[T](
+        rwLocks: TraversableOnce[ReentrantReadWriteLock]
+    )(
+        f: ⇒ T
+    ): T = {
         var acquiredRWLocks: Chain[WriteLock] = Naught
         var error: Throwable = null
         val allLocked =
@@ -144,7 +148,7 @@ object Locking {
     final def tryWithReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): Option[B] = {
         var isLocked = false
         try {
-            isLocked = rwLock.readLock().tryLock(100l, TimeUnit.MILLISECONDS)
+            isLocked = rwLock.readLock().tryLock(100L, TimeUnit.MILLISECONDS)
             if (isLocked)
                 Some(f)
             else

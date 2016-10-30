@@ -124,8 +124,9 @@ object OPALLogger extends OPALLogger {
             nextId += 1
         } else if (ctx.id >= 0) {
             throw new RuntimeException("reregistration of a log context is not supported")
-        } else
-            throw new RuntimeException("reregistration of an unregistered log context is not supported")
+        } else {
+            throw new RuntimeException("log contexts cannot be reregistered")
+        }
     }
 
     def unregister(ctx: LogContext): Unit = this.synchronized {

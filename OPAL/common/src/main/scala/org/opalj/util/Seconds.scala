@@ -42,7 +42,7 @@ class Seconds(val timeSpan: Double) extends AnyVal {
             time+" s"
         } else {
             time
-		}
+        }
     }
 
     def +(other: Seconds): Seconds = new Seconds(this.timeSpan + other.timeSpan)

@@ -34,8 +34,8 @@ package collection
  * I.e., this trait is implemented by objects that have – by construction -
  * unique ids in a well-defined scope.
  *
- * @note	Two object that are not equal may have the same id, if both objects
- * 			do not have the same context.
+ * @note    Two object that are not equal may have the same id, if both objects
+ *          do not have the same context.
  *
  * @author Michael Eichberg
  */

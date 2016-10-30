@@ -46,7 +46,9 @@ import scala.collection.JavaConverters._
 import org.opalj.graphs.closedSCCs
 import org.opalj.io.writeAndOpen
 import org.opalj.collection.mutable.ArrayMap
-import org.opalj.concurrent.Locking.{withReadLock, withWriteLock, withWriteLocks}
+import org.opalj.concurrent.Locking.withReadLock
+import org.opalj.concurrent.Locking.withWriteLock
+import org.opalj.concurrent.Locking.withWriteLocks
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.OPALLogger.{info ⇒ logInfo}
@@ -266,8 +268,8 @@ class PropertyStore private (
                 Tasks.reset()
 
                 // reset statistics
-                propagationCount.set(0l)
-                effectiveDefaultPropertiesCount.set(0l)
+                propagationCount.set(0L)
+                effectiveDefaultPropertiesCount.set(0L)
 
                 // reset set property related information
                 theSetPropertyObservers.clear()
@@ -388,7 +390,10 @@ class PropertyStore private (
                 s"\tperEntityProperties[$perEntityPropertiesStatistics]"+"\n"+properties
             else
                 "") +
-            (if (overallSetPropertyCount > 0) s"\tperSetPropertyEntities[$setPropertiesStatistics]\n" else "")+
+            (if (overallSetPropertyCount > 0)
+                s"\tperSetPropertyEntities[$setPropertiesStatistics]\n"
+            else
+                "")+
             ")"
     }
 
@@ -502,7 +507,8 @@ class PropertyStore private (
         val spMutex = sp.mutex
         writeSetPropertyObservers {
             val oldObservers = theSetPropertyObservers.getOrElse(spIndex, Nil)
-            theSetPropertyObservers(spIndex) = f.asInstanceOf[(Entity, Answer) ⇒ Unit] :: oldObservers
+            theSetPropertyObservers(spIndex) =
+                f.asInstanceOf[(Entity, Answer) ⇒ Unit] :: oldObservers
             spMutex.synchronized {
                 import scala.collection.JavaConversions._
                 val spData = theSetProperties.getOrElseUpdate(spIndex, new JIDMap())
@@ -1430,7 +1436,7 @@ class PropertyStore private (
             def clearAllObservers(): Unit = {
                 // We iterate over all entities and remove all related observers
                 // to help to make sure that the computation can finish in due time.
-                threadPool.awaitTermination(5000l, TimeUnit.MILLISECONDS)
+                threadPool.awaitTermination(5000L, TimeUnit.MILLISECONDS)
 
                 if (debug) logDebug("analysis progress", "garbage collecting property computations")
                 accessStore {

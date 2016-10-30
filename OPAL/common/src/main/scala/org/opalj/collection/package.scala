@@ -77,9 +77,9 @@ package object collection {
      * returned. Otherwise, the given function `f` is evaluated and that value is
      * stored in the map and also returned.
      *
-     * @note 	It is possible that `f` is evaluated but the result is not used, if
-     * 			another thread has already associated a value with the respective key.
-     *      	In that case the result of the evaluation of `f` is thrown away.
+     * @note    It is possible that `f` is evaluated but the result is not used, if
+     *          another thread has already associated a value with the respective key.
+     *          In that case the result of the evaluation of `f` is thrown away.
      */
     def putIfAbsentAndGet[K, V](map: ConcurrentHashMap[K, V], key: K, f: ⇒ V): V = {
         val value = map.get(key)
