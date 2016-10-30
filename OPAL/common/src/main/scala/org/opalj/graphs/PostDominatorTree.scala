@@ -73,11 +73,11 @@ object PostDominatorTree {
      * scala>pdt.toDot()
      * }}}
      *
-     * @param 	isExitNode A function that returns `true` if the given node – in the underlying
-     * 			(control-flow) graph – is an exit node; that is	the node has no successors.
-     * @param	foreachExitNode A function f that takes a function g with an int parameter
+     * @param   isExitNode A function that returns `true` if the given node – in the underlying
+     *          (control-flow) graph – is an exit node; that is the node has no successors.
+     * @param   foreachExitNode A function f that takes a function g with an int parameter
      * and which executes g for each exit node.
-     * @param 	maxNode The largest id used by the underlying (control-flow) graph.
+     * @param   maxNode The largest id used by the underlying (control-flow) graph.
      *
      */
     def apply(

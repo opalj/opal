@@ -106,7 +106,7 @@ trait OrderedProperty extends Property {
      * if a computation was performed as the result of an update to a dependency.
      *
      * @return None if this property is a valid successor of the other property else
-     * 		Some(description :String) is returned.
+     *      Some(description :String) is returned.
      */
     def isValidSuccessorOf(other: OrderedProperty): Option[String]
 

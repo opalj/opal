@@ -223,8 +223,8 @@ object PerformanceEvaluation {
      * import org.opalj.util.PerformanceEvaluation._
      * import org.opalj.util._
      * time[String](2,4,3,{Thread.sleep(300).toString}){ (t, ts) =>
-     *            val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
-     *            println(f"Avg: ${avg(ts).timeSpan}%1.4f; T: ${t.toSeconds.timeSpan}%1.4f; Ts: $sTs")
+     *     val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
+     *     println(f"Avg: ${avg(ts).timeSpan}%1.4f; T: ${t.toSeconds.timeSpan}%1.4f; Ts: $sTs")
      * }
      * }}}
      *
@@ -271,7 +271,7 @@ object PerformanceEvaluation {
         require(minimalNumberOfRelevantRuns >= 3)
         require(
             consideredRunsEpsilon > epsilon,
-            s"consideredRunsEpsilon ($consideredRunsEpsilon) has to be larger than epsilon ($epsilon)"
+            s"epsilon ($epsilon) < consideredRunsEpsilon ($consideredRunsEpsilon)"
         )
 
         var result: T = null

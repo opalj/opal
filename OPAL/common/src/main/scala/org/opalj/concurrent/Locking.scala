@@ -110,12 +110,13 @@ object Locking {
         assert(allLocked || (error ne null))
 
         try {
-            if (allLocked)
+            if (allLocked) {
                 f
-            else
+            } else {
                 // if we are here, something went so terribly wrong, that the performance
                 // penalty of throwing an exception and immediately catching it, is a no-brainer...
                 throw error;
+            }
         } finally {
             acquiredRWLocks foreach { rwLock ⇒
                 try { rwLock.unlock() } catch { case t: Throwable ⇒ if (error eq null) error = t }

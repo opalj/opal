@@ -49,7 +49,7 @@ class Milliseconds(val timeSpan: Long) extends AnyVal {
      */
     final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d)
 
-    final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000l * 1000L)
+    final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000L * 1000L)
 
     def toString(withUnit: Boolean): String = {
         if (withUnit) {
@@ -69,7 +69,7 @@ class Milliseconds(val timeSpan: Long) extends AnyVal {
  */
 object Milliseconds {
 
-    final val None: Milliseconds = new Milliseconds(0l)
+    final val None: Milliseconds = new Milliseconds(0L)
 
     /**
      * Converts the specified time span and converts it into milliseconds.
