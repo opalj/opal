@@ -392,6 +392,10 @@ object MethodDescriptor {
 
     final val NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
 
+    final def DefaultConstructorDescriptor: MethodDescriptor = {
+        NoArgumentAndNoReturnValueMethodDescriptor
+    }
+
     /**
      * The signature of a signature polymorphic method.
      * Basically, the signature:
