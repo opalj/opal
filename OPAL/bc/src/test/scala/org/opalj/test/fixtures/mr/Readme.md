@@ -2,7 +2,35 @@
 This package contains code to engineer classes to test method resolution in
 those cases that are not possible to create using Java source code.
 
-The following code represents the generic stub used by the subsequent examples.
+## "Inherited"StaticMethods
+The following is the Java code to facilitate comprehension of the test case.
+
+The engineered classes are found in `bc/test/resources/InheritedStaticMethods/mr`.
+***(The code is not valid Java bytecode; it is intended to test the resolution scheme used by the call graph algorithm!)***
+
+```java
+class X {
+    static void m(){ Helper.println("X.m"); };
+}
+
+class SubX implements X { }
+
+class Main {
+    public static void main(String[] args) {
+        // The static method m is "inherited"...
+        SubX.m();
+
+        // The static method m defined by the
+        // interface I cannot be called using the
+        // sub interface SubI (no lookup in supertype!)
+        SubI.m();// => NoSuchMethodError ...
+    }
+}    
+```
+
+## Java 8 Method Call Semantics
+
+The following is the generic stub used by the subsequent examples.
 ```java
 class C implements Intf {
     public void f(){ this.m(); }
@@ -23,7 +51,7 @@ public class Main {
 ```
 
 
-## StaticAndDefaultInterfaceMethods
+### StaticAndDefaultInterfaceMethods
 The following is **pseudo-code** to facilitate comprehension of the test case:
 ***(The code is not valid Java code!)***
 
@@ -43,7 +71,7 @@ interface Intf extends SuperIntf {
 }
 ```
 
-## MaximallySpecificInterfaceMethods
+### MaximallySpecificInterfaceMethods
 The following is **pseudo-code** to facilitate comprehension of the test case:
 ***(The code is not valid Java code!)***
 

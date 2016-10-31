@@ -36,6 +36,7 @@ import scala.collection.mutable
 
 //import org.opalj.log.LogContext
 import org.opalj.br.instructions.FieldAccess
+import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.collection.immutable.Result
 import org.opalj.collection.immutable.Failure
@@ -43,7 +44,6 @@ import org.opalj.collection.immutable.Success
 import org.opalj.collection.immutable.Empty
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0
-//import org.opalj.br.instructions.INVOKESTATIC
 
 /**
  * Enables project wide lookups of methods and fields.
@@ -447,12 +447,25 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         }
     }
 
-    //    invokestaticTarget(i : INVOKESTATIC) : Option[Method] = {
-    //        declaringClass:   ObjectType, // a class type to be precise
-    //        isInterface:      Boolean,
-    //        name:             String,
-    //        methodDescriptor: MethodDescriptor
-    //    }
+    /**
+     * Returns the method which will be called by the respective [[INVOKESTATIC]]
+     * instruction.
+     */
+    def invokestaticCall(i: INVOKESTATIC): Option[Method] = {
+        invokestaticCall(i.declaringClass, i.name, i.methodDescriptor)
+    }
+
+    def invokestaticCall(
+        declaringClass:   ObjectType,
+        name:             String,
+        methodDescriptor: MethodDescriptor
+    ): Option[Method] = {
+        // Recall that the invokestatic instruction:
+        // "... gives the name and descriptor of the method as well as a symbolic reference to
+        // the class or interface in which the method is to be found.
+        classFile(declaringClass).flatMap(cf ⇒
+            cf.findMethod(name, methodDescriptor))
+    }
 
     /////////// OLD OLD OLD OLD OLD OLD //////////
     /////////// OLD OLD OLD OLD OLD OLD //////////
