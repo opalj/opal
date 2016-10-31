@@ -400,7 +400,13 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
         project.classFile(receiverType) match {
             case Some(classFile) ⇒
-                assert(!classFile.isInterfaceDeclaration)
+                assert(
+                    !classFile.isInterfaceDeclaration,
+                    {
+                        val methodInfo = descriptor.toJava(receiverType.toJava, name)
+                        s"the method is defined in an interface $methodInfo"
+                    }
+                )
 
                 def resolveSuperclassMethodReference(): Result[Method] = {
                     classFile.superclassType match {
