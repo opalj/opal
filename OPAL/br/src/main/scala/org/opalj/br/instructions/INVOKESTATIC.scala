@@ -36,7 +36,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESTATIC(
-        declaringClass:   ObjectType, // a class or interface (Java 8) type 
+        declaringClass:   ObjectType, // a class or interface (Java 8) type
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor
@@ -56,8 +56,12 @@ case class INVOKESTATIC(
         methodDescriptor.parametersCount
     }
 
-    // Required to avoid that Scala generates a default toString method!
-    override def toString = super.toString
+    override def toString = {
+        if (isInterface)
+            "/* interface */"+super.toString
+        else
+            super.toString
+    }
 
 }
 object INVOKESTATIC {
