@@ -383,15 +383,23 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 currentMaximallySpecificMethods ++= additionalMaximallySpecificMethods
 
                 val concreteMaximallySpecificMethods = currentMaximallySpecificMethods.filter(!_.isAbstract)
-                if (concreteMaximallySpecificMethods.isEmpty)
+                if (concreteMaximallySpecificMethods.isEmpty) {
                     // We have not yet found any method or we may have multiple abstract methods...
                     (analyzedSuperinterfaceTypes, currentMaximallySpecificMethods)
-                else
+                } else {
                     (analyzedSuperinterfaceTypes, concreteMaximallySpecificMethods)
+                }
             }
         }
     }
 
+    /**
+     * @return  [[org.opalj.collection.immutable.Success]]`(method)` if the method was found;
+     *          `Failure` if the project is incomplete and the method could not be found;
+     *          `Empty` if the method could not be found though the project is seemingly complete.
+     *          I.e., if `Empty` is returned the analyzed code basis is most likely
+     *          inconsistent.
+     */
     def resolveClassMethodReference(
         receiverType: ObjectType,
         name:         String,
@@ -437,7 +445,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                         else
                             resolveSuperclassMethodReference()
                     } else {
-                        methods.find(method ⇒ method.descriptor == descriptor) match {
+                        methods.find(m ⇒ m.descriptor == descriptor) match {
                             case None                 ⇒ resolveSuperclassMethodReference()
                             case Some(resolvedMethod) ⇒ Success(resolvedMethod)
                         }
@@ -454,23 +462,45 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     }
 
     /**
-     * Returns the method which will be called by the respective [[INVOKESTATIC]]
-     * instruction.
+     * Returns the method which will be called by the respective
+     * [[org.opalj.br.instructions.INVOKESTATIC]] instruction.
      */
-    def invokestaticCall(i: INVOKESTATIC): Option[Method] = {
-        invokestaticCall(i.declaringClass, i.name, i.methodDescriptor)
+    def invokestaticCall(i: INVOKESTATIC): Result[Method] = {
+        invokestaticCall(i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
     }
 
+    /**
+     * Returns the method that will be called by the respective invokestatic call.
+     * (The client may require to perform additional checks such as validating the visibility!)
+     *
+     * @return  [[org.opalj.collection.immutable.Success]] `(method)` if the method was found;
+     *          `Failure` if the project is incomplete and the method could not be found;
+     *          `Empty` if the method could not be found though the project is seemingly complete.
+     *          I.e., if `Empty` is returned the analyzed code basis is most likely
+     *          inconsistent.
+     */
     def invokestaticCall(
-        declaringClass:   ObjectType,
-        name:             String,
-        methodDescriptor: MethodDescriptor
-    ): Option[Method] = {
+        declaringClassType: ObjectType,
+        isInterface:        Boolean,
+        name:               String,
+        descriptor:         MethodDescriptor
+    ): Result[Method] = {
         // Recall that the invokestatic instruction:
         // "... gives the name and descriptor of the method as well as a symbolic reference to
         // the class or interface in which the method is to be found.
-        classFile(declaringClass).flatMap(cf ⇒
-            cf.findMethod(name, methodDescriptor))
+        // However, in case of interfaces no lookup in superclasses is done!
+        if (isInterface) {
+            classFile(declaringClassType) match {
+                case Some(classFile) ⇒
+                    classFile.findMethod(name, descriptor) match {
+                        case Some(method) ⇒ Success(method)
+                        case None         ⇒ Empty
+                    }
+                case None ⇒ Failure
+            }
+        } else {
+            resolveClassMethodReference(declaringClassType, name, descriptor)
+        }
     }
 
     /////////// OLD OLD OLD OLD OLD OLD //////////
