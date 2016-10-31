@@ -52,6 +52,13 @@ sealed abstract class MethodDescriptor
 
     def parametersCount: Int
 
+    final def copy(
+        parameterTypes: IndexedSeq[FieldType] = this.parameterTypes,
+        returnType:     Type                  = this.returnType
+    ): MethodDescriptor = {
+        MethodDescriptor(parameterTypes, returnType)
+    }
+
     /**
      * The number of registers required to store the method parameters.
      *
