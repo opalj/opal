@@ -180,7 +180,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 functionalInterfaceMethodName,
                 functionalInterfaceDescriptorBeforeTypeErasure,
                 targetMethodOwner,
-                receiverIsInterface = false,
+                // Note a static lambda method in an interface needs
+                // to be called using the correct variant of an invokestatic.
+                receiverIsInterface = classFile.isInterfaceDeclaration,
                 targetMethodName,
                 receiverDescriptor,
                 invocationInstruction,
