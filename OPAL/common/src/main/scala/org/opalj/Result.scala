@@ -39,6 +39,7 @@ package org.opalj
  * @author  Michael Eichberg
  */
 sealed trait Result[@specialized(Int) +T] extends Serializable {
+    final def isEmpty: Boolean = !hasValue
     def hasValue: Boolean
     def value: T
     def map[B](f: T ⇒ B): Result[B]
