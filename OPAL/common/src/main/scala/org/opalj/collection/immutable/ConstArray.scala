@@ -39,7 +39,7 @@ import scala.collection.IndexedSeqOptimized
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayBuffer
-
+import org.opalj.control.{find ⇒ findInArray}
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
  * therefore also no longer mutable if ConstArray is the soler owner.
@@ -112,6 +112,10 @@ object ConstArray extends LowLevelConstArrayImplicits {
         }
 
     final val EmptyConstArray = new ConstArray[Null](new Array[Null](0))
+
+    def find[T <: AnyRef](sortedConstArray: ConstArray[T])(evaluate: T ⇒ Int): Option[T] = {
+        findInArray(sortedConstArray.data)(evaluate)
+    }
 
     def empty[T <: AnyRef] = EmptyConstArray.asInstanceOf[ConstArray[T]]
 
