@@ -38,12 +38,6 @@ import scala.collection.mutable
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.collection.immutable.Result
-import org.opalj.collection.immutable.Failure
-import org.opalj.collection.immutable.Success
-import org.opalj.collection.immutable.Empty
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet0
 
 /**
  * Enables project wide lookups of methods and fields.

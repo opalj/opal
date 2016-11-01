@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package collection
-package immutable
 
 /**
  * Represents the result of some computation that either (a) succeeded and encapsulates some value,
@@ -47,6 +45,24 @@ sealed trait Result[@specialized(Int) +T] extends Serializable {
     def flatMap[B](f: T ⇒ Result[B]): Result[B]
     def foreach[U](f: (T) ⇒ U): Unit
     def withFilter(q: (T) ⇒ Boolean): Result[T]
+}
+
+/**
+ * Defines factory methods for [[Result]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object Result {
+
+    /**
+     * Maps a `Some` to [[Success]] and `None` to [[Empty$]].
+     */
+    def apply[T](result: Option[T]): Result[T] = {
+        result match {
+            case Some(value) ⇒ Success(value)
+            case _ /*None*/  ⇒ Empty
+        }
+    }
 }
 
 /**
@@ -83,6 +99,10 @@ sealed trait NoResult extends Result[Nothing] {
     def map[B](f: (Nothing) ⇒ B): this.type = this
     def flatMap[B](f: (Nothing) ⇒ Result[B]): this.type = this
     def withFilter(q: (Nothing) ⇒ Boolean): this.type = this
+}
+
+object NoResult {
+    def unapply(noResult: NoResult): Boolean = true
 }
 
 /**
