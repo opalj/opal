@@ -33,11 +33,17 @@ package analyses
 import scala.annotation.tailrec
 
 import scala.collection.mutable
+import scala.collection.{Map ⇒ SomeMap}
+import scala.collection.{Set ⇒ SomeSet}
 
-//import org.opalj.log.LogContext
+import org.opalj.collection.immutable.ConstArray.find
+import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet0
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePolymorphicMethodDescriptor}
 
 /**
  * Enables project wide lookups of methods and fields.
@@ -52,16 +58,23 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  *
  * @note
  *
- * @author Michael Eichberg
+ * 3* @author Michael Eichberg
  */
 trait ProjectLike extends ClassFileRepository { project ⇒
 
     implicit def classHierarchy: ClassHierarchy
 
     /**
-     * Returns the class file of `java.lang.Object` if available.
+     * Returns the class file of `java.lang.Object`, if available.
      */
     val ObjectClassFile: Option[ClassFile]
+
+    /**
+     * Returns the class file of `java.lang.invoke.MethodHandle`, if available.
+     */
+    val MethodHandleClassFile: Option[ClassFile]
+
+    val MethodHandleSubtypes: SomeSet[ObjectType]
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //
@@ -150,6 +163,112 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         assert(!m.isInitializer, s"initializers $m cannot be overridden")
 
         overridingMethods.get(m).getOrElse(Set.empty)
+    }
+
+    /**
+     * Returns the set of all non-private, non-abstract, non-static methods that are not
+     * initializers and which are potentially callable by clients when we have an object that
+     * has the specified type and a method is called using
+     * [[org.opalj.br.instructions.INVOKEINTERFACE]] or [[org.opalj.br.instructions.INVOKEVIRTUAL]].
+     *
+     * '''The returned array must not be mutated!'''
+     *
+     * The array of methods is sorted using [[MethodDeclarationContextOrdering]] to
+     * enable the fast look-up of the target method.
+     */
+    protected[this] val instanceMethods: SomeMap[ObjectType, ConstArray[MethodDeclarationContext]]
+
+    /**
+     * Tests if the given method belongs to the interface of the given object type.
+     * I.e., returns `true` if a virtual method call, where the receiver type is known
+     * to be the given object type, would lead to the invokation of the given method.
+     * The given method can be an inherited method, but it will never return `Yes` if
+     * the given method is overridden by `objectType` or a supertype of it which is a
+     * sub type of the declaring type of `method`.
+     *
+     * @note The computation is based on the computed set of [[instanceMethods]].
+     */
+    def hasVirtualMethod(objectType: ObjectType, method: Method): Answer = {
+        // RECALL val instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]]
+        val definedMethodsOption = instanceMethods.get(objectType)
+        if (definedMethodsOption.isEmpty)
+            return Unknown;
+
+        val definedMethods: ConstArray[MethodDeclarationContext] = definedMethodsOption.get
+
+        val result: Option[MethodDeclarationContext] = find(definedMethods) { definedMethodContext ⇒
+            val definedMethod = definedMethodContext.method
+            if (definedMethod eq method)
+                0
+            else {
+                val methodComparison = definedMethod compare method
+                if (methodComparison == 0)
+                    // We may have multiple methods with the same signature, but which belong
+                    // to different packages!
+                    definedMethodContext.packageName compare classFile(method).thisType.packageName
+                else
+                    methodComparison
+            }
+        }
+        Answer(result)
+    }
+
+    /**
+     * Looks up the method (declaration context) which is accessible in the given context to
+     * an [[INVOKEVIRTUAL]] or [[INVOKEINTERFACE]] call. The context is only relevant in case
+     * of method with default visibility.
+     *
+     * @note    This method uses the precomputed information about instance methods and
+     *          is therefore very fast.
+     */
+    def lookupVirtualMethod(
+        callingContextType: ObjectType,
+        receiverType:       ObjectType,
+        name:               String,
+        descriptor:         MethodDescriptor
+    ): Result[MethodDeclarationContext] = {
+        val definedMethodsOption = instanceMethods.get(receiverType)
+        if (definedMethodsOption.isEmpty)
+            return Failure;
+
+        val definedMethods: ConstArray[MethodDeclarationContext] = definedMethodsOption.get
+
+        find(definedMethods) { definedMethodContext ⇒
+            val definedMethod = definedMethodContext.method
+            val signatureComparison = definedMethod.compare(name, descriptor)
+            if (signatureComparison != 0) {
+                signatureComparison
+            } else {
+                if (definedMethod.hasDefaultVisibility) {
+                    definedMethodContext.packageName compare callingContextType.packageName
+                } else {
+                    0
+                }
+            }
+        } match {
+            case Some(mdc) ⇒ Success(mdc)
+            case r ⇒
+                if (MethodHandleSubtypes.contains(receiverType) && (
+                    // we have to avoid endless recursion if we can't find the target method
+                    receiverType != ObjectType.MethodHandle ||
+                    descriptor != MethodDescriptor.SignaturePolymorphicMethod
+                )) {
+                    // At least in Java 8 the signature polymorphic methods are not overloaded and
+                    // it actually doesn't make sense to do so. Therefore we decided to only
+                    // make this lookup if strictly required.
+                    lookupVirtualMethod(
+                        callingContextType,
+                        ObjectType.MethodHandle,
+                        name,
+                        MethodDescriptor.SignaturePolymorphicMethod
+                    ) match {
+                        case r @ Success(mdc) ⇒ if (mdc.method.isNativeAndVarargs) r else Empty
+                        case r                ⇒ r
+                    }
+                } else {
+                    Result(r)
+                }
+        }
     }
 
     /* GENERAL NOTES
@@ -424,15 +543,14 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 // - It has a single formal parameter of type Object[].
                 // - It has a return type of Object.
                 // - It has the ACC_VARARGS and ACC_NATIVE flags set.
-                val isPotentiallySignaturePolymorphicCall =
-                    (receiverType eq ObjectType.MethodHandle) &&
-                        (descriptor == MethodDescriptor.SignaturePolymorphicMethod)
+                val isPotentiallySignaturePolymorphicCall = receiverType eq ObjectType.MethodHandle
 
                 if (isPotentiallySignaturePolymorphicCall) {
                     val methods = classFile.findMethod(name)
                     if (methods.isSingletonList) {
                         val method = methods.head
-                        if (method.isNativeAndVarargs)
+                        if (method.isNativeAndVarargs &&
+                            method.descriptor == MethodDescriptor.SignaturePolymorphicMethod)
                             Success(method) // the resolved method is signature polymorphic
                         else if (method.descriptor == descriptor)
                             Success(method) // "normal" resolution of a method
@@ -456,11 +574,20 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     }
 
     /**
+     * Returns true if the method defined by the given class type is signature polymorphic.
+     */
+    def isSignaturePolymorphic(definingClassType: ObjectType, method: Method): Boolean = {
+        (definingClassType eq ObjectType.MethodHandle) &&
+            method.isNativeAndVarargs &&
+            method.descriptor == SignaturePolymorphicMethodDescriptor
+    }
+
+    /**
      * Returns the method which will be called by the respective
      * [[org.opalj.br.instructions.INVOKESTATIC]] instruction.
      */
-    def invokestaticCall(i: INVOKESTATIC): Result[Method] = {
-        invokestaticCall(i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
+    def staticCall(i: INVOKESTATIC): Result[Method] = {
+        staticCall(i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
     }
 
     /**
@@ -473,7 +600,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      *          I.e., if `Empty` is returned the analyzed code basis is most likely
      *          inconsistent.
      */
-    def invokestaticCall(
+    def staticCall(
         declaringClassType: ObjectType,
         isInterface:        Boolean,
         name:               String,
@@ -496,6 +623,41 @@ trait ProjectLike extends ClassFileRepository { project ⇒
             resolveClassMethodReference(declaringClassType, name, descriptor)
         }
     }
+
+    def specialCall: Result[Method] = ???
+
+    /**
+     * Returns the (instance) method that would be called when we have an instance of
+     * the given receiver type. I.e., using this method is suitable when the runtime
+     * type, which is the receiver of the method call, is precisely known!
+     *
+     * This method supports default methods and signature polymorphic calls.
+     *
+     * @param   callerType The object type which defines the method which performs the call.
+     *          This information is required if the call target has (potentially) default
+     *          visibility. (Note that this - in general - does not replace the need to perform an
+     *          accessibility check.)
+     * @param   receiverType A class type or an array type; never an interface type.
+     */
+    def instanceCall(
+        callerType:   ObjectType,
+        receiverType: ReferenceType,
+        name:         String,
+        descriptor:   MethodDescriptor
+    ): Result[Method] = {
+        if (receiverType.isArrayType) {
+            return Result(ObjectClassFile flatMap { cf ⇒ cf.findMethod(name, descriptor) });
+        }
+
+        val receiverClassType = receiverType.asObjectType
+        val mdcResult = lookupVirtualMethod(callerType, receiverClassType, name, descriptor)
+        mdcResult map { mdc ⇒ mdc.method }
+
+    }
+
+    def interfaceCall: Result[Method] = ???
+
+    def virtualCall: Result[Method] = ???
 
     /////////// OLD OLD OLD OLD OLD OLD //////////
     /////////// OLD OLD OLD OLD OLD OLD //////////

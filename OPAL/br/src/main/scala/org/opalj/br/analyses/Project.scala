@@ -47,29 +47,29 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
-import org.opalj.control.find
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
-import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.DefaultLogContext
-import org.opalj.br.instructions.NEW
 import org.opalj.log.Error
+import org.opalj.log.GlobalLogContext
+import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.reader.Java9LibraryFramework
+import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.log.GlobalLogContext
-import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -163,7 +163,13 @@ class Project[Source] private (
     |                                                                                              |
     \* ------------------------------------------------------------------------------------------ */
 
-    final val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
+    final val ObjectClassFile = classFile(ObjectType.Object)
+
+    final val MethodHandleClassFile = classFile(ObjectType.MethodHandle)
+
+    final val MethodHandleSubtypes = {
+        classHierarchy.allSubtypes(ObjectType.MethodHandle, reflexive = true)
+    }
 
     /**
      * The number of classes (including inner and annoymous classes as well as
@@ -191,18 +197,7 @@ class Project[Source] private (
         methodToClassFile.keysIterator.count(m ⇒ m.isVirtualMethodDeclaration)
     }
 
-    /**
-     * Returns the set of all non-private, non-abstract, non-static methods that are not
-     * initializers and which are potentially callable by clients when we have an object that
-     * has the specified type and a method is called using
-     * [[org.opalj.br.instructions.INVOKEINTERFACE]] or [[org.opalj.br.instructions.INVOKEVIRTUAL]].
-     *
-     * The returned array must not be mutated!
-     *
-     * The array of methods is sorted using [[MethodDeclarationContextOrdering]] to
-     * enable the fast look-up of the target method.
-     */
-    val instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]] = time {
+    final val instanceMethods: Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
 
         // IMPROVE Instead of an Array/Chain use a sorted trie (set) or something similar which is always sorted.
 
@@ -211,7 +206,7 @@ class Project[Source] private (
         // information about all super types is available (already stored in instanceMethods)
         // when we process the subtype. If not all information is already available, which
         // can happen in the following case if the processing of C would be scheduled before B:
-        //      interface A; interface B extends A; interface C extends A, B
+        //      interface A; interface B extends A; interface C extends A, B,
         // we postpone the processing of C until the information is available.
 
         val methods: ConcurrentHashMap[ObjectType, Chain[MethodDeclarationContext]] = {
@@ -306,7 +301,7 @@ class Project[Source] private (
                         }
                     }
                 case None ⇒
-                // this point is only reached in case of a rather incomplete project...
+                // this point is only reached in case of a rather incomplete projects...
             }
             methods.put(objectType, definedMethods)
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
@@ -319,12 +314,12 @@ class Project[Source] private (
             OPALLogger.error("project configuration", "computing the defined methods failed", e)
         }
 
-        val result = new AnyRefMap[ObjectType, Array[MethodDeclarationContext]](methods.size)
+        val result = new AnyRefMap[ObjectType, ConstArray[MethodDeclarationContext]](methods.size)
         methods.asScala.foreach { e ⇒
             val (objectType, methods) = e
             val sortedMethods = methods.toArray
             java.util.Arrays.sort(sortedMethods, MethodDeclarationContextOrdering)
-            result.+=(objectType, sortedMethods)
+            result.+=(objectType, ConstArray(sortedMethods))
         }
         result.repack
         result
@@ -459,41 +454,6 @@ class Project[Source] private (
         val otherClassFiles = other.projectClassFilesWithSources
         val otherLibraryClassFiles = other.libraryClassFilesWithSources
         Project.extend[Source](this, otherClassFiles, otherLibraryClassFiles)
-    }
-
-    /**
-     * Tests if the given method belongs to the interface of the given object type.
-     * I.e., returns `true` if a virtual method call, where the receiver type is known
-     * to be the given object type, would lead to the invokation of the given method.
-     * The given method can be an inherited method, but it will never return `Yes` if
-     * the given method is overridden by `objectType` or a supertype of it which is a
-     * sub type of the declaring type of `method`.
-     *
-     * @note The computation is based on the computed set of [[instanceMethods]].
-     */
-    def hasInstanceMethod(objectType: ObjectType, method: Method): Answer = {
-        // RECALL val instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]]
-        val definedMethodsOption = instanceMethods.get(objectType)
-        if (definedMethodsOption.isEmpty)
-            return Unknown;
-
-        val definedMethods: Array[MethodDeclarationContext] = definedMethodsOption.get
-
-        val result: Option[MethodDeclarationContext] = find(definedMethods) { definedMethodContext ⇒
-            val definedMethod = definedMethodContext.method
-            if (definedMethod eq method)
-                0
-            else {
-                val methodComparison = definedMethod compare method
-                if (methodComparison == 0)
-                    // We may have multiple methods with the same signature, but which belong
-                    // to different packages!
-                    definedMethodContext.packageName compare classFile(method).thisType.packageName
-                else
-                    methodComparison
-            }
-        }
-        Answer(result)
     }
 
     /**
