@@ -258,6 +258,13 @@ final class Method private (
             this.name.compareTo(other.name)
     }
 
+    def compare(otherName: String, otherDescriptor: MethodDescriptor): Int = {
+        if (this.name eq otherName)
+            this.descriptor.compare(otherDescriptor)
+        else
+            this.name.compareTo(otherName)
+    }
+
     def toJava(): String = {
         val visibility = VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("")
         visibility + descriptor.toJava(name)
