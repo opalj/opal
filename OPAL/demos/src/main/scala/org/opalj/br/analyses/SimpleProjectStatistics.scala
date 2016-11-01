@@ -123,15 +123,15 @@ object SimpleProjectStatistics extends DefaultOneStepAnalysis {
         BasicReport(
             classFilesDistribution.mkString("classFilesDistribution:\n\t", "\n\t", "\n")+
                 "maxInstanceFieldsInAClass: "+
-				maxInstanceFieldsInAClass+"("+classWithMaxInstanceFields+")\n"+
+                maxInstanceFieldsInAClass+"("+classWithMaxInstanceFields+")\n"+
                 "maxClassFieldsInAClass: "+
-				maxClassFieldsInAClass+"("+classWithMaxClassFields+")\n"+
+                maxClassFieldsInAClass+"("+classWithMaxClassFields+")\n"+
                 "maxMethodsInAClass: "+
-				maxMethodsInAClass+"("+classWithMaxMethods+")\n"+
+                maxMethodsInAClass+"("+classWithMaxMethods+")\n"+
                 "longestMethodInAClass: "+
-				longestMethodInAClass+"("+theLongestMethod+")\n"+
+                longestMethodInAClass+"("+theLongestMethod+")\n"+
                 "methodWithMostRegisterVariableInAClass: "+
-				methodWithMostRegisterVariableInAClass+"("+theMethodWithTheMostLocalVariables+")\n"
+                methodWithMostRegisterVariableInAClass+"("+theMethodWithTheMostLocalVariables+")\n"
         )
     }
 }

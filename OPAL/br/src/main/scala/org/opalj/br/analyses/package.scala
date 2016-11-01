@@ -66,9 +66,7 @@ package object analyses {
     type MultipleResultsAnalysis[Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
 
     implicit object MethodDeclarationContextOrdering extends Ordering[MethodDeclarationContext] {
-        def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = {
-            x compare y
-        }
+        def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = x compare y
     }
 
 }
