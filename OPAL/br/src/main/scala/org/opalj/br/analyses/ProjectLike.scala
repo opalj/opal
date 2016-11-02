@@ -42,6 +42,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePolymorphicMethodDescriptor}
 
@@ -155,7 +156,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * initialization method the set of methods which override the specific method. To safe
      * memory, methods which are not overridden are not stored in the may.
      */
-    protected[this] val overridingMethods: scala.collection.Map[Method, Set[Method]]
+    protected[this] val overridingMethods: SomeMap[Method, Set[Method]]
 
     def overriddenBy(m: Method): Set[Method] = {
         assert(!m.isPrivate, s"private methods $m cannot be overridden")
@@ -189,7 +190,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * @note The computation is based on the computed set of [[instanceMethods]].
      */
     def hasVirtualMethod(objectType: ObjectType, method: Method): Answer = {
-        // RECALL val instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]]
+        //  ... instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]]
         val definedMethodsOption = instanceMethods.get(objectType)
         if (definedMethodsOption.isEmpty)
             return Unknown;
@@ -215,11 +216,17 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
     /**
      * Looks up the method (declaration context) which is accessible in the given context to
-     * an [[INVOKEVIRTUAL]] or [[INVOKEINTERFACE]] call. The context is only relevant in case
-     * of method with default visibility.
+     * an [[org.opalj.br.instructions.INVOKEVIRTUAL]] or
+     * [[org.opalj.br.instructions.INVOKEINTERFACE]] call.
+     * The context is only relevant in case the target method has default visibility.
      *
      * @note    This method uses the precomputed information about instance methods and
      *          is therefore very fast.
+     *
+     * @return  [[Success]] if the method is found; [[Empty$]] if the method cannot be found and
+     *          [[Failure$]] if the method cannot be found because the project is not complete.
+     *          Hence, [[Empty$]] may be indicative of an inconsistent project, if this lookup
+     *          is expected to succeed.
      */
     def lookupVirtualMethod(
         callingContextType: ObjectType,
@@ -307,7 +314,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * method. Resolution of '''signature polymorphic''' method calls is also
      * supported.
      *
-     * This method is the basis for the implementation of the semantics
+     * This method can be used as the basis for the implementation of the semantics
      * of the `invokeXXX` instructions. However, it does not check whether the resolved
      * method can be accessed by the caller or if it is abstract. Additionally, it is still
      * necessary that the caller makes a distinction between the statically
@@ -322,7 +329,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      *          type must be a class type and must not be an interface type.
      *          I.e., no check w.r.t. a potential `IncompatibleClassChangeError` is done
      *          by this method.
-     * @param   lookupInSuperinterfacesOnFailure If true (default: false) the method tries
+     * @param   forceLookupInSuperinterfacesOnFailure If true (default: false) the method tries
      *          to look up the method in a super interface if it can't find it in the available
      *          super classes. (This setting is only relevant if the class hierarchy is not
      *          complete.)
@@ -330,16 +337,16 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      *          To get the defining class file use the project's respective method.
      */
     def resolveMethodReference(
-        receiverType:                     ObjectType,
-        name:                             String,
-        descriptor:                       MethodDescriptor,
-        lookupInSuperinterfacesOnFailure: Boolean          = false
+        receiverType:                          ObjectType,
+        name:                                  String,
+        descriptor:                            MethodDescriptor,
+        forceLookupInSuperinterfacesOnFailure: Boolean          = false
     ): Option[Method] = {
         assert(classHierarchy.isInterface(receiverType).isNoOrUnknown)
 
         resolveClassMethodReference(receiverType, name, descriptor) match {
-            case Success(method)                              ⇒ Some(method)
-            case Failure if !lookupInSuperinterfacesOnFailure ⇒ None
+            case Success(method)                                   ⇒ Some(method)
+            case Failure if !forceLookupInSuperinterfacesOnFailure ⇒ None
             case _ /*Empty | (Failure && lookupInSuperinterfacesOnFailure) */ ⇒
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(receiverType).get
                 val (_, methods) =
@@ -365,7 +372,6 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         }
 
         project.classFile(receiverType) flatMap { classFile ⇒
-            assert(classFile.isInterfaceDeclaration)
             classFile.findMethod(name, descriptor) orElse {
                 lookupInObject() orElse {
                     classHierarchy.superinterfaceTypes(receiverType) flatMap { superinterfaceTypes ⇒
@@ -507,7 +513,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     }
 
     /**
-     * @return  [[org.opalj.collection.immutable.Success]]`(method)` if the method was found;
+     * @return  [[org.opalj.Success]]`(method)` if the method was found;
      *          `Failure` if the project is incomplete and the method could not be found;
      *          `Empty` if the method could not be found though the project is seemingly complete.
      *          I.e., if `Empty` is returned the analyzed code basis is most likely
@@ -574,7 +580,8 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     }
 
     /**
-     * Returns true if the method defined by the given class type is signature polymorphic.
+     * Returns true if the method defined by the given class type is a signature polymorphic
+     * method. (See JVM 8 Spec. for details.)
      */
     def isSignaturePolymorphic(definingClassType: ObjectType, method: Method): Boolean = {
         (definingClassType eq ObjectType.MethodHandle) &&
@@ -594,37 +601,86 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * Returns the method that will be called by the respective invokestatic call.
      * (The client may require to perform additional checks such as validating the visibility!)
      *
-     * @return  [[org.opalj.collection.immutable.Success]] `(method)` if the method was found;
+     * @return  [[org.opalj.Success]] `(method)` if the method was found;
      *          `Failure` if the project is incomplete and the method could not be found;
      *          `Empty` if the method could not be found though the project is seemingly complete.
      *          I.e., if `Empty` is returned the analyzed code basis is most likely
      *          inconsistent.
      */
     def staticCall(
-        declaringClassType: ObjectType,
-        isInterface:        Boolean,
-        name:               String,
-        descriptor:         MethodDescriptor
+        declaringClass: ObjectType,
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor
     ): Result[Method] = {
         // Recall that the invokestatic instruction:
         // "... gives the name and descriptor of the method as well as a symbolic reference to
         // the class or interface in which the method is to be found.
         // However, in case of interfaces no lookup in superclasses is done!
         if (isInterface) {
-            classFile(declaringClassType) match {
-                case Some(classFile) ⇒
-                    classFile.findMethod(name, descriptor) match {
-                        case Some(method) ⇒ Success(method)
-                        case None         ⇒ Empty
-                    }
-                case None ⇒ Failure
+            classFile(declaringClass) match {
+                case Some(classFile) ⇒ Result(classFile.findMethod(name, descriptor))
+                case None            ⇒ Failure
             }
         } else {
-            resolveClassMethodReference(declaringClassType, name, descriptor)
+            resolveClassMethodReference(declaringClass, name, descriptor)
         }
     }
 
-    def specialCall: Result[Method] = ???
+    def specialCall(i: INVOKESPECIAL): Result[Method] = {
+        specialCall(i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
+    }
+
+    /**
+     * Returns the instance method/initializer which is called by an invokespecial instruction.
+     *
+     * @note    Virtual method call resolution is not necessary; the call target is
+     *          either a constructor, a private method or a super method/constructor. However, in
+     *          the last case it may be possible that we can't find the method because
+     *          of an incomplete project. In that case the result will be [[Empty$]]. If the
+     *          project is complete, but we can't find the class the result is [[Failure$]]; this
+     *          is indicative of an inconsistent project.
+     *
+     * @return  One of the following three values:
+     *           - [[org.opalj.Success]] `(method)` if the method was found;
+     *           - `Failure` if the project is definitively incomplete and the method could not
+     *          be found;
+     *           - `Empty` if the method could not be found though the project is seemingly complete.
+     *          I.e., if `Empty` is returned the analyzed code basis is most likely
+     *          inconsistent.
+     */
+    def specialCall(
+        declaringClass: ObjectType, // an interface or class type to be precise
+        isInterface:    Boolean,
+        name:           String, // an interface or class type to be precise
+        descriptor:     MethodDescriptor
+    ): Result[Method] = {
+        // ...  default methods cannot override methods from java.lang.Object
+        // ...  in case of super method calls (not initializers), we can use
+        //      "instanceMethods" to find the method, because the method has to
+        //      be an instance method, must not be abstract and must not be private.
+        // ...  the receiver type of super initialzizer calls is always explicitly given
+        classFile(declaringClass) match {
+            case Some(classFile) ⇒
+                classFile.findMethod(name, descriptor) match {
+                    case Some(method)             ⇒ Success(method)
+                    case None if name == "<init>" ⇒ Empty // the initialzizer is not found...
+                    case _ ⇒
+                        // We have to find the (maximally specific) super method, which is,
+                        // unless we have an inconsistent code base, unique (compared to
+                        // an invokevirtual based call, we don't have to care about the
+                        // visiblity of the target method; a corresponding check has to be done
+                        // by the caller, if necessary)
+                        Result(
+                            find(instanceMethods(declaringClass)) { definedMethodContext ⇒
+                                val definedMethod = definedMethodContext.method
+                                definedMethod.compare(name, descriptor)
+                            } map { mdc ⇒ mdc.method }
+                        )
+                }
+            case None ⇒ Failure
+        }
+    }
 
     /**
      * Returns the (instance) method that would be called when we have an instance of
@@ -652,7 +708,6 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         val receiverClassType = receiverType.asObjectType
         val mdcResult = lookupVirtualMethod(callerType, receiverClassType, name, descriptor)
         mdcResult map { mdc ⇒ mdc.method }
-
     }
 
     def interfaceCall: Result[Method] = ???
