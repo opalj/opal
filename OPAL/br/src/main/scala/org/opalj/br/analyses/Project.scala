@@ -333,9 +333,11 @@ class Project[Source] private (
      * overrides it.
      *
      * This method takes the visibility of the methods and the defining context into consideration.
-     * @see [[Method]]`.isVirtualMethodDeclaration` for further details.
+     * @see     [[Method]]`.isVirtualMethodDeclaration` for further details.
+     * @note    The map only contains those methods which have at least one concrete
+     *          implementation.
      */
-    lazy val overridingMethods: Map[Method, immutable.Set[Method]] = time {
+    protected[this] final val overridingMethods: Map[Method, immutable.Set[Method]] = time {
         // IDEA
         // 0.   We start with the leaf nodes of the class hierarchy and store for each method
         //      the set of overriding methods (recall that the overrides relation is reflexive).
@@ -366,8 +368,8 @@ class Project[Source] private (
             // instanceMethods will also just reuse the information derived from the superclasses.
             try {
                 for {
-                    declaredMethods ← classFile(objectType).map(cf ⇒ cf.methods)
-                    declaredMethod ← declaredMethods
+                    cf ← classFile(objectType)
+                    declaredMethod ← cf.methods
                     if declaredMethod.isVirtualMethodDeclaration
                 } {
                     if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
