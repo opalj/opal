@@ -662,8 +662,8 @@ class ClassHierarchy private (
     ): Unit = {
         foreachSubtype(objectType, reflexive) { subtype ⇒
             project.classFile(subtype) match {
-                case None            ⇒ true
                 case Some(classFile) ⇒ process(classFile)
+                case _ /* None*/     ⇒ true
             }
         }
     }
@@ -1556,8 +1556,8 @@ class ClassHierarchy private (
     }
 
     /**
-     * Determines whether the given [[ClassSignature]] of the potential `subtype` does implement or extend
-     * the given type `supertype` of type [[ObjectType]].
+     * Determines whether the given [[ClassSignature]] of `subtype` implements or extends
+     * the given `supertype`.
      * In case that the `subtype` does implement or extend the `supertype`, an `Option` of
      * [[ClassTypeSignature]] is returned. Otherwise None will be returned.
      *
