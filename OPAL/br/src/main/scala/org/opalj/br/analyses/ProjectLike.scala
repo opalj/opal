@@ -158,12 +158,20 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      */
     protected[this] val overridingMethods: SomeMap[Method, Set[Method]]
 
+    /**
+     * Returns the set of methods which directly override the given method. Note that
+     * `overriddenBy` is not context aware. I.e., if the given method m is an inteface
+     * method, then it may happen that we have an implementation of that method
+     * in a class which is inherited from a superclass which is not a subtype of the
+     * interface. This method (since it is not defined by a subtype of the interface)
+     * is not included in the returned set.
+     */
     def overriddenBy(m: Method): Set[Method] = {
         assert(!m.isPrivate, s"private methods $m cannot be overridden")
         assert(!m.isStatic, s"static methods $m cannot be overridden")
         assert(!m.isInitializer, s"initializers $m cannot be overridden")
 
-        overridingMethods.get(m).getOrElse(Set.empty)
+        overridingMethods.getOrElse(m, Set.empty)
     }
 
     /**
