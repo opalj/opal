@@ -42,6 +42,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePolymorphicMethodDescriptor}
@@ -64,6 +65,8 @@ import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePo
 trait ProjectLike extends ClassFileRepository { project ⇒
 
     implicit def classHierarchy: ClassHierarchy
+
+    private[this] final implicit val thisProjectLike: this.type = this
 
     /**
      * Returns the class file of `java.lang.Object`, if available.
@@ -154,7 +157,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     /**
      * Stores for each non-private, non-final instance method that is not an instance
      * initialization method the set of methods which override the specific method. To safe
-     * memory, methods which are not overridden are not stored in the may.
+     * memory, methods which are not overridden are not stored in the map.
      */
     protected[this] val overridingMethods: SomeMap[Method, Set[Method]]
 
@@ -718,7 +721,68 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         mdcResult map { mdc ⇒ mdc.method }
     }
 
-    def interfaceCall: Result[Method] = ???
+    def interfaceCall(i: INVOKEINTERFACE): Set[Method] = {
+        interfaceCall(i.declaringClass, i.name, i.methodDescriptor)
+    }
+
+    /**
+     * Returns the methods that may be called by an invokeinterface if the precise runtime
+     * type is not known. (If the precise runtime type is known use `instanceCall`.)
+     *
+     * @note    '''Caching the result (in particular when the call graph is computed)
+     *          is recommended as the computation is expensive.'''
+     *
+     * @note    Keep in mind that the following is legal (byte)code:
+     *          {{{
+     *          class X { void m(){ System.out.println("X.m"); } }
+     *          interface I { void m(); }
+     *          class Z extends X implements I {}
+     *          }}}
+     *          Hence, we also have to consider inherited methods and just considering the
+     *          methods defined by subclasses is not sufficient! In other words, the result
+     *          can contain methods defined by classes which are not subtypes of the given
+     *          interface type!
+     */
+    def interfaceCall(
+        declaringClass: ObjectType, // an interface or class type to be precise
+        name:           String,
+        descriptor:     MethodDescriptor
+    ): Set[Method] = {
+        var methods = Set.empty[Method]
+
+        // (1) consider the method defined by the super type or this type...
+        // Depending on the analysis mode it may be the case that the method cannot be
+        // a receiver, because it is actually always overridden; however, we don't
+        // do any checks related to this issue.
+        find(instanceMethods(declaringClass)) { mdc ⇒
+            mdc.method.compare(name, descriptor)
+        } foreach (mdc ⇒ methods += mdc.method)
+
+        // (2) methods of strict subtypes (always necessary, because we have an interface)
+        classHierarchy.foreachSubtypeCF(declaringClass, reflexive = false) { subtypeCF ⇒
+            val subtype = subtypeCF.thisType
+            val mdc = find(instanceMethods(subtype)) { mdc ⇒ mdc.method.compare(name, descriptor) }
+            mdc match {
+                case Some(mdc) ⇒
+                    methods += mdc.method
+                    // This is an overapproximation, if the inherited concrete method is
+                    // always overridden by all concrete subtypes and subtypeCF
+                    // is an abstract class in a closed package/module
+                    methods ++= (
+                        overriddenBy(mdc.method).iterator.filter { m ⇒
+                            (classFile(m).thisType isSubtyeOf subtype).isYes
+                        }
+                    )
+                    // for interfaces we have to continue, because we may have inherited a
+                    // a concrete method from a class type which is not in the set of
+                    // overriddenBy methods
+                    subtypeCF.isInterfaceDeclaration
+                case _ /*None*/ ⇒
+                    true
+            }
+        }
+        methods
+    }
 
     def virtualCall: Result[Method] = ???
 
