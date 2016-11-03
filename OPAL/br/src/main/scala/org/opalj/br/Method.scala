@@ -272,10 +272,16 @@ final class Method private (
 
     def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
 
+    def toJava(project: ClassFileRepository): String = toJava(project.classFile(this).thisType)
+
     def toJava(declaringType: ObjectType): String = s"${declaringType.toJava}{ $toJava }"
 
     def toJava(declaringClass: ClassFile, methodInfo: String): String = {
         toJava(declaringClass.thisType, methodInfo)
+    }
+
+    def toJava(methodInfo: String)(implicit project: ClassFileRepository): String = {
+        toJava(project.classFile(this), methodInfo)
     }
 
     def toJava(declaringType: ObjectType, methodInfo: String): String = {
