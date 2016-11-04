@@ -201,6 +201,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * @note The computation is based on the computed set of [[instanceMethods]].
      */
     def hasVirtualMethod(objectType: ObjectType, method: Method): Answer = {
+        val declaringPackageName = classFile(method).thisType.packageName
         //  ... instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]]
         val definedMethodsOption = instanceMethods.get(objectType)
         if (definedMethodsOption.isEmpty)
@@ -217,7 +218,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 if (methodComparison == 0)
                     // We may have multiple methods with the same signature, but which belong
                     // to different packages!
-                    definedMethodContext.packageName compare classFile(method).thisType.packageName
+                    definedMethodContext.packageName compare declaringPackageName
                 else
                     methodComparison
             }
@@ -251,18 +252,8 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
         val definedMethods: ConstArray[MethodDeclarationContext] = definedMethodsOption.get
 
-        find(definedMethods) { definedMethodContext ⇒
-            val definedMethod = definedMethodContext.method
-            val signatureComparison = definedMethod.compare(name, descriptor)
-            if (signatureComparison != 0) {
-                signatureComparison
-            } else {
-                if (definedMethod.hasDefaultVisibility) {
-                    definedMethodContext.packageName compare callingContextType.packageName
-                } else {
-                    0
-                }
-            }
+        find(definedMethods) { mdc ⇒
+            mdc.compareAccessibilityAware(name, descriptor, callingContextType.packageName)
         } match {
             case Some(mdc) ⇒ Success(mdc)
             case r ⇒
@@ -726,7 +717,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     }
 
     /**
-     * Returns the methods that may be called by an invokeinterface if the precise runtime
+     * Returns the methods that may be called by an [[INVOKEINTERFACE]] if the precise runtime
      * type is not known. (If the precise runtime type is known use `instanceCall`.)
      *
      * @note    '''Caching the result (in particular when the call graph is computed)
@@ -740,8 +731,8 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      *          }}}
      *          Hence, we also have to consider inherited methods and just considering the
      *          methods defined by subclasses is not sufficient! In other words, the result
-     *          can contain methods defined by classes which are not subtypes of the given
-     *          interface type!
+     *          can contain methods (here, `X.m`) defined by classes which are not subtypes
+     *          of the given interface type!
      */
     def interfaceCall(
         declaringClass: ObjectType, // an interface or class type to be precise
