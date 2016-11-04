@@ -285,11 +285,10 @@ class Project[Source] private (
 
             classFile(objectType) match {
                 case Some(classFile) ⇒
-                    val packageName = objectType.packageName
                     for {
                         declaredMethod ← classFile.methods
                         if declaredMethod.isVirtualMethodDeclaration
-                        declaredMethodContext = MethodDeclarationContext(declaredMethod, packageName)
+                        declaredMethodContext = MethodDeclarationContext(declaredMethod, classFile)
                     } {
                         // We have to filter multiple methods when we inherit (w.r.t. the visibility)
                         // multiple conflicting methods!

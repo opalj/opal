@@ -46,19 +46,20 @@ import org.opalj.bi.ACC_PRIVATE
  *          most one method with a given name and descriptor.
  *
  * @note    Equality is defined based on the name, descriptor and declaring package
- *          of a method.
+ *          of a method (the concrete declaring class is not considered!).
  *
  * @author Michael Eichberg
  */
 final class MethodDeclarationContext(
-        val method:      Method,
-        val packageName: String
+        val method:         Method,
+        val declaringClass: ObjectType
 ) extends Ordered[MethodDeclarationContext] {
 
     assert(!method.isPrivate)
     assert(!method.isStatic)
     assert(!method.isInitializer)
 
+    def packageName = declaringClass.packageName
     def isPublic: Boolean = method.isPublic
     def name: String = method.name
     def descriptor: MethodDescriptor = method.descriptor
@@ -174,11 +175,15 @@ final class MethodDeclarationContext(
  */
 object MethodDeclarationContext {
 
-    def apply(method: Method, packageName: String): MethodDeclarationContext = {
-        new MethodDeclarationContext(method, packageName)
+    def apply(method: Method, declaringClassFile: ClassFile): MethodDeclarationContext = {
+        new MethodDeclarationContext(method, declaringClassFile.thisType)
     }
 
-    def unapply(mi: MethodDeclarationContext): Some[(Method, String)] = {
-        Some((mi.method, mi.packageName))
+    def apply(method: Method, declaringClass: ObjectType): MethodDeclarationContext = {
+        new MethodDeclarationContext(method, declaringClass)
+    }
+
+    def unapply(mi: MethodDeclarationContext): Some[(Method, ObjectType)] = {
+        Some((mi.method, mi.declaringClass))
     }
 }
