@@ -46,6 +46,7 @@ sealed trait Result[@specialized(Int) +T] extends Serializable {
     def flatMap[B](f: T ⇒ Result[B]): Result[B]
     def foreach[U](f: (T) ⇒ U): Unit
     def withFilter(q: (T) ⇒ Boolean): Result[T]
+    def toSet[X >: T]: Set[X]
 }
 
 /**
@@ -84,6 +85,7 @@ case class Success[@specialized(Int) +T](value: T) extends Result[T] {
         def map[B](f: (T) ⇒ B): Result[B] = if (p(value)) Success(f(value)) else Empty
         def flatMap[B](f: (T) ⇒ Result[B]): Result[B] = if (p(value)) f(value) else Empty
         def withFilter(p: (T) ⇒ Boolean): Result[T] = new FilteredSuccess((t: T) ⇒ p(t) && this.p(t))
+        def toSet[X >: T]: Set[X] = if (p(value)) Set(value) else Set.empty
     }
 
     def hasValue: Boolean = true
@@ -91,6 +93,7 @@ case class Success[@specialized(Int) +T](value: T) extends Result[T] {
     def map[B](f: (T) ⇒ B): Success[B] = Success(f(value))
     def flatMap[B](f: (T) ⇒ Result[B]): Result[B] = f(value)
     def withFilter(p: (T) ⇒ Boolean): Result[T] = new FilteredSuccess(p)
+    def toSet[X >: T]: Set[X] = Set(value)
 }
 
 sealed trait NoResult extends Result[Nothing] {
@@ -100,6 +103,7 @@ sealed trait NoResult extends Result[Nothing] {
     def map[B](f: (Nothing) ⇒ B): this.type = this
     def flatMap[B](f: (Nothing) ⇒ Result[B]): this.type = this
     def withFilter(q: (Nothing) ⇒ Boolean): this.type = this
+    def toSet[X >: Nothing]: Set[X] = Set.empty
 }
 
 object NoResult {
