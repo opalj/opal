@@ -36,7 +36,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEINTERFACE(
-        declaringClass:   ObjectType, // an interface or class type to be precise
+        declaringClass:   ObjectType, // an interface type
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {

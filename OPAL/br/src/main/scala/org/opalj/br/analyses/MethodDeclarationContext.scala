@@ -91,11 +91,11 @@ final class MethodDeclarationContext(
     }
 
     /**
-     * Compares this method (declaration context) with a method which has the
-     * given name and descriptor and which is defined in the given package
+     * Compares this method (declaration context) with an (implicit) method which has the
+     * given `name` and `descriptor` and which is defined in the given `package`
      * unless this method is protected or public. In that case the
-     * packagename is not compared and "0" (<=> equal) is returned. I.e.,
-     * this `compare` method is well suited to make a lookup for a matching
+     * `packageName` is not compared and "0" (<=> equal) is returned.
+     * Hence, this `compare` method is well suited to make a lookup for a matching
      * method declaration context in a sorted array of method declaration
      * contexts.
      */
