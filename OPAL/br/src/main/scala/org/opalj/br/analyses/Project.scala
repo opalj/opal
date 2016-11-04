@@ -337,7 +337,7 @@ class Project[Source] private (
      * @note    The map only contains those methods which have at least one concrete
      *          implementation.
      */
-    protected[this] final val overridingMethods: Map[Method, immutable.Set[Method]] = time {
+    final val overridingMethods: Map[Method, immutable.Set[Method]] = time {
         // IDEA
         // 0.   We start with the leaf nodes of the class hierarchy and store for each method
         //      the set of overriding methods (recall that the overrides relation is reflexive).
