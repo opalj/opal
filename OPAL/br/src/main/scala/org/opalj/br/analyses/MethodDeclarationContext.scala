@@ -90,6 +90,29 @@ final class MethodDeclarationContext(
     }
 
     /**
+     * Compares this method (declaration context) with a method which has the
+     * given name and descriptor and which is defined in the given package
+     * unless this method is protected or public. In that case the
+     * packagename is not compared and "0" (<=> equal) is returned. I.e.,
+     * this `compare` method is well suited to make a lookup for a matching
+     * method declaration context in a sorted array of method declaration
+     * contexts.
+     */
+    def compareAccessibilityAware(
+        name:        String,
+        descriptor:  MethodDescriptor,
+        packageName: String // only considered if name and descriptor already match...
+    ): Int = {
+        val method = this.method
+        val result = method.compare(name, descriptor)
+        if (result == 0 && method.hasDefaultVisibility) {
+            this.packageName compareTo packageName
+        } else {
+            result
+        }
+    }
+
+    /**
      * Returns true if this method directly overrides the given method.
      *
      * (Note: indirect overriding can only be determined if all intermediate methods
