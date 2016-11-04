@@ -140,6 +140,17 @@ final class MethodDeclarationContext(
     }
 
     /**
+     * Returns true if a method with the same signature as this method that is defined in
+     * the given package directly overrides this encapsultated method. This property
+     * always holds if this method has public or protected visiblity. If this method
+     * has package visibility the other (implicit) method has to be defined in
+     * this method's package.
+     */
+    def isDirectlyOverriddenBy(packageName: String): Boolean = {
+        !this.method.hasDefaultVisibility || this.packageName == packageName
+    }
+
+    /**
      * Performs the accessibility check required when we need to determine
      * if this method (`mc`) overrides another method (`ma`).
      *
