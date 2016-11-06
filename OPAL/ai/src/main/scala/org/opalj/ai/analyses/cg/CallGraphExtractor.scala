@@ -68,7 +68,7 @@ trait CallGraphExtractor { extractor ⇒
         def classFile: ClassFile
         def method: Method
 
-        @inline final def cache = extractor.cache
+        @inline final def cache: CallGraphCache[MethodSignature, Set[Method]] = extractor.cache
 
         //
         //

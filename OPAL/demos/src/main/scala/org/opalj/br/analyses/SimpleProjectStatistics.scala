@@ -40,16 +40,15 @@ import java.net.URL
  */
 object SimpleProjectStatistics extends DefaultOneStepAnalysis {
 
-    override def title: String = "Collects Project Statistics"
+    override def title: String = "collects project statistics"
 
-    override def description: String =
-        "Collects basic size metrics about a project."
+    override def description: String = "collects basic size metrics about a project"
 
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         // the following is highly inefficient
 

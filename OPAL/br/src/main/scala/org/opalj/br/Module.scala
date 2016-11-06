@@ -60,9 +60,9 @@ case class Requires(
 )
 
 /**
- * @param 	exports Name of an exported package in internal form.
- * @param 	exportsTo List of names of modules whose code can access the
- * 			public types in this exported package (in internal form).
+ * @param   exports Name of an exported package in internal form.
+ * @param   exportsTo List of names of modules whose code can access the
+ *          public types in this exported package (in internal form).
  */
 case class Exports(
     exports:   String,

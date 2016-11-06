@@ -49,7 +49,7 @@ final class DominatorTree private (
         final val startNode:            Int
 ) {
 
-    final def maxNode = idom.length - 1
+    final def maxNode: Int = idom.length - 1
 
     assert(startNode <= maxNode, s"start node ($startNode) out of range ([0,$maxNode])")
 

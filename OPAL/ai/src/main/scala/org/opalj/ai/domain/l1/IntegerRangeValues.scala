@@ -124,7 +124,7 @@ trait IntegerRangeValues
      *
      * This setting can be adapted at runtime.
      */
-    def maxCardinalityOfIntegerRanges: Long = 16l
+    def maxCardinalityOfIntegerRanges: Long = 16L
 
     // -----------------------------------------------------------------------------------
     //

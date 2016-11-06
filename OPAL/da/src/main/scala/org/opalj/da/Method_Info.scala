@@ -54,13 +54,13 @@ case class Method_Info(
     /**
      * The simple name of the method.
      */
-    def name(implicit cp: Constant_Pool) = cp(name_index).toString(cp)
+    def name(implicit cp: Constant_Pool): String = cp(name_index).toString(cp)
 
     /**
      * The method descriptor as used by the Java VM. E.g., the method `void doIt()`
      * would have the descriptor `()V`.
      */
-    def descriptor(implicit cp: Constant_Pool) = cp(descriptor_index).asString
+    def descriptor(implicit cp: Constant_Pool): String = cp(descriptor_index).asString
 
     /**
      * @param definingTypeFQN The FQN of the class defining this field.
@@ -91,7 +91,7 @@ case class Method_Info(
         </div>
     }
 
-    private[this] def attributesToXHTML(methodIndex: Int)(implicit cp: Constant_Pool) = {
+    private[this] def attributesToXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Seq[Node] = {
         attributes map {
             case codeAttribute: Code_attribute ⇒ codeAttribute.toXHTML(methodIndex)
             case attribute                     ⇒ attribute.toXHTML(cp)

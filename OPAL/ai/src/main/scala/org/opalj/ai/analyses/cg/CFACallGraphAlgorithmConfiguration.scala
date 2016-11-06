@@ -58,14 +58,12 @@ class CFACallGraphAlgorithmConfiguration(
 
     OPALLogger.info("progress", s"constructing a $k-CFA call graph")
 
-    def Domain[Source](
-        classFile: ClassFile,
-        method:    Method
-    ) =
+    def Domain(classFile: ClassFile, method: Method) = {
         new CFACallGraphDomain(
             k,
             project, fieldValueInformation, methodReturnValueInformation,
             cache,
             classFile, method
         )
+    }
 }

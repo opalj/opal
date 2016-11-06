@@ -145,13 +145,13 @@ case class AnnotatedWith(
      *    then the elements will not match.
      *
      *  - If the predicate defines specific [[org.opalj.br.ElementValuePair]]s such as
-     * 		`ArrayBuffer(ElementValuePair("target", ClassValue("org.opalj.av.checking.AnnotationPredicate")),
-     * 				ElementValuePair("name", StringValue("Annotation_Predicate"))`
-     * 		it will then match annotations where the [[org.opalj.br.ElementValuePair]]s have a different order:
-     * 		`ArrayBuffer(ElementValuePair("name", StringValue("Annotation_Predicate"),
-     * 				ElementValuePair("target", ClassValue("org.opalj.av.checking.AnnotationPredicate")))`
-     *  	But it will not match if one or both of the two [[org.opalj.br.ElementValuePair]]s are missing or there is
-     *  	another [[org.opalj.br.ElementValuePair]] not defined by this predicate.
+     *      `ArrayBuffer(ElementValuePair("target", ClassValue("org.opalj.av.checking.AnnotationPredicate")),
+     *              ElementValuePair("name", StringValue("Annotation_Predicate"))`
+     *      it will then match annotations where the [[org.opalj.br.ElementValuePair]]s have a different order:
+     *      `ArrayBuffer(ElementValuePair("name", StringValue("Annotation_Predicate"),
+     *              ElementValuePair("target", ClassValue("org.opalj.av.checking.AnnotationPredicate")))`
+     *      But it will not match if one or both of the two [[org.opalj.br.ElementValuePair]]s are missing or there is
+     *      another [[org.opalj.br.ElementValuePair]] not defined by this predicate.
      */
     override def apply(that: Annotation): Boolean = {
         (that.annotationType eq this.annotationType) && {

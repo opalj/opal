@@ -121,10 +121,10 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
      * Determines the immutability of instances of the given class file `cf`.
      *
      * @param superClassFile The direct super class (file) of the given class file `cf`.
-     * 		Can be `null` if `superClassMutability` is `ImmutableObject`.
+     *      Can be `null` if `superClassMutability` is `ImmutableObject`.
      * @param superClassMutability The mutability of the given super class. The mutability
-     * 		must not be "MutableObject"; this case has to be handled explicitly. Hence,
-     * 		the mutability is either unknown, immutable or (at least) conditionally immutable.
+     *      must not be "MutableObject"; this case has to be handled explicitly. Hence,
+     *      the mutability is either unknown, immutable or (at least) conditionally immutable.
      */
     def determineObjectImmutability(
         superClassFile:       ClassFile,

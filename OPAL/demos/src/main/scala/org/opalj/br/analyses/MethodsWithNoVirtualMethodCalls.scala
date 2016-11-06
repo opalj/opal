@@ -53,7 +53,7 @@ object MethodsWithNoVirtualMethodCalls extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         val allMethods = new AtomicInteger(0)
 

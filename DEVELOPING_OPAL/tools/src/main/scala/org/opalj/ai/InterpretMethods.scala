@@ -89,9 +89,9 @@ object InterpretMethods extends AnalysisExecutor {
  */
 class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
-    override def title = "Interpret Methods"
+    override def title: String = "interpret methods"
 
-    override def description = "Performs an abstract interpretation of all methods."
+    override def description: String = "performs an abstract interpretation of all methods"
 
     override def analyze(
         project:                Project[Source],

@@ -69,29 +69,29 @@ import org.opalj.collection.IncompleteCollection
  * ==Thread safety==
  * This class is effectively immutable; concurrent access to the class hierarchy is supported.
  *
- * @note 	Java 9 module definitions are completely ignored.
+ * @note    Java 9 module definitions are completely ignored.
  *
- * @note 	Unless explicitly documented, it is an error to pass an instance of `ObjectType`
- *      	to any method if the `ObjectType` was not previously added. If in doubt, first
- *      	check if the type is known (`isKnown`/`ifKnown`).
+ * @note    Unless explicitly documented, it is an error to pass an instance of `ObjectType`
+ *          to any method if the `ObjectType` was not previously added. If in doubt, first
+ *          check if the type is known (`isKnown`/`ifKnown`).
  *
- * @param 	knownTypesMap A mapping between the id of an object type and the object type;
- * 			implicitly encodes which types are known.
- * @param 	interfaceTypesMap `true` iff the type is an interface otherwise `false`;
- * 			'''only defined for those types that are known'''.
- * @param 	isKnownToBeFinalMap `true` if the class is known to be `final`. I.e.,
- * 			if the class is final `isFinal(ClassFile(objectType)) =>
- * 			isFinal(classHierachy(objectType))`.
- * @param 	superclassTypeMap Contains type information about a type's immediate superclass.
- *      	This value is always defined (i.e., not null) unless the key identifies the
- *      	object type `java.lang.Object` or when the respective class file was not
- *      	analyzed and the respective type was only seen in the declaration of another class.
- * @param 	superinterfaceTypesMap Contains type information about a type's directly
- *      	implemented interfaces; if any.
- * @param 	subclassTypesMap Contains type information about a type's subclasses; if any.
- * @param 	subinterfaceTypesMap Contains type information about a type's subinterfaces.
- *      	They only ''class type'' that is allowed to have a non-empty set of subinterfaces
- *      	is `java.lang.Object`.
+ * @param   knownTypesMap A mapping between the id of an object type and the object type;
+ *          implicitly encodes which types are known.
+ * @param   interfaceTypesMap `true` iff the type is an interface otherwise `false`;
+ *          '''only defined for those types that are known'''.
+ * @param   isKnownToBeFinalMap `true` if the class is known to be `final`. I.e.,
+ *          if the class is final `isFinal(ClassFile(objectType)) =>
+ *          isFinal(classHierachy(objectType))`.
+ * @param   superclassTypeMap Contains type information about a type's immediate superclass.
+ *          This value is always defined (i.e., not null) unless the key identifies the
+ *          object type `java.lang.Object` or when the respective class file was not
+ *          analyzed and the respective type was only seen in the declaration of another class.
+ * @param   superinterfaceTypesMap Contains type information about a type's directly
+ *          implemented interfaces; if any.
+ * @param   subclassTypesMap Contains type information about a type's subclasses; if any.
+ * @param   subinterfaceTypesMap Contains type information about a type's subinterfaces.
+ *          They only ''class type'' that is allowed to have a non-empty set of subinterfaces
+ *          is `java.lang.Object`.
  *
  * @author Michael Eichberg
  */
@@ -148,12 +148,12 @@ class ClassHierarchy private (
      * If the class hierarchy is complete then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
      *
-     * @note	If we load an application and all the jars used to implement it or a library
-     *    		and all the libraries it depends on, then the class hierarchy '''should not'''
-     *    		contain multiple root types. However, the (complete) JDK already contains
-     *    		some references to Eclipse classes which are not part of the JDK.
-     * @return 	A Set of all object types which have no supertype or for which the
-     * 			information is incomplete.
+     * @note    If we load an application and all the jars used to implement it or a library
+     *          and all the libraries it depends on, then the class hierarchy '''should not'''
+     *          contain multiple root types. However, the (complete) JDK already contains
+     *          some references to Eclipse classes which are not part of the JDK.
+     * @return  A Set of all object types which have no supertype or for which the
+     *          information is incomplete.
      */
     val rootTypes: Set[ObjectType] = {
         knownTypesMap.foldLeft(HashSet.empty[ObjectType]) { (rootTypes, objectType) ⇒
@@ -257,10 +257,10 @@ class ClassHierarchy private (
      * If the class hierarchy is complete then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
      *
-     * @note	If we load an application and all the jars used to implement it or a library
-     *    		and all the library it depends on then the class hierarchy '''should not'''
-     * 		   	contain multiple root types. However, the (complete) JDK contains some references
-     *    		to Eclipse classes which are not part of the JDK.
+     * @note    If we load an application and all the jars used to implement it or a library
+     *          and all the library it depends on then the class hierarchy '''should not'''
+     *          contain multiple root types. However, the (complete) JDK contains some references
+     *          to Eclipse classes which are not part of the JDK.
      */
     def rootClassTypes: Iterator[ObjectType] = {
         rootTypes.iterator filter { objectType ⇒ !interfaceTypesMap(objectType.id) }
@@ -678,7 +678,7 @@ class ClassHierarchy private (
      *
      * @note    No explicit `isKnown` check is required; if the type is unknown nothing
      *          will happen.
-     * @note 	For details regarding incomplete class hierarchies see `foreachSubtype`.
+     * @note    For details regarding incomplete class hierarchies see `foreachSubtype`.
      */
     def foreachSubclass(
         objectType: ObjectType,

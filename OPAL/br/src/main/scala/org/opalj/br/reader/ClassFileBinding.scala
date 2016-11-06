@@ -47,8 +47,8 @@ trait ClassFileBinding extends ClassFileReader {
      * This property determines whether artificial [[SynthesizedClassFiles]] attributes
      * are kept or removed.
      *
-     * @note	This setting can be set using the configuration key
-     * 			`ClassFileBinding.DeleteSynthesizedClassFilesAttributesConfigKey`.
+     * @note    This setting can be set using the configuration key
+     *          `ClassFileBinding.DeleteSynthesizedClassFilesAttributesConfigKey`.
      */
     val deleteSynthesizedClassFilesAttributes: Boolean = {
         import ClassFileBinding.{DeleteSynthesizedClassFilesAttributesConfigKey ⇒ Key}

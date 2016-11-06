@@ -117,9 +117,7 @@ object PCLineComprehension {
 /**
  * Information that facilitates the comprehension of a reported issue.
  */
-trait IssueDetails extends IssueRepresentations {
-
-}
+trait IssueDetails extends IssueRepresentations
 
 /**
  * @param localVariables The register values at the given location.

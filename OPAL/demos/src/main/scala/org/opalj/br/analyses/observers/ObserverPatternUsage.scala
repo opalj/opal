@@ -47,7 +47,11 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
     override def description: String =
         "Loads all classes stored in the jar files and analyses the usage of the observer pattern."
 
-    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
         val appClassFiles = project.allProjectClassFiles
         val libClassFiles = project.allLibraryClassFiles
         println("Application:\n\tClasses:"+appClassFiles.size)

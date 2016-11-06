@@ -48,9 +48,9 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
      * Deferred resolution is necessary since the [[BootstrapMethodTable]] – which
      * is an attribute of the class file – is loaded after the methods.
      *
-     * @note	This method is called (back) after the class file was completely loaded.
-     * 			Registration as a callback method happens whenever an `invokedynamic`
-     * 			instruction is found in a method's byte code.
+     * @note    This method is called (back) after the class file was completely loaded.
+     *          Registration as a callback method happens whenever an `invokedynamic`
+     *          instruction is found in a method's byte code.
      *
      * ==Overriding this Method==
      * To perform additional analyses on `invokedynamic` instructions, e.g. to
@@ -59,13 +59,13 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
      * (`super.deferredResolveInvokedynamicInstruction`) to ensure that the default resolution
      * is carried out.
      *
-     * @param 	classFile The [[ClassFile]] with which the deferred action was registered.
-     * @param 	cp The class file's [[Constant_Pool]].
-     * @param 	invokeDynamicInfo The [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction's
-     * 			constant pool entry.
-     * @param 	instructions This method's array of [[instructions.Instruction]]s.
-     * 			(The array returned by the [[#Instructions]] method.)
-     * @param 	pc The program counter of the `invokedynamic` instruction.
+     * @param   classFile The [[ClassFile]] with which the deferred action was registered.
+     * @param   cp The class file's [[Constant_Pool]].
+     * @param   invokeDynamicInfo The [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction's
+     *          constant pool entry.
+     * @param   instructions This method's array of [[instructions.Instruction]]s.
+     *          (The array returned by the [[#Instructions]] method.)
+     * @param   pc The program counter of the `invokedynamic` instruction.
      */
     protected def deferredInvokedynamicResolution(
         classFile:         ClassFile,

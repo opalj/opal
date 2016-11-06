@@ -86,8 +86,8 @@ import org.opalj.br.instructions.INVOKEINTERFACE
  *     The list of project wide information that can be made available is equivalent
  *     to the list of (concrete/singleton) objects implementing the trait
  *     [[org.opalj.br.analyses.ProjectInformationKey]].
- * 	   One of the most important project information keys is the
- * 	   `SourceElementsPropertyStoreKey` which gives access to the property store.
+ *     One of the most important project information keys is the
+ *     `SourceElementsPropertyStoreKey` which gives access to the property store.
  *
  * ==Thread Safety==
  * This class is thread-safe.
@@ -117,7 +117,7 @@ import org.opalj.br.instructions.INVOKEINTERFACE
  *          possible.
  *
  * @param   libraryClassFilesAreInterfacesOnly If `true` then only the public interface
- * 		   of the methods of the library's classes is available.
+ *         of the methods of the library's classes is available.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -880,11 +880,11 @@ class Project[Source] private (
      * If the information was not yet required the information is computed and
      * returned. Subsequent calls will directly return the information.
      *
-     * @note	(Development Time)
-     * 			Every analysis using [[ProjectInformationKey]]s must list '''All
-     * 			requirements; failing to specify a requirement can end up in a deadlock.'''
+     * @note    (Development Time)
+     *          Every analysis using [[ProjectInformationKey]]s must list '''All
+     *          requirements; failing to specify a requirement can end up in a deadlock.'''
      *
-     * @see 	[[ProjectInformationKey]] for further information.
+     * @see     [[ProjectInformationKey]] for further information.
      */
     def get[T <: AnyRef](pik: ProjectInformationKey[T]): T = {
         val pikUId = pik.uniqueId
@@ -1178,20 +1178,20 @@ object Project {
      * Creates a new Project.
      *
      * @param projectClassFilesWithSources The list of class files of this project that are considered
-     *    	to belong to the application/library that will be analyzed.
-     *    	[Thread Safety] The underlying data structure has to support concurrent access.
+     *      to belong to the application/library that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
      *
      * @param libraryClassFilesWithSources The list of class files of this project that make up
-     *    	the libraries used by the project that will be analyzed.
-     *    	[Thread Safety] The underlying data structure has to support concurrent access.
+     *      the libraries used by the project that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
      *
      * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
-     * 		and no private methods or method implementations are available. Otherwise,
-     * 		the libraries are completely loaded.
+     *      and no private methods or method implementations are available. Otherwise,
+     *      the libraries are completely loaded.
      *
      * @param virtualClassFiles A list of virtual class files that have no direct
      *      representation in the project.
-     * 	    Such declarations are created, e.g., to handle `invokedynamic`
+     *      Such declarations are created, e.g., to handle `invokedynamic`
      *      instructions.
      *      '''In general, such class files should be added using
      *      `projectClassFilesWithSources` and the `Source` should be the file that
@@ -1278,7 +1278,7 @@ object Project {
             var libraryMethodsCount: Int = 0
             var libraryFieldsCount: Int = 0
 
-            var codeSize: Long = 0l
+            var codeSize: Long = 0L
 
             val methodToClassFile = AnyRefMap.empty[Method, ClassFile]
             val fieldToClassFile = AnyRefMap.empty[Field, ClassFile]

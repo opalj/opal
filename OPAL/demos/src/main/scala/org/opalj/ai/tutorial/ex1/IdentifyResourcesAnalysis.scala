@@ -71,7 +71,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         // Step 1
         // Find all methods that create "java.io.File(<String>)" objects.

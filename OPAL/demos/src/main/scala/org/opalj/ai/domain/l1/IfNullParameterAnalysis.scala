@@ -80,7 +80,7 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         // Explicitly specifies that all reference values are not null.
         def setToNonNull(

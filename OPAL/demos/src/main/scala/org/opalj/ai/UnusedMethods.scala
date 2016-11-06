@@ -52,7 +52,7 @@ object UnusedMethods extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
         implicit val classHierarchy = theProject.classHierarchy
         import classHierarchy.isSubtypeOf
 

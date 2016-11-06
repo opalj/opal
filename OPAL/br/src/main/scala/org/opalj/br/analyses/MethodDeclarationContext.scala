@@ -40,10 +40,10 @@ import org.opalj.bi.ACC_PRIVATE
  * methods which are '''not initializers''' (`<(cl)init>`) and which is required when determining
  * potential call targets.
  *
- * @note	A class may have -- w.r.t. a given package name -- at most one package
- * 			visible method which has a specific name and descriptor combination.
- * 			For methods with protected or public visibility a class always has at
- * 			most one method with a given name and descriptor.
+ * @note    A class may have -- w.r.t. a given package name -- at most one package
+ *          visible method which has a specific name and descriptor combination.
+ *          For methods with protected or public visibility a class always has at
+ *          most one method with a given name and descriptor.
  *
  * @note    Equality is defined based on the name, descriptor and declaring package
  *          of a method.
@@ -96,13 +96,13 @@ final class MethodDeclarationContext(
      * are known; only in that case it is possible to test if, e.g., a public method
      * in package x indirectly overrides a package visible method in a package y.)
      *
-     * @note 	The overrides relation is reflexive as defined by the JVM specification
-     * 			(Section: "Overriding").
+     * @note    The overrides relation is reflexive as defined by the JVM specification
+     *          (Section: "Overriding").
      *
-     * @param 	that The [[MethodDeclarationContext]] object of another method which is defined by
-     * 			the same class as this method or a superclass thereof. If the
-     * 			other method is defined by some other class with which this class
-     * 			is not in a sub-/supertype relation the result is not defined.
+     * @param   that The [[MethodDeclarationContext]] object of another method which is defined by
+     *          the same class as this method or a superclass thereof. If the
+     *          other method is defined by some other class with which this class
+     *          is not in a sub-/supertype relation the result is not defined.
      */
     def directlyOverrides(that: MethodDeclarationContext): Boolean = {
         // mc and ma are used as in the JVM spec
@@ -120,8 +120,8 @@ final class MethodDeclarationContext(
      * Performs the accessibility check required when we need to determine
      * if this method (`mc`) overrides another method (`ma`).
      *
-     * @note 	This method must be defined by a class which is a subtype of the
-     * 			declaring class of the other method.
+     * @note    This method must be defined by a class which is a subtype of the
+     *          declaring class of the other method.
      */
     def canDirectlyOverride(
         visibility:  Option[VisibilityModifier],

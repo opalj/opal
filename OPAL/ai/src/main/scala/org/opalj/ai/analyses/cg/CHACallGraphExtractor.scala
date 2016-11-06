@@ -79,7 +79,7 @@ class CHACallGraphExtractor(
             declaringClassType: ObjectType,
             name:               String,
             descriptor:         MethodDescriptor
-        ) = {
+        ): Unit = {
 
             def handleUnresolvedMethodCall() = {
                 addUnresolvedMethodCall(

@@ -115,7 +115,7 @@ case class ExceptionLogMessage(
         t:           Throwable
 ) extends LogMessage {
 
-    def message = {
+    def message: String = {
 
         def exceptionToMessage(t: Throwable): String = {
             val stacktrace = t.getStackTrace.mkString("\t", "\n\t", "")

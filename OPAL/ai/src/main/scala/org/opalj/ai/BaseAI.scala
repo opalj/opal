@@ -42,7 +42,7 @@ package ai
  */
 class BaseAI extends AI[Domain] {
 
-    override def isInterrupted = Thread.interrupted()
+    override def isInterrupted: Boolean = Thread.interrupted()
 
 }
 

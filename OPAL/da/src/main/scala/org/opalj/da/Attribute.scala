@@ -36,9 +36,9 @@ import scala.xml.Node
  * the first two attribute_info elements.
  * <pre>
  * attribute_info {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u1 info[attribute_length];
+ *  u2 attribute_name_index;
+ *  u4 attribute_length;
+ *  u1 info[attribute_length];
  *  ...
  * }
  * </pre>

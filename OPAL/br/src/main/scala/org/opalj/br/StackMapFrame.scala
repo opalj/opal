@@ -36,8 +36,8 @@ package br
  */
 sealed trait StackMapFrame {
     type VerificationTypeInfo = br.VerificationTypeInfo
-    // [DOCUMENTATION ONLY]	type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
-    // [DOCUMENTATION ONLY]	type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
+    // [DOCUMENTATION ONLY] type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
+    // [DOCUMENTATION ONLY] type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
 
     def frameType: Int
 

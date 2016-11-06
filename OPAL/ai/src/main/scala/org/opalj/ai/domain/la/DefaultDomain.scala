@@ -89,7 +89,7 @@ class DefaultDomain(
         with domain.RecordCFG
         with domain.l1.RecordAllThrownExceptions {
 
-    override val maxCardinalityOfIntegerRanges: Long = 16l
+    override val maxCardinalityOfIntegerRanges: Long = 16L
 
     val fieldValueInformation: FieldValueInformation = project.get(FieldValuesKey)
 

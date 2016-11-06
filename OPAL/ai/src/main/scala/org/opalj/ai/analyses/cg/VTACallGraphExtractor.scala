@@ -72,7 +72,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             name:               String,
             descriptor:         MethodDescriptor,
             operands:           domain.Operands
-        ) = {
+        ): Unit = {
 
             def handleUnresolvedMethodCall() = {
                 addUnresolvedMethodCall(

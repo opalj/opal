@@ -80,9 +80,9 @@ final class Field private (
         new Field(accessFlags, name, fieldType, attributes)
     }
 
-    final override def isField = true
+    final override def isField: Boolean = true
 
-    final override def asField = this
+    final override def asField: Field = this
 
     final def asVirtualField(declaringClassFile: ClassFile): VirtualField = {
         asVirtualField(declaringClassFile.thisType)

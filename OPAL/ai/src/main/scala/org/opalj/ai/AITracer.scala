@@ -153,13 +153,13 @@ trait AITracer {
      * on the operand stack and the registers are joined.
      *
      * @param thisOperands The operand stack as it was used the last time when the
-     * 		instruction with the given program counter was evaluated.
+     *      instruction with the given program counter was evaluated.
      * @param thisLocals The registers as they were used the last time when the
-     * 		instruction with the given program counter was evaluated.
+     *      instruction with the given program counter was evaluated.
      * @param otherOperands The current operand stack when we re-reach the instruction
      * @param otherLocals The current registers.
      * @param result The result of joining the operand stacks and register
-     * 		assignment.
+     *      assignment.
      */
     def join(
         domain: Domain

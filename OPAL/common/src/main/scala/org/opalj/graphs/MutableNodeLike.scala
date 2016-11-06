@@ -71,7 +71,7 @@ class MutableNodeLike[I, N <: Node](
 
     def updateIdentifier(newIdentifier: I): Unit = this.synchronized(theIdentifier = newIdentifier)
 
-    override def toHRR = Some(identifierToString(identifier))
+    override def toHRR: Option[String] = Some(identifierToString(identifier))
 
     override def nodeId: Long = identifier.hashCode().toLong
 

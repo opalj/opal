@@ -51,7 +51,7 @@ object NonInstantiableClasses extends DefaultOneStepAnalysis {
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         import org.opalj.util.PerformanceEvaluation.{time, memory, asMB}
         var overallExecutionTime = Nanoseconds.None

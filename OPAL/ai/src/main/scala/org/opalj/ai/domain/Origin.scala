@@ -62,7 +62,7 @@ trait Origin { domain: ValuesDomain ⇒
      */
     trait SingleOriginValue extends ValueWithOriginInformation {
         def origin: ValueOrigin
-        final def origins = Iterable(origin)
+        final def origins: Iterable[ValueOrigin] = Iterable(origin)
     }
 
     /**

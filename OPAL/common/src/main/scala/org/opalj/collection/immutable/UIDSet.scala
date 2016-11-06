@@ -375,8 +375,8 @@ object UIDSet0 extends UIDSet[Nothing] {
 }
 
 private[collection] trait NonEmptyUIDSet[+T <: UID] extends UIDSet[T] {
-    final override def isEmpty = false
-    final override def nonEmpty = true
+    final override def isEmpty: Boolean = false
+    final override def nonEmpty: Boolean = true
 
     /** This nodes value. */
     private[collection] val e: T
@@ -406,7 +406,7 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
     private[collection] def left: NonEmptyUIDSet[T] = null
     private[collection] def right: NonEmptyUIDSet[T] = null
 
-    override def size = 1
+    override def size: Int = 1
 
     override def isSingletonSet: Boolean = true
 
@@ -450,7 +450,7 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
 
     override def reduce[X >: T](op: (X, X) ⇒ X): X = e
 
-    override def toSeq = e :: Nil
+    override def toSeq: List[T] = e :: Nil
 
     override def toIterator: Iterator[T] = Iterator.single(e)
 

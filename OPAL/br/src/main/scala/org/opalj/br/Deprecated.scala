@@ -36,7 +36,7 @@ package br
  */
 case object Deprecated extends Attribute {
 
-    override def kindId = KindId
+    override def kindId: Int = KindId
 
     final val KindId = 22
 

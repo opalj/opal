@@ -46,17 +46,17 @@ import org.opalj.ai.domain.Origins
  */
 object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "identify methods that always return a given parameter"
+    override def title: String = "identify methods that always return a given parameter"
 
-    override def description: String =
+    override def description: String = {
         "identifies methods that either always throw an exception or return a given parameter"
+    }
 
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         val methods = for {
             classFile ← theProject.allClassFiles.par

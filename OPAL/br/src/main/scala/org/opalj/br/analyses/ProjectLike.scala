@@ -50,13 +50,13 @@ import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePo
 /**
  * Enables project wide lookups of methods and fields.
  *
- * @note 	The current implementation is based on the '''correct project assumption''';
- * 			i.e., if the bytecode as a whole is not valid, the result is generally undefined.
- * 			One example would be, if we have two interfaces which define a non-abstract method
- * 			with the same signature and both interfaces are implemented by a third interface
- * 			which does not override these methods. In this case the result of a
- * 			[[resolveMethodReference]] is not defined, because the code base as a whole is not
- * 			valid.
+ * @note    The current implementation is based on the '''correct project assumption''';
+ *          i.e., if the bytecode as a whole is not valid, the result is generally undefined.
+ *          One example would be, if we have two interfaces which define a non-abstract method
+ *          with the same signature and both interfaces are implemented by a third interface
+ *          which does not override these methods. In this case the result of a
+ *          [[resolveMethodReference]] is not defined, because the code base as a whole is not
+ *          valid.
  *
  * @note
  *
@@ -295,28 +295,28 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * done by the following methods as it does not affect the search for the potential target
      * methods.)
      *
-     * Invokestatic 	=> 	the resolved method is called (if it is accessible, static etc...)
-     * Invokespecial 	=>	the resolved (interface) method is called if it is a constructor
-     * 						call, or the resolved method belongs to the calling class (calls of
-     * 						private methods). Otherwise, the calling class' supertypes are
-     * 						searched for a method with the same signature up until the resolved
-     * 						method. When we search the type hierarchy upwards, we first search
-     * 						for a method defined by a superclass (unless the current class defines
-     * 						an interface type) before we search the interfaces. In the later
-     * 						case we compute the set of the maximally specific matching methods
-     * 						and select THE concrete one (it is an error if multiple concrete ones
-     * 						exist!)
-     * Invokevirtual	=>	the resolved method is called, if the resolved method is signature
-     * 						polymorphic; in this case the concrete type of the method receiver
-     * 						is not relevant. Otherwise, the type of the receiver is used to
-     * 						start searching for the method that is to be invoked. That method
-     * 						however, has to override the resolved method (which is generally not
-     * 						the case if the method is private; and is only the case if the resolved
-     * 						method and the current type belong to the same package in case of
-     * 						a method with default visibility).
-     * Invokeinterface 	=>	the resolved interface method just defines an upper bound; the
-     * 						called method is determined as in case of invokevirtual; but
-     * 						signature polymorphic calls are not relevant
+     * Invokestatic     =>  the resolved method is called (if it is accessible, static etc...)
+     * Invokespecial    =>  the resolved (interface) method is called if it is a constructor
+     *                      call, or the resolved method belongs to the calling class (calls of
+     *                      private methods). Otherwise, the calling class' supertypes are
+     *                      searched for a method with the same signature up until the resolved
+     *                      method. When we search the type hierarchy upwards, we first search
+     *                      for a method defined by a superclass (unless the current class defines
+     *                      an interface type) before we search the interfaces. In the later
+     *                      case we compute the set of the maximally specific matching methods
+     *                      and select THE concrete one (it is an error if multiple concrete ones
+     *                      exist!)
+     * Invokevirtual    =>  the resolved method is called, if the resolved method is signature
+     *                      polymorphic; in this case the concrete type of the method receiver
+     *                      is not relevant. Otherwise, the type of the receiver is used to
+     *                      start searching for the method that is to be invoked. That method
+     *                      however, has to override the resolved method (which is generally not
+     *                      the case if the method is private; and is only the case if the resolved
+     *                      method and the current type belong to the same package in case of
+     *                      a method with default visibility).
+     * Invokeinterface  =>  the resolved interface method just defines an upper bound; the
+     *                      called method is determined as in case of invokevirtual; but
+     *                      signature polymorphic calls are not relevant
      */
 
     /**
@@ -400,10 +400,10 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * Computes the set of maximally specific superinterface methods with the
      * given name and descriptor.
      *
-     * @note 	'''This method does not consider methods defined by `java.lang.Object`'''!
-     * 			Those methods have precedence over respective methods defined by
-     * 			superinterfaces! A corresponding check needs to be done before calling
-     * 			this method.
+     * @note    '''This method does not consider methods defined by `java.lang.Object`'''!
+     *          Those methods have precedence over respective methods defined by
+     *          superinterfaces! A corresponding check needs to be done before calling
+     *          this method.
      */
     def findMaximallySpecificSuperinterfaceMethods(
         superinterfaceType:          ObjectType,
@@ -457,7 +457,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * and descriptor
      *
      * @param   interfaceTypes A set of interfaces which potentially declare a method
-     * 			with the given name and descriptor.
+     *          with the given name and descriptor.
      */
     def findMaximallySpecificSuperinterfaceMethods(
         superinterfaceTypes:         UIDSet[ObjectType],

@@ -116,7 +116,7 @@ trait DefaultLongSetValues
                 target.LongValue(pc)
             }
 
-        override def hashCode = this.values.hashCode * 13
+        override def hashCode: Int = this.values.hashCode * 13
 
         override def equals(other: Any): Boolean = {
             other match {
@@ -132,11 +132,11 @@ trait DefaultLongSetValues
 
     override def LongValue(origin: ValueOrigin): DomainValue = new ALongValue()
 
-    override def LongSet(values: SortedSet[Long]): LongSet =
-        new LongSet(values)
+    override def LongSet(values: SortedSet[Long]): LongSet = new LongSet(values)
 
-    override def LongValue(origin: ValueOrigin, value: Long) =
+    override def LongValue(origin: ValueOrigin, value: Long): LongSet = {
         new LongSet(SortedSet(value))
+    }
 
 }
 

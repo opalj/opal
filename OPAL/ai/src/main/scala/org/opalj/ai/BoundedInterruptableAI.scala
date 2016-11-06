@@ -57,7 +57,7 @@ class BoundedInterruptableAI[D <: Domain](
         val doInterrupt:       () ⇒ Boolean
 ) extends InstructionCountBoundedAI[D](maxEvaluationCount) {
 
-    private[this] var startTime: Long = -1l;
+    private[this] var startTime: Long = -1L;
 
     def this(
         code:                Code,
@@ -80,7 +80,7 @@ class BoundedInterruptableAI[D <: Domain](
             return true;
 
         val startTime = this.startTime
-        if (startTime == -1l) {
+        if (startTime == -1L) {
             this.startTime = System.nanoTime()
             false
         } else if (super.currentEvaluationCount % 1000 == 0) {

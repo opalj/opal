@@ -187,9 +187,9 @@ sealed abstract class MethodDescriptor
 
 private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescriptor {
 
-    override def returnType = VoidType
+    override def returnType: VoidType = VoidType
 
-    override def parameterTypes = IndexedSeq.empty
+    override def parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty
 
     override def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
 

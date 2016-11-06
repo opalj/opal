@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import org.opalj.bi.ConstantPoolTag
 import org.opalj.bi.ConstantPoolTags
 
 /**
@@ -42,7 +43,7 @@ case class CONSTANT_MethodType_info(
 
     override final def size: Int = 1 + 2
 
-    override def Constant_Type_Value = ConstantPoolTags.CONSTANT_MethodType
+    override def Constant_Type_Value: ConstantPoolTag = ConstantPoolTags.CONSTANT_MethodType
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <span class="cp_entry">

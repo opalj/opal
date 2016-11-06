@@ -51,7 +51,7 @@ object InterpretMethod {
 
     private object AI extends AI[Domain] {
 
-        override def isInterrupted = Thread.interrupted()
+        override def isInterrupted: Boolean = Thread.interrupted()
 
         override val tracer = {
             val consoleTracer = new ConsoleTracer { override val printOIDs = true }
@@ -66,10 +66,10 @@ object InterpretMethod {
      * Traces the interpretation of a single method and prints out the results.
      *
      * @param args The first element must be the name of a class file, a jar file
-     * 		or a directory containing the former. The second element must
-     * 		denote the name of a class and the third must denote the name of a method
-     * 		of the respective class. If the method is overloaded the first method
-     * 		is returned.
+     *      or a directory containing the former. The second element must
+     *      denote the name of a class and the third must denote the name of a method
+     *      of the respective class. If the method is overloaded the first method
+     *      is returned.
      */
     def main(args: Array[String]): Unit = {
         import Console.{RED, RESET}

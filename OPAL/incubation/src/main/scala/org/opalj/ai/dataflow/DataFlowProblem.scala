@@ -107,7 +107,7 @@ trait DataFlowProblem[Source, P] {
      * Extractor to match tainted values.
      */
     object Tainted {
-        def unapply(value: TaintedValue) = Some(value.typeInformation)
+        def unapply(value: TaintedValue): Some[TypeInformation] = Some(value.typeInformation)
     }
 
     case class Invoke(

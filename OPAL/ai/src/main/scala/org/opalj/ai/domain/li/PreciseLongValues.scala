@@ -65,7 +65,7 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
      * This is a runtime configurable setting that may affect the overall precision of
      * subsequent analyses that require knowledge about longs.
      */
-    def maxSpreadLong: Long = 25l
+    def maxSpreadLong: Long = 25L
 
     protected def spread(a: Long, b: Long): Long = Math.abs(a - b)
 
@@ -226,9 +226,11 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
     // BINARY EXPRESSIONS
     //
 
-    def linc(pc: PC, value: DomainValue, increment: Long) = value match {
-        case v: DefiniteLongValue ⇒ LongValue(pc, v.value + increment)
-        case _                    ⇒ LongValue(origin = pc)
+    def linc(pc: PC, value: DomainValue, increment: Long): DomainValue = {
+        value match {
+            case v: DefiniteLongValue ⇒ LongValue(pc, v.value + increment)
+            case _                    ⇒ LongValue(origin = pc)
+        }
     }
 
     override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
@@ -287,7 +289,7 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
         value2: DomainValue
     ): LongValueOrArithmeticException =
         longValue(value2) { v2 ⇒
-            if (v2 == 0l)
+            if (v2 == 0L)
                 ThrowsException(VMArithmeticException(pc))
             else {
                 longValue(value1) { v1 ⇒

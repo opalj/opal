@@ -236,12 +236,9 @@ class InstructionLocation(
 }
 
 class FieldLocation(
-        description: Option[String],
-        theProject:  SomeProject,
-        classFile:   ClassFile,
-        val field:   Field,
-        details:     Seq[IssueDetails] = List.empty
-) extends ClassLocation(description, theProject, classFile, details) {
-
-}
-
+    description: Option[String],
+    theProject:  SomeProject,
+    classFile:   ClassFile,
+    val field:   Field,
+    details:     Seq[IssueDetails] = List.empty
+) extends ClassLocation(description, theProject, classFile, details)

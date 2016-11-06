@@ -45,11 +45,9 @@ trait ConsoleTracer extends AITracer { tracer ⇒
 
     val printOIDs: Boolean = false
 
-    def oidString(value: Object) =
-        "[#"+System.identityHashCode(value).toHexString+"]"
+    def oidString(value: Object): String = s"[#${System.identityHashCode(value).toHexString}]"
 
-    def toStringWithOID(value: Object) =
-        value+" "+oidString(value)
+    def toStringWithOID(value: Object): String = s"$value ${oidString(value)}"
 
     private def correctIndent(value: Object, printOIDs: Boolean): String = {
         if (value eq null)

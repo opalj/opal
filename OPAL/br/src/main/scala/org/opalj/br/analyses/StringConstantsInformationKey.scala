@@ -59,7 +59,7 @@ object StringConstantsInformationKey extends ProjectInformationKey[StringConstan
      * Computes the field access information.
      *
      * @note This analysis is internally parallelized. I.e., it is advantageous to run this
-     * 		analysis in isolation.
+     *      analysis in isolation.
      */
     override protected def compute(project: SomeProject): Map[String, ConstArray[(Method, PC)]] = {
 

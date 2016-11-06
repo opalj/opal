@@ -50,7 +50,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
         val ps = project.get(SourceElementsPropertyStoreKey)
         ps <||< (PropertyStore.entitySelector[Method], new ThrownExceptionsFallbackAnalysis(ps))
         ps.waitOnPropertyComputationCompletion(true)

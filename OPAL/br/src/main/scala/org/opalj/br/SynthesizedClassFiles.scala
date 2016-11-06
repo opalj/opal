@@ -42,11 +42,11 @@ package br
  *
  * This attribute may occur multiple times in the attributes table of a class file structure.
  *
- * @param 	classFiles A sequence consisting of class file objects and "reasons" why the
- * 			respective class file was created.
+ * @param   classFiles A sequence consisting of class file objects and "reasons" why the
+ *          respective class file was created.
  *
- * @author 	Arne Lottmann
- * @author 	Michael Eichberg
+ * @author  Arne Lottmann
+ * @author  Michael Eichberg
  */
 case class SynthesizedClassFiles(classFiles: List[(ClassFile, Option[AnyRef])]) extends Attribute {
 

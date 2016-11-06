@@ -56,8 +56,8 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
      * Wraps the given value into a `ReturnedValue`.
      *
      * @param pc The program counter of the return instruction. The returned
-     * 		values are automatically associated with the pc of the instruction. Hence,
-     *   	it is not strictly required to store it in the `ReturnedValue`.
+     *      values are automatically associated with the pc of the instruction. Hence,
+     *      it is not strictly required to store it in the `ReturnedValue`.
      *
      * @see For details study the documentation of the abstract type `ReturnedValue`
      *      and study the subclass(es) of `RecordReturnedValues`.
@@ -69,8 +69,8 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
      * are returned by the same return instruction (same `pc`).
      *
      * @param pc The program counter of the return instruction. The returned
-     * 		values are automatically associated with the pc of the instruction. Hence,
-     *   	it is not strictly required to store it in the `ReturnedValue`.
+     *      values are automatically associated with the pc of the instruction. Hence,
+     *      it is not strictly required to store it in the `ReturnedValue`.
      *
      * @see For details study the documentation of the abstract type `ReturnedValue`
      *      and study the subclass(es) of `RecordReturnedValues`.

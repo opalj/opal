@@ -471,7 +471,7 @@ trait DefaultTypeLevelReferenceValues
 
         override def summarize(origin: ValueOrigin): this.type = this
 
-        override def toString() = {
+        override def toString: String = {
             upperTypeBound.map(_.toJava).mkString("ReferenceValue(", " with ", ")")
         }
     }

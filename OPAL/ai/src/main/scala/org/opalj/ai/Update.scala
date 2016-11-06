@@ -104,7 +104,7 @@ final case class StructuralUpdate[V](value: V) extends SomeUpdate[V] {
 
     override def isStructuralUpdate: Boolean = true
 
-    override def updateType = StructuralUpdateType
+    override def updateType: UpdateType = StructuralUpdateType
 
     override def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 
@@ -132,7 +132,7 @@ final case class MetaInformationUpdate[V](value: V) extends SomeUpdate[V] {
 
     override def isMetaInformationUpdate: Boolean = true
 
-    override def updateType = MetaInformationUpdateType
+    override def updateType: UpdateType = MetaInformationUpdateType
 
     override def &:(updateType: UpdateType): UpdateType = {
         if (updateType == StructuralUpdateType)
@@ -161,7 +161,7 @@ case object NoUpdate extends Update[Nothing] {
 
     def isSomeUpdate: Boolean = false
 
-    override def updateType = NoUpdateType
+    override def updateType: UpdateType = NoUpdateType
 
     override def &:(updateType: UpdateType): UpdateType = updateType
 

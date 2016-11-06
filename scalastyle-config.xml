@@ -59,7 +59,7 @@
 
  <check level="warning" class="org.scalastyle.scalariform.SpacesBeforePlusChecker" enabled="false"></check>
 
- <check level="warning" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
+ <check level="warning" class="org.scalastyle.file.FileLineLengthChecker" enabled="false">
   <parameters>
    <parameter name="maxLineLength"><![CDATA[100]]></parameter>
    <parameter name="tabSize"><![CDATA[4]]></parameter>
@@ -114,11 +114,11 @@
  
  <check level="warning" class="org.scalastyle.scalariform.NoCloneChecker" enabled="true"></check>
  
- <check level="warning" class="org.scalastyle.scalariform.NoFinalizeChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalariform.NoFinalizeChecker" enabled="false"></check>
 
  <check level="warning" class="org.scalastyle.scalariform.CovariantEqualsChecker" enabled="true"></check>
 
- <check level="warning" class="org.scalastyle.scalariform.StructuralTypeChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalariform.StructuralTypeChecker" enabled="false"></check>
 
  <check level="warning" class="org.scalastyle.file.RegexChecker" enabled="false">
   <parameters>
@@ -167,9 +167,9 @@
   </parameters>
  </check>
 
- <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="false"></check>
 
- <check level="warning" class="org.scalastyle.file.NewLineAtEofChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.file.NewLineAtEofChecker" enabled="false"></check>
 
  <check level="warning" class="org.scalastyle.file.NoNewLineAtEofChecker" enabled="false"></check>
  

@@ -68,7 +68,7 @@ case object TopVariableInfo extends VerificationTypeInfo {
 
     final override def attribute_length: Int = 1
 
-    def tag = VerificationTypeInfo.ITEM_Top
+    def tag: Int = VerificationTypeInfo.ITEM_Top
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">top |</span>
 
@@ -78,7 +78,7 @@ case object IntegerVariableInfo extends VerificationTypeInfo {
 
     final override def attribute_length: Int = 1
 
-    def tag = VerificationTypeInfo.ITEM_Integer
+    def tag: Int = VerificationTypeInfo.ITEM_Integer
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">int |</span>
 
@@ -88,7 +88,7 @@ case object FloatVariableInfo extends VerificationTypeInfo {
 
     final override def attribute_length: Int = 1
 
-    def tag = VerificationTypeInfo.ITEM_Float
+    def tag: Int = VerificationTypeInfo.ITEM_Float
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">float |</span>
 
@@ -98,7 +98,7 @@ case object LongVariableInfo extends VerificationTypeInfo {
 
     final override def attribute_length: Int = 1
 
-    def tag = VerificationTypeInfo.ITEM_Long
+    def tag: Int = VerificationTypeInfo.ITEM_Long
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">long |</span>
 
@@ -108,7 +108,7 @@ case object DoubleVariableInfo extends VerificationTypeInfo {
 
     final override def attribute_length: Int = 1
 
-    def tag = VerificationTypeInfo.ITEM_Double
+    def tag: Int = VerificationTypeInfo.ITEM_Double
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">double |</span>
 
@@ -118,7 +118,7 @@ case object NullVariableInfo extends VerificationTypeInfo {
 
     final override def attribute_length: Int = 1
 
-    def tag = VerificationTypeInfo.ITEM_Null
+    def tag: Int = VerificationTypeInfo.ITEM_Null
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">null |</span>
 
@@ -128,7 +128,7 @@ case object UninitializedThisVariableInfo extends VerificationTypeInfo {
 
     final override def attribute_length: Int = 1
 
-    def tag = VerificationTypeInfo.ITEM_UninitializedThis
+    def tag: Int = VerificationTypeInfo.ITEM_UninitializedThis
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="verification">uninitializedThis |</span>
@@ -139,7 +139,7 @@ case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
 
     final override def attribute_length: Int = 1 + 2
 
-    def tag = VerificationTypeInfo.ITEM_Object
+    def tag: Int = VerificationTypeInfo.ITEM_Object
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="verification">{ cp(cpool_index).toString(cp) } |</span>
@@ -150,7 +150,7 @@ case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeIn
 
     final override def attribute_length: Int = 1 + 2
 
-    def tag = VerificationTypeInfo.ITEM_Unitialized
+    def tag: Int = VerificationTypeInfo.ITEM_Unitialized
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="verification">Uninitialized(pc: { offset }) |</span>

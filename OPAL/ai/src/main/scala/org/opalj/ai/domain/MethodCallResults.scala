@@ -43,7 +43,7 @@ trait MethodCallResults { domain: ValuesDomain ⇒
      * `true` if the method returned due to a `("void"|a|i|l|f|d)return` instruction.
      *
      * @note This method may only be called after the abstract interpretation of a
-     * 		 method has completed.
+     *       method has completed.
      */
     def returnedNormally: Boolean
 
@@ -51,11 +51,11 @@ trait MethodCallResults { domain: ValuesDomain ⇒
      * Adapts and returns the returned value.
      *
      * @note This method is only defined if the method returned normally. In this case
-     * 		`None` is returned if the method's return type is `void`;
-     *   	`Some(DomainValue)` is returned otherwise.
+     *      `None` is returned if the method's return type is `void`;
+     *      `Some(DomainValue)` is returned otherwise.
      *
      * @note This method may only be called after the abstract interpretation of a
-     * 		 method has completed.
+     *       method has completed.
      */
     def returnedValue(target: TargetDomain, callerPC: PC): Option[target.DomainValue]
 
@@ -84,7 +84,7 @@ trait MethodCallResults { domain: ValuesDomain ⇒
      * `ExceptionValue`.
      *
      * @note This method may only be called after the abstract interpretation of a
-     * 		 method has completed.
+     *       method has completed.
      */
     def thrownExceptions(target: TargetDomain, callerPC: PC): target.ExceptionValues
 

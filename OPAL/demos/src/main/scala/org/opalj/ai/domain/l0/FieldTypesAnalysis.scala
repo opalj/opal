@@ -56,7 +56,7 @@ object FieldTypesAnalysis extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         val refinedFieldValues =
             org.opalj.ai.analyses.FieldValuesAnalysis.doAnalyze(

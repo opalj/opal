@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import org.opalj.bi.ConstantPoolTag
 
 /**
  * @author Michael Eichberg
@@ -38,7 +39,7 @@ case class CONSTANT_Long_info(value: Long) extends Constant_Pool_Entry {
 
     override final def size: Int = { 1 + 4 + 4 }
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Long
+    override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Long
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <span class="cp_entry">

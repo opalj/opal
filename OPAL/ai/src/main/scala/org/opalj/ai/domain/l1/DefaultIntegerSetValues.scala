@@ -64,7 +64,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         override def toString: String = "AnIntegerValue"
     }
 
-    def AnIntegerValue() = new AnIntegerValue()
+    def AnIntegerValue(): AnIntegerValue = new AnIntegerValue()
 
     class IntegerSet(val values: SortedSet[Int]) extends super.IntegerSet {
 
@@ -137,31 +137,34 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
     override def IntegerSet(values: SortedSet[Int]): IntegerSet = new IntegerSet(values)
 
-    override def BooleanValue(pc: PC): DomainValue =
+    override def BooleanValue(pc: PC): DomainValue = {
         if (maxCardinalityOfIntegerSets > 1)
             IntegerSet(SortedSet(0, 1))
         else
             AnIntegerValue()
+    }
 
-    override def BooleanValue(pc: PC, value: Boolean): DomainValue =
+    override def BooleanValue(pc: PC, value: Boolean): DomainValue = {
         if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
+    }
 
-    override def ByteValue(pc: PC): DomainValue =
+    override def ByteValue(pc: PC): DomainValue = {
         if (maxCardinalityOfIntegerSets > 255)
             IntegerSet(SortedSet(Range.inclusive(Byte.MinValue, Byte.MaxValue): _*))
         else
             AnIntegerValue()
+    }
 
-    override def ByteValue(pc: PC, value: Byte) = IntegerSet(value.toInt)
+    override def ByteValue(pc: PC, value: Byte): DomainValue = IntegerSet(value.toInt)
 
     override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ShortValue(pc: PC, value: Short) = IntegerSet(value.toInt)
+    override def ShortValue(pc: PC, value: Short): DomainValue = IntegerSet(value.toInt)
 
     override def CharValue(pc: PC): DomainValue = AnIntegerValue()
-    override def CharValue(pc: PC, value: Char) = IntegerSet(value.toInt)
+    override def CharValue(pc: PC, value: Char): DomainValue = IntegerSet(value.toInt)
 
     override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
-    override def IntegerValue(pc: PC, value: Int) = IntegerSet(value)
+    override def IntegerValue(pc: PC, value: Int): DomainValue = IntegerSet(value)
 
 }
 

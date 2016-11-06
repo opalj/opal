@@ -41,7 +41,7 @@ case class MainClass_attribute(
         main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
 ) extends Attribute {
 
-    def attribute_length = 2
+    def attribute_length: Int = 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="simple_attribute">

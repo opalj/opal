@@ -47,7 +47,7 @@ object NativeMethodsCounter extends DefaultOneStepAnalysis {
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
         val nativeMethods =
             (
                 for {
@@ -58,7 +58,6 @@ object NativeMethodsCounter extends DefaultOneStepAnalysis {
             ).seq
 
         BasicReport(
-
             nativeMethods.mkString(nativeMethods.size+" native methods found:\n\t", "\n\t", "\n")
         )
     }

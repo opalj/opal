@@ -84,7 +84,7 @@ case class Code_attribute(
 
     }
 
-    def attributesAsXHTML(implicit cp: Constant_Pool) = attributes.map(_.toXHTML(cp))
+    def attributesAsXHTML(implicit cp: Constant_Pool): Seq[Node] = attributes.map(_.toXHTML(cp))
 
     def exception_handlersAsXHTML(implicit cp: Constant_Pool): Node = {
         if (exceptionTable.length > 0)

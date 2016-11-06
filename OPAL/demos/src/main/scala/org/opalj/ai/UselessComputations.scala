@@ -70,19 +70,21 @@ object UselessComputations extends DefaultOneStepAnalysis {
             with domain.l1.ConcretePrimitiveValuesConversions
             with domain.l1.LongValuesShiftOperators {
 
-        override def maxCardinalityOfIntegerRanges: Long = 4l
+        override def maxCardinalityOfIntegerRanges: Long = 4L
     }
 
-    override def title: String = "Useless Computations Identification"
+    override def title: String = "useless computations"
 
-    override def description: String =
-        "Identifies computations that are useless, e.g., comparison against null if the value is known not be null."
+    override def description: String = {
+        "identifies computations that are useless, e.g., "+
+            "comparison against null if the value is known not be null"
+    }
 
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         val results = {
             val results = for {
@@ -148,7 +150,7 @@ case class UselessComputation(
 
     def line: Option[Int] = method.body.get.lineNumber(pc)
 
-    override def toString = {
+    override def toString: String = {
         import Console._
 
         val line = this.line.map("(line:"+_+")").getOrElse("")

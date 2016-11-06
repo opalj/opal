@@ -73,7 +73,11 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
 
     override def description: String = "Prints information about invokedynamic instructions."
 
-    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
         val invokedynamics = new ConcurrentLinkedQueue[String]()
         project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
             val BasicMethodInfo(classFile, method @ MethodWithBody(body)) = methodInfo

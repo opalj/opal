@@ -74,8 +74,8 @@ sealed abstract class OVector[T >: Null <: AnyRef] extends scala.collection.Trav
      * the return value will be `this` or `other` otherwise a new Vector
      * is created.
      *
-     * @param 	other Another `Vector` that has the the same number of
-     *      	elements as this `Vector`.
+     * @param   other Another `Vector` that has the the same number of
+     *          elements as this `Vector`.
      */
     def merge(other: OVector[T], onDiff: (T, T) ⇒ T): OVector[T]
 
@@ -98,9 +98,9 @@ sealed abstract class OVector[T >: Null <: AnyRef] extends scala.collection.Trav
 object OVector {
 
     /**
-     * @param	leadSize The size of the first segment. Specifying a `leadSize` that is
-     * 			not zero is in particular helpful if the first segment is known
-     * 			to behave different w.r.t. updates.
+     * @param   leadSize The size of the first segment. Specifying a `leadSize` that is
+     *          not zero is in particular helpful if the first segment is known
+     *          to behave different w.r.t. updates.
      */
     def apply[T >: Null <: AnyRef](size: Int, leadSize: Int): OVector[T] = {
 
@@ -118,8 +118,8 @@ object OVector {
 
 private[mutable] final object OVector0 extends OVector[Null] {
     override def size: Int = 0
-    override def isEmpty = true
-    override def nonEmpty = false
+    override def isEmpty: Boolean = true
+    override def nonEmpty: Boolean = false
     override def exists(p: Null ⇒ Boolean): Boolean = false
     override def find(p: Null ⇒ Boolean): Option[Null] = None
     override def nthValue(f: Null ⇒ Boolean): Int = -1
@@ -148,8 +148,8 @@ private[mutable] final object OVector0 extends OVector[Null] {
 }
 
 private[mutable] sealed abstract class OVectorX[T >: Null <: AnyRef] extends OVector[T] {
-    final override def isEmpty = false
-    final override def nonEmpty = true
+    final override def isEmpty: Boolean = false
+    final override def nonEmpty: Boolean = true
 
     override def equals(other: Any): Boolean = {
         val thisSize = this.size
@@ -167,9 +167,11 @@ private[mutable] sealed abstract class OVectorX[T >: Null <: AnyRef] extends OVe
     }
 }
 
-private[mutable] final class OVector1[T >: Null <: AnyRef](private var v: T = null) extends OVectorX[T] {
+private[mutable] final class OVector1[T >: Null <: AnyRef](
+        private var v: T = null
+) extends OVectorX[T] {
 
-    override def size = 1
+    override def size: Int = 1
     override def apply(index: Int): T = this.v
     override def update(f: (T) ⇒ T): Unit = this.v = f(this.v)
     override def update(index: Int, value: T): Unit = this.v = value

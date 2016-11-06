@@ -60,8 +60,8 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
      * Wraps the given value into a `ThrownException`.
      *
      * @param pc The program counter of the instruction that throws the exception. It
-     * 		is automatically stored in the map that associates instructions with
-     *   	the exceptions that are thrown.
+     *      is automatically stored in the map that associates instructions with
+     *      the exceptions that are thrown.
      *
      * @see For details study the documentation of the abstract type `ThrownException`
      *      and study the subclass(es) of `RecordThrownExceptions`.

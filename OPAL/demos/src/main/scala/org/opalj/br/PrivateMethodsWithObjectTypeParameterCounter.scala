@@ -42,10 +42,16 @@ import java.net.URL
  */
 object PrivateMethodsWithObjectTypeParameterCounter extends DefaultOneStepAnalysis {
 
-    override def description: String =
-        "Counts the number of package private and private methods with a body with at least one parameter that is an object type."
+    override def description: String = {
+        "counts the number of package private and private methods "+
+            "with a body with at least one parameter that is an object type"
+    }
 
-    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
         val overallPotential = new java.util.concurrent.atomic.AtomicInteger(0)
         val methods = (
             for {

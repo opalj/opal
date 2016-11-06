@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -52,7 +52,7 @@ trait Property extends PropertyMetaInformation {
     /**
      *  Returns `true` if this property is always final and no refinement is possible.
      */
-    final def isFinal = !isRefineable
+    final def isFinal: Boolean = !isRefineable
 
     /**
      * Equality of Properties has to be based on structural equality.
@@ -114,8 +114,8 @@ trait OrderedProperty extends Property {
 
 private[fpcf] trait PropertyIsBeingComputed extends Property {
 
-    final override def key = throw new UnsupportedOperationException
-    final override def isRefineable = throw new UnsupportedOperationException
+    final override def key: Nothing = throw new UnsupportedOperationException
+    final override def isRefineable: Nothing = throw new UnsupportedOperationException
     final override private[fpcf] def isBeingComputed: Boolean = true
 
 }

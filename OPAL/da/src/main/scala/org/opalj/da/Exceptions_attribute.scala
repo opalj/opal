@@ -35,10 +35,10 @@ import scala.xml.Text
 /**
  * <pre>
  * Exceptions_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 number_of_exceptions;
- * 	u2 exception_index_table[number_of_exceptions];
+ *  u2 attribute_name_index;
+ *  u4 attribute_length;
+ *  u2 number_of_exceptions;
+ *  u2 exception_index_table[number_of_exceptions];
  * }
  * </pre>
  *

@@ -61,7 +61,7 @@ trait BaseDomain[Source]
         with domain.l1.DefaultIntegerRangeValues {
     domain: Configuration ⇒
 
-    override def maxCardinalityOfIntegerRanges: Long = 20l
+    override def maxCardinalityOfIntegerRanges: Long = 20L
 
 }
 

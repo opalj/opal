@@ -67,7 +67,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             with domain.TheProject
             with domain.TheMethod {
 
-        override def maxCardinalityOfIntegerRanges: Long = 128l
+        override def maxCardinalityOfIntegerRanges: Long = 128L
     }
 
     override def title: String =
@@ -80,7 +80,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
         println("Calculating CallGraph")
         val ComputedCallGraph(callGraph, /*we don't care about unresolved methods etc. */ _, _) =
             theProject.get(VTACallGraphKey)
@@ -201,7 +201,7 @@ case class NativeCallWithBoundedMethodParameter(
         upperBound:     Int
 ) {
 
-    override def toString = {
+    override def toString: String = {
         import Console._
         val declaringClassOfNativeMethod = project.classFile(nativeMethod).thisType.toJava
         val declaringClassOfCaller = project.classFile(caller).thisType.toJava

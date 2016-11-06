@@ -31,10 +31,11 @@ package de
 
 import scala.collection.Map
 import scala.collection.Set
+
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br._
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.br._
 
 /**
  * Stores extracted dependencies.
@@ -45,12 +46,10 @@ import org.opalj.log.OPALLogger
  * @author Michael Eichberg
  */
 class DependencyStore(
-        val dependencies:             Map[VirtualSourceElement, Map[VirtualSourceElement, Set[DependencyType]]],
-        val dependenciesOnArrayTypes: Map[VirtualSourceElement, Map[ArrayType, Set[DependencyType]]],
-        val dependenciesOnBaseTypes:  Map[VirtualSourceElement, Map[BaseType, Set[DependencyType]]]
-) {
-
-}
+    val dependencies:             Map[VirtualSourceElement, Map[VirtualSourceElement, Set[DependencyType]]],
+    val dependenciesOnArrayTypes: Map[VirtualSourceElement, Map[ArrayType, Set[DependencyType]]],
+    val dependenciesOnBaseTypes:  Map[VirtualSourceElement, Map[BaseType, Set[DependencyType]]]
+)
 
 object DependencyStore {
 

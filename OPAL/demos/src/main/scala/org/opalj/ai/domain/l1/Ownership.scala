@@ -64,7 +64,7 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         val Private___Not_Static = (AccessFlagsMatcher.NOT_STATIC && ACC_PRIVATE)
 

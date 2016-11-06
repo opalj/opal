@@ -149,7 +149,7 @@ sealed abstract class AIResult {
      * Contains the memory layout related to the method's subroutines (if any).
      *
      * @note '''This value is `null`''' if the method does not have subroutines (Java 6 and newer
-     * 		class files never contain subroutines) or if no subroutine was analyzed so far.
+     *      class files never contain subroutines) or if no subroutine was analyzed so far.
      */
     val subroutinesOperandsArray: domain.OperandsArray
 
@@ -157,7 +157,7 @@ sealed abstract class AIResult {
      * Contains the memory layout related to the method's subroutines (if any).
      *
      * @note '''This value is `null`''' if the method does not have subroutines (Java 6 and newer
-     * 		class files never contain subroutines) or if no subroutine was analyzed so far.
+     *      class files never contain subroutines) or if no subroutine was analyzed so far.
      */
     val subroutinesLocalsArray: domain.LocalsArray
 

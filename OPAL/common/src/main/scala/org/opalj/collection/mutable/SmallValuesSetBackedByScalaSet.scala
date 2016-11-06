@@ -38,15 +38,15 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
 
     def this(value: Int) { this(Set(value)) }
 
-    override def min = set.min
+    override def min: Int = set.min
 
-    override def max = set.max
+    override def max: Int = set.max
 
-    override def isEmpty = set.isEmpty
+    override def isEmpty: Boolean = set.isEmpty
 
-    override def isSingletonSet = set.size == 1
+    override def isSingletonSet: Boolean = set.size == 1
 
-    override def size = set.size
+    override def size: Int = set.size
 
     override def +≈:(value: Int): SmallValuesSetBackedByScalaSet = {
         val set = this.set

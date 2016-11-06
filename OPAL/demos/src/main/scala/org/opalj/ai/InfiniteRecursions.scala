@@ -58,17 +58,17 @@ import org.opalj.br.instructions.NEW
  */
 object InfiniteRecursions extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "infinite recursions analysis"
+    override def title: String = "infinite recursions analysis"
 
-    override def description: String =
+    override def description: String = {
         "identifies method which calls themselves using infinite recursion"
+    }
 
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String]  = List.empty,
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         // In a real application we should take this from a parameter
         val maxRecursionDepth = 3

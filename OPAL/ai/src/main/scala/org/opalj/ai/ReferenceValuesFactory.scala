@@ -94,7 +94,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      * @param origin Information about the origin of the value.
      * @param counts The size of each dimension if available. `counts` may not be empty but
      *      may not contain information about all dimensions; the
-     *   	following condition always has to hold: `counts.length <= arrayType.dimensions`.
+     *      following condition always has to hold: `counts.length <= arrayType.dimensions`.
      */
     def InitializedArrayValue(
         origin:    ValueOrigin,

@@ -115,7 +115,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
         val methodsWithRefinedReturnTypes = time {
             for {
                 classFile ← theProject.allClassFiles.par

@@ -68,7 +68,7 @@ case class ByteValue(value: Byte) extends BaseTypeElementValue {
 
     override def baseType: BaseType = ByteType
 
-    override def toJava = value.toString
+    override def toJava: String = value.toString
 
     override def kindId: Int = ByteValue.KindId
 
@@ -83,7 +83,7 @@ case class CharValue(value: Char) extends BaseTypeElementValue {
 
     override def baseType: BaseType = CharType
 
-    override def toJava = value.toString
+    override def toJava: String = value.toString
 
     override def kindId: Int = CharValue.KindId
 
@@ -98,7 +98,7 @@ case class DoubleValue(value: Double) extends BaseTypeElementValue {
 
     override def baseType: BaseType = DoubleType
 
-    override def toJava = value.toString
+    override def toJava: String = value.toString
 
     override def kindId: Int = DoubleValue.KindId
 
@@ -113,7 +113,7 @@ case class FloatValue(value: Float) extends BaseTypeElementValue {
 
     override def baseType: BaseType = FloatType
 
-    override def toJava = value.toString
+    override def toJava: String = value.toString
 
     override def kindId: Int = FloatValue.KindId
 
@@ -128,7 +128,7 @@ case class IntValue(value: Int) extends BaseTypeElementValue {
 
     override def baseType: BaseType = IntegerType
 
-    override def toJava = value.toString
+    override def toJava: String = value.toString
 
     override def kindId: Int = IntValue.KindId
 
@@ -143,7 +143,7 @@ case class LongValue(value: Long) extends BaseTypeElementValue {
 
     override def baseType: BaseType = LongType
 
-    override def toJava = value.toString
+    override def toJava: String = value.toString
 
     override def kindId: Int = LongValue.KindId
 
@@ -158,7 +158,7 @@ case class ShortValue(value: Short) extends BaseTypeElementValue {
 
     override def baseType: BaseType = ShortType
 
-    override def toJava = value.toString
+    override def toJava: String = value.toString
 
     override def kindId: Int = ShortValue.KindId
 
@@ -174,7 +174,7 @@ case class BooleanValue(value: Boolean)
 
     override def baseType: BaseType = BooleanType
 
-    override def toJava = value.toString
+    override def toJava: String = value.toString
 
     override def kindId: Int = BooleanValue.KindId
 
@@ -189,7 +189,7 @@ case class StringValue(value: String) extends ElementValue {
 
     final override def valueType = ObjectType.String
 
-    override def toJava = "\""+value.toString+"\""
+    override def toJava: String = "\""+value.toString+"\""
 
     override def kindId: Int = StringValue.KindId
 
@@ -204,7 +204,7 @@ case class ClassValue(value: Type) extends ElementValue {
 
     final override def valueType = ObjectType.Class
 
-    override def toJava = value.toJava+".class"
+    override def toJava: String = value.toJava+".class"
 
     override def kindId: Int = ClassValue.KindId
 
@@ -219,7 +219,7 @@ case class EnumValue(enumType: ObjectType, constName: String) extends ElementVal
 
     final override def valueType = enumType
 
-    override def toJava = enumType.toJava+"."+constName
+    override def toJava: String = enumType.toJava+"."+constName
 
     override def kindId: Int = EnumValue.KindId
 
@@ -235,7 +235,7 @@ case class ArrayValue(values: IndexedSeq[ElementValue]) extends ElementValue {
     // by design/specification the first value determines the type of the Array
     final override def valueType = ArrayType(values(0).valueType)
 
-    override def toJava = values.map(_.toJava).mkString("{", ",", "}")
+    override def toJava: String = values.map(_.toJava).mkString("{", ",", "}")
 
     override def kindId: Int = ArrayValue.KindId
 
@@ -250,7 +250,7 @@ case class AnnotationValue(annotation: Annotation) extends ElementValue {
 
     final override def valueType = annotation.annotationType
 
-    override def toJava = annotation.toJava
+    override def toJava: String = annotation.toJava
 
     override def kindId: Int = AnnotationValue.KindId
 

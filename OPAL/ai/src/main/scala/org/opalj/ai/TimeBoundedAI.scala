@@ -42,7 +42,7 @@ import org.opalj.util.Nanoseconds
  * @author Michael Eichberg
  */
 class TimeBoundedAI[D <: Domain](
-        val maxEffort: Nanoseconds = new Milliseconds(150l).toNanoseconds
+        val maxEffort: Nanoseconds = new Milliseconds(150L).toNanoseconds
 ) extends AI[D] {
 
     private[this] final val CheckInterval = 100

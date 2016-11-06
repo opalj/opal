@@ -47,7 +47,7 @@ object StringConstants extends DefaultOneStepAnalysis {
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         val data = project.get(StringConstantsInformationKey)
         val mappedData: ConstArray[String] = data.map { kv ⇒

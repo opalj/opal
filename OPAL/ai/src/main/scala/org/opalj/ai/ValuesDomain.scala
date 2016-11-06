@@ -271,8 +271,8 @@ trait ValuesDomain {
          *      reasons, as the default implementation relies on [[join]].
          *
          * @param other Another `DomainValue` with the same computational
-         * 		type as this value.
-         * 		(The `IllegalValue` has no computational type and, hence,
+         *      type as this value.
+         *      (The `IllegalValue` has no computational type and, hence,
          *      a comparison with an IllegalValue is not well defined.)
          *
          * @see `abstractsOver`

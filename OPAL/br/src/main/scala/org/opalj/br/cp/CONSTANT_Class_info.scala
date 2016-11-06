@@ -13,7 +13,6 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -43,11 +42,15 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
 
     override def tag: Int = ConstantPoolTags.CONSTANT_Class_ID
 
-    override def asConstantValue(cp: Constant_Pool) = ConstantClass(asReferenceType(cp))
+    override def asObjectType(cp: Constant_Pool): ObjectType = ObjectType(cp(name_index).asString)
 
-    override def asObjectType(cp: Constant_Pool) = ObjectType(cp(name_index).asString)
+    override def asReferenceType(cp: Constant_Pool): ReferenceType = {
+        ReferenceType(cp(name_index).asString)
+    }
 
-    override def asReferenceType(cp: Constant_Pool) = ReferenceType(cp(name_index).asString)
+    override def asConstantValue(cp: Constant_Pool): ConstantClass = {
+        ConstantClass(asReferenceType(cp))
+    }
 
     override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
 

@@ -54,7 +54,9 @@ trait DefaultDomainValueBinding extends ValuesDomain {
 
     final type DomainReturnAddressValue = ReturnAddressValue
 
-    final override def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
+    final override def ReturnAddressValue(address: Int): ReturnAddressValue = {
+        new ReturnAddressValue(address)
+    }
 
     final type DomainReturnAddressValues = ReturnAddressValues
 

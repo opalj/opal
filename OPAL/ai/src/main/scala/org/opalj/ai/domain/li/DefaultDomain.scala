@@ -39,8 +39,7 @@ class DefaultConfigurableDomain[I, Source](
     val project:   Project[Source],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
@@ -62,7 +61,7 @@ class DefaultConfigurableDomain[I, Source](
 
     type Id = I
 
-    override protected def maxUpdatesForIntegerValues: Long = 25l
+    override protected def maxUpdatesForIntegerValues: Long = 25L
 
 }
 
@@ -70,10 +69,9 @@ class DefaultDomain[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
+) extends DefaultConfigurableDomain[String, Source](
+    method.toJava(classFile),
+    project,
+    classFile,
+    method
 )
-        extends DefaultConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method
-        )

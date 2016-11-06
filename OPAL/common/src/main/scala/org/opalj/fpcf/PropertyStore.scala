@@ -1466,22 +1466,22 @@ class PropertyStore private (
             }
         }
 
-        def taskStarted() = this.synchronized {
+        def taskStarted(): Unit = this.synchronized {
             scheduled += 1
             cleanUpRequired = true
         }
 
-        def tasksStarted(tasksCount: Int) = this.synchronized {
+        def tasksStarted(tasksCount: Int): Unit = this.synchronized {
             scheduled += tasksCount
         }
 
-        def tasksAborted(tasksCount: Int) = this.synchronized {
+        def tasksAborted(tasksCount: Int): Unit = this.synchronized {
             scheduled -= tasksCount
         }
 
         // Locks: Tasks
         //        Store(exclusive access), Tasks, handleUnsatisfiedDependencies: Store (access), Entity and scheduleContinuation: Tasks
-        def taskCompleted() = {
+        def taskCompleted(): Unit = {
             /*internal*/ // assert(scheduled > 0)
 
             this.synchronized {
@@ -1556,7 +1556,8 @@ class PropertyStore private (
                             notifyAll()
                         } else {
                             if (debug) logDebug(
-                                "analysis progress", s"(re)scheduled $scheduled property computations"
+                                "analysis progress",
+                                s"(re)scheduled $scheduled property computations"
                             )
                         }
                     }

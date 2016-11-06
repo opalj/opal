@@ -51,11 +51,11 @@ trait ValueExpr extends Expr
 case class Param(cTpe: ComputationalType, name: String) extends ValueExpr
 
 case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
-    final def cTpe = ComputationalTypeInt
+    final def cTpe: ComputationalType = ComputationalTypeInt
 }
 
 case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
-    final def cTpe = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 
 case class Compare(
@@ -65,7 +65,7 @@ case class Compare(
         right:     Expr
 ) extends Expr {
 
-    final def cTpe = ComputationalTypeInt
+    final def cTpe: ComputationalType = ComputationalTypeInt
 }
 
 sealed trait Const extends ValueExpr
@@ -73,47 +73,47 @@ sealed trait Const extends ValueExpr
 sealed trait SimpleValueConst extends Const
 
 case class IntConst(pc: PC, value: Int) extends SimpleValueConst {
-    final def tpe = IntegerType
-    final def cTpe = ComputationalTypeInt
+    final def tpe: Type = IntegerType
+    final def cTpe: ComputationalType = ComputationalTypeInt
 }
 
 case class LongConst(pc: PC, value: Long) extends SimpleValueConst {
-    final def tpe = LongType
-    final def cTpe = ComputationalTypeLong
+    final def tpe: Type = LongType
+    final def cTpe: ComputationalType = ComputationalTypeLong
 }
 
 case class FloatConst(pc: PC, value: Float) extends SimpleValueConst {
-    final def tpe = FloatType
-    final def cTpe = ComputationalTypeFloat
+    final def tpe: Type = FloatType
+    final def cTpe: ComputationalType = ComputationalTypeFloat
 }
 
 case class DoubleConst(pc: PC, value: Double) extends SimpleValueConst {
-    final def tpe = DoubleType
-    final def cTpe = ComputationalTypeDouble
+    final def tpe: Type = DoubleType
+    final def cTpe: ComputationalType = ComputationalTypeDouble
 }
 
 case class StringConst(pc: PC, value: String) extends SimpleValueConst {
-    final def tpe = ObjectType.String
-    final def cTpe = ComputationalTypeReference
+    final def tpe: Type = ObjectType.String
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 
 case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
-    final def tpe = ObjectType.MethodType
-    final def cTpe = ComputationalTypeReference
+    final def tpe: Type = ObjectType.MethodType
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 
 case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
-    final def tpe = ObjectType.MethodHandle
-    final def cTpe = ComputationalTypeReference
+    final def tpe: Type = ObjectType.MethodHandle
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 
 case class ClassConst(pc: PC, value: ReferenceType) extends SimpleValueConst {
-    final def tpe = ObjectType.Class
-    final def cTpe = ComputationalTypeReference
+    final def tpe: Type = ObjectType.Class
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 
 case class NullExpr(pc: PC) extends SimpleValueConst {
-    final def cTpe = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 
 /**
@@ -137,31 +137,31 @@ case class PrefixExpr(
 ) extends Expr
 
 case class PrimitiveTypecastExpr(pc: PC, targetTpe: BaseType, operand: Expr) extends Expr {
-    final def cTpe = targetTpe.computationalType
+    final def cTpe: ComputationalType = targetTpe.computationalType
 }
 
 case class New(pc: PC, tpe: ObjectType) extends Expr {
-    final def cTpe = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 
 case class NewArray(pc: PC, counts: List[Expr], tpe: ArrayType) extends Expr {
-    final def cTpe = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 
 case class ArrayLoad(pc: PC, index: Var, arrayRef: Var) extends Expr {
-    final def cTpe = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 
 case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
-    final def cTpe = ComputationalTypeInt
+    final def cTpe: ComputationalType = ComputationalTypeInt
 }
 
 case class GetField(pc: PC, declaringClass: ObjectType, name: String, objRef: Expr) extends Expr {
-    final def cTpe = ComputationalTypeInt
+    final def cTpe: ComputationalType = ComputationalTypeInt
 }
 
 case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr {
-    final def cTpe = ComputationalTypeInt
+    final def cTpe: ComputationalType = ComputationalTypeInt
 }
 
 case class Invokedynamic(
@@ -171,11 +171,11 @@ case class Invokedynamic(
         descriptor:      MethodDescriptor,
         params:          List[Expr]
 ) extends Expr {
-    final def cTpe = descriptor.returnType.computationalType
+    final def cTpe: ComputationalType = descriptor.returnType.computationalType
 }
 
 sealed trait FunctionCall extends Call with Expr {
-    final def cTpe = descriptor.returnType.computationalType
+    final def cTpe: ComputationalType = descriptor.returnType.computationalType
 }
 
 sealed trait InstanceFunctionCall extends FunctionCall {
@@ -217,7 +217,7 @@ trait Var extends ValueExpr {
 
     /**
      * @return `true` if this variable and the given variable use the same location.
-     * 			Compared to `equals` this test does not consider the computational type.
+     *          Compared to `equals` this test does not consider the computational type.
      */
     def hasSameLocation(that: Var): Boolean
 
@@ -241,10 +241,11 @@ sealed trait IdBasedVar extends Var {
         }
     }
 
-    def name =
+    def name: String = {
         if (id == Int.MinValue) "t"
         else if (id >= 0) "op_"+id.toString
         else "r_"+(-(id + 1))
+    }
 
     def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
 }
@@ -259,7 +260,7 @@ case class SimpleVar(id: Int, cTpe: ComputationalType) extends IdBasedVar
 
 case class DomainValueBasedVar(id: Int, properties: Domain#DomainValue) extends IdBasedVar {
 
-    final override def cTpe = properties.computationalType
+    final override def cTpe: ComputationalType = properties.computationalType
 
 }
 

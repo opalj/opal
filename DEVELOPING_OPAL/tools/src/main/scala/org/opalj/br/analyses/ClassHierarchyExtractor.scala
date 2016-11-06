@@ -51,7 +51,7 @@ object ClassHierarchyExtractor {
         if (args.length < 3 || !args.drop(2).forall(_.endsWith(".jar"))) {
             println("Usage:     java …ClassHierarchy supertype filterprefix <JAR file>+")
             println("Example:   … java.lang.Enum \"\" .../rt.jar")
-            println("      	    lists all subclasses of java.lang.Enum in rt.jar; \"\" effectively disables the filter.")
+            println("           lists all subclasses of java.lang.Enum in rt.jar; \"\" effectively disables the filter.")
             println("Copyright: 2015 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
             sys.exit(-1)
         }

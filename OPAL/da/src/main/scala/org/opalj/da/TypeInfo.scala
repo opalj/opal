@@ -45,7 +45,7 @@ object TypeInfo {
 }
 
 abstract class PrimitiveTypeInfo protected (val javaTypeName: String) extends TypeInfo {
-    final def elementTypeIsBaseType = true
+    final def elementTypeIsBaseType: Boolean = true
 }
 
 case object BooleanTypeInfo extends PrimitiveTypeInfo("boolean")
@@ -58,7 +58,7 @@ case object FloatTypeInfo extends PrimitiveTypeInfo("float")
 case object DoubleTypeInfo extends PrimitiveTypeInfo("double")
 
 case class ObjectTypeInfo(javaTypeName: String) extends TypeInfo {
-    def elementTypeIsBaseType = false
+    def elementTypeIsBaseType: Boolean = false
 }
 
 case class ArrayTypeInfo(javaTypeName: String, elementTypeIsBaseType: Boolean) extends TypeInfo
