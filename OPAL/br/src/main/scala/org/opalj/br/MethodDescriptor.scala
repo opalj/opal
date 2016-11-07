@@ -36,9 +36,9 @@ import scala.math.Ordered
  * A method descriptor represents the parameters that the method takes and
  * the value that it returns.
  *
- * @note The `equals(Any):Boolean` method takes the number of parameters and types
- *      into account. I.e., two method descriptor objects are equal if they have
- *      the same number of parameters and each parameter has the same [[Type]].
+ * @note    The `equals(Any):Boolean` method takes the number of parameters and types
+ *          into account. I.e., two method descriptor objects are equal if they have
+ *          the same number of parameters and each parameter has the same [[Type]].
  *
  * @author Michael Eichberg
  */
@@ -213,7 +213,7 @@ private final class NoArgumentMethodDescriptor(val returnType: Type) extends Met
     override def equalParameters(other: MethodDescriptor): Boolean =
         other.parametersCount == 0
 
-    override def hashCode: Int = returnType.hashCode()
+    override def hashCode: Int = returnType.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -280,7 +280,7 @@ private final class TwoArgumentsMethodDescriptor(
     }
 
     override lazy val hashCode: Int = {
-        (firstParameterType.hashCode() * 13 + secondParameterType.hashCode) * 61 +
+        (firstParameterType.hashCode * 13 + secondParameterType.hashCode) * 61 +
             returnType.hashCode()
     }
 
@@ -309,7 +309,7 @@ private final class MultiArgumentsMethodDescriptor(
         other.parameterTypes == this.parameterTypes
     }
 
-    override lazy val hashCode: Int = (returnType.hashCode() * 13) + parameterTypes.hashCode
+    override lazy val hashCode: Int = (returnType.hashCode * 13) + parameterTypes.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -333,50 +333,77 @@ private final class MultiArgumentsMethodDescriptor(
 
 object HasNoArgsAndReturnsVoid {
 
-    def unapply(md: MethodDescriptor): Boolean =
+    def unapply(md: MethodDescriptor): Boolean = {
         md match {
             case NoArgumentAndNoReturnValueMethodDescriptor ⇒ true
             case _                                          ⇒ false
         }
+    }
 }
 
 object NoArgumentMethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[Type] =
+    def unapply(md: MethodDescriptor): Option[Type] = {
         md match {
             case md: NoArgumentMethodDescriptor ⇒ Some(md.returnType)
             case _                              ⇒ None
         }
+    }
 }
 
+/**
+ * Extractor for method descriptors defining a single parameter type and some return type.
+ *
+ * @author Michael Eichberg
+ */
 object SingleArgumentMethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[(FieldType, Type)] =
+    def apply(parameterType: FieldType, returnType: Type = VoidType): MethodDescriptor = {
+        new SingleArgumentMethodDescriptor(parameterType, returnType)
+    }
+
+    def unapply(md: MethodDescriptor): Option[(FieldType, Type)] = {
         md match {
             case md: SingleArgumentMethodDescriptor ⇒ Some((md.parameterType, md.returnType))
             case _                                  ⇒ None
         }
+    }
 }
 
+
+/**
+ * Extractor for method descriptors defining a single parameter type.
+ *
+ * @author Michael Eichberg
+ */
 object TheArgument {
 
-    def unapply(md: MethodDescriptor): Option[FieldType] =
-        if (md.parametersCount == 1)
+    /**
+     * Returns `Some(FieldType)` of the first paramter type if the given method
+     * descriptor just defines a single paramter.
+     *
+     * @author Michael Eichberg
+     */
+    def unapply(md: MethodDescriptor): Option[FieldType] = {
+        if (md.parametersCount == 1) {
             Some(md.parameterType(0))
-        else
+        } else {
             None
+        }
+    }
 
 }
 
 object TwoArgumentsMethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[(FieldType, FieldType, Type)] =
+    def unapply(md: MethodDescriptor): Option[(FieldType, FieldType, Type)] = {
         md match {
             case md: TwoArgumentsMethodDescriptor ⇒
                 Some((md.firstParameterType, md.secondParameterType, md.returnType))
             case _ ⇒
                 None
         }
+    }
 }
 
 /**
@@ -456,7 +483,8 @@ object MethodDescriptor {
     /**
      * Descriptor of the method `java.lang.invoke.LambdaMetafactory.metafactory`.
      */
-    final val LambdaMetafactoryDescriptor = MethodDescriptor(
+    final val LambdaMetafactoryDescriptor = {
+        MethodDescriptor(
         IndexedSeq(
             ObjectType.MethodHandles$Lookup,
             ObjectType.String,
@@ -467,11 +495,13 @@ object MethodDescriptor {
         ),
         ObjectType.CallSite
     )
+}
 
     /**
      * Descriptor of the method `java.lang.invoke.LambdaMetafactory.altMetafactory`.
      */
-    final val LambdaAltMetafactoryDescriptor = MethodDescriptor(
+    final val LambdaAltMetafactoryDescriptor = {
+         MethodDescriptor(
         IndexedSeq(
             ObjectType.MethodHandles$Lookup,
             ObjectType.String,
@@ -480,6 +510,7 @@ object MethodDescriptor {
         ),
         ObjectType.CallSite
     )
+}
 
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {

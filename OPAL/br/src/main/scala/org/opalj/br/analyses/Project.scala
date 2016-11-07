@@ -32,6 +32,7 @@ package analyses
 
 import java.net.URL
 import java.io.File
+import java.util.Arrays.{sort => sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicIntegerArray
 
@@ -317,7 +318,7 @@ class Project[Source] private (
         methods.asScala.foreach { e ⇒
             val (objectType, methods) = e
             val sortedMethods = methods.toArray
-            java.util.Arrays.sort(sortedMethods, MethodDeclarationContextOrdering)
+            sortArray(sortedMethods, MethodDeclarationContextOrdering)
             result.+=(objectType, ConstArray(sortedMethods))
         }
         result.repack
@@ -332,6 +333,7 @@ class Project[Source] private (
      * overrides it.
      *
      * This method takes the visibility of the methods and the defining context into consideration.
+     *
      * @see     [[Method]]`.isVirtualMethodDeclaration` for further details.
      * @note    The map only contains those methods which have at least one concrete
      *          implementation.
@@ -401,8 +403,9 @@ class Project[Source] private (
                 // The try-finally is a safety net to ensure that this method at least
                 // terminates and that exceptions can be reported!
                 classHierarchy.foreachDirectSupertype(objectType) { supertype ⇒
-                    if (subtypesToProcessCounts.decrementAndGet(supertype.id) == 0)
+                    if (subtypesToProcessCounts.decrementAndGet(supertype.id) == 0) {
                         tasks.submit(supertype)
+                    }
                 }
             }
         }
@@ -449,7 +452,7 @@ class Project[Source] private (
         }
 
         if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly) {
-            throw new IllegalArgumentException("the projects libraries are loaded differently");
+            throw new IllegalArgumentException("the projects' libraries are loaded differently");
         }
 
         val otherClassFiles = other.projectClassFilesWithSources

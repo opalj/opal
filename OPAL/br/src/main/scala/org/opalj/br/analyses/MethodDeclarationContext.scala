@@ -78,10 +78,20 @@ final class MethodDeclarationContext(
         }
     }
 
-    override def hashCode: Int = method.hashCode * 113 + packageName.hashCode()
+    /**
+     * The hash code is equal to the ``"hashCode of the descriptor of the underlying method"
+     * * 113 + "the hashCode of the package of the declaring class".
+     */
+    override def hashCode: Int = method.descriptor.hashCode * 113 + packageName.hashCode()
 
     override def toString: String = s"MethodDeclarationContext($packageName, ${method.toJava})"
 
+    /**
+     * Compares this `MethodDeclarationContext` with the given one. Defines a total order w.r.t.
+     * the name, descriptor and declaring package of a method. (The declaring class is not
+     * considered and, therefore, two `MethodDeclarationContext` may be considered equal
+     * even though the underlying method is not the same one.)
+     */
     def compare(that: MethodDeclarationContext): Int = {
         val result = this.method compare that.method
         if (result == 0)
