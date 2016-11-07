@@ -68,7 +68,6 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
     private[this] final implicit val thisProjectLike: this.type = this
 
-
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //
     //
@@ -113,7 +112,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     ): Option[Field] = {
         // for more details see JVM 7/8 Spec. Section 5.4.3.2
         project.classFile(declaringClassType) flatMap { classFile ⇒
-            resolveFieldReference(classFile,fieldName, fieldType)
+            resolveFieldReference(classFile, fieldName, fieldType)
         }
     }
 
@@ -123,17 +122,17 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         fieldType:          FieldType
     ): Option[Field] = {
         // for more details see JVM 7/8 Spec. Section 5.4.3.2
-            declaringClassFile findField (fieldName, fieldType) orElse {
-                declaringClassFile.interfaceTypes collectFirst { supertype ⇒
-                    resolveFieldReference(supertype, fieldName, fieldType) match {
-                        case Some(resolvedFieldReference) ⇒ resolvedFieldReference
-                    }
-                } orElse {
-                    declaringClassFile.superclassType flatMap { supertype ⇒
-                        resolveFieldReference(supertype, fieldName, fieldType)
-                    }
+        declaringClassFile findField (fieldName, fieldType) orElse {
+            declaringClassFile.interfaceTypes collectFirst { supertype ⇒
+                resolveFieldReference(supertype, fieldName, fieldType) match {
+                    case Some(resolvedFieldReference) ⇒ resolvedFieldReference
+                }
+            } orElse {
+                declaringClassFile.superclassType flatMap { supertype ⇒
+                    resolveFieldReference(supertype, fieldName, fieldType)
                 }
             }
+        }
     }
 
     /**
@@ -151,22 +150,21 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     //
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    /**
+     * Returns the class file of `java.lang.Object`, if available.
+     */
+    val ObjectClassFile: Option[ClassFile]
 
-        /**
-         * Returns the class file of `java.lang.Object`, if available.
-         */
-        val ObjectClassFile: Option[ClassFile]
+    /**
+     * Returns the class file of `java.lang.invoke.MethodHandle`, if available.
+     */
+    val MethodHandleClassFile: Option[ClassFile]
 
-        /**
-         * Returns the class file of `java.lang.invoke.MethodHandle`, if available.
-         */
-        val MethodHandleClassFile: Option[ClassFile]
-
-        /**
-         * The set of all subtypes of `java.lang.invoke.MethodHandle`; in particular required to
-         * resolve signature polymorphic method calls.
-         */
-        val MethodHandleSubtypes: SomeSet[ObjectType]
+    /**
+     * The set of all subtypes of `java.lang.invoke.MethodHandle`; in particular required to
+     * resolve signature polymorphic method calls.
+     */
+    val MethodHandleSubtypes: SomeSet[ObjectType]
 
     /**
      * Stores for each non-private, non-initializer method the set of methods which override
@@ -295,8 +293,8 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                         name,
                         SignaturePolymorphicMethodDescriptor
                     ) match {
-                        case r @ Success(mdc)  if mdc.method.isNativeAndVarargs => r
-                        case r                ⇒ r
+                        case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
+                        case r                                                 ⇒ r
                     }
                 } else {
                     Result(r)
@@ -396,7 +394,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         }
 
         project.classFile(receiverType) flatMap { classFile ⇒
-            assert (classFile.isInterfaceDeclaration)
+            assert(classFile.isInterfaceDeclaration)
             classFile.findMethod(name, descriptor) orElse {
                 lookupInObject() orElse {
                     classHierarchy.superinterfaceTypes(receiverType) flatMap { superinterfaceTypes ⇒
@@ -469,13 +467,8 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * Computes the maximally specific superinterface method with the given name
      * and descriptor
      *
-<<<<<<< 0f34bcc334dbfb2188fdbce892ccf014999c51b2
-     * @param   interfaceTypes A set of interfaces which potentially declare a method
-     *          with the given name and descriptor.
-=======
      * @param   superinterfaceTypes A set of interfaces which potentially declare a method
-     * 			with the given name and descriptor.
->>>>>>> various refactorings to improve the documentation, fix typos and the like
+     *          with the given name and descriptor.
      */
     def findMaximallySpecificSuperinterfaceMethods(
         superinterfaceTypes:         UIDSet[ObjectType],
@@ -802,7 +795,106 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         methods
     }
 
-    def virtualCall: Result[Method] = ???
+    def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): Set[Method] = {
+        virtualCall(callerPackageName, i.declaringClass, i.name, i.methodDescriptor)
+    }
+
+    /**
+     * Returns the set of methods that may be called by an invokevirtual call, if
+     * the return type is unknown.
+     */
+    def virtualCall(
+        callerPackageName: String,
+        declaringType:     ReferenceType, // an interface, class or array type to be precise
+        name:              String,
+        descriptor:        MethodDescriptor
+    ): Set[Method] = {
+        if (declaringType.isArrayType) {
+            return instanceCall(ObjectType.Object, ObjectType.Object, name, descriptor).toSet
+        }
+
+        // In the following we opted for implementing some support for the
+        // different possibilities that exist w.r.t. where the defined method
+        // is found. This is done to speed up the computation
+        // of the set of methods (vs. using a very generic approach)!
+
+        val declaringClass = declaringType.asObjectType
+        var methods = Set.empty[Method]
+
+        if (classHierarchy.isUnknown(declaringClass)) {
+            return methods;
+        }
+
+        // Let's find the (concrete) method defined by this type or a supertype if it exists.
+        // We have to check the declaring package if the method has package visibility to ensure
+        // that we find the correct method!
+        find(instanceMethods(declaringClass)) { mdc ⇒
+            mdc.compareAccessibilityAware(name, descriptor, callerPackageName)
+        } foreach (mdc ⇒ methods += mdc.method)
+
+        if (methods.nonEmpty) {
+            val method = methods.head
+            if (classFile(method).thisType eq declaringClass) {
+                // The (concret) method belongs to this class... hence, we just need to
+                // get all methods which override (reflexive) this method and are done.
+                return overriddenBy(method);
+            } else {
+                // ... we cannot use the overriddenBy methods because this could return
+                // methods belonging to classes which are not a subtype of the given
+                // declaring class.
+                classHierarchy.foreachSubtypeCF(declaringClass, reflexive = false) { subtypeCF ⇒
+                    val subtype = subtypeCF.thisType
+                    val mdcOption = find(instanceMethods(subtype)) { mdc ⇒
+                        mdc.compareAccessibilityAware(name, descriptor, callerPackageName)
+                    }
+                    if (mdcOption.nonEmpty && (mdcOption.get.method ne method)) {
+                        methods ++= overriddenBy(mdcOption.get.method)
+                        false // we don't have to look into furthersubtypes
+                    } else {
+                        true
+                    }
+                }
+                return methods;
+            }
+        }
+
+        // We just have to collect the methods in the subtypes... unless we have
+        // a call to a signature polymorphic method!
+
+        if (MethodHandleClassFile.isDefined && MethodHandleSubtypes.contains(declaringClass)) {
+            val mdcOption = find(instanceMethods(declaringClass)) { mdc ⇒
+                mdc.compareAccessibilityAware(
+                    name, SignaturePolymorphicMethodDescriptor, callerPackageName
+                )
+            }
+            if (mdcOption.isDefined) {
+                val method = mdcOption.get.method
+                if (method.isNativeAndVarargs && (classFile(method) eq MethodHandleClassFile.get)) {
+                    return Set(method);
+                }
+            }
+        }
+
+        classHierarchy.foreachSubtypeCF(declaringClass, reflexive = false) { subtypeCF ⇒
+            val subtype = subtypeCF.thisType
+            val mdcOption = find(instanceMethods(subtype)) { mdc ⇒
+                mdc.compareAccessibilityAware(name, descriptor, callerPackageName)
+            }
+            mdcOption match {
+                case Some(mdc) ⇒
+                    if (methods.isEmpty) {
+                        methods = overriddenBy(mdc.method)
+                    } else {
+                        methods ++= overriddenBy(mdc.method)
+                    }
+                    false // we don't have to look into furthersubtypes
+                case _ /*None*/ ⇒
+                    true
+            }
+        }
+        methods
+
+    }
 
     /////////// OLD OLD OLD OLD OLD OLD //////////
     /////////// OLD OLD OLD OLD OLD OLD //////////
