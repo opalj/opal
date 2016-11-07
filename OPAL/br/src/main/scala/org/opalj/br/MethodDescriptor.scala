@@ -370,7 +370,6 @@ object SingleArgumentMethodDescriptor {
     }
 }
 
-
 /**
  * Extractor for method descriptors defining a single parameter type.
  *
@@ -485,32 +484,32 @@ object MethodDescriptor {
      */
     final val LambdaMetafactoryDescriptor = {
         MethodDescriptor(
-        IndexedSeq(
-            ObjectType.MethodHandles$Lookup,
-            ObjectType.String,
-            ObjectType.MethodType,
-            ObjectType.MethodType,
-            ObjectType.MethodHandle,
-            ObjectType.MethodType
-        ),
-        ObjectType.CallSite
-    )
-}
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ObjectType.MethodType,
+                ObjectType.MethodHandle,
+                ObjectType.MethodType
+            ),
+            ObjectType.CallSite
+        )
+    }
 
     /**
      * Descriptor of the method `java.lang.invoke.LambdaMetafactory.altMetafactory`.
      */
     final val LambdaAltMetafactoryDescriptor = {
-         MethodDescriptor(
-        IndexedSeq(
-            ObjectType.MethodHandles$Lookup,
-            ObjectType.String,
-            ObjectType.MethodType,
-            ArrayType.ArrayOfObjects
-        ),
-        ObjectType.CallSite
-    )
-}
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ArrayType.ArrayOfObjects
+            ),
+            ObjectType.CallSite
+        )
+    }
 
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {

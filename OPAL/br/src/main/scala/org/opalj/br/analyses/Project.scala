@@ -32,7 +32,7 @@ package analyses
 
 import java.net.URL
 import java.io.File
-import java.util.Arrays.{sort => sortArray}
+import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicIntegerArray
 
