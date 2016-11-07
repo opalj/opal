@@ -33,14 +33,14 @@ package br
  * A method's line number table.
  *
  * @param lineNumbers
- * 			<pre>
- * 			LineNumberTable_attribute {
- *   			DATA:
- *   			{  	u2 start_pc;
- *      			u2 line_number;
- *   			}
- * 			}
- * 			</pre>
+ *          <pre>
+ *          LineNumberTable_attribute {
+ *              DATA:
+ *              {   u2 start_pc;
+ *                  u2 line_number;
+ *              }
+ *          }
+ *          </pre>
  *
  * @author Michael Eichberg
  */

@@ -66,7 +66,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
 
         describe("the behavior of join if we exceed the max spread") {
 
-            val theDomain = new DefaultIntegerRangesTestDomain(2l)
+            val theDomain = new DefaultIntegerRangesTestDomain(2L)
             import theDomain._
 
             it("(join of two ranges with positive values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {

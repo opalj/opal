@@ -83,7 +83,7 @@ class UByteSetTest extends FunSpec with Matchers {
         }
 
         it("it should be possible – though the datastructure is not intended to be used for that – to store a larger number of different values in the set") {
-            val seed = 21372380337323390l
+            val seed = 21372380337323390L
             val ValuesCount = 100000
             val rnd = new java.util.Random
             rnd.setSeed(seed)

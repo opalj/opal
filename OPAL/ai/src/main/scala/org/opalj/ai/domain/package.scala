@@ -80,8 +80,4 @@ package ai
  *
  * @author Michael Eichberg
  */
-package object domain {
-
-    // currently empty
-
-}
+package object domain /* currently empty */

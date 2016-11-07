@@ -69,7 +69,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
             with l0.TypeLevelInvokeInstructions
             with TheMethod {
 
-        override def maxCardinalityOfIntegerRanges: Long = 16l
+        override def maxCardinalityOfIntegerRanges: Long = 16L
 
         override def throwIllegalMonitorStateException: Boolean = false
 

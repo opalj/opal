@@ -67,7 +67,7 @@ package properties
  *
  * == Fallback ==
  *
- * 	The sound fallback of this property depends on the actual analysis mode under which the property is computed.
+ *  The sound fallback of this property depends on the actual analysis mode under which the property is computed.
  *
  *  If the analysis mode is some application analysis mode (Desktop, J2EE etc.), the entity [[NotInheritableByNewTypes]].
  *  If the analysis mode is some library analysis mode (CPA, OPA), the sound approximation is [[IsInheritableByNewTypes]].

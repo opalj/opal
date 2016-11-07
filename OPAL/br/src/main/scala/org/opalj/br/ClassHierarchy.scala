@@ -1905,7 +1905,7 @@ class ClassHierarchy private (
         }
 
         // a virtual root node
-        override def nodeId = -1l
+        override def nodeId = -1L
         override def toHRR = None
         override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
             /*

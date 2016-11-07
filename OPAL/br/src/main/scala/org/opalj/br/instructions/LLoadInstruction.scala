@@ -41,6 +41,5 @@ trait LLoadInstruction extends LoadLocalVariableInstruction {
 
     final def stackSlotsChange: Int = 2
 }
-object LLoadInstruction {
 
-}
+object LLoadInstruction

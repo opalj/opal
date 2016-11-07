@@ -37,7 +37,7 @@ package instructions
  */
 case object LCONST_1 extends LConstInstruction {
 
-    final val value = 1l
+    final val value = 1L
 
     final val opcode = 10
 

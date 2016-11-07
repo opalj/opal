@@ -371,6 +371,6 @@ object UIDSetSpecification extends Properties("UIDSet") {
             }
         }
     }
-	*/
+    */
 
 }

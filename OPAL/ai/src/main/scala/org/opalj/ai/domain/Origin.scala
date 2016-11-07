@@ -69,8 +69,7 @@ trait Origin { domain: ValuesDomain ⇒
      * Should be mixed in by `Value` classes that capture information about all origins
      * of a value.
      */
-    trait MultipleOriginsValue extends ValueWithOriginInformation {
-    }
+    trait MultipleOriginsValue extends ValueWithOriginInformation
 
     /**
      * Returns the origin(s) of the given value if the information is available.
@@ -100,14 +99,14 @@ trait Origin { domain: ValuesDomain ⇒
 
 object Origin {
 
-    def unapply(value: Origin#SingleOriginValue): Option[Int] =
-        Some(value.origin)
+    def unapply(value: Origin#SingleOriginValue): Option[Int] = Some(value.origin)
 
 }
 
 object Origins {
 
-    def unapply(value: Origin#ValueWithOriginInformation): Option[Iterable[ValueOrigin]] =
+    def unapply(value: Origin#ValueWithOriginInformation): Option[Iterable[ValueOrigin]] = {
         Some(value.origins)
+    }
 
 }

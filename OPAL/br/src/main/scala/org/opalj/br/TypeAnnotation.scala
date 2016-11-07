@@ -63,13 +63,11 @@ sealed trait TypeAnnotationPathElement
  * @author Michael Eichberg
  */
 case class TypeAnnotation(
-        target:            TypeAnnotationTarget,
-        path:              TypeAnnotationPath,
-        annotationType:    FieldType,
-        elementValuePairs: ElementValuePairs
-) {
-
-}
+    target:            TypeAnnotationTarget,
+    path:              TypeAnnotationPath,
+    annotationType:    FieldType,
+    elementValuePairs: ElementValuePairs
+)
 
 case class TAOfCastExpression(
     offset:              Int,

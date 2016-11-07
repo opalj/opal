@@ -37,7 +37,7 @@ import org.opalj.collection.mutable.UShortSet
  * Return from subroutine.
  *
  * @note A RET instruction always returns to an instruction immediately following a JSR(_W)
- * 		instruction.
+ *      instruction.
  *
  * @author Michael Eichberg
  */

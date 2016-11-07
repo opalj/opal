@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-trait PrimitiveArrayAccess {}
+trait PrimitiveArrayAccess
 
 object PrimitiveArrayAccess {
 

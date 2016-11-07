@@ -48,7 +48,7 @@ import org.opalj.fpcf.properties.IsExtensible
  * package which is prevented by the default `ClassLoader` in all cases.
  *
  * @note Since the computed property is a set property, other analyses have to wait till the
- * 		property is computed.
+ *      property is computed.
  *
  * @author Michael Reif
  */

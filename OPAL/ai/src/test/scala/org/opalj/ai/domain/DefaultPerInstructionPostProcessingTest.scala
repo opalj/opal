@@ -68,7 +68,7 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
             with l0.TypeLevelPrimitiveValuesConversions
             with l0.TypeLevelLongValuesShiftOperators {
 
-        override def maxCardinalityOfIntegerRanges: Long = 16l
+        override def maxCardinalityOfIntegerRanges: Long = 16L
 
         override def throwIllegalMonitorStateException: Boolean = false
 

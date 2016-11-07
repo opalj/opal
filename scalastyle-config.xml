@@ -112,7 +112,7 @@
  
  <check level="warning" class="org.scalastyle.scalariform.NullChecker" enabled="false"></check>
  
- <check level="warning" class="org.scalastyle.scalariform.NoCloneChecker" enabled="true"></check>
+ <check level="warning" class="org.scalastyle.scalariform.NoCloneChecker" enabled="false"></check>
  
  <check level="warning" class="org.scalastyle.scalariform.NoFinalizeChecker" enabled="false"></check>
 

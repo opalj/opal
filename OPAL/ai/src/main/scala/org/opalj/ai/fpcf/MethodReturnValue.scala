@@ -46,7 +46,7 @@ sealed trait MethodReturnValuePropertyMetaInformation extends PropertyMetaInform
  * In the worst case the information about the return value is just the declared type.
  *
  * @param returnValue The value returned by the method when the method does not throw an exception.
- * 		If the method always throws an exception, then the returnValue is `None`.
+ *      If the method always throws an exception, then the returnValue is `None`.
  */
 case class MethodReturnValue private (
         returnValue: Option[Domain#Value]
