@@ -45,7 +45,7 @@ case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction {
 
     final def condition: RelationalOperator = RelationalOperators.NE
 }
-object IFNONNULL {
+object IFNONNULL extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 199
 

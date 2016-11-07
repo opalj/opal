@@ -45,7 +45,7 @@ case class IFNE(branchoffset: Int) extends IF0Instruction {
 
     final def condition: RelationalOperator = RelationalOperators.NE
 }
-object IFNE {
+object IFNE extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 154
 

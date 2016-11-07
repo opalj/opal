@@ -46,7 +46,7 @@ case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction {
     final def condition: RelationalOperator = RelationalOperators.EQ
 
 }
-object IF_ICMPEQ {
+object IF_ICMPEQ extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 159
 

@@ -46,7 +46,7 @@ case class IF_ACMPNE(branchoffset: Int) extends IFACMPInstruction {
     final def condition: RelationalOperator = RelationalOperators.NE
 
 }
-object IF_ACMPNE {
+object IF_ACMPNE extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 166
 

@@ -45,7 +45,7 @@ case class IFLT(branchoffset: Int) extends IF0Instruction {
 
     final def condition: RelationalOperator = RelationalOperators.LT
 }
-object IFLT {
+object IFLT extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 155
 

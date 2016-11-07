@@ -46,7 +46,7 @@ case class IFGT(branchoffset: Int) extends IF0Instruction {
     final def condition: RelationalOperator = RelationalOperators.GT
 }
 
-object IFGT {
+object IFGT extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 157
 

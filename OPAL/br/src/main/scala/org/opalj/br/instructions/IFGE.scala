@@ -46,7 +46,7 @@ case class IFGE(branchoffset: Int) extends IF0Instruction {
     final def condition: RelationalOperator = RelationalOperators.GE
 }
 
-object IFGE {
+object IFGE extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 156
 

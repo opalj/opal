@@ -46,7 +46,7 @@ case class IFLE(branchoffset: Int) extends IF0Instruction {
     final def condition: RelationalOperator = RelationalOperators.LE
 
 }
-object IFLE {
+object IFLE extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 158
 

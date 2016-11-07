@@ -45,7 +45,7 @@ case class IF_ICMPGT(branchoffset: Int) extends IFICMPInstruction {
 
     final def condition: RelationalOperator = RelationalOperators.GT
 }
-object IF_ICMPGT {
+object IF_ICMPGT extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 163
 

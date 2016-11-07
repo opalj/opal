@@ -47,7 +47,7 @@ case class IFEQ(branchoffset: Int) extends IF0Instruction {
 
 }
 
-object IFEQ {
+object IFEQ extends UnresolvedBranchInstructionBuilder {
 
     final val opcode = 153
 
