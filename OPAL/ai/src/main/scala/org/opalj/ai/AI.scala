@@ -1753,8 +1753,8 @@ trait AI[D <: Domain] {
                         val multianewarray = instruction.asInstanceOf[MULTIANEWARRAY]
                         val dimensions = multianewarray.dimensions
                         val dimensionSizes = operands.take(multianewarray.dimensions)
-                        val componentType = multianewarray.componentType
-                        val computation = theDomain.multianewarray(pc, dimensionSizes, componentType)
+                        val arrayType = multianewarray.arrayType
+                        val computation = theDomain.multianewarray(pc, dimensionSizes, arrayType)
                         computationWithReturnValueAndException(computation, operands.drop(dimensions))
 
                     //

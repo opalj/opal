@@ -35,8 +35,7 @@ import org.opalj.collection.mutable.UShortSet
 /**
  * Getstatic ﬁeld from class.
  *
- * @see [[org.opalj.br.instructions.FieldAccess]] for additional
- *      pattern matching support.
+ * @see [[org.opalj.br.instructions.FieldAccess]] for additional pattern matching support.
  *
  * @author Michael Eichberg
  */
@@ -85,15 +84,14 @@ object GETSTATIC {
     /**
      * Factory method to create [[GETSTATIC]] instructions.
      *
-     * @param declaringClass the fields class name in JVM notation, e.g. "java/lang/Object"
-     * @param name the fields name
-     * @param fieldType the field type in JVM notation e.g. "Z" for boolean or `Ljava/lang/Object`
-     *                  for general objects
+     * @param   declaringClassName The binary name of the field's declaring class, e.g.
+     *          `java/lang/Object`.
+     * @param   name The field's name.
+     * @param   fieldTypeName The field's type; see [[org.opalj.br.FieldType$]] for the concrete
+     *          syntax.
      */
-    def apply(
-        declaringClass: String,
-        name:           String,
-        fieldType:      String
-    ): GETSTATIC = GETSTATIC(ObjectType(declaringClass), name, FieldType(fieldType))
+    def apply(declaringClassName: String, name: String, fieldTypeName: String): GETSTATIC = {
+        GETSTATIC(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
+    }
 
 }

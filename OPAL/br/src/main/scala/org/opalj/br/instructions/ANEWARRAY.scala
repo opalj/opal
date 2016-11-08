@@ -59,11 +59,9 @@ object ANEWARRAY {
     /**
      * Factory method to create [[ANEWARRAY]] instructions.
      *
-     * @param componentType The arrays type name in JVM notation, for example "Ljava/lang/Object"
-     *                      for Object.
+     * @param   componentType The name of the array's '''component type'';
+     *          see [[org.opalj.br.ReferenceType$]] for details regarding the syntax!
      */
-    def apply(
-        componentType: String
-    ): ANEWARRAY = ANEWARRAY(ReferenceType(componentType))
+    def apply(componentTypeName: String): ANEWARRAY = ANEWARRAY(ReferenceType(componentTypeName))
 
 }

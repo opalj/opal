@@ -26,7 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.instructions
+package org.opalj
+package br
+package instructions
 
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
@@ -50,7 +52,7 @@ class FactoryMethodsOfInstructionTest extends FlatSpec {
     val fieldName = "myField"
     val fieldTypeObject = "Ljava/lang/Object"
     val fieldTypeBoolean = "Z"
-    val fieldTypeArray = "[Z"
+    val fieldTypeBooleanArray = "[Z"
 
     "INVOKEINTERFACE's factory method" should "return an INVOKEINTERFACE instruction" in {
         val invoke = INVOKEINTERFACE(declaringClass, methodName, methodDescriptor)
@@ -126,11 +128,15 @@ class FactoryMethodsOfInstructionTest extends FlatSpec {
     }
 
     "MULTIANEWARRAY's factory method" should "return an MULTIANEWARRAY instruction" in {
-        val multianewarrayObject = MULTIANEWARRAY(fieldTypeArray, 2)
+        val multianewarrayObject = MULTIANEWARRAY(fieldTypeBooleanArray, 1)
 
         assert(multianewarrayObject.getClass.getName == "org.opalj.br.instructions.MULTIANEWARRAY")
-        assert(multianewarrayObject.componentType.asArrayType.componentType.isBooleanType)
-        assert(multianewarrayObject.dimensions == 2)
+        assert(multianewarrayObject.arrayType.componentType.isBooleanType)
+        assert(multianewarrayObject.dimensions == 1)
+    }
+
+    "MULTIANEWARRAY's factory method" should "catch the error if the dimensions don't fit" in {
+        assertThrows[IllegalArgumentException] { MULTIANEWARRAY(fieldTypeBooleanArray, 2) }
     }
 
     "INSTANCEOF's factory method" should "return an INSTANCEOF instruction" in {
@@ -139,7 +145,7 @@ class FactoryMethodsOfInstructionTest extends FlatSpec {
         assert(instanceOfObject.getClass.getName == "org.opalj.br.instructions.INSTANCEOF")
         assert(instanceOfObject.referenceType.isObjectType)
 
-        val instanceOfArray = INSTANCEOF(fieldTypeArray)
+        val instanceOfArray = INSTANCEOF(fieldTypeBooleanArray)
 
         assert(instanceOfArray.getClass.getName == "org.opalj.br.instructions.INSTANCEOF")
         assert(instanceOfArray.referenceType.asArrayType.componentType.isBooleanType)

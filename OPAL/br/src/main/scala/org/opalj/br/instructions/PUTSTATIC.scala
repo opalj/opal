@@ -83,15 +83,14 @@ object PUTSTATIC {
     /**
      * Factory method to create [[PUTSTATIC]] instructions.
      *
-     * @param declaringClass the fields class name in JVM notation, e.g. "java/lang/Object"
-     * @param name the fields name
-     * @param fieldType the field type in JVM notation e.g. "Z" for boolean or `Ljava/lang/Object`
-     *                  for general objects
+     * @param   declaringClassName The binary name of the field's declaring class, e.g.
+     *          `java/lang/Object`.
+     * @param   name The field's name.
+     * @param   fieldTypeName The field's type; see [[org.opalj.br.FieldType$]] for the concrete
+     *          syntax.
      */
-    def apply(
-        declaringClass: String,
-        name:           String,
-        fieldType:      String
-    ): PUTSTATIC = PUTSTATIC(ObjectType(declaringClass), name, FieldType(fieldType))
+    def apply(declaringClassName: String, name: String, fieldTypeName: String): PUTSTATIC = {
+        PUTSTATIC(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
+    }
 
 }

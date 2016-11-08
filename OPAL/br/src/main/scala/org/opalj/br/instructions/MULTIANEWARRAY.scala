@@ -33,13 +33,15 @@ package instructions
 /**
  * Create new multidimensional array.
  *
+ * @param   arrayType The type of the array to be created.
+ * @param   dimensions The number of dimensions of the specified array that should be initialized.
+ *
  * @author Michael Eichberg
  */
 case class MULTIANEWARRAY(
-    componentType: ArrayType,
-    dimensions:    Int
-)
-        extends CreateNewArrayInstruction {
+        arrayType:  ArrayType,
+        dimensions: Int
+) extends CreateNewArrayInstruction {
 
     final def opcode: Opcode = MULTIANEWARRAY.opcode
 
@@ -75,13 +77,20 @@ object MULTIANEWARRAY {
     /**
      * Factory method to create [[MULTIANEWARRAY]] instructions.
      *
-     * @param arrayType The arrays type name in JVM notation, e.g. "[Ljava/lang/Object" for an
-     *                  array type of Object.
-     * @param dimensions The arrays dimension.
+     * @param   arrayType The array's type name; see [[org.opalj.br.FieldType$]] for details.
+     * @param   dimensions The number of dimensions that should be initialized; the instruction will
+     *          take a corresponding number of values from the stack.
      */
-    def apply(
-        arrayType:  String,
-        dimensions: Int
-    ): MULTIANEWARRAY = MULTIANEWARRAY(FieldType(arrayType).asArrayType, dimensions)
+    def apply(arrayTypeName: String, dimensions: Int): MULTIANEWARRAY = {
+        val arrayTypeCandidate = FieldType(arrayTypeName)
+        require(arrayTypeCandidate.isArrayType, s"given type $arrayTypeName is not an array type")
+        val arrayType = arrayTypeCandidate.asArrayType
+        val arrayDimensions = arrayType.dimensions
+        require(
+            dimensions <= arrayDimensions,
+            s"$dimensions > $arrayDimensions (the number of dimensions of the given array type)"
+        )
+        MULTIANEWARRAY(arrayType, dimensions)
+    }
 
 }

@@ -97,9 +97,8 @@ object INSTANCEOF {
     /**
      * Factory method to create [[INSTANCEOF]] instructions.
      *
-     * @param referenceType the referenceType name in JVM notation, e.g. "Ljava/lang/Object;"
+     * @param   referenceType The `referenceType` against which the type test is done; see
+     * +            [[org.opalj.br.ReferenceType$]]'s `apply` method for the correct syntax.
      */
-    def apply(
-        referenceType: String
-    ): INSTANCEOF = INSTANCEOF(ReferenceType(referenceType))
+    def apply(referenceTypeName: String): INSTANCEOF = INSTANCEOF(ReferenceType(referenceTypeName))
 }
