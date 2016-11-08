@@ -1352,6 +1352,7 @@ class PropertyStore private (
                 ps = eps.ps
                 pos ← ps.values
                 p = pos.p
+                if p ne null
                 if !p.isBeingComputed
                 ep /*: (Entity, Property)*/ = (e, p)
                 if collect.isDefinedAt(ep)
