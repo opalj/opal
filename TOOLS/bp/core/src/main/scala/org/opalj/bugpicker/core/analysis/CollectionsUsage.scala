@@ -131,7 +131,7 @@ object CollectionsUsage {
                                     case INVOKESPECIAL(_, false, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
                                         foundConstructorCall = true
 
-                                        // TODO Support the case of a call to addElement
+                                    // TODO Support the case of a call to addElement
                                     case INVOKEVIRTUAL(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) |
                                         INVOKEINTERFACE(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) ⇒
                                         // is it the receiver or the parameter (in relation to a different collection?
