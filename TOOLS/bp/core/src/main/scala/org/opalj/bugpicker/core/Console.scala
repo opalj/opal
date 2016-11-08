@@ -35,7 +35,11 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.charset.StandardCharsets
 import java.io.File
+
 import scala.xml.Node
+
+import com.typesafe.config.Config
+
 import org.opalj.io.writeAndOpen
 import org.opalj.io.process
 import org.opalj.log.OPALLogger
@@ -129,17 +133,22 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
     private[this] var libcpFiles: Iterable[File] = null
 
     override def setupProject(
-        cpFiles:      Iterable[File],
-        libcpFiles:   Iterable[File],
+        cpFiles:                 Iterable[File],
+        libcpFiles:              Iterable[File],
         completelyLoadLibraries: Boolean,
-        analysisMode: AnalysisMode
+        analysisMode:            AnalysisMode,
+        fallbackConfiguration:   Config
     )(
         implicit
         initialLogContext: LogContext
     ): Project[URL] = {
         this.cpFiles = cpFiles
         this.libcpFiles = libcpFiles
-        super.setupProject(cpFiles, libcpFiles, completelyLoadLibraries, analysisMode)
+        super.setupProject(
+            cpFiles, libcpFiles, completelyLoadLibraries,
+            analysisMode,
+            fallbackConfiguration
+        )
     }
 
     override def analyze(
