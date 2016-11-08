@@ -55,8 +55,29 @@ case class INVOKEVIRTUAL(
     override def toString = super.toString
 
 }
+
+/**
+  * Convenience Methods for the BytecodeAssembler DSL
+  *
+  * @author Malte Limmeroth
+  */
 object INVOKEVIRTUAL {
 
     final val opcode = 182
+
+    /**
+      * Convenience method to create INVOKEVIRTUAL objects from Stings
+      */
+    def apply(
+               declaringClass: String,
+               methodName: String,
+               methodDescriptor: String
+             ): INVOKEVIRTUAL = {
+        INVOKEVIRTUAL(
+            ReferenceType(declaringClass),
+            methodName,
+            MethodDescriptor(methodDescriptor)
+        )
+    }
 
 }

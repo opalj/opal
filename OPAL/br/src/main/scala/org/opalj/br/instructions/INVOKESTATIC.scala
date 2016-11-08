@@ -60,8 +60,31 @@ case class INVOKESTATIC(
     override def toString = super.toString
 
 }
+
+/**
+  * Convenience Methods for the BytecodeAssembler DSL
+  *
+  * @author Malte Limmeroth
+  */
 object INVOKESTATIC {
 
     final val opcode = 184
+
+    /**
+      * Convenience method to create INVOKESTATIC objects from Stings
+      */
+    def apply(
+               declaringClass: String,
+               isInterface: Boolean,
+               methodName: String,
+               methodDescriptor: String
+             ): INVOKESTATIC = {
+        INVOKESTATIC(
+            ObjectType(declaringClass),
+            isInterface,
+            methodName,
+            MethodDescriptor(methodDescriptor)
+        )
+    }
 
 }

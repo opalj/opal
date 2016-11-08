@@ -55,8 +55,29 @@ case class INVOKEINTERFACE(
     override def toString = super.toString
 
 }
+
+/**
+  * Convenience Methods for the BytecodeAssembler DSL
+  *
+  * @author Malte Limmeroth
+  */
 object INVOKEINTERFACE {
 
     final val opcode = 185
+
+    /**
+      * Convenience method to create INVOKEINTERFACE objects from Stings
+      */
+    def apply(
+               declaringClass: String,
+               methodName: String,
+               methodDescriptor: String
+             ): INVOKEINTERFACE = {
+        INVOKEINTERFACE(
+            ObjectType(declaringClass),
+            methodName,
+            MethodDescriptor(methodDescriptor)
+        )
+    }
 
 }

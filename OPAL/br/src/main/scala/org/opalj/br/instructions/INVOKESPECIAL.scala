@@ -61,8 +61,31 @@ case class INVOKESPECIAL(
     override def toString = super.toString
 
 }
+
+/**
+  * Convenience Methods for the BytecodeAssembler DSL
+  *
+  * @author Malte Limmeroth
+  */
 object INVOKESPECIAL {
 
     final val opcode = 183
+
+    /**
+      * Convenience method to create INVOKESPECIAL objects from Stings
+      */
+    def apply(
+               declaringClass: String,
+               isInterface: Boolean,
+               methodName: String,
+               methodDescriptor: String
+             ): INVOKESPECIAL = {
+        INVOKESPECIAL(
+            ObjectType(declaringClass),
+            isInterface,
+            methodName,
+            MethodDescriptor(methodDescriptor)
+        )
+    }
 
 }
