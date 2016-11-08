@@ -1713,13 +1713,23 @@ class PropertyStore private (
             ) */
         }
 
-        // Locks: Tasks
-        def waitOnCompletion(useFallbackForIncomputableProperties: Boolean): Unit = this.synchronized {
-            this.useFallbackForIncomputableProperties = useFallbackForIncomputableProperties
+        private[this] def doWaitOnCompletion(): Unit = {
             //noinspection LoopVariableNotUpdated
             while (scheduled > 0) {
                 if (debug) logDebug("analysis progress", s"remaining tasks: $scheduled")
                 wait()
+            }
+        }
+
+        // Locks: Tasks
+        def waitOnCompletion(useFallbackForIncomputableProperties: Boolean): Unit = this.synchronized {
+            this.useFallbackForIncomputableProperties = useFallbackForIncomputableProperties
+            doWaitOnCompletion()
+            // If all computations were finished already `scheduled` would have been "0" already
+            // and no fallback computations would have been triggered
+            if (useFallbackForIncomputableProperties) {
+                handleUnsatisfiedDependencies()
+                doWaitOnCompletion()
             }
         }
     }
@@ -1978,7 +1988,6 @@ class PropertyStore private (
                                     ps(p.key.id).p == p,
                                     s"the property store $pos does not contain the new property $p"
                                 ) */
-
                             } else {
                                 if (debug) logDebug(
                                     "analysis progress", s"$e: ignoring useless update $oldP => $p"
@@ -2132,9 +2141,10 @@ class PropertyStore private (
                                 if (debug) logDebug(
                                     "analysis progress",
                                     s"scheduled continuation of $dependerE(${dependerP.key}): "+
+                                        s"$dependeeE("+
                                         s"oldP=${if (eOptionP.hasProperty) eOptionP.p.toString() else "<none>"}, "+
                                         s"currentP=${dependeeCurrentPOs.p}, "+
-                                        s"updateType=$updateType"
+                                        s"updateType=$updateType)"
                                 )
                                 // println("potential for savings.....")
                                 scheduleContinuation(dependeeE, dependeeCurrentPOs.p, updateType, c)
