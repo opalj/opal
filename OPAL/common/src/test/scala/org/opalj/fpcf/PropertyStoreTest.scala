@@ -242,7 +242,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     final val ReachableNodesKey: PropertyKey[ReachableNodes] = {
         PropertyKey.create(
             "ReachableNodes",
-            (ps: PropertyStore, e: Entity) ⇒ throw new UnknownError /*IDIOM IF NO FALLBACK IS EXPECTED/SUPPORTED*/ ,
+            (ps: PropertyStore, e: Entity) ⇒ {
+                /*IDIOM IF NO FALLBACK IS EXPECTED/SUPPORTED*/
+                throw new UnknownError(s"no fallback for ReachableNodes property for $e available")
+            },
             (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ {
                 //                val allReachableNodes = epks.foldLeft(Set.empty[Node]) { (c, epk) ⇒
                 //                    c ++ ps(epk.e, ReachableNodesKey /* <=> epk.pk */ ).get.nodes
