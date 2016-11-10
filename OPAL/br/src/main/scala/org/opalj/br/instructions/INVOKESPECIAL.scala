@@ -61,8 +61,35 @@ case class INVOKESPECIAL(
     override def toString = super.toString
 
 }
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object INVOKESPECIAL {
 
     final val opcode = 183
+
+    /**
+     * Convenience factory to create INVOKESPECIAL objects from stings.
+     *
+     * @param declaringClass the declaring class name in JVM notation, e.g. "java/lang/Object"
+     * @param methodDescriptor the method descriptor in JVM notation, e.g. "()V" for a method
+     *                         without parameters returning void
+     */
+    def apply(
+        declaringClass:   String,
+        isInterface:      Boolean,
+        methodName:       String,
+        methodDescriptor: String
+    ): INVOKESPECIAL = {
+        INVOKESPECIAL(
+            ObjectType(declaringClass),
+            isInterface,
+            methodName,
+            MethodDescriptor(methodDescriptor)
+        )
+    }
 
 }
