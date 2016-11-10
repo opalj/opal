@@ -382,6 +382,10 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         }
     }
 
+    def resolveMethodReference(i: INVOKEVIRTUAL): Option[Method] = {
+        resolveMethodReference(i.declaringClass, i.name, i.methodDescriptor)
+    }
+
     def resolveInterfaceMethodReference(
         receiverType: ObjectType,
         name:         String,
@@ -406,6 +410,10 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 }
             }
         }
+    }
+
+    def resolveInterfaceMethodReference(i: INVOKEINTERFACE): Option[Method] = {
+        resolveInterfaceMethodReference(i.declaringClass, i.name, i.methodDescriptor)
     }
 
     /**
