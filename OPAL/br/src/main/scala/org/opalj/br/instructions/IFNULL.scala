@@ -46,8 +46,19 @@ case class IFNULL(branchoffset: Int) extends IFXNullInstruction {
     final def condition: RelationalOperator = RelationalOperators.EQ
 
 }
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IFNULL {
 
     final val opcode = 198
+
+    /**
+     * Factory for creating LabelIFNULL instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIFNULL = LabelIFNULL(label)
 
 }

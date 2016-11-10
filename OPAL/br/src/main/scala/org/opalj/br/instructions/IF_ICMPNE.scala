@@ -45,8 +45,19 @@ case class IF_ICMPNE(branchoffset: Int) extends IFICMPInstruction {
 
     final def condition: RelationalOperator = RelationalOperators.NE
 }
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IF_ICMPNE {
 
     final val opcode = 160
+
+    /**
+     * Factory for creating LabelIF_ICMPNE instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIF_ICMPNE = LabelIF_ICMPNE(label)
 
 }

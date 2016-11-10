@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,33 +31,19 @@ package br
 package instructions
 
 /**
- * Branch if int comparison with zero succeeds; succeeds if and only if value ≠ 0.
- *
- * @author Michael Eichberg
- */
-case class IFNE(branchoffset: Int) extends IF0Instruction {
-
-    final def opcode: Opcode = IFNE.opcode
-
-    final def mnemonic: String = "ifne"
-
-    final def operator: String = "!= 0"
-
-    final def condition: RelationalOperator = RelationalOperators.NE
-}
-
-/**
- * Additional factory methods.
- *
+ * LabelBranchInstructions are used to encode branch instructions with a
+ * Symbol as the branch target in the BytecodeAssembler DSL
  * @author Malte Limmeroth
  */
-object IFNE {
-
-    final val opcode = 154
+trait LabelBranchInstruction extends ControlTransferInstruction {
+    /**
+     * resolves the LabelBranchInstruction to the actual ControlTransferInstruction with the
+     * given branchoffset
+     */
+    def resolve(branchoffset: Int): ControlTransferInstruction
 
     /**
-     * Factory for creating LabelIFNE instructions with a Symbol as the branch target.
+     * the branching target as a Symbol
      */
-    def apply(label: Symbol): LabelIFNE = LabelIFNE(label)
-
+    def label: Symbol
 }

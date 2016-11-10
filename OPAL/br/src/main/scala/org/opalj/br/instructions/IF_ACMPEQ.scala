@@ -45,8 +45,19 @@ case class IF_ACMPEQ(branchoffset: Int) extends IFACMPInstruction {
 
     final def condition: RelationalOperator = RelationalOperators.EQ
 }
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IF_ACMPEQ {
 
     final val opcode = 165
+
+    /**
+     * Factory for creating LabelIF_ACMPEQ instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIF_ACMPEQ = LabelIF_ACMPEQ(label)
 
 }

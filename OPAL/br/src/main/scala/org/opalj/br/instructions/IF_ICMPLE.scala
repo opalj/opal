@@ -45,8 +45,19 @@ case class IF_ICMPLE(branchoffset: Int) extends IFICMPInstruction {
 
     final def condition: RelationalOperator = RelationalOperators.LE
 }
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IF_ICMPLE {
 
     final val opcode = 164
+
+    /**
+     * Factory for creating LabelIF_ICMPLE instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIF_ICMPLE = LabelIF_ICMPLE(label)
 
 }

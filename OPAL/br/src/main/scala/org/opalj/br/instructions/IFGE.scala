@@ -46,8 +46,18 @@ case class IFGE(branchoffset: Int) extends IF0Instruction {
     final def condition: RelationalOperator = RelationalOperators.GE
 }
 
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IFGE {
 
     final val opcode = 156
+
+    /**
+     * Factory for creating LabelIFGE instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIFGE = LabelIFGE(label)
 
 }

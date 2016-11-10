@@ -46,8 +46,19 @@ case class IFLE(branchoffset: Int) extends IF0Instruction {
     final def condition: RelationalOperator = RelationalOperators.LE
 
 }
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IFLE {
 
     final val opcode = 158
+
+    /**
+     * Factory for creating LabelIFLE instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIFLE = LabelIFLE(label)
 
 }
