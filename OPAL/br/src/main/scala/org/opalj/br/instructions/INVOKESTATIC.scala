@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -62,23 +62,27 @@ case class INVOKESTATIC(
 }
 
 /**
-  * Convenience Methods for the BytecodeAssembler DSL
-  *
-  * @author Malte Limmeroth
-  */
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object INVOKESTATIC {
 
     final val opcode = 184
 
     /**
-      * Convenience method to create INVOKESTATIC objects from Stings
-      */
+     * Convenience factory to create INVOKESTATIC objects from stings.
+     *
+     * @param declaringClass the declaring class name in JVM notation, e.g. "java/lang/Object"
+     * @param methodDescriptor the method descriptor in JVM notation, e.g. "()V" for a method
+     *                         without parameters returning void
+     */
     def apply(
-               declaringClass: String,
-               isInterface: Boolean,
-               methodName: String,
-               methodDescriptor: String
-             ): INVOKESTATIC = {
+        declaringClass:   String,
+        isInterface:      Boolean,
+        methodName:       String,
+        methodDescriptor: String
+    ): INVOKESTATIC = {
         INVOKESTATIC(
             ObjectType(declaringClass),
             isInterface,

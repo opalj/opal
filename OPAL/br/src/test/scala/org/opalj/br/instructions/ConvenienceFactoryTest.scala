@@ -32,24 +32,23 @@ package instructions
 
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
-import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 /**
-  * Tests instantiation of InvocationInstructions with the convenience Constructors with only
-  * Strings as parameter for the BytecodeAssembler DSL
-  *
-  * @author Malte Limmeroth
-  */
+ * Tests instantiation of InvocationInstructions with the convenience Constructors with only
+ * Strings as parameter for the BytecodeAssembler DSL
+ *
+ * @author Malte Limmeroth
+ */
 @RunWith(classOf[JUnitRunner])
-class ConvenienceConstructorInvocationInstructionTest extends FlatSpec with Matchers {
-    behavior of "InvocationInstructions Convenience Constructors"
+class ConvenienceConstructorInvocationInstructionTest extends FlatSpec {
+    behavior of "InvocationInstructions convenience factories"
 
     val declaringClass = "my/test/Class"
     val methodName = "myMythod"
     val methodDescriptor = "()V"
 
-    "INVOKEINTERFACE instantiation" should "return an INVOKEINTERFACE Instruction" in {
+    "INVOKEINTERFACE instantiation" should "return an INVOKEINTERFACE instruction" in {
         val test = INVOKEINTERFACE(declaringClass, methodName, methodDescriptor)
 
         assert(test.getClass.getName == "org.opalj.br.instructions.INVOKEINTERFACE")
@@ -58,7 +57,7 @@ class ConvenienceConstructorInvocationInstructionTest extends FlatSpec with Matc
         assert(test.methodDescriptor.toJVMDescriptor == methodDescriptor)
     }
 
-    "INVOKEVIRTUAL instantiation" should "return an INVOKEVIRTUAL Instruction" in {
+    "INVOKEVIRTUAL instantiation" should "return an INVOKEVIRTUAL instruction" in {
         val test = INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
 
         assert(test.getClass.getName == "org.opalj.br.instructions.INVOKEVIRTUAL")
@@ -67,7 +66,7 @@ class ConvenienceConstructorInvocationInstructionTest extends FlatSpec with Matc
         assert(test.methodDescriptor.toJVMDescriptor == methodDescriptor)
     }
 
-    "INVOKESPECIAL instantiation" should "return an INVOKESPECIAL Instruction" in {
+    "INVOKESPECIAL instantiation" should "return an INVOKESPECIAL instruction" in {
         val test = INVOKESPECIAL(declaringClass, false, methodName, methodDescriptor)
 
         assert(test.getClass.getName == "org.opalj.br.instructions.INVOKESPECIAL")
@@ -77,7 +76,7 @@ class ConvenienceConstructorInvocationInstructionTest extends FlatSpec with Matc
         assert(test.methodDescriptor.toJVMDescriptor == methodDescriptor)
     }
 
-    "INVOKESTATIC instantiation" should "return an INVOKESTATIC Instruction" in {
+    "INVOKESTATIC instantiation" should "return an INVOKESTATIC instruction" in {
         val test = INVOKESTATIC(declaringClass, false, methodName, methodDescriptor)
 
         assert(test.getClass.getName == "org.opalj.br.instructions.INVOKESTATIC")
@@ -86,6 +85,5 @@ class ConvenienceConstructorInvocationInstructionTest extends FlatSpec with Matc
         assert(test.name == methodName)
         assert(test.methodDescriptor.toJVMDescriptor == methodDescriptor)
     }
-
 
 }

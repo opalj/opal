@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -57,22 +57,26 @@ case class INVOKEVIRTUAL(
 }
 
 /**
-  * Convenience Methods for the BytecodeAssembler DSL
-  *
-  * @author Malte Limmeroth
-  */
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object INVOKEVIRTUAL {
 
     final val opcode = 182
 
     /**
-      * Convenience method to create INVOKEVIRTUAL objects from Stings
-      */
+     * Convenience factory to create INVOKEVIRTUAL objects from stings.
+     *
+     * @param declaringClass the declaring class name in JVM notation, e.g. "java/lang/Object"
+     * @param methodDescriptor the method descriptor in JVM notation, e.g. "()V" for a method
+     *                         without parameters returning void
+     */
     def apply(
-               declaringClass: String,
-               methodName: String,
-               methodDescriptor: String
-             ): INVOKEVIRTUAL = {
+        declaringClass:   String,
+        methodName:       String,
+        methodDescriptor: String
+    ): INVOKEVIRTUAL = {
         INVOKEVIRTUAL(
             ReferenceType(declaringClass),
             methodName,
