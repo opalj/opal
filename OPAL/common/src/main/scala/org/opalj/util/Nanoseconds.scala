@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,17 +36,20 @@ package util
  */
 class Nanoseconds(val timeSpan: Long) extends AnyVal {
 
-    final def +(other: Nanoseconds): Nanoseconds =
+    final def +(other: Nanoseconds): Nanoseconds = {
         new Nanoseconds(this.timeSpan + other.timeSpan)
+    }
 
-    final def -(other: Nanoseconds): Nanoseconds =
+    final def -(other: Nanoseconds): Nanoseconds = {
         new Nanoseconds(this.timeSpan - other.timeSpan)
+    }
 
     /**
      * Converts the specified number of nanoseconds into seconds.
      */
-    final def toSeconds: Seconds =
+    final def toSeconds: Seconds = {
         new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
+    }
 
     def toString(withUnit: Boolean): String = {
         if (withUnit) timeSpan+" ns" else timeSpan.toString
@@ -61,7 +64,7 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal {
  */
 object Nanoseconds {
 
-    final val None: Nanoseconds = new Nanoseconds(0l)
+    final val None: Nanoseconds = new Nanoseconds(0L)
 
     def apply(timeSpan: Long): Nanoseconds = new Nanoseconds(timeSpan)
 
@@ -71,7 +74,8 @@ object Nanoseconds {
     final def TimeSpan(
         startTimeInNanoseconds: Long,
         endTimeInNanoseconds:   Long
-    ): Nanoseconds =
+    ): Nanoseconds = {
         new Nanoseconds(endTimeInNanoseconds - startTimeInNanoseconds)
+    }
 
 }

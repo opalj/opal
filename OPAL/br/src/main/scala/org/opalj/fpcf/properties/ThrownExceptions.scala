@@ -57,8 +57,8 @@ import org.opalj.br.instructions._
  * will never throw an exception.
  * {{{
  * object Validator {
- * 	def isAvailable(s : String) : Boolean = {
- * 		try { Class.forName(s); true} finally {return false;}
+ *  def isAvailable(s : String) : Boolean = {
+ *      try { Class.forName(s); true} finally {return false;}
  *  }
  * }
  * }}}
@@ -291,7 +291,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (lci: LoadConstantInstruction[Long] @unchecked) if lci.value != 0l ⇒
+                            case (lci: LoadConstantInstruction[Long] @unchecked) if lci.value != 0L ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒

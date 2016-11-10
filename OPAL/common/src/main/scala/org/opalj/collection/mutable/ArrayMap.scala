@@ -230,7 +230,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     override def hashCode: Int = {
         var hc = 1
         foreachValue { e ⇒
-            hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === System.identityHashCode(null) */ }
+            hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === identityHashCode(null) */ }
         }
         hc
     }
@@ -258,12 +258,12 @@ object ArrayMap {
     /**
      * Creates an empty map which initially can store 2 values.
      */
-    def empty[T >: Null <: AnyRef: ClassTag] = new ArrayMap(new Array[T](2))
+    def empty[T >: Null <: AnyRef: ClassTag]: ArrayMap[T] = new ArrayMap(new Array[T](2))
 
     /**
      * Creates an empty map which initially can store up to sizeHint values.
      */
-    def apply[T >: Null <: AnyRef: ClassTag](sizeHint: Int) = {
+    def apply[T >: Null <: AnyRef: ClassTag](sizeHint: Int): ArrayMap[T] = {
         new ArrayMap(new Array[T](sizeHint))
     }
 }

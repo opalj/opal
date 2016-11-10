@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -80,7 +80,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * A map that contains the refined values (the map's values) of some old values (the
      * map's keys).
      */
-    type Refinements = IdentityHashMap[ /*old*/ AReferenceValue, /*new*/ AReferenceValue]
+    type Refinements = IdentityHashMap[AReferenceValue /*old*/ , AReferenceValue /*new*/ ]
 
     /**
      * Defines a total order on reference values with a single origin by subtracting

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,14 +34,14 @@ import scala.xml.Node
 /**
  * <pre>
  * InnerClasses_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 number_of_classes; // => Seq[InnerClasses_attribute.Class]
- * 	{	u2 inner_class_info_index;
- * 		u2 outer_class_info_index;
- * 		u2 inner_name_index;
- * 		u2 inner_class_access_flags;
- * 	} classes[number_of_classes];
+ *  u2 attribute_name_index;
+ *  u4 attribute_length;
+ *  u2 number_of_classes; // => Seq[InnerClasses_attribute.Class]
+ *  {   u2 inner_class_info_index;
+ *      u2 outer_class_info_index;
+ *      u2 inner_name_index;
+ *      u2 inner_class_access_flags;
+ *  } classes[number_of_classes];
  * }
  * </pre>
  *

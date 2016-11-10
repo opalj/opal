@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -39,8 +39,8 @@ import org.opalj.control.repeat
  * Generic parser for the ''Module'' attribute (Java 9).
  *
  * @note This implementation is based on:
- * 		http://cr.openjdk.java.net/~mr/jigsaw/spec/lang-vm.html
- * 		August 2016
+ *      http://cr.openjdk.java.net/~mr/jigsaw/spec/lang-vm.html
+ *      August 2016
  *
  * @author Michael Eichberg
  */

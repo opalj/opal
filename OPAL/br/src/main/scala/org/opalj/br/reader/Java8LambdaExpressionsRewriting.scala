@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -180,7 +180,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 functionalInterfaceMethodName,
                 functionalInterfaceDescriptorBeforeTypeErasure,
                 targetMethodOwner,
-                receiverIsInterface = false,
+                // Note a static lambda method in an interface needs
+                // to be called using the correct variant of an invokestatic.
+                receiverIsInterface = classFile.isInterfaceDeclaration,
                 targetMethodName,
                 receiverDescriptor,
                 invocationInstruction,
@@ -195,12 +197,13 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
             val newInvokestatic = INVOKESTATIC(
                 proxy.thisType,
-                isInterface = false,
+                isInterface = false, // the created proxy class is always a concrete class
                 factoryMethod.name,
                 // the invokedynamic's methodDescriptor (factoryDescriptor) determines
                 // the parameters that are actually pushed and popped from/to the stack
-                factoryDescriptor
+                factoryDescriptor.copy(returnType = proxy.thisType)
             )
+
             // DEBUG ---
             if (classFile.thisType.toJava.startsWith("java.util.stream.DistinctOps")) {
                 println("Creating Proxy Class:")
@@ -218,14 +221,15 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 println()
             }
             // --- DEBUG
+
             if (logJava8LambdaExpressionsRewrites) {
                 OPALLogger.info(
                     "analysis",
                     s"rewriting lambda expression: $invokedynamic ⇒ $newInvokestatic"
                 )
             }
-            instructions(pc) = newInvokestatic
 
+            instructions(pc) = newInvokestatic
             // since invokestatic is two bytes shorter than invokedynamic, we need to fill
             // the two-byte gap following the invokestatic with NOPs
             instructions(pc + 3) = NOP

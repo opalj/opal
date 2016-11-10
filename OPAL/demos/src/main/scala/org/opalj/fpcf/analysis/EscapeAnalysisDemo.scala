@@ -55,7 +55,11 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
         "determins escape information related to objects belonging to a specific class"
     }
 
-    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
 

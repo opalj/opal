@@ -32,6 +32,7 @@ package analyses
 
 import java.net.URL
 import java.io.File
+import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicIntegerArray
 
@@ -47,29 +48,29 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
-import org.opalj.control.find
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
-import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.DefaultLogContext
-import org.opalj.br.instructions.NEW
 import org.opalj.log.Error
+import org.opalj.log.GlobalLogContext
+import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.reader.Java9LibraryFramework
+import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.log.GlobalLogContext
-import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -86,8 +87,8 @@ import org.opalj.util.PerformanceEvaluation.time
  *     The list of project wide information that can be made available is equivalent
  *     to the list of (concrete/singleton) objects implementing the trait
  *     [[org.opalj.br.analyses.ProjectInformationKey]].
- * 	   One of the most important project information keys is the
- * 	   `SourceElementsPropertyStoreKey` which gives access to the property store.
+ *     One of the most important project information keys is the
+ *     `SourceElementsPropertyStoreKey` which gives access to the property store.
  *
  * ==Thread Safety==
  * This class is thread-safe.
@@ -117,7 +118,7 @@ import org.opalj.util.PerformanceEvaluation.time
  *          possible.
  *
  * @param   libraryClassFilesAreInterfacesOnly If `true` then only the public interface
- * 		   of the methods of the library's classes is available.
+ *         of the methods of the library's classes is available.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -163,7 +164,13 @@ class Project[Source] private (
     |                                                                                              |
     \* ------------------------------------------------------------------------------------------ */
 
-    final val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
+    final val ObjectClassFile = classFile(ObjectType.Object)
+
+    final val MethodHandleClassFile = classFile(ObjectType.MethodHandle)
+
+    final val MethodHandleSubtypes = {
+        classHierarchy.allSubtypes(ObjectType.MethodHandle, reflexive = true)
+    }
 
     /**
      * The number of classes (including inner and annoymous classes as well as
@@ -191,18 +198,7 @@ class Project[Source] private (
         methodToClassFile.keysIterator.count(m ⇒ m.isVirtualMethodDeclaration)
     }
 
-    /**
-     * Returns the set of all non-private, non-abstract, non-static methods that are not
-     * initializers and which are potentially callable by clients when we have an object that
-     * has the specified type and a method is called using
-     * [[org.opalj.br.instructions.INVOKEINTERFACE]] or [[org.opalj.br.instructions.INVOKEVIRTUAL]].
-     *
-     * The returned array must not be mutated!
-     *
-     * The array of methods is sorted using [[MethodDeclarationContextOrdering]] to
-     * enable the fast look-up of the target method.
-     */
-    val instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]] = time {
+    final val instanceMethods: Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
 
         // IMPROVE Instead of an Array/Chain use a sorted trie (set) or something similar which is always sorted.
 
@@ -211,7 +207,7 @@ class Project[Source] private (
         // information about all super types is available (already stored in instanceMethods)
         // when we process the subtype. If not all information is already available, which
         // can happen in the following case if the processing of C would be scheduled before B:
-        //      interface A; interface B extends A; interface C extends A, B
+        //      interface A; interface B extends A; interface C extends A, B,
         // we postpone the processing of C until the information is available.
 
         val methods: ConcurrentHashMap[ObjectType, Chain[MethodDeclarationContext]] = {
@@ -290,11 +286,10 @@ class Project[Source] private (
 
             classFile(objectType) match {
                 case Some(classFile) ⇒
-                    val packageName = objectType.packageName
                     for {
                         declaredMethod ← classFile.methods
                         if declaredMethod.isVirtualMethodDeclaration
-                        declaredMethodContext = MethodDeclarationContext(declaredMethod, packageName)
+                        declaredMethodContext = MethodDeclarationContext(declaredMethod, classFile)
                     } {
                         // We have to filter multiple methods when we inherit (w.r.t. the visibility)
                         // multiple conflicting methods!
@@ -306,7 +301,7 @@ class Project[Source] private (
                         }
                     }
                 case None ⇒
-                // this point is only reached in case of a rather incomplete project...
+                // this point is only reached in case of a rather incomplete projects...
             }
             methods.put(objectType, definedMethods)
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
@@ -319,12 +314,12 @@ class Project[Source] private (
             OPALLogger.error("project configuration", "computing the defined methods failed", e)
         }
 
-        val result = new AnyRefMap[ObjectType, Array[MethodDeclarationContext]](methods.size)
+        val result = new AnyRefMap[ObjectType, ConstArray[MethodDeclarationContext]](methods.size)
         methods.asScala.foreach { e ⇒
             val (objectType, methods) = e
             val sortedMethods = methods.toArray
-            java.util.Arrays.sort(sortedMethods, MethodDeclarationContextOrdering)
-            result.+=(objectType, sortedMethods)
+            sortArray(sortedMethods, MethodDeclarationContextOrdering)
+            result.+=(objectType, ConstArray(sortedMethods))
         }
         result.repack
         result
@@ -338,9 +333,12 @@ class Project[Source] private (
      * overrides it.
      *
      * This method takes the visibility of the methods and the defining context into consideration.
-     * @see [[Method]]`.isVirtualMethodDeclaration` for further details.
+     *
+     * @see     [[Method]]`.isVirtualMethodDeclaration` for further details.
+     * @note    The map only contains those methods which have at least one concrete
+     *          implementation.
      */
-    lazy val overridingMethods: Map[Method, immutable.Set[Method]] = time {
+    final val overridingMethods: Map[Method, immutable.Set[Method]] = time {
         // IDEA
         // 0.   We start with the leaf nodes of the class hierarchy and store for each method
         //      the set of overriding methods (recall that the overrides relation is reflexive).
@@ -371,8 +369,8 @@ class Project[Source] private (
             // instanceMethods will also just reuse the information derived from the superclasses.
             try {
                 for {
-                    declaredMethods ← classFile(objectType).map(cf ⇒ cf.methods)
-                    declaredMethod ← declaredMethods
+                    cf ← classFile(objectType)
+                    declaredMethod ← cf.methods
                     if declaredMethod.isVirtualMethodDeclaration
                 } {
                     if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
@@ -405,8 +403,9 @@ class Project[Source] private (
                 // The try-finally is a safety net to ensure that this method at least
                 // terminates and that exceptions can be reported!
                 classHierarchy.foreachDirectSupertype(objectType) { supertype ⇒
-                    if (subtypesToProcessCounts.decrementAndGet(supertype.id) == 0)
+                    if (subtypesToProcessCounts.decrementAndGet(supertype.id) == 0) {
                         tasks.submit(supertype)
+                    }
                 }
             }
         }
@@ -453,47 +452,12 @@ class Project[Source] private (
         }
 
         if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly) {
-            throw new IllegalArgumentException("the projects libraries are loaded differently");
+            throw new IllegalArgumentException("the projects' libraries are loaded differently");
         }
 
         val otherClassFiles = other.projectClassFilesWithSources
         val otherLibraryClassFiles = other.libraryClassFilesWithSources
         Project.extend[Source](this, otherClassFiles, otherLibraryClassFiles)
-    }
-
-    /**
-     * Tests if the given method belongs to the interface of the given object type.
-     * I.e., returns `true` if a virtual method call, where the receiver type is known
-     * to be the given object type, would lead to the invokation of the given method.
-     * The given method can be an inherited method, but it will never return `Yes` if
-     * the given method is overridden by `objectType` or a supertype of it which is a
-     * sub type of the declaring type of `method`.
-     *
-     * @note The computation is based on the computed set of [[instanceMethods]].
-     */
-    def hasInstanceMethod(objectType: ObjectType, method: Method): Answer = {
-        // RECALL val instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]]
-        val definedMethodsOption = instanceMethods.get(objectType)
-        if (definedMethodsOption.isEmpty)
-            return Unknown;
-
-        val definedMethods: Array[MethodDeclarationContext] = definedMethodsOption.get
-
-        val result: Option[MethodDeclarationContext] = find(definedMethods) { definedMethodContext ⇒
-            val definedMethod = definedMethodContext.method
-            if (definedMethod eq method)
-                0
-            else {
-                val methodComparison = definedMethod compare method
-                if (methodComparison == 0)
-                    // We may have multiple methods with the same signature, but which belong
-                    // to different packages!
-                    definedMethodContext.packageName compare classFile(method).thisType.packageName
-                else
-                    methodComparison
-            }
-        }
-        Answer(result)
     }
 
     /**
@@ -918,11 +882,11 @@ class Project[Source] private (
      * If the information was not yet required the information is computed and
      * returned. Subsequent calls will directly return the information.
      *
-     * @note	(Development Time)
-     * 			Every analysis using [[ProjectInformationKey]]s must list '''All
-     * 			requirements; failing to specify a requirement can end up in a deadlock.'''
+     * @note    (Development Time)
+     *          Every analysis using [[ProjectInformationKey]]s must list '''All
+     *          requirements; failing to specify a requirement can end up in a deadlock.'''
      *
-     * @see 	[[ProjectInformationKey]] for further information.
+     * @see     [[ProjectInformationKey]] for further information.
      */
     def get[T <: AnyRef](pik: ProjectInformationKey[T]): T = {
         val pikUId = pik.uniqueId
@@ -1216,20 +1180,20 @@ object Project {
      * Creates a new Project.
      *
      * @param projectClassFilesWithSources The list of class files of this project that are considered
-     *    	to belong to the application/library that will be analyzed.
-     *    	[Thread Safety] The underlying data structure has to support concurrent access.
+     *      to belong to the application/library that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
      *
      * @param libraryClassFilesWithSources The list of class files of this project that make up
-     *    	the libraries used by the project that will be analyzed.
-     *    	[Thread Safety] The underlying data structure has to support concurrent access.
+     *      the libraries used by the project that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
      *
      * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
-     * 		and no private methods or method implementations are available. Otherwise,
-     * 		the libraries are completely loaded.
+     *      and no private methods or method implementations are available. Otherwise,
+     *      the libraries are completely loaded.
      *
      * @param virtualClassFiles A list of virtual class files that have no direct
      *      representation in the project.
-     * 	    Such declarations are created, e.g., to handle `invokedynamic`
+     *      Such declarations are created, e.g., to handle `invokedynamic`
      *      instructions.
      *      '''In general, such class files should be added using
      *      `projectClassFilesWithSources` and the `Source` should be the file that
@@ -1316,7 +1280,7 @@ object Project {
             var libraryMethodsCount: Int = 0
             var libraryFieldsCount: Int = 0
 
-            var codeSize: Long = 0l
+            var codeSize: Long = 0L
 
             val methodToClassFile = AnyRefMap.empty[Method, ClassFile]
             val fieldToClassFile = AnyRefMap.empty[Field, ClassFile]

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -52,7 +52,7 @@ trait ClassMember extends ConcreteSourceElement {
 
     final def hasDefaultVisibility: Boolean = (VisibilityModifier.mask & accessFlags) == 0
 
-    final def isPackagePrivate = hasDefaultVisibility
+    final def isPackagePrivate: Boolean = hasDefaultVisibility
 
     final def isStatic: Boolean = (ACC_STATIC.mask & accessFlags) != 0
 

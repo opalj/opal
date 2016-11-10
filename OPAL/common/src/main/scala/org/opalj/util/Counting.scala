@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,7 +43,8 @@ import scala.collection.mutable
  * ==Thread Safety==
  * This class is thread safe.
  *
- * @note The sum relies on integers, it is therefore not suitable to get higher sums than the integer range provides.
+ * @note    The sum relies on integers, it is therefore not suitable to get higher sums than the
+ *          integer range provides.
  *
  * @author Michael Reif
  */
@@ -52,11 +53,14 @@ trait Counting extends Locking {
     private[this] val count = mutable.Map.empty[Symbol, Int]
 
     /**
-     * Increases or decreases the count of the current statistics which is defined over the passed `symbol`.
-     * If the passed `value` is positive the count will be increases whereas it will decreases when a negative number is passed.
+     * Increases or decreases the count of the current statistics which is defined over the passed
+     * `symbol`.
+     * If the passed `value` is positive the count will be increases whereas it will decreases when
+     * a negative number is passed.
      *
-     * @param s Symbol used to put multiple statistics into relation.
-     * @param value The value that will be added to the statistics. A negative number will reduce the current count.
+     * @param   s Symbol used to put multiple statistics into relation.
+     * @param   value The value that will be added to the statistics. A negative number will reduce
+     *          the current count.
      */
     final def updateStatistics(s: Symbol, value: Int): Unit = {
         withWriteLock { doUpdateStatistics(s, value) }

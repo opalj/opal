@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -48,7 +48,7 @@ object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         import scala.collection.immutable.TreeMap // <= Sorted...
         var methodParametersDistribution: Map[Int, Int] = TreeMap.empty

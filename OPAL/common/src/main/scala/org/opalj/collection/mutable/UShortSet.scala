@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -219,7 +219,7 @@ private final class UShortSet2(private var value: Int) extends UShortSet {
             this
     }
 
-    override def isEmpty = false
+    override def isEmpty: Boolean = false
 
     def iterator: Iterator[UShort] = {
         if (notFull)
@@ -427,23 +427,23 @@ private final class UShortSet4(private var value: Long) extends UShortSet { self
         f(value2.toInt)
         f(value3.toInt)
         val value4 = this.value4
-        if (value4 > 0l) f(value4.toInt)
+        if (value4 > 0L) f(value4.toInt)
     }
 
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
         val b = f(f(f(z, value1.toInt), value2.toInt), value3.toInt)
         val value4 = this.value4
-        if (value4 > 0l) f(b, value4.toInt) else b
+        if (value4 > 0L) f(b, value4.toInt) else b
     }
 
     override def forall(f: UShort ⇒ Boolean): Boolean = {
         f(value1.toInt) && f(value2.toInt) && f(value3.toInt) && {
             val value4 = this.value4
-            value4 == 0l || f(value4.toInt)
+            value4 == 0L || f(value4.toInt)
         }
     }
 
-    override def isEmpty = false
+    override def isEmpty: Boolean = false
 
     def iterator: Iterator[UShort] = new Iterator[UShort] {
         private var i = 0

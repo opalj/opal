@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -340,7 +340,7 @@ private[mutable] final object Locals0 extends Locals[Null] {
         this.asInstanceOf[Locals[X]]
     }
 
-    override def mapConserve(f: Null ⇒ Null) = this
+    override def mapConserve(f: Null ⇒ Null): Locals[Null] = this
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -352,9 +352,9 @@ private[mutable] final object Locals0 extends Locals[Null] {
 
 private[mutable] sealed abstract class LocalsX[T >: Null <: AnyRef] extends Locals[T] {
 
-    final override def isEmpty = false
+    final override def isEmpty: Boolean = false
 
-    final override def nonEmpty = true
+    final override def nonEmpty: Boolean = true
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -375,7 +375,7 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         private var v: T = null
 ) extends LocalsX[T] {
 
-    final override def size = 1
+    final override def size: Int = 1
 
     override def apply(index: Int): T = {
         // if (index != 0) throw new IndexOutOfBoundsException("invalid index("+index+")")
@@ -447,7 +447,7 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
         private var v1: T = null
 ) extends LocalsX[T] {
 
-    final override def size = 2
+    final override def size: Int = 2
 
     override def apply(index: Int): T = {
         if (index == 0) v0 else v1
@@ -549,7 +549,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
         private var v2: T = null
 ) extends LocalsX[T] {
 
-    final override def size = 3
+    final override def size: Int = 3
 
     override def apply(index: Int): T = {
         index match {
@@ -679,7 +679,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
         private var v3: T = null
 ) extends LocalsX[T] {
 
-    final override def size = 4
+    final override def size: Int = 4
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -831,7 +831,7 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
         final val vs2: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size = 5
+    final def size: Int = 5
 
     override def apply(index: Int): T = {
         if (index < 2) vs1(index) else vs2(index - 2)

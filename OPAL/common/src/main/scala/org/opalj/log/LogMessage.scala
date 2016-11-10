@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -90,12 +90,11 @@ trait LogMessage {
  * @author Michael Eichberg
  */
 case class BasicLogMessage(
-    level:   Level  = Info,
-    message: String
-)
-        extends LogMessage {
+        level:   Level  = Info,
+        message: String
+) extends LogMessage {
 
-    def category = None
+    def category: Option[String] = None
 }
 
 /**
@@ -107,18 +106,16 @@ case class StandardLogMessage(
     level:    Level          = Info,
     category: Option[String] = None,
     message:  String
-)
-        extends LogMessage
+) extends LogMessage
 
 case class ExceptionLogMessage(
-    level:       Level          = Info,
-    category:    Option[String] = None,
-    baseMessage: String,
-    t:           Throwable
-)
-        extends LogMessage {
+        level:       Level          = Info,
+        category:    Option[String] = None,
+        baseMessage: String,
+        t:           Throwable
+) extends LogMessage {
 
-    def message = {
+    def message: String = {
 
         def exceptionToMessage(t: Throwable): String = {
             val stacktrace = t.getStackTrace.mkString("\t", "\n\t", "")

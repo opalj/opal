@@ -1,5 +1,5 @@
-/* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,10 +13,6 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
- *    prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -366,12 +362,11 @@ trait ArrayValues
     // In that case it may be possible to load a value from the array and manipulate
     // it which could lead to a new domain value which is not referred to by the array!
     protected class ConcreteArrayValue(
-        origin:     ValueOrigin,
-        theType:    ArrayType,
-        val values: Array[DomainValue],
-        t:          Timestamp
-    )
-            extends ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
+            origin:     ValueOrigin,
+            theType:    ArrayType,
+            val values: Array[DomainValue],
+            t:          Timestamp
+    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
         this: DomainConcreteArrayValue ⇒
 
         override def length: Some[Int] = Some(values.size)
@@ -388,7 +383,7 @@ trait ArrayValues
                 return ComputedValueOrException(
                     TypedValue(loadPC, theUpperTypeBound.componentType),
                     potentialExceptions
-                )
+                );
             }
 
             intValue[ArrayLoadResult](index) { index ⇒
@@ -535,12 +530,13 @@ trait ArrayValues
             }
         }
 
-        override protected def canEqual(other: ArrayValue): Boolean =
+        override protected def canEqual(other: ArrayValue): Boolean = {
             other.isInstanceOf[ConcreteArrayValue]
+        }
 
         override def hashCode: Int = origin * 79 + upperTypeBound.hashCode
 
-        override def toString() = {
+        override def toString: String = {
             val valuesAsString = values.mkString("«", ", ", "»")
             s"${theType.toJava}[@$origin;length=${values.size};t=$t,$valuesAsString]"
         }

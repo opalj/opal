@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -114,7 +114,7 @@ class DependencyExtractorJava7Test extends FunSuite {
         assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList", CREATES)
         assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList.<init>()", CALLS_METHOD)
-        //    	list.add(null);
+        //      list.add(null);
         assertDependency("dependencies.TestClass.testMethod()", "java.util.List", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.TestClass.testMethod()", "java.util.List.add(java.lang.Object)", CALLS_METHOD)
         assertDependency("dependencies.TestClass.testMethod()", "java.lang.Object", PARAMETER_TYPE_OF_CALLED_METHOD)
@@ -126,15 +126,15 @@ class DependencyExtractorJava7Test extends FunSuite {
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.Integer", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.String", RETURN_TYPE)
         assertImplicitThisLocalVariable("dependencies.TestClass.testMethod(java.lang.Integer, int)")
-        //    	if (i != null && i.intValue() > j) {
+        //      if (i != null && i.intValue() > j) {
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.Integer", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.Integer.intValue()", CALLS_METHOD)
-        //    	    return i.toString();
+        //          return i.toString();
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.Integer", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.Integer.toString()", CALLS_METHOD)
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.String", RETURN_TYPE_OF_CALLED_METHOD)
-        //    	}
-        //    	return String.valueOf(j);
+        //      }
+        //      return String.valueOf(j);
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.String", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.String.valueOf(int)", CALLS_METHOD)
         assertDependency("dependencies.TestClass.testMethod(java.lang.Integer, int)", "java.lang.String", RETURN_TYPE_OF_CALLED_METHOD)
@@ -204,7 +204,7 @@ class DependencyExtractorJava7Test extends FunSuite {
         assertDependency("dependencies.FieldsClass.readField()", "dependencies.FieldsClass", INSTANCE_MEMBER)
         assertDependency("dependencies.FieldsClass.readField()", "java.lang.Integer", RETURN_TYPE)
         assertImplicitThisLocalVariable("dependencies.FieldsClass.readField()")
-        //    	return i;
+        //      return i;
         assertDependency("dependencies.FieldsClass.readField()", "dependencies.FieldsClass", DECLARING_CLASS_OF_ACCESSED_FIELD)
         assertDependency("dependencies.FieldsClass.readField()", "dependencies.FieldsClass.i", READS_FIELD)
         assertDependency("dependencies.FieldsClass.readField()", "java.lang.Integer", TYPE_OF_ACCESSED_FIELD)
@@ -215,7 +215,7 @@ class DependencyExtractorJava7Test extends FunSuite {
         assertDependency("dependencies.FieldsClass.writeField(java.lang.Integer)", "java.lang.Integer", PARAMETER_TYPE)
         assertDependency("dependencies.FieldsClass.writeField(java.lang.Integer)", "java.lang.Integer", LOCAL_VARIABLE_TYPE)
         assertImplicitThisLocalVariable("dependencies.FieldsClass.writeField(java.lang.Integer)")
-        //    	i = j;
+        //      i = j;
         assertDependency("dependencies.FieldsClass.writeField(java.lang.Integer)", "dependencies.FieldsClass", DECLARING_CLASS_OF_ACCESSED_FIELD)
         assertDependency("dependencies.FieldsClass.writeField(java.lang.Integer)", "dependencies.FieldsClass.i", WRITES_FIELD)
         assertDependency("dependencies.FieldsClass.writeField(java.lang.Integer)", "java.lang.Integer", TYPE_OF_ACCESSED_FIELD)
@@ -227,16 +227,16 @@ class DependencyExtractorJava7Test extends FunSuite {
         assertDependency("dependencies.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", RETURN_TYPE)
         assertImplicitThisLocalVariable("dependencies.FieldsClass.readWrite(java.lang.Integer)")
-        //    	Integer result = readField();
+        //      Integer result = readField();
         assertDependency("dependencies.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.FieldsClass.readWrite(java.lang.Integer)", "dependencies.FieldsClass", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.FieldsClass.readWrite(java.lang.Integer)", "dependencies.FieldsClass.readField()", CALLS_METHOD)
         assertDependency("dependencies.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", RETURN_TYPE_OF_CALLED_METHOD)
-        //    	writeField(j);
+        //      writeField(j);
         assertDependency("dependencies.FieldsClass.readWrite(java.lang.Integer)", "dependencies.FieldsClass", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.FieldsClass.readWrite(java.lang.Integer)", "dependencies.FieldsClass.writeField(java.lang.Integer)", CALLS_METHOD)
         assertDependency("dependencies.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", PARAMETER_TYPE_OF_CALLED_METHOD)
-        //    	return result;
+        //      return result;
         //        }
         //    }
 
@@ -298,16 +298,16 @@ class DependencyExtractorJava7Test extends FunSuite {
         //        };
         assertDependency("dependencies.EnclosingMethodClass$1", "java.lang.Object", EXTENDS)
         assertDependency("dependencies.EnclosingMethodClass$1", "dependencies.EnclosingMethodClass", ENCLOSED)
-        //	//implicit field:
+        //  //implicit field:
         assertDependency("dependencies.EnclosingMethodClass$1.this$0", "dependencies.EnclosingMethodClass$1", INSTANCE_MEMBER)
         assertDependency("dependencies.EnclosingMethodClass$1.this$0", "dependencies.EnclosingMethodClass", FIELD_TYPE)
-        //	//implicit constructor:
+        //  //implicit constructor:
         assertDependency("dependencies.EnclosingMethodClass$1.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass$1", INSTANCE_MEMBER)
         assertDependency("dependencies.EnclosingMethodClass$1.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass", PARAMETER_TYPE)
         assertImplicitThisLocalVariable("dependencies.EnclosingMethodClass$1.<init>(dependencies.EnclosingMethodClass)")
         assertDependency("dependencies.EnclosingMethodClass$1.<init>(dependencies.EnclosingMethodClass)", "java.lang.Object", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.EnclosingMethodClass$1.<init>(dependencies.EnclosingMethodClass)", "java.lang.Object.<init>()", CALLS_METHOD)
-        //	// write to implicit field:
+        //  // write to implicit field:
         assertDependency("dependencies.EnclosingMethodClass$1.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass$1", DECLARING_CLASS_OF_ACCESSED_FIELD)
         assertDependency("dependencies.EnclosingMethodClass$1.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass$1.this$0", WRITES_FIELD)
         assertDependency("dependencies.EnclosingMethodClass$1.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass", TYPE_OF_ACCESSED_FIELD)
@@ -318,7 +318,7 @@ class DependencyExtractorJava7Test extends FunSuite {
         //        };
         assertDependency("dependencies.EnclosingMethodClass$2", "java.lang.Object", EXTENDS)
         assertDependency("dependencies.EnclosingMethodClass$2", "dependencies.EnclosingMethodClass", ENCLOSED)
-        //	//implicit constructor:
+        //  //implicit constructor:
         assertDependency("dependencies.EnclosingMethodClass$2.<init>()", "dependencies.EnclosingMethodClass$2", INSTANCE_MEMBER)
         assertImplicitThisLocalVariable("dependencies.EnclosingMethodClass$2.<init>()")
         assertDependency("dependencies.EnclosingMethodClass$2.<init>()", "java.lang.Object", DECLARING_CLASS_OF_CALLED_METHOD)
@@ -327,27 +327,27 @@ class DependencyExtractorJava7Test extends FunSuite {
         //        public void enclosingMethod() {
         assertDependency("dependencies.EnclosingMethodClass.enclosingMethod()", "dependencies.EnclosingMethodClass", INSTANCE_MEMBER)
         assertImplicitThisLocalVariable("dependencies.EnclosingMethodClass.enclosingMethod()")
-        //    	new Object() {
+        //      new Object() {
         assertDependency("dependencies.EnclosingMethodClass$3", "java.lang.Object", EXTENDS)
         assertDependency("dependencies.EnclosingMethodClass$3", "dependencies.EnclosingMethodClass.enclosingMethod()", ENCLOSED)
-        //	//implicit field:
+        //  //implicit field:
         assertDependency("dependencies.EnclosingMethodClass$3.this$0", "dependencies.EnclosingMethodClass$3", INSTANCE_MEMBER)
         assertDependency("dependencies.EnclosingMethodClass$3.this$0", "dependencies.EnclosingMethodClass", FIELD_TYPE)
-        //	//implicit constructor:
+        //  //implicit constructor:
         assertDependency("dependencies.EnclosingMethodClass$3.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass$3", INSTANCE_MEMBER)
         assertDependency("dependencies.EnclosingMethodClass$3.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass", PARAMETER_TYPE)
         assertImplicitThisLocalVariable("dependencies.EnclosingMethodClass$3.<init>(dependencies.EnclosingMethodClass)")
         assertDependency("dependencies.EnclosingMethodClass$3.<init>(dependencies.EnclosingMethodClass)", "java.lang.Object", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.EnclosingMethodClass$3.<init>(dependencies.EnclosingMethodClass)", "java.lang.Object.<init>()", CALLS_METHOD)
-        //	// write to implicit field:
+        //  // write to implicit field:
         assertDependency("dependencies.EnclosingMethodClass$3.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass$3", DECLARING_CLASS_OF_ACCESSED_FIELD)
         assertDependency("dependencies.EnclosingMethodClass$3.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass$3.this$0", WRITES_FIELD)
         assertDependency("dependencies.EnclosingMethodClass$3.<init>(dependencies.EnclosingMethodClass)", "dependencies.EnclosingMethodClass", TYPE_OF_ACCESSED_FIELD)
-        //    	    public void innerMethod() {
+        //          public void innerMethod() {
         assertDependency("dependencies.EnclosingMethodClass$3.innerMethod()", "dependencies.EnclosingMethodClass$3", INSTANCE_MEMBER)
         assertImplicitThisLocalVariable("dependencies.EnclosingMethodClass$3.innerMethod()")
-        //    	    }
-        //    	}.innerMethod();
+        //          }
+        //      }.innerMethod();
         assertDependency("dependencies.EnclosingMethodClass.enclosingMethod()", "dependencies.EnclosingMethodClass$3", CREATES)
         assertDependency("dependencies.EnclosingMethodClass.enclosingMethod()", "dependencies.EnclosingMethodClass$3", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.EnclosingMethodClass.enclosingMethod()", "dependencies.EnclosingMethodClass$3.<init>(dependencies.EnclosingMethodClass)", CALLS_METHOD)
@@ -369,12 +369,12 @@ class DependencyExtractorJava7Test extends FunSuite {
         assertImplicitDefaultConstructor("dependencies.ExceptionTestClass")
         //
         //        public void testMethod() throws IllegalStateException,
-        //    	    OperationNotSupportedException {
+        //          OperationNotSupportedException {
         assertDependency("dependencies.ExceptionTestClass.testMethod()", "dependencies.ExceptionTestClass", INSTANCE_MEMBER)
         assertDependency("dependencies.ExceptionTestClass.testMethod()", "java.lang.IllegalStateException", THROWN_EXCEPTION)
         assertDependency("dependencies.ExceptionTestClass.testMethod()", "javax.naming.OperationNotSupportedException", THROWN_EXCEPTION)
         assertImplicitThisLocalVariable("dependencies.ExceptionTestClass.testMethod()")
-        //    	throw new FormatterClosedException();
+        //      throw new FormatterClosedException();
         assertDependency("dependencies.ExceptionTestClass.testMethod()", "java.util.FormatterClosedException", CREATES)
         assertDependency("dependencies.ExceptionTestClass.testMethod()", "java.util.FormatterClosedException", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.ExceptionTestClass.testMethod()", "java.util.FormatterClosedException.<init>()", CALLS_METHOD)
@@ -383,20 +383,20 @@ class DependencyExtractorJava7Test extends FunSuite {
         //        public void catchMethod() {
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "dependencies.ExceptionTestClass", INSTANCE_MEMBER)
         assertImplicitThisLocalVariable("dependencies.ExceptionTestClass.catchMethod()")
-        //    	try {
-        //    	    try {
-        //    		testMethod();
+        //      try {
+        //          try {
+        //          testMethod();
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "dependencies.ExceptionTestClass", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "dependencies.ExceptionTestClass.testMethod()", CALLS_METHOD)
-        //    	    } catch (IllegalStateException e) {
+        //          } catch (IllegalStateException e) {
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "java.lang.IllegalStateException", CATCHES)
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "java.lang.IllegalStateException", LOCAL_VARIABLE_TYPE)
-        //    	    }
-        //    	} catch (Exception e) {
+        //          }
+        //      } catch (Exception e) {
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "java.lang.Exception", CATCHES)
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "java.lang.Exception", LOCAL_VARIABLE_TYPE)
-        //    	} finally{
-        //    	    Integer.valueOf(42);
+        //      } finally{
+        //          Integer.valueOf(42);
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "java.lang.Integer", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "java.lang.Integer.valueOf(int)", CALLS_METHOD)
         assertDependency("dependencies.ExceptionTestClass.catchMethod()", "java.lang.Integer", RETURN_TYPE_OF_CALLED_METHOD)
@@ -444,7 +444,7 @@ class DependencyExtractorJava7Test extends FunSuite {
         assertDependency("dependencies.TestAnnotation.annotationValue()", "java.lang.String", ANNOTATION_DEFAULT_VALUE_TYPE)
         //
         //        public abstract Class<?>[] arrayClassValue() default { String.class,
-        //    	    Integer.class };
+        //          Integer.class };
         assertDependency("dependencies.TestAnnotation.arrayClassValue()", "dependencies.TestAnnotation", INSTANCE_MEMBER)
         assertDependency("dependencies.TestAnnotation.arrayClassValue()", "java.lang.Class", RETURN_TYPE)
         assertDependency("dependencies.TestAnnotation.arrayClassValue()", "java.lang.String", ANNOTATION_DEFAULT_VALUE_TYPE)
@@ -462,7 +462,7 @@ class DependencyExtractorJava7Test extends FunSuite {
         assertImplicitDefaultConstructor("dependencies.AnnotationDefaultAttributeTestClass")
         //
         //        @TestAnnotation(stringValue = "noDefault", classValue = Integer.class, enumValue = ElementType.METHOD, annotationValue = @SuppressWarnings("noDefault"), arrayClassValue = {
-        //    	    Long.class, Boolean.class })
+        //          Long.class, Boolean.class })
         //        public void testMethod() {
         assertDependency("dependencies.AnnotationDefaultAttributeTestClass.testMethod()", "dependencies.AnnotationDefaultAttributeTestClass", INSTANCE_MEMBER)
         assertDependency("dependencies.AnnotationDefaultAttributeTestClass.testMethod()", "dependencies.TestAnnotation", ANNOTATED_WITH)
@@ -498,66 +498,66 @@ class DependencyExtractorJava7Test extends FunSuite {
         //        public void method() {
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.InstructionsTestClass", INSTANCE_MEMBER)
         assertImplicitThisLocalVariable("dependencies.InstructionsTestClass.method()")
-        //    	// NEW and INVOKESPECIAL (constructor call)
-        //    	Object obj = new Object();
+        //      // NEW and INVOKESPECIAL (constructor call)
+        //      Object obj = new Object();
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", CREATES)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object.<init>()", CALLS_METHOD)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", DECLARING_CLASS_OF_CALLED_METHOD)
-        //    	FilterInputStream stream = null;
+        //      FilterInputStream stream = null;
         assertDependency("dependencies.InstructionsTestClass.method()", "java.io.FilterInputStream", LOCAL_VARIABLE_TYPE)
-        //    	// ANEWARRAY
-        //    	obj = new Long[1];
+        //      // ANEWARRAY
+        //      obj = new Long[1];
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Long", CREATES_ARRAY)
-        //    	// MULTIANEWARRAY
-        //    	obj = new Integer[1][];
+        //      // MULTIANEWARRAY
+        //      obj = new Integer[1][];
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Integer", CREATES_ARRAY)
         //
-        //    	// PUTFIELD
-        //    	field = obj;
+        //      // PUTFIELD
+        //      field = obj;
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.InstructionsTestClass", DECLARING_CLASS_OF_ACCESSED_FIELD)
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.InstructionsTestClass.field", WRITES_FIELD)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", TYPE_OF_ACCESSED_FIELD)
-        //    	// GETFIELD
-        //    	obj = field;
+        //      // GETFIELD
+        //      obj = field;
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.InstructionsTestClass", DECLARING_CLASS_OF_ACCESSED_FIELD)
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.InstructionsTestClass.field", READS_FIELD)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", TYPE_OF_ACCESSED_FIELD)
-        //    	// INSTANCEOF
-        //    	if (obj instanceof ZipInputStream) {
+        //      // INSTANCEOF
+        //      if (obj instanceof ZipInputStream) {
         assertDependency("dependencies.InstructionsTestClass.method()", "java.util.zip.ZipInputStream", TYPECHECK)
-        //    	    // CHECKCAST
-        //    	    stream = (InflaterInputStream) obj;
+        //          // CHECKCAST
+        //          stream = (InflaterInputStream) obj;
         assertDependency("dependencies.InstructionsTestClass.method()", "java.util.zip.InflaterInputStream", TYPECAST)
-        //    	    // PUTSTATIC
-        //    	    staticField = stream;
+        //          // PUTSTATIC
+        //          staticField = stream;
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.InstructionsTestClass", DECLARING_CLASS_OF_ACCESSED_FIELD)
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.InstructionsTestClass.staticField", WRITES_FIELD)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.io.InputStream", TYPE_OF_ACCESSED_FIELD)
-        //    	    // GETSTATIC
-        //    	    obj = staticField;
+        //          // GETSTATIC
+        //          obj = staticField;
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.InstructionsTestClass", DECLARING_CLASS_OF_ACCESSED_FIELD)
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.InstructionsTestClass.staticField", READS_FIELD)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.io.InputStream", TYPE_OF_ACCESSED_FIELD)
-        //    	}
+        //      }
         //
-        //    	// INVOKESTATIC
-        //    	System.currentTimeMillis();
+        //      // INVOKESTATIC
+        //      System.currentTimeMillis();
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.System", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.System.currentTimeMillis()", CALLS_METHOD)
         //
-        //    	TestInterface ti = new TestClass();
+        //      TestInterface ti = new TestClass();
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.TestInterface", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.TestClass", CREATES)
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.TestClass", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.TestClass.<init>()", CALLS_METHOD)
-        //    	// INVOKEINTERFACE
-        //    	ti.testMethod();
+        //      // INVOKEINTERFACE
+        //      ti.testMethod();
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.TestInterface", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.TestInterface.testMethod()", CALLS_METHOD)
         //
-        //    	// INVOKEVIRTUAL
-        //    	obj.equals(stream);
+        //      // INVOKEVIRTUAL
+        //      obj.equals(stream);
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object.equals(java.lang.Object)", CALLS_METHOD)
         assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", PARAMETER_TYPE_OF_CALLED_METHOD)
@@ -606,7 +606,7 @@ class DependencyExtractorJava7Test extends FunSuite {
         //    import java.util.List;
         //
         //    public abstract class SignatureTestClass<Q extends FilterInputStream>
-        //    	implements SignatureTestInterface<Q, String> {
+        //      implements SignatureTestInterface<Q, String> {
         assertDependency("dependencies.SignatureTestClass", "java.lang.Object", EXTENDS)
         assertDependency("dependencies.SignatureTestClass", "java.io.FilterInputStream", TYPE_IN_TYPE_PARAMETERS)
         assertDependency("dependencies.SignatureTestClass", "java.lang.String", TYPE_IN_TYPE_PARAMETERS)
@@ -716,7 +716,7 @@ class DependencyExtractorJava7Test extends FunSuite {
         //    import java.util.zip.ZipInputStream;
         //
         //    public abstract class SignatureTestSubClass extends
-        //    	SignatureTestClass<ZipInputStream> {
+        //      SignatureTestClass<ZipInputStream> {
         assertDependency("dependencies.SignatureTestSubClass", "dependencies.SignatureTestClass", EXTENDS)
         assertDependency("dependencies.SignatureTestSubClass", "java.util.zip.ZipInputStream", TYPE_IN_TYPE_PARAMETERS)
         assertImplicitDefaultConstructor("dependencies.SignatureTestSubClass", "dependencies.SignatureTestClass")

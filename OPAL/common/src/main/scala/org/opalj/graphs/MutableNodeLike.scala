@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -69,16 +69,13 @@ class MutableNodeLike[I, N <: Node](
 
     def children: List[N] = this.synchronized(theChildren)
 
-    def updateIdentifier(newIdentifier: I) =
-        this.synchronized(theIdentifier = newIdentifier)
+    def updateIdentifier(newIdentifier: I): Unit = this.synchronized(theIdentifier = newIdentifier)
 
-    override def toHRR = Some(identifierToString(identifier))
+    override def toHRR: Option[String] = Some(identifierToString(identifier))
 
     override def nodeId: Long = identifier.hashCode().toLong
 
-    def addChild(node: N): Unit = {
-        this.synchronized(theChildren = node :: children)
-    }
+    def addChild(node: N): Unit = this.synchronized(theChildren = node :: children)
 
     def addChildren(furtherChildren: List[N]): Unit = {
         this.synchronized(theChildren = theChildren ::: furtherChildren)

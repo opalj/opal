@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -63,9 +63,9 @@ sealed trait QualifiedCollection[+S] {
 }
 
 case class CompleteCollection[+S](s: S) extends QualifiedCollection[S] {
-    final def isComplete = true
+    final def isComplete: Boolean = true
 }
 
 case class IncompleteCollection[+S](s: S) extends QualifiedCollection[S] {
-    final def isComplete = false
+    final def isComplete: Boolean = false
 }

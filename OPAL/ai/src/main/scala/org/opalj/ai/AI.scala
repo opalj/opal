@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -147,7 +147,7 @@ trait AI[D <: Domain] {
      *      will be analyzed. All parameters are automatically initialized with sensible
      *      default values.
      *  @param theDomain The domain that will be used to perform computations related
-     *  	to values.
+     *      to values.
      */
     def apply(
         classFile: ClassFile,
@@ -191,7 +191,7 @@ trait AI[D <: Domain] {
      * @param method A non-native, non-abstract method. I.e., a method that has an
      *      implementation in Java bytecode (e.g., `method.body.isDefined === true`).
      * @param domain The domain that will be used to perform computations related
-     *  	to values.
+     *      to values.
      */
     def initialLocals(
         classFile: ClassFile,
@@ -269,7 +269,7 @@ trait AI[D <: Domain] {
      * @param theDomain The abstract domain that will be used for the abstract interpretation
      *      of the given method.
      * @param someLocals The initial register assignment (the parameters passed to the
-     * 		method). If the values passed to a method are already known, the
+     *      method). If the values passed to a method are already known, the
      *      abstract interpretation will be performed under that assumption. The specified
      *      number of locals has to be equal or larger than the number of parameters
      *      (including `this` in case of a non-static method.). If the number is lower
@@ -2146,9 +2146,9 @@ trait AI[D <: Domain] {
                         fallThrough(theDomain.IntegerValue(pc, 5) :&: operands)
 
                     case 9 /*lconst_0*/ ⇒
-                        fallThrough(theDomain.LongValue(pc, 0l) :&: operands)
+                        fallThrough(theDomain.LongValue(pc, 0L) :&: operands)
                     case 10 /*lconst_1*/ ⇒
-                        fallThrough(theDomain.LongValue(pc, 1l) :&: operands)
+                        fallThrough(theDomain.LongValue(pc, 1L) :&: operands)
 
                     case 18 /*ldc*/ ⇒ instruction match {
                         case LoadInt(v) ⇒

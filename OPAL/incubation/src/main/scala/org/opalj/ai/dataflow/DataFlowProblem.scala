@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -107,7 +107,7 @@ trait DataFlowProblem[Source, P] {
      * Extractor to match tainted values.
      */
     object Tainted {
-        def unapply(value: TaintedValue) = Some(value.typeInformation)
+        def unapply(value: TaintedValue): Some[TypeInformation] = Some(value.typeInformation)
     }
 
     case class Invoke(

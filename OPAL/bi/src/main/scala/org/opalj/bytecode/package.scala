@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -134,8 +134,8 @@ package object bytecode {
      * Java runtime environment can be found). If the rt.jar cannot be found an
      * exception is raised.
      *
-     * @note 	The Java 9 JDK/JRE is structured in a different way.
-     * 			// IMPROVE [JDK9] Add mechanism to locate JDK 9 System class files
+     * @note    The Java 9 JDK/JRE is structured in a different way.
+     *          // IMPROVE [JDK9] Add mechanism to locate JDK 9 System class files
      */
     lazy val JRELibraryFolder: File = {
         System.getProperties()
@@ -162,8 +162,8 @@ package object bytecode {
      * location in which the rt.jar file and the other jar files belonging to the
      * Java runtime environment can be found).
      *
-     * @note 	The Java 9 JDK/JRE does not have an `rt.jar`.
-     * 			// IMPROVE [JDK9] Mechanism to find the primary module.
+     * @note    The Java 9 JDK/JRE does not have an `rt.jar`.
+     *          // IMPROVE [JDK9] Mechanism to find the primary module.
      *
      */
     lazy val RTJar: File = {

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -38,15 +38,15 @@ import java.lang.System.identityHashCode
  * objects is done by doing a reference-based comparison of the stored values.
  *
  * @example
- * 	{{{
- * 	val a = new String("fooBar")
- * 	val b = "foo"+"Bar"
- * 	val p1 = new IdentityPair(a,b) // #1
- * 	val p2 = new IdentityPair(a,a) // #2
- * 	val p3 = new IdentityPair(a,b) // #3
- * 	p1 == p2 // => false (though (a,b) == (a,a) would be true
- * 	p1 == p3 // => true
- * 	}}}
+ *  {{{
+ *  val a = new String("fooBar")
+ *  val b = "foo"+"Bar"
+ *  val p1 = new IdentityPair(a,b) // #1
+ *  val p2 = new IdentityPair(a,a) // #2
+ *  val p3 = new IdentityPair(a,b) // #3
+ *  p1 == p2 // => false (though (a,b) == (a,a) would be true
+ *  p1 == p3 // => true
+ *  }}}
  *
  * @param _1 A reference value (can be `null`).
  * @param _2 A reference value (can be `null`).

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -68,7 +68,7 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
             with l0.TypeLevelPrimitiveValuesConversions
             with l0.TypeLevelLongValuesShiftOperators {
 
-        override def maxCardinalityOfIntegerRanges: Long = 16l
+        override def maxCardinalityOfIntegerRanges: Long = 16L
 
         override def throwIllegalMonitorStateException: Boolean = false
 

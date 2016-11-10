@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts.MODULE
 
@@ -45,13 +47,14 @@ case class Module_attribute(
         provides:             IndexedSeq[ProvidesEntry]
 ) extends Attribute {
 
-    def attribute_length: Int =
+    def attribute_length: Int = {
         2 + requires.length * 4 + // <= requires
             2 + exports.length * 8 + // <= exports
             2 + uses.length * 2 + // <= uses
             2 + provides.length * 4 // <= provides 
+    }
 
-    override def toXHTML(implicit cp: Constant_Pool) = {
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
             <summary>Module</summary>
             <div>{ requires.map(_.toString(cp)).sorted.map(r ⇒ <span>{ r }</span><br/>) }</div>

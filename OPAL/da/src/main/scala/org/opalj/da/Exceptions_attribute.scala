@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,10 +35,10 @@ import scala.xml.Text
 /**
  * <pre>
  * Exceptions_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 number_of_exceptions;
- * 	u2 exception_index_table[number_of_exceptions];
+ *  u2 attribute_name_index;
+ *  u4 attribute_length;
+ *  u2 number_of_exceptions;
+ *  u2 exception_index_table[number_of_exceptions];
  * }
  * </pre>
  *

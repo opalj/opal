@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -49,18 +49,20 @@ import org.opalj.br.analyses.SomeProject
  */
 object DomainRegistry {
 
+    type TheRegistry = Map[Class[_ <: Domain], (SomeProject, ClassFile, Method) ⇒ Domain]
+
     private[this] var descriptions: Map[String, Class[_ <: Domain]] = Map.empty
-    private[this] var theRegistry: Map[Class[_ <: Domain], (SomeProject, ClassFile, Method) ⇒ Domain] = Map.empty
+    private[this] var theRegistry: TheRegistry = Map.empty
 
     /**
      * Register a new domain that can be used to perform an abstract interpretation
      * of a specific method.
      *
      * @param domainDescription A short description of the properties of the domain;
-     * 		in particular w.r.t. the kind of computations the domain does.
+     *      in particular w.r.t. the kind of computations the domain does.
      * @param domainClass The class of the domain.
      * @param factory The factory method that will be used to create instances of the
-     * 		domain.
+     *      domain.
      */
     def register(
         domainDescription: String,
@@ -82,7 +84,7 @@ object DomainRegistry {
     /**
      * Returns the current view of the registry.
      */
-    def registry = this.synchronized { theRegistry }
+    def registry: TheRegistry = this.synchronized { theRegistry }
 
     /**
      * Creates a new instance of the domain identified by the given `domainDescription`.
@@ -91,7 +93,7 @@ object DomainRegistry {
      * @param project The project.
      * @param classFile A class file object that belongs to the given project.
      * @param method A non-native/non-abstract method belonging to the specified class
-     * 		file.
+     *      file.
      */
     // primarily introduced to facilitate the interaction with Java
     def newDomain(
@@ -114,7 +116,7 @@ object DomainRegistry {
      * @param project The project.
      * @param classFile A class file object that belongs to the given project.
      * @param method A non-native/non-abstract method belonging to the specified class
-     * 		file.
+     *      file.
      */
     def newDomain(
         domainClass: Class[_ <: Domain],

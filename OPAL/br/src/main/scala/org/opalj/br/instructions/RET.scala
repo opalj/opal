@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,7 +37,7 @@ import org.opalj.collection.mutable.UShortSet
  * Return from subroutine.
  *
  * @note A RET instruction always returns to an instruction immediately following a JSR(_W)
- * 		instruction.
+ *      instruction.
  *
  * @author Michael Eichberg
  */

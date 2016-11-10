@@ -88,7 +88,7 @@ object CallGraphVisualization {
                     err.println("\t4) The number of seconds before the analysis starts (max. 30).")
                     sys.exit(-30)
                 }
-                Thread.sleep(secs * 1000l)
+                Thread.sleep(secs * 1000L)
             } catch {
                 case _: NumberFormatException ⇒
                     err.println("\t4) The number of seconds before the analysis starts (max 30).")

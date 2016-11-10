@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -99,7 +99,7 @@ object ClassFileReader
     type Method_Info = da.Method_Info
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
 
-    final override def reifyEmptyAttributes = true
+    final override def reifyEmptyAttributes: Boolean = true
 
     def ClassFile(
         cp:            Constant_Pool,
@@ -645,7 +645,6 @@ object ClassFileReader
     type TypeAnnotationPathElement = da.TypeAnnotationPathElement
     def TypeAnnotationPath(path: IndexedSeq[TypeAnnotationPathElement]): TypeAnnotationPath = {
         new TypeAnnotationPathElements(path)
-
     }
 
     /**

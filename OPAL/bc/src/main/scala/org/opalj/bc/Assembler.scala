@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2016
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -665,7 +665,7 @@ object Assembler {
 
     /**
      * @note  You should use serialize if the concrete/required type of the given parameter is
-     * 		available/can be automatically inferred by the Scala compiler.
+     *      available/can be automatically inferred by the Scala compiler.
      */
     def serialize[T: ClassFileElement](
         t: T
@@ -679,9 +679,9 @@ object Assembler {
 
     /**
      * @param segmentInformation A function that will be called back to provide information about
-     * 		the segment that was just written.
-     * 		This is particularly useful when debugging the serializer to determine which segments
-     * 		were successfully/completely written.
+     *      the segment that was just written.
+     *      This is particularly useful when debugging the serializer to determine which segments
+     *      were successfully/completely written.
      */
     def apply(
         classFile:          ClassFile,

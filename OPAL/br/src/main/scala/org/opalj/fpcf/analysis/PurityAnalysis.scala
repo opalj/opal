@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -95,24 +95,24 @@ import org.opalj.log.OPALLogger
  *
  * [...] a function may be considered a pure function if both of the following statements about
  * the function hold:
- *  - 	The function always evaluates to the same result value given the same argument value(s).
- *  	The function result value cannot depend on any hidden information or state that may change
- *  	while program execution proceeds or between different executions of the program, nor can it
- *  	depend on any external input from I/O devices.
+ *  -   The function always evaluates to the same result value given the same argument value(s).
+ *      The function result value cannot depend on any hidden information or state that may change
+ *      while program execution proceeds or between different executions of the program, nor can it
+ *      depend on any external input from I/O devices.
  *
- *  	'''[Hence, using true constants (e.g., Math.e) is not a problem as well as creating
- *  	intermediate
- *  	(mutable) data structures. Furthermore, instance method based calls can also be pure if
- *  	the receiving object is (effectively final).'''
+ *      '''[Hence, using true constants (e.g., Math.e) is not a problem as well as creating
+ *      intermediate
+ *      (mutable) data structures. Furthermore, instance method based calls can also be pure if
+ *      the receiving object is (effectively final).'''
  *
- *  -	Evaluation of the result does not cause any semantically observable side effect or output,
- *  	such as mutation of mutable objects or output to I/O devices.
- *  	The result value need not depend on all (or any) of the argument values. However, it must
- *  	depend on nothing other than the argument values. The function may return multiple result
- *  	values and these conditions must apply to all returned values for the function to be
- *  	considered pure. If an argument is call by reference, any parameter mutation will alter
- *  	the value of the argument outside the function, which will render the function impure.
- *   	'''However, if the referenced object is immutable it is object.'''
+ *  -   Evaluation of the result does not cause any semantically observable side effect or output,
+ *      such as mutation of mutable objects or output to I/O devices.
+ *      The result value need not depend on all (or any) of the argument values. However, it must
+ *      depend on nothing other than the argument values. The function may return multiple result
+ *      values and these conditions must apply to all returned values for the function to be
+ *      considered pure. If an argument is call by reference, any parameter mutation will alter
+ *      the value of the argument outside the function, which will render the function impure.
+ *      '''However, if the referenced object is immutable it is object.'''
  *
  * @author Michael Eichberg
  */

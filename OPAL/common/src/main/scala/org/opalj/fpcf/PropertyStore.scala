@@ -46,7 +46,9 @@ import scala.collection.JavaConverters._
 import org.opalj.graphs.closedSCCs
 import org.opalj.io.writeAndOpen
 import org.opalj.collection.mutable.ArrayMap
-import org.opalj.concurrent.Locking.{withReadLock, withWriteLock, withWriteLocks}
+import org.opalj.concurrent.Locking.withReadLock
+import org.opalj.concurrent.Locking.withWriteLock
+import org.opalj.concurrent.Locking.withWriteLocks
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.OPALLogger.{info ⇒ logInfo}
@@ -87,7 +89,7 @@ import org.opalj.collection.immutable.UIDSet
  *  - (One Function per Property Kind) A specific kind of property is always computed
  *      by only one registered `PropertyComputation` function.
  *  - (Thread-Safe) PropertyComputation functions have to be thread-safe. I.e., the function may
- *  	be executed concurrently for different entities.
+ *      be executed concurrently for different entities.
  *  - (Non-Overlapping Results) [[PropertyComputation]] functions that are invoked on different
  *      entities have to compute result sets that are disjoint.
  *      For example, an analysis that performs a computation on class files and
@@ -138,9 +140,9 @@ import org.opalj.collection.immutable.UIDSet
  *  [2.] the specific SET PROPERTY related lock (mutex)
  *  [3.] the global STORE lock (accessEntity/accessStore=exclusive access)
  *  [4.] the specific ENTITY (read/write) related lock (the entity lock must only be acquired
- *  	 when the store lock (accessEntity/accessStore) is held.
- *  	 If multiple locks are required at the same time, then all locks are acquired
- *  	 in the order of the entity id; i.e., we are using a globally consistent order.
+ *       when the store lock (accessEntity/accessStore) is held.
+ *       If multiple locks are required at the same time, then all locks are acquired
+ *       in the order of the entity id; i.e., we are using a globally consistent order.
  *  [5.] the global TASKS related lock (<Tasks>.synchronized)
  */
 // COMMON ABBREVIATONS USED IN THE FOLLOWING:
@@ -232,7 +234,7 @@ class PropertyStore private (
 
     /**
      * @param entities Conceptually a set of entities for which we will acquire the locks in order
-     * 		of the locks' ids.
+     *      of the locks' ids.
      */
     //    @inline final private[this] def withEntitiesWriteLocks[T](epss: List[EntityProperties])(f: ⇒ T): T = {
     //        val sortedEntities = epss.sortWith((e1, e2) ⇒ e1.id < e2.id)
@@ -266,8 +268,8 @@ class PropertyStore private (
                 Tasks.reset()
 
                 // reset statistics
-                propagationCount.set(0l)
-                effectiveDefaultPropertiesCount.set(0l)
+                propagationCount.set(0L)
+                effectiveDefaultPropertiesCount.set(0L)
 
                 // reset set property related information
                 theSetPropertyObservers.clear()
@@ -388,7 +390,10 @@ class PropertyStore private (
                 s"\tperEntityProperties[$perEntityPropertiesStatistics]"+"\n"+properties
             else
                 "") +
-            (if (overallSetPropertyCount > 0) s"\tperSetPropertyEntities[$setPropertiesStatistics]\n" else "")+
+            (if (overallSetPropertyCount > 0)
+                s"\tperSetPropertyEntities[$setPropertiesStatistics]\n"
+            else
+                "")+
             ")"
     }
 
@@ -401,8 +406,8 @@ class PropertyStore private (
      * Checks the consistency of the store.
      *
      * @note Only checks related to potentially internal bugs are performed. None of the checks is
-     * 		relevant to developers of analyses. However, even if some checks fail, they can still
-     * 		be caused by failures in user code.
+     *      relevant to developers of analyses. However, even if some checks fail, they can still
+     *      be caused by failures in user code.
      */
     // REQUIRES: Lock: AccessStore (!)
     @throws[AssertionError]("if the store is inconsistent")
@@ -502,7 +507,8 @@ class PropertyStore private (
         val spMutex = sp.mutex
         writeSetPropertyObservers {
             val oldObservers = theSetPropertyObservers.getOrElse(spIndex, Nil)
-            theSetPropertyObservers(spIndex) = f.asInstanceOf[(Entity, Answer) ⇒ Unit] :: oldObservers
+            theSetPropertyObservers(spIndex) =
+                f.asInstanceOf[(Entity, Answer) ⇒ Unit] :: oldObservers
             spMutex.synchronized {
                 import scala.collection.JavaConversions._
                 val spData = theSetProperties.getOrElseUpdate(spIndex, new JIDMap())
@@ -611,7 +617,7 @@ class PropertyStore private (
      * Returns a snapshot of the properties with the given kind associated with the given entities.
      *
      * @note Querying the properties of the given entities will trigger lazy and direct property
-     * 		computations.
+     *      computations.
      * @note The returned collection can be used to create an [[IntermediateResult]].
      */
     // Locks (indirectly): apply(Entity,PropertyKey)
@@ -626,7 +632,7 @@ class PropertyStore private (
      * Returns a snapshot of the properties with the given kind associated with the given entities.
      *
      * @note Querying the properties of the given entities will trigger lazy and direct property
-     * 		computations.
+     *      computations.
      * @note The returned collection can be used to create an [[IntermediateResult]].
      */
     // Locks (indirectly): apply(Entity,PropertyKey)
@@ -651,9 +657,9 @@ class PropertyStore private (
      * @note In general, the returned value may change over time but only such that it
      *      is strictly more precise.
      * @note Querying a property may trigger the computation of the property if the underlying
-     * 		function is either a lazy or a direct property computation function. In general
-     * 		It is preferred that clients always assume that the property is lazily computed
-     * 		when calling this function!
+     *      function is either a lazy or a direct property computation function. In general
+     *      It is preferred that clients always assume that the property is lazily computed
+     *      when calling this function!
      * @param e An entity stored in the property store.
      * @param pk The kind of property.
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
@@ -785,7 +791,7 @@ class PropertyStore private (
      * @param dependerE The entity for which we are currently computing a property.
      * @param dependerPK The property that is currently computed for the entity `dependerE`.
      * @param dependeeE The entity about which some information is strictly required to compute the
-     * 		property `dependerPK`.
+     *      property `dependerPK`.
      */
     // Locks of this.apply(...): Store, Entity
     def require[DependeeP <: Property](
@@ -821,8 +827,8 @@ class PropertyStore private (
      * suspends the computation if the (negative) answer cannot directly be computed.
      *
      * @note Calling this method only makes sense if all properties that have the same property
-     * 		kind as `expectedP` are not refineable/are final or if it is certain that no
-     * 		further refinement of the respective properties can happen.
+     *      kind as `expectedP` are not refineable/are final or if it is certain that no
+     *      further refinement of the respective properties can happen.
      */
     // Locks (indirectly): this.apply(...): Store, Entity
     def allHaveProperty(
@@ -907,7 +913,7 @@ class PropertyStore private (
      * trigger''' the computation of a property.
      *
      * @note The returned iterator operates on a snapshot and will never throw any
-     * 		`ConcurrentModificatonException`.
+     *      `ConcurrentModificatonException`.
      * @param e An entity stored in the property store.
      * @return `Iterator[Property]`
      */
@@ -1014,25 +1020,25 @@ class PropertyStore private (
      * property. In other words, all computations that derive this property have to
      * use `put` or none.
      *
-     * @note 	The property store offers two methods to directly associate a property with
-     * 			an entity: `set` and `put`.
+     * @note    The property store offers two methods to directly associate a property with
+     *          an entity: `set` and `put`.
      *          `set` is intended to be used if the respective
-     * 			property is computed independent of the computations managed
-     * 			by the store. Therefore, setting an already set property will throw an
-     * 			exception!
+     *          property is computed independent of the computations managed
+     *          by the store. Therefore, setting an already set property will throw an
+     *          exception!
      *          `put` is intended to be used if the respective property is potentially
      *          computed concurrently by multiple (independent) computations and if
      *          all computations are guaranteed to derive the same property!
      *
-     * @param 	e An entity stored in the property store.
-     * 			If the entity `e` is unknown the behavior and state of the property
-     * 			store is undefined after calling this method. Furthermore, the current
-     * 			behavior in this special case may change arbitrarily.
-     * @param 	p Some arbitrary property. (The property `p` must not be `final`; however any
-     * 			further updates cannot be done using `put` to prevent some very
+     * @param   e An entity stored in the property store.
+     *          If the entity `e` is unknown the behavior and state of the property
+     *          store is undefined after calling this method. Furthermore, the current
+     *          behavior in this special case may change arbitrarily.
+     * @param   p Some arbitrary property. (The property `p` must not be `final`; however any
+     *          further updates cannot be done using `put` to prevent some very
      *          nasty concurrency bugs.)
-     * @return	`true` if the property was associated with the entity `e` and `false` if the
-     * 			property (the same object) was already associated with the entity.
+     * @return  `true` if the property was associated with the entity `e` and `false` if the
+     *          property (the same object) was already associated with the entity.
      */
     def put(e: Entity, p: Property): Boolean = {
         val pkId = p.key.id
@@ -1190,13 +1196,13 @@ class PropertyStore private (
      *  - the computation must not create dependencies (i.e., an ImmediateResult)
      *
      * @note In general, using DPCs is most useful for analyses that have no notion of more/less
-     * 		precise/sound. In this case client's of properties computed using DPCs can query the
-     * 		store and will get the answer; i.e., a client that wants to know the property `P`
-     * 		of an entity `e` with property key `pk` computed using a dpc can write:
-     * 		{{{
-     *  	val ps : PropertyStore = ...
-     *  	ps(e,pk).get
-     * 		}}}
+     *      precise/sound. In this case client's of properties computed using DPCs can query the
+     *      store and will get the answer; i.e., a client that wants to know the property `P`
+     *      of an entity `e` with property key `pk` computed using a dpc can write:
+     *      {{{
+     *      val ps : PropertyStore = ...
+     *      ps(e,pk).get
+     *      }}}
      */
     def <<![P <: Property](pk: PropertyKey[P], dpc: (Entity) ⇒ Property): Unit = accessStore {
         /* The framework has to handle the situation that the same dpc is potentially triggered
@@ -1206,13 +1212,13 @@ class PropertyStore private (
          * property computations may not depend on properties of the same kind.
          *  1. a dpc may require the calculation of a dpc that leads to a cycle
          *  2. two or more dpcs may depend on each other:
-         *  	t1:	o → o1 → o2
+         *      t1: o → o1 → o2
          *                 ↙︎ ↑
-         *      t2:	o → o3 → o4
+         *      t2: o → o3 → o4
          *      t1 and t2 are two threads that run concurrently.
          *      Now: if o2 depends on o3 to finish, but o4 is currently running then o2 will block
-         *      	 but if now o4 requires the property computed by o2 it also needs to wait.
-         *      	 Hence, we have a deadlock.
+         *           but if now o4 requires the property computed by o2 it also needs to wait.
+         *           Hence, we have a deadlock.
          */
         theDirectPropertyComputations(pk.id) = dpc
     }
@@ -1365,7 +1371,7 @@ class PropertyStore private (
 
     /**
      * @return `true` if the pool is shutdown. In this case it is no longer possible to submit
-     * 		new computations.
+     *      new computations.
      */
     def isShutdown: Boolean = threadPool.isShutdown
 
@@ -1430,7 +1436,7 @@ class PropertyStore private (
             def clearAllObservers(): Unit = {
                 // We iterate over all entities and remove all related observers
                 // to help to make sure that the computation can finish in due time.
-                threadPool.awaitTermination(5000l, TimeUnit.MILLISECONDS)
+                threadPool.awaitTermination(5000L, TimeUnit.MILLISECONDS)
 
                 if (debug) logDebug("analysis progress", "garbage collecting property computations")
                 accessStore {
@@ -1460,22 +1466,22 @@ class PropertyStore private (
             }
         }
 
-        def taskStarted() = this.synchronized {
+        def taskStarted(): Unit = this.synchronized {
             scheduled += 1
             cleanUpRequired = true
         }
 
-        def tasksStarted(tasksCount: Int) = this.synchronized {
+        def tasksStarted(tasksCount: Int): Unit = this.synchronized {
             scheduled += tasksCount
         }
 
-        def tasksAborted(tasksCount: Int) = this.synchronized {
+        def tasksAborted(tasksCount: Int): Unit = this.synchronized {
             scheduled -= tasksCount
         }
 
         // Locks: Tasks
         //        Store(exclusive access), Tasks, handleUnsatisfiedDependencies: Store (access), Entity and scheduleContinuation: Tasks
-        def taskCompleted() = {
+        def taskCompleted(): Unit = {
             /*internal*/ // assert(scheduled > 0)
 
             this.synchronized {
@@ -1550,7 +1556,8 @@ class PropertyStore private (
                             notifyAll()
                         } else {
                             if (debug) logDebug(
-                                "analysis progress", s"(re)scheduled $scheduled property computations"
+                                "analysis progress",
+                                s"(re)scheduled $scheduled property computations"
                             )
                         }
                     }
@@ -1577,7 +1584,7 @@ class PropertyStore private (
             /*
              * @param epks The set of EPKs which have a dependency on dependerEPK.
              * @return Those epks that are newly added to the set epks. If epks is initially empty
-             * 		the returned list and the given set epks contain the same elements.
+             *      the returned list and the given set epks contain the same elements.
              */
             def determineDependentIncomputableEPKs(
                 dependerEPK: SomeEPK,
@@ -1753,11 +1760,11 @@ class PropertyStore private (
         import Tasks.{taskStarted, taskCompleted}
 
         /*
-    	 * The core method that actually submits runnables to the thread pool.
+         * The core method that actually submits runnables to the thread pool.
 
-    	 * @note	tastStarted is called immediately and taskCompleted is called when the
-    	 * 			task has finished.
-    	 */
+         * @note    tastStarted is called immediately and taskCompleted is called when the
+         *          task has finished.
+         */
         // Locks: Tasks
         def scheduleTask(task: Runnable): Unit = {
             if (isInterrupted()) {
@@ -1855,11 +1862,11 @@ class PropertyStore private (
         }
 
         /*
-     	 * Associates / Updates the property with element e. If observers are registered
-     	 * with the respective property then those observers will be informed about the
-     	 * property change and the observers will be removed unless the new property
-     	 * is the same as the old property and the updateType is intermediate update.
-     	 */
+         * Associates / Updates the property with element e. If observers are registered
+         * with the respective property then those observers will be informed about the
+         * property change and the observers will be removed unless the new property
+         * is the same as the old property and the updateType is intermediate update.
+         */
         // Invariant: always only at most one function exists that will compute/update
         // the property p belonging to property kind k of an element e.
         //
@@ -2392,8 +2399,8 @@ private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObserve
 
 /**
  * @param id A property store wide unique id that is used to sort all entities.
- * 			This global order is then used to acquire locks related to multiple entities in a
- * 			'''globally''' consistent order.
+ *          This global order is then used to acquire locks related to multiple entities in a
+ *          '''globally''' consistent order.
  * @param ps A mutable map of the entities properties; the key is the id of the property's kind.
  */
 private[fpcf] final class EntityProperties(

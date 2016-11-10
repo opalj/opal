@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -57,7 +57,7 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
      * Handles a `monitorenter` instruction.
      *
      * @note The default implementation checks if the given value is `null` and raises
-     * 		an exception if it is `null` or maybe `null`.
+     *      an exception if it is `null` or maybe `null`.
      */
     /*override*/ def monitorenter(
         pc:    PC,
@@ -70,7 +70,7 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
      * Handles a `monitorexit` instruction.
      *
      * @note The default implementation checks if the given value is `null` and raises
-     * 		an exception if it is `null` or maybe `null`.
+     *      an exception if it is `null` or maybe `null`.
      */
     /*override*/ def monitorexit(
         pc:    PC,

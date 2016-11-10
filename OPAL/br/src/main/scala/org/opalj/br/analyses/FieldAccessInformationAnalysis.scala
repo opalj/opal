@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -51,9 +51,9 @@ import org.opalj.br.instructions.PUTSTATIC
  * val accessInformation = project.get(FieldAccessInformationKey)
  * }}}
  *
- * @note 	The analysis does not take reflective field accesses into account.
- * @note 	The analysis is internally parallelized and should not be run with other analyses in
- *      	parallel.
+ * @note    The analysis does not take reflective field accesses into account.
+ * @note    The analysis is internally parallelized and should not be run with other analyses in
+ *          parallel.
  *
  * @author Michael Eichberg
  */

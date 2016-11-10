@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -168,8 +168,8 @@ object PerformanceEvaluation {
      * by `f` are measured.
      *
      * @note If large data structures are used by `f` that are
-     * 		not used anymore afterwards then it may happen that the used amount of memory
-     * 		is negative.
+     *      not used anymore afterwards then it may happen that the used amount of memory
+     *      is negative.
      */
     def memory[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
         val memoryMXBean = ManagementFactory.getMemoryMXBean
@@ -223,8 +223,8 @@ object PerformanceEvaluation {
      * import org.opalj.util.PerformanceEvaluation._
      * import org.opalj.util._
      * time[String](2,4,3,{Thread.sleep(300).toString}){ (t, ts) =>
-     *            val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
-     *            println(f"Avg: ${avg(ts).timeSpan}%1.4f; T: ${t.toSeconds.timeSpan}%1.4f; Ts: $sTs")
+     *     val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
+     *     println(f"Avg: ${avg(ts).timeSpan}%1.4f; T: ${t.toSeconds.timeSpan}%1.4f; Ts: $sTs")
      * }
      * }}}
      *
@@ -271,7 +271,7 @@ object PerformanceEvaluation {
         require(minimalNumberOfRelevantRuns >= 3)
         require(
             consideredRunsEpsilon > epsilon,
-            s"consideredRunsEpsilon ($consideredRunsEpsilon) has to be larger than epsilon ($epsilon)"
+            s"epsilon ($epsilon) < consideredRunsEpsilon ($consideredRunsEpsilon)"
         )
 
         var result: T = null

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,6 +32,7 @@ package domain
 package l0
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
@@ -262,7 +263,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         /**
          * Returns `ComputationalTypeReference`.
          */
-        final override def computationalType = ComputationalTypeReference
+        final override def computationalType: ComputationalType = ComputationalTypeReference
 
         final override def asDomainValue(
             implicit
@@ -274,7 +275,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                 )
             this.asInstanceOf[targetDomain.DomainReferenceValue]
         }
-
     }
 
     /**
@@ -307,10 +307,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
         /** Returns `Yes`. */
-        final override def isNull = Yes
+        final override def isNull: Answer = Yes
 
         /** Returns `true`. */
-        final override def isPrecise = true
+        final override def isPrecise: Boolean = true
 
         /** Returns an empty upper type bound. */
         final override def upperTypeBound: UpperTypeBound = UIDSet.empty

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -77,24 +77,24 @@ class PreciseLongValuesTest extends FlatSpec with Matchers {
     //
 
     it should ("be able to check if two long values are equal") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 7l)
-        val v3 = LongValue(-1, 8l)
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 7L)
+        val v3 = LongValue(-1, 8L)
         v1.equals(v2) should be(true)
         v1.equals(v3) should be(false)
     }
 
     it should ("be able to check if a long value is less than another value") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 8l)
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 8L)
         longIsLessThan(v1, v2) should be(Yes)
         longIsLessThan(v1, v1) should be(No)
         longIsLessThan(v2, v1) should be(No)
     }
 
     it should ("be able to check if a long value is less than or equal another value") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 8l)
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 8L)
         longIsLessThanOrEqualTo(v1, v2) should be(Answer(true))
         longIsLessThanOrEqualTo(v1, v1) should be(Answer(true))
         longIsLessThanOrEqualTo(v2, v1) should be(Answer(false))
@@ -105,8 +105,8 @@ class PreciseLongValuesTest extends FlatSpec with Matchers {
     //
 
     it should ("be able to compare two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 8l)
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 8L)
         lcmp(-1, v1, v2) should be(IntegerValue(-1, -1))
         lcmp(-1, v1, v1) should be(IntegerValue(-1, 0))
         lcmp(-1, v2, v1) should be(IntegerValue(-1, 1))
@@ -117,7 +117,7 @@ class PreciseLongValuesTest extends FlatSpec with Matchers {
     //
 
     it should ("be able to the calculate the neg of a long value") in {
-        val v1 = LongValue(-1, 7l)
+        val v1 = LongValue(-1, 7L)
         val v2 = lneg(-1, lneg(-1, v1))
         v1.equals(v2) should be(true)
     }
@@ -127,69 +127,69 @@ class PreciseLongValuesTest extends FlatSpec with Matchers {
     //
 
     it should ("be able to the calculate the result of the add of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        ladd(-1, v1, v2) should be(LongValue(-1, 7l + 6l))
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L)
+        ladd(-1, v1, v2) should be(LongValue(-1, 7L + 6L))
     }
 
     it should ("be able to the calculate the result of the and of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        land(-1, v1, v2) should be(LongValue(-1, 7l & 6l))
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L)
+        land(-1, v1, v2) should be(LongValue(-1, 7L & 6L))
     }
 
     it should ("be able to the calculate the result of the div of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        ldiv(-1, v1, v2) should be(ComputedValue(LongValue(-1, 7l / 6l)))
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L)
+        ldiv(-1, v1, v2) should be(ComputedValue(LongValue(-1, 7L / 6L)))
     }
 
     it should ("be able to the calculate the result of the mul of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        lmul(-1, v1, v2) should be(LongValue(-1, 7l * 6l))
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L)
+        lmul(-1, v1, v2) should be(LongValue(-1, 7L * 6L))
     }
 
     it should ("be able to the calculate the result of the or of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        lor(-1, v1, v2) should be(LongValue(-1, 7l | 6l))
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L)
+        lor(-1, v1, v2) should be(LongValue(-1, 7L | 6L))
     }
 
     it should ("be able to the calculate the result of the rem of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        lrem(-1, v1, v2) should be(ComputedValue(LongValue(-1, 7l % 6l)))
-    }
-
-    it should ("be able to the calculate the result of the shl of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        lshl(-1, v1, v2) should be(LongValue(-1, 7l << 6l))
-    }
-
-    it should ("be able to the calculate the result of the or of shr long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        lshr(-1, v1, v2) should be(LongValue(-1, 7l >> 6l))
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L)
+        lrem(-1, v1, v2) should be(ComputedValue(LongValue(-1, 7L % 6L)))
     }
 
     it should ("be able to the calculate the result of the sub of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        lsub(-1, v1, v2) should be(LongValue(-1, 7l - 6l))
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L)
+        lsub(-1, v1, v2) should be(LongValue(-1, 7L - 6L))
+    }
+
+    it should ("be able to the calculate the result of the shl of two long values") in {
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L) // FIXME ???
+        lshl(-1, v1, v2) should be(LongValue(-1, 7L << 6))
+    }
+
+    it should ("be able to the calculate the result of the or of shr long values") in {
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L) // FIXME ???
+        lshr(-1, v1, v2) should be(LongValue(-1, 7L >> 6))
     }
 
     it should ("be able to the calculate the result of the ushr of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        lushr(-1, v1, v2) should be(LongValue(-1, 7l >>> 6l))
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L) // FIXME ???
+        lushr(-1, v1, v2) should be(LongValue(-1, 7L >>> 6))
     }
 
     it should ("be able to the calculate the result of the xor of two long values") in {
-        val v1 = LongValue(-1, 7l)
-        val v2 = LongValue(-1, 6l)
-        lxor(-1, v1, v2) should be(LongValue(-1, 7l ^ 6l))
+        val v1 = LongValue(-1, 7L)
+        val v2 = LongValue(-1, 6L)
+        lxor(-1, v1, v2) should be(LongValue(-1, 7L ^ 6L))
     }
 
     //
@@ -199,22 +199,22 @@ class PreciseLongValuesTest extends FlatSpec with Matchers {
 
     it should ("be able to the calculate the result of the and of a specific (but unknown) LongValue and 0") in {
         val v1 = ALongValue()
-        val v2 = LongValue(-1, 0l)
-        land(-1, v1, v2) should be(LongValue(-1, 0l))
-        land(-1, v2, v1) should be(LongValue(-1, 0l))
+        val v2 = LongValue(-1, 0L)
+        land(-1, v1, v2) should be(LongValue(-1, 0L))
+        land(-1, v2, v1) should be(LongValue(-1, 0L))
     }
 
     it should ("be able to the calculate the result of the mul of a specific (but unknown) LongValue and 0") in {
         val v1 = ALongValue()
-        val v2 = LongValue(-1, 0l)
-        lmul(-1, v1, v2) should be(LongValue(-1, 0l))
-        lmul(-1, v2, v1) should be(LongValue(-1, 0l))
+        val v2 = LongValue(-1, 0L)
+        lmul(-1, v1, v2) should be(LongValue(-1, 0L))
+        lmul(-1, v2, v1) should be(LongValue(-1, 0L))
     }
 
     it should ("be able to the calculate the result of the or of a specific (but unknown) LongValue and -1") in {
         val v1 = ALongValue()
-        val v2 = LongValue(-1, -1l)
-        lor(-1, v1, v2) should be(LongValue(-1, -1l))
-        lor(-1, v2, v1) should be(LongValue(-1, -1l))
+        val v2 = LongValue(-1, -1L)
+        lor(-1, v1, v2) should be(LongValue(-1, -1L))
+        lor(-1, v2, v1) should be(LongValue(-1, -1L))
     }
 }

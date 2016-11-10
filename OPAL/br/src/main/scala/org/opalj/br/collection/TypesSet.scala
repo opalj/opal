@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -64,8 +64,8 @@ abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
 
     /**
      * @param f A call back function will be called for each type stored in the set along with
-     * 		the information if type represents an upper type bound (`true`) or refers to a
-     * 		concrete class/interface type (the second parameter is then `false`).
+     *      the information if type represents an upper type bound (`true`) or refers to a
+     *      concrete class/interface type (the second parameter is then `false`).
      */
     def foreach[U](f: (ObjectType, Boolean) ⇒ U): Unit = {
         concreteTypes.foreach { tpe ⇒ f(tpe, false) }

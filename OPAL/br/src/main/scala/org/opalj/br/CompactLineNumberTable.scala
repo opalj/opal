@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,14 +33,14 @@ package br
  * A method's line number table.
  *
  * @param lineNumbers
- * 			<pre>
- * 			LineNumberTable_attribute {
- *   			DATA:
- *   			{  	u2 start_pc;
- *      			u2 line_number;
- *   			}
- * 			}
- * 			</pre>
+ *          <pre>
+ *          LineNumberTable_attribute {
+ *              DATA:
+ *              {   u2 start_pc;
+ *                  u2 line_number;
+ *              }
+ *          }
+ *          </pre>
  *
  * @author Michael Eichberg
  */

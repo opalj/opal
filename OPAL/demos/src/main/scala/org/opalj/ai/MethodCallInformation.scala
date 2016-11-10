@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -46,17 +46,17 @@ import org.opalj.ai.domain.PerformAI
  */
 object MethodCallInformation extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "Extracting Actual Method Parameter Information"
+    override def title: String = "Extracting Actual Method Parameter Information"
 
-    override def description: String =
+    override def description: String = {
         "Analyzes the parameters of called methods to determine if we have more precise type information."
+    }
 
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
         //        val mutex = new Object // JUST USED TO GET A REASONABLE DEBUG OUTPUT
 
         val callsCount = new java.util.concurrent.atomic.AtomicInteger

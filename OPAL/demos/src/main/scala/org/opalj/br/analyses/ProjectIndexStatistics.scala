@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -39,16 +39,17 @@ import java.net.URL
  */
 object ProjectIndexStatistics extends DefaultOneStepAnalysis {
 
-    override def title: String = "Project Statistics"
+    override def title: String = "project statistics"
 
-    override def description: String =
-        "Statistics about the usage of field/method identifiers in a project."
+    override def description: String = {
+        "statistics about the usage of field/method identifiers in a project"
+    }
 
-    override def doAnalyze(
+    def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         BasicReport(
             project.get(ProjectIndexKey).

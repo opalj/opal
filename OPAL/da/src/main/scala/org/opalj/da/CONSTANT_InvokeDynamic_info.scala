@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,6 +31,7 @@ package da
 
 import scala.xml.Node
 import scala.xml.Text
+import org.opalj.bi.ConstantPoolTag
 
 /**
  *
@@ -43,7 +44,7 @@ case class CONSTANT_InvokeDynamic_info(
 
     override final def size: Int = 1 + 2 + 2
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_InvokeDynamic
+    override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_InvokeDynamic
 
     override def asCPNode(implicit cp: Constant_Pool): Node = {
         <div class="cp_entry">

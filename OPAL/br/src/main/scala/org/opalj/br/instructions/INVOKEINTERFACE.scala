@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,7 +36,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEINTERFACE(
-        declaringClass:   ObjectType, // an interface or class type to be precise
+        declaringClass:   ObjectType, // an interface type
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {

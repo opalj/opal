@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,7 +43,11 @@ object CountClassForNameCalls extends DefaultOneStepAnalysis {
 
     override def description: String = "Counts the number of times Class.forName is called."
 
-    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         import ObjectType.{String, Class}
         // Next, we create a descriptor of a method that takes a single parameter of

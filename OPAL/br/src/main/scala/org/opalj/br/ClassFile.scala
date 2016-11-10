@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -91,8 +91,8 @@ import org.opalj.collection.immutable.Naught
  *          methods referred to by the [[org.opalj.br.instructions.INVOKEDYNAMIC]]
  *          instructions.
  *
- * @note	Equality of `ClassFile` objects is reference based and a class file's hash code
- *    		is the same as the underlying [[ObjectType]]'s hash code; i.e., ' `thisType`'s hash code.
+ * @note    Equality of `ClassFile` objects is reference based and a class file's hash code
+ *          is the same as the underlying [[ObjectType]]'s hash code; i.e., ' `thisType`'s hash code.
  *
  * @author Michael Eichberg
  */
@@ -216,9 +216,9 @@ final class ClassFile private (
     /**
      * Returns this class file's bootstrap method table.
      *
-     * @note	A class file's bootstrap method table may be removed at load time if
-     * 			the corresponding [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions
-     * 			are rewritten.
+     * @note    A class file's bootstrap method table may be removed at load time if
+     *          the corresponding [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions
+     *          are rewritten.
      */
     def bootstrapMethodTable: Option[BootstrapMethodTable] = {
         attributes collectFirst { case bmt: BootstrapMethodTable ⇒ bmt }

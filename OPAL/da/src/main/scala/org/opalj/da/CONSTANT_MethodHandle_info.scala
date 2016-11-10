@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import org.opalj.bi.ConstantPoolTag
 
 /**
  *
@@ -42,7 +43,7 @@ case class CONSTANT_MethodHandle_info(
 
     override final def size: Int = 1 + 1 + 2
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_MethodHandle
+    override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_MethodHandle
 
     def refrenceKindAsNode(implicit cp: Constant_Pool): Node = {
         <span class="method_handle_reference_kind">{

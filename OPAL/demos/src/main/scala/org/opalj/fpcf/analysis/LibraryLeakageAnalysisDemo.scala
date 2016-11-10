@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -46,13 +46,13 @@ import org.opalj.fpcf.properties.NotClientCallable
  */
 object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
 
-    override def title: String =
-        "method leakage analysis"
+    override def title: String = "method leakage analysis"
 
-    override def description: String =
+    override def description: String = {
         "determines if the method is exposed to the client via subclasses"
+    }
 
-    override def doAnalyze(
+    def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean

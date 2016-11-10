@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -71,7 +71,7 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         val results = new ConcurrentLinkedQueue[String]()
         theProject.parForeachMethodWithBody(isInterrupted) { m ⇒

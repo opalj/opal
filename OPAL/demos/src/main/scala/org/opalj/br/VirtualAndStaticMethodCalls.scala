@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -46,7 +46,11 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
 
     override def description: String = "Counts the number of static and virtual method calls."
 
-    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         var staticCalls = 0
         var virtualCalls = 0
@@ -69,6 +73,5 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
                 "\tNumber of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
                 "\tNumber of invokeinterface/invokevirtual instructions: "+virtualCalls
         )
-
     }
 }

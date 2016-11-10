@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -65,7 +65,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         var fieldValueInformation = theProject.get(FieldValuesKey)
 
@@ -143,7 +143,7 @@ case class RefinedReturnType[D <: Domain](
         refinedType: Option[D#DomainValue]
 ) {
 
-    override def toString = {
+    override def toString: String = {
 
         val returnType = method.descriptor.returnType
         val additionalInfo =

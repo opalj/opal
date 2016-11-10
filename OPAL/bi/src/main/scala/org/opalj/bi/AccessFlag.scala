@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -118,132 +118,132 @@ object VisibilityModifier {
 object ACC_PUBLIC extends VisibilityModifier {
     final override val javaName: Some[String] = Some("public")
     final override val mask: Int = 0x0001
-    override def toString = "PUBLIC"
+    override def toString: String = "PUBLIC"
 }
 
 object ACC_PRIVATE extends VisibilityModifier {
     final override val javaName: Some[String] = Some("private")
     final override val mask: Int = 0x0002
-    override def toString = "PRIVATE"
+    override def toString: String = "PRIVATE"
 }
 
 object ACC_PROTECTED extends VisibilityModifier {
     final override val javaName: Some[String] = Some("protected")
     final override val mask: Int = 0x0004
-    override def toString = "PROTECTED"
+    override def toString: String = "PROTECTED"
 }
 
 object ACC_STATIC extends AccessFlag {
     final override val javaName: Some[String] = Some("static")
     final override val mask = 0x0008
-    override def toString = "STATIC"
+    override def toString: String = "STATIC"
 }
 
 object ACC_FINAL extends AccessFlag {
     final override val javaName: Some[String] = Some("final")
     final override val mask = 0x0010
-    override def toString = "FINAL"
+    override def toString: String = "FINAL"
 }
 
 object ACC_SUPER extends AccessFlag {
     final val javaName: None.type = None
     final val mask = 0x0020
-    override def toString = "SUPER"
+    override def toString: String = "SUPER"
 }
 
 object ACC_SYNCHRONIZED extends AccessFlag {
     final override val javaName: Some[String] = Some("synchronized")
     final override val mask = 0x0020
-    override def toString = "SYNCHRONIZED"
+    override def toString: String = "SYNCHRONIZED"
 }
 
 object ACC_VOLATILE extends AccessFlag {
     final override val javaName: Some[String] = Some("volatile")
     final override val mask = 0x0040
-    override def toString = "VOLATILE"
+    override def toString: String = "VOLATILE"
 }
 
 object ACC_BRIDGE extends AccessFlag {
     final val javaName: None.type = None
     final val mask = 0x0040
-    override def toString = "BRIDGE"
+    override def toString: String = "BRIDGE"
 }
 
 object ACC_TRANSIENT extends AccessFlag {
     final override val javaName: Some[String] = Some("transient")
     final override val mask = 0x0080
-    override def toString = "TRANSIENT"
+    override def toString: String = "TRANSIENT"
 }
 
 object ACC_VARARGS extends AccessFlag {
     final override val javaName: None.type = None
     final override val mask = 0x0080
-    override def toString = "VARARGS"
+    override def toString: String = "VARARGS"
 }
 
 object ACC_NATIVE extends AccessFlag {
     final val javaName: Some[String] = Some("native")
     final val mask = 0x0100
-    override def toString = "NATIVE"
+    override def toString: String = "NATIVE"
 }
 
 object ACC_INTERFACE extends AccessFlag {
     // this flag modifies the semantics of a class, but it is not an additional flag
     final override val javaName: None.type = None
     final override val mask = 0x0200
-    override def toString = "INTERFACE"
+    override def toString: String = "INTERFACE"
 }
 
 object ACC_ABSTRACT extends AccessFlag {
     final override val javaName: Some[String] = Some("abstract")
     final override val mask = 0x0400
-    override def toString = "ABSTRACT"
+    override def toString: String = "ABSTRACT"
 }
 
 object ACC_STRICT extends AccessFlag {
     final override val javaName: Some[String] = Some("strictfp")
     final val mask = 0x0800
-    override def toString = "STRICT"
+    override def toString: String = "STRICT"
 }
 
 object ACC_SYNTHETIC extends AccessFlag {
     final override val javaName: None.type = None
     final override val mask = 0x1000
-    override def toString = "SYNTHETIC"
+    override def toString: String = "SYNTHETIC"
 }
 
 object ACC_ANNOTATION extends AccessFlag {
     final override val javaName: None.type = None
     final override val mask = 0x2000
-    override def toString = "ANNOTATION"
+    override def toString: String = "ANNOTATION"
 }
 
 object ACC_ENUM extends AccessFlag {
     final override val javaName: None.type = None
     final override val mask = 0x4000
-    override def toString = "ENUM"
+    override def toString: String = "ENUM"
 }
 
 /**
  * Identifies a class as defining a Java 9 module.
  *
  * @note From the specification: "If ACC_MODULE is set in ClassFile.access_flags, then
- * 		no other flag in `ClassFile.access_flags` may be set."
- * 		The name of the class has to be "/module-info".
+ *      no other flag in `ClassFile.access_flags` may be set."
+ *      The name of the class has to be "/module-info".
  * @note '''super_class, interfaces_count, fields_count, methods_count: zero. I.e.,
- * 		a module does not have a super class.'''
+ *      a module does not have a super class.'''
  * @note Only used in combination with Java 9 modules.
  */
 object ACC_MODULE extends AccessFlag {
     final override val javaName: None.type = None
     final override val mask = 0x8000 // SAME AS ACC_MANDATED (!)
-    override def toString = "MODULE"
+    override def toString: String = "MODULE"
 }
 
 object ACC_MANDATED extends AccessFlag {
     final override val javaName: None.type = None
     final override val mask = 0x8000
-    override def toString = "MANDATED"
+    override def toString: String = "MANDATED"
 }
 
 /**
@@ -253,31 +253,31 @@ object ACC_MANDATED extends AccessFlag {
 object ACC_TRANSITIVE extends AccessFlag {
     final override val javaName = Some("public") // IMPROVE [JDK9] Check if the name "public <-> transitive" is chosen 
     final override val mask = 0x0010
-    override def toString = "TRANSITIVE"
+    override def toString: String = "TRANSITIVE"
 }
 
 /**
  *
  * @note From the JVM 9 specification: "Indicates that this [inter-module] dependence is
- * 		mandatory in the static phase, i.e., at compile time, but is optional in the
- * 		dynamic phase, i.e., at run time."
+ *      mandatory in the static phase, i.e., at compile time, but is optional in the
+ *      dynamic phase, i.e., at run time."
  * @note Only used in combination with Java 9 modules.
  */
 object ACC_STATIC_PHASE extends AccessFlag {
     final override val javaName = Some("static")
     final override val mask = 0x0020
-    override def toString = "STATIC_PHASE"
+    override def toString: String = "STATIC_PHASE"
 }
 
 /**
  *
  * @note From the JVM 9 specification: "Indicates that the package is concealed in the
- * 		static phase, i.e., at compile time, but is exported in the dynamic phase, i.e.,
- * 		at run time."
+ *      static phase, i.e., at compile time, but is exported in the dynamic phase, i.e.,
+ *      at run time."
  * @note Only used in combination with Java 9 modules.
  */
 object ACC_DYNAMIC_PHASE extends AccessFlag {
     final override val javaName = Some("dynamic")
     final override val mask = 0x0040
-    override def toString = "DYNAMIC_PHASE"
+    override def toString: String = "DYNAMIC_PHASE"
 }

@@ -47,7 +47,7 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
  * }}}
  *
  * @note It is possible to use an analysis that directly uses the property store and
- * 		an analysis that uses this factory infrastructure at the same time.
+ *      an analysis that uses this factory infrastructure at the same time.
  *
  * @author Michael Reif
  * @author Michael Eichberg
@@ -81,12 +81,12 @@ trait FPCFAnalysisRunner {
      * before this analysis can be performed.
      *
      * @note
-     * 		An analysis should be listed as a requirement if and only if the analysis
-     * 		strictly depends on the computed property of the analysis and the property
-     * 		has no fallback (which is generally not the case!).
-     * 		If no strict requirements are defined then this analysis can be run even
-     * 		if no other analyses are executed. This provides the end user more leeway
-     * 		in specifying the analyses that should be analyzed.
+     *      An analysis should be listed as a requirement if and only if the analysis
+     *      strictly depends on the computed property of the analysis and the property
+     *      has no fallback (which is generally not the case!).
+     *      If no strict requirements are defined then this analysis can be run even
+     *      if no other analyses are executed. This provides the end user more leeway
+     *      in specifying the analyses that should be analyzed.
      */
     def requirements: Set[FPCFAnalysisRunner] = Set.empty
 

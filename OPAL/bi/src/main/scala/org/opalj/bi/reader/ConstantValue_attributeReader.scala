@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -42,9 +42,9 @@ import java.io.DataInputStream
  *
  * <pre>
  * ConstantValue_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 constantvalue_index;
+ *  u2 attribute_name_index;
+ *  u4 attribute_length;
+ *  u2 constantvalue_index;
  * }
  * </pre>
  *

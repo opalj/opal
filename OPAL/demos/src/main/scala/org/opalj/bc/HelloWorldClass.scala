@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2016
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -51,9 +51,9 @@ import java.nio.file.Paths
  * Demonstrates how to create a "HelloWorld" class which basically has the following code:
  * {{{
  * public class Test {
- * 	public static void main(String[] args) {
- * 		System.out.println("Hello World");
- * 	}
+ *  public static void main(String[] args) {
+ *      System.out.println("Hello World");
+ *  }
  * }
  * }}}
  * {{{

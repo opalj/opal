@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -271,8 +271,8 @@ trait ValuesDomain {
          *      reasons, as the default implementation relies on [[join]].
          *
          * @param other Another `DomainValue` with the same computational
-         * 		type as this value.
-         * 		(The `IllegalValue` has no computational type and, hence,
+         *      type as this value.
+         *      (The `IllegalValue` has no computational type and, hence,
          *      a comparison with an IllegalValue is not well defined.)
          *
          * @see `abstractsOver`

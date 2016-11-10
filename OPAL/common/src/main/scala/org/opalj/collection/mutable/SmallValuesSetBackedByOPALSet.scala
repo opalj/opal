@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -42,15 +42,15 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
         private[this] var set: SmallValuesSet
 ) extends SmallValuesSet {
 
-    override def min = set.min + offset
+    override def min: Int = set.min + offset
 
-    override def max = set.max + offset
+    override def max: Int = set.max + offset
 
-    override def size = set.size
+    override def size: Int = set.size
 
-    override def isSingletonSet = set.isSingletonSet
+    override def isSingletonSet: Boolean = set.isSingletonSet
 
-    override def isEmpty = set.isEmpty
+    override def isEmpty: Boolean = set.isEmpty
 
     override def mutableCopy: SmallValuesSetBackedByOPALSet = {
         new SmallValuesSetBackedByOPALSet(offset, set.mutableCopy)
