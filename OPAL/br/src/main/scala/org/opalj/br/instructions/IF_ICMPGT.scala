@@ -45,8 +45,19 @@ case class IF_ICMPGT(branchoffset: Int) extends IFICMPInstruction {
 
     final def condition: RelationalOperator = RelationalOperators.GT
 }
-object IF_ICMPGT extends UnresolvedBranchInstructionBuilder {
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
+object IF_ICMPGT {
 
     final val opcode = 163
+
+    /**
+     * Factory for creating LabelIF_ICMPGT instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIF_ICMPGT = LabelIF_ICMPGT(label)
 
 }

@@ -45,8 +45,19 @@ case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction {
 
     final def condition: RelationalOperator = RelationalOperators.NE
 }
-object IFNONNULL extends UnresolvedBranchInstructionBuilder {
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
+object IFNONNULL {
 
     final val opcode = 199
+
+    /**
+     * Factory for creating LabelIFNONNULL instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIFNONNULL = LabelIFNONNULL(label)
 
 }

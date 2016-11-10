@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,27 +31,19 @@ package br
 package instructions
 
 /**
- * Branch if int comparison succeeds; succeeds if and only if value1 ≥ value2.
- *
- * @author Michael Eichberg
+ * LabelBranchInstructions are used to encode branch instructions with a
+ * Symbol as the branch target in the BytecodeAssembler DSL
+ * @author Malte Limmeroth
  */
-case class IF_ICMPGE(branchoffset: Int) extends IFICMPInstruction {
-
-    final def opcode: Opcode = IF_ICMPGE.opcode
-
-    final def mnemonic: String = "if_icmpge"
-
-    final def operator: String = ">="
-
-    final def condition: RelationalOperator = RelationalOperators.GE
-}
-object IF_ICMPGE {
-
-    final val opcode = 162
+trait LabelBranchInstruction extends ControlTransferInstruction {
+    /**
+     * resolves the LabelBranchInstruction to the actual ControlTransferInstruction with the
+     * given branchoffset
+     */
+    def resolve(branchoffset: Int): ControlTransferInstruction
 
     /**
-     * Factory for creating LabelIF_ICMPGE instructions with a Symbol as the branch target.
+     * the branching target as a Symbol
      */
-    def apply(label: Symbol): LabelIF_ICMPGE = LabelIF_ICMPGE(label)
-
+    def label: Symbol
 }

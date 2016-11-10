@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,9 +36,9 @@ package instructions
  *
  * @author Malte Limmeroth
  */
-trait UnresolvedSimpleConditionalBranchInstruction
+trait LabelSimpleConditionalBranchInstruction
         extends SimpleConditionalBranchInstruction
-        with UnresolvedBranchInstruction {
+        with LabelBranchInstruction {
 
     override def resolve(offset: Int): SimpleConditionalBranchInstruction
 
@@ -61,75 +61,75 @@ trait UnresolvedSimpleConditionalBranchInstruction
     override def mnemonic: String = instruction.mnemonic
 }
 
-case class Unresolved_IF_ACMPEQ(label: Symbol)
-  extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIF_ACMPEQ(label: Symbol)
+        extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IF_ACMPEQ(offset)
 }
 
-case class Unresolved_IF_ACMPNE(label: Symbol)
-  extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIF_ACMPNE(label: Symbol)
+        extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IF_ACMPNE(offset)
 }
 
-case class Unresolved_IF_ICMPEQ(label: Symbol)
-  extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIF_ICMPEQ(label: Symbol)
+        extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IF_ICMPEQ(offset)
 }
 
-case class Unresolved_IF_ICMPNE(label: Symbol)
-  extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIF_ICMPNE(label: Symbol)
+        extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IF_ICMPNE(offset)
 }
 
-case class Unresolved_IF_ICMPLT(label: Symbol)
-  extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIF_ICMPLT(label: Symbol)
+        extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IF_ICMPLT(offset)
 }
 
-case class Unresolved_IF_ICMPGE(label: Symbol)
-  extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIF_ICMPGE(label: Symbol)
+        extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IF_ICMPGE(offset)
 }
 
-case class Unresolved_IF_ICMPGT(label: Symbol)
-  extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIF_ICMPGT(label: Symbol)
+        extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IF_ICMPGT(offset)
 }
 
-case class Unresolved_IF_ICMPLE(label: Symbol)
-  extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIF_ICMPLE(label: Symbol)
+        extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IF_ICMPLE(offset)
 }
 
-case class Unresolved_IFEQ(label: Symbol) extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIFEQ(label: Symbol) extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IFEQ(offset)
 }
 
-case class Unresolved_IFNE(label: Symbol) extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIFNE(label: Symbol) extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IFNE(offset)
 }
 
-case class Unresolved_IFLT(label: Symbol) extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIFLT(label: Symbol) extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IFLT(offset)
 }
 
-case class Unresolved_IFGE(label: Symbol) extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIFGE(label: Symbol) extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IFGE(offset)
 }
 
-case class Unresolved_IFGT(label: Symbol) extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIFGT(label: Symbol) extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IFGT(offset)
 }
 
-case class Unresolved_IFLE(label: Symbol) extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIFLE(label: Symbol) extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IFLE(offset)
 }
 
-case class Unresolved_IFNONNULL(label: Symbol)
-  extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIFNONNULL(label: Symbol)
+        extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IFNONNULL(offset)
 }
 
-case class Unresolved_IFNULL(label: Symbol) extends UnresolvedSimpleConditionalBranchInstruction {
+case class LabelIFNULL(label: Symbol) extends LabelSimpleConditionalBranchInstruction {
     override def resolve(offset: PC): SimpleConditionalBranchInstruction = IFNULL(offset)
 }

@@ -46,8 +46,18 @@ case class IFGT(branchoffset: Int) extends IF0Instruction {
     final def condition: RelationalOperator = RelationalOperators.GT
 }
 
-object IFGT extends UnresolvedBranchInstructionBuilder {
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
+object IFGT {
 
     final val opcode = 157
+
+    /**
+     * Factory for creating LabelIFGT instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIFGT = LabelIFGT(label)
 
 }

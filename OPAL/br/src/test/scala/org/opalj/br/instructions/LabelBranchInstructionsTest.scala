@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,33 +33,34 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
- * Tests instantiation and resolving of UnresolvedBranchInstructions
+ * Tests instantiation and resolving of LabelBranchInstructions
  *
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class UnresolvedBranchInstructionsTest extends FlatSpec with Matchers {
-    behavior of "UnresolvedBranchInstructions"
+class LabelBranchInstructionsTest extends FlatSpec with Matchers {
+    behavior of "LabelBranchInstructions"
 
+    val label = 'TestLabel
     val simpleBranchInstructionsMap = List(
-        IFEQ → Unresolved_IFEQ,
-        IFNE → Unresolved_IFNE,
-        IFLT → Unresolved_IFLT,
-        IFGE → Unresolved_IFGE,
-        IFGT → Unresolved_IFGT,
-        IFLE → Unresolved_IFLE,
+        IFEQ(label) → LabelIFEQ,
+        IFNE(label) → LabelIFNE,
+        IFLT(label) → LabelIFLT,
+        IFGE(label) → LabelIFGE,
+        IFGT(label) → LabelIFGT,
+        IFLE(label) → LabelIFLE,
 
-        IF_ICMPEQ → Unresolved_IF_ICMPEQ,
-        IF_ICMPNE → Unresolved_IF_ICMPNE,
-        IF_ICMPLT → Unresolved_IF_ICMPLT,
-        IF_ICMPGE → Unresolved_IF_ICMPGE,
-        IF_ICMPGT → Unresolved_IF_ICMPGT,
-        IF_ICMPLE → Unresolved_IF_ICMPLE,
-        IF_ACMPEQ → Unresolved_IF_ACMPEQ,
-        IF_ACMPNE → Unresolved_IF_ACMPNE,
+        IF_ICMPEQ(label) → LabelIF_ICMPEQ,
+        IF_ICMPNE(label) → LabelIF_ICMPNE,
+        IF_ICMPLT(label) → LabelIF_ICMPLT,
+        IF_ICMPGE(label) → LabelIF_ICMPGE,
+        IF_ICMPGT(label) → LabelIF_ICMPGT,
+        IF_ICMPLE(label) → LabelIF_ICMPLE,
+        IF_ACMPEQ(label) → LabelIF_ACMPEQ,
+        IF_ACMPNE(label) → LabelIF_ACMPNE,
 
-        IFNULL → Unresolved_IFNULL,
-        IFNONNULL → Unresolved_IFNONNULL
+        IFNULL(label) → LabelIFNULL,
+        IFNONNULL(label) → LabelIFNONNULL
     )
 
     val offset = 42
@@ -84,47 +85,44 @@ class UnresolvedBranchInstructionsTest extends FlatSpec with Matchers {
         IFNONNULL(offset)
     )
 
-
-    val label = 'TestLabel
     val resolvedSimpleBranchInstructions = for (i ← simpleBranchInstructionsMap.indices)
-        yield simpleBranchInstructionsMap(i)
-          ._1(label)
-          .resolve(i)
-          .asInstanceOf[SimpleConditionalBranchInstruction]
+        yield simpleBranchInstructionsMap(i)._1
+        .resolve(i)
+        .asInstanceOf[SimpleConditionalBranchInstruction]
 
-    "the UnresolvedBranchInstructionBuilder" should "return the correct type of UnresolvedBranchInstruction" in {
-        simpleBranchInstructionsMap.foreach { bi ⇒
-            assert(bi._1(label) == bi._2(label))
+    "the convenience factories of SimpleConditionalBranchInstructions" should
+        "return the correct type of LabelBranchInstruction" in {
+            simpleBranchInstructionsMap.foreach { bi ⇒
+                assert(bi._1 == bi._2(label))
+            }
         }
-    }
 
-    "UnresolvedBranchInstruction.resolve" should "resolve to the right BranchOffset" in {
+    "LabelBranchInstruction.resolve" should "resolve to the correct BranchOffset" in {
         for (i ← resolvedSimpleBranchInstructions.indices) {
             assert(resolvedSimpleBranchInstructions(i).branchoffset == i)
         }
     }
 
-    "UnresolvedBranchInstructions" should "resolve to the right Instruction" in {
+    "LabelBranchInstructions" should "resolve to the correct Instruction" in {
         for (i ← simpleBranchInstructions.indices) {
             assert(resolvedSimpleBranchInstructions(i).getClass ==
-              simpleBranchInstructions(i).getClass)
+                simpleBranchInstructions(i).getClass)
         }
     }
 
-    "UnresolvedSimpleConditionalBranchInstructions" should "mirror all properties of " +
-      "SimpleConditionalBranchInstruction" in {
-        for(i <- simpleBranchInstructionsMap.indices){
-            val testInst = simpleBranchInstructionsMap(i)._1(label)
-              .asInstanceOf[SimpleConditionalBranchInstruction]
-            val refInst = simpleBranchInstructions(i)
+    "LabelSimpleConditionalBranchInstruction" should "mirror all properties of "+
+        "SimpleConditionalBranchInstruction" in {
+            for (i ← simpleBranchInstructionsMap.indices) {
+                val testInst = simpleBranchInstructionsMap(i)._1
+                val refInst = simpleBranchInstructions(i)
 
-            assert(testInst.opcode == refInst.opcode)
-            assert(testInst.toString() == refInst.mnemonic+"("+label+")")
-            assert(testInst.operator == refInst.operator)
-            assert(testInst.operandCount == refInst.operandCount)
-            assert(testInst.stackSlotsChange == refInst.stackSlotsChange)
-            assert(testInst.mnemonic == refInst.mnemonic)
-            assertThrows[IllegalStateException](testInst.branchoffset)
+                assert(testInst.opcode == refInst.opcode)
+                assert(testInst.toString() == refInst.mnemonic+"("+label+")")
+                assert(testInst.operator == refInst.operator)
+                assert(testInst.operandCount == refInst.operandCount)
+                assert(testInst.stackSlotsChange == refInst.stackSlotsChange)
+                assert(testInst.mnemonic == refInst.mnemonic)
+                assertThrows[IllegalStateException](testInst.branchoffset)
+            }
         }
-    }
 }

@@ -45,8 +45,19 @@ case class IFNE(branchoffset: Int) extends IF0Instruction {
 
     final def condition: RelationalOperator = RelationalOperators.NE
 }
-object IFNE extends UnresolvedBranchInstructionBuilder {
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
+object IFNE {
 
     final val opcode = 154
+
+    /**
+     * Factory for creating LabelIFNE instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIFNE = LabelIFNE(label)
 
 }

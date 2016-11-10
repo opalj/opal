@@ -47,8 +47,18 @@ case class IFEQ(branchoffset: Int) extends IF0Instruction {
 
 }
 
-object IFEQ extends UnresolvedBranchInstructionBuilder {
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
+object IFEQ {
 
     final val opcode = 153
+
+    /**
+     * Factory for creating LabelIFEQ instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIFEQ = LabelIFEQ(label)
 
 }

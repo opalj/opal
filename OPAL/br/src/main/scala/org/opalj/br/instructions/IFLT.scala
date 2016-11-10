@@ -45,8 +45,18 @@ case class IFLT(branchoffset: Int) extends IF0Instruction {
 
     final def condition: RelationalOperator = RelationalOperators.LT
 }
-object IFLT extends UnresolvedBranchInstructionBuilder {
+
+/**
+ * Additional factory methods.
+ *
+ * @author Malte Limmeroth
+ */
+object IFLT {
 
     final val opcode = 155
 
+    /**
+     * Factory for creating LabelIFLT instructions with a Symbol as the branch target.
+     */
+    def apply(label: Symbol): LabelIFLT = LabelIFLT(label)
 }
