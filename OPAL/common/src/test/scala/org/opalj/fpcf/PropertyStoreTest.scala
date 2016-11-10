@@ -947,7 +947,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     }
 
                     ps <||< ({ case n: Node ⇒ n }, analysis)
-                    ps.waitOnPropertyComputationCompletion(true)
+                    ps.waitOnPropertyComputationCompletion(false)
 
                     try {
                         // the graph:
@@ -969,7 +969,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             info(s"test failed on run $runs\n"+ps.toString(true))
                             try { ps.validate(None) } catch {
                                 case ae: AssertionError ⇒
-                                    info(s"validation failed on run $runs\n"+ae.getMessage.toString)
+                                    info(s"validation failed on run $runs\n"+ae.getMessage)
                             }
                             throw t
                     }
@@ -1056,7 +1056,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     }
 
                     ps <||< ({ case n: Node ⇒ n }, analysis)
-                    ps.waitOnPropertyComputationCompletion(true)
+                    ps.waitOnPropertyComputationCompletion(false)
 
                     try {
                         // the graph:
