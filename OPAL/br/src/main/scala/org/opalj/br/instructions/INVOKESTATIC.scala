@@ -64,8 +64,34 @@ case class INVOKESTATIC(
     }
 
 }
+
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object INVOKESTATIC {
 
     final val opcode = 184
+
+    /**
+     * Factory method to create [[INVOKESTATIC]] instructions.
+     *
+     * @param 	declaringClass the method's declaring class name in JVM notation,
+     * 			e.g. "java/lang/Object".
+     * @param	isInterface has to be `true` if declaring class identifies an interface.
+     * 			(Determines how the target method is resolved - relevant for Java 8 onwards.)
+     * @param 	methodDescriptor the method descriptor in JVM notation,
+     * 			e.g. "()V" for a method without parameters which returns void.
+     */
+    def apply(
+        declaringClass:   String,
+        isInterface:      Boolean,
+        methodName:       String,
+        methodDescriptor: String
+    ): INVOKESTATIC = {
+        val declaringClassType = ObjectType(declaringClass)
+        INVOKESTATIC(declaringClassType, isInterface, methodName, MethodDescriptor(methodDescriptor))
+    }
 
 }
