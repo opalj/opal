@@ -361,12 +361,17 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      *          To get the defining class file use the project's respective method.
      */
     def resolveMethodReference(
-        receiverType:                          ObjectType,
+        declaringClass:                        ReferenceType,
         name:                                  String,
         descriptor:                            MethodDescriptor,
         forceLookupInSuperinterfacesOnFailure: Boolean          = false
     ): Option[Method] = {
-        assert(classHierarchy.isInterface(receiverType).isNoOrUnknown)
+        val receiverType =
+            if (declaringClass.isArrayType) {
+                ObjectType.Object
+            } else {
+                declaringClass.asObjectType
+            }
 
         resolveClassMethodReference(receiverType, name, descriptor) match {
             case Success(method)                                   ⇒ Some(method)
