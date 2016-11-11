@@ -33,34 +33,34 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
- * Tests instantiation and resolving of LabelBranchInstructions
+ * Tests instantiation and resolving of LabeledBranchInstructions
  *
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class LabelBranchInstructionsTest extends FlatSpec with Matchers {
-    behavior of "LabelBranchInstructions"
+class LabeledBranchInstructionsTest extends FlatSpec with Matchers {
+    behavior of "LabeledBranchInstructions"
 
     val label = 'TestLabel
     val simpleBranchInstructionsMap = List(
-        IFEQ(label) → LabelIFEQ,
-        IFNE(label) → LabelIFNE,
-        IFLT(label) → LabelIFLT,
-        IFGE(label) → LabelIFGE,
-        IFGT(label) → LabelIFGT,
-        IFLE(label) → LabelIFLE,
+        IFEQ(label) → LabeledIFEQ,
+        IFNE(label) → LabeledIFNE,
+        IFLT(label) → LabeledIFLT,
+        IFGE(label) → LabeledIFGE,
+        IFGT(label) → LabeledIFGT,
+        IFLE(label) → LabeledIFLE,
 
-        IF_ICMPEQ(label) → LabelIF_ICMPEQ,
-        IF_ICMPNE(label) → LabelIF_ICMPNE,
-        IF_ICMPLT(label) → LabelIF_ICMPLT,
-        IF_ICMPGE(label) → LabelIF_ICMPGE,
-        IF_ICMPGT(label) → LabelIF_ICMPGT,
-        IF_ICMPLE(label) → LabelIF_ICMPLE,
-        IF_ACMPEQ(label) → LabelIF_ACMPEQ,
-        IF_ACMPNE(label) → LabelIF_ACMPNE,
+        IF_ICMPEQ(label) → LabeledIF_ICMPEQ,
+        IF_ICMPNE(label) → LabeledIF_ICMPNE,
+        IF_ICMPLT(label) → LabeledIF_ICMPLT,
+        IF_ICMPGE(label) → LabeledIF_ICMPGE,
+        IF_ICMPGT(label) → LabeledIF_ICMPGT,
+        IF_ICMPLE(label) → LabeledIF_ICMPLE,
+        IF_ACMPEQ(label) → LabeledIF_ACMPEQ,
+        IF_ACMPNE(label) → LabeledIF_ACMPNE,
 
-        IFNULL(label) → LabelIFNULL,
-        IFNONNULL(label) → LabelIFNONNULL
+        IFNULL(label) → LabeledIFNULL,
+        IFNONNULL(label) → LabeledIFNONNULL
     )
 
     val offset = 42
@@ -87,23 +87,23 @@ class LabelBranchInstructionsTest extends FlatSpec with Matchers {
 
     val resolvedSimpleBranchInstructions = for (i ← simpleBranchInstructionsMap.indices)
         yield simpleBranchInstructionsMap(i)._1
-        .resolve(i)
+        .resolveLabel(i)
         .asInstanceOf[SimpleConditionalBranchInstruction]
 
     "the convenience factories of SimpleConditionalBranchInstructions" should
-        "return the correct type of LabelBranchInstruction" in {
+        "return the correct type of LabeledBranchInstruction" in {
             simpleBranchInstructionsMap.foreach { bi ⇒
                 assert(bi._1 == bi._2(label))
             }
         }
 
-    "LabelBranchInstruction.resolve" should "resolve to the correct BranchOffset" in {
+    "LabeledBranchInstruction.resolve" should "resolve to the correct BranchOffset" in {
         for (i ← resolvedSimpleBranchInstructions.indices) {
             assert(resolvedSimpleBranchInstructions(i).branchoffset == i)
         }
     }
 
-    "LabelBranchInstructions" should "resolve to the correct Instruction" in {
+    "LabeledBranchInstructions" should "resolve to the correct Instruction" in {
         for (i ← simpleBranchInstructions.indices) {
             assert(resolvedSimpleBranchInstructions(i).getClass ==
                 simpleBranchInstructions(i).getClass)
@@ -117,7 +117,7 @@ class LabelBranchInstructionsTest extends FlatSpec with Matchers {
                 val refInst = simpleBranchInstructions(i)
 
                 assert(testInst.opcode == refInst.opcode)
-                assert(testInst.toString() == refInst.mnemonic+"("+label+")")
+                assert(testInst.toString() == s"${refInst.mnemonic}($label)")
                 assert(testInst.operator == refInst.operator)
                 assert(testInst.operandCount == refInst.operandCount)
                 assert(testInst.stackSlotsChange == refInst.stackSlotsChange)

@@ -47,7 +47,7 @@ case class IFGE(branchoffset: Int) extends IF0Instruction {
 }
 
 /**
- * Additional factory methods.
+ * Defines constants and factory methods.
  *
  * @author Malte Limmeroth
  */
@@ -56,8 +56,8 @@ object IFGE {
     final val opcode = 156
 
     /**
-     * Factory for creating LabelIFGE instructions with a Symbol as the branch target.
+     * Creates LabeledIFGE instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIFGE = LabelIFGE(label)
+    def apply(label: Symbol): LabeledIFGE = LabeledIFGE(label)
 
 }

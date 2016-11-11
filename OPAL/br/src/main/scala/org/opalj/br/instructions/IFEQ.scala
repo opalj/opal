@@ -48,7 +48,7 @@ case class IFEQ(branchoffset: Int) extends IF0Instruction {
 }
 
 /**
- * Additional factory methods.
+ * Defines constants and factory methods.
  *
  * @author Malte Limmeroth
  */
@@ -57,8 +57,8 @@ object IFEQ {
     final val opcode = 153
 
     /**
-     * Factory for creating LabelIFEQ instructions with a Symbol as the branch target.
+     * Creates LabeledIFEQ instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIFEQ = LabelIFEQ(label)
+    def apply(label: Symbol): LabeledIFEQ = LabeledIFEQ(label)
 
 }

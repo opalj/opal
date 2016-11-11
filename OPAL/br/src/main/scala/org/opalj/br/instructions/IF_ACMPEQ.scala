@@ -47,7 +47,7 @@ case class IF_ACMPEQ(branchoffset: Int) extends IFACMPInstruction {
 }
 
 /**
- * Additional factory methods.
+ * Defines constants and factory methods.
  *
  * @author Malte Limmeroth
  */
@@ -56,8 +56,8 @@ object IF_ACMPEQ {
     final val opcode = 165
 
     /**
-     * Factory for creating LabelIF_ACMPEQ instructions with a Symbol as the branch target.
+     * Creates[[LabeledIF_ACMPEQ]] instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIF_ACMPEQ = LabelIF_ACMPEQ(label)
+    def apply(label: Symbol): LabeledIF_ACMPEQ = LabeledIF_ACMPEQ(label)
 
 }

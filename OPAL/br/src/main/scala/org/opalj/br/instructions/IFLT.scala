@@ -47,7 +47,7 @@ case class IFLT(branchoffset: Int) extends IF0Instruction {
 }
 
 /**
- * Additional factory methods.
+ * Defines constants and factory methods.
  *
  * @author Malte Limmeroth
  */
@@ -56,7 +56,7 @@ object IFLT {
     final val opcode = 155
 
     /**
-     * Factory for creating LabelIFLT instructions with a Symbol as the branch target.
+     * Creates LabeledIFLT instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIFLT = LabelIFLT(label)
+    def apply(label: Symbol): LabeledIFLT = LabeledIFLT(label)
 }

@@ -47,7 +47,7 @@ case class IFGT(branchoffset: Int) extends IF0Instruction {
 }
 
 /**
- * Additional factory methods.
+ * Defines constants and factory methods.
  *
  * @author Malte Limmeroth
  */
@@ -56,8 +56,8 @@ object IFGT {
     final val opcode = 157
 
     /**
-     * Factory for creating LabelIFGT instructions with a Symbol as the branch target.
+     * Creates LabeledIFGT instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIFGT = LabelIFGT(label)
+    def apply(label: Symbol): LabeledIFGT = LabeledIFGT(label)
 
 }

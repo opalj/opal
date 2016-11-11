@@ -48,7 +48,7 @@ case class IFLE(branchoffset: Int) extends IF0Instruction {
 }
 
 /**
- * Additional factory methods.
+ * Defines constants and factory methods.
  *
  * @author Malte Limmeroth
  */
@@ -57,8 +57,8 @@ object IFLE {
     final val opcode = 158
 
     /**
-     * Factory for creating LabelIFLE instructions with a Symbol as the branch target.
+     * Creates LabeledIFLE instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIFLE = LabelIFLE(label)
+    def apply(label: Symbol): LabeledIFLE = LabeledIFLE(label)
 
 }

@@ -48,7 +48,7 @@ case class IF_ACMPNE(branchoffset: Int) extends IFACMPInstruction {
 }
 
 /**
- * Additional factory methods.
+ * Defines constants and factory methods.
  *
  * @author Malte Limmeroth
  */
@@ -57,8 +57,8 @@ object IF_ACMPNE {
     final val opcode = 166
 
     /**
-     * Factory for creating LabelIF_ACMPNE instructions with a Symbol as the branch target.
+     * Creates LabeledIF_ACMPNE instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIF_ACMPNE = LabelIF_ACMPNE(label)
+    def apply(label: Symbol): LabeledIF_ACMPNE = LabeledIF_ACMPNE(label)
 
 }

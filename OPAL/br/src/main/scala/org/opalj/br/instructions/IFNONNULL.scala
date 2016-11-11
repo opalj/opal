@@ -47,7 +47,7 @@ case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction {
 }
 
 /**
- * Additional factory methods.
+ * Defines constants and factory methods.
  *
  * @author Malte Limmeroth
  */
@@ -56,8 +56,8 @@ object IFNONNULL {
     final val opcode = 199
 
     /**
-     * Factory for creating LabelIFNONNULL instructions with a Symbol as the branch target.
+     * Creates LabeledIFNONNULL instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIFNONNULL = LabelIFNONNULL(label)
+    def apply(label: Symbol): LabeledIFNONNULL = LabeledIFNONNULL(label)
 
 }

@@ -50,8 +50,8 @@ object IF_ICMPGE {
     final val opcode = 162
 
     /**
-     * Factory for creating LabelIF_ICMPGE instructions with a Symbol as the branch target.
+     * Creates LabeledIF_ICMPGE instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIF_ICMPGE = LabelIF_ICMPGE(label)
+    def apply(label: Symbol): LabeledIF_ICMPGE = LabeledIF_ICMPGE(label)
 
 }

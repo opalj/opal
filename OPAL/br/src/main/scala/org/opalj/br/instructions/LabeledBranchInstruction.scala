@@ -31,19 +31,22 @@ package br
 package instructions
 
 /**
- * LabelBranchInstructions are used to encode branch instructions with a
- * Symbol as the branch target in the BytecodeAssembler DSL
+ * `LabeledBranchInstruction`s specify the instruction which will be executed next by referring
+ * to the label associated with the instruction which should be executed. The label is
+ * a standard Scala `Symbol`.
+ *
  * @author Malte Limmeroth
  */
-trait LabelBranchInstruction extends ControlTransferInstruction {
-    /**
-     * resolves the LabelBranchInstruction to the actual ControlTransferInstruction with the
-     * given branchoffset
-     */
-    def resolve(branchoffset: Int): ControlTransferInstruction
+trait LabeledBranchInstruction extends ControlTransferInstruction {
 
     /**
-     * the branching target as a Symbol
+     * Resolves the LabeledBranchInstruction to the actual ControlTransferInstruction with the
+     * given branchoffset
      */
-    def label: Symbol
+    def resolveLabel(branchoffset: Int): ControlTransferInstruction
+
+    /**
+     * The label associated with the [[Instruction]] which should be executed next.
+     */
+    def branchTargetLabel: Symbol
 }

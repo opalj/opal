@@ -47,7 +47,7 @@ case class IFNE(branchoffset: Int) extends IF0Instruction {
 }
 
 /**
- * Additional factory methods.
+ * Defines constants and factory methods.
  *
  * @author Malte Limmeroth
  */
@@ -56,8 +56,8 @@ object IFNE {
     final val opcode = 154
 
     /**
-     * Factory for creating LabelIFNE instructions with a Symbol as the branch target.
+     * Creates LabeledIFNE instructions with a Symbol as the branch target.
      */
-    def apply(label: Symbol): LabelIFNE = LabelIFNE(label)
+    def apply(label: Symbol): LabeledIFNE = LabeledIFNE(label)
 
 }
