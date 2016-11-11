@@ -160,6 +160,36 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
         return pureCyclicRecursiveCall1(k);
     }
 
+    static int impureComplex1(int i) {
+        int j = impureComplex2(i-1);
+        return impureComplex3(j*2);
+    }
+
+    static int impureComplex2(int i) {
+        int j = impureComplex2(i-1);
+        return impureComplex1(j*2);
+    }
+
+    static int impureComplex3(int i) {
+        int j = impureComplex4(i-1);
+        return impureComplex1(j*2);
+    }
+
+    static int impureComplex4(int i) {
+        int j = impureComplex5(i-1);
+        return impureComplex2(j*2);
+    }
+
+    static int impureComplex5(int i) {
+        int j = impureComplex6(i-1);
+        return impureComplex4(j*2);
+    }
+
+    static int impureComplex6(int i) {
+        int j = impureComplex6(i-1);
+        return impureAtLast(impureComplex4(j*2));
+    }
+
     // --------------------------------------------------------------------------------------------
     // Two methods which are mutually dependent, but one depends on another pure method (where
     // the latter is also part of a mutual recursive dependency.
@@ -192,5 +222,18 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
 
     static int pureClosedSCC3(int i) {
         return pureClosedSCC0(12121 / i);
+    }
+
+    // --------------------------------------------------------------------------------------------
+    // Impure, but takes "comparatively long to analyze"
+    //
+    public static int impureAtLast(int i) {
+        int v = cpureCallsAbsCalleeCalleeCalleCallee(i);
+        int u = impureRecursiveCallWithDependency1(impureRecursiveCallWithDependency2(v));
+        int z = pureRecursiveCallWithDependency2(pureRecursiveCallWithDependency1(u));
+        int l = pureClosedSCC2(pureClosedSCC1(pureClosedSCC0(z)));
+        int j = impureComplex3(impureComplex2(impureComplex1(l)));
+        int k = impureComplex6(impureComplex5(impureComplex4(j)));
+        return (int) (k * System.nanoTime());
     }
 }
