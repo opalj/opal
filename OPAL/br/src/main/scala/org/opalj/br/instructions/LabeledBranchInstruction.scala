@@ -31,45 +31,11 @@ package br
 package instructions
 
 /**
- * Branch if int comparison succeeds; succeeds if and only if value1 = value2.
- *
- * @author Michael Eichberg
- */
-trait IF_ICMPEQLike extends IFICMPInstructionLike {
-
-    final def opcode: Opcode = IF_ICMPEQ.opcode
-
-    final def mnemonic: String = "if_icmpeq"
-
-    final def operator: String = "=="
-
-    final def condition: RelationalOperator = RelationalOperators.EQ
-
-}
-
-case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction with IF_ICMPEQLike
-
-/**
- * Defines constants and factory methods.
+ * An instruction where the jump targets are identified using `Symbols` associated with the
+ * instructions which should be executed in case of a jump.
+ * The label is a standard Scala `Symbol`.
  *
  * @author Malte Limmeroth
+ * @author Michael Eichberg
  */
-object IF_ICMPEQ {
-
-    final val opcode = 159
-
-    /**
-     * Creates [[LabeledIF_ICMPEQ]] instructions with a `Symbol` as the branch target.
-     */
-    def apply(branchTarget: Symbol): LabeledIF_ICMPEQ = LabeledIF_ICMPEQ(branchTarget)
-
-}
-
-case class LabeledIF_ICMPEQ(
-        branchTarget: Symbol
-) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPEQLike {
-
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ICMPEQ = {
-        IF_ICMPEQ(branchoffsets(branchTarget))
-    }
-}
+trait LabeledInstruction extends InstructionLike

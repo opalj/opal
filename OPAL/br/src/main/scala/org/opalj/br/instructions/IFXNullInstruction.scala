@@ -36,7 +36,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class IFXNullInstruction extends SimpleConditionalBranchInstruction {
+trait IFXNullInstructionLike extends SimpleConditionalBranchInstructionLike {
 
     final def operandCount = 1
 
@@ -44,3 +44,5 @@ abstract class IFXNullInstruction extends SimpleConditionalBranchInstruction {
 
     final def stackSlotsChange: Int = -1
 }
+
+trait IFXNullInstruction extends SimpleConditionalBranchInstruction with IFXNullInstructionLike

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2016
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -44,46 +44,46 @@ class FactoryMethodsOfInvocationInstructionTest extends FlatSpec {
 
     behavior of "factory methods of InvocationInstructions"
 
-    val declaringClass = "my/iInstr/Class"
+    val declaringClass = "my/invoke/Class"
     val methodName = "myMythod"
     val methodDescriptor = "()V"
 
     "INVOKEINTERFACE's factory method" should "return an INVOKEINTERFACE instruction" in {
-        val iInstr = INVOKEINTERFACE(declaringClass, methodName, methodDescriptor)
+        val invoke = INVOKEINTERFACE(declaringClass, methodName, methodDescriptor)
 
-        assert(iInstr.getClass.getName == "org.opalj.br.instructions.INVOKEINTERFACE")
-        assert(iInstr.declaringClass.fqn == declaringClass)
-        assert(iInstr.name == methodName)
-        assert(iInstr.methodDescriptor.toJVMDescriptor == methodDescriptor)
+        assert(invoke.getClass.getName == "org.opalj.br.instructions.INVOKEINTERFACE")
+        assert(invoke.declaringClass.fqn == declaringClass)
+        assert(invoke.name == methodName)
+        assert(invoke.methodDescriptor.toJVMDescriptor == methodDescriptor)
     }
 
     "INVOKEVIRTUAL's factory method" should "return an INVOKEVIRTUAL instruction" in {
-        val iInstr = INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
+        val invoke = INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
 
-        assert(iInstr.getClass.getName == "org.opalj.br.instructions.INVOKEVIRTUAL")
-        assert(iInstr.declaringClass.asInstanceOf[ObjectType].fqn == declaringClass)
-        assert(iInstr.name == methodName)
-        assert(iInstr.methodDescriptor.toJVMDescriptor == methodDescriptor)
+        assert(invoke.getClass.getName == "org.opalj.br.instructions.INVOKEVIRTUAL")
+        assert(invoke.declaringClass.asObjectType.fqn == declaringClass)
+        assert(invoke.name == methodName)
+        assert(invoke.methodDescriptor.toJVMDescriptor == methodDescriptor)
     }
 
     "INVOKESPECIAL's factory method" should "return an INVOKESPECIAL instruction" in {
-        val iInstr = INVOKESPECIAL(declaringClass, false, methodName, methodDescriptor)
+        val invoke = INVOKESPECIAL(declaringClass, false, methodName, methodDescriptor)
 
-        assert(iInstr.getClass.getName == "org.opalj.br.instructions.INVOKESPECIAL")
-        assert(iInstr.declaringClass.fqn == declaringClass)
-        assert(!iInstr.isInterface)
-        assert(iInstr.name == methodName)
-        assert(iInstr.methodDescriptor.toJVMDescriptor == methodDescriptor)
+        assert(invoke.getClass.getName == "org.opalj.br.instructions.INVOKESPECIAL")
+        assert(invoke.declaringClass.fqn == declaringClass)
+        assert(!invoke.isInterface)
+        assert(invoke.name == methodName)
+        assert(invoke.methodDescriptor.toJVMDescriptor == methodDescriptor)
     }
 
     "INVOKESTATIC's factory method" should "return an INVOKESTATIC instruction" in {
-        val iInstr = INVOKESTATIC(declaringClass, false, methodName, methodDescriptor)
+        val invoke = INVOKESTATIC(declaringClass, false, methodName, methodDescriptor)
 
-        assert(iInstr.getClass.getName == "org.opalj.br.instructions.INVOKESTATIC")
-        assert(iInstr.declaringClass.fqn == declaringClass)
-        assert(!iInstr.isInterface)
-        assert(iInstr.name == methodName)
-        assert(iInstr.methodDescriptor.toJVMDescriptor == methodDescriptor)
+        assert(invoke.getClass.getName == "org.opalj.br.instructions.INVOKESTATIC")
+        assert(invoke.declaringClass.fqn == declaringClass)
+        assert(!invoke.isInterface)
+        assert(invoke.name == methodName)
+        assert(invoke.methodDescriptor.toJVMDescriptor == methodDescriptor)
     }
 
 }

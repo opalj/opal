@@ -750,8 +750,9 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     }
 
     /**
-     * Returns the methods that may be called by an [[INVOKEINTERFACE]] if the precise runtime
-     * type is not known. (If the precise runtime type is known use `instanceCall`.)
+     * Returns the methods that may be called by [[org.opalj.br.instructions.INVOKEINTERFACE]]
+     * if the precise runtime type is not known. (If the precise runtime type is known use
+     * `instanceCall` to get the target method.)
      *
      * @note    '''Caching the result (in particular when the call graph is computed)
      *          is recommended as the computation is expensive.'''

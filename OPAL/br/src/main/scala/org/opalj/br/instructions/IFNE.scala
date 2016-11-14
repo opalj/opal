@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFNE(branchoffset: Int) extends IF0Instruction {
+trait IFNELike extends IF0InstructionLike {
 
     final def opcode: Opcode = IFNE.opcode
 
@@ -45,8 +45,30 @@ case class IFNE(branchoffset: Int) extends IF0Instruction {
 
     final def condition: RelationalOperator = RelationalOperators.NE
 }
+
+case class IFNE(branchoffset: Int) extends IF0Instruction with IFNELike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IFNE {
 
     final val opcode = 154
 
+    /**
+     * Creates [[LabeledIFNE]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledIFNE = LabeledIFNE(branchTarget)
+
+}
+
+case class LabeledIFNE(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFNELike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFNE = {
+        IFNE(branchoffsets(branchTarget))
+    }
 }

@@ -68,10 +68,10 @@ object INVOKEINTERFACE {
     /**
      * Factory method to create [[INVOKEINTERFACE]] instructions.
      *
-     * @param 	declaringClass the method's declaring class name in JVM notation,
-     * 			e.g. "java/lang/Object".
-     * @param 	methodDescriptor the method descriptor in JVM notation,
-     * 			e.g. "()V" for a method without parameters which returns void.
+     * @param   declaringClass the method's declaring class name in JVM notation,
+     *          e.g. "java/lang/Object".
+     * @param   methodDescriptor the method descriptor in JVM notation,
+     *          e.g. "()V" for a method without parameters which returns void.
      */
     def apply(
         declaringClass:   String,

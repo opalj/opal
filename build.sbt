@@ -52,10 +52,10 @@ scalacOptions in (ScalaUnidoc, unidoc) ++=
     )
 
 javaOptions in ThisBuild ++= Seq(
-	  "-Xmx3G", "-Xms1024m", "-Xnoclassgc",
+	"-Xmx3G", "-Xms1024m", "-Xnoclassgc",
 		"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC","-XX:+AggressiveOpts")
 
-addCommandAlias("compileAll","; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:compile ")
+addCommandAlias("compileAll","; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
 
 addCommandAlias("cleanAll","; clean ; cleanFiles ; cleanCache ; cleanLocal ")
 
