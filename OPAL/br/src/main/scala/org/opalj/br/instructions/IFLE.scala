@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFLE(branchoffset: Int) extends IF0Instruction {
+trait IFLELike extends IF0InstructionLike {
 
     final def opcode: Opcode = IFLE.opcode
 
@@ -47,6 +47,8 @@ case class IFLE(branchoffset: Int) extends IF0Instruction {
 
 }
 
+case class IFLE(branchoffset: Int) extends IF0Instruction with IFLELike
+
 /**
  * Defines constants and factory methods.
  *
@@ -57,8 +59,17 @@ object IFLE {
     final val opcode = 158
 
     /**
-     * Creates LabeledIFLE instructions with a Symbol as the branch target.
+     * Creates [[LabeledIFLE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIFLE = LabeledIFLE(label)
+    def apply(branchTarget: Symbol): LabeledIFLE = LabeledIFLE(branchTarget)
 
+}
+
+case class LabeledIFLE(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFLELike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFLE = {
+        IFLE(branchoffsets(branchTarget))
+    }
 }

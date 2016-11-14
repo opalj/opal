@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPNE(branchoffset: Int) extends IFICMPInstruction {
+trait IF_ICMPNELike extends IFICMPInstructionLike {
 
     final def opcode: Opcode = IF_ICMPNE.opcode
 
@@ -44,7 +44,10 @@ case class IF_ICMPNE(branchoffset: Int) extends IFICMPInstruction {
     final def operator: String = "!="
 
     final def condition: RelationalOperator = RelationalOperators.NE
+
 }
+
+case class IF_ICMPNE(branchoffset: Int) extends IFICMPInstruction with IF_ICMPNELike
 
 /**
  * Defines constants and factory methods.
@@ -56,8 +59,17 @@ object IF_ICMPNE {
     final val opcode = 160
 
     /**
-     * Creates LabeledIF_ICMPNE instructions with a Symbol as the branch target.
+     * Creates [[LabeledIF_ICMPNE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIF_ICMPNE = LabeledIF_ICMPNE(label)
+    def apply(branchTarget: Symbol): LabeledIF_ICMPNE = LabeledIF_ICMPNE(branchTarget)
 
+}
+
+case class LabeledIF_ICMPNE(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPNELike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ICMPNE = {
+        IF_ICMPNE(branchoffsets(branchTarget))
+    }
 }

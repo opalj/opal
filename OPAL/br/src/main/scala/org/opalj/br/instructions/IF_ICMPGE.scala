@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPGE(branchoffset: Int) extends IFICMPInstruction {
+trait IF_ICMPGELike extends IFICMPInstructionLike {
 
     final def opcode: Opcode = IF_ICMPGE.opcode
 
@@ -44,14 +44,27 @@ case class IF_ICMPGE(branchoffset: Int) extends IFICMPInstruction {
     final def operator: String = ">="
 
     final def condition: RelationalOperator = RelationalOperators.GE
+
 }
+
+case class IF_ICMPGE(branchoffset: Int) extends IFICMPInstruction with IF_ICMPGELike
+
 object IF_ICMPGE {
 
     final val opcode = 162
 
     /**
-     * Creates LabeledIF_ICMPGE instructions with a Symbol as the branch target.
+     * Creates [[LabeledIF_ICMPGE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIF_ICMPGE = LabeledIF_ICMPGE(label)
+    def apply(branchTarget: Symbol): LabeledIF_ICMPGE = LabeledIF_ICMPGE(branchTarget)
 
+}
+
+case class LabeledIF_ICMPGE(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPGELike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ICMPGE = {
+        IF_ICMPGE(branchoffsets(branchTarget))
+    }
 }

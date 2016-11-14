@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFLT(branchoffset: Int) extends IF0Instruction {
+trait IFLTLike extends IF0InstructionLike {
 
     final def opcode: Opcode = IFLT.opcode
 
@@ -45,6 +45,8 @@ case class IFLT(branchoffset: Int) extends IF0Instruction {
 
     final def condition: RelationalOperator = RelationalOperators.LT
 }
+
+case class IFLT(branchoffset: Int) extends IF0Instruction with IFLTLike
 
 /**
  * Defines constants and factory methods.
@@ -56,7 +58,16 @@ object IFLT {
     final val opcode = 155
 
     /**
-     * Creates LabeledIFLT instructions with a Symbol as the branch target.
+     * Creates LabeledIFLT instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIFLT = LabeledIFLT(label)
+    def apply(branchTarget: Symbol): LabeledIFLT = LabeledIFLT(branchTarget)
+}
+
+case class LabeledIFLT(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFLTLike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFLT = {
+        IFLT(branchoffsets(branchTarget))
+    }
 }

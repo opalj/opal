@@ -31,22 +31,11 @@ package br
 package instructions
 
 /**
- * `LabeledBranchInstruction`s specify the instruction which will be executed next by referring
- * to the label associated with the instruction which should be executed. The label is
- * a standard Scala `Symbol`.
+ * An instruction where the jump targets are identified using `Symbols` associated with the
+ * instructions which should be executed in case of a jump.
+ * The label is a standard Scala `Symbol`.
  *
  * @author Malte Limmeroth
+ * @author Michael Eichberg
  */
-trait LabeledBranchInstruction extends ControlTransferInstruction {
-
-    /**
-     * Resolves the LabeledBranchInstruction to the actual ControlTransferInstruction with the
-     * given branchoffset
-     */
-    def resolveLabel(branchoffset: Int): ControlTransferInstruction
-
-    /**
-     * The label associated with the [[Instruction]] which should be executed next.
-     */
-    def branchTargetLabel: Symbol
-}
+trait LabeledInstruction extends InstructionLike

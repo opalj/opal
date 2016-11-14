@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPLE(branchoffset: Int) extends IFICMPInstruction {
+trait IF_ICMPLELike extends IFICMPInstructionLike {
 
     final def opcode: Opcode = IF_ICMPLE.opcode
 
@@ -44,7 +44,10 @@ case class IF_ICMPLE(branchoffset: Int) extends IFICMPInstruction {
     final def operator: String = "<="
 
     final def condition: RelationalOperator = RelationalOperators.LE
+
 }
+
+case class IF_ICMPLE(branchoffset: Int) extends IFICMPInstruction with IF_ICMPLELike
 
 /**
  * Defines constants and factory methods.
@@ -56,8 +59,17 @@ object IF_ICMPLE {
     final val opcode = 164
 
     /**
-     * Creates LabeledIF_ICMPLE instructions with a Symbol as the branch target.
+     * Creates [[LabeledIF_ICMPLE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIF_ICMPLE = LabeledIF_ICMPLE(label)
+    def apply(branchTarget: Symbol): LabeledIF_ICMPLE = LabeledIF_ICMPLE(branchTarget)
 
+}
+
+case class LabeledIF_ICMPLE(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPLELike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ICMPLE = {
+        IF_ICMPLE(branchoffsets(branchTarget))
+    }
 }

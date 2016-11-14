@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFNULL(branchoffset: Int) extends IFXNullInstruction {
+trait IFNULLLike extends IFXNullInstructionLike {
 
     final def opcode: Opcode = IFNULL.opcode
 
@@ -47,6 +47,8 @@ case class IFNULL(branchoffset: Int) extends IFXNullInstruction {
 
 }
 
+case class IFNULL(branchoffset: Int) extends IFXNullInstruction with IFNULLLike
+
 /**
  * Defines constants and factory methods.
  *
@@ -57,8 +59,17 @@ object IFNULL {
     final val opcode = 198
 
     /**
-     * Creates LabeledIFNULL instructions with a Symbol as the branch target.
+     * Creates LabeledIFNULL instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIFNULL = LabeledIFNULL(label)
+    def apply(branchTarget: Symbol): LabeledIFNULL = LabeledIFNULL(branchTarget)
 
+}
+
+case class LabeledIFNULL(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFNULLLike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFNULL = {
+        IFNULL(branchoffsets(branchTarget))
+    }
 }

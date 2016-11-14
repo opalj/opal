@@ -36,14 +36,17 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class IF0Instruction extends SimpleConditionalBranchInstruction {
+trait IF0InstructionLike extends SimpleConditionalBranchInstructionLike {
 
     final def operandCount = 1
 
+    final def stackSlotsChange: Int = -1
+
     def condition: RelationalOperator
 
-    final def stackSlotsChange: Int = -1
 }
+
+trait IF0Instruction extends SimpleConditionalBranchInstruction with IF0InstructionLike
 
 object IF0Instruction {
 

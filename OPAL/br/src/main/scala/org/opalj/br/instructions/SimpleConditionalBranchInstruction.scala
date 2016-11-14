@@ -37,8 +37,8 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class SimpleConditionalBranchInstruction
-        extends ConditionalBranchInstruction
+trait SimpleConditionalBranchInstructionLike
+        extends ConditionalBranchInstructionLike
         with ConstantLengthInstruction {
 
     /**
@@ -47,14 +47,19 @@ abstract class SimpleConditionalBranchInstruction
      */
     def operator: String
 
-    def branchoffset: Int
-
     final def length: Int = 3
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (this == other)
     }
+}
+
+trait SimpleConditionalBranchInstruction
+        extends ConditionalBranchInstruction
+        with SimpleConditionalBranchInstructionLike {
+
+    def branchoffset: Int
 
     final def nextInstructions(
         currentPC:             PC,
@@ -67,9 +72,8 @@ abstract class SimpleConditionalBranchInstruction
     }
 
     override def toString(currentPC: Int) = {
-        getClass.getSimpleName+
-            "(true="+(currentPC + branchoffset) + (if (branchoffset >= 0) "↓" else "↑")+
-            ", false=↓)"
+        getClass.getSimpleName +
+            s"(true=${currentPC + branchoffset}${if (branchoffset >= 0) "↓" else "↑"}, false=↓)"
     }
-}
 
+}

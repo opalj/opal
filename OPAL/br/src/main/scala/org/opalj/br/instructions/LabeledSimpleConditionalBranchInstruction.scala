@@ -30,105 +30,16 @@ package org.opalj
 package br
 package instructions
 
-/**
- * UnresolvedSimpleConditionalBranchInstructions are used to encode branch instructions with a
- * Symbol as the branch target in the BytecodeAssembler DSL
- *
- * @author Malte Limmeroth
- */
 trait LabeledSimpleConditionalBranchInstruction
-        extends SimpleConditionalBranchInstruction
-        with LabeledBranchInstruction {
+        extends LabeledInstruction
+        with SimpleConditionalBranchInstructionLike {
 
-    override def resolveLabel(branchoffset: Int): SimpleConditionalBranchInstruction
+    def branchTarget: Symbol
 
-    //used to mirror the original instructions properties
-    private val instruction: SimpleConditionalBranchInstruction = resolveLabel(0)
+    def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): SimpleConditionalBranchInstruction
 
-    override def opcode: Int = instruction.opcode
+    override def toString(currentPC: Int) = {
+        s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
+    }
 
-    override def toString = mnemonic+"("+branchTargetLabel+")"
-
-    override def operator: String = instruction.operator
-
-    override def branchoffset: PC = throw new IllegalStateException("the branchoffset is not yet resolved")
-
-    override def operandCount: PC = instruction.operandCount
-
-    override def stackSlotsChange: PC = instruction.stackSlotsChange
-
-    override def mnemonic: String = instruction.mnemonic
-}
-
-case class LabeledIF_ACMPEQ(branchTargetLabel: Symbol)
-        extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IF_ACMPEQ = IF_ACMPEQ(branchoffset)
-}
-
-case class LabeledIF_ACMPNE(branchTargetLabel: Symbol)
-        extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IF_ACMPNE = IF_ACMPNE(branchoffset)
-}
-
-case class LabeledIF_ICMPEQ(branchTargetLabel: Symbol)
-        extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IF_ICMPEQ = IF_ICMPEQ(branchoffset)
-}
-
-case class LabeledIF_ICMPNE(branchTargetLabel: Symbol)
-        extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IF_ICMPNE = IF_ICMPNE(branchoffset)
-}
-
-case class LabeledIF_ICMPLT(branchTargetLabel: Symbol)
-        extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IF_ICMPLT = IF_ICMPLT(branchoffset)
-}
-
-case class LabeledIF_ICMPGE(branchTargetLabel: Symbol)
-        extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IF_ICMPGE = IF_ICMPGE(branchoffset)
-}
-
-case class LabeledIF_ICMPGT(branchTargetLabel: Symbol)
-        extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IF_ICMPGT = IF_ICMPGT(branchoffset)
-}
-
-case class LabeledIF_ICMPLE(branchTargetLabel: Symbol)
-        extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IF_ICMPLE = IF_ICMPLE(branchoffset)
-}
-
-case class LabeledIFEQ(branchTargetLabel: Symbol) extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IFEQ = IFEQ(branchoffset)
-}
-
-case class LabeledIFNE(branchTargetLabel: Symbol) extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IFNE = IFNE(branchoffset)
-}
-
-case class LabeledIFLT(branchTargetLabel: Symbol) extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IFLT = IFLT(branchoffset)
-}
-
-case class LabeledIFGE(branchTargetLabel: Symbol) extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IFGE = IFGE(branchoffset)
-}
-
-case class LabeledIFGT(branchTargetLabel: Symbol) extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IFGT = IFGT(branchoffset)
-}
-
-case class LabeledIFLE(branchTargetLabel: Symbol) extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IFLE = IFLE(branchoffset)
-}
-
-case class LabeledIFNONNULL(branchTargetLabel: Symbol)
-        extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IFNONNULL = IFNONNULL(branchoffset)
-}
-
-case class LabeledIFNULL(branchTargetLabel: Symbol) extends LabeledSimpleConditionalBranchInstruction {
-    override def resolveLabel(branchoffset: Int): IFNULL = IFNULL(branchoffset)
 }

@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFEQ(branchoffset: Int) extends IF0Instruction {
+trait IFEQLike extends IF0InstructionLike {
 
     final def opcode: Opcode = IFEQ.opcode
 
@@ -47,6 +47,8 @@ case class IFEQ(branchoffset: Int) extends IF0Instruction {
 
 }
 
+case class IFEQ(branchoffset: Int) extends IF0Instruction with IFEQLike
+
 /**
  * Defines constants and factory methods.
  *
@@ -57,8 +59,17 @@ object IFEQ {
     final val opcode = 153
 
     /**
-     * Creates LabeledIFEQ instructions with a Symbol as the branch target.
+     * Creates [[LabeledIFEQ]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIFEQ = LabeledIFEQ(label)
+    def apply(branchTarget: Symbol): LabeledIFEQ = LabeledIFEQ(branchTarget)
 
+}
+
+case class LabeledIFEQ(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFEQLike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFEQ = {
+        IFEQ(branchoffsets(branchTarget))
+    }
 }

@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ACMPNE(branchoffset: Int) extends IFACMPInstruction {
+trait IF_ACMPNELike extends IFACMPInstructionLike {
 
     final def opcode: Opcode = IF_ACMPNE.opcode
 
@@ -47,6 +47,8 @@ case class IF_ACMPNE(branchoffset: Int) extends IFACMPInstruction {
 
 }
 
+case class IF_ACMPNE(branchoffset: Int) extends IFACMPInstruction with IF_ACMPNELike
+
 /**
  * Defines constants and factory methods.
  *
@@ -57,8 +59,17 @@ object IF_ACMPNE {
     final val opcode = 166
 
     /**
-     * Creates LabeledIF_ACMPNE instructions with a Symbol as the branch target.
+     * Creates [[LabeledIF_ACMPNE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIF_ACMPNE = LabeledIF_ACMPNE(label)
+    def apply(branchTarget: Symbol): LabeledIF_ACMPNE = LabeledIF_ACMPNE(branchTarget)
 
+}
+
+case class LabeledIF_ACMPNE(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IF_ACMPNELike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ACMPNE = {
+        IF_ACMPNE(branchoffsets(branchTarget))
+    }
 }

@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFGT(branchoffset: Int) extends IF0Instruction {
+trait IFGTLike extends IF0InstructionLike {
 
     final def opcode: Opcode = IFGT.opcode
 
@@ -45,6 +45,8 @@ case class IFGT(branchoffset: Int) extends IF0Instruction {
 
     final def condition: RelationalOperator = RelationalOperators.GT
 }
+
+case class IFGT(branchoffset: Int) extends IF0Instruction with IFGTLike
 
 /**
  * Defines constants and factory methods.
@@ -56,8 +58,17 @@ object IFGT {
     final val opcode = 157
 
     /**
-     * Creates LabeledIFGT instructions with a Symbol as the branch target.
+     * Creates [[LabeledIFGT]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIFGT = LabeledIFGT(label)
+    def apply(branchTarget: Symbol): LabeledIFGT = LabeledIFGT(branchTarget)
 
+}
+
+case class LabeledIFGT(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFGTLike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFGT = {
+        IFGT(branchoffsets(branchTarget))
+    }
 }

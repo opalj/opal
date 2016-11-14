@@ -35,10 +35,12 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class ControlTransferInstruction extends Instruction {
+trait ControlTransferInstructionLike extends InstructionLike {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def expressionResult: NoExpression.type = NoExpression
 
 }
+
+trait ControlTransferInstruction extends Instruction with ControlTransferInstructionLike

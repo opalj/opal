@@ -36,11 +36,14 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class IFACMPInstruction extends SimpleConditionalBranchInstruction {
+trait IFACMPInstructionLike extends SimpleConditionalBranchInstructionLike {
 
     final def operandCount = 2
 
+    final def stackSlotsChange: Int = -2
+
     def condition: RelationalOperator
 
-    final def stackSlotsChange: Int = -2
 }
+
+trait IFACMPInstruction extends SimpleConditionalBranchInstruction with IFACMPInstructionLike

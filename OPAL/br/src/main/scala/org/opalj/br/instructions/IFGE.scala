@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFGE(branchoffset: Int) extends IF0Instruction {
+trait IFGELike extends IF0InstructionLike {
 
     final def opcode: Opcode = IFGE.opcode
 
@@ -44,7 +44,10 @@ case class IFGE(branchoffset: Int) extends IF0Instruction {
     final def operator: String = ">= 0"
 
     final def condition: RelationalOperator = RelationalOperators.GE
+
 }
+
+case class IFGE(branchoffset: Int) extends IF0Instruction with IFGELike
 
 /**
  * Defines constants and factory methods.
@@ -56,8 +59,17 @@ object IFGE {
     final val opcode = 156
 
     /**
-     * Creates LabeledIFGE instructions with a Symbol as the branch target.
+     * Creates [[LabeledIFGE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIFGE = LabeledIFGE(label)
+    def apply(branchTarget: Symbol): LabeledIFGE = LabeledIFGE(branchTarget)
 
+}
+
+case class LabeledIFGE(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFGELike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFGE = {
+        IFGE(branchoffsets(branchTarget))
+    }
 }

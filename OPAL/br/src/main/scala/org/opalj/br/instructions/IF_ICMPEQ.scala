@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction {
+trait IF_ICMPEQLike extends IFICMPInstructionLike {
 
     final def opcode: Opcode = IF_ICMPEQ.opcode
 
@@ -47,6 +47,8 @@ case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction {
 
 }
 
+case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction with IF_ICMPEQLike
+
 /**
  * Defines constants and factory methods.
  *
@@ -57,8 +59,17 @@ object IF_ICMPEQ {
     final val opcode = 159
 
     /**
-     * Creates LabeledIF_ICMPEQ instructions with a Symbol as the branch target.
+     * Creates [[LabeledIF_ICMPEQ]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIF_ICMPEQ = LabeledIF_ICMPEQ(label)
+    def apply(branchTarget: Symbol): LabeledIF_ICMPEQ = LabeledIF_ICMPEQ(branchTarget)
 
+}
+
+case class LabeledIF_ICMPEQ(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPEQLike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ICMPEQ = {
+        IF_ICMPEQ(branchoffsets(branchTarget))
+    }
 }

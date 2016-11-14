@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ACMPEQ(branchoffset: Int) extends IFACMPInstruction {
+trait IF_ACMPEQLike extends IFACMPInstructionLike {
 
     final def opcode: Opcode = IF_ACMPEQ.opcode
 
@@ -44,7 +44,10 @@ case class IF_ACMPEQ(branchoffset: Int) extends IFACMPInstruction {
     final def operator: String = "=="
 
     final def condition: RelationalOperator = RelationalOperators.EQ
+
 }
+
+case class IF_ACMPEQ(branchoffset: Int) extends IFACMPInstruction with IF_ACMPEQLike
 
 /**
  * Defines constants and factory methods.
@@ -56,8 +59,17 @@ object IF_ACMPEQ {
     final val opcode = 165
 
     /**
-     * Creates[[LabeledIF_ACMPEQ]] instructions with a Symbol as the branch target.
+     * Creates[[LabeledIF_ACMPEQ]] instructions with a `Symbol` as the branch target.
      */
-    def apply(label: Symbol): LabeledIF_ACMPEQ = LabeledIF_ACMPEQ(label)
+    def apply(branchTarget: Symbol): LabeledIF_ACMPEQ = LabeledIF_ACMPEQ(branchTarget)
 
+}
+
+case class LabeledIF_ACMPEQ(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IF_ACMPEQLike {
+
+    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ACMPEQ = {
+        IF_ACMPEQ(branchoffsets(branchTarget))
+    }
 }
