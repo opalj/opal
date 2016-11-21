@@ -73,6 +73,6 @@ A recommended read (to speed up the process of getting your pull request pulled)
 * OPAL is build using Shippable.
 
 # Further Information #
-
+* [The OPAL Gitter chatroom](https://gitter.im/OPAL-Project)
 * [Questions regarding how to write analyses (Stackoverflow)](http://stackoverflow.com/questions/tagged/opal-framework?sort=newest)
 * [OPAL Project](http://www.opal-project.de)
