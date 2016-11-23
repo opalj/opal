@@ -29,46 +29,52 @@
 package org.opalj
 package ba
 
+import scala.language.implicitConversions
+
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 
 /**
- * Enhancing wrapper for combining AccessFlags.
+ * Builder for parameters specified during a class declaration before any Fields or Methods have
+ * been added.
  *
  * @author Malte Limmeroth
- * @author Michael Eichberg
  */
-final class AccessModifier(val accessFlag: Int) extends AnyVal {
-
+case class ClassDeclarationBuilder(private val classFile: ClassFile) {
     /**
-     * Returns a new [[AccessModifier]] with both [[AccessModifier]]s `accessFlag`s set.
+     * Creates a new [[ClassFileBuilder]] from this [[ClassDeclarationBuilder]] with the specified
+     * [[ClassFileMemberBuilder]]s added.
      */
-    def +(that: AccessModifier): AccessModifier = {
-        new AccessModifier(this.accessFlag | that.accessFlag)
-    }
+    def apply(classFileElements: ClassFileMemberBuilder*): ClassFileBuilder = ClassFileBuilder(classFile)
 
     /**
-     * Creates a new [[ClassDeclarationBuilder]] with the given name and previously defined
-     * AccessModifiers. The minorVersion is initialized as
-     * [[ClassFileBuilder.defaultMinorVersion]] and the majorVersion as
-     * [[ClassFileBuilder.defaultMajorVersion]].
+     * Defines the extending class.
      *
-     * @param fqn The class name in JVM notation as a fully qualified name, e.g. "MyClass" for a
-     *            class in the default package or "my/package/MyClass" for a class in "my.package".
+     * @param fqn The extending class name in JVM notation as a fully qualified name, e.g.
+     *            "java/lang/Object".
      */
-    def CLASS(fqn: String): ClassDeclarationBuilder = {
-        ClassDeclarationBuilder(
-            ClassFile(
-                minorVersion = ClassFileBuilder.defaultMinorVersion,
-                majorVersion = ClassFileBuilder.defaultMajorVersion,
-                accessFlags = accessFlag,
-                thisType = ObjectType(fqn),
-                superclassType = None,
-                interfaceTypes = IndexedSeq.empty,
-                fields = IndexedSeq.empty,
-                methods = IndexedSeq.empty,
-                attributes = IndexedSeq.empty
-            )
-        )
+    def EXTENDS(fqn: String): ClassDeclarationBuilder = {
+        ClassDeclarationBuilder(classFile.copy(superclassType = Some(ObjectType(fqn))))
     }
+
+    /**
+     * Defines the implemented interfaces.
+     *
+     * @param fqn The interfaces class names in JVM notation as a fully qualified name, e.g.
+     *            "java/lang/Object".
+     */
+    def IMPLEMENTS(fqn: String*): ClassDeclarationBuilder = {
+        ClassDeclarationBuilder(classFile.copy(interfaceTypes = fqn.map(i ⇒ ObjectType(i))))
+    }
+
+    //TODO: type parameter
+    //TODO: throws declaration
+}
+
+object ClassDeclarationBuilder {
+    /**
+     * Converts a [[ClassDeclarationBuilder]] to [[ClassFileBuilder]] - required for Classes without
+     * any fields or methods (empty interfaces or classes with only a default constructor).
+     */
+    implicit def declarationBuildertoClassFileBuilder(cfb: ClassDeclarationBuilder): ClassFileBuilder = ClassFileBuilder(cfb.classFile)
 }
