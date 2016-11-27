@@ -70,8 +70,28 @@ case class PUTSTATIC(
         "put static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
 
 }
+
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object PUTSTATIC {
 
     final val opcode = 179
+
+    /**
+     * Factory method to create [[PUTSTATIC]] instructions.
+     *
+     * @param declaringClass the fields class name in JVM notation, e.g. "java/lang/Object"
+     * @param name the fields name
+     * @param fieldType the field type in JVM notation e.g. "Z" for boolean or `Ljava/lang/Object`
+     *                  for general objects
+     */
+    def apply(
+        declaringClass: String,
+        name:           String,
+        fieldType:      String
+    ): PUTSTATIC = PUTSTATIC(ObjectType(declaringClass), name, FieldType(fieldType))
 
 }

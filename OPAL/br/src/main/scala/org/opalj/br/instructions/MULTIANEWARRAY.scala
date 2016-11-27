@@ -62,8 +62,26 @@ case class MULTIANEWARRAY(
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }
+
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object MULTIANEWARRAY {
 
     final val opcode = 197
+
+    /**
+     * Factory method to create [[MULTIANEWARRAY]] instructions.
+     *
+     * @param arrayType The arrays type name in JVM notation, e.g. "[Ljava/lang/Object" for an
+     *                  array type of Object.
+     * @param dimensions The arrays dimension.
+     */
+    def apply(
+        arrayType:  String,
+        dimensions: Int
+    ): MULTIANEWARRAY = MULTIANEWARRAY(FieldType(arrayType).asArrayType, dimensions)
 
 }

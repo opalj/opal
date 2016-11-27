@@ -74,8 +74,28 @@ case class PUTFIELD(
     override def toString = "put "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
 
 }
+
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object PUTFIELD {
 
     final val opcode = 181
+
+    /**
+     * Factory method to create [[PUTFIELD]] instructions.
+     *
+     * @param declaringClass the fields class name in JVM notation, e.g. "java/lang/Object"
+     * @param name the fields name
+     * @param fieldType the field type in JVM notation e.g. "Z" for boolean or `Ljava/lang/Object`
+     *                  for general objects
+     */
+    def apply(
+        declaringClass: String,
+        name:           String,
+        fieldType:      String
+    ): PUTFIELD = PUTFIELD(ObjectType(declaringClass), name, FieldType(fieldType))
 
 }

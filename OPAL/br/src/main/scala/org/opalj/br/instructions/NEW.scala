@@ -91,4 +91,6 @@ object NEW {
 
     final val jvmExceptions = List(ObjectType.OutOfMemoryError)
 
+    def apply(fqn: String): NEW = NEW(ObjectType(fqn))
+
 }

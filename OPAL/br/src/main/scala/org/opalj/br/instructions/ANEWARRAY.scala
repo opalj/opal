@@ -47,8 +47,23 @@ case class ANEWARRAY(
 
 }
 
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object ANEWARRAY {
 
     final val opcode = 189
+
+    /**
+     * Factory method to create [[ANEWARRAY]] instructions.
+     *
+     * @param componentType The arrays type name in JVM notation, for example "Ljava/lang/Object"
+     *                      for Object.
+     */
+    def apply(
+        componentType: String
+    ): ANEWARRAY = ANEWARRAY(ReferenceType(componentType))
 
 }
