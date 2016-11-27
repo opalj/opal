@@ -69,7 +69,7 @@ case class LabeledIF_ICMPLE(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPLELike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ICMPLE = {
-        IF_ICMPLE(branchoffsets(branchTarget))
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IF_ICMPLE = {
+        IF_ICMPLE(branchoffsets(branchTarget) - currentIndex)
     }
 }

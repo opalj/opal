@@ -68,7 +68,7 @@ case class LabeledIFNONNULL(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IFNONNULLLike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFNONNULL = {
-        IFNONNULL(branchoffsets(branchTarget))
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IFNONNULL = {
+        IFNONNULL(branchoffsets(branchTarget) - currentIndex)
     }
 }

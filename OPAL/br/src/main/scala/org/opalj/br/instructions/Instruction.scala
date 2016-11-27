@@ -42,7 +42,7 @@ trait Instruction extends InstructionLike {
     /**
      * @return  `this`.
      */
-    def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): this.type = this
+    def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): this.type = this
 
     /**
      * Returns the pcs of the instructions that may be executed next at runtime. This

@@ -69,7 +69,7 @@ case class LabeledIFGE(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IFGELike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFGE = {
-        IFGE(branchoffsets(branchTarget))
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IFGE = {
+        IFGE(branchoffsets(branchTarget) - currentIndex)
     }
 }

@@ -69,7 +69,7 @@ case class LabeledIFLE(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IFLELike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFLE = {
-        IFLE(branchoffsets(branchTarget))
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IFLE = {
+        IFLE(branchoffsets(branchTarget) - currentIndex)
     }
 }
