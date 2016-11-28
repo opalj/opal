@@ -151,12 +151,12 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     /**
-     * Returns the class file of `java.lang.Object`, if available.
+     * The class file of `java.lang.Object`, if available.
      */
     val ObjectClassFile: Option[ClassFile]
 
     /**
-     * Returns the class file of `java.lang.invoke.MethodHandle`, if available.
+     * The class file of `java.lang.invoke.MethodHandle`, if available.
      */
     val MethodHandleClassFile: Option[ClassFile]
 
@@ -168,17 +168,18 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
     /**
      * Stores for each non-private, non-initializer method the set of methods which override
-     * the specific method.
+     * the specific method. If the given method is a concrete method, this method is also
+     * included in the set of `overridingMethods`.
      */
     protected[this] val overridingMethods: SomeMap[Method, Set[Method]]
 
     /**
      * Returns the set of methods which directly override the given method. Note that
-     * `overriddenBy` is not context aware. I.e., if the given method m is an inteface
+     * `overriddenBy` is not context aware. I.e., if a given method `m` is an inteface
      * method, then it may happen that we have an implementation of that method
      * in a class which is inherited from a superclass which is not a subtype of the
      * interface. That method - since it is not defined by a subtype of the interface -
-     * would not be included in the returned set.
+     * would not be included in the returned set. An example is shown next:
      * {{{
      * class X { void m(){ System.out.println("X.m"); }
      * interface Y { default void m(){ System.out.println("Y.m"); }
@@ -201,16 +202,17 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * Returns the set of all non-private, non-abstract, non-static methods that are not
      * initializers and which are potentially callable by clients when we have an object that
      * has the specified type and a method is called using
-     * [[org.opalj.br.instructions.INVOKEINTERFACE]] or [[org.opalj.br.instructions.INVOKEVIRTUAL]].
+     * [[org.opalj.br.instructions.INVOKEINTERFACE]], [[org.opalj.br.instructions.INVOKEVIRTUAL]] or
+     * [[org.opalj.br.instructions.INVOKEDYNAMIC]].
      *
      * The array of methods is sorted using [[MethodDeclarationContextOrdering]] to
-     * enable the fast look-up of the target method. (See [[MethodDeclarationContext]]'s
+     * enable fast look-up of the target method. (See [[MethodDeclarationContext]]'s
      * `compareAccessibilityAware` method for further details.)
      */
     protected[this] val instanceMethods: SomeMap[ObjectType, ConstArray[MethodDeclarationContext]]
 
     /**
-     * Tests if the given method belongs to the interface of an object identified by the given
+     * Tests if the given method belongs to the interface of an '''object''' identified by the given
      * `objectType`.
      * I.e., returns `true` if a virtual method call, where the receiver type is known
      * to have the given `objectType`, would lead to the invokation of the given `method`.
@@ -223,14 +225,13 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      *          methods of the given object type; the class hierarchy is not traversed.
      */
     def hasVirtualMethod(objectType: ObjectType, method: Method): Answer = {
-        val declaringPackageName = classFile(method).thisType.packageName
         //  ... instanceMethods: Map[ObjectType, Array[MethodDeclarationContext]]
         val definedMethodsOption = instanceMethods.get(objectType)
         if (definedMethodsOption.isEmpty) {
             return Unknown;
         }
-
         val definedMethods: ConstArray[MethodDeclarationContext] = definedMethodsOption.get
+        val declaringPackageName = classFile(method).thisType.packageName
 
         val result: Option[MethodDeclarationContext] = find(definedMethods) { definedMethodContext ⇒
             val definedMethod = definedMethodContext.method
@@ -253,11 +254,13 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * Looks up the method (declaration context) which is accessible/callable by an
      * [[org.opalj.br.instructions.INVOKEVIRTUAL]] or [[org.opalj.br.instructions.INVOKEINTERFACE]]
      * call which was done by a method belonging to `callingContextType`.
-     * The context is only relevant in case the target method has default visibility; in this
-     * case it is checked whether the caller belongs to the same context.
+     * The `callingContextType` is only relevant in case the target method has default visibility;
+     * in this case it is checked whether the caller belongs to the same context.
      *
      * @note    This method uses the precomputed information about instance methods and,
      *          therefore, does not require a type hierarchy based lookup.
+     *
+     * @note    It supports the lookup of polymorphic methods.
      *
      * @return  [[Success]] if the method is found; [[Empty$]] if the method cannot be found and
      *          [[Failure$]] if the method cannot be found because the project is not complete.
@@ -304,7 +307,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
     /* GENERAL NOTES
      *
-     * (Accessibilty checks are done by the JVM when the method is resolved; this is, however not
+     * (Accessibilty checks are done by the JVM when the method is resolved; this is, however, not
      * done by the following methods as it does not affect the search for the potential target
      * methods.)
      *
@@ -351,14 +354,14 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      *
      * @param   receiverType The type of the object that receives the method call. The
      *          type must be a class type and must not be an interface type.
-     *          I.e., no check w.r.t. a potential `IncompatibleClassChangeError` is done
+     *          No check w.r.t. a potential `IncompatibleClassChangeError` is done
      *          by this method.
      * @param   forceLookupInSuperinterfacesOnFailure If true (default: false) the method tries
      *          to look up the method in a super interface if it can't find it in the available
      *          super classes. (This setting is only relevant if the class hierarchy is not
      *          complete.)
      * @return  The resolved method `Some(`'''METHOD'''`)` or `None`.
-     *          To get the defining class file use the project's respective method.
+     *          (To get the defining class file use the project's respective method.)
      */
     def resolveMethodReference(
         declaringClass:                        ReferenceType,
