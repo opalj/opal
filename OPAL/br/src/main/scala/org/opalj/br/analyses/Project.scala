@@ -988,7 +988,11 @@ class Project[Source] private (
  */
 object Project {
 
-    lazy val GlobalConfig = ConfigFactory.load()
+    // We want to make sure that the class loader is used which potentially can
+    // find the config files; the libraries (e.g., Typesafe Config) may have
+    // been loaded using the parent class loader and, hence, may not be able to
+    // find the config files at all.
+    lazy val GlobalConfig = ConfigFactory.load(this.getClass.getClassLoader())
 
     lazy val JavaLibraryClassFileReader = Java9LibraryFramework
 
@@ -1215,7 +1219,7 @@ object Project {
         handleInconsistentProject:          HandleInconsistenProject         = defaultHandlerForInconsistentProjects
     )(
         implicit
-        config:        Config     = ConfigFactory.load(),
+        config:        Config     = GlobalConfig,
         projectLogger: OPALLogger = OPALLogger.globalLogger()
     ): Project[Source] = {
         implicit val logContext = new DefaultLogContext()
@@ -1419,7 +1423,13 @@ object Project {
                 throw t
         }
     } { t ⇒
-        OPALLogger.info("project setup", s"creating the project took ${t.toSeconds}")(logContext)
+        // If an exception was thrown the logContext is no longer available!
+        val availableContext =
+            if (OPALLogger.isUnregistered(logContext)) GlobalLogContext else logContext
+        info(
+            "project setup",
+            s"creating the project took ${t.toSeconds}"
+        )(availableContext)
     }
 
     /**
