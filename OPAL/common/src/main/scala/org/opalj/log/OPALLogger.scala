@@ -136,10 +136,13 @@ object OPALLogger extends OPALLogger {
         }
 
         val ctxId = ctx.id
+        // try to reuse log context id if possible
         if (ctxId + 1 == nextId) nextId = ctxId
         loggers(ctxId) = null
         ctx.id = -2
     }
+
+    def isUnregistered(ctx: LogContext): Boolean = this.synchronized { ctx.id == -2 }
 
     def logger(ctx: LogContext): OPALLogger = this.synchronized { loggers(ctx.id) }
 
@@ -248,4 +251,3 @@ object OPALLogger extends OPALLogger {
         log(Error(category, message, t))
     }
 }
-
