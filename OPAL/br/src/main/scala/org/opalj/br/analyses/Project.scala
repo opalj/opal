@@ -56,6 +56,7 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.info
 import org.opalj.log.DefaultLogContext
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
@@ -324,9 +325,7 @@ class Project[Source] private (
         result.repack
         result
         //new AnyRefMap[ObjectType, Chain[MethodDeclarationContext]](methods.size) ++ methods.asScala
-    } { t ⇒
-        OPALLogger.info("project setup", s"computing defined methods took ${t.toSeconds}")
-    }
+    } { t ⇒ info("project setup", s"computing defined methods took ${t.toSeconds}") }
 
     /**
      * Returns for a given virtual method the set of all non-abstract virtual methods which
@@ -422,7 +421,7 @@ class Project[Source] private (
         result.repack
         result
     } { t ⇒
-        OPALLogger.info("project setup", s"computing overriding information took ${t.toSeconds}")
+        info("project setup", s"computing overriding information took ${t.toSeconds}")
     }
 
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
@@ -904,7 +903,9 @@ class Project[Source] private (
             }
             val pi = time {
                 pik.doCompute(this)
-            } { t ⇒ OPALLogger.info("project", s"initialization of $className took ${t.toSeconds}") }
+            } { t ⇒
+                info("project", s"initialization of $className took ${t.toSeconds}")
+            }
             projectInformation.set(pikUId, pi)
             pi
         }
@@ -1025,8 +1026,9 @@ object Project {
     }
 
     def apply(file: File, logContext: LogContext, config: Config): Project[URL] = {
+        val reader = JavaClassFileReader(logContext, config)
         this(
-            projectClassFilesWithSources = JavaClassFileReader(logContext, config).ClassFiles(file),
+            projectClassFilesWithSources = reader.ClassFiles(file),
             libraryClassFilesWithSources = Traversable.empty,
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty,
@@ -1257,11 +1259,11 @@ object Project {
                 val typeHierarchyDefinitions =
                     if (projectClassFilesWithSources.exists(_._1.thisType == ObjectType.Object) ||
                         libraryClassFilesWithSources.exists(_._1.thisType == ObjectType.Object)) {
-                        OPALLogger.info("project configuration", "the JDK is part of the analysis")
+                        info("project configuration", "the JDK is part of the analysis")
                         ClassHierarchy.noDefaultTypeHierarchyDefinitions
                     } else {
                         val alternative = "(using the preconfigured type hierarchy (based on Java 7) for classes belonging java.lang)"
-                        OPALLogger.info("project configuration", "JDK classes not found"+alternative)
+                        info("project configuration", "JDK classes not found"+alternative)
                         ClassHierarchy.defaultTypeHierarchyDefinitions
                     }
 
@@ -1409,12 +1411,12 @@ object Project {
             time {
                 val issues = validate(project)
                 issues foreach { handleInconsistentProject(logContext, _) }
-                OPALLogger.info(
+                info(
                     "project configuration",
                     s"project validation revealed ${issues.size} significant issues"+
                         (if (issues.size > 0) "; validate the configured libraries for inconsistencies" else "")
                 )
-            } { t ⇒ OPALLogger.info("project setup", s"validating the project took ${t.toSeconds}") }
+            } { t ⇒ info("project setup", s"validating the project took ${t.toSeconds}") }
 
             project
         } catch {
