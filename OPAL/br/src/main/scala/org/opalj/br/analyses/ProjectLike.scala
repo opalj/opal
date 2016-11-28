@@ -53,12 +53,13 @@ import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePo
  * invoke or field access instruction.
  *
  * @note    The current implementation is based on the '''correct project assumption''';
- *          i.e., if the bytecode as a whole is not valid, the result is generally undefined.
- *          One example would be, if we have two interfaces which define a non-abstract method
- *          with the same signature and both interfaces are implemented by a third interface
- *          which does not override these methods. In this case the result of a
- *          [[resolveMethodReference]] is not defined, because the code base as a whole is not
- *          valid.
+ *          i.e., if the bytecode as a whole is not valid, the result is generally
+ *          undefined.
+ *          One example would be, if we have two interfaces which define a non-abstract
+ *          method with the same signature and both interfaces are implemented by a third
+ *          interface which does not override these methods. In this case the result of a
+ *          `resolveMethodReference` is not defined, because the code base as a whole is
+ *          not valid.
  *
  * @author Michael Eichberg
  */
