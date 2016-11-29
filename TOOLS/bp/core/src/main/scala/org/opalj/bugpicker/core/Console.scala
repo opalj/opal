@@ -62,6 +62,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
     val analysis = this
 
+    final val IDLFileOutputNameMatcher = """-idl=([\w-_\.\:/\\]+)""".r
+
     final val HTMLFileOutputNameMatcher = """-html=([\w-_\.\:/\\]+)""".r
 
     final val DebugFileOutputNameMatcher = """-debug=([\w-_\.\:/\\]+)""".r
@@ -194,12 +196,15 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         // Generate a report using the bug description language
         //
         if (parameters.contains("-idl")) {
-            val formattedIssues = issues.map { issue ⇒ issue.toIDL }
+            val formattedIssues = issues.map { issue ⇒ issue.toIDL.toString }
             println(s"Analysis of "+cpFiles.mkString(", "))
             println("Parameters")
             println(parameters.mkString("\n"))
             println("Issues")
-            println(formattedIssues.toSeq.sorted.mkString("\n"))
+            val idlReport = "["+formattedIssues.toSeq.mkString(",\n")+"]"
+            println(idlReport)
+
+            writeAndOpen(idlReport, "BugPickerAnalysisResults", ".json")
         }
 
         // Generate the HTML report
