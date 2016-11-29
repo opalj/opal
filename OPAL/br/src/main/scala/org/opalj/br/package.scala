@@ -22,19 +22,21 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 
-import org.opalj.collection.immutable.UIDSet
-import scala.xml.Node
-import scala.xml.Text
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
+
+import scala.xml.Node
+import scala.xml.Text
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 
@@ -203,6 +205,10 @@ package object br {
         <span class="access_flags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.CLASS) }</span>
     }
 
+    def classAccessFlagsToString(accessFlags: Int): String = {
+        AccessFlags.toString(accessFlags, AccessFlagsContexts.CLASS)
+    }
+
     def typeToXHTML(accessFlags: Int, t: Type, abbreviateTypes: Boolean): Node = {
 
         val signature = typeToXHTML(t, abbreviateTypes)
@@ -247,9 +253,13 @@ package object br {
         val signature = methodToXHTML(name, descriptor, abbreviateTypes)
 
         <span class="method_signature_with_access_flags">
-            <span class="access_flags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD) }</span>
+            <span class="access_flags">{ methodAccessFlagsToString(accessFlags) }</span>
             { signature }
         </span>
+    }
+
+    def methodAccessFlagsToString(accessFlags: Int): String = {
+        AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD)
     }
 
 }

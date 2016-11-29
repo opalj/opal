@@ -33,6 +33,9 @@ import scala.xml.Node
 import scala.xml.Group
 import scala.xml.Unparsed
 
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+
 /**
  * Describes some issue found in source code.
  *
@@ -122,15 +125,15 @@ case class Issue(
         )
     }
 
-    def toIDL: String = {
-        this.analysis+"\n"+
-            "{"+"\n"+
-            categories.mkString("\tCategories: ", ", ", "\n") +
-            kinds.mkString("\tKinds: ", ", ", "\n")+
-            "\tRelevance: "+relevance.value.toString()+"\n"+
-            "\tSummary: "+summary+"\n"+
-            locations.map(_.toIDL).filter(_.nonEmpty).mkString("\n")+
-            "}"
+    override def toIDL: JsValue = {
+        Json.obj(
+            "analysis" → analysis,
+            "relevance" → relevance,
+            "summary" → summary,
+            "categories" → categories,
+            "kinds" → kinds,
+            "details" → details,
+            "locations" → locations
+        )
     }
-
 }

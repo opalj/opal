@@ -33,15 +33,24 @@ import scala.xml.Node
 import scala.xml.Text
 import scala.xml.Group
 import scala.xml.UnprefixedAttribute
+
+import play.api.libs.json.Json
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsValue
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsString
+
 import org.opalj.br.PC
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.Code
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
 import org.opalj.br.methodToXHTML
 import org.opalj.br.typeToXHTML
+import org.opalj.br.classAccessFlagsToString
 import org.opalj.br.classAccessFlagsToXHTML
+import org.opalj.br.analyses.SomeProject
 
 /**
  * The location of an issue.
@@ -56,7 +65,6 @@ sealed trait IssueLocation extends IssueRepresentations with java.lang.Comparabl
     def description: Option[String]
 
     def compareTo(other: IssueLocation): Int
-
 }
 
 abstract class ProjectLocation(
@@ -94,12 +102,6 @@ abstract class ProjectLocation(
     override def toEclipseConsoleString: String = {
         description.map(_.replace('\n', ';')).getOrElse("")
     }
-
-    override def toIDL: String = {
-        description.map { d ⇒
-            "\tproject:\n\t\t"+d.replace("\n", "\n\t\t")+"\n"
-        }.getOrElse("")
-    }
 }
 
 class PackageLocation(
@@ -135,6 +137,19 @@ class PackageLocation(
         ))
     }
 
+    def locationAsIDL: JsObject = Json.obj("package" → thePackage.replace('/', '.'))
+
+    def descriptionAsIDL: Option[JsObject] = description.map { d ⇒ Json.obj("descriptopn" → d) }
+
+    def detailsAsIDL: JsArray = Json.arr(details)
+
+    final override def toIDL: JsValue = {
+        Json.obj(
+            "location" → locationAsIDL,
+            "description" → descriptionAsIDL,
+            "details" → detailsAsIDL
+        )
+    }
 }
 
 class ClassLocation(
@@ -162,10 +177,22 @@ class ClassLocation(
         theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"
     }
 
-    override def toIDL: String = {
-        ""+
-            "\tPackage: "+thePackage+"\n"+
-            "\tClass: "+classFile.thisType.simpleName+"\n"
+    override def locationAsIDL: JsObject = {
+        super.locationAsIDL + (
+            (
+                "class",
+                Json.obj(
+                    "fqn" → classFile.fqn,
+                    "type" → typeToIDL(classFile.thisType),
+                    "accessFlags" → {
+                        classFile.accessFlags match {
+                            case 0 ⇒ JsNull
+                            case _ ⇒ classAccessFlagsToString(classFile.accessFlags)
+                        }
+                    }
+                )
+            )
+        )
     }
 }
 
@@ -194,12 +221,20 @@ class MethodLocation(
             </span>
         if (firstLineOfMethod.isDefined) {
             val firstLine = firstLineOfMethod.get.toString
-            methodNode = methodNode % (new UnprefixedAttribute("data-line", firstLine, scala.xml.Null))
+            methodNode %= new UnprefixedAttribute("data-line", firstLine, scala.xml.Null)
         }
 
         super.locationAsInlineXHTML(basicInfoOnly) ++ List(Text("{ "), methodNode, Text(" }"))
     }
 
+    override def locationAsIDL: JsObject = {
+        super.locationAsIDL + (
+            "method" →
+            (methodToIDL(method.accessFlags, method.name, method.descriptor) +
+                ("signature" → JsString(methodJVMSignature)) +
+                ("firstLine" → Json.toJson(firstLineOfMethod)))
+        )
+    }
 }
 
 class InstructionLocation(
@@ -220,6 +255,10 @@ class InstructionLocation(
         val superLocationAsInlineXHTML = super.locationAsInlineXHTML(basicInfoOnly)
         superLocationAsInlineXHTML.init ++
             List(Text("["), pcNode, lineNode, Text("]"), superLocationAsInlineXHTML.last)
+    }
+
+    override def locationAsIDL: JsObject = {
+        super.locationAsIDL + (("instruction", lineJson))
     }
 
     override def toEclipseConsoleString: String = {

@@ -31,21 +31,31 @@ package issues
 
 import scala.xml.Node
 import scala.xml.Text
-import org.opalj.collection.mutable.Locals
-import org.opalj.br.{ClassFile, Method, PC, Code}
-import org.opalj.br.instructions.Instruction
-import org.opalj.ai.domain.l1.IntegerRangeValues
 import scala.xml.Comment
+import scala.xml.Group
+
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsArray
+
+import org.opalj.collection.mutable.Locals
+import org.opalj.collection.immutable.Chain
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.PC
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.instructions.StackManagementInstruction
 import org.opalj.br.instructions.IINC
-import scala.xml.Group
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.AIResult
-import org.opalj.collection.immutable.Chain
 
 trait ClassComprehension {
 
@@ -86,7 +96,9 @@ trait PCLineComprehension extends MethodComprehension with CodeComprehension {
 
     def lineNode: Node = PCLineComprehension.lineNode(classFileFQN, methodJVMSignature, pc, line)
 
+    def lineJson: JsValue = PCLineComprehension.lineJson(classFileFQN, methodJVMSignature, pc, line)
 }
+
 object PCLineComprehension {
 
     final def line(pc: PC)(implicit code: Code): Option[Int] = code.lineNumber(pc)
@@ -104,7 +116,20 @@ object PCLineComprehension {
         </span>
     }
 
-    def lineNode(classFileFQN: String, methodJVMSignature: String, pc: PC, line: Option[Int]): Node = {
+    def pcJson(classFileFQN: String, methodJVMSignature: String, pc: PC): JsObject = {
+        Json.obj(
+            "classFileFQN" → classFileFQN,
+            "methodJVMSignature" → methodJVMSignature,
+            "pc" → pc
+        )
+    }
+
+    def lineNode(
+        classFileFQN:       String,
+        methodJVMSignature: String,
+        pc:                 PC,
+        line:               Option[Int]
+    ): Node = {
         line.map { line ⇒
             <span class="line_number" data-class={ classFileFQN } data-method={ methodJVMSignature } data-line={ line.toString } data-pc={ pc.toString } data-show="sourcecode">
                 line={ line.toString }
@@ -112,6 +137,13 @@ object PCLineComprehension {
         }.getOrElse(Group(Nil))
     }
 
+    def lineJson(classFileFQN: String, methodJVMSignature: String, pc: PC, line: Option[Int]): JsValue = {
+        val result = pcJson(classFileFQN, methodJVMSignature, pc)
+        if (line.isDefined)
+            result + (("line", JsNumber(line.get)))
+        else
+            result
+    }
 }
 
 /**
@@ -136,27 +168,15 @@ class LocalVariables(
         if (basicInfoOnly)
             return Text("");
 
+        val sortedLVDefs = localVariableDefinitions.toSeq.sortWith((a, b) ⇒ a._1 < b._1)
         val lvsAsXHTML =
-            for ((index, theLV) ← localVariableDefinitions.toSeq.sortWith((a, b) ⇒ a._1 < b._1)) yield {
+            for ((index, theLV) ← sortedLVDefs) yield {
                 val localValue = localVariables(index)
                 val localValueAsXHTML =
                     if (localValue == null)
                         <span class="warning">unused</span>
-                    else {
-
-                        if ((theLV.fieldType eq org.opalj.br.BooleanType) &&
-                            // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
-                            localValue.isInstanceOf[IntegerRangeValues#IntegerRange]) {
-                            val range = localValue.asInstanceOf[IntegerRangeValues#IntegerRange]
-                            if ( /*range.lowerBound == 0 &&*/ range.upperBound == 0)
-                                Text("false")
-                            else if (range.lowerBound == 1 /* && range.upperBound == 1*/ )
-                                Text("true")
-                            else
-                                Text("true or false")
-                        } else
-                            Text(localValue.toString)
-                    }
+                    else
+                        Text(localVariableToString(theLV, localValue))
 
                 <tr>
                     <td>{ index }</td><td>{ theLV.name }</td><td>{ localValueAsXHTML }</td>
@@ -177,7 +197,23 @@ class LocalVariables(
 
     def toEclipseConsoleString: String = "" // TODO Support a better representation
 
-    def toIDL: String = "" // TODO Support a better representation
+    override def toIDL: JsValue = {
+        val lvDefs = code.localVariablesAt(pc)
+        val lvValues = lvDefs.toSeq.sortWith((a, b) ⇒ a._1 < b._1).map { e ⇒
+            val (index, localVariable) = e
+            val localValue = localVariables(index)
+            Json.obj(
+                "name" → localVariable.name,
+                "value" → {
+                    if (localValue == null)
+                        JsNull
+                    else
+                        localVariableToString(localVariable, localValue)
+                }
+            )
+        }
+        Json.obj("type" → getClass.getSimpleName, "values" → lvValues)
+    }
 }
 
 class Operands(
@@ -251,8 +287,57 @@ class Operands(
 
     def toEclipseConsoleString: String = "" // TODO Support a better representation
 
-    def toIDL: String = "" // TODO Support a better representation
+    override def toIDL: JsValue = {
+        instruction match {
+            case cbi: SimpleConditionalBranchInstruction ⇒
+                Json.obj(
+                    "type" → "SimpleConditionalBranchInstruction",
+                    "operator" → cbi.operator,
+                    "value" → {
+                        cbi.operandCount match {
+                            case 1 ⇒ operands.head.toString
+                            case _ ⇒ operands.tail.head.toString
+                        }
+                    },
+                    "value2" → {
+                        cbi.operandCount match {
+                            case 1 ⇒ JsNull
+                            case _ ⇒ operands.head.toString
+                        }
+                    }
+                )
+            case cbi: CompoundConditionalBranchInstruction ⇒
+                Json.obj(
+                    "type" → "CompoundConditionalBranchInstruction",
+                    "value" → operands.head.toString,
+                    "caseValues" → cbi.caseValues.mkString(", ")
+                )
+            case smi: StackManagementInstruction ⇒
+                Json.obj(
+                    "type" → "StackManagementInstruction",
+                    "mnemonic" → smi.mnemonic,
+                    "values" → operands.map(_.toString).toList
+                )
+            case IINC(lvIndex, constValue) ⇒
+                Json.obj(
+                    "type" → "IINC",
+                    "value" → localVariables(lvIndex).toString,
+                    "constValue" → constValue
+                )
 
+            case instruction ⇒
+                val operandsCount =
+                    instruction.numberOfPoppedOperands { x ⇒
+                        val message = "a stack management instruction is related to an issue"
+                        throw new UnknownError(message)
+                    }
+                Json.obj(
+                    "type" → instruction.getClass.getSimpleName,
+                    "mnemonic" → instruction.mnemonic,
+                    "parameters" → operands.take(operandsCount).reverse.map(_.toString).toList
+                )
+        }
+    }
 }
 
 class FieldValues(
@@ -303,8 +388,24 @@ class FieldValues(
 
     def toEclipseConsoleString: String = "" // TODO Support a better representation
 
-    def toIDL: String = "" // TODO Support a better representation
+    override def toIDL: JsValue = {
+        import PCLineComprehension.line
 
+        Json.obj(
+            "type" → getClass.getSimpleName,
+            "values" → collectReadFieldValues.map { fieldData ⇒
+                val (pc, details) = fieldData
+
+                Json.obj(
+                    "classFileFQN" → classFileFQN,
+                    "methodJVMSignature" → methodJVMSignature,
+                    "pc" → pc,
+                    "line" → line(pc),
+                    "details" → details
+                )
+            }
+        )
+    }
 }
 
 class MethodReturnValues(
@@ -318,7 +419,6 @@ class MethodReturnValues(
     private[this] def operandsArray = result.operandsArray
 
     def collectMethodReturnValues: Seq[(PC, String)] = {
-
         code.collectWithIndex {
             case (pc, instr @ MethodInvocationInstruction(declaringClassType, name, descriptor)) if !descriptor.returnType.isVoidType && {
                 val nextPC = instr.indexOfNextInstruction(pc)
@@ -360,5 +460,19 @@ class MethodReturnValues(
 
     def toEclipseConsoleString: String = "" // TODO Support a better representation
 
-    def toIDL: String = "" // TODO Support a better representation
+    override def toIDL: JsValue = {
+        import PCLineComprehension.line
+
+        JsArray(collectMethodReturnValues.map { methodData ⇒
+            val (pc, details) = methodData
+
+            Json.obj(
+                "classFileFQN" → classFileFQN,
+                "methodJVMSignature" → methodJVMSignature,
+                "pc" → pc,
+                "line" → line(pc),
+                "details" → details
+            )
+        })
+    }
 }
