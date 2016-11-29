@@ -219,9 +219,6 @@ object PerformanceEvaluation {
      * {{{
      * import org.opalj.util.PerformanceEvaluation._
      * import org.opalj.util._
-     *
-     * import org.opalj.util.PerformanceEvaluation._
-     * import org.opalj.util._
      * time[String](2,4,3,{Thread.sleep(300).toString}){ (t, ts) =>
      *     val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
      *     println(f"Avg: ${avg(ts).timeSpan}%1.4f; T: ${t.toSeconds.timeSpan}%1.4f; Ts: $sTs")
@@ -259,7 +256,7 @@ object PerformanceEvaluation {
      *       1. The last parameter is the list of times required to evaluate `f` that are taken
      *      into consideration when calculating the average.
      */
-    def time[T >: Null <: AnyRef](
+    def time[T](
         epsilon:                     Int,
         consideredRunsEpsilon:       Int,
         minimalNumberOfRelevantRuns: Int,
@@ -274,7 +271,7 @@ object PerformanceEvaluation {
             s"epsilon ($epsilon) < consideredRunsEpsilon ($consideredRunsEpsilon)"
         )
 
-        var result: T = null
+        var result: T = 0.asInstanceOf[T]
 
         val e = epsilon.toDouble / 100.0d
         val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
