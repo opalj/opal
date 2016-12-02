@@ -69,7 +69,7 @@ case class LabeledIFEQ(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IFEQLike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFEQ = {
-        IFEQ(branchoffsets(branchTarget))
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFEQ = {
+        IFEQ(pcs(branchTarget) - pc)
     }
 }

@@ -69,7 +69,7 @@ case class LabeledIF_ICMPEQ(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPEQLike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ICMPEQ = {
-        IF_ICMPEQ(branchoffsets(branchTarget))
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IF_ICMPEQ = {
+        IF_ICMPEQ(pcs(branchTarget) - pc)
     }
 }
