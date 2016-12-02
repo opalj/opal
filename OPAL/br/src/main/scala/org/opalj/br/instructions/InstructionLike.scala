@@ -60,7 +60,7 @@ trait InstructionLike {
      *
      * If this instruction already has concrete jump targets nothing special will happen.
      */
-    def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): Instruction
+    def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): Instruction
 
     /**
      * The exceptions that may be thrown by the JVM at runtime if the execution of

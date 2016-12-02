@@ -68,7 +68,7 @@ case class LabeledIFNE(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IFNELike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFNE = {
-        IFNE(branchoffsets(branchTarget))
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IFNE = {
+        IFNE(branchoffsets(branchTarget) - currentIndex)
     }
 }

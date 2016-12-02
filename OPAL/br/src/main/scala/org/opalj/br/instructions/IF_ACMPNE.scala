@@ -69,7 +69,7 @@ case class LabeledIF_ACMPNE(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IF_ACMPNELike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ACMPNE = {
-        IF_ACMPNE(branchoffsets(branchTarget))
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IF_ACMPNE = {
+        IF_ACMPNE(branchoffsets(branchTarget) - currentIndex)
     }
 }

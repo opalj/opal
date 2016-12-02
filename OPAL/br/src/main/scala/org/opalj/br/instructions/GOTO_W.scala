@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class GOTO_W(branchoffset: Int) extends GotoInstruction {
+trait GOTO_WLike extends GotoInstructionLike {
 
     final def opcode: Opcode = GOTO_W.opcode
 
@@ -46,8 +46,28 @@ case class GOTO_W(branchoffset: Int) extends GotoInstruction {
     final def stackSlotsChange: Int = 0
 }
 
+case class GOTO_W(branchoffset: Int) extends GotoInstruction with GOTO_WLike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object GOTO_W {
 
     final val opcode = 200
 
+    /**
+     * Creates [[LabeledGOTO_W]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledGOTO_W = LabeledGOTO_W(branchTarget)
+
+}
+
+case class LabeledGOTO_W(
+        branchTarget: Symbol
+) extends LabeledInstruction with GOTO_WLike {
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): GOTO_W = {
+        GOTO_W(branchoffsets(branchTarget) - currentIndex)
+    }
 }

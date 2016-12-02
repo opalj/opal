@@ -33,13 +33,13 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
- * Tests instantiation and resolving of LabeledBranchInstructions
+ * Tests instantiation and resolving of LabeledInstructions.
  *
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class LabeledSimpleBranchInstructionsTest extends FlatSpec with Matchers {
-    behavior of "LabeledSimpleBranchInstructions"
+class LabeledInstructionsTest extends FlatSpec with Matchers {
+    behavior of "LabeledInstructions"
 
     val label = 'TestLabel
     val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, scala.runtime.AbstractFunction1[Symbol, LabeledSimpleConditionalBranchInstruction])] = {
@@ -68,7 +68,7 @@ class LabeledSimpleBranchInstructionsTest extends FlatSpec with Matchers {
     val resolvedSimpleBranchInstructions = {
         simpleBranchInstructionsMap.zipWithIndex.map { instructionWithIndex ⇒
             val ((labeledInstruction, _), index) = instructionWithIndex
-            labeledInstruction.resolveJumpTargets(Map(label → index))
+            labeledInstruction.resolveJumpTargets(0, Map(label → index))
         }
     }
 
@@ -80,10 +80,23 @@ class LabeledSimpleBranchInstructionsTest extends FlatSpec with Matchers {
             }
         }
 
-    "LabeledBranchInstruction.resolve" should "resolve to the correct branchoffset" in {
-        for ((i, index) ← resolvedSimpleBranchInstructions.zipWithIndex) {
-            assert(i.branchoffset == index)
+    "LabeledBranchInstruction.resolve for SimpleBranchInstructions" should
+        "resolve to the correct branchoffset" in {
+            for ((i, index) ← resolvedSimpleBranchInstructions.zipWithIndex) {
+                assert(i.branchoffset == index)
+            }
         }
-    }
+
+    "the convenience factories of GotoInstructions" should
+        "return the correct type of LabeledGotoInstruction" in {
+            assert(GOTO(label) == LabeledGOTO(label))
+            assert(GOTO_W(label) == LabeledGOTO_W(label))
+        }
+
+    "LabeledBranchInstruction.resolve for GotoInstructions" should
+        "resolve to the correct branchoffset" in {
+            assert(GOTO(label).resolveJumpTargets(1, Map(label → 43)).branchoffset == 42)
+            assert(GOTO_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
+        }
 
 }

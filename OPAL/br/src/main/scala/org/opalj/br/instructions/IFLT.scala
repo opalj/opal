@@ -67,7 +67,7 @@ case class LabeledIFLT(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IFLTLike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IFLT = {
-        IFLT(branchoffsets(branchTarget))
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IFLT = {
+        IFLT(branchoffsets(branchTarget) - currentIndex)
     }
 }

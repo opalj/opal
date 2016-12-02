@@ -64,7 +64,7 @@ case class LabeledIF_ICMPGE(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPGELike {
 
-    override def resolveJumpTargets(branchoffsets: Map[Symbol, PC]): IF_ICMPGE = {
-        IF_ICMPGE(branchoffsets(branchTarget))
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IF_ICMPGE = {
+        IF_ICMPGE(branchoffsets(branchTarget) - currentIndex)
     }
 }

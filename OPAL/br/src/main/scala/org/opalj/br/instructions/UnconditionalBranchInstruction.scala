@@ -38,11 +38,9 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class UnconditionalBranchInstruction
-        extends ControlTransferInstruction
+trait UnconditionalBranchInstructionLike
+        extends ControlTransferInstructionLike
         with ConstantLengthInstruction {
-
-    def branchoffset: Int
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
@@ -53,6 +51,16 @@ abstract class UnconditionalBranchInstruction
     final def writesLocal: Boolean = false
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
+}
+object UnconditionalBranch {
+
+    def unapply(i: UnconditionalBranchInstruction): Option[Int] = Some(i.branchoffset)
+
+}
+
+trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranchInstructionLike {
+    def branchoffset: Int
 
     final def nextInstructions(
         currentPC:             PC,
@@ -68,10 +76,4 @@ abstract class UnconditionalBranchInstruction
         getClass.getSimpleName+" "+
             (currentPC + branchoffset) +
             (if (branchoffset >= 0) "↓" else "↑")
-
-}
-object UnconditionalBranch {
-
-    def unapply(i: UnconditionalBranchInstruction): Option[Int] = Some(i.branchoffset)
-
 }
