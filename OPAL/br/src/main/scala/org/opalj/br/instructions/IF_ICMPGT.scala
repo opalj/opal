@@ -69,7 +69,7 @@ case class LabeledIF_ICMPGT(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPGTLike {
 
-    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IF_ICMPGT = {
-        IF_ICMPGT(branchoffsets(branchTarget) - currentIndex)
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IF_ICMPGT = {
+        IF_ICMPGT(pcs(branchTarget) - pc)
     }
 }

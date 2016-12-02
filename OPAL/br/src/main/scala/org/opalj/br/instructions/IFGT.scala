@@ -68,7 +68,7 @@ case class LabeledIFGT(
         branchTarget: Symbol
 ) extends LabeledSimpleConditionalBranchInstruction with IFGTLike {
 
-    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): IFGT = {
-        IFGT(branchoffsets(branchTarget) - currentIndex)
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFGT = {
+        IFGT(pcs(branchTarget) - pc)
     }
 }

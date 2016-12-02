@@ -38,10 +38,4 @@ package instructions
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-trait LabeledInstruction extends InstructionLike {
-    def branchTarget: Symbol
-
-    override def toString(currentPC: Int) = {
-        s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
-    }
-}
+trait LabeledInstruction extends InstructionLike

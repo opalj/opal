@@ -38,11 +38,11 @@ import org.scalatest.{FlatSpec, Matchers}
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class LabeledInstructionsTest extends FlatSpec with Matchers {
-    behavior of "LabeledInstructions"
+class LabeledSimpleBranchInstructionsTest extends FlatSpec with Matchers {
+    behavior of "LabeledSimpleBranchInstructions"
 
     val label = 'TestLabel
-    val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, scala.runtime.AbstractFunction1[Symbol, LabeledSimpleConditionalBranchInstruction])] = {
+    val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, Symbol ⇒ LabeledSimpleConditionalBranchInstruction)] = {
         List /*[(LabeledSimpleConditionalBranchInstruction, { def apply(branchTarget: Symbol): AnyRef })]*/ (
             IFEQ(label) → LabeledIFEQ,
             IFNE(label) → LabeledIFNE,
@@ -74,18 +74,17 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
 
     "the convenience factories of SimpleConditionalBranchInstructions" should
         "return the correct type of LabeledBranchInstruction" in {
-            simpleBranchInstructionsMap.foreach { bi ⇒
+            simpleBranchInstructionsMap foreach { bi ⇒
                 val (factoryMethodResult, constructorResult) = bi
                 assert(factoryMethodResult == constructorResult(label))
             }
         }
 
-    "LabeledBranchInstruction.resolve for SimpleBranchInstructions" should
-        "resolve to the correct branchoffset" in {
-            for ((i, index) ← resolvedSimpleBranchInstructions.zipWithIndex) {
-                assert(i.branchoffset == index)
-            }
+    "resolving SimpleBranchInstructions" should "resolve to the correct branchoffset" in {
+        for ((i, index) ← resolvedSimpleBranchInstructions.zipWithIndex) {
+            assert(i.branchoffset == index)
         }
+    }
 
     "the convenience factories of GotoInstructions" should
         "return the correct type of LabeledGotoInstruction" in {
@@ -93,10 +92,9 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
             assert(GOTO_W(label) == LabeledGOTO_W(label))
         }
 
-    "LabeledBranchInstruction.resolve for GotoInstructions" should
-        "resolve to the correct branchoffset" in {
-            assert(GOTO(label).resolveJumpTargets(1, Map(label → 43)).branchoffset == 42)
-            assert(GOTO_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
-        }
+    "resolving GotoInstructions" should "resolve to the correct branchoffset" in {
+        assert(GOTO(label).resolveJumpTargets(1, Map(label → 43)).branchoffset == 42)
+        assert(GOTO_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
+    }
 
 }

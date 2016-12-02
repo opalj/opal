@@ -34,5 +34,12 @@ trait LabeledSimpleConditionalBranchInstruction
         extends LabeledInstruction
         with SimpleConditionalBranchInstructionLike {
 
-    def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): SimpleConditionalBranchInstruction
+    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): SimpleConditionalBranchInstruction
+
+    def branchTarget: Symbol
+
+    override def toString(currentPC: PC): String = {
+        s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
+    }
+
 }
