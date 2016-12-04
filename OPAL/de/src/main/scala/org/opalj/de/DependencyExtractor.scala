@@ -759,7 +759,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case 197 ⇒
                     processDependency(
                         declaringMethod,
-                        as[MULTIANEWARRAY](instruction).componentType,
+                        as[MULTIANEWARRAY](instruction).arrayType,
                         CREATES_ARRAY
                     )
 

@@ -613,7 +613,7 @@ object AsQuadruples {
                 case MULTIANEWARRAY.opcode ⇒
                     val instr = as[MULTIANEWARRAY](instruction)
                     val (counts, rest) = stack.splitAt(instr.dimensions)
-                    val newArray = NewArray(pc, counts, instr.componentType)
+                    val newArray = NewArray(pc, counts, instr.arrayType)
                     val newVal = OperandVar(ComputationalTypeReference, rest)
                     statements(pc) = List(Assignment(pc, newVal, newArray))
                     schedule(pcOfNextInstruction(pc), newVal :: rest)

@@ -83,9 +83,22 @@ case class INSTANCEOF(
     override def toString: String = "INSTANCEOF("+referenceType.toJava+")"
 }
 
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object INSTANCEOF {
 
     final val opcode = 193
 
     final val length = 3
+
+    /**
+     * Factory method to create [[INSTANCEOF]] instructions.
+     *
+     * @param   referenceType The `referenceType` against which the type test is done; see
+     * +            [[org.opalj.br.ReferenceType$]]'s `apply` method for the correct syntax.
+     */
+    def apply(referenceTypeName: String): INSTANCEOF = INSTANCEOF(ReferenceType(referenceTypeName))
 }
