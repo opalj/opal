@@ -26,27 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package instructions
+package org.opalj.br.instructions
 
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 
 /**
- * Tests instantiation of `InvocationInstructions` using the convenience factory methods.
+ * Tests instantiation of [[Instruction]]s using the convenience factory methods.
  *
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class FactoryMethodsOfInvocationInstructionTest extends FlatSpec {
+class FactoryMethodsOfInstructionTest extends FlatSpec {
 
-    behavior of "factory methods of InvocationInstructions"
+    behavior of "factory methods of Instructions"
 
     val declaringClass = "my/invoke/Class"
+
     val methodName = "myMythod"
     val methodDescriptor = "()V"
+
+    val fieldName = "myField"
+    val fieldTypeObject = "Ljava/lang/Object"
+    val fieldTypeBoolean = "Z"
+    val fieldTypeArray = "[Z"
 
     "INVOKEINTERFACE's factory method" should "return an INVOKEINTERFACE instruction" in {
         val invoke = INVOKEINTERFACE(declaringClass, methodName, methodDescriptor)
@@ -84,6 +88,61 @@ class FactoryMethodsOfInvocationInstructionTest extends FlatSpec {
         assert(!invoke.isInterface)
         assert(invoke.name == methodName)
         assert(invoke.methodDescriptor.toJVMDescriptor == methodDescriptor)
+    }
+
+    "GETSTATIC's factory method" should "return an GETSTATIC instruction" in {
+        val getStaticObject = GETSTATIC(declaringClass, fieldName, fieldTypeObject)
+
+        assert(getStaticObject.getClass.getName == "org.opalj.br.instructions.GETSTATIC")
+        assert(getStaticObject.declaringClass.fqn == declaringClass)
+        assert(getStaticObject.fieldType.asObjectType.fqn ==
+            fieldTypeObject.substring(1, fieldTypeObject.length - 1))
+
+        val getStaticBoolean = GETSTATIC(declaringClass, fieldName, fieldTypeBoolean)
+        assert(getStaticBoolean.getClass.getName == "org.opalj.br.instructions.GETSTATIC")
+        assert(getStaticBoolean.declaringClass.fqn == declaringClass)
+        assert(getStaticBoolean.fieldType.asBaseType.isBooleanType)
+    }
+
+    "PUTSTATIC's factory method" should "return an PUTSTATIC instruction" in {
+        val getStaticObject = PUTSTATIC(declaringClass, fieldName, fieldTypeObject)
+
+        assert(getStaticObject.getClass.getName == "org.opalj.br.instructions.PUTSTATIC")
+        assert(getStaticObject.declaringClass.fqn == declaringClass)
+        assert(getStaticObject.fieldType.asObjectType.fqn ==
+            fieldTypeObject.substring(1, fieldTypeObject.length - 1))
+
+        val getStaticBoolean = PUTSTATIC(declaringClass, fieldName, fieldTypeBoolean)
+        assert(getStaticBoolean.getClass.getName == "org.opalj.br.instructions.PUTSTATIC")
+        assert(getStaticBoolean.declaringClass.fqn == declaringClass)
+        assert(getStaticBoolean.fieldType.asBaseType.isBooleanType)
+    }
+
+    "ANEWARRAY's factory method" should "return an ANEWARRAY instruction" in {
+        val anewarrayObject = ANEWARRAY(fieldTypeObject)
+
+        assert(anewarrayObject.getClass.getName == "org.opalj.br.instructions.ANEWARRAY")
+        assert(anewarrayObject.componentType.isObjectType)
+    }
+
+    "MULTIANEWARRAY's factory method" should "return an MULTIANEWARRAY instruction" in {
+        val multianewarrayObject = MULTIANEWARRAY(fieldTypeArray, 2)
+
+        assert(multianewarrayObject.getClass.getName == "org.opalj.br.instructions.MULTIANEWARRAY")
+        assert(multianewarrayObject.componentType.asArrayType.componentType.isBooleanType)
+        assert(multianewarrayObject.dimensions == 2)
+    }
+
+    "INSTANCEOF's factory method" should "return an INSTANCEOF instruction" in {
+        val instanceOfObject = INSTANCEOF(fieldTypeObject)
+
+        assert(instanceOfObject.getClass.getName == "org.opalj.br.instructions.INSTANCEOF")
+        assert(instanceOfObject.referenceType.isObjectType)
+
+        val instanceOfArray = INSTANCEOF(fieldTypeArray)
+
+        assert(instanceOfArray.getClass.getName == "org.opalj.br.instructions.INSTANCEOF")
+        assert(instanceOfArray.referenceType.asArrayType.componentType.isBooleanType)
     }
 
 }

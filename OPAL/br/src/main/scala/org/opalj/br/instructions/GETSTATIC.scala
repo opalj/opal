@@ -70,10 +70,30 @@ case class GETSTATIC(
         "get static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
 
 }
+
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object GETSTATIC {
 
     final val opcode = 178
 
     final val mnemonic = "getstatic"
+
+    /**
+     * Factory method to create [[GETSTATIC]] instructions.
+     *
+     * @param declaringClass the fields class name in JVM notation, e.g. "java/lang/Object"
+     * @param name the fields name
+     * @param fieldType the field type in JVM notation e.g. "Z" for boolean or `Ljava/lang/Object`
+     *                  for general objects
+     */
+    def apply(
+        declaringClass: String,
+        name:           String,
+        fieldType:      String
+    ): GETSTATIC = GETSTATIC(ObjectType(declaringClass), name, FieldType(fieldType))
 
 }

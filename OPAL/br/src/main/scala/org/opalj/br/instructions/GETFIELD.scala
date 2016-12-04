@@ -83,8 +83,27 @@ case class GETFIELD(
 
 }
 
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object GETFIELD {
 
     final val opcode = 180
+
+    /**
+     * Factory method to create [[GETFIELD]] instructions.
+     *
+     * @param declaringClass the fields class name in JVM notation, e.g. "java/lang/Object"
+     * @param name the fields name
+     * @param fieldType the field type in JVM notation e.g. "Z" for boolean or `Ljava/lang/Object`
+     *                  for general objects
+     */
+    def apply(
+        declaringClass: String,
+        name:           String,
+        fieldType:      String
+    ): GETFIELD = GETFIELD(ObjectType(declaringClass), name, FieldType(fieldType))
 
 }
