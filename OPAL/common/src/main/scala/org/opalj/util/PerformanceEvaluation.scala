@@ -130,6 +130,22 @@ object GlobalPerformanceEvaluation extends PerformanceEvaluation
  * Collection of helper functions useful when evaluating the performance of some
  * code.
  *
+ * @example
+ * Measuring the time and memory used by some piece of code:
+ * {{{
+ * import org.opalj.util.PerformanceEvaluation.{memory,time}
+ * var store : Array[Object] = null
+ * implicit val logContext = Some(org.opalj.log.GlobalLogContext)
+ * for(i <- 1 to 5){
+ *   memory{store = null}(l => println("empty: "+l))
+ *   memory{
+ *     time{
+ *       store = Array.fill(1000000){val l : Object = List(i); l}
+ *    }(t => println("time:"+t.toSeconds))
+ *   }(l => println("non-empty:"+l))
+ * }
+ * }}}
+ *
  * @author Michael Eichberg
  */
 object PerformanceEvaluation {
