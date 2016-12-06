@@ -171,10 +171,34 @@ object PerformanceEvaluation {
      */
     final def ns2ms(nanoseconds: Long): Double = nanoseconds.toDouble / 1000.0d / 1000.0d
 
-    /** Tries it best to run the garbage collector. */
-    final def gc(memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean): Unit = {
-        memoryMXBean.gc()
-        System.gc()
+    /**
+     *  Tries it best to run the garbage collector and to wait until all objects are also
+     *  finalized.
+     */
+    final def gc(
+        memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean,
+        maxGCTime:    Milliseconds = new Milliseconds(333)
+    )(
+        implicit
+        logContext: Option[LogContext] = None
+    ): Unit = {
+        val startTime = System.nanoTime()
+        var run = 0
+        do {
+            if (logContext.isDefined) {
+                OPALLogger.info("performance", s"garbage collection run $run")(logContext.get)
+            }
+            // In general it is **not possible to guarantee** that the garbage collector is really
+            // run, but we still do our best.
+            memoryMXBean.gc()
+            Thread.sleep(50)
+            // It may be the case that some finalizers (of just gc'ed object) are still running and
+            // -- therefore -- some further objects can be freed after the first gc run.
+            memoryMXBean.gc()
+            Thread.sleep(50)
+            run += 1
+        } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
+            ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
     }
 
     /**
