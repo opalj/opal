@@ -45,10 +45,17 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal {
     }
 
     /**
-     * Converts the specified number of nanoseconds into seconds.
+     * Conversion to [[Seconds]].
      */
     final def toSeconds: Seconds = {
         new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
+    }
+
+    /**
+     * Conversion to [[Milliseconds]].
+     */
+    final def toMilliseconds: Milliseconds = {
+        new Milliseconds(timeSpan / (1000 * 1000))
     }
 
     def toString(withUnit: Boolean): String = {
