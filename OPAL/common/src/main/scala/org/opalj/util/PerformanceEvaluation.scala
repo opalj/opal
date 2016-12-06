@@ -223,10 +223,11 @@ object PerformanceEvaluation {
     }
 
     /**
-     * Times the execution of a given function `f`.
+     * Times the execution of a given function `f`. If the timing may be affected by
+     * (required) garbage collection runs it is recommended to first run the garbage collector.
      *
-     * @param r A function that is passed the time (in nanoseconds) that it
-     *      took to evaluate `f`. `r` is called even if `f` fails with an exception.
+     * @param     r A function that is passed the time (in nanoseconds) that it
+     *          took to evaluate `f`. `r` is called even if `f` fails with an exception.
      */
     def time[T](f: ⇒ T)(r: Nanoseconds ⇒ Unit): T = {
         val startTime: Long = System.nanoTime
@@ -373,9 +374,8 @@ object PerformanceEvaluation {
     /**
      * Times the execution of a given function `f`.
      *
-     * @param r A function that is passed the time that it
-     *      took to evaluate `f` and the result produced by `f`.
-     *      `r` is only called if `f` succeeds.
+     * @param    r A function that is passed the time that it took to evaluate `f` and the result
+     *             produced by `f`; `r` is only called if `f` succeeds.
      */
     def run[T, X](f: ⇒ T)(r: (Nanoseconds, T) ⇒ X): X = {
         val startTime: Long = System.nanoTime
