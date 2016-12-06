@@ -243,9 +243,9 @@ object PerformanceEvaluation {
     /**
      * Times the execution of a given function `f` until the execution time has
      * stabilized and the average time for evaluating `f` is only changing in a
-     * well-defined manner.
+     * well-understood manner.
      *
-     * In general `time` repeats the execution of `f` as long as the average changes
+     * In general, `time` repeats the execution of `f` as long as the average changes
      * significantly. Furthermore, `f` is executed at least `minimalNumberOfRelevantRuns`
      * times and only those runs are taken into consideration for the calculation of the
      * average that are `consideredRunsEpsilon`% worse than the best run. However, if we
@@ -265,42 +265,51 @@ object PerformanceEvaluation {
      * }
      * }}}
      *
-     * @note **If `f` has side effects it may not be possible to use this method.**
+     * @note    **If `f` has side effects it may not be possible to use this method.**
      *
-     * @note If epsilon is too small we can get an endless loop as the termination
-     *      condition is never met. However, in practice often a value such as "1 or 2"
-     *      is still useable.
+     * @note    If epsilon is too small we can get an endless loop as the termination
+     *          condition is never met. However, in practice often a value such as "1 or 2"
+     *          is still useable.
      *
-     * @note This method can generally only be used to measure the time of some process
-     *      that does not require user interaction or disk/network access. In the latter
-     *      case the variation between two runs will be too coarse grained to get
-     *      meaningful results.
+     * @note    This method can generally only be used to measure the time of some process
+     *          that does not require user interaction or disk/network access. In the latter
+     *          case the variation between two runs will be too coarse grained to get
+     *          meaningful results.
      *
-     * @param epsilon The maximum percentage that *the final run* is allowed to affect
-     *      the average. In other words,
-     *      if the effect of the last execution on the average is less than `epsilon`
-     *      percent. The evaluation halts and the result of the last run is returned.
-     * @param consideredRunsEpsilon Controls which runs are taken into consideration
-     *      when calculating the average. Only those runs are used that are at most
-     *      `consideredRunsEpsilon%` slower than the last run. Additionally,
-     *      the last run is only considered if it is at most `consideredRunsEpsilon%`
-     *      slower than the average. Hence, it is even possible that the average may rise
-     *      during the evaluation of `f`.
-     * @param f The function that will be measured.
-     * @param r A function that is called back whenever `f` was successfully evaluated.
-     *      The signature is:
-     *      {{{
-     *      def r(lastExecutionTime:Nanoseconds, consideredExecutionTimes : Seq[Nanoseconds]) : Unit
-     *      }}}
-     *       1. The first parameter is the last execution time of `f`.
-     *       1. The last parameter is the list of times required to evaluate `f` that are taken
-     *      into consideration when calculating the average.
+     * @param   epsilon The maximum percentage that *the final run* is allowed to affect
+     *          the average. In other words, if the effect of the last execution on the
+     *          average is less than `epsilon` percent then the evaluation halts and the
+     *          result of the last run is returned.
+     * @param   consideredRunsEpsilon Controls which runs are taken into consideration
+     *          when calculating the average. Only those runs are used that are at most
+     *          `consideredRunsEpsilon%` slower than the last run. Additionally,
+     *          the last run is only considered if it is at most `consideredRunsEpsilon%`
+     *          slower than the average. Hence, it is even possible that the average may rise
+     *          during the evaluation of `f`.
+     * @param   f The side-effect free function that will be measured.
+     * @param   r A function that is called back whenever `f` was successfully evaluated.
+     *          The signature is:
+     *          {{{
+     *          def r(
+     *              lastExecutionTime:Nanoseconds,
+     *              consideredExecutionTimes : Seq[Nanoseconds]
+     *          ) : Unit
+     *          }}}
+     *           1. The first parameter is the last execution time of `f`.
+     *           1. The last parameter is the list of times required to evaluate `f` that are taken
+     *          into consideration when calculating the average.
+     * @param   runGC If `true` the garbage collector is run using `PerformanceEvaluation.gc()`
+     *          before each run. This may be necessary to get reasonable stable behavior between
+     *          multiple runs. However, if each run takes very long and the VM has to perform
+     *          garbage collection as part of executing f (and also has to increase the JVM's heap)
+     *          getting stable measurements is unlikely.
      */
     def time[T](
         epsilon:                     Int,
         consideredRunsEpsilon:       Int,
         minimalNumberOfRelevantRuns: Int,
-        f:                           ⇒ T
+        f:                           ⇒ T,
+        runGC:                       Boolean = false
     )(
         r: (Nanoseconds, Seq[Nanoseconds]) ⇒ Unit
     ): T = {
@@ -318,6 +327,7 @@ object PerformanceEvaluation {
 
         var runsSinceLastUpdate = 0
         var times = List.empty[Nanoseconds]
+        if (runGC) gc()
         time { f } { t ⇒
             times = t :: times
             if (t.timeSpan <= 199999) { // < 2 milliseconds
@@ -333,6 +343,7 @@ object PerformanceEvaluation {
         }
         var avg: Double = times.head.timeSpan.toDouble
         do {
+            if (runGC) gc()
             time {
                 result = f
             } { t ⇒
