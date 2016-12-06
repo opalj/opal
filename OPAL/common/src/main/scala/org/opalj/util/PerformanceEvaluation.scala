@@ -29,12 +29,15 @@
 package org.opalj
 package util
 
-import org.opalj.concurrent.Locking
-import scala.collection.mutable.Map
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
 import java.lang.management.MemoryMXBean
 import java.lang.management.ManagementFactory
+
+import scala.collection.mutable.Map
+
+import org.opalj.concurrent.Locking
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
  * Measures the execution time of some code.
@@ -207,11 +210,17 @@ object PerformanceEvaluation {
      * used before and after executing `f`; i.e., the permanent data structures that are created
      * by `f` are measured.
      *
-     * @note If large data structures are used by `f` that are
-     *      not used anymore afterwards then it may happen that the used amount of memory
-     *      is negative.
+     * @note    If large data structures are used by `f` that are not used anymore afterwards
+     *             then it may happen that the used amount of memory is negative.
      */
-    def memory[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
+    def memory[T](
+        f: ⇒ T
+    )(
+        mu: Long ⇒ Unit
+    )(
+        implicit
+        logContext: Option[LogContext] = None
+    ): T = {
         val memoryMXBean = ManagementFactory.getMemoryMXBean
         gc(memoryMXBean)
         val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
