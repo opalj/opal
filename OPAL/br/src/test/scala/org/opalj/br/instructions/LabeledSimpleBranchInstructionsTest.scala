@@ -97,4 +97,16 @@ class LabeledSimpleBranchInstructionsTest extends FlatSpec with Matchers {
         assert(GOTO_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
     }
 
+    "the convenience factories of JSRInstructions" should
+        "return the correct type of LabeledJSRInstruction" in {
+            assert(JSR(label) == LabeledJSR(label))
+            assert(JSR_W(label) == LabeledJSR_W(label))
+        }
+
+    "LabeledBranchInstruction.resolve for JSRInstructions" should
+        "resolve to the correct branchoffset" in {
+            assert(JSR(label).resolveJumpTargets(1, Map(label → 43)).branchoffset == 42)
+            assert(JSR_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
+        }
+
 }
