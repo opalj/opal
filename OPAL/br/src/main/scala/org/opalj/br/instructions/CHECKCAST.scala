@@ -88,10 +88,23 @@ case class CHECKCAST(
 
 }
 
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object CHECKCAST {
 
     final val opcode = 192
 
     val jvmExceptions = List(ObjectType.ClassCastException)
+
+    /**
+     * Factory method to create [[CHECKCAST]] instructions.
+     *
+     * @param referenceType The references type name in JVM notation, for example
+     *                      "Ljava/lang/Object" for Object.
+     */
+    def apply(referenceType: String): CHECKCAST = CHECKCAST(ReferenceType(referenceType))
 
 }
