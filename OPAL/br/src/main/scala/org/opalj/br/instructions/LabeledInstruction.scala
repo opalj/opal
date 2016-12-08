@@ -33,9 +33,11 @@ package instructions
 /**
  * An instruction where the jump targets are identified using `Symbols` associated with the
  * instructions which should be executed in case of a jump.
- * The label is a standard Scala `Symbol`.
+ * The labels are standard Scala `Symbol`.
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-trait LabeledInstruction extends InstructionLike
+trait LabeledInstruction extends InstructionLike {
+    def branchTargets: List[Symbol]
+}

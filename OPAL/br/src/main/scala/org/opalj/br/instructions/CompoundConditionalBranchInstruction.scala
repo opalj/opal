@@ -36,9 +36,20 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class CompoundConditionalBranchInstruction extends ConditionalBranchInstruction {
+trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstructionLike {
 
     def operandCount: Int = 1
+
+    final def stackSlotsChange: Int = -1
+
+    def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        throw new UnsupportedOperationException()
+    }
+
+}
+
+trait CompoundConditionalBranchInstruction extends ConditionalBranchInstruction
+        with CompoundConditionalBranchInstructionLike {
 
     def defaultOffset: Int
 
@@ -52,7 +63,4 @@ abstract class CompoundConditionalBranchInstruction extends ConditionalBranchIns
     def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean)
 
     def caseValues: Seq[Int]
-
-    final def stackSlotsChange: Int = -1
-
 }

@@ -38,8 +38,8 @@ import org.scalatest.{FlatSpec, Matchers}
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class LabeledSimpleBranchInstructionsTest extends FlatSpec with Matchers {
-    behavior of "LabeledSimpleBranchInstructions"
+class LabeledInstructionsTest extends FlatSpec with Matchers {
+    behavior of "LabeledInstructionsTest"
 
     val label = 'TestLabel
     val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, Symbol ⇒ LabeledSimpleConditionalBranchInstruction)] = {
@@ -107,6 +107,39 @@ class LabeledSimpleBranchInstructionsTest extends FlatSpec with Matchers {
         "resolve to the correct branchoffset" in {
             assert(JSR(label).resolveJumpTargets(1, Map(label → 43)).branchoffset == 42)
             assert(JSR_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
+        }
+
+    val table = List('two, 'three)
+    val lookupTable = ((2 to 3) zip table).toList
+    val labelsMap = Map(
+        label → 43,
+        'two → 44,
+        'three → 45
+    )
+
+    "the convenience factories of CompoundConditionalBranchInstruction" should
+        "return the correct type of LabeledCompoundConditionalBranchInstruction" in {
+            assert(LOOKUPSWITCH(label, lookupTable: _*) == LabeledLOOKUPSWITCH(label, lookupTable))
+            assert(TABLESWITCH(label, 2, 3, table: _*) ==
+                LabeledTABLESWITCH(label, 2, 3, table))
+        }
+
+    "LabeledBranchInstruction.resolve for CompoundConditionalBranchInstruction" should
+        "resolve to the correct branchoffset" in {
+            val resolvedLOOKUPSWITCH = LOOKUPSWITCH(label, lookupTable: _*).resolveJumpTargets(
+                1,
+                labelsMap
+            )
+            assert(resolvedLOOKUPSWITCH.defaultOffset == 42)
+            assert(resolvedLOOKUPSWITCH.jumpOffsets == IndexedSeq(43, 44))
+            assert(resolvedLOOKUPSWITCH.caseValues == IndexedSeq(2, 3))
+
+            val resolvedTABLESWITCH = TABLESWITCH(label, 2, 3, table: _*).resolveJumpTargets(
+                1,
+                labelsMap
+            )
+            assert(resolvedTABLESWITCH.defaultOffset == 42)
+            assert(resolvedTABLESWITCH.jumpOffsets == IndexedSeq(43, 44))
         }
 
 }

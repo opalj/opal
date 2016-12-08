@@ -31,44 +31,18 @@ package br
 package instructions
 
 /**
- * Branch always.
- *
- * @author Michael Eichberg
- */
-trait GOTO_WLike extends GotoInstructionLike {
-
-    final def opcode: Opcode = GOTO_W.opcode
-
-    final def mnemonic: String = "goto_w"
-
-    final def length: Int = 5
-
-    final def stackSlotsChange: Int = 0
-}
-
-case class GOTO_W(branchoffset: Int) extends GotoInstruction with GOTO_WLike
-
-/**
- * Defines constants and factory methods.
+ * An instruction where the jump target is identified using a `Symbol` associated with the
+ * instruction which should be executed in case of a jump.
+ * The label is a standard Scala `Symbol`.
  *
  * @author Malte Limmeroth
+ * @author Michael Eichberg
  */
-object GOTO_W {
+trait SingleLabelLabeledInstruction extends LabeledInstruction {
+    def branchTargets: List[Symbol] = branchTarget :: Nil
+    def branchTarget: Symbol
 
-    final val opcode = 200
-
-    /**
-     * Creates [[LabeledGOTO_W]] instructions with a `Symbol` as the branch target.
-     */
-    def apply(branchTarget: Symbol): LabeledGOTO_W = LabeledGOTO_W(branchTarget)
-
-}
-
-case class LabeledGOTO_W(
-        branchTarget: Symbol
-) extends SingleLabelLabeledInstruction with GOTO_WLike {
-    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): GOTO_W = {
-        GOTO_W(branchoffsets(branchTarget) - currentIndex)
+    override def toString(currentPC: Int) = {
+        s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
     }
-
 }

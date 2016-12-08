@@ -37,16 +37,31 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
+trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
+    protected def tableSize: Int
+
+    final def opcode: Opcode = TABLESWITCH.opcode
+
+    final def mnemonic: String = "tableswitch"
+
+    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
+        indexOfNextInstruction(currentPC, false)
+    }
+
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
+        currentPC + 1 + (3 - (currentPC % 4)) + 12 + tableSize * 4
+    }
+
+}
+
 case class TABLESWITCH(
         defaultOffset: Int,
         low:           Int,
         high:          Int,
         jumpOffsets:   IndexedSeq[Int]
-) extends CompoundConditionalBranchInstruction {
+) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
 
-    final def opcode: Opcode = TABLESWITCH.opcode
-
-    final def mnemonic: String = "tableswitch"
+    override protected def tableSize = jumpOffsets.size
 
     def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
         var caseValues = List.empty[Int]
@@ -62,14 +77,6 @@ case class TABLESWITCH(
     def caseValues: Seq[Int] =
         (low to high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
 
-    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
-        indexOfNextInstruction(currentPC, false)
-    }
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
-    }
-
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
@@ -82,7 +89,7 @@ case class TABLESWITCH(
         pcs
     }
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val paddingOffset = (thisPC % 4) - (otherPC % 4)
 
         code.instructions(otherPC) match {
@@ -120,8 +127,57 @@ case class TABLESWITCH(
 
 }
 
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object TABLESWITCH {
 
     final val opcode = 170
 
+    /**
+     * Creates [[LabeledTABLESWITCH]] instructions with a `Symbol` as the branch targets.
+     *
+     */
+    def apply(
+        defaultBranchTarget: Symbol,
+        low:                 Int,
+        high:                Int,
+        branchTargets:       Symbol*
+    ): LabeledTABLESWITCH = LabeledTABLESWITCH(
+        defaultBranchTarget,
+        low,
+        high,
+        branchTargets.toList
+    )
+
+}
+
+case class LabeledTABLESWITCH(
+        defaultBranchTarget: Symbol,
+        low:                 Int,
+        high:                Int,
+        jumpTargets:         List[Symbol]
+) extends LabeledInstruction with TABLESWITCHLike {
+    override protected def tableSize = jumpTargets.size
+
+    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): TABLESWITCH = {
+        TABLESWITCH(
+            branchoffsets(defaultBranchTarget) - currentIndex,
+            low,
+            high,
+            jumpTargets.map(branchoffsets(_) - currentIndex).toIndexedSeq
+        )
+    }
+
+    override def branchTargets: List[Symbol] = defaultBranchTarget :: jumpTargets.toList
+
+    override def toString(pc: Int): String =
+        "TABLESWITCH("+
+            (low to high).zip(jumpTargets).map { keyOffset ⇒
+                val (key, target) = keyOffset
+                key+"="+target
+            }.mkString(", ")+
+            "; ifNoMatch="+defaultBranchTarget+")"
 }
