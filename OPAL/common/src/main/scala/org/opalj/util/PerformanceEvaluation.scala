@@ -194,11 +194,12 @@ object PerformanceEvaluation {
             // In general it is **not possible to guarantee** that the garbage collector is really
             // run, but we still do our best.
             memoryMXBean.gc()
-            Thread.sleep(50)
-            // It may be the case that some finalizers (of just gc'ed object) are still running and
-            // -- therefore -- some further objects can be freed after the first gc run.
-            memoryMXBean.gc()
-            Thread.sleep(50)
+            if (memoryMXBean.getObjectPendingFinalizationCount() > 0) {
+                // It may be the case that some finalizers (of just gc'ed object) are still running and
+                // -- therefore -- some further objects can be freed after the first gc run.
+                Thread.sleep(50)
+                memoryMXBean.gc()
+            }
             run += 1
         } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
             ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
@@ -273,6 +274,25 @@ object PerformanceEvaluation {
      *     val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
      *     println(f"Avg: ${avg(ts).timeSpan}%1.4f; T: ${t.toSeconds.timeSpan}%1.4f; Ts: $sTs")
      * }
+     * }}}
+     * {{{
+     * import org.opalj.util.PerformanceEvaluation.{gc,memory,time,avg}
+     * var store : Array[Object] = null
+     * implicit val logContext = Some(org.opalj.log.GlobalLogContext)
+     * time{
+     *   for(i <- 1 to 5){
+     *     memory{store = null}(l => println("empty: "+l))
+     *     memory{
+     *       time(2,4,3,
+     *            {store = Array.fill(1000000){val l : Object = List(i); l}},
+     *            runGC=true
+     *       ){ (t, ts) =>
+     *          val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
+     *          println(f"Avg: ${avg(ts).timeSpan}%1.4f; T:${t.toSeconds.timeSpan}%1.4f; Ts:$sTs")
+     *        }
+     *     }(l => println("non-empty:"+l))
+     *   }
+     * }{t => println("overall-time:"+t.toSeconds)}
      * }}}
      *
      * @note    **If `f` has side effects it may not be possible to use this method.**
