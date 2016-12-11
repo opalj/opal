@@ -142,8 +142,8 @@ object LOOKUPSWITCH {
      */
     def apply(
         defaultBranchTarget: Symbol,
-        branchTargets:       (Int, Symbol)*
-    ): LabeledLOOKUPSWITCH = LabeledLOOKUPSWITCH(defaultBranchTarget, branchTargets.toList)
+        branchTargets:       IndexedSeq[(Int, Symbol)]
+    ): LabeledLOOKUPSWITCH = LabeledLOOKUPSWITCH(defaultBranchTarget, branchTargets)
 
 }
 
@@ -156,13 +156,13 @@ object LOOKUPSWITCH {
  */
 case class LabeledLOOKUPSWITCH(
         defaultBranchTarget: Symbol,
-        npairs:              List[(Int, Symbol)]
+        npairs:              IndexedSeq[(Int, Symbol)]
 ) extends LabeledInstruction with LOOKUPSWITCHLike {
     override protected def tableSize = branchTargets.size
 
     override def caseValues: Seq[Int] = npairs.map(_._1)
 
-    override def branchTargets: List[Symbol] = npairs.map(_._2)
+    override def branchTargets: List[Symbol] = npairs.map(_._2).toList
 
     def caseValueOfJumpTarget(jumpTarget: Symbol): (Seq[Int], Boolean) = {
         (

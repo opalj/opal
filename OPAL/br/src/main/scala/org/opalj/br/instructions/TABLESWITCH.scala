@@ -147,7 +147,7 @@ object TABLESWITCH {
         defaultBranchTarget: Symbol,
         low:                 Int,
         high:                Int,
-        branchTargets:       Symbol*
+        branchTargets:       IndexedSeq[Symbol]
     ): LabeledTABLESWITCH = {
         require(
             branchTargets.size == high - low + 1,
@@ -157,7 +157,7 @@ object TABLESWITCH {
             defaultBranchTarget,
             low,
             high,
-            branchTargets.toList
+            branchTargets
         )
     }
 }
@@ -173,14 +173,14 @@ case class LabeledTABLESWITCH(
         defaultBranchTarget: Symbol,
         low:                 Int,
         high:                Int,
-        jumpTargets:         List[Symbol]
+        jumpTargets:         IndexedSeq[Symbol]
 ) extends LabeledInstruction with TABLESWITCHLike {
     override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): TABLESWITCH = {
         TABLESWITCH(
             branchoffsets(defaultBranchTarget) - currentIndex,
             low,
             high,
-            jumpTargets.map(branchoffsets(_) - currentIndex).toIndexedSeq
+            jumpTargets.map(branchoffsets(_) - currentIndex)
         )
     }
 

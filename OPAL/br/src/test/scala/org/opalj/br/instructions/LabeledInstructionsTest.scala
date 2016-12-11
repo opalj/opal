@@ -109,8 +109,8 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
             assert(JSR_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
         }
 
-    val table = List('two, 'three)
-    val lookupTable = ((2 to 3) zip table).toList
+    val table = IndexedSeq('two, 'three)
+    val lookupTable = ((2 to 3) zip table)
     val labelsMap = Map(
         label → 43,
         'two → 44,
@@ -119,14 +119,14 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
 
     "the convenience factories of CompoundConditionalBranchInstruction" should
         "return the correct type of LabeledCompoundConditionalBranchInstruction" in {
-            assert(LOOKUPSWITCH(label, lookupTable: _*) == LabeledLOOKUPSWITCH(label, lookupTable))
-            assert(TABLESWITCH(label, 2, 3, table: _*) ==
+            assert(LOOKUPSWITCH(label, lookupTable) == LabeledLOOKUPSWITCH(label, lookupTable))
+            assert(TABLESWITCH(label, 2, 3, table) ==
                 LabeledTABLESWITCH(label, 2, 3, table))
         }
 
     "LabeledBranchInstruction.resolve for CompoundConditionalBranchInstruction" should
         "resolve to the correct branchoffset" in {
-            val resolvedLOOKUPSWITCH = LOOKUPSWITCH(label, lookupTable: _*).resolveJumpTargets(
+            val resolvedLOOKUPSWITCH = LOOKUPSWITCH(label, lookupTable).resolveJumpTargets(
                 1,
                 labelsMap
             )
@@ -134,7 +134,7 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
             assert(resolvedLOOKUPSWITCH.jumpOffsets == IndexedSeq(43, 44))
             assert(resolvedLOOKUPSWITCH.caseValues == IndexedSeq(2, 3))
 
-            val resolvedTABLESWITCH = TABLESWITCH(label, 2, 3, table: _*).resolveJumpTargets(
+            val resolvedTABLESWITCH = TABLESWITCH(label, 2, 3, table).resolveJumpTargets(
                 1,
                 labelsMap
             )
