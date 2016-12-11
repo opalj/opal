@@ -137,7 +137,10 @@ object TABLESWITCH {
     final val opcode = 170
 
     /**
-     * Creates [[LabeledTABLESWITCH]] instructions with a `Symbol` as the branch targets.
+     * Creates [[LabeledTABLESWITCH]] instructions with `Symbols` as the branch targets.
+     *
+     * @param branchTargets The first target is chosen when the branch value has the value `low`.
+     *                      The second target is chosen if the value is `low+1` etc.
      *
      */
     def apply(
@@ -159,6 +162,13 @@ object TABLESWITCH {
     }
 }
 
+/**
+ *
+ * Represents a [[TABLESWITCH]] instruction with unresolved jump targets represented as `Symbols`.
+ *
+ * @author Malte Limmeroth
+ *
+ */
 case class LabeledTABLESWITCH(
         defaultBranchTarget: Symbol,
         low:                 Int,

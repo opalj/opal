@@ -135,7 +135,7 @@ object LOOKUPSWITCH {
     final val opcode = 171
 
     /**
-     * Creates [[LabeledLOOKUPSWITCH]] instructions with a `Symbol` as the branch targets.
+     * Creates [[LabeledLOOKUPSWITCH]] instructions with `Symbols` as the branch targets.
      *
      * @param branchTargets A list of tuples where the first value is the match value and
      *    the second value is the branch target.
@@ -147,6 +147,13 @@ object LOOKUPSWITCH {
 
 }
 
+/**
+ *
+ * Represents a [[LOOKUPSWITCH]] instruction with unresolved jump targets represented as `Symbols`.
+ *
+ * @author Malte Limmeroth
+ *
+ */
 case class LabeledLOOKUPSWITCH(
         defaultBranchTarget: Symbol,
         npairs:              List[(Int, Symbol)]
