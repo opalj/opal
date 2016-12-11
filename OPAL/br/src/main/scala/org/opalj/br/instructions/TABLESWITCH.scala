@@ -91,7 +91,7 @@ case class TABLESWITCH(
         pcs
     }
 
-    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val paddingOffset = (thisPC % 4) - (otherPC % 4)
 
         code.instructions(otherPC) match {

@@ -39,7 +39,7 @@ package instructions
  * @author Michael Eichberg
  */
 trait SingleLabelLabeledInstruction extends LabeledInstruction {
-    def branchTargets: List[Symbol] = branchTarget :: Nil
+    final def branchTargets: List[Symbol] = branchTarget :: Nil
     def branchTarget: Symbol
 
     override def toString(currentPC: Int) = {
