@@ -52,7 +52,7 @@ trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
     }
 
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        currentPC + 1 + (3 - (currentPC % 4)) + 12 + (high - low) * 4
+        currentPC + 1 + (3 - (currentPC % 4)) + 12 + (high - low + 1) * 4
     }
 
 }
