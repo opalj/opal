@@ -151,4 +151,10 @@ class FactoryMethodsOfInstructionTest extends FlatSpec {
         assert(instanceOfArray.referenceType.asArrayType.componentType.isBooleanType)
     }
 
+    "CHECKCAST's factory method" should "return an CHECKCAST instruction" in {
+        val checkcastObject = CHECKCAST(fieldTypeObject)
+
+        assert(checkcastObject.getClass.getName == "org.opalj.br.instructions.CHECKCAST")
+        assert(checkcastObject.referenceType.isObjectType)
+    }
 }
