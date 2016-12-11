@@ -102,8 +102,8 @@ object CHECKCAST {
     /**
      * Factory method to create [[CHECKCAST]] instructions.
      *
-     * @param referenceType The references type name in JVM notation, for example
-     *                      "Ljava/lang/Object" for Object.
+     * @param   referenceType The name of the [[org.opalj.br.ReferenceType]]. See the corresponding
+     *          factory method for further details.
      */
     def apply(referenceType: String): CHECKCAST = CHECKCAST(ReferenceType(referenceType))
 

@@ -409,7 +409,13 @@ object ReferenceType {
     /**
      * Creates a representation of the described [[ReferenceType]].
      *
-     * @param rt A string as passed to `java.lang.Class.forName(...)`.
+     * @param   rt A string as passed to `java.lang.Class.forName(...)` but in binary notation.
+     *          Examples:
+     *          {{{
+     *          "[B" // in case of an array of Booleans
+     *          "java/lang/Object" // for the class type java.lang.Object
+     *          "[Ljava/lang/Object;" // for the array of java.lang.Object
+     *          }}}
      */
     @throws[IllegalArgumentException](
         "if the given string is not a valid reference type descriptor"
