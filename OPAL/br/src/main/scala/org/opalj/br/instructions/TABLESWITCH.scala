@@ -40,6 +40,8 @@ import org.opalj.collection.mutable.UShortSet
 trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
     protected def tableSize: Int
 
+    def caseValues: Seq[Int]
+
     final def opcode: Opcode = TABLESWITCH.opcode
 
     final def mnemonic: String = "tableswitch"
@@ -74,7 +76,7 @@ case class TABLESWITCH(
         (caseValues, jumpOffset == defaultOffset)
     }
 
-    def caseValues: Seq[Int] =
+    override def caseValues: Seq[Int] =
         (low to high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
 
     final def nextInstructions(
@@ -172,6 +174,25 @@ case class LabeledTABLESWITCH(
     }
 
     override def branchTargets: List[Symbol] = defaultBranchTarget :: jumpTargets.toList
+
+    def caseValueOfJumpTarget(jumpTarget: Symbol): (Seq[Int], Boolean) = {
+        var caseValues = List.empty[Int]
+        var i = jumpTargets.length - 1
+        while (i >= 0) {
+            if (jumpTargets(i) == jumpTarget)
+                caseValues = high - i :: caseValues
+            i -= 1
+        }
+        (caseValues, jumpTarget == defaultBranchTarget)
+    }
+
+    override def caseValues: Seq[Int] =
+        (low to high).filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (this == other)
+    }
 
     override def toString(pc: Int): String =
         "TABLESWITCH("+

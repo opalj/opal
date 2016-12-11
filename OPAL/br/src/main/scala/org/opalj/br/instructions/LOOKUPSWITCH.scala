@@ -40,6 +40,8 @@ import org.opalj.collection.mutable.UShortSet
 trait LOOKUPSWITCHLike extends CompoundConditionalBranchInstructionLike {
     protected def tableSize: Int
 
+    def caseValues: Seq[Int]
+
     final def opcode: Opcode = LOOKUPSWITCH.opcode
 
     final def mnemonic: String = "lookupswitch"
@@ -68,7 +70,7 @@ case class LOOKUPSWITCH(
 
     def jumpOffsets = npairs.map(_._2)
 
-    def caseValues: Seq[Int] = npairs.map(_._1)
+    override def caseValues: Seq[Int] = npairs.map(_._1)
 
     def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
         (
@@ -92,7 +94,7 @@ case class LOOKUPSWITCH(
         pcs
     }
 
-    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val paddingOffset = (thisPC % 4) - (otherPC % 4)
 
         code.instructions(otherPC) match {
@@ -151,7 +153,16 @@ case class LabeledLOOKUPSWITCH(
 ) extends LabeledInstruction with LOOKUPSWITCHLike {
     override protected def tableSize = branchTargets.size
 
-    override def branchTargets = npairs.map(_._2)
+    override def caseValues: Seq[Int] = npairs.map(_._1)
+
+    override def branchTargets: List[Symbol] = npairs.map(_._2)
+
+    def caseValueOfJumpTarget(jumpTarget: Symbol): (Seq[Int], Boolean) = {
+        (
+            npairs.filter(_._2 == jumpTarget).map(_._1),
+            jumpTarget == defaultBranchTarget
+        )
+    }
 
     override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): LOOKUPSWITCH = {
         LOOKUPSWITCH(
@@ -161,6 +172,11 @@ case class LabeledLOOKUPSWITCH(
                 (value, branchoffsets(target) - currentIndex)
             }).toIndexedSeq
         )
+    }
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (this == other)
     }
 
     override def toString(pc: Int): String = {
