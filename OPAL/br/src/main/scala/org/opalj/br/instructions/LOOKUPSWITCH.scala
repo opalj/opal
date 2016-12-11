@@ -174,10 +174,10 @@ case class LabeledLOOKUPSWITCH(
     override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): LOOKUPSWITCH = {
         LOOKUPSWITCH(
             branchoffsets(defaultBranchTarget) - currentIndex,
-            npairs.map(pair ⇒ {
+            npairs.map { pair ⇒
                 val (value, target) = pair
                 (value, branchoffsets(target) - currentIndex)
-            }).toIndexedSeq
+            }.toIndexedSeq
         )
     }
 
