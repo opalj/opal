@@ -38,7 +38,8 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
-    protected def tableSize: Int
+    def low: Int
+    def high: Int
 
     def caseValues: Seq[Int]
 
@@ -51,7 +52,7 @@ trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
     }
 
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        currentPC + 1 + (3 - (currentPC % 4)) + 12 + tableSize * 4
+        currentPC + 1 + (3 - (currentPC % 4)) + 12 + (high - low) * 4
     }
 
 }
@@ -62,9 +63,6 @@ case class TABLESWITCH(
         high:          Int,
         jumpOffsets:   IndexedSeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
-
-    override protected def tableSize = jumpOffsets.size
-
     def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
         var caseValues = List.empty[Int]
         var i = jumpOffsets.length - 1
@@ -147,13 +145,18 @@ object TABLESWITCH {
         low:                 Int,
         high:                Int,
         branchTargets:       Symbol*
-    ): LabeledTABLESWITCH = LabeledTABLESWITCH(
-        defaultBranchTarget,
-        low,
-        high,
-        branchTargets.toList
-    )
-
+    ): LabeledTABLESWITCH = {
+        require(
+            branchTargets.size == high - low + 1,
+            s"There have to be high-low+1 (${high - low + 1}) targets!"
+        )
+        LabeledTABLESWITCH(
+            defaultBranchTarget,
+            low,
+            high,
+            branchTargets.toList
+        )
+    }
 }
 
 case class LabeledTABLESWITCH(
@@ -162,8 +165,6 @@ case class LabeledTABLESWITCH(
         high:                Int,
         jumpTargets:         List[Symbol]
 ) extends LabeledInstruction with TABLESWITCHLike {
-    override protected def tableSize = jumpTargets.size
-
     override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): TABLESWITCH = {
         TABLESWITCH(
             branchoffsets(defaultBranchTarget) - currentIndex,
