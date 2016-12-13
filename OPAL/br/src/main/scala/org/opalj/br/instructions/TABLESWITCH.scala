@@ -163,11 +163,9 @@ object TABLESWITCH {
 }
 
 /**
- *
  * Represents a [[TABLESWITCH]] instruction with unresolved jump targets represented as `Symbols`.
  *
  * @author Malte Limmeroth
- *
  */
 case class LabeledTABLESWITCH(
         defaultBranchTarget: Symbol,
