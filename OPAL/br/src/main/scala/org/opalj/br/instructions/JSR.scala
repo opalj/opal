@@ -67,4 +67,8 @@ case class LabeledJSR(
     override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): JSR = {
         JSR(branchoffsets(branchTarget) - currentIndex)
     }
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        this eq code.instructions(otherPC)
+    }
 }
