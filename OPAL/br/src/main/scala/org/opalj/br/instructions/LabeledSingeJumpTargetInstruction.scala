@@ -38,11 +38,7 @@ package instructions
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-trait SingleLabelLabeledInstruction extends LabeledInstruction {
+trait LabeledSingeJumpTargetInstruction extends LabeledInstruction {
     final def branchTargets: List[Symbol] = branchTarget :: Nil
     def branchTarget: Symbol
-
-    override def toString(currentPC: Int) = {
-        s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
-    }
 }

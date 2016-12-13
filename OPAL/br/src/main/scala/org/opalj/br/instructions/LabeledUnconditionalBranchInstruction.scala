@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,44 +31,15 @@ package br
 package instructions
 
 /**
- * Jump subroutine.
- *
- * @author Michael Eichberg
- */
-trait JSRLike extends JSRInstructionLike {
-
-    final def opcode: Opcode = JSR.opcode
-
-    final def mnemonic: String = "jsr"
-
-    final def length: Int = 3
-}
-
-case class JSR(branchoffset: Int) extends JSRInstruction with JSRLike
-
-/**
- * Defines constants and factory methods.
+ * Super class of all labeled bytecode instructions that always jump to a specific
+ * target instruction.
  *
  * @author Malte Limmeroth
  */
-object JSR {
+trait LabeledUnconditionalBranchInstruction
+        extends LabeledSingeJumpTargetInstruction
+        with UnconditionalBranchInstructionLike {
 
-    final val opcode = 168
-
-    /**
-     * Creates [[LabeledJSR]] instructions with a `Symbol` as the branch target.
-     */
-    def apply(branchTarget: Symbol): LabeledJSR = LabeledJSR(branchTarget)
-}
-
-case class LabeledJSR(
-        branchTarget: Symbol
-) extends LabeledUnconditionalBranchInstruction with JSRLike {
-    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): JSR = {
-        JSR(branchoffsets(branchTarget) - currentIndex)
-    }
-
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        this eq code.instructions(otherPC)
-    }
+    override def toString(currentPC: Int) =
+        getClass.getSimpleName+" "+branchTarget
 }

@@ -63,7 +63,7 @@ object JSR_W {
 
 case class LabeledJSR_W(
         branchTarget: Symbol
-) extends SingleLabelLabeledInstruction with JSRLike {
+) extends LabeledUnconditionalBranchInstruction with JSRLike {
     override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): JSR_W = {
         JSR_W(branchoffsets(branchTarget) - currentIndex)
     }

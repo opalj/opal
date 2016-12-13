@@ -66,7 +66,7 @@ object GOTO {
 
 case class LabeledGOTO(
         branchTarget: Symbol
-) extends SingleLabelLabeledInstruction with GOTOLike {
+) extends LabeledUnconditionalBranchInstruction with GOTOLike {
     override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): GOTO = {
         GOTO(branchoffsets(branchTarget) - currentIndex)
     }

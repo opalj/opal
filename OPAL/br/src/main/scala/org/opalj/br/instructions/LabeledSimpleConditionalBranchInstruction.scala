@@ -31,11 +31,15 @@ package br
 package instructions
 
 trait LabeledSimpleConditionalBranchInstruction
-        extends SingleLabelLabeledInstruction
+        extends LabeledSingeJumpTargetInstruction
         with SimpleConditionalBranchInstructionLike {
 
     def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): SimpleConditionalBranchInstruction
 
     def branchTarget: Symbol
+
+    override def toString(currentPC: Int) = {
+        s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
+    }
 
 }
