@@ -30,6 +30,7 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.mutable.UShortSet
 
 /**
@@ -64,14 +65,14 @@ case class TABLESWITCH(
         jumpOffsets:   IndexedSeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
     def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
-        var caseValues = List.empty[Int]
+        var caseValues = Chain.empty[Int]
         var i = jumpOffsets.length - 1
         while (i >= 0) {
             if (jumpOffsets(i) == jumpOffset)
-                caseValues = high - i :: caseValues
+                caseValues = high - i :&: caseValues
             i -= 1
         }
-        (caseValues, jumpOffset == defaultOffset)
+        (caseValues.toSeq, jumpOffset == defaultOffset)
     }
 
     override def caseValues: Seq[Int] =
@@ -185,14 +186,14 @@ case class LabeledTABLESWITCH(
     override def branchTargets: List[Symbol] = defaultBranchTarget :: jumpTargets.toList
 
     def caseValueOfJumpTarget(jumpTarget: Symbol): (Seq[Int], Boolean) = {
-        var caseValues = List.empty[Int]
+        var caseValues = Chain.empty[Int]
         var i = jumpTargets.length - 1
         while (i >= 0) {
             if (jumpTargets(i) == jumpTarget)
-                caseValues = high - i :: caseValues
+                caseValues = high - i :&: caseValues
             i -= 1
         }
-        (caseValues, jumpTarget == defaultBranchTarget)
+        (caseValues.toSeq, jumpTarget == defaultBranchTarget)
     }
 
     override def caseValues: Seq[Int] =
