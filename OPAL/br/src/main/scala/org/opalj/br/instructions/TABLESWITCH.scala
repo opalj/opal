@@ -151,7 +151,7 @@ object TABLESWITCH {
     ): LabeledTABLESWITCH = {
         require(
             branchTargets.size == high - low + 1,
-            s"There have to be high-low+1 (${high - low + 1}) targets!"
+            s"there have to be high-low+1 (${high - low + 1}) targets"
         )
         LabeledTABLESWITCH(
             defaultBranchTarget,
