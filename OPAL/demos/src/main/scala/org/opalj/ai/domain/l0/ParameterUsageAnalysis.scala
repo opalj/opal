@@ -97,7 +97,7 @@ object ParameterUsageAnalysis extends DefaultOneStepAnalysis {
                                 case _ ⇒ // we don't care about other usages..
                             }
                         }
-                        parameterIndex -= 1						
+                        parameterIndex -= 1
                     }
                 }
             }
