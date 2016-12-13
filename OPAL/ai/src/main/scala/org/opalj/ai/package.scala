@@ -267,22 +267,23 @@ package object ai {
 
     /**
      * Calculates the initial "ValueOrigin" associated with a method's parameter.
+     * The index of the first parameter is 0 (which contains the implicit `this`
+     * reference in case of instance methods).
      *
-     * @param isStaticMethod True if method is static and, hence, has no implicit
-     *      parameter for `this`.
-     * @see [[mapOperandsToParameters]]
+     * @param 	isStatic `true` if method is static and, hence, has no implicit
+     *      	parameter for `this`.
+     * @see 	[[mapOperandsToParameters]]
      */
-    def parameterToValueIndex(
-        isStaticMethod: Boolean,
+    def parameterIndexToValueOrigin(
+        isStatic:       Boolean,
         descriptor:     MethodDescriptor,
         parameterIndex: Int
     ): Int = {
-
         def origin(localVariableIndex: Int) = -localVariableIndex - 1
 
         var localVariableIndex = 0
 
-        if (!isStaticMethod) {
+        if (!isStatic) {
             localVariableIndex += 1 /*=="this".computationalType.operandSize*/
         }
         val parameterTypes = descriptor.parameterTypes
