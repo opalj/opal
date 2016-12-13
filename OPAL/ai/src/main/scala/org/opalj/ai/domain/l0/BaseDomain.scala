@@ -31,8 +31,9 @@ package ai
 package domain
 package l0
 
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
-import org.opalj.br.{Method, ClassFile}
 
 /**
  * A complete domain that performs all computations at the type level and which has
@@ -92,3 +93,14 @@ object BaseDomain {
     }
 
 }
+
+/**
+ * Configuration of a domain that uses the `l0` domains and
+ * which also records the abstract-interpretation time control flow graph and def/use
+ * information.
+ */
+class BaseDomainWithDefUse[Source](
+    project:   Project[Source],
+    classFile: ClassFile,
+    method:    Method
+) extends BaseDomain[Source](project, classFile, method) with RecordDefUse
