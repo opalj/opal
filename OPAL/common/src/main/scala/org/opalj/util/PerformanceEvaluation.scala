@@ -29,12 +29,15 @@
 package org.opalj
 package util
 
-import org.opalj.concurrent.Locking
-import scala.collection.mutable.Map
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
 import java.lang.management.MemoryMXBean
 import java.lang.management.ManagementFactory
+
+import scala.collection.mutable.Map
+
+import org.opalj.concurrent.Locking
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
  * Measures the execution time of some code.
@@ -130,6 +133,22 @@ object GlobalPerformanceEvaluation extends PerformanceEvaluation
  * Collection of helper functions useful when evaluating the performance of some
  * code.
  *
+ * @example
+ * Measuring the time and memory used by some piece of code:
+ * {{{
+ * import org.opalj.util.PerformanceEvaluation.{memory,time}
+ * var store : Array[Object] = null
+ * implicit val logContext = Some(org.opalj.log.GlobalLogContext)
+ * for(i <- 1 to 5){
+ *   memory{store = null}(l => println("empty: "+l))
+ *   memory{
+ *     time{
+ *       store = Array.fill(1000000){val l : Object = List(i); l}
+ *    }(t => println("time:"+t.toSeconds))
+ *   }(l => println("non-empty:"+l))
+ * }
+ * }}}
+ *
  * @author Michael Eichberg
  */
 object PerformanceEvaluation {
@@ -155,10 +174,35 @@ object PerformanceEvaluation {
      */
     final def ns2ms(nanoseconds: Long): Double = nanoseconds.toDouble / 1000.0d / 1000.0d
 
-    /** Tries it best to run the garbage collector. */
-    final def gc(memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean): Unit = {
-        memoryMXBean.gc()
-        System.gc()
+    /**
+     *  Tries it best to run the garbage collector and to wait until all objects are also
+     *  finalized.
+     */
+    final def gc(
+        memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean,
+        maxGCTime:    Milliseconds = new Milliseconds(333)
+    )(
+        implicit
+        logContext: Option[LogContext] = None
+    ): Unit = {
+        val startTime = System.nanoTime()
+        var run = 0
+        do {
+            if (logContext.isDefined) {
+                OPALLogger.info("performance", s"garbage collection run $run")(logContext.get)
+            }
+            // In general it is **not possible to guarantee** that the garbage collector is really
+            // run, but we still do our best.
+            memoryMXBean.gc()
+            if (memoryMXBean.getObjectPendingFinalizationCount() > 0) {
+                // It may be the case that some finalizers (of just gc'ed object) are still running and
+                // -- therefore -- some further objects can be freed after the first gc run.
+                Thread.sleep(50)
+                memoryMXBean.gc()
+            }
+            run += 1
+        } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
+            ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
     }
 
     /**
@@ -167,11 +211,17 @@ object PerformanceEvaluation {
      * used before and after executing `f`; i.e., the permanent data structures that are created
      * by `f` are measured.
      *
-     * @note If large data structures are used by `f` that are
-     *      not used anymore afterwards then it may happen that the used amount of memory
-     *      is negative.
+     * @note    If large data structures are used by `f` that are not used anymore afterwards
+     *             then it may happen that the used amount of memory is negative.
      */
-    def memory[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
+    def memory[T](
+        f: ⇒ T
+    )(
+        mu: Long ⇒ Unit
+    )(
+        implicit
+        logContext: Option[LogContext] = None
+    ): T = {
         val memoryMXBean = ManagementFactory.getMemoryMXBean
         gc(memoryMXBean)
         val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
@@ -183,10 +233,11 @@ object PerformanceEvaluation {
     }
 
     /**
-     * Times the execution of a given function `f`.
+     * Times the execution of a given function `f`. If the timing may be affected by
+     * (required) garbage collection runs it is recommended to first run the garbage collector.
      *
-     * @param r A function that is passed the time (in nanoseconds) that it
-     *      took to evaluate `f`. `r` is called even if `f` fails with an exception.
+     * @param     r A function that is passed the time (in nanoseconds) that it
+     *          took to evaluate `f`. `r` is called even if `f` fails with an exception.
      */
     def time[T](f: ⇒ T)(r: Nanoseconds ⇒ Unit): T = {
         val startTime: Long = System.nanoTime
@@ -203,9 +254,9 @@ object PerformanceEvaluation {
     /**
      * Times the execution of a given function `f` until the execution time has
      * stabilized and the average time for evaluating `f` is only changing in a
-     * well-defined manner.
+     * well-understood manner.
      *
-     * In general `time` repeats the execution of `f` as long as the average changes
+     * In general, `time` repeats the execution of `f` as long as the average changes
      * significantly. Furthermore, `f` is executed at least `minimalNumberOfRelevantRuns`
      * times and only those runs are taken into consideration for the calculation of the
      * average that are `consideredRunsEpsilon`% worse than the best run. However, if we
@@ -224,43 +275,71 @@ object PerformanceEvaluation {
      *     println(f"Avg: ${avg(ts).timeSpan}%1.4f; T: ${t.toSeconds.timeSpan}%1.4f; Ts: $sTs")
      * }
      * }}}
+     * {{{
+     * import org.opalj.util.PerformanceEvaluation.{gc,memory,time,avg}
+     * var store : Array[Object] = null
+     * implicit val logContext = Some(org.opalj.log.GlobalLogContext)
+     * time{
+     *   for(i <- 1 to 5){
+     *     memory{store = null}(l => println("empty: "+l))
+     *     memory{
+     *       time(2,4,3,
+     *            {store = Array.fill(1000000){val l : Object = List(i); l}},
+     *            runGC=true
+     *       ){ (t, ts) =>
+     *          val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
+     *          println(f"Avg: ${avg(ts).timeSpan}%1.4f; T:${t.toSeconds.timeSpan}%1.4f; Ts:$sTs")
+     *        }
+     *     }(l => println("non-empty:"+l))
+     *   }
+     * }{t => println("overall-time:"+t.toSeconds)}
+     * }}}
      *
-     * @note **If `f` has side effects it may not be possible to use this method.**
+     * @note    **If `f` has side effects it may not be possible to use this method.**
      *
-     * @note If epsilon is too small we can get an endless loop as the termination
-     *      condition is never met. However, in practice often a value such as "1 or 2"
-     *      is still useable.
+     * @note    If epsilon is too small we can get an endless loop as the termination
+     *          condition is never met. However, in practice often a value such as "1 or 2"
+     *          is still useable.
      *
-     * @note This method can generally only be used to measure the time of some process
-     *      that does not require user interaction or disk/network access. In the latter
-     *      case the variation between two runs will be too coarse grained to get
-     *      meaningful results.
+     * @note    This method can generally only be used to measure the time of some process
+     *          that does not require user interaction or disk/network access. In the latter
+     *          case the variation between two runs will be too coarse grained to get
+     *          meaningful results.
      *
-     * @param epsilon The maximum percentage that *the final run* is allowed to affect
-     *      the average. In other words,
-     *      if the effect of the last execution on the average is less than `epsilon`
-     *      percent. The evaluation halts and the result of the last run is returned.
-     * @param consideredRunsEpsilon Controls which runs are taken into consideration
-     *      when calculating the average. Only those runs are used that are at most
-     *      `consideredRunsEpsilon%` slower than the last run. Additionally,
-     *      the last run is only considered if it is at most `consideredRunsEpsilon%`
-     *      slower than the average. Hence, it is even possible that the average may rise
-     *      during the evaluation of `f`.
-     * @param f The function that will be measured.
-     * @param r A function that is called back whenever `f` was successfully evaluated.
-     *      The signature is:
-     *      {{{
-     *      def r(lastExecutionTime:Nanoseconds, consideredExecutionTimes : Seq[Nanoseconds]) : Unit
-     *      }}}
-     *       1. The first parameter is the last execution time of `f`.
-     *       1. The last parameter is the list of times required to evaluate `f` that are taken
-     *      into consideration when calculating the average.
+     * @param   epsilon The maximum percentage that *the final run* is allowed to affect
+     *          the average. In other words, if the effect of the last execution on the
+     *          average is less than `epsilon` percent then the evaluation halts and the
+     *          result of the last run is returned.
+     * @param   consideredRunsEpsilon Controls which runs are taken into consideration
+     *          when calculating the average. Only those runs are used that are at most
+     *          `consideredRunsEpsilon%` slower than the last run. Additionally,
+     *          the last run is only considered if it is at most `consideredRunsEpsilon%`
+     *          slower than the average. Hence, it is even possible that the average may rise
+     *          during the evaluation of `f`.
+     * @param   f The side-effect free function that will be measured.
+     * @param   r A function that is called back whenever `f` was successfully evaluated.
+     *          The signature is:
+     *          {{{
+     *          def r(
+     *              lastExecutionTime:Nanoseconds,
+     *              consideredExecutionTimes : Seq[Nanoseconds]
+     *          ) : Unit
+     *          }}}
+     *           1. The first parameter is the last execution time of `f`.
+     *           1. The last parameter is the list of times required to evaluate `f` that are taken
+     *          into consideration when calculating the average.
+     * @param   runGC If `true` the garbage collector is run using `PerformanceEvaluation.gc()`
+     *          before each run. This may be necessary to get reasonable stable behavior between
+     *          multiple runs. However, if each run takes very long and the VM has to perform
+     *          garbage collection as part of executing f (and also has to increase the JVM's heap)
+     *          getting stable measurements is unlikely.
      */
     def time[T](
         epsilon:                     Int,
         consideredRunsEpsilon:       Int,
         minimalNumberOfRelevantRuns: Int,
-        f:                           ⇒ T
+        f:                           ⇒ T,
+        runGC:                       Boolean = false
     )(
         r: (Nanoseconds, Seq[Nanoseconds]) ⇒ Unit
     ): T = {
@@ -278,6 +357,7 @@ object PerformanceEvaluation {
 
         var runsSinceLastUpdate = 0
         var times = List.empty[Nanoseconds]
+        if (runGC) gc()
         time { f } { t ⇒
             times = t :: times
             if (t.timeSpan <= 199999) { // < 2 milliseconds
@@ -293,6 +373,7 @@ object PerformanceEvaluation {
         }
         var avg: Double = times.head.timeSpan.toDouble
         do {
+            if (runGC) gc()
             time {
                 result = f
             } { t ⇒
@@ -322,9 +403,8 @@ object PerformanceEvaluation {
     /**
      * Times the execution of a given function `f`.
      *
-     * @param r A function that is passed the time that it
-     *      took to evaluate `f` and the result produced by `f`.
-     *      `r` is only called if `f` succeeds.
+     * @param    r A function that is passed the time that it took to evaluate `f` and the result
+     *             produced by `f`; `r` is only called if `f` succeeds.
      */
     def run[T, X](f: ⇒ T)(r: (Nanoseconds, T) ⇒ X): X = {
         val startTime: Long = System.nanoTime

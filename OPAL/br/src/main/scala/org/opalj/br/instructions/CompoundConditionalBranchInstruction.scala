@@ -41,6 +41,11 @@ trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstruct
     def operandCount: Int = 1
 
     final def stackSlotsChange: Int = -1
+
+    /**
+     * Returns all case values that are '''not related to the default branch'''.
+     */
+    def caseValues: Iterable[Int]
 }
 
 trait CompoundConditionalBranchInstruction extends ConditionalBranchInstruction
@@ -57,5 +62,4 @@ trait CompoundConditionalBranchInstruction extends ConditionalBranchInstruction
      */
     def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean)
 
-    def caseValues: Seq[Int]
 }

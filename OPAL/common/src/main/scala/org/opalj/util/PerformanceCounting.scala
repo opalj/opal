@@ -30,59 +30,37 @@ package org.opalj
 package util
 
 /**
- * Represents a time span of `n` nanoseconds.
+ * Counts how often some piece of code is executed. Usually it is sufficient
+ * to create an instance of this object and to execute some piece of code using
+ * the function `time(Symbol)(=>T)`. Afterwards it is possible to query this object
+ * to get detailed information: (1) how often the function given to `time` was evaluated
+ * and (2) about the accumulated time.
+ *
+ * ==Thread Safety==
+ * This class is thread safe.
  *
  * @author Michael Eichberg
+ * @author Michael Reif
  */
-class Nanoseconds(val timeSpan: Long) extends AnyVal {
-
-    final def +(other: Nanoseconds): Nanoseconds = {
-        new Nanoseconds(this.timeSpan + other.timeSpan)
-    }
-
-    final def -(other: Nanoseconds): Nanoseconds = {
-        new Nanoseconds(this.timeSpan - other.timeSpan)
-    }
+class PerformanceCounting extends PerformanceEvaluation with Counting {
 
     /**
-     * Conversion to [[Seconds]].
+     * Times and counts the execution of `f` and associates the information with the
+     * given symbol `s`.
      */
-    final def toSeconds: Seconds = {
-        new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
+    // Locks: the caller already has the write lock related to the time measurements
+    override protected[this] def doUpdateTimes(s: Symbol, duration: Nanoseconds): Unit = {
+        super.doUpdateTimes(s, duration)
+        super.incrementCount(s)
     }
 
-    /**
-     * Conversion to [[Milliseconds]].
-     */
-    final def toMilliseconds: Milliseconds = {
-        new Milliseconds(timeSpan / (1000 * 1000))
+    override def reset(symbol: Symbol): Unit = {
+        super[PerformanceEvaluation].reset(symbol)
+        super[Counting].reset(symbol)
     }
 
-    def toString(withUnit: Boolean): String = {
-        if (withUnit) timeSpan+" ns" else timeSpan.toString
+    override def resetAll(): Unit = {
+        super[PerformanceEvaluation].resetAll()
+        super[Counting].resetAll()
     }
-
-    override def toString: String = toString(withUnit = true)
-}
-/**
- * Defines factory methods and constants related to time spans in [[Nanoseconds]].
- *
- * @author Michael Eichberg
- */
-object Nanoseconds {
-
-    final val None: Nanoseconds = new Nanoseconds(0L)
-
-    def apply(timeSpan: Long): Nanoseconds = new Nanoseconds(timeSpan)
-
-    /**
-     * Converts the specified time span and converts it into seconds.
-     */
-    final def TimeSpan(
-        startTimeInNanoseconds: Long,
-        endTimeInNanoseconds:   Long
-    ): Nanoseconds = {
-        new Nanoseconds(endTimeInNanoseconds - startTimeInNanoseconds)
-    }
-
 }

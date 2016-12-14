@@ -40,8 +40,6 @@ import org.opalj.collection.mutable.UShortSet
 trait LOOKUPSWITCHLike extends CompoundConditionalBranchInstructionLike {
     protected def tableSize: Int
 
-    def caseValues: Seq[Int]
-
     final def opcode: Opcode = LOOKUPSWITCH.opcode
 
     final def mnemonic: String = "lookupswitch"
@@ -58,9 +56,10 @@ trait LOOKUPSWITCHLike extends CompoundConditionalBranchInstructionLike {
 /**
  * Access jump table by key match and jump.
  *
- * @param npairs A list of tuples where the first value is the match value and
- *    the second value is the jump offset.
- * @author Michael Eichberg
+ * @param   npairs A list of tuples where the first value is the match/case value and
+ *          the second value is the jump offset.
+ *
+ * @author  Michael Eichberg
  */
 case class LOOKUPSWITCH(
         defaultOffset: Int,
@@ -70,14 +69,14 @@ case class LOOKUPSWITCH(
 
     def jumpOffsets = npairs.map(_._2)
 
-    override def caseValues: Seq[Int] = npairs.map(_._1)
-
     def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
         (
             npairs.filter(_._2 == jumpOffset).map(_._1),
             jumpOffset == defaultOffset
         )
     }
+
+    override def caseValues: Iterable[Int] = npairs.view.filter(_._2 != defaultOffset).map(_._1)
 
     def nextInstructions(
         currentPC:             PC,
@@ -160,7 +159,7 @@ case class LabeledLOOKUPSWITCH(
 ) extends LabeledInstruction with LOOKUPSWITCHLike {
     override protected def tableSize = branchTargets.size
 
-    override def caseValues: Seq[Int] = npairs.map(_._1)
+    def caseValues: Iterable[Int] = npairs.view.filter(_._2 != defaultBranchTarget).map(_._1)
 
     override def branchTargets: List[Symbol] = npairs.map(_._2).toList
 

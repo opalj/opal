@@ -64,7 +64,7 @@ abstract class StringPassedToClassForName[Source]
         {
             case method @ Method(PUBLIC___OR___PROTECTED_AND_NOT_FINAL(), _, md) ⇒
                 md.selectParameter(_ == ObjectType.String).toSet.map(
-                    parameterToValueIndex(method.isStatic, method.descriptor, _: Int)
+                    parameterIndexToValueOrigin(method.isStatic, method.descriptor, _: Int)
                 )
         }
     )

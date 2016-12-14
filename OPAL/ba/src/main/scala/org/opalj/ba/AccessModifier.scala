@@ -27,62 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package util
+package ba
 
 /**
- * Represents a time span of `n` nanoseconds.
+ * Enhancing wrapper for combining AccessFlags.
  *
+ * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-class Nanoseconds(val timeSpan: Long) extends AnyVal {
-
-    final def +(other: Nanoseconds): Nanoseconds = {
-        new Nanoseconds(this.timeSpan + other.timeSpan)
-    }
-
-    final def -(other: Nanoseconds): Nanoseconds = {
-        new Nanoseconds(this.timeSpan - other.timeSpan)
-    }
+final class AccessModifier(val accessFlag: Int) extends AnyVal {
 
     /**
-     * Conversion to [[Seconds]].
+     * Returns a new [[AccessModifier]] with both [[AccessModifier]]s `accessFlag`s set.
      */
-    final def toSeconds: Seconds = {
-        new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
+    def +(that: AccessModifier): AccessModifier = {
+        new AccessModifier(this.accessFlag | that.accessFlag)
     }
-
-    /**
-     * Conversion to [[Milliseconds]].
-     */
-    final def toMilliseconds: Milliseconds = {
-        new Milliseconds(timeSpan / (1000 * 1000))
-    }
-
-    def toString(withUnit: Boolean): String = {
-        if (withUnit) timeSpan+" ns" else timeSpan.toString
-    }
-
-    override def toString: String = toString(withUnit = true)
-}
-/**
- * Defines factory methods and constants related to time spans in [[Nanoseconds]].
- *
- * @author Michael Eichberg
- */
-object Nanoseconds {
-
-    final val None: Nanoseconds = new Nanoseconds(0L)
-
-    def apply(timeSpan: Long): Nanoseconds = new Nanoseconds(timeSpan)
-
-    /**
-     * Converts the specified time span and converts it into seconds.
-     */
-    final def TimeSpan(
-        startTimeInNanoseconds: Long,
-        endTimeInNanoseconds:   Long
-    ): Nanoseconds = {
-        new Nanoseconds(endTimeInNanoseconds - startTimeInNanoseconds)
-    }
-
 }

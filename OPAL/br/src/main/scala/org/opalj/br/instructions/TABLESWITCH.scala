@@ -42,8 +42,6 @@ trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
     def low: Int
     def high: Int
 
-    def caseValues: Seq[Int]
-
     final def opcode: Opcode = TABLESWITCH.opcode
 
     final def mnemonic: String = "tableswitch"
@@ -75,8 +73,9 @@ case class TABLESWITCH(
         (caseValues.toSeq, jumpOffset == defaultOffset)
     }
 
-    override def caseValues: Seq[Int] =
-        (low to high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+    override def caseValues: Iterable[Int] = {
+        (low to high).view.filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+    }
 
     final def nextInstructions(
         currentPC:             PC,
@@ -196,8 +195,9 @@ case class LabeledTABLESWITCH(
         (caseValues.toSeq, jumpTarget == defaultBranchTarget)
     }
 
-    override def caseValues: Seq[Int] =
-        (low to high).filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
+    override def caseValues: Iterable[Int] = {
+        (low to high).view.filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
+    }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
