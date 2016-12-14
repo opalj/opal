@@ -35,9 +35,10 @@ import org.opalj.collection.mutable.UShortSet
 /**
  * Access jump table by key match and jump.
  *
- * @param npairs A list of tuples where the first value is the match value and
- *    the second value is the jump offset.
- * @author Michael Eichberg
+ * @param   npairs A list of tuples where the first value is the match/case value and
+ *          the second value is the jump offset.
+ *
+ * @author  Michael Eichberg
  */
 case class LOOKUPSWITCH(
         defaultOffset: Int,
@@ -57,7 +58,7 @@ case class LOOKUPSWITCH(
         )
     }
 
-    def caseValues: Seq[Int] = npairs.map(_._1)
+    def caseValues: Iterable[Int] = npairs.view.filter(_._2 != defaultOffset).map(_._1)
 
     def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
         indexOfNextInstruction(currentPC, false)

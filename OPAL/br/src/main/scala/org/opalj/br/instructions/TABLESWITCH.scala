@@ -59,8 +59,9 @@ case class TABLESWITCH(
         (caseValues, jumpOffset == defaultOffset)
     }
 
-    def caseValues: Seq[Int] =
-        (low to high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+    def caseValues: Iterable[Int] = {
+        (low to high).view.filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+    }
 
     final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
         indexOfNextInstruction(currentPC, false)

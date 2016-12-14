@@ -51,7 +51,10 @@ abstract class CompoundConditionalBranchInstruction extends ConditionalBranchIns
      */
     def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean)
 
-    def caseValues: Seq[Int]
+    /**
+     * Returns all case values that are '''not related to the default branch'''.
+     */
+    def caseValues: Iterable[Int]
 
     final def stackSlotsChange: Int = -1
 
