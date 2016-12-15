@@ -30,6 +30,7 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.mutable.UShortSet
 
 /**
@@ -38,7 +39,12 @@ import org.opalj.collection.mutable.UShortSet
  * @author Malte Limmeroth
  */
 trait LOOKUPSWITCHLike extends CompoundConditionalBranchInstructionLike {
-    protected def tableSize: Int
+
+    /**
+     * The number of different case values. (Several case values may share the same target and
+     * in particular may also point to the default target.)
+     */
+    def tableSize: Int
 
     final def opcode: Opcode = LOOKUPSWITCH.opcode
 
@@ -65,13 +71,14 @@ case class LOOKUPSWITCH(
         defaultOffset: Int,
         npairs:        IndexedSeq[(Int, Int)]
 ) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
-    override protected def tableSize = npairs.size
+
+    override def tableSize = npairs.size
 
     def jumpOffsets = npairs.map(_._2)
 
-    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
+    def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
         (
-            npairs.filter(_._2 == jumpOffset).map(_._1),
+            npairs.filter(_._2 == jumpOffset).map(_._1)(Chain.GenericSpecializedCBF),
             jumpOffset == defaultOffset
         )
     }
@@ -157,25 +164,26 @@ case class LabeledLOOKUPSWITCH(
         defaultBranchTarget: Symbol,
         npairs:              IndexedSeq[(Int, Symbol)]
 ) extends LabeledInstruction with LOOKUPSWITCHLike {
-    override protected def tableSize = branchTargets.size
+
+    override def tableSize = npairs.size
 
     def caseValues: Iterable[Int] = npairs.view.filter(_._2 != defaultBranchTarget).map(_._1)
 
-    override def branchTargets: List[Symbol] = npairs.map(_._2).toList
+    override def branchTargets: Seq[Symbol] = npairs.map(_._2)
 
-    def caseValueOfJumpTarget(jumpTarget: Symbol): (Seq[Int], Boolean) = {
+    def caseValueOfJumpTarget(jumpTarget: Symbol): (Chain[Int], Boolean) = {
         (
-            npairs.filter(_._2 == jumpTarget).map(_._1),
+            npairs.filter(_._2 == jumpTarget).map(_._1)(Chain.GenericSpecializedCBF),
             jumpTarget == defaultBranchTarget
         )
     }
 
-    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): LOOKUPSWITCH = {
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): LOOKUPSWITCH = {
         LOOKUPSWITCH(
-            branchoffsets(defaultBranchTarget) - currentIndex,
+            pcs(defaultBranchTarget) - currentPC,
             npairs.map { pair ⇒
                 val (value, target) = pair
-                (value, branchoffsets(target) - currentIndex)
+                (value, pcs(target) - currentPC)
             }.toIndexedSeq
         )
     }
@@ -186,8 +194,7 @@ case class LabeledLOOKUPSWITCH(
     }
 
     override def toString(pc: Int): String = {
-        "LOOKUPSWITCH("+
-            npairs.map(p ⇒ p._1+"="+p._2).mkString(",")+
-            "; ifNoMatch="+defaultBranchTarget+")"
+        npairs.map(p ⇒ p._1+"="+p._2).
+            mkString("LOOKUPSWITCH(", ",", s"; ifNoMatch=$defaultBranchTarget)")
     }
 }

@@ -39,5 +39,7 @@ package instructions
  * @author Michael Eichberg
  */
 trait LabeledInstruction extends InstructionLike {
-    def branchTargets: List[Symbol]
+
+    def branchTargets: Seq[Symbol]
+
 }

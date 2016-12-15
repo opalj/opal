@@ -39,7 +39,11 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
+
+    /** The smallest '''case''' value. `high` &geq; `low` */
     def low: Int
+
+    /** The largest '''case''' value. `high` &geq; `low` */
     def high: Int
 
     final def opcode: Opcode = TABLESWITCH.opcode
@@ -62,7 +66,8 @@ case class TABLESWITCH(
         high:          Int,
         jumpOffsets:   IndexedSeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
-    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
+
+    def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
         var caseValues = Chain.empty[Int]
         var i = jumpOffsets.length - 1
         while (i >= 0) {
@@ -70,7 +75,7 @@ case class TABLESWITCH(
                 caseValues = high - i :&: caseValues
             i -= 1
         }
-        (caseValues.toSeq, jumpOffset == defaultOffset)
+        (caseValues, jumpOffset == defaultOffset)
     }
 
     override def caseValues: Iterable[Int] = {
@@ -111,19 +116,21 @@ case class TABLESWITCH(
         }
     }
 
-    override def toString: String =
+    override def toString: String = {
         "TABLESWITCH("+
             (low to high).zip(jumpOffsets).map(e ⇒ e._1+"⤼"+e._2).mkString(",")+
             ";default⤼"+defaultOffset+
             ")"
+    }
 
-    override def toString(pc: Int): String =
+    override def toString(pc: PC): String = {
         "TABLESWITCH("+
             (low to high).zip(jumpOffsets).map { keyOffset ⇒
                 val (key, offset) = keyOffset
                 key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
             }.mkString(", ")+
             "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
+    }
 
 }
 
@@ -153,12 +160,7 @@ object TABLESWITCH {
             branchTargets.size == high - low + 1,
             s"there have to be high-low+1 (${high - low + 1}) targets"
         )
-        LabeledTABLESWITCH(
-            defaultBranchTarget,
-            low,
-            high,
-            branchTargets
-        )
+        LabeledTABLESWITCH(defaultBranchTarget, low, high, branchTargets)
     }
 }
 
@@ -173,18 +175,19 @@ case class LabeledTABLESWITCH(
         high:                Int,
         jumpTargets:         IndexedSeq[Symbol]
 ) extends LabeledInstruction with TABLESWITCHLike {
-    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): TABLESWITCH = {
+
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): TABLESWITCH = {
         TABLESWITCH(
-            branchoffsets(defaultBranchTarget) - currentIndex,
+            pcs(defaultBranchTarget) - currentPC,
             low,
             high,
-            jumpTargets.map(branchoffsets(_) - currentIndex)
+            jumpTargets.map(pcs(_) - currentPC)
         )
     }
 
-    override def branchTargets: List[Symbol] = defaultBranchTarget :: jumpTargets.toList
+    override def branchTargets: Seq[Symbol] = defaultBranchTarget +: jumpTargets
 
-    def caseValueOfJumpTarget(jumpTarget: Symbol): (Seq[Int], Boolean) = {
+    def caseValueOfJumpTarget(jumpTarget: Symbol): (Chain[Int], Boolean) = {
         var caseValues = Chain.empty[Int]
         var i = jumpTargets.length - 1
         while (i >= 0) {
@@ -192,7 +195,7 @@ case class LabeledTABLESWITCH(
                 caseValues = high - i :&: caseValues
             i -= 1
         }
-        (caseValues.toSeq, jumpTarget == defaultBranchTarget)
+        (caseValues, jumpTarget == defaultBranchTarget)
     }
 
     override def caseValues: Iterable[Int] = {
@@ -204,11 +207,10 @@ case class LabeledTABLESWITCH(
         (this eq other) || (this == other)
     }
 
-    override def toString(pc: Int): String =
-        "TABLESWITCH("+
-            (low to high).zip(jumpTargets).map { keyOffset ⇒
-                val (key, target) = keyOffset
-                key+"="+target
-            }.mkString(", ")+
-            "; ifNoMatch="+defaultBranchTarget+")"
+    override def toString(pc: Int): String = {
+        (low to high).zip(jumpTargets).map { keyOffset ⇒
+            val (key, target) = keyOffset
+            key+"="+target
+        }.mkString("TABLESWITCH(", ", ", "; ifNoMatch="+defaultBranchTarget+")")
+    }
 }

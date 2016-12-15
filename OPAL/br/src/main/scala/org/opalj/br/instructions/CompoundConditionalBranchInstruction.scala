@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.immutable.Chain
+
 /**
  * Common super class of all compound conditional branch instructions
  * (switch instructions!).
@@ -48,7 +50,8 @@ trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstruct
     def caseValues: Iterable[Int]
 }
 
-trait CompoundConditionalBranchInstruction extends ConditionalBranchInstruction
+trait CompoundConditionalBranchInstruction
+        extends ConditionalBranchInstruction
         with CompoundConditionalBranchInstructionLike {
 
     def defaultOffset: Int
@@ -60,6 +63,6 @@ trait CompoundConditionalBranchInstruction extends ConditionalBranchInstruction
      * If the `jumpOffset` is also the `defaultOffset`, the return value's second
      * value is true.
      */
-    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean)
+    def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean)
 
 }
