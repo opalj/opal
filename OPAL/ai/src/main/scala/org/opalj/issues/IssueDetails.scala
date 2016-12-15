@@ -84,7 +84,6 @@ trait PCLineComprehension extends MethodComprehension with CodeComprehension {
 
     def lineNode: Node = PCLineComprehension.lineNode(classFileFQN, methodJVMSignature, pc, line)
 
-    def lineJson: JsValue = PCLineComprehension.lineJson(classFileFQN, methodJVMSignature, pc, line)
 }
 
 object PCLineComprehension {

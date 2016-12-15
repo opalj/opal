@@ -35,18 +35,11 @@ import scala.xml.Group
 import scala.xml.UnprefixedAttribute
 
 import play.api.libs.json.Json
-<<<<<<< HEAD
-import play.api.libs.json.JsArray
-=======
->>>>>>> feature/IDL2.0
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsNull
 import play.api.libs.json.JsString
-<<<<<<< HEAD
-=======
 import play.api.libs.json.JsNumber
->>>>>>> feature/IDL2.0
 
 import org.opalj.br.PC
 import org.opalj.br.ClassFile
