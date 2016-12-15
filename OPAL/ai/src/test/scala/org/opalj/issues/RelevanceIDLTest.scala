@@ -26,36 +26,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package instructions
+package org.opalj.issues
+
+import org.junit.runner.RunWith
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+import org.scalatest.junit.JUnitRunner
 
 /**
- * Common super class of all compound conditional branch instructions
- * (switch instructions!).
+ * Tests the `toIDL` method of [[Relevance]].
  *
- * @author Michael Eichberg
+ * @author Lukas Berg
  */
-abstract class CompoundConditionalBranchInstruction extends ConditionalBranchInstruction {
+@RunWith(classOf[JUnitRunner])
+class RelevanceIDLTest extends FlatSpec with Matchers {
 
-    def operandCount: Int = 1
+    import IDLTestsFixtures._
 
-    def defaultOffset: Int
+    behavior of "the toIDL method"
 
-    def jumpOffsets: Seq[Int]
+    it should "return a valid IDLJson object for Relevance.OfNoRelevance" in {
+        val relevance = Relevance.OfNoRelevance
+        relevance.toIDL should be(toIDL(Relevance.OfNoRelevance))
+    }
 
-    /**
-     * Returns the case value(s) that are associated with the given `jumpOffset`.
-     * If the `jumpOffset` is also the `defaultOffset`, the return value's second
-     * value is true.
-     */
-    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean)
-
-    /**
-     * Returns all case values that are '''not related to the default branch'''.
-     */
-    def caseValues: Iterable[Int]
-
-    final def stackSlotsChange: Int = -1
-
+    it should "return a valid IDLJson object for Relevance.High" in {
+        val relevance = Relevance.High
+        relevance.toIDL should be(toIDL(Relevance.High))
+    }
 }

@@ -270,9 +270,9 @@ package object ai {
      * The index of the first parameter is 0 (which contains the implicit `this`
      * reference in case of instance methods).
      *
-     * @param 	isStatic `true` if method is static and, hence, has no implicit
-     *      	parameter for `this`.
-     * @see 	[[mapOperandsToParameters]]
+     * @param   isStatic `true` if method is static and, hence, has no implicit
+     *          parameter for `this`.
+     * @see     [[mapOperandsToParameters]]
      */
     def parameterIndexToValueOrigin(
         isStatic:       Boolean,
