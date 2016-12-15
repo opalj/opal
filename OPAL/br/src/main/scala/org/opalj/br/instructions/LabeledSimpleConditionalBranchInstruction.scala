@@ -31,7 +31,7 @@ package br
 package instructions
 
 trait LabeledSimpleConditionalBranchInstruction
-        extends LabeledSingeJumpTargetInstruction
+        extends LabeledSingleJumpTargetInstruction
         with SimpleConditionalBranchInstructionLike {
 
     def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): SimpleConditionalBranchInstruction

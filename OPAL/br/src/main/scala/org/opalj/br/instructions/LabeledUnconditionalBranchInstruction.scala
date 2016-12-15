@@ -37,7 +37,7 @@ package instructions
  * @author Malte Limmeroth
  */
 trait LabeledUnconditionalBranchInstruction
-        extends LabeledSingeJumpTargetInstruction
+        extends LabeledSingleJumpTargetInstruction
         with UnconditionalBranchInstructionLike {
 
     override def toString(currentPC: Int) =

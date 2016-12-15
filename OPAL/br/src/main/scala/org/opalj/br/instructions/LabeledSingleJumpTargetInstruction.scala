@@ -38,7 +38,9 @@ package instructions
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-trait LabeledSingeJumpTargetInstruction extends LabeledInstruction {
+trait LabeledSingleJumpTargetInstruction extends LabeledInstruction {
+
     final def branchTargets: List[Symbol] = branchTarget :: Nil
+
     def branchTarget: Symbol
 }
