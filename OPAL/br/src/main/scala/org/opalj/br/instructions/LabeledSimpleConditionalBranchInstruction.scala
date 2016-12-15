@@ -38,7 +38,7 @@ trait LabeledSimpleConditionalBranchInstruction
 
     def branchTarget: Symbol
 
-    override def toString(currentPC: Int) = {
+    override def toString(currentPC: Int): String = {
         s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
     }
 

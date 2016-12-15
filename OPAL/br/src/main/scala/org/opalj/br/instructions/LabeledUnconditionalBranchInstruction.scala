@@ -40,6 +40,5 @@ trait LabeledUnconditionalBranchInstruction
         extends LabeledSingleJumpTargetInstruction
         with UnconditionalBranchInstructionLike {
 
-    override def toString(currentPC: Int) =
-        getClass.getSimpleName+" "+branchTarget
+    override def toString(currentPC: Int): String = getClass.getSimpleName+" "+branchTarget
 }
