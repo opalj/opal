@@ -64,11 +64,17 @@ object JSR {
 case class LabeledJSR(
         branchTarget: Symbol
 ) extends LabeledUnconditionalBranchInstruction with JSRLike {
-    override def resolveJumpTargets(currentIndex: PC, branchoffsets: Map[Symbol, PC]): JSR = {
-        JSR(branchoffsets(branchTarget) - currentIndex)
+
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): JSRInstruction = {
+        val branchoffset = pcs(branchTarget) - currentPC
+        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
+            JSR_W(branchoffset)
+        } else {
+            JSR(branchoffset)
+        }
     }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        this eq code.instructions(otherPC)
+        this == code.instructions(otherPC)
     }
 }
