@@ -189,14 +189,18 @@ object PerformanceEvaluation {
         var run = 0
         do {
             if (logContext.isDefined) {
-                OPALLogger.info("performance", s"garbage collection run $run")(logContext.get)
+                val pendingCount = memoryMXBean.getObjectPendingFinalizationCount()
+                OPALLogger.info(
+                    "performance",
+                    s"garbage collection run $run (pending finalization: $pendingCount)"
+                )(logContext.get)
             }
             // In general it is **not possible to guarantee** that the garbage collector is really
             // run, but we still do our best.
             memoryMXBean.gc()
             if (memoryMXBean.getObjectPendingFinalizationCount() > 0) {
                 // It may be the case that some finalizers (of just gc'ed object) are still running and
-                // -- therefore -- some further objects can be freed after the first gc run.
+                // -- therefore -- some further objects are freed after the gc run.
                 Thread.sleep(50)
                 memoryMXBean.gc()
             }
@@ -212,7 +216,7 @@ object PerformanceEvaluation {
      * by `f` are measured.
      *
      * @note    If large data structures are used by `f` that are not used anymore afterwards
-     *             then it may happen that the used amount of memory is negative.
+     *          then it may happen that the used amount of memory is negative.
      */
     def memory[T](
         f: ⇒ T
@@ -236,7 +240,7 @@ object PerformanceEvaluation {
      * Times the execution of a given function `f`. If the timing may be affected by
      * (required) garbage collection runs it is recommended to first run the garbage collector.
      *
-     * @param     r A function that is passed the time (in nanoseconds) that it
+     * @param   r A function that is passed the time (in nanoseconds) that it
      *          took to evaluate `f`. `r` is called even if `f` fails with an exception.
      */
     def time[T](f: ⇒ T)(r: Nanoseconds ⇒ Unit): T = {

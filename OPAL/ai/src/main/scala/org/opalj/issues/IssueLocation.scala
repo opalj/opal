@@ -35,11 +35,11 @@ import scala.xml.Group
 import scala.xml.UnprefixedAttribute
 
 import play.api.libs.json.Json
-import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsNull
 import play.api.libs.json.JsString
+import play.api.libs.json.JsNumber
 
 import org.opalj.br.PC
 import org.opalj.br.ClassFile
@@ -139,25 +139,24 @@ class PackageLocation(
 
     def locationAsIDL: JsObject = Json.obj("package" → thePackage.replace('/', '.'))
 
-    def descriptionAsIDL: Option[JsObject] = description.map { d ⇒ Json.obj("descriptopn" → d) }
-
-    def detailsAsIDL: JsArray = Json.arr(details)
+    def detailsAsIDL: JsValue = Json.toJson(details)
 
     final override def toIDL: JsValue = {
         Json.obj(
+            "description" → description,
             "location" → locationAsIDL,
-            "description" → descriptionAsIDL,
             "details" → detailsAsIDL
         )
     }
 }
 
 class ClassLocation(
-        description:   Option[String],
-        theProject:    SomeProject,
-        val classFile: ClassFile,
-        details:       Seq[IssueDetails] = List.empty
-) extends PackageLocation(description, theProject, classFile.thisType.packageName, details) with ClassComprehension {
+    description:   Option[String],
+    theProject:    SomeProject,
+    val classFile: ClassFile,
+    details:       Seq[IssueDetails] = List.empty
+) extends PackageLocation(description, theProject, classFile.thisType.packageName, details)
+        with ClassComprehension {
 
     override def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
         val locationAsInlineXHTML = super.locationAsInlineXHTML(basicInfoOnly) ++
@@ -205,8 +204,9 @@ class MethodLocation(
 ) extends ClassLocation(description, theProject, classFile, details)
         with MethodComprehension {
 
-    val firstLineOfMethod: Option[String] =
+    val firstLineOfMethod: Option[String] = {
         method.body.flatMap(_.firstLineNumber.map(ln ⇒ (if (ln > 2) (ln - 2) else 0).toString))
+    }
 
     override def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
         var methodNode =
@@ -229,10 +229,11 @@ class MethodLocation(
 
     override def locationAsIDL: JsObject = {
         super.locationAsIDL + (
-            "method" →
-            (methodToIDL(method.accessFlags, method.name, method.descriptor) +
+            "method" → (
+                methodToIDL(method.accessFlags, method.name, method.descriptor) +
                 ("signature" → JsString(methodJVMSignature)) +
-                ("firstLine" → Json.toJson(firstLineOfMethod)))
+                ("firstLine" → Json.toJson(firstLineOfMethod))
+            )
         )
     }
 }
@@ -258,7 +259,10 @@ class InstructionLocation(
     }
 
     override def locationAsIDL: JsObject = {
-        super.locationAsIDL + (("instruction", lineJson))
+        var instructionLocation = Json.obj("pc" → pc)
+        if (line.isDefined) instructionLocation += (("line", JsNumber(line.get)))
+
+        super.locationAsIDL + (("instruction", instructionLocation))
     }
 
     override def toEclipseConsoleString: String = {

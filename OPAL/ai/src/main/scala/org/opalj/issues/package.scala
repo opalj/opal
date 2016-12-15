@@ -56,6 +56,18 @@ import org.opalj.ai.domain.l1.IntegerRangeValues
  */
 package object issues {
 
+    implicit object IssueDetailsWrites extends Writes[IssueDetails] {
+        def writes(issueDetails: IssueDetails): JsValue = issueDetails.toIDL
+    }
+
+    implicit object IssueLocationWrites extends Writes[IssueLocation] {
+        def writes(issueLocation: IssueLocation): JsValue = issueLocation.toIDL
+    }
+
+    implicit object RelevanceWrites extends Writes[Relevance] {
+        def writes(relevance: Relevance): JsValue = relevance.toIDL
+    }
+
     /**
      * Shortens an absolute path to one relative to the current working directory.
      */
@@ -92,18 +104,6 @@ package object issues {
     }
 
     def fileToLocationIdentifier(file: File): String = file.getAbsolutePath()
-
-    implicit object IssueDetailsWrites extends Writes[IssueDetails] {
-        def writes(issueDetails: IssueDetails) = issueDetails.toIDL
-    }
-
-    implicit object IssueLocationWrites extends Writes[IssueLocation] {
-        def writes(issueLocation: IssueLocation) = issueLocation.toIDL
-    }
-
-    implicit object RelevanceWrites extends Writes[Relevance] {
-        def writes(relevance: Relevance) = relevance.toIDL
-    }
 
     /**
      * Given a `LocalVariable` object and its current value a human readable `String`
