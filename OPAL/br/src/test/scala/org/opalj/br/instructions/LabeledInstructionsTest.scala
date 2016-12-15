@@ -38,8 +38,8 @@ import org.scalatest.{FlatSpec, Matchers}
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class LabeledSimpleBranchInstructionsTest extends FlatSpec with Matchers {
-    behavior of "LabeledSimpleBranchInstructions"
+class LabeledInstructionsTest extends FlatSpec with Matchers {
+    behavior of "LabeledInstructionsTest"
 
     val label = 'TestLabel
     val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, Symbol ⇒ LabeledSimpleConditionalBranchInstruction)] = {
@@ -96,5 +96,50 @@ class LabeledSimpleBranchInstructionsTest extends FlatSpec with Matchers {
         assert(GOTO(label).resolveJumpTargets(1, Map(label → 43)).branchoffset == 42)
         assert(GOTO_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
     }
+
+    "the convenience factories of JSRInstructions" should
+        "return the correct type of LabeledJSRInstruction" in {
+            assert(JSR(label) == LabeledJSR(label))
+            assert(JSR_W(label) == LabeledJSR_W(label))
+        }
+
+    "LabeledBranchInstruction.resolve for JSRInstructions" should
+        "resolve to the correct branchoffset" in {
+            assert(JSR(label).resolveJumpTargets(1, Map(label → 43)).branchoffset == 42)
+            assert(JSR_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
+        }
+
+    val table = IndexedSeq('two, 'three)
+    val lookupTable = ((2 to 3) zip table)
+    val labelsMap = Map(
+        label → 43,
+        'two → 44,
+        'three → 45
+    )
+
+    "the convenience factories of CompoundConditionalBranchInstruction" should
+        "return the correct type of LabeledCompoundConditionalBranchInstruction" in {
+            assert(LOOKUPSWITCH(label, lookupTable) == LabeledLOOKUPSWITCH(label, lookupTable))
+            assert(TABLESWITCH(label, 2, 3, table) ==
+                LabeledTABLESWITCH(label, 2, 3, table))
+        }
+
+    "LabeledBranchInstruction.resolve for CompoundConditionalBranchInstruction" should
+        "resolve to the correct branchoffset" in {
+            val resolvedLOOKUPSWITCH = LOOKUPSWITCH(label, lookupTable).resolveJumpTargets(
+                1,
+                labelsMap
+            )
+            assert(resolvedLOOKUPSWITCH.defaultOffset == 42)
+            assert(resolvedLOOKUPSWITCH.jumpOffsets == IndexedSeq(43, 44))
+            assert(resolvedLOOKUPSWITCH.caseValues == IndexedSeq(2, 3))
+
+            val resolvedTABLESWITCH = TABLESWITCH(label, 2, 3, table).resolveJumpTargets(
+                1,
+                labelsMap
+            )
+            assert(resolvedTABLESWITCH.defaultOffset == 42)
+            assert(resolvedTABLESWITCH.jumpOffsets == IndexedSeq(43, 44))
+        }
 
 }

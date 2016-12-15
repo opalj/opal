@@ -36,9 +36,20 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class CompoundConditionalBranchInstruction extends ConditionalBranchInstruction {
+trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstructionLike {
 
     def operandCount: Int = 1
+
+    final def stackSlotsChange: Int = -1
+
+    /**
+     * Returns all case values that are '''not related to the default branch'''.
+     */
+    def caseValues: Iterable[Int]
+}
+
+trait CompoundConditionalBranchInstruction extends ConditionalBranchInstruction
+        with CompoundConditionalBranchInstructionLike {
 
     def defaultOffset: Int
 
@@ -50,12 +61,5 @@ abstract class CompoundConditionalBranchInstruction extends ConditionalBranchIns
      * value is true.
      */
     def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean)
-
-    /**
-     * Returns all case values that are '''not related to the default branch'''.
-     */
-    def caseValues: Iterable[Int]
-
-    final def stackSlotsChange: Int = -1
 
 }

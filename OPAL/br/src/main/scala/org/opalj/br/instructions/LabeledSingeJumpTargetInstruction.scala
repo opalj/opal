@@ -31,11 +31,14 @@ package br
 package instructions
 
 /**
- * An instruction where the jump targets are identified using `Symbols` associated with the
- * instructions which should be executed in case of a jump.
+ * An instruction where the jump target is identified using a `Symbol` associated with the
+ * instruction which should be executed in case of a jump.
  * The label is a standard Scala `Symbol`.
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-trait LabeledInstruction extends InstructionLike
+trait LabeledSingeJumpTargetInstruction extends LabeledInstruction {
+    final def branchTargets: List[Symbol] = branchTarget :: Nil
+    def branchTarget: Symbol
+}

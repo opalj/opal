@@ -35,13 +35,15 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class JSRInstruction extends UnconditionalBranchInstruction {
+trait JSRInstructionLike extends UnconditionalBranchInstructionLike {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = 1
+}
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+trait JSRInstruction extends UnconditionalBranchInstruction with JSRInstructionLike {
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (
             other match {
@@ -51,5 +53,4 @@ abstract class JSRInstruction extends UnconditionalBranchInstruction {
             }
         )
     }
-
 }
