@@ -29,46 +29,9 @@
 package org.opalj
 package ba
 
-import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
-
 /**
- * Enhancing wrapper for combining AccessFlags.
+ * Builder for elements inside a class – that are: Fields and Methods.
  *
  * @author Malte Limmeroth
- * @author Michael Eichberg
  */
-final class AccessModifier(val accessFlag: Int) extends AnyVal {
-
-    /**
-     * Returns a new [[AccessModifier]] with both [[AccessModifier]]s `accessFlag`s set.
-     */
-    def +(that: AccessModifier): AccessModifier = {
-        new AccessModifier(this.accessFlag | that.accessFlag)
-    }
-
-    /**
-     * Creates a new [[ClassDeclarationBuilder]] with the given name and previously defined
-     * AccessModifiers. The minorVersion is initialized as
-     * [[ClassFileBuilder.defaultMinorVersion]] and the majorVersion as
-     * [[ClassFileBuilder.defaultMajorVersion]].
-     *
-     * @param fqn The class name in JVM notation as a fully qualified name, e.g. "MyClass" for a
-     *            class in the default package or "my/package/MyClass" for a class in "my.package".
-     */
-    def CLASS(fqn: String): ClassDeclarationBuilder = {
-        ClassDeclarationBuilder(
-            ClassFile(
-                minorVersion = ClassFileBuilder.defaultMinorVersion,
-                majorVersion = ClassFileBuilder.defaultMajorVersion,
-                accessFlags = accessFlag,
-                thisType = ObjectType(fqn),
-                superclassType = None,
-                interfaceTypes = IndexedSeq.empty,
-                fields = IndexedSeq.empty,
-                methods = IndexedSeq.empty,
-                attributes = IndexedSeq.empty
-            )
-        )
-    }
-}
+trait ClassFileMemberBuilder
