@@ -64,6 +64,8 @@ final class AccessModifier(val accessFlag: Int) extends AnyVal {
                 Some(ObjectType.Object)
             else
                 None
+        if (ACC_ANNOTATION.isSet(accessFlags))
+            accessFlags |= ACC_INTERFACE.mask
         ClassDeclarationBuilder(
             ClassFile(
                 minorVersion = ClassFileBuilder.defaultMinorVersion,
