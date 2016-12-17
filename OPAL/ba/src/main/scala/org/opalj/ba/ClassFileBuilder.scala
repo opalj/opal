@@ -98,6 +98,8 @@ case class ClassFileBuilder(
 }
 
 object ClassFileBuilder {
-    final val defaultMinorVersion = 0
-    final val defaultMajorVersion = 50
+
+    final val DefaultMinorVersion = 0
+
+    final val DefaultMajorVersion = 50
 }
