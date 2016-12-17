@@ -39,6 +39,9 @@ import org.opalj.br.ConcreteSourceElement
 
 /**
  * ClassFileBuilder for the parameters specified after Fields or Methods have been added.
+ *
+ * @author Malte Limmeroth
+ * @author Michael Eichberg
  */
 class ClassFileBuilder(
         private var classFile:   BRClassFile,
