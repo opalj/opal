@@ -111,16 +111,16 @@ object br2da {
         def assembleToDA(constantPoolBuffer: ConstantPoolBuffer): da.Code_attribute = {
             val instructions = scala.collection.mutable.ListBuffer.empty[Byte]
 
-            def addShortArg(arg: Int) = {
-                instructions.append((arg >> 8).toByte)
-                instructions.append((arg & 0xFF).toByte)
+            def addShortArg(value: Int) = {
+                instructions.append((value >>> 8).toByte)
+                instructions.append((value & 0xFF).toByte)
             }
 
-            def addIntArg(arg: Int) = {
-                instructions.append((arg >> 24).toByte)
-                instructions.append((arg >> 16).toByte)
-                instructions.append((arg >> 8).toByte)
-                instructions.append((arg & 0xFF).toByte)
+            def addIntArg(value: Int) = {
+                instructions.append((value >>> 24).toByte)
+                instructions.append((value >>> 16).toByte)
+                instructions.append((value >>> 8).toByte)
+                instructions.append((value & 0xFF).toByte)
             }
 
             var nextPC = 0
