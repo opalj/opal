@@ -30,12 +30,11 @@ package org.opalj
 package util
 
 /**
- * Loads a Class from a map of class names and byte-arrays representing the binary version of the
- * classes.
+ * A simple `ClassLoader` that looks-up the available classes in a standard map.
  *
- * @param classes a `Map` of classes where the key is the class name names with `.` as package separator and byte arrays
- *                  consisting of the binary representation of that class
- * @author Malte Limmeroth
+ * @param   classes a `Map` of classes where the key is the class name – using `.` as the package
+ * separator – and the value is the serialized class file.
+ * @author  Malte Limmeroth
  */
 class InMemoryClassLoader(
         val classes: Map[String, Array[Byte]],
