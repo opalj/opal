@@ -76,15 +76,18 @@ class ClassFileBuilder(
      * Returns the build [[org.opalj.br.ClassFile]]. For classes without the `Interface` access flag
      * set, a default constructor will be generated if no constructor was defined.
      */
-    def buildBRClassFile: BRClassFile = {
-        if ((classFile.accessFlags & ACC_INTERFACE.mask) != 0
-            || classFile.methods.exists(_.name == "<init>")) {
-            classFile
+    def buildBRClassFile(): (BRClassFile, Map[ConcreteSourceElement, Map[PC, Any]]) = {
+        if (classFile.isInterfaceDeclaration ||
+            classFile.constructors.nonEmpty ||
+            // If "only" the following partical condition holds,
+            // the the class file will be invalid, but we can't 
+            // generate a default constructor, because we don't 
+            // know the target!
+            classFile.superclassType.isEmpty) {
             (classFile, annotations)
         } else {
             val superclassType = classFile.superclassType.get
             val newMethods = classFile.methods :+ Method.defaultConstructor(superclassType)
-            classFile.copy(methods = newMethods)
             (classFile.copy(methods = newMethods), annotations)
         }
 
