@@ -53,29 +53,29 @@ import org.opalj.bc.Assembler
  */
 @RunWith(classOf[JUnitRunner])
 class ClassDeclarationTest extends FlatSpec {
+
     behavior of "the ClassFileDeclarationBuilder"
 
-    val noFunctionInterface1 = ABSTRACT + INTERFACE CLASS "NoFunctionInterface1"
-    val noFunctionInterface2 = ABSTRACT + INTERFACE CLASS "NoFunctionInterface2"
+    val markerInterface1 = ABSTRACT + INTERFACE CLASS "MarkerInterface1"
+    val markerInterface2 = ABSTRACT + INTERFACE CLASS "MarkerInterface2"
 
     val abstractClass = ABSTRACT + PUBLIC CLASS "org/opalj/bc/AbstractClass"
 
-    val concreteClass = (PUBLIC + SUPER + FINAL + SYNTHETIC CLASS "ConcreteClass"
+    val simpleConcreteClass = (
+        PUBLIC + SUPER + FINAL + SYNTHETIC CLASS "ConcreteClass"
         EXTENDS "org/opalj/bc/AbstractClass"
-        IMPLEMENTS ("NoFunctionInterface1", "NoFunctionInterface2")) Version (
-            minorVersion = 2,
-            majorVersion = 49
-        )
+        IMPLEMENTS ("MarkerInterface1", "MarkerInterface2")
+    ) Version (minorVersion = 2, majorVersion = 49)
 
     val abstractAsm = Assembler(abstractClass.buildDAClassFile)
-    val concreteAsm = Assembler(concreteClass.buildDAClassFile)
+    val concreteAsm = Assembler(simpleConcreteClass.buildDAClassFile)
     val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
     val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
-            "NoFunctionInterface1" → Assembler(noFunctionInterface1.buildDAClassFile),
-            "NoFunctionInterface2" → Assembler(noFunctionInterface2.buildDAClassFile),
+            "MarkerInterface1" → Assembler(markerInterface1.buildDAClassFile),
+            "MarkerInterface2" → Assembler(markerInterface2.buildDAClassFile),
             "ConcreteClass" → concreteAsm,
             "org.opalj.bc.AbstractClass" → Assembler(abstractClass.buildDAClassFile)
         ),
@@ -83,8 +83,8 @@ class ClassDeclarationTest extends FlatSpec {
     )
 
     "the generated classes" should "load correctly" in {
-        loader.loadClass("NoFunctionInterface1")
-        loader.loadClass("NoFunctionInterface2")
+        loader.loadClass("MarkerInterface1")
+        loader.loadClass("MarkerInterface2")
         loader.loadClass("org.opalj.bc.AbstractClass")
         loader.loadClass("ConcreteClass")
 
@@ -102,8 +102,8 @@ class ClassDeclarationTest extends FlatSpec {
     }
 
     it should "implement the specified Interfaces" in {
-        assert(concreteBRClassFile.interfaceTypes.map(i ⇒ i.fqn).contains("NoFunctionInterface1"))
-        assert(concreteBRClassFile.interfaceTypes.map(i ⇒ i.fqn).contains("NoFunctionInterface2"))
+        assert(concreteBRClassFile.interfaceTypes.map(i ⇒ i.fqn).contains("MarkerInterface1"))
+        assert(concreteBRClassFile.interfaceTypes.map(i ⇒ i.fqn).contains("MarkerInterface2"))
     }
 
     it should "have the specified access_flags" in {
