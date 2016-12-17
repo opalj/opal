@@ -81,31 +81,9 @@ case class ClassFileBuilder(
             || classFile.methods.exists(_.name == "<init>")) {
             classFile
         } else {
-            val attributes = IndexedSeq(
-                Code(
-                    maxStack = 1,
-                    maxLocals = 1,
-                    instructions = Array(
-                        ALOAD_0,
-                        INVOKESPECIAL(
-                            classFile.superclassType.getOrElse(ObjectType("java/lang/Object")),
-                            false,
-                            "<init>",
-                            MethodDescriptor("()V")
-                        ),
-                        null,
-                        null,
-                        RETURN
-                    )
-                )
-            )
-            val defaultConstructor = Method(
-                accessFlags = ACC_PUBLIC.mask,
-                name = "<init>",
-                descriptor = MethodDescriptor("()V"),
-                attributes = attributes
-            )
-            classFile.copy(methods = classFile.methods :+ defaultConstructor)
+            val superclassType = classFile.superclassType.get
+            val newMethods = classFile.methods :+ Method.defaultConstructor(superclassType)
+            classFile.copy(methods = newMethods)
         }
 
     }
