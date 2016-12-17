@@ -31,7 +31,6 @@ package ba
 
 import java.io.ByteArrayInputStream
 
-import scala.collection.JavaConversions.mapAsJavaMap
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.junit.runner.RunWith

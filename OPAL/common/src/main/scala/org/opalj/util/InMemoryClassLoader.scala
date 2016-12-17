@@ -26,39 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.util;
-
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Map;
+package org.opalj
+package util
 
 /**
  * Loads a Class from a map of class names and byte-arrays representing the binary version of the
  * classes.
  *
+ * @param classes a `Map` of classes where the key is the class name names with `.` as package separator and byte arrays
+ *                  consisting of the binary representation of that class
  * @author Malte Limmeroth
  */
-public class InMemoryClassLoader extends URLClassLoader {
-    private final Map<String, byte[]> classDefs;
+class InMemoryClassLoader(
+        val classes: Map[String, Array[Byte]],
+        parent:      ClassLoader
+) extends ClassLoader(parent) {
 
-    /**
-     * Creates a new ClassLoader.
-     *
-     * @param classDefs a Map of class names with `.` as package separator and byte arrays
-     *                  consisting of the binary representation of that class
-     */
-    public InMemoryClassLoader(Map<String, byte[]> classDefs, ClassLoader parent) {
-        super(new URL[0], parent);
-        this.classDefs = classDefs;
-    }
-
-    @Override
-    protected Class<?> findClass(String name) throws ClassNotFoundException {
-        byte[] classBytes = classDefs.get(name);
-        if(classBytes == null){
-            return super.findClass(name);
-        }else{
-            return defineClass(name, classBytes, 0, classBytes.length);
+    @throws[ClassNotFoundException]
+    override def findClass(name: String): Class[_] = {
+        classes.get(name) match {
+            case Some(data) ⇒ defineClass(name, data, 0, data.length)
+            case None       ⇒ super.findClass(name)
         }
     }
 }
