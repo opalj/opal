@@ -29,6 +29,8 @@
 package org.opalj
 package ba
 
+import org.opalj.bi.ACC_INTERFACE
+import org.opalj.bi.ACC_ANNOTATION
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 
@@ -38,13 +40,13 @@ import org.opalj.br.ObjectType
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-final class AccessModifier(val accessFlag: Int) extends AnyVal {
+final class AccessModifier(val accessFlags: Int) extends AnyVal {
 
     /**
      * Returns a new [[AccessModifier]] with both [[AccessModifier]]s `accessFlag`s set.
      */
     def +(that: AccessModifier): AccessModifier = {
-        new AccessModifier(this.accessFlag | that.accessFlag)
+        new AccessModifier(this.accessFlags | that.accessFlags)
     }
 
     /**
@@ -53,7 +55,7 @@ final class AccessModifier(val accessFlag: Int) extends AnyVal {
      * [[ClassFileBuilder.defaultMinorVersion]] and the majorVersion as
      * [[ClassFileBuilder.defaultMajorVersion]].
      *
-     * @param fqn The class name in JVM notation as a fully qualified name, e.g. "MyClass" for a
+     * @param fqn The fully qualified class name in JVM notation, e.g. "MyClass" for a
      *            class in the default package or "my/package/MyClass" for a class in "my.package".
      */
     def CLASS(fqn: String): ClassDeclarationBuilder = {
@@ -64,15 +66,17 @@ final class AccessModifier(val accessFlag: Int) extends AnyVal {
                 Some(ObjectType.Object)
             else
                 None
+
         if (ACC_ANNOTATION.isSet(accessFlags))
             accessFlags |= ACC_INTERFACE.mask
+
         ClassDeclarationBuilder(
             ClassFile(
-                minorVersion = ClassFileBuilder.defaultMinorVersion,
-                majorVersion = ClassFileBuilder.defaultMajorVersion,
-                accessFlags = accessFlag,
+                minorVersion = ClassFileBuilder.DefaultMinorVersion,
+                majorVersion = ClassFileBuilder.DefaultMajorVersion,
+                accessFlags = accessFlags,
                 thisType = ObjectType(fqn),
-                superclassType = None,
+                superclassType = superclassType,
                 interfaceTypes = IndexedSeq.empty,
                 fields = IndexedSeq.empty,
                 methods = IndexedSeq.empty,
