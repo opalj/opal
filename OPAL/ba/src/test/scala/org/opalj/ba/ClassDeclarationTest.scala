@@ -69,6 +69,8 @@ class ClassDeclarationTest extends FlatSpec {
 
     val abstractAsm = Assembler(abstractClass.buildDAClassFile)
     val concreteAsm = Assembler(concreteClass.buildDAClassFile)
+    val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
+    val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
@@ -79,9 +81,6 @@ class ClassDeclarationTest extends FlatSpec {
         ),
         this.getClass.getClassLoader
     )
-
-    val abstractBRClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(abstractAsm)).head
-    val concreteBRClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(concreteAsm)).head
 
     "the generated classes" should "load correctly" in {
         loader.loadClass("NoFunctionInterface1")
