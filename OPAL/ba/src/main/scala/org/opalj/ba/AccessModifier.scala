@@ -57,6 +57,13 @@ final class AccessModifier(val accessFlag: Int) extends AnyVal {
      *            class in the default package or "my/package/MyClass" for a class in "my.package".
      */
     def CLASS(fqn: String): ClassDeclarationBuilder = {
+        var accessFlags = this.accessFlags
+
+        val superclassType: Option[ObjectType] =
+            if (ACC_INTERFACE.isSet(accessFlags))
+                Some(ObjectType.Object)
+            else
+                None
         ClassDeclarationBuilder(
             ClassFile(
                 minorVersion = ClassFileBuilder.defaultMinorVersion,
