@@ -59,7 +59,7 @@ class ClassDeclarationTest extends FlatSpec {
     val markerInterface1 = ABSTRACT + INTERFACE CLASS "MarkerInterface1"
     val markerInterface2 = ABSTRACT + INTERFACE CLASS "MarkerInterface2"
 
-    val abstractClass = ABSTRACT + PUBLIC CLASS "org/opalj/bc/AbstractClass"
+    val abstractClass = ABSTRACT + PUBLIC CLASS "org/opalj/bc/AbstractClass" EXTENDS "java/lang/Object"
 
     val simpleConcreteClass = (
         PUBLIC + SUPER + FINAL + SYNTHETIC CLASS "ConcreteClass"
