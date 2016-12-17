@@ -81,41 +81,45 @@ class ClassDeclarationTest extends FlatSpec {
         ),
         this.getClass.getClassLoader
     )
+    import loader.loadClass
 
     "the generated classes" should "load correctly" in {
-        loader.loadClass("MarkerInterface1")
-        loader.loadClass("MarkerInterface2")
-        loader.loadClass("org.opalj.bc.AbstractClass")
-        loader.loadClass("ConcreteClass")
-
-        val clazz = loader.loadClass("ConcreteClass")
-        assert(clazz.newInstance() != null)
+        assert("MarkerInterface1" == loadClass("MarkerInterface1").getSimpleName)
+        assert("MarkerInterface2" == loadClass("MarkerInterface2").getSimpleName)
+        assert("org.opalj.bc.AbstractClass" == loadClass("org.opalj.bc.AbstractClass").getName)
+        assert("ConcreteClass" == loadClass("ConcreteClass").getSimpleName)
     }
 
-    "the generated class 'ConcreteClass'" should "have a generated default Constructor" in {
-        assert(concreteBRClassFile.methods.size == 1)
-        assert(concreteBRClassFile.methods.head.descriptor == MethodDescriptor("()V"))
+    "the generated class 'ConcreteClass'" should "have only the generated default Constructor" in {
+        val methods = concreteBRClassFile.methods
+        assert(methods.size == 1)
+        assert(methods.head.name == "<init>")
+        assert(methods.head.descriptor == MethodDescriptor("()V"))
     }
 
-    it should "extend the specified Class" in {
+    it should "be possible to create an instance" in {
+        assert(loader.loadClass("ConcreteClass").newInstance() != null)
+    }
+
+    it should "extend org/opalj/bc/AbstractClass" in {
         assert(concreteBRClassFile.superclassType.get.fqn == "org/opalj/bc/AbstractClass")
     }
 
-    it should "implement the specified Interfaces" in {
+    it should "implement MarkerInterface1 and MarkerInterface2" in {
         assert(concreteBRClassFile.interfaceTypes.map(i ⇒ i.fqn).contains("MarkerInterface1"))
         assert(concreteBRClassFile.interfaceTypes.map(i ⇒ i.fqn).contains("MarkerInterface2"))
     }
 
-    it should "have the specified access_flags" in {
+    it should "be public final synthetic (super)" in {
         assert(concreteBRClassFile.accessFlags ==
             (ACC_PUBLIC.mask | ACC_FINAL.mask | ACC_SYNTHETIC.mask | ACC_SUPER.mask))
     }
 
-    it should "have the specified minor version" in {
+    it should "have the specified minor version: 2" in {
         assert(concreteBRClassFile.minorVersion == 2)
     }
 
-    it should "have the specified major version" in {
+    it should "have the specified major version: 49" in {
         assert(concreteBRClassFile.majorVersion == 49)
     }
 
