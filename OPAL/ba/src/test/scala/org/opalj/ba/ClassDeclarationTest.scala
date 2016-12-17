@@ -36,10 +36,13 @@ import org.scalatest.FlatSpec
 import org.junit.runner.RunWith
 
 import org.opalj.util.InMemoryClassLoader
-import org.opalj.bc.Assembler
-import org.opalj.bi._
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.reader.Java8Framework
+import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.bc.Assembler
 
 /**
  * Tests general properties of a classes build with the BytecodeAssembler DSL by loading and
