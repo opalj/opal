@@ -67,17 +67,17 @@ class ClassDeclarationTest extends FlatSpec {
         IMPLEMENTS ("MarkerInterface1", "MarkerInterface2")
     ) Version (minorVersion = 2, majorVersion = 49)
 
-    val abstractAsm = Assembler(abstractClass.buildDAClassFile)
-    val concreteAsm = Assembler(simpleConcreteClass.buildDAClassFile)
+    val abstractAsm = Assembler(abstractClass.buildDAClassFile._1)
+    val concreteAsm = Assembler(simpleConcreteClass.buildDAClassFile._1)
     val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
     val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
-            "MarkerInterface1" → Assembler(markerInterface1.buildDAClassFile),
-            "MarkerInterface2" → Assembler(markerInterface2.buildDAClassFile),
-            "ConcreteClass" → concreteAsm,
-            "org.opalj.bc.AbstractClass" → Assembler(abstractClass.buildDAClassFile)
+            "MarkerInterface1" → Assembler(markerInterface1.buildDAClassFile._1),
+            "MarkerInterface2" → Assembler(markerInterface2.buildDAClassFile._1),
+            "org.opalj.bc.AbstractClass" → abstractAsm,
+            "ConcreteClass" → concreteAsm
         ),
         this.getClass.getClassLoader
     )

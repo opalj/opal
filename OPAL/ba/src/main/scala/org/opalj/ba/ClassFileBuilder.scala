@@ -47,9 +47,9 @@ import org.opalj.da.{ClassFile ⇒ DAClassFile}
 /**
  * ClassFileBuilder for the parameters specified after Fields or Methods have been added.
  */
-case class ClassFileBuilder(
-        private val classFile: BRClassFile,
-        annotations:           Map[String, Map[PC, Any]] = Map.empty
+class ClassFileBuilder(
+        private var classFile:   BRClassFile,
+        private var annotations: Map[ConcreteSourceElement, Map[PC, Any]] = Map.empty
 ) {
     /**
      * Defines the SourceFile attribute.
@@ -80,10 +80,12 @@ case class ClassFileBuilder(
         if ((classFile.accessFlags & ACC_INTERFACE.mask) != 0
             || classFile.methods.exists(_.name == "<init>")) {
             classFile
+            (classFile, annotations)
         } else {
             val superclassType = classFile.superclassType.get
             val newMethods = classFile.methods :+ Method.defaultConstructor(superclassType)
             classFile.copy(methods = newMethods)
+            (classFile.copy(methods = newMethods), annotations)
         }
 
     }
@@ -93,7 +95,10 @@ case class ClassFileBuilder(
      *
      * @see [[buildBRClassFile]]
      */
-    def buildDAClassFile: DAClassFile = buildBRClassFile.assembleToDA
+    def buildDAClassFile(): (DAClassFile, Map[ConcreteSourceElement, Map[PC, Any]]) = {
+        val (brClassFile, annotations) = buildBRClassFile()
+        (brClassFile.assembleToDA, annotations)
+    }
 
 }
 
@@ -102,4 +107,9 @@ object ClassFileBuilder {
     final val DefaultMinorVersion = 0
 
     final val DefaultMajorVersion = 50
+
+    def apply(initialClassFile: BRClassFile): ClassFileBuilder = {
+        new ClassFileBuilder(initialClassFile)
+    }
+
 }
