@@ -29,20 +29,13 @@
 package org.opalj
 package ba
 
-import org.opalj.ba.br2da.ClassConvert
-import org.opalj.bi.ACC_INTERFACE
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.br.{ClassFile ⇒ BRClassFile}
-import org.opalj.br.Code
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.PC
-import org.opalj.br.instructions.ALOAD_0
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.RETURN
 import org.opalj.collection.immutable.UShortPair
+
 import org.opalj.da.{ClassFile ⇒ DAClassFile}
+import org.opalj.br.{ClassFile ⇒ BRClassFile}
+import org.opalj.br.Method
+import org.opalj.br.PC
+import org.opalj.br.ConcreteSourceElement
 
 /**
  * ClassFileBuilder for the parameters specified after Fields or Methods have been added.
@@ -51,30 +44,36 @@ class ClassFileBuilder(
         private var classFile:   BRClassFile,
         private var annotations: Map[ConcreteSourceElement, Map[PC, Any]] = Map.empty
 ) {
+
     /**
      * Defines the SourceFile attribute.
      */
-    def SourceFile(sourceFile: String): ClassFileBuilder = {
-        this.copy(
-            classFile = classFile.copy(
-                attributes = classFile.attributes :+ org.opalj.br.SourceFile(sourceFile)
-            )
+    def SourceFile(sourceFile: String): this.type = {
+        classFile = classFile.copy(
+            attributes = classFile.attributes :+ org.opalj.br.SourceFile(sourceFile)
         )
+
+        this
     }
 
     /**
-     * Defines the minorVersion and majorVersion. The default values are the unchanged values.
+     * Defines the minorVersion and majorVersion. The default values are the current values.
      */
     def Version(
         minorVersion: Int = classFile.version.minor,
         majorVersion: Int = classFile.version.major
-    ): ClassFileBuilder = {
-        this.copy(classFile = classFile.copy(version = UShortPair(minorVersion, majorVersion)))
+    ): this.type = {
+        classFile = classFile.copy(version = UShortPair(minorVersion, majorVersion))
+
+        this
     }
 
     /**
-     * Returns the build [[org.opalj.br.ClassFile]]. For classes without the `Interface` access flag
-     * set, a default constructor will be generated if no constructor was defined.
+     * Builds the [[org.opalj.br.ClassFile]].
+     *
+     * The following conditional changes are done to ensure a correct class file is created:
+     *  - For regular classes (not interface types) a default constructor will be generated
+     *    if no constructor was defined and the superclass type information is available.
      */
     def buildBRClassFile(): (BRClassFile, Map[ConcreteSourceElement, Map[PC, Any]]) = {
         if (classFile.isInterfaceDeclaration ||
