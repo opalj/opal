@@ -46,7 +46,7 @@ class InMemoryClassLoader(
     override def findClass(name: String): Class[_] = {
         classes.get(name) match {
             case Some(data) ⇒ defineClass(name, data, 0, data.length)
-            case None       ⇒ super.findClass(name)
+            case None       ⇒ throw new ClassNotFoundException(name)
         }
     }
 }
