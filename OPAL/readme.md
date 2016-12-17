@@ -2,6 +2,6 @@
 
 ---
 
-![OPAL Project Dependencies](Project Dependencies.svg)
+![OPAL Project Dependencies](./Project%20Dependencies.svg)
 
 ---
