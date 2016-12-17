@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.ba;
+package org.opalj.util;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -35,18 +35,19 @@ import java.util.Map;
 /**
  * Loads a Class from a map of class names and byte-arrays representing the binary version of the
  * classes.
+ *
  * @author Malte Limmeroth
  */
-public class ByteClassLoader extends URLClassLoader {
+public class InMemoryClassLoader extends URLClassLoader {
     private final Map<String, byte[]> classDefs;
 
     /**
-     * Creates a new ByteClassLoader.
+     * Creates a new ClassLoader.
      *
      * @param classDefs a Map of class names with `.` as package separator and byte arrays
      *                  consisting of the binary representation of that class
      */
-    ByteClassLoader(Map<String, byte[]> classDefs, ClassLoader parent) {
+    public InMemoryClassLoader(Map<String, byte[]> classDefs, ClassLoader parent) {
         super(new URL[0], parent);
         this.classDefs = classDefs;
     }

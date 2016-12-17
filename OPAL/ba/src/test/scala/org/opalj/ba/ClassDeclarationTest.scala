@@ -35,6 +35,8 @@ import scala.collection.JavaConversions.mapAsJavaMap
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.junit.runner.RunWith
+
+import org.opalj.util.InMemoryClassLoader
 import org.opalj.bc.Assembler
 import org.opalj.bi._
 import org.opalj.br.MethodDescriptor
@@ -66,7 +68,7 @@ class ClassDeclarationTest extends FlatSpec {
     val abstractAsm = Assembler(abstractClass.buildDAClassFile)
     val concreteAsm = Assembler(concreteClass.buildDAClassFile)
 
-    val loader = new ByteClassLoader(
+    val loader = new InMemoryClassLoader(
         Map(
             "NoFunctionInterface1" → Assembler(noFunctionInterface1.buildDAClassFile),
             "NoFunctionInterface2" → Assembler(noFunctionInterface2.buildDAClassFile),
