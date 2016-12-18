@@ -185,7 +185,7 @@ package object ba {
         implicit
         constantPoolBuffer: ConstantPoolBuffer
     ): da.Code_attribute = {
-        val data = new ByteArrayOutputStream()
+        val data = new ByteArrayOutputStream(code.instructions.size)
         val instructions = new DataOutputStream(data)
 
         var modifiedByWide = false
