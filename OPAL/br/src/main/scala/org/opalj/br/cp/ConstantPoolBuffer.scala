@@ -67,11 +67,17 @@ class ConstantPoolBuffer {
         getOrElseUpdate(CONSTANT_Class_info(CPEUtf8(typeName)), 1)
     }
 
-    def CPEDouble(value: Double): Int = getOrElseUpdate(CONSTANT_Double_info(ConstantDouble(value)), 2)
+    def CPEDouble(value: Double): Int = {
+        getOrElseUpdate(CONSTANT_Double_info(ConstantDouble(value)), 2)
+    }
 
-    def CPEFloat(value: Float): Int = getOrElseUpdate(CONSTANT_Float_info(ConstantFloat(value)), 1)
+    def CPEFloat(value: Float): Int = {
+        getOrElseUpdate(CONSTANT_Float_info(ConstantFloat(value)), 1)
+    }
 
-    def CPEInteger(value: Int): Int = getOrElseUpdate(CONSTANT_Integer_info(ConstantInteger(value)), 1)
+    def CPEInteger(value: Int): Int = {
+        getOrElseUpdate(CONSTANT_Integer_info(ConstantInteger(value)), 1)
+    }
 
     def CPELong(value: Long): Int = getOrElseUpdate(CONSTANT_Long_info(ConstantLong(value)), 2)
 
@@ -91,8 +97,7 @@ class ConstantPoolBuffer {
         fieldType:  String
     ): Int = {
         getOrElseUpdate(
-            CONSTANT_Fieldref_info(CPEClass(objectType), CPENameAndType(fieldName, fieldType)),
-            1
+            CONSTANT_Fieldref_info(CPEClass(objectType), CPENameAndType(fieldName, fieldType)), 1
         )
     }
 

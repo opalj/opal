@@ -80,7 +80,7 @@ final class Code private (
             bf: CanBuildFrom[Nothing, B, That]
         ): That = {
             val that = bf()
-            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+            code foreach { (pcInstruction: (PC, Instruction)) ⇒
                 if (p(pcInstruction)) that += f(pcInstruction)
             }
             that.result
@@ -93,7 +93,7 @@ final class Code private (
             bf: CanBuildFrom[Nothing, B, That]
         ): That = {
             val that = bf()
-            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+            code foreach { (pcInstruction: (PC, Instruction)) ⇒
                 if (p(pcInstruction)) that ++= f(pcInstruction).seq
             }
             that.result
