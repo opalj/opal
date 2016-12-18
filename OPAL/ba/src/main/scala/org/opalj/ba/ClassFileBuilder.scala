@@ -38,15 +38,15 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 class ClassFileBuilder(
-        private var version:        UShortPair                                     = ClassFileBuilder.DefaultVersion,
-        private var accessFlags:    Int                                            = 0,
-        private var thisType:       br.ObjectType                                  = null, // REQUIRED
-        private var superclassType: Option[br.ObjectType]                          = None,
-        private var interfaceTypes: Seq[br.ObjectType]                             = Seq.empty,
-        private var fields:         br.Fields                                      = IndexedSeq.empty,
-        private var methods:        br.Methods                                     = IndexedSeq.empty,
-        private var attributes:     br.Attributes                                  = IndexedSeq.empty,
-        private var annotations:    Map[br.ConcreteSourceElement, Map[br.PC, Any]] = Map.empty
+        private var version:        UShortPair                      = ClassFileBuilder.DefaultVersion,
+        private var accessFlags:    Int                             = 0,
+        private var thisType:       br.ObjectType                   = null, // REQUIRED
+        private var superclassType: Option[br.ObjectType]           = None,
+        private var interfaceTypes: Seq[br.ObjectType]              = Seq.empty,
+        private var fields:         br.Fields                       = IndexedSeq.empty,
+        private var methods:        br.Methods                      = IndexedSeq.empty,
+        private var attributes:     br.Attributes                   = IndexedSeq.empty,
+        private var annotations:    Map[br.Method, Map[br.PC, Any]] = Map.empty
 ) {
 
     /**
@@ -76,10 +76,7 @@ class ClassFileBuilder(
     /**
      * Defines the minorVersion and majorVersion. The default values are the current values.
      */
-    def Version(
-        minorVersion: Int = version.minor,
-        majorVersion: Int = version.major
-    ): this.type = {
+    def Version(minorVersion: Int = version.minor, majorVersion: Int = version.major): this.type = {
         version = UShortPair(minorVersion, majorVersion)
 
         this
