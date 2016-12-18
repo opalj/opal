@@ -33,9 +33,10 @@ import org.opalj.collection.immutable.UShortPair
 
 import org.opalj.da.{ClassFile ⇒ DAClassFile}
 import org.opalj.br.{ClassFile ⇒ BRClassFile}
-import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.ConcreteSourceElement
+import org.opalj.br.Method
 
 /**
  * ClassFileBuilder for the parameters specified after Fields or Methods have been added.
@@ -47,6 +48,30 @@ class ClassFileBuilder(
         private var classFile:   BRClassFile,
         private var annotations: Map[ConcreteSourceElement, Map[PC, Any]] = Map.empty
 ) {
+
+    /**
+     * Defines the extending class.
+     *
+     * @param fqn The extending class name in JVM notation as a fully qualified name, e.g.
+     *            "java/lang/Object".
+     */
+    def EXTENDS(fqn: String): this.type = {
+        classFile = classFile.copy(superclassType = Some(ObjectType(fqn)))
+
+        this
+    }
+
+    /**
+     * Defines the implemented interfaces.
+     *
+     * @param fqn The interfaces class names in JVM notation as a fully qualified name, e.g.
+     *            "java/lang/Object".
+     */
+    def IMPLEMENTS(fqns: String*): this.type = {
+        classFile = classFile.copy(interfaceTypes = fqns.map(ObjectType.apply))
+
+        this
+    }
 
     /**
      * Defines the SourceFile attribute.
@@ -109,9 +134,9 @@ class ClassFileBuilder(
 
 object ClassFileBuilder {
 
-    final val DefaultMinorVersion = 0
-
     final val DefaultMajorVersion = 50
+
+    final val DefaultMinorVersion = 0
 
     def apply(initialClassFile: BRClassFile): ClassFileBuilder = {
         new ClassFileBuilder(initialClassFile)

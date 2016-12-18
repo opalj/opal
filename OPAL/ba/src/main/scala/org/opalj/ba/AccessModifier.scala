@@ -52,7 +52,7 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
     }
 
     /**
-     * Creates a new [[ClassDeclarationBuilder]] with the given name and previously defined
+     * Creates a new [[ClassFileBuilder]] with the given name and previously defined
      * AccessModifiers. The minorVersion is initialized as
      * [[ClassFileBuilder.defaultMinorVersion]] and the majorVersion as
      * [[ClassFileBuilder.defaultMajorVersion]].
@@ -60,7 +60,7 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
      * @param fqn The fully qualified class name in JVM notation, e.g. "MyClass" for a
      *            class in the default package or "my/package/MyClass" for a class in "my.package".
      */
-    def CLASS(fqn: String): ClassDeclarationBuilder = {
+    def CLASS(fqn: String): ClassFileBuilder = {
         var accessFlags = this.accessFlags
 
         val superclassType: Option[ObjectType] =
@@ -72,7 +72,7 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
         if (ACC_ANNOTATION.isSet(accessFlags))
             accessFlags |= ACC_INTERFACE.mask
 
-        ClassDeclarationBuilder(
+        ClassFileBuilder(
             ClassFile(
                 minorVersion = ClassFileBuilder.DefaultMinorVersion,
                 majorVersion = ClassFileBuilder.DefaultMajorVersion,

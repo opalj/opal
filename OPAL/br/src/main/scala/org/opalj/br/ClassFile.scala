@@ -109,6 +109,7 @@ final class ClassFile private (
 
     /**
      * Creates a shallow copy of this class file object.
+     *
      * @param   fields The new set of fields; it need to be ordered by means of the ordering
      *          defined by [[Field]].
      * @param   methods The new set of methods; it need to be ordered by means of the ordering
