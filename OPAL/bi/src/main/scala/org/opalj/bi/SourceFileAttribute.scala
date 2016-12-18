@@ -28,55 +28,9 @@
  */
 package org.opalj
 package bi
-package reader
 
-import java.io.DataInputStream
+object SourceFileAttribute {
 
-/**
- * The SourceFile attribute is an optional attribute in the
- * attributes table of a ClassFile structure.
- *
- * @author Michael Eichberg
- */
-trait SourceFile_attributeReader extends AttributeReader {
+    final val Name = "SourceFile"
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
-
-    type SourceFile_attribute <: Attribute
-
-    def SourceFile_attribute(
-        constant_pool:        Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        sourcefile_index:     Constant_Pool_Index
-    ): SourceFile_attribute
-
-    //
-    // IMPLEMENTATION
-    //
-
-    /**
-     * The SourceFile attribute is an optional fixed-length attribute in the
-     * attributes table of a ClassFile structure.
-     *
-     * <pre>
-     * SourceFile_attribute {
-     *    u2 attribute_name_index;
-     *    u4 attribute_length;
-     *    u2 sourcefile_index;
-     * }
-     * </pre>
-     */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): SourceFile_attribute = {
-        /*val attribute_length =*/ in.readInt
-        SourceFile_attribute(cp, attribute_name_index, in.readUnsignedShort)
-    }
-
-    registerAttributeReader(SourceFileAttribute.Name → parser)
 }
