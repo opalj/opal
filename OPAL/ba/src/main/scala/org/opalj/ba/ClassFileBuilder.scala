@@ -38,8 +38,15 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 class ClassFileBuilder(
-        private var classFile:   br.ClassFile,
-        private var annotations: Map[br.ConcreteSourceElement, Map[br.PC, Any]] = Map.empty
+        private var version:        UShortPair                                     = ClassFileBuilder.DefaultVersion,
+        private var accessFlags:    Int                                            = 0,
+        private var thisType:       br.ObjectType                                  = null, // REQUIRED
+        private var superclassType: Option[br.ObjectType]                          = None,
+        private var interfaceTypes: Seq[br.ObjectType]                             = Seq.empty,
+        private var fields:         br.Fields                                      = IndexedSeq.empty,
+        private var methods:        br.Methods                                     = IndexedSeq.empty,
+        private var attributes:     br.Attributes                                  = IndexedSeq.empty,
+        private var annotations:    Map[br.ConcreteSourceElement, Map[br.PC, Any]] = Map.empty
 ) {
 
     /**
@@ -49,7 +56,7 @@ class ClassFileBuilder(
      *            "java/lang/Object".
      */
     def EXTENDS(fqn: String): this.type = {
-        classFile = classFile.copy(superclassType = Some(br.ObjectType(fqn)))
+        superclassType = Some(br.ObjectType(fqn))
 
         this
     }
@@ -61,18 +68,7 @@ class ClassFileBuilder(
      *            "java/lang/Object".
      */
     def IMPLEMENTS(fqns: String*): this.type = {
-        classFile = classFile.copy(interfaceTypes = fqns.map(br.ObjectType.apply))
-
-        this
-    }
-
-    /**
-     * Defines the SourceFile attribute.
-     */
-    def SourceFile(sourceFile: String): this.type = {
-        classFile = classFile.copy(
-            attributes = classFile.attributes :+ br.SourceFile(sourceFile)
-        )
+        interfaceTypes = fqns.map(br.ObjectType.apply)
 
         this
     }
@@ -81,36 +77,55 @@ class ClassFileBuilder(
      * Defines the minorVersion and majorVersion. The default values are the current values.
      */
     def Version(
-        minorVersion: Int = classFile.version.minor,
-        majorVersion: Int = classFile.version.major
+        minorVersion: Int = version.minor,
+        majorVersion: Int = version.major
     ): this.type = {
-        classFile = classFile.copy(version = UShortPair(minorVersion, majorVersion))
+        version = UShortPair(minorVersion, majorVersion)
 
         this
     }
 
     /**
-     * Builds the [[org.opalj.br.ClassFile]].
+     * Defines the SourceFile attribute.
+     */
+    def SourceFile(sourceFile: String): this.type = {
+        attributes :+= br.SourceFile(sourceFile)
+
+        this
+    }
+
+    /**
+     * Builds the [[org.opalj.br.ClassFile]] given the current information.
      *
      * The following conditional changes are done to ensure a correct class file is created:
      *  - For regular classes (not interface types) a default constructor will be generated
      *    if no constructor was defined and the superclass type information is available.
      */
     def buildBRClassFile(): (br.ClassFile, Map[br.ConcreteSourceElement, Map[br.PC, Any]]) = {
-        if (classFile.isInterfaceDeclaration ||
-            classFile.constructors.nonEmpty ||
+        if (!(
+            bi.ACC_INTERFACE.isSet(accessFlags) ||
+            methods.exists(_.isConstructor) ||
             // If "only" the following partical condition holds,
             // the the class file will be invalid, but we can't 
             // generate a default constructor, because we don't 
             // know the target!
-            classFile.superclassType.isEmpty) {
-            (classFile, annotations)
-        } else {
-            val superclassType = classFile.superclassType.get
-            val newMethods = classFile.methods :+ br.Method.defaultConstructor(superclassType)
-            (classFile.copy(methods = newMethods), annotations)
+            superclassType.isEmpty
+        )) {
+            this.methods :+= br.Method.defaultConstructor(this.superclassType.get)
         }
-
+        val classFile = br.ClassFile(
+            /*WE HAVE TO USE THE FACTORY METHOD TO ENSURE THAT THE MEMBERS ARE SORTED*/
+            version.minor,
+            version.major,
+            accessFlags,
+            thisType,
+            superclassType,
+            interfaceTypes,
+            fields,
+            methods,
+            attributes
+        )
+        (classFile, annotations)
     }
 
     /**
@@ -131,8 +146,6 @@ object ClassFileBuilder {
 
     final val DefaultMinorVersion = 0
 
-    def apply(initialClassFile: br.ClassFile): ClassFileBuilder = {
-        new ClassFileBuilder(initialClassFile)
-    }
+    final val DefaultVersion = UShortPair(DefaultMinorVersion, DefaultMajorVersion)
 
 }

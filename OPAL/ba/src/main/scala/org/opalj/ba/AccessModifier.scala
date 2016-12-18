@@ -31,7 +31,6 @@ package ba
 
 import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_ANNOTATION
-import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 
 /**
@@ -72,18 +71,10 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
         if (ACC_ANNOTATION.isSet(accessFlags))
             accessFlags |= ACC_INTERFACE.mask
 
-        ClassFileBuilder(
-            ClassFile(
-                minorVersion = ClassFileBuilder.DefaultMinorVersion,
-                majorVersion = ClassFileBuilder.DefaultMajorVersion,
-                accessFlags = accessFlags,
-                thisType = ObjectType(fqn),
-                superclassType = superclassType,
-                interfaceTypes = IndexedSeq.empty,
-                fields = IndexedSeq.empty,
-                methods = IndexedSeq.empty,
-                attributes = IndexedSeq.empty
-            )
+        new ClassFileBuilder(
+            accessFlags = accessFlags,
+            thisType = ObjectType(fqn),
+            superclassType = superclassType
         )
     }
 }
