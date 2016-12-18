@@ -182,6 +182,7 @@ package object ba { ba ⇒
             val (pc, i) = e
             instructions.writeByte(i.opcode)
             i match {
+                // TODO use opcode to enable efficient switching (by means of a tableswitch)
                 case BIPUSH(value) ⇒ instructions.writeShort(value)
                 case CHECKCAST(referenceType) ⇒
                     val cpeRef = constantPoolBuffer.CPEClass(referenceType)
@@ -342,6 +343,7 @@ package object ba { ba ⇒
         constantPoolBuffer: ConstantPoolBuffer
     ): Array[da.Constant_Pool_Entry] = {
         constantPoolBuffer.toArray.map {
+            // TODO use tags to enable efficient switching (by means of a tableswitch)
             case CONSTANT_NameAndType_info(name_index, descriptor_index) ⇒
                 da.CONSTANT_NameAndType_info(name_index, descriptor_index)
 
