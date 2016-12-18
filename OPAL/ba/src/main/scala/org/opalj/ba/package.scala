@@ -28,6 +28,8 @@
  */
 package org.opalj
 
+import scala.language.implicitConversions
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
@@ -51,14 +53,10 @@ import org.opalj.bi.ACC_NATIVE
 import org.opalj.bi.ACC_STRICT
 
 import org.opalj.br.Attribute
-import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
-import org.opalj.br.Field
-import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodHandle
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.SourceFile
 import org.opalj.br.cp._ // we need ALL of them...
@@ -148,10 +146,11 @@ package object ba {
         val interfaces = classFile.interfaceTypes.map(constantPoolBuffer.CPEClass)
         val fields = classFile.fields.map(toDA)
         val methods = classFile.methods.map(toDA)
-        val attributes = classFile.attributes.map(_.assembleToDA(constantPoolBuffer))
+        val attributes = classFile.attributes.map(toDA)
+        val constant_pool = toDA(constantPoolBuffer)
 
         da.ClassFile(
-            constant_pool = constantPoolBuffer.assembleToDA,
+            constant_pool = constant_pool,
             minor_version = classFile.version.minor,
             major_version = classFile.version.major,
             access_flags = classFile.accessFlags,
@@ -164,244 +163,252 @@ package object ba {
         )
     }
 
-    private implicit class FieldConvert(field: Field) {
-        def assembleToDA(constantPoolBuffer: ConstantPoolBuffer): da.Field_Info = {
-            da.Field_Info(
-                access_flags = field.accessFlags,
-                name_index = constantPoolBuffer.CPEUtf8(field.name),
-                descriptor_index = constantPoolBuffer.CPEUtf8(field.fieldType.toJVMTypeName),
-                attributes = field.attributes.map(_.assembleToDA(constantPoolBuffer))
-            )
-        }
+    implicit def toDA(
+        field: br.Field
+    )(
+        implicit
+        constantPoolBuffer: ConstantPoolBuffer
+    ): da.Field_Info = {
+        da.Field_Info(
+            access_flags = field.accessFlags,
+            name_index = constantPoolBuffer.CPEUtf8(field.name),
+            descriptor_index = constantPoolBuffer.CPEUtf8(field.fieldType.toJVMTypeName),
+            attributes = field.attributes.map(toDA)
+        )
     }
 
-    private implicit class MethodConvert(method: Method) {
-        def assembleToDA(constantPoolBuffer: ConstantPoolBuffer): da.Method_Info = {
-            var attributes = method.attributes.map(_.assembleToDA(constantPoolBuffer))
-            if (method.body.isDefined) {
-                attributes = attributes :+ method.body.get.assembleToDA(constantPoolBuffer)
-            }
-            da.Method_Info(
-                access_flags = method.accessFlags,
-                name_index = constantPoolBuffer.CPEUtf8(method.name),
-                descriptor_index = constantPoolBuffer.CPEUtf8(method.descriptor.toJVMDescriptor),
-                attributes = attributes
-            )
+    implicit def toDA(
+        method: br.Method
+    )(
+        implicit
+        constantPoolBuffer: ConstantPoolBuffer
+    ): da.Method_Info = {
+        var attributes = method.attributes.map(toDA)
+        if (method.body.isDefined) {
+            attributes = (method.body.get: da.Code_attribute) +: attributes
         }
+        da.Method_Info(
+            access_flags = method.accessFlags,
+            name_index = constantPoolBuffer.CPEUtf8(method.name),
+            descriptor_index = constantPoolBuffer.CPEUtf8(method.descriptor.toJVMDescriptor),
+            attributes = attributes
+        )
     }
 
-    private implicit class CodeConvert(code: Code) {
-        def assembleToDA(constantPoolBuffer: ConstantPoolBuffer): da.Code_attribute = {
-            val instructions = scala.collection.mutable.ListBuffer.empty[Byte]
+    implicit def toDA(
+        code: Code
+    )(
+        implicit
+        constantPoolBuffer: ConstantPoolBuffer
+    ): da.Code_attribute = {
+        val instructions = scala.collection.mutable.ListBuffer.empty[Byte]
 
-            def addShortArg(value: Int) = {
-                instructions.append((value >>> 8).toByte)
-                instructions.append((value & 0xFF).toByte)
-            }
+        def addShortArg(value: Int) = {
+            instructions.append((value >>> 8).toByte)
+            instructions.append((value & 0xFF).toByte)
+        }
 
-            def addIntArg(value: Int) = {
-                instructions.append((value >>> 24).toByte)
-                instructions.append((value >>> 16).toByte)
-                instructions.append((value >>> 8).toByte)
-                instructions.append((value & 0xFF).toByte)
-            }
+        def addIntArg(value: Int) = {
+            instructions.append((value >>> 24).toByte)
+            instructions.append((value >>> 16).toByte)
+            instructions.append((value >>> 8).toByte)
+            instructions.append((value & 0xFF).toByte)
+        }
 
-            var nextPC = 0
-            var modifiedByWide = false
-            code.foreach(e ⇒ {
-                val (_, i) = e
-                instructions.append(i.opcode.toByte)
-                i match {
-                    case BIPUSH(value) ⇒ addShortArg(value)
-                    case CHECKCAST(referenceType) ⇒ {
-                        val argIndex = constantPoolBuffer.CPEClass(referenceType)
-                        addShortArg(argIndex)
-                    }
-                    case IINC(lvIndex, constValue) ⇒ {
-                        if (modifiedByWide) {
-                            addShortArg(lvIndex)
-                            addShortArg(constValue)
-                        } else {
-                            instructions.append(lvIndex.toByte)
-                            instructions.append(constValue.toByte)
-                        }
-                    }
-                    case INSTANCEOF(referenceType) ⇒ {
-                        val argIndex = constantPoolBuffer.CPEClass(referenceType)
-                        addShortArg(argIndex)
-                    }
-                    case JSR_W(branchoffset) ⇒ addIntArg(branchoffset)
-                    case _: LDC[_] | _: LDC_W[_] ⇒ {
-                        val value = i.asInstanceOf[LoadConstantInstruction[_]].value
-                        val argIndex = value match {
-                            case int: Int ⇒ {
-                                constantPoolBuffer.CPEInteger(int)
-                            }
-                            case float: Float ⇒ {
-                                constantPoolBuffer.CPEFloat(float)
-                            }
-                            case string: String ⇒ {
-                                constantPoolBuffer.CPEString(string)
-                            }
-                            case mh: MethodHandle ⇒ {
-                                constantPoolBuffer.CPEMethodHandle(mh)
-                            }
-                            case md: MethodDescriptor ⇒ {
-                                constantPoolBuffer.CPEMethodType(md.toJVMDescriptor)
-                            }
-                            case reference: ReferenceType ⇒ {
-                                constantPoolBuffer.CPEClass(reference)
-                            }
-                        }
-
-                        if (i.isInstanceOf[LDC_W[_]]) {
-                            addIntArg(argIndex)
-                        } else {
-                            addShortArg(argIndex)
-                        }
-                    }
-                    case l: LDC2_W[_] ⇒ {
-                        l.value match {
-                            case l: Long ⇒ {
-                                addShortArg(constantPoolBuffer.CPELong(l))
-                            }
-                            case d: Double ⇒ {
-                                addShortArg(constantPoolBuffer.CPEDouble(d))
-                            }
-                        }
-                    }
-                    //TODO: LOOKUPSWITCH, MULTIANEWARRAY
-                    case NEW(objectType) ⇒ {
-                        val argIndex = constantPoolBuffer.CPEClass(objectType)
-                        addShortArg(argIndex)
-                    }
-                    //TODO: NEWARRAY
-                    case RET(lvIndex)  ⇒ instructions.append(lvIndex.toByte)
-                    case SIPUSH(value) ⇒ addShortArg(value)
-                    //TODO: TABLESWITCH
-
-                    //TODO: INVOKEDYNAMIC
-                    case methodInvocation: MethodInvocationInstruction ⇒
-                        val argIndex = constantPoolBuffer.CPEMethodRef(
-                            methodInvocation.declaringClass,
-                            methodInvocation.name,
-                            methodInvocation.methodDescriptor.toJVMDescriptor
-                        )
-                        addShortArg(argIndex)
-                    case s: SimpleConditionalBranchInstruction ⇒ addShortArg(s.branchoffset)
-                    case u: UnconditionalBranchInstruction     ⇒ addShortArg(u.branchoffset)
-                    case f: FieldAccess ⇒ {
-                        val argIndex = constantPoolBuffer.CPEFieldRef(
-                            f.declaringClass,
-                            f.name,
-                            f.fieldType.toJVMTypeName
-                        )
-                        addShortArg(argIndex)
-                    }
-                    case e: ExplicitLocalVariableIndex ⇒ {
-                        if (modifiedByWide) {
-                            addShortArg(e.lvIndex)
-                        } else {
-                            instructions.append(e.lvIndex.toByte)
-                        }
-                    }
-                    case _ ⇒
+        var nextPC = 0
+        var modifiedByWide = false
+        code.foreach(e ⇒ {
+            val (_, i) = e
+            instructions.append(i.opcode.toByte)
+            i match {
+                case BIPUSH(value) ⇒ addShortArg(value)
+                case CHECKCAST(referenceType) ⇒ {
+                    val argIndex = constantPoolBuffer.CPEClass(referenceType)
+                    addShortArg(argIndex)
                 }
-
-                modifiedByWide = false
-                if (i.isInstanceOf[WIDE.type]) {
-                    modifiedByWide = true
+                case IINC(lvIndex, constValue) ⇒ {
+                    if (modifiedByWide) {
+                        addShortArg(lvIndex)
+                        addShortArg(constValue)
+                    } else {
+                        instructions.append(lvIndex.toByte)
+                        instructions.append(constValue.toByte)
+                    }
                 }
+                case INSTANCEOF(referenceType) ⇒ {
+                    val argIndex = constantPoolBuffer.CPEClass(referenceType)
+                    addShortArg(argIndex)
+                }
+                case JSR_W(branchoffset) ⇒ addIntArg(branchoffset)
+                case _: LDC[_] | _: LDC_W[_] ⇒ {
+                    val value = i.asInstanceOf[LoadConstantInstruction[_]].value
+                    val argIndex = value match {
+                        case int: Int ⇒ {
+                            constantPoolBuffer.CPEInteger(int)
+                        }
+                        case float: Float ⇒ {
+                            constantPoolBuffer.CPEFloat(float)
+                        }
+                        case string: String ⇒ {
+                            constantPoolBuffer.CPEString(string)
+                        }
+                        case mh: MethodHandle ⇒ {
+                            constantPoolBuffer.CPEMethodHandle(mh)
+                        }
+                        case md: MethodDescriptor ⇒ {
+                            constantPoolBuffer.CPEMethodType(md.toJVMDescriptor)
+                        }
+                        case reference: ReferenceType ⇒ {
+                            constantPoolBuffer.CPEClass(reference)
+                        }
+                    }
 
-                nextPC = i.indexOfNextInstruction(nextPC)(code)
-            })
+                    if (i.isInstanceOf[LDC_W[_]]) {
+                        addIntArg(argIndex)
+                    } else {
+                        addShortArg(argIndex)
+                    }
+                }
+                case l: LDC2_W[_] ⇒ {
+                    l.value match {
+                        case l: Long ⇒ {
+                            addShortArg(constantPoolBuffer.CPELong(l))
+                        }
+                        case d: Double ⇒ {
+                            addShortArg(constantPoolBuffer.CPEDouble(d))
+                        }
+                    }
+                }
+                //TODO: LOOKUPSWITCH, MULTIANEWARRAY
+                case NEW(objectType) ⇒ {
+                    val argIndex = constantPoolBuffer.CPEClass(objectType)
+                    addShortArg(argIndex)
+                }
+                //TODO: NEWARRAY
+                case RET(lvIndex)  ⇒ instructions.append(lvIndex.toByte)
+                case SIPUSH(value) ⇒ addShortArg(value)
+                //TODO: TABLESWITCH
 
-            da.Code_attribute(
-                attribute_name_index = constantPoolBuffer.CPEUtf8("Code"),
-                max_stack = code.maxStack,
-                max_locals = code.maxLocals,
-                code = da.Code(instructions.toArray),
-                exceptionTable = code.exceptionHandlers.map(e ⇒ e.assembleToDA(constantPoolBuffer)),
-                attributes = IndexedSeq.empty
-            )
-        }
+                //TODO: INVOKEDYNAMIC
+                case methodInvocation: MethodInvocationInstruction ⇒
+                    val argIndex = constantPoolBuffer.CPEMethodRef(
+                        methodInvocation.declaringClass,
+                        methodInvocation.name,
+                        methodInvocation.methodDescriptor.toJVMDescriptor
+                    )
+                    addShortArg(argIndex)
+                case s: SimpleConditionalBranchInstruction ⇒ addShortArg(s.branchoffset)
+                case u: UnconditionalBranchInstruction     ⇒ addShortArg(u.branchoffset)
+                case f: FieldAccess ⇒ {
+                    val argIndex = constantPoolBuffer.CPEFieldRef(
+                        f.declaringClass,
+                        f.name,
+                        f.fieldType.toJVMTypeName
+                    )
+                    addShortArg(argIndex)
+                }
+                case e: ExplicitLocalVariableIndex ⇒ {
+                    if (modifiedByWide) {
+                        addShortArg(e.lvIndex)
+                    } else {
+                        instructions.append(e.lvIndex.toByte)
+                    }
+                }
+                case _ ⇒
+            }
+
+            modifiedByWide = false
+            if (i.isInstanceOf[WIDE.type]) {
+                modifiedByWide = true
+            }
+
+            nextPC = i.indexOfNextInstruction(nextPC)(code)
+        })
+
+        da.Code_attribute(
+            attribute_name_index = constantPoolBuffer.CPEUtf8(bi.CodeAttribute.Name),
+            max_stack = code.maxStack,
+            max_locals = code.maxLocals,
+            code = da.Code(instructions.toArray),
+            exceptionTable = code.exceptionHandlers.map(toDA),
+            attributes = code.attributes.map(toDA)
+        )
     }
 
-    private implicit class ExceptionHandlersConvert(exceptionHandler: ExceptionHandler) {
-        def assembleToDA(constantPoolBuffer: ConstantPoolBuffer): da.ExceptionTableEntry = {
-            val index = if (exceptionHandler.catchType.isDefined) {
-                constantPoolBuffer.CPEClass(exceptionHandler.catchType.get)
-            } else 0
-            da.ExceptionTableEntry(
-                exceptionHandler.startPC,
-                exceptionHandler.endPC,
-                exceptionHandler.handlerPC,
-                index
-            )
-        }
+    implicit def toDA(
+        exceptionHandler: ExceptionHandler
+    )(
+        implicit
+        constantPoolBuffer: ConstantPoolBuffer
+    ): da.ExceptionTableEntry = {
+        val index = if (exceptionHandler.catchType.isDefined) {
+            constantPoolBuffer.CPEClass(exceptionHandler.catchType.get)
+        } else 0
+        da.ExceptionTableEntry(
+            exceptionHandler.startPC,
+            exceptionHandler.endPC,
+            exceptionHandler.handlerPC,
+            index
+        )
     }
 
-    private implicit class AttributeConvert(attribute: Attribute) {
-        def assembleToDA(constantPoolBuffer: ConstantPoolBuffer): da.Attribute = {
-            attribute match {
-                case c: Code ⇒ c.assembleToDA(constantPoolBuffer)
-                case SourceFile(s) ⇒ da.SourceFile_attribute(
-                    constantPoolBuffer.CPEUtf8("SourceFile"),
+    implicit def toDA(
+        attribute: Attribute
+    )(
+        implicit
+        constantPoolBuffer: ConstantPoolBuffer
+    ): da.Attribute = {
+        attribute match {
+            // implicit conversions
+            case c: Code ⇒ (c: da.Code_attribute)
+
+            // direct conversions
+            case SourceFile(s) ⇒
+                da.SourceFile_attribute(
+                    constantPoolBuffer.CPEUtf8(bi.SourceFileAttribute.Name),
                     constantPoolBuffer.CPEUtf8(s)
                 )
-            }
+
+            // TODO: Support the other attributes...
         }
     }
 
-    private implicit class ConstantPoolConvert(constantPoolBuffer: ConstantPoolBuffer) {
-        def assembleToDA: Array[da.Constant_Pool_Entry] = {
-            constantPoolBuffer.toArray.map {
-                case CONSTANT_NameAndType_info(name_index, descriptor_index) ⇒ {
-                    da.CONSTANT_NameAndType_info(
-                        name_index,
-                        descriptor_index
-                    )
-                }
-                case CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index) ⇒ {
-                    da.CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index)
-                }
-                case CONSTANT_Fieldref_info(class_index, name_and_type_index) ⇒ {
-                    da.CONSTANT_Fieldref_info(
-                        class_index,
-                        name_and_type_index
-                    )
-                }
-                case CONSTANT_MethodHandle_info(referenceKind, referenceIndex) ⇒ {
-                    da.CONSTANT_MethodHandle_info(
-                        referenceKind,
-                        referenceIndex
-                    )
-                }
-                case CONSTANT_Methodref_info(class_index, name_and_type_index) ⇒ {
-                    da.CONSTANT_Methodref_info(
-                        class_index,
-                        name_and_type_index
-                    )
-                }
-                case CONSTANT_InvokeDynamic_info(bootstrapMethodIndex, nameAndTypeIndex) ⇒ {
-                    da.CONSTANT_InvokeDynamic_info(
-                        bootstrapMethodIndex,
-                        nameAndTypeIndex
-                    )
-                }
+    implicit def toDA(
+        implicit
+        constantPoolBuffer: ConstantPoolBuffer
+    ): Array[da.Constant_Pool_Entry] = {
+        constantPoolBuffer.toArray.map {
+            case CONSTANT_NameAndType_info(name_index, descriptor_index) ⇒
+                da.CONSTANT_NameAndType_info(name_index, descriptor_index)
 
-                case CONSTANT_Class_info(name_index) ⇒ da.CONSTANT_Class_info(name_index)
-                case CONSTANT_MethodType_info(index) ⇒ da.CONSTANT_MethodType_info(index)
+            case CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index) ⇒
+                da.CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index)
 
-                case CONSTANT_Double_info(d)         ⇒ da.CONSTANT_Double_info(d.value)
-                case CONSTANT_Float_info(f)          ⇒ da.CONSTANT_Float_info(f.value)
-                case CONSTANT_Long_info(l)           ⇒ da.CONSTANT_Long_info(l.value)
-                case CONSTANT_Integer_info(i)        ⇒ da.CONSTANT_Integer_info(i.value)
-                case CONSTANT_String_info(s)         ⇒ da.CONSTANT_String_info(s)
-                case CONSTANT_Utf8_info(u)           ⇒ da.CONSTANT_Utf8(u)
-                case null                            ⇒ null
-                case _                               ⇒ throw new IllegalArgumentException
-            }
+            case CONSTANT_Fieldref_info(class_index, name_and_type_index) ⇒
+                da.CONSTANT_Fieldref_info(class_index, name_and_type_index)
+
+            case CONSTANT_MethodHandle_info(referenceKind, referenceIndex) ⇒
+                da.CONSTANT_MethodHandle_info(referenceKind, referenceIndex)
+
+            case CONSTANT_Methodref_info(class_index, name_and_type_index) ⇒
+                da.CONSTANT_Methodref_info(class_index, name_and_type_index)
+
+            case CONSTANT_InvokeDynamic_info(bootstrapMethodIndex, nameAndTypeIndex) ⇒
+                da.CONSTANT_InvokeDynamic_info(bootstrapMethodIndex, nameAndTypeIndex)
+
+            case CONSTANT_Class_info(name_index) ⇒ da.CONSTANT_Class_info(name_index)
+            case CONSTANT_MethodType_info(index) ⇒ da.CONSTANT_MethodType_info(index)
+
+            case CONSTANT_Double_info(d)         ⇒ da.CONSTANT_Double_info(d.value)
+            case CONSTANT_Float_info(f)          ⇒ da.CONSTANT_Float_info(f.value)
+            case CONSTANT_Long_info(l)           ⇒ da.CONSTANT_Long_info(l.value)
+            case CONSTANT_Integer_info(i)        ⇒ da.CONSTANT_Integer_info(i.value)
+            case CONSTANT_String_info(s)         ⇒ da.CONSTANT_String_info(s)
+            case CONSTANT_Utf8_info(u)           ⇒ da.CONSTANT_Utf8(u)
+
+            case null                            ⇒ null
+
+            case cpe                             ⇒ throw new IllegalArgumentException(cpe.toString)
         }
     }
 
