@@ -35,12 +35,14 @@ import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 
 /**
- * Enhancing wrapper for combining AccessFlags.
+ * Represents the access flags of a class, method or field declaration.
+ *
+ * All standard access flags are predefined in this package [[org.opalj.ba]].
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-final class AccessModifier(val accessFlags: Int) extends AnyVal {
+final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
 
     /**
      * Returns a new [[AccessModifier]] with both [[AccessModifier]]s `accessFlag`s set.
