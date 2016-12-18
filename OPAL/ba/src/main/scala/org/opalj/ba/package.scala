@@ -137,32 +137,31 @@ package object ba {
      * Converts a [[org.opalj.br.ClassFile]] to a [[org.opalj.da.ClassFile]] and all its attributes
      * to the attributes in [[org.opalj.da]].
      */
-    implicit class ClassConvert(classFile: ClassFile) {
-        def assembleToDA: da.ClassFile = {
-            val constantPoolBuffer = new ConstantPoolBuffer()
-            val thisNamePos = constantPoolBuffer.CPEClass(classFile.thisType)
-            val superClassPos = constantPoolBuffer.CPEClass(
-                classFile.superclassType.getOrElse(ObjectType("java/lang/Object"))
-            )
-
-            val interfaces = classFile.interfaceTypes.map(constantPoolBuffer.CPEClass(_))
-            val fields = classFile.fields.map(_.assembleToDA(constantPoolBuffer))
-            val methods = classFile.methods.map(_.assembleToDA(constantPoolBuffer))
-            val attributes = classFile.attributes.map(_.assembleToDA(constantPoolBuffer))
-
-            da.ClassFile(
-                constant_pool = constantPoolBuffer.assembleToDA,
-                minor_version = classFile.version.minor,
-                major_version = classFile.version.major,
-                access_flags = classFile.accessFlags,
-                this_class = thisNamePos,
-                super_class = superClassPos,
-                interfaces = interfaces.toIndexedSeq,
-                fields = fields,
-                methods = methods,
-                attributes = attributes
-            )
+    implicit def toDA(classFile: br.ClassFile): da.ClassFile = {
+        implicit val constantPoolBuffer = new ConstantPoolBuffer()
+        val thisTypeCPRef = constantPoolBuffer.CPEClass(classFile.thisType)
+        val superClassCPRef = classFile.superclassType match {
+            case Some(superclassType) ⇒ constantPoolBuffer.CPEClass(superclassType)
+            case None                 ⇒ 0
         }
+
+        val interfaces = classFile.interfaceTypes.map(constantPoolBuffer.CPEClass)
+        val fields = classFile.fields.map(toDA)
+        val methods = classFile.methods.map(toDA)
+        val attributes = classFile.attributes.map(_.assembleToDA(constantPoolBuffer))
+
+        da.ClassFile(
+            constant_pool = constantPoolBuffer.assembleToDA,
+            minor_version = classFile.version.minor,
+            major_version = classFile.version.major,
+            access_flags = classFile.accessFlags,
+            this_class = thisTypeCPRef,
+            super_class = superClassCPRef,
+            interfaces = interfaces.toIndexedSeq,
+            fields = fields,
+            methods = methods,
+            attributes = attributes
+        )
     }
 
     private implicit class FieldConvert(field: Field) {
