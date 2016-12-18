@@ -50,8 +50,8 @@ import org.opalj.collection.immutable.Naught
  * Represents a single class file which either defines a class type or an interface type.
  * (`Annotation` types are also interface types and `Enum`s are class types.)
  *
- * @param   minorVersion The minor part of this class file's version number.
- * @param   majorVersion The major part of this class file's version number.
+ * @param   version A pair of unsigned short values identifying the class file version number.
+ *          `UShortPair(minorVersion, majorVersion)`.
  * @param   accessFlags The access flags of this class. To further analyze the access flags
  *          either use the corresponding convenience methods (e.g., isEnumDeclaration())
  *          or the class [[org.opalj.bi.AccessFlagsIterator]] or the classes which
