@@ -47,14 +47,14 @@ import org.opalj.bc.Assembler
 /**
  * Tests general properties of a classes build with the BytecodeAssembler DSL by loading and
  * instantiating them with the JVM and doing a round trip `BRClassFile` -> `DAClassFile` ->
- * `Assembler` -> `BRClassFile`.
+ * `Serialized Class File` -> `BRClassFile`.
  *
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class ClassDeclarationTest extends FlatSpec {
+class ClassFiledBuilderTest extends FlatSpec {
 
-    behavior of "the ClassFileDeclarationBuilder"
+    behavior of "the ClassFileBuilder"
 
     val markerInterface1 = ABSTRACT + INTERFACE CLASS "MarkerInterface1"
     val markerInterface2 = ABSTRACT + INTERFACE CLASS "MarkerInterface2"
