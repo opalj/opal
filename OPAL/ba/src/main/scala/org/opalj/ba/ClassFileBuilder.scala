@@ -135,7 +135,7 @@ class ClassFileBuilder(
      */
     def buildDAClassFile(): (da.ClassFile, Map[br.ConcreteSourceElement, Map[br.PC, Any]]) = {
         val (brClassFile, annotations) = buildBRClassFile()
-        (brClassFile, annotations)
+        (brClassFile.toDA, annotations)
     }
 
 }

@@ -75,7 +75,7 @@ import org.opalj.br.instructions._ // we need NEARY ALL of them...
  * @author Michael Eichberg
  * @author Malte Limmeroth
  */
-package object ba {
+package object ba { ba ⇒
 
     {
         // Log the information whether a production build or a development build is used.
@@ -111,7 +111,7 @@ package object ba {
 
     // *********************************************************************************************
     //
-    //          F U N C T I O N A L I T Y   T O  C R E A T E    B R C L A S S F I L E S
+    //          F U N C T I O N A L I T Y   T O  C R E A T E    "br." C L A S S F I L E S
     //
     // *********************************************************************************************
 
@@ -119,7 +119,7 @@ package object ba {
      * Converts a [[org.opalj.br.ClassFile]] to a [[org.opalj.da.ClassFile]] and all its attributes
      * to the attributes in [[org.opalj.da]].
      */
-    implicit def toDA(classFile: br.ClassFile): da.ClassFile = {
+    def toDA(classFile: br.ClassFile): da.ClassFile = {
         implicit val constantPoolBuffer = new ConstantPoolBuffer()
         val thisTypeCPRef = constantPoolBuffer.CPEClass(classFile.thisType)
         val superClassCPRef = classFile.superclassType match {
@@ -131,7 +131,7 @@ package object ba {
         val fields = classFile.fields.map(toDA)
         val methods = classFile.methods.map(toDA)
         val attributes = classFile.attributes.map(toDA)
-        val constant_pool = toDA(constantPoolBuffer)
+        val constant_pool = constantPoolBuffer.toDA
 
         da.ClassFile(
             constant_pool = constant_pool,
@@ -147,12 +147,11 @@ package object ba {
         )
     }
 
-    implicit def toDA(
-        field: br.Field
-    )(
-        implicit
-        constantPoolBuffer: ConstantPoolBuffer
-    ): da.Field_Info = {
+    implicit class BRClassFile(classFile: br.ClassFile) {
+        def toDA: da.ClassFile = ba.toDA(classFile)
+    }
+
+    def toDA(field: br.Field)(implicit constantPoolBuffer: ConstantPoolBuffer): da.Field_Info = {
         da.Field_Info(
             access_flags = field.accessFlags,
             name_index = constantPoolBuffer.CPEUtf8(field.name),
@@ -161,15 +160,10 @@ package object ba {
         )
     }
 
-    implicit def toDA(
-        method: br.Method
-    )(
-        implicit
-        constantPoolBuffer: ConstantPoolBuffer
-    ): da.Method_Info = {
+    def toDA(method: br.Method)(implicit constantPoolBuffer: ConstantPoolBuffer): da.Method_Info = {
         var attributes = method.attributes.map(toDA)
         if (method.body.isDefined) {
-            attributes = (method.body.get: da.Code_attribute) +: attributes
+            attributes = method.body.get.toDA +: attributes
         }
         da.Method_Info(
             access_flags = method.accessFlags,
@@ -179,12 +173,7 @@ package object ba {
         )
     }
 
-    implicit def toDA(
-        code: Code
-    )(
-        implicit
-        constantPoolBuffer: ConstantPoolBuffer
-    ): da.Code_attribute = {
+    def toDA(code: Code)(implicit constantPoolBuffer: ConstantPoolBuffer): da.Code_attribute = {
         val data = new ByteArrayOutputStream(code.instructions.size)
         val instructions = new DataOutputStream(data)
 
@@ -302,6 +291,15 @@ package object ba {
         )
     }
 
+    implicit class BRCode(
+            code: br.Code
+    )(
+            implicit
+            constantPoolBuffer: ConstantPoolBuffer
+    ) {
+        def toDA: da.Code_attribute = ba.toDA(code)
+    }
+
     implicit def toDA(
         exceptionHandler: ExceptionHandler
     )(
@@ -326,8 +324,7 @@ package object ba {
         constantPoolBuffer: ConstantPoolBuffer
     ): da.Attribute = {
         attribute match {
-            // implicit conversions
-            case c: Code ⇒ (c: da.Code_attribute)
+            case c: Code ⇒ c.toDA
 
             // direct conversions
             case SourceFile(s) ⇒
@@ -377,6 +374,10 @@ package object ba {
 
             case cpe                             ⇒ throw new IllegalArgumentException(cpe.toString)
         }
+    }
+
+    implicit class BRConstantPoolBuffer(constantPoolBuffer: ConstantPoolBuffer) {
+        def toDA: Array[da.Constant_Pool_Entry] = ba.toDA(constantPoolBuffer)
     }
 
 }
