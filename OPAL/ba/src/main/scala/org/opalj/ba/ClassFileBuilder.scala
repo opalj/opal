@@ -31,13 +31,6 @@ package ba
 
 import org.opalj.collection.immutable.UShortPair
 
-import org.opalj.da.{ClassFile ⇒ DAClassFile}
-import org.opalj.br.{ClassFile ⇒ BRClassFile}
-import org.opalj.br.ObjectType
-import org.opalj.br.PC
-import org.opalj.br.ConcreteSourceElement
-import org.opalj.br.Method
-
 /**
  * ClassFileBuilder for the parameters specified after Fields or Methods have been added.
  *
@@ -45,8 +38,8 @@ import org.opalj.br.Method
  * @author Michael Eichberg
  */
 class ClassFileBuilder(
-        private var classFile:   BRClassFile,
-        private var annotations: Map[ConcreteSourceElement, Map[PC, Any]] = Map.empty
+        private var classFile:   br.ClassFile,
+        private var annotations: Map[br.ConcreteSourceElement, Map[br.PC, Any]] = Map.empty
 ) {
 
     /**
@@ -56,7 +49,7 @@ class ClassFileBuilder(
      *            "java/lang/Object".
      */
     def EXTENDS(fqn: String): this.type = {
-        classFile = classFile.copy(superclassType = Some(ObjectType(fqn)))
+        classFile = classFile.copy(superclassType = Some(br.ObjectType(fqn)))
 
         this
     }
@@ -68,7 +61,7 @@ class ClassFileBuilder(
      *            "java/lang/Object".
      */
     def IMPLEMENTS(fqns: String*): this.type = {
-        classFile = classFile.copy(interfaceTypes = fqns.map(ObjectType.apply))
+        classFile = classFile.copy(interfaceTypes = fqns.map(br.ObjectType.apply))
 
         this
     }
@@ -78,7 +71,7 @@ class ClassFileBuilder(
      */
     def SourceFile(sourceFile: String): this.type = {
         classFile = classFile.copy(
-            attributes = classFile.attributes :+ org.opalj.br.SourceFile(sourceFile)
+            attributes = classFile.attributes :+ br.SourceFile(sourceFile)
         )
 
         this
@@ -103,7 +96,7 @@ class ClassFileBuilder(
      *  - For regular classes (not interface types) a default constructor will be generated
      *    if no constructor was defined and the superclass type information is available.
      */
-    def buildBRClassFile(): (BRClassFile, Map[ConcreteSourceElement, Map[PC, Any]]) = {
+    def buildBRClassFile(): (br.ClassFile, Map[br.ConcreteSourceElement, Map[br.PC, Any]]) = {
         if (classFile.isInterfaceDeclaration ||
             classFile.constructors.nonEmpty ||
             // If "only" the following partical condition holds,
@@ -114,7 +107,7 @@ class ClassFileBuilder(
             (classFile, annotations)
         } else {
             val superclassType = classFile.superclassType.get
-            val newMethods = classFile.methods :+ Method.defaultConstructor(superclassType)
+            val newMethods = classFile.methods :+ br.Method.defaultConstructor(superclassType)
             (classFile.copy(methods = newMethods), annotations)
         }
 
@@ -125,7 +118,7 @@ class ClassFileBuilder(
      *
      * @see [[buildBRClassFile]]
      */
-    def buildDAClassFile(): (DAClassFile, Map[ConcreteSourceElement, Map[PC, Any]]) = {
+    def buildDAClassFile(): (da.ClassFile, Map[br.ConcreteSourceElement, Map[br.PC, Any]]) = {
         val (brClassFile, annotations) = buildBRClassFile()
         (brClassFile, annotations)
     }
@@ -138,7 +131,7 @@ object ClassFileBuilder {
 
     final val DefaultMinorVersion = 0
 
-    def apply(initialClassFile: BRClassFile): ClassFileBuilder = {
+    def apply(initialClassFile: br.ClassFile): ClassFileBuilder = {
         new ClassFileBuilder(initialClassFile)
     }
 
