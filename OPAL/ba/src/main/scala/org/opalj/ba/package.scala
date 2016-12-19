@@ -53,6 +53,20 @@ import org.opalj.bi.ACC_TRANSIENT
 import org.opalj.bi.ACC_VOLATILE
 import org.opalj.bi.ACC_NATIVE
 import org.opalj.bi.ACC_STRICT
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Class_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Fieldref_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Methodref_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_InterfaceMethodref_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_String_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Integer_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Float_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Long_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Double_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_NameAndType_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Utf8_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodHandle_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
@@ -342,39 +356,69 @@ package object ba { ba ⇒
         implicit
         constantPoolBuffer: ConstantPoolBuffer
     ): Array[da.Constant_Pool_Entry] = {
-        constantPoolBuffer.toArray.map {
-            // TODO use tags to enable efficient switching (by means of a tableswitch)
-            case CONSTANT_NameAndType_info(name_index, descriptor_index) ⇒
-                da.CONSTANT_NameAndType_info(name_index, descriptor_index)
+        constantPoolBuffer.toArray.map { cpEntry ⇒
+            if (cpEntry eq null)
+                null
+            else {
+                cpEntry.tag match {
+                    case CONSTANT_Class_ID ⇒
+                        val CONSTANT_Class_info(nameIndex) = cpEntry
+                        da.CONSTANT_Class_info(nameIndex)
 
-            case CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index) ⇒
-                da.CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index)
+                    case CONSTANT_Fieldref_ID ⇒
+                        val CONSTANT_Fieldref_info(classIndex, nameAndTypeIndex) = cpEntry
+                        da.CONSTANT_Fieldref_info(classIndex, nameAndTypeIndex)
 
-            case CONSTANT_Fieldref_info(class_index, name_and_type_index) ⇒
-                da.CONSTANT_Fieldref_info(class_index, name_and_type_index)
+                    case CONSTANT_Methodref_ID ⇒
+                        val CONSTANT_Methodref_info(classIndex, nameAndTypeIndex) = cpEntry
+                        da.CONSTANT_Methodref_info(classIndex, nameAndTypeIndex)
 
-            case CONSTANT_MethodHandle_info(referenceKind, referenceIndex) ⇒
-                da.CONSTANT_MethodHandle_info(referenceKind, referenceIndex)
+                    case CONSTANT_InterfaceMethodref_ID ⇒
+                        val CONSTANT_InterfaceMethodref_info(classIndex, nameAndTypeIndex) = cpEntry
+                        da.CONSTANT_InterfaceMethodref_info(classIndex, nameAndTypeIndex)
 
-            case CONSTANT_Methodref_info(class_index, name_and_type_index) ⇒
-                da.CONSTANT_Methodref_info(class_index, name_and_type_index)
+                    case CONSTANT_String_ID ⇒
+                        val CONSTANT_String_info(s) = cpEntry
+                        da.CONSTANT_String_info(s)
 
-            case CONSTANT_InvokeDynamic_info(bootstrapMethodIndex, nameAndTypeIndex) ⇒
-                da.CONSTANT_InvokeDynamic_info(bootstrapMethodIndex, nameAndTypeIndex)
+                    case CONSTANT_Integer_ID ⇒
+                        val CONSTANT_Integer_info(i) = cpEntry
+                        da.CONSTANT_Integer_info(i.value)
 
-            case CONSTANT_Class_info(name_index) ⇒ da.CONSTANT_Class_info(name_index)
-            case CONSTANT_MethodType_info(index) ⇒ da.CONSTANT_MethodType_info(index)
+                    case CONSTANT_Float_ID ⇒
+                        val CONSTANT_Float_info(f) = cpEntry
+                        da.CONSTANT_Float_info(f.value)
 
-            case CONSTANT_Double_info(d)         ⇒ da.CONSTANT_Double_info(d.value)
-            case CONSTANT_Float_info(f)          ⇒ da.CONSTANT_Float_info(f.value)
-            case CONSTANT_Long_info(l)           ⇒ da.CONSTANT_Long_info(l.value)
-            case CONSTANT_Integer_info(i)        ⇒ da.CONSTANT_Integer_info(i.value)
-            case CONSTANT_String_info(s)         ⇒ da.CONSTANT_String_info(s)
-            case CONSTANT_Utf8_info(u)           ⇒ da.CONSTANT_Utf8(u)
+                    case CONSTANT_Long_ID ⇒
+                        val CONSTANT_Long_info(l) = cpEntry
+                        da.CONSTANT_Long_info(l.value)
 
-            case null                            ⇒ null
+                    case CONSTANT_Double_ID ⇒
+                        val CONSTANT_Double_info(d) = cpEntry
+                        da.CONSTANT_Double_info(d.value)
 
-            case cpe                             ⇒ throw new IllegalArgumentException(cpe.toString)
+                    case CONSTANT_NameAndType_ID ⇒
+                        val CONSTANT_NameAndType_info(nameIndex, descriptorIndex) = cpEntry
+                        da.CONSTANT_NameAndType_info(nameIndex, descriptorIndex)
+
+                    case CONSTANT_Utf8_ID ⇒
+                        val CONSTANT_Utf8_info(u) = cpEntry
+                        da.CONSTANT_Utf8(u)
+
+                    case CONSTANT_MethodHandle_ID ⇒
+                        val CONSTANT_MethodHandle_info(referenceKind, referenceIndex) = cpEntry
+                        da.CONSTANT_MethodHandle_info(referenceKind, referenceIndex)
+
+                    case CONSTANT_MethodType_ID ⇒
+                        val CONSTANT_MethodType_info(index) = cpEntry
+                        da.CONSTANT_MethodType_info(index)
+
+                    case CONSTANT_InvokeDynamic_ID ⇒
+                        val CONSTANT_InvokeDynamic_info(bootstrapIndex, nameAndTypeIndex) = cpEntry
+                        da.CONSTANT_InvokeDynamic_info(bootstrapIndex, nameAndTypeIndex)
+
+                }
+            }
         }
     }
 
