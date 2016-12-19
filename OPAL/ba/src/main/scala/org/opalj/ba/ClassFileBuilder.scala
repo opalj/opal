@@ -98,7 +98,7 @@ class ClassFileBuilder(
      *  - For regular classes (not interface types) a default constructor will be generated
      *    if no constructor was defined and the superclass type information is available.
      */
-    def buildBRClassFile(): (br.ClassFile, Map[br.ConcreteSourceElement, Map[br.PC, Any]]) = {
+    def buildBRClassFile(): (br.ClassFile, Map[br.Method, Map[br.PC, Any]]) = {
         if (!(
             bi.ACC_INTERFACE.isSet(accessFlags) ||
             methods.exists(_.isConstructor) ||
@@ -130,7 +130,7 @@ class ClassFileBuilder(
      *
      * @see [[buildBRClassFile]]
      */
-    def buildDAClassFile(): (da.ClassFile, Map[br.ConcreteSourceElement, Map[br.PC, Any]]) = {
+    def buildDAClassFile(): (da.ClassFile, Map[br.Method, Map[br.PC, Any]]) = {
         val (brClassFile, annotations) = buildBRClassFile()
         (brClassFile.toDA, annotations)
     }
