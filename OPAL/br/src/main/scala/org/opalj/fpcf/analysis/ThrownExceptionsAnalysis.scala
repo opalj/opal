@@ -26,9 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
-package analysis
+//package org.opalj
+//package fpcf
+//package analysis
 
 //import scala.collection.Set
 //import org.opalj.fpcf.PropertyComputation
