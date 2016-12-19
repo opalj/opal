@@ -33,8 +33,9 @@ package util
  * A simple `ClassLoader` that looks-up the available classes in a standard map.
  *
  * @param   classes a `Map` of classes where the key is the class name – using `.` as the package
- * separator – and the value is the serialized class file.
+ *          separator – and the value is the serialized class file.
  * @author  Malte Limmeroth
+ * @author  Michael Eichberg
  */
 class InMemoryClassLoader(
         val classes: Map[String, Array[Byte]],
