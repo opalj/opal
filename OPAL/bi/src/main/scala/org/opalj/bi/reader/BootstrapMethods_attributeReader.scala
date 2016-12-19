@@ -132,7 +132,3 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     registerAttributeReader(BootstrapMethodsAttribute.Name → parser)
 }
 
-object BootstrapMethodsAttribute {
-    final val Name = "BootstrapMethods"
-}
-

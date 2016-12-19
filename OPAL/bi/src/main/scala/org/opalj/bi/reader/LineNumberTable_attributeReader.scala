@@ -96,9 +96,3 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     registerAttributeReader(LineNumberTableAttribute.Name → parser)
 }
 
-object LineNumberTableAttribute {
-
-    final val Name = "LineNumberTable"
-
-}
-

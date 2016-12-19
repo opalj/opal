@@ -82,8 +82,3 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
 
 }
 
-object SourceDebugExtensionAttribute {
-
-    final val Name = "SourceDebugExtension"
-
-}

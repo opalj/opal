@@ -83,11 +83,3 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
 
     registerAttributeReader(AnnotationDefaultAttribute.Name → parser)
 }
-/**
- * Common properties of `AnnotationDefault` attributes.
- */
-object AnnotationDefaultAttribute {
-
-    final val Name = "AnnotationDefault"
-
-}

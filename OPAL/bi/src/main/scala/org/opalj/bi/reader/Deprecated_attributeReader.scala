@@ -70,9 +70,4 @@ trait Deprecated_attributeReader extends AttributeReader {
 
     registerAttributeReader(DeprecatedAttribute.Name → parser)
 }
-object DeprecatedAttribute {
-
-    final val Name = "Deprecated"
-
-}
 

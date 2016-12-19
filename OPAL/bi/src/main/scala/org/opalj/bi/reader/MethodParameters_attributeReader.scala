@@ -101,9 +101,3 @@ trait MethodParameters_attributeReader extends AttributeReader {
     registerAttributeReader(MethodParametersAttribute.Name → parser)
 }
 
-object MethodParametersAttribute {
-
-    final val Name = "MethodParameters"
-
-}
-

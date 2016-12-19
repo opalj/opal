@@ -86,12 +86,4 @@ trait RuntimeInvisibleTypeAnnotations_attributeReader extends AttributeReader {
     registerAttributeReader(RuntimeInvisibleTypeAnnotationsAttribute.Name → parser)
 
 }
-/**
- * Common properties of `RuntimeInvisibleTypeAnnotations` attributes.
- */
-object RuntimeInvisibleTypeAnnotationsAttribute {
-
-    final val Name = "RuntimeInvisibleTypeAnnotations"
-
-}
 

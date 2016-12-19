@@ -79,8 +79,3 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
 
     registerAttributeReader(EnclosingMethodAttribute.Name → parser)
 }
-
-object EnclosingMethodAttribute {
-
-    final val Name = "EnclosingMethod"
-}
