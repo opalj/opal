@@ -965,6 +965,8 @@ class PropertyStore private (
         }
     }
 
+    // TODO FOREACH
+
     /**
      * Directly associate the given property `p` with given entity `e` if `e` has no property
      * of the respective kind and no other lazy or direct computation is currently executed.
