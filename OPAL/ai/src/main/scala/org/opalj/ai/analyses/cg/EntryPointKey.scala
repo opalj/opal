@@ -156,15 +156,22 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
                             OPALLogger.warn("config", s"No entry point method with the name: $name has been found in: $declClass")
 
                         if (descriptor.nonEmpty) {
+                            val jvmDescriptor = descriptor.get
                             try {
-                                val methodDescriptor = MethodDescriptor(descriptor.get)
-                                methods = methods.filterNot(_.descriptor == methodDescriptor)
+                                val methodDescriptor = MethodDescriptor(jvmDescriptor)
+                                methods = methods.filter(_.descriptor == methodDescriptor)
 
-                                if (methods.size > 1)
-                                    OPALLogger.warn("config", s"No entry point method with the name: $name and ${descriptor.get} has been found in: $declClass")
+                                if (methods.isEmpty)
+                                    OPALLogger.warn(
+                                        "project configuration", 
+                                        s"$declClass does not define a method $name($jvmDescriptor); "+
+                                        "entry point ignored")
                             } catch {
                                 case e: IllegalArgumentException ⇒
-                                    OPALLogger.warn("config", s"Illegal method descriptor at specified entry point method at: ($declClass, $name, ${descriptor.get})")
+                                    OPALLogger.warn(
+                                        "project configuration",
+                                         s"illegal: $declClass or $name or $jvmDescriptor"
+                                     )
                             }
                         }
 
