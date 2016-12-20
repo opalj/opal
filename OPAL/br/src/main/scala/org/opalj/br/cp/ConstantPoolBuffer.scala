@@ -40,6 +40,8 @@ import scala.collection.mutable
  */
 class ConstantPoolBuffer {
 
+    // FIXME The constant pool buffer may create indexes that cannot be handleded by the instructions (LDC only stores a byte value!)
+
     private[this] var nextIndex = 1
     private[this] val buffer = mutable.HashMap.empty[Constant_Pool_Entry, Constant_Pool_Index]
     //the first item is null because the constant_pool starts with the index 1
@@ -60,8 +62,8 @@ class ConstantPoolBuffer {
     def CPEClass(referenceType: ReferenceType): Int = {
         val typeName =
             if (referenceType.isObjectType)
-                referenceType.asObjectType.fqn
-            else
+                referenceType.asObjectType.fqn // "just", e.g., "java/lang/Object"
+            else // an array type including L and ; in case of reference types
                 referenceType.toJVMTypeName
 
         getOrElseUpdate(CONSTANT_Class_info(CPEUtf8(typeName)), 1)
