@@ -31,6 +31,7 @@ package ai
 package analyses
 package cg
 
+import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -41,7 +42,8 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analysis.EntryPointsAnalysis
 import org.opalj.fpcf.properties.IsEntryPoint
-import org.opalj.log.OPALLogger
+import org.opalj.fpcf.properties.EntryPoint
+import org.opalj.fpcf.PropertyStore
 
 /**
  * The ''key'' object to get the entry point(s) of a project. The entry points are computed w.r.t.
@@ -105,7 +107,7 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
             )(project.logContext)
 
         val configuredEntryPoints = getConfigEntryPoints(project)
-        new EntryPointInformation(project, configuredEntryPoints)
+        new EntryPointInformation(project.get(SourceElementsPropertyStoreKey), configuredEntryPoints)
     }
 
     def getConfigEntryPoints(project: SomeProject): Set[Method] = {
@@ -123,9 +125,9 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
             )
             return entryPoints;
         }
-        val configEntryPoints: List[EntryPoint] =
+        val configEntryPoints: List[EntryPointContainer] =
             try {
-                project.config.as[List[EntryPoint]]("org.opalj.callgraph.entryPoints")
+                project.config.as[List[EntryPointContainer]]("org.opalj.callgraph.entryPoints")
             } catch {
                 case e: Throwable ⇒
                     OPALLogger.error(
@@ -138,7 +140,7 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
             }
 
         configEntryPoints map { ep ⇒
-            val EntryPoint(declClass, name, descriptor) = ep
+            val EntryPointContainer(declClass, name, descriptor) = ep
 
             project.classFile(ObjectType(declClass)) match {
                 case Some(cf) ⇒
@@ -187,24 +189,31 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
 }
 
 /* Needed by the `ArbitraryTypeReader` of ficus. */
-private case class EntryPoint private (
+private case class EntryPointContainer private (
     declaringClass: String,
     name:           String,
     descriptor:     Option[String]
 )
 
-class EntryPointInformation(project: SomeProject, configuredEntryPoints: Set[Method]) {
+class EntryPointInformation(propertyStore: PropertyStore, configuredEntryPoints: Set[Method]) {
+
+    def isEntryPoint(method: Method): Boolean = {
+        val ep = propertyStore(method, EntryPoint.Key)
+        if (ep.hasProperty) {
+            ep.p == IsEntryPoint
+        } else {
+            false
+        }
+    }
+
+    def foreach[U](f: Method ⇒ U): Unit = {
+        propertyStore.entities(IsEntryPoint).foreach(e ⇒ f(e.asInstanceOf[Method]))
+    }
+
+    // LEGACY INTERFACE
 
     def getEntryPoints(): Set[Method] = {
-        getEntryPointsFromPropertyStore(project) ++ configuredEntryPoints
-    }
-
-    /*
-     * Get all methods from the property store that are entry points.
-     */
-    private[this] def getEntryPointsFromPropertyStore(project: SomeProject): Set[Method] = {
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        propertyStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
+        configuredEntryPoints ++
+            propertyStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }
     }
 }
-
