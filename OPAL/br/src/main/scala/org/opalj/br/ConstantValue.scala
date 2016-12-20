@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,11 +32,11 @@ package br
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
- * Represents constant values; i.e., values pushed onto the stack by the ldc(2)(_w)
+ * Represents constant values; that is, values pushed onto the stack by the `ldc(2)(_w)`
  * instructions or type information required by the instructions to create arrays.
  *
- * @note A `MethodHandle` or ''MethodType'' (i.e., a `MethodDescriptor`) is also
- *      a `ConstantValue`.
+ * @note    A `MethodHandle` or ''MethodType'' (i.e., a `MethodDescriptor`) is also
+ *          a `ConstantValue`.
  *
  * @author Michael Eichberg
  */
@@ -111,30 +111,13 @@ trait ConstantValue[T >: Nothing] extends BootstrapArgument {
 }
 
 /**
- * Represents a class or interface.
- *
- * `ConstantClass` is, e.g., used by `anewarray` and `multianewarray` instructions.
- * A `ConstantClass` value is never a `Field` value. I.e., it is never used to
- * set the value of a static field.
- */
-final case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
-
-    override def valueToString = value.toJava
-
-    final def toJava = valueToString+".class"
-
-    override def valueType = ObjectType.Class
-
-    final override def toReferenceType: ReferenceType = value
-}
-
-/**
  * Facilitates matching constant values.
  *
  * @author Michael Eichberg
  */
 object ConstantValue {
 
-    def unapply[T](constantValue: ConstantValue[T]): Option[(T, Type)] =
+    def unapply[T](constantValue: ConstantValue[T]): Some[(T, Type)] = {
         Some((constantValue.value, constantValue.valueType))
+    }
 }
