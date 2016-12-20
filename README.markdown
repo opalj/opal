@@ -45,7 +45,7 @@ Go to OPAL's root folder.
 You are ready to go.
 
 # Using OPAL #
-To get started, go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
+To get started, go to the webpage of the project [The OPAL Project](http://www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
 
 # Example Usage #
 
