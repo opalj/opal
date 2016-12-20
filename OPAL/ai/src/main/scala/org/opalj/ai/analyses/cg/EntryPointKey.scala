@@ -51,7 +51,7 @@ import org.opalj.log.OPALLogger
  * callbacks. Those calls are implicitly triggered by the JVM, a custom framework, a custom web
  * server or others. To overcome that limitation, the key provides a mechanism to specify individual entry points
  * via the configuration file. To use that mechanism, it's required to add the following config key
-  * to the configuration file. More details are below:
+ * to the configuration file. More details are below:
  *
  * The general format of the key that can be added to the application.conf or reference.conf.
  *
