@@ -40,6 +40,8 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
 
     /* abstract */ def declaringClass: ReferenceType
 
+    def isInterfaceCall: Boolean
+
     /**
      * Returns `true` if the called method is an instance method and virtual method
      * call resolution has to take place. I.e., if the underlying instruction is an
@@ -63,9 +65,10 @@ object MethodInvocationInstruction {
 
     def unapply(
         instruction: MethodInvocationInstruction
-    ): Option[(ReferenceType, String, MethodDescriptor)] = {
+    ): Option[(ReferenceType, Boolean, String, MethodDescriptor)] = {
         Some((
             instruction.declaringClass,
+            instruction.isInterfaceCall,
             instruction.name,
             instruction.methodDescriptor
         ))

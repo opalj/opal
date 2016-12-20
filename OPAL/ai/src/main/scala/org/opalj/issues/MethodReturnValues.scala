@@ -54,7 +54,7 @@ class MethodReturnValues(
 
     def collectMethodReturnValues: Seq[(PC, String)] = {
         code.collectWithIndex {
-            case (pc, instr @ MethodInvocationInstruction(declaringClassType, name, descriptor)) if !descriptor.returnType.isVoidType && {
+            case (pc, instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor)) if !descriptor.returnType.isVoidType && {
                 val nextPC = instr.indexOfNextInstruction(pc)
                 val operands = operandsArray(nextPC)
                 operands != null &&

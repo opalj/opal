@@ -177,12 +177,12 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
 
-                    case MethodInvocationInstruction(`declaringClassType`, `methodName`, `methodDescriptor`) ⇒
+                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
                     // We have a self-recursive call; such calls do not influence
                     // the computation of the method's purity and are ignored.
                     // Let's continue with the evaluation of the next instruction.
 
-                    case MethodInvocationInstruction(declaringClassType, methodName, methodDescriptor) ⇒
+                    case MethodInvocationInstruction(declaringClassType, _, methodName, methodDescriptor) ⇒
 
                         val calleeOption =
                             try {
