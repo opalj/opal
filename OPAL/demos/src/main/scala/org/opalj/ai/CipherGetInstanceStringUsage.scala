@@ -1,17 +1,19 @@
-/*
- * BSD 2-Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
  * All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
+ *
  *  - Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -24,13 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.opalj.ai
 
 import java.net.URL
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.JavaConverters._
 
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicMethodInfo
 import org.opalj.br.analyses.BasicReport
@@ -42,22 +45,20 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.LoadString
 
 /**
- * The analysis demonstrates how to find values passed to Chipher.getInstance.
+ * The analysis demonstrates how to find values passed to Chipher.getInstance:
+ * {{{
+ * static Chipher getInstance(String transformation)
+ * static Cipher  getInstance(String transformation, Provider provider)
+ * static Cipher  getInstance(String transformation, String provider)
+ * }}}
  *
  * @author Michael Reif
  */
 object CipherGetInstanceStringUsage extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "Input value analysis for Chipher.getInstance calls"
+    override def title: String = "input value analysis for Chipher.getInstance calls"
 
     override def description: String = "Analyzes the input values of Chipher.getInstance calls."
-
-    /*
-    *static Chipher getInstance(String transformation)
-    *static Cipher	getInstance(String transformation, Provider provider)
-    *static Cipher	getInstance(String transformation, String provider)
-  */
 
     // #################### CONSTANTS ####################
 
@@ -65,44 +66,39 @@ object CipherGetInstanceStringUsage extends DefaultOneStepAnalysis {
 
     val Key = ObjectType("java/security/Key")
 
+    // #################### ANALYSIS ####################
+
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        var report = List.empty[String]
+        val report = new ConcurrentLinkedQueue[String]
 
-        val ai = new InterruptableAI[Domain]
+        project.parForeachMethodWithBody() { mi ⇒
+            val BasicMethodInfo(cf, m) = mi
 
-        project.parForeachMethodWithBody() { m ⇒
-            val BasicMethodInfo(classFile, method) = m
-
-            val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
-            val result = ai(classFile, method, domain)
-            implicit val code = result.domain.code
+            val result = BaseAI(cf, m, new DefaultDomainWithCFGAndDefUse(project, cf, m))
+            val code = result.domain.code
 
             for {
                 (pc, INVOKESTATIC(Cipher, false, "getInstance", _)) ← code
-                vos ← domain.operandOrigin(pc, 0)
-            } yield {
-
+                vos ← result.domain.operandOrigin(pc, 0)
+            } {
                 // getInstance is static, algorithm is first param
                 code.instructions(vos) match {
-                    case LoadString(value) ⇒ report = value :: report
-                    case invoke @ INVOKEINTERFACE(
-                        Key,
-                        "getAlgorithm",
-                        MethodDescriptor.JustReturnsString) ⇒
-                        report = invoke.toString :: report
+                    case LoadString(value) ⇒
+                        report.add(m.toJava(cf, s"passed value ($pc): $value"))
+                    case invoke @ INVOKEINTERFACE(Key, "getAlgorithm", JustReturnsString) ⇒
+                        report.add(m.toJava(cf, s"return value of ($pc): ${invoke.toString}"))
 
-                    case get @ GETFIELD(_, _, _) ⇒ println("unknwon inst: ")
-                    case unknownInstr            ⇒ println("unknwon inst: "+unknownInstr)
+                    case get @ GETFIELD(_, _, _) ⇒ println("unknwon value: "+get)
+                    case i                       ⇒ println("unknwon instruction: "+i)
                 }
-
             }
         }
 
-        BasicReport(report.mkString("\n"))
+        BasicReport(report.asScala.mkString("\n"))
     }
 }
