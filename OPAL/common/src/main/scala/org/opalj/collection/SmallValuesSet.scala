@@ -84,6 +84,12 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      */
     def foreach[U](f: Int ⇒ U): Unit
 
+    def map[U](f: Int ⇒ U): scala.collection.mutable.Set[U] = {
+        val m = scala.collection.mutable.Set.empty[U]
+        foreach(e ⇒ m += f(e))
+        m
+    }
+
     def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B
 
     /**
