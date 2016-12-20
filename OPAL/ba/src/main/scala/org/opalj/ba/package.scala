@@ -73,7 +73,6 @@ import org.opalj.br.ExceptionHandler
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodHandle
 import org.opalj.br.ReferenceType
-import org.opalj.br.SourceFile
 import org.opalj.br.cp._ // we need ALL of them...
 import org.opalj.br.instructions._ // we need NEARY ALL of them...
 
@@ -199,7 +198,7 @@ package object ba { ba ⇒
             i match {
 
                 /*
-                
+
                 case ALOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeReference)
                 case ALOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeReference)
                 case ALOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeReference)
@@ -362,8 +361,7 @@ package object ba { ba ⇒
                 case I2S.opcode                           ⇒ primitiveCastOperation(ShortType)
                 case ATHROW.opcode ⇒
                 case WIDE.opcode ⇒
-                
-                
+
                 */
 
                 // TODO use opcode to enable efficient switching (by means of a tableswitch)
@@ -512,13 +510,64 @@ package object ba { ba ⇒
             case c: Code ⇒ c.toDA
 
             // direct conversions
-            case SourceFile(s) ⇒
+            case br.SourceFile(s) ⇒
                 da.SourceFile_attribute(
                     constantPoolBuffer.CPEUtf8(bi.SourceFileAttribute.Name),
                     constantPoolBuffer.CPEUtf8(s)
                 )
 
-            // TODO: Support the other attributes...
+            case br.Deprecated ⇒
+                da.Deprecated_attribute(constantPoolBuffer.CPEUtf8(bi.DeprecatedAttribute.Name))
+
+            case br.Synthetic ⇒
+                da.Synthetic_attribute(constantPoolBuffer.CPEUtf8(bi.SyntheticAttribute.Name))
+
+            case br.SourceDebugExtension(data) ⇒
+                da.SourceDebugExtension_attribute(
+                    constantPoolBuffer.CPEUtf8(bi.SourceDebugExtensionAttribute.Name),
+                    data
+                )
+
+            // ALL CONSTANT FIELD VALUES
+            case br.ConstantDouble(value) ⇒
+                da.ConstantValue_attribute(
+                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
+                    constantPoolBuffer.CPEDouble(value)
+                )
+            case br.ConstantFloat(value) ⇒
+                da.ConstantValue_attribute(
+                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
+                    constantPoolBuffer.CPEFloat(value)
+                )
+            case br.ConstantInteger(value) ⇒
+                da.ConstantValue_attribute(
+                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
+                    constantPoolBuffer.CPEInteger(value)
+                )
+            case br.ConstantLong(value) ⇒
+                da.ConstantValue_attribute(
+                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
+                    constantPoolBuffer.CPELong(value)
+                )
+            case br.ConstantString(value) ⇒
+                da.ConstantValue_attribute(
+                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
+                    constantPoolBuffer.CPEString(value)
+                )
+
+            case br.EnclosingMethod(classType, nameOption, descriptorOption) ⇒
+                val classIndex = constantPoolBuffer.CPEClass(classType)
+                val nameAndTypeIndex = nameOption match {
+                    case Some(name) ⇒
+                        constantPoolBuffer.CPENameAndType(name, descriptorOption.get.toJVMDescriptor)
+                    case None ⇒
+                        0
+                }
+                da.EnclosingMethod_attribute(
+                    constantPoolBuffer.CPEUtf8(bi.EnclosingMethodAttribute.Name),
+                    classIndex,
+                    nameAndTypeIndex
+                )
         }
     }
 
