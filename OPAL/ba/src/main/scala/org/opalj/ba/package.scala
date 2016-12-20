@@ -350,56 +350,58 @@ package object ba { ba ⇒
                             CPEMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
                     instructions.writeShort(cpeRef)
 
-                case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
+                case NEWARRAY.opcode ⇒
+                    instructions.writeByte(i.asInstanceOf[NEWARRAY].atype)
 
-                case INVOKEDYNAMIC.opcode                      ⇒ ???
-                case NEWARRAY.opcode                           ⇒ ???
-                case ANEWARRAY.opcode                          ⇒ ???
-                case MULTIANEWARRAY.opcode                     ⇒ ???
-                case TABLESWITCH.opcode                        ⇒ ???
-                case LOOKUPSWITCH.opcode                       ⇒ ???
+                case ANEWARRAY.opcode ⇒
+                    val ANEWARRAY(referenceType) = i
+                    instructions.writeShort(CPEClass(referenceType))
+
+                case MULTIANEWARRAY.opcode ⇒
+                    val MULTIANEWARRAY(arrayType, dimensions) = i
+                    instructions.writeShort(CPEClass(arrayType))
+                    instructions.writeByte(dimensions)
+
+                case LDC.opcode ⇒
+                    instructions.writeByte(
+                        i match {
+                            case LoadInt(value)          ⇒ CPEInteger(value)
+                            case LoadFloat(value)        ⇒ CPEFloat(value)
+                            case LoadClass(value)        ⇒ CPEClass(value)
+                            case LoadMethodHandle(value) ⇒ CPEMethodHandle(value)
+                            case LoadMethodType(value)   ⇒ CPEMethodType(value.toJVMDescriptor)
+                            case LoadString(value)       ⇒ CPEString(value)
+                        }
+                    )
+
+                case LDC_W.opcode ⇒
+                    instructions.writeShort(
+                        i match {
+                            case LoadInt_W(value)          ⇒ CPEInteger(value)
+                            case LoadFloat_W(value)        ⇒ CPEFloat(value)
+                            case LoadClass_W(value)        ⇒ CPEClass(value)
+                            case LoadMethodHandle_W(value) ⇒ CPEMethodHandle(value)
+                            case LoadMethodType_W(value)   ⇒ CPEMethodType(value.toJVMDescriptor)
+                            case LoadString_W(value)       ⇒ CPEString(value)
+                        }
+                    )
+
+                case LDC2_W.opcode ⇒
+                    i match {
+                        case LoadLong(value)   ⇒ instructions.writeShort(CPELong(value))
+                        case LoadDouble(value) ⇒ instructions.writeShort(CPEDouble(value))
+                    }
+
+                case INVOKEDYNAMIC.opcode ⇒ ???
+                case TABLESWITCH.opcode   ⇒ ???
+                case LOOKUPSWITCH.opcode  ⇒ ???
 
                 case WIDE.opcode ⇒
                     if (modifiedByWide)
                         throw new IllegalArgumentException(s"the wide at $pc follows a wide")
                     // modifiedByWide will be set to false by the subsequent instruction
                     modifiedByWide = true
-
-                /*
-
-                case _: LDC[_] | _: LDC_W[_] ⇒ {
-                    val value = i.asInstanceOf[LoadConstantInstruction[_]].value
-                    val cpeRef = value match {
-                        case int: Int ⇒ constantPoolBuffer.CPEInteger(int)
-
-                        case float: Float ⇒
-                            constantPoolBuffer.CPEFloat(float)
-                        case string: String ⇒
-                            constantPoolBuffer.CPEString(string)
-                        case mh: MethodHandle ⇒
-                            constantPoolBuffer.CPEMethodHandle(mh)
-                        case md: MethodDescriptor ⇒
-                            constantPoolBuffer.CPEMethodType(md.toJVMDescriptor)
-                        case reference: ReferenceType ⇒
-                            constantPoolBuffer.CPEClass(reference)
-                    }
-
-                    if (i.isInstanceOf[LDC_W[_]]) {
-                        instructions.writeInt(cpeRef)
-                    } else {
-                        instructions.writeShort(cpeRef)
-                    }
-                }
-                case l: LDC2_W[_] ⇒ {
-                    l.value match {
-                        case l: Long   ⇒ instructions.writeShort(constantPoolBuffer.CPELong(l))
-                        case d: Double ⇒ instructions.writeShort(constantPoolBuffer.CPEDouble(d))
-                    }
-                }
-                */
-
             }
-
         }
 
         instructions.flush
@@ -468,6 +470,20 @@ package object ba { ba ⇒
                     data
                 )
 
+            case br.EnclosingMethod(classType, nameOption, descriptorOption) ⇒
+                val classIndex = constantPoolBuffer.CPEClass(classType)
+                val nameAndTypeIndex = nameOption match {
+                    case Some(name) ⇒
+                        constantPoolBuffer.CPENameAndType(name, descriptorOption.get.toJVMDescriptor)
+                    case None ⇒
+                        0
+                }
+                da.EnclosingMethod_attribute(
+                    constantPoolBuffer.CPEUtf8(bi.EnclosingMethodAttribute.Name),
+                    classIndex,
+                    nameAndTypeIndex
+                )
+
             // ALL CONSTANT FIELD VALUES
             case br.ConstantDouble(value) ⇒
                 da.ConstantValue_attribute(
@@ -493,20 +509,6 @@ package object ba { ba ⇒
                 da.ConstantValue_attribute(
                     constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
                     constantPoolBuffer.CPEString(value)
-                )
-
-            case br.EnclosingMethod(classType, nameOption, descriptorOption) ⇒
-                val classIndex = constantPoolBuffer.CPEClass(classType)
-                val nameAndTypeIndex = nameOption match {
-                    case Some(name) ⇒
-                        constantPoolBuffer.CPENameAndType(name, descriptorOption.get.toJVMDescriptor)
-                    case None ⇒
-                        0
-                }
-                da.EnclosingMethod_attribute(
-                    constantPoolBuffer.CPEUtf8(bi.EnclosingMethodAttribute.Name),
-                    classIndex,
-                    nameAndTypeIndex
                 )
         }
     }
