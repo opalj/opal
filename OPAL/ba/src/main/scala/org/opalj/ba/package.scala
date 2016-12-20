@@ -70,9 +70,6 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.MethodHandle
-import org.opalj.br.ReferenceType
 import org.opalj.br.cp._ // we need ALL of them...
 import org.opalj.br.instructions._ // we need NEARY ALL of them...
 
@@ -187,6 +184,7 @@ package object ba { ba ⇒
     }
 
     def toDA(code: Code)(implicit constantPoolBuffer: ConstantPoolBuffer): da.Code_attribute = {
+        import constantPoolBuffer._
         val data = new ByteArrayOutputStream(code.instructions.size)
         val instructions = new DataOutputStream(data)
 
@@ -195,182 +193,108 @@ package object ba { ba ⇒
             val (pc, i) = e
             val opcode = i.opcode
             instructions.writeByte(opcode)
-            i match {
 
-                /*
+            i.opcode match {
+                // the
 
-                case ALOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeReference)
-                case ALOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeReference)
-                case ALOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeReference)
-                case ALOAD_3.opcode ⇒ loadInstruction(3, ComputationalTypeReference)
-                case ALOAD.opcode ⇒
-                    val lvIndex = as[ALOAD](instruction).lvIndex
-                    loadInstruction(lvIndex, ComputationalTypeReference)
+                case ALOAD_0.opcode | ALOAD_1.opcode | ALOAD_2.opcode | ALOAD_3.opcode |
+                    ASTORE_0.opcode | ASTORE_1.opcode | ASTORE_2.opcode | ASTORE_3.opcode |
+                    ILOAD_0.opcode | ILOAD_1.opcode | ILOAD_2.opcode | ILOAD_3.opcode |
+                    ISTORE_0.opcode | ISTORE_1.opcode | ISTORE_2.opcode | ISTORE_3.opcode |
+                    DLOAD_0.opcode | DLOAD_1.opcode | DLOAD_2.opcode | DLOAD_3.opcode |
+                    DSTORE_0.opcode | DSTORE_1.opcode | DSTORE_2.opcode | DSTORE_3.opcode |
+                    FLOAD_0.opcode | FLOAD_1.opcode | FLOAD_2.opcode | FLOAD_3.opcode |
+                    FSTORE_0.opcode | FSTORE_1.opcode | FSTORE_2.opcode | FSTORE_3.opcode |
+                    LLOAD_0.opcode | LLOAD_1.opcode | LLOAD_2.opcode | LLOAD_3.opcode |
+                    LSTORE_0.opcode | LSTORE_1.opcode | LSTORE_2.opcode | LSTORE_3.opcode |
 
-                case ASTORE_0.opcode ⇒ storeInstruction(0)
-                case ASTORE_1.opcode ⇒ storeInstruction(1)
-                case ASTORE_2.opcode ⇒ storeInstruction(2)
-                case ASTORE_3.opcode ⇒ storeInstruction(3)
-                case ASTORE.opcode   ⇒ storeInstruction(as[ASTORE](instruction).lvIndex)
+                    IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
+                    ARETURN.opcode |
+                    RETURN.opcode |
 
-                case ILOAD_0.opcode  ⇒ loadInstruction(0, ComputationalTypeInt)
-                case ILOAD_1.opcode  ⇒ loadInstruction(1, ComputationalTypeInt)
-                case ILOAD_2.opcode  ⇒ loadInstruction(2, ComputationalTypeInt)
-                case ILOAD_3.opcode  ⇒ loadInstruction(3, ComputationalTypeInt)
-                case ILOAD.opcode ⇒
-                    loadInstruction(as[ILOAD](instruction).lvIndex, ComputationalTypeInt)
+                    ARRAYLENGTH.opcode |
+                    AASTORE.opcode |
+                    DASTORE.opcode | FASTORE.opcode |
+                    IASTORE.opcode | LASTORE.opcode | SASTORE.opcode | BASTORE.opcode | CASTORE.opcode |
+                    AALOAD.opcode |
+                    DALOAD.opcode | FALOAD.opcode |
+                    IALOAD.opcode | LALOAD.opcode | SALOAD.opcode | BALOAD.opcode | CALOAD.opcode |
 
-                case ISTORE_0.opcode ⇒ storeInstruction(0)
-                case ISTORE_1.opcode ⇒ storeInstruction(1)
-                case ISTORE_2.opcode ⇒ storeInstruction(2)
-                case ISTORE_3.opcode ⇒ storeInstruction(3)
-                case ISTORE.opcode   ⇒ storeInstruction(as[ISTORE](instruction).lvIndex)
+                    DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode |
+                    DDIV.opcode | FDIV.opcode | IDIV.opcode | LDIV.opcode |
+                    DNEG.opcode | FNEG.opcode | INEG.opcode | LNEG.opcode |
+                    DMUL.opcode | FMUL.opcode | IMUL.opcode | LMUL.opcode |
+                    DREM.opcode | FREM.opcode | IREM.opcode | LREM.opcode |
+                    DSUB.opcode | FSUB.opcode | ISUB.opcode | LSUB.opcode |
 
-                case DLOAD_0.opcode  ⇒ loadInstruction(0, ComputationalTypeDouble)
-                case DLOAD_1.opcode  ⇒ loadInstruction(1, ComputationalTypeDouble)
-                case DLOAD_2.opcode  ⇒ loadInstruction(2, ComputationalTypeDouble)
-                case DLOAD_3.opcode  ⇒ loadInstruction(3, ComputationalTypeDouble)
-                case DLOAD.opcode ⇒
-                    loadInstruction(as[DLOAD](instruction).lvIndex, ComputationalTypeDouble)
+                    IAND.opcode | LAND.opcode |
+                    IOR.opcode | LOR.opcode |
+                    IXOR.opcode | LXOR.opcode |
+                    ISHL.opcode | LSHL.opcode |
+                    ISHR.opcode | LSHR.opcode |
+                    IUSHR.opcode | LUSHR.opcode |
 
-                case DSTORE_0.opcode ⇒ storeInstruction(0)
-                case DSTORE_1.opcode ⇒ storeInstruction(1)
-                case DSTORE_2.opcode ⇒ storeInstruction(2)
-                case DSTORE_3.opcode ⇒ storeInstruction(3)
-                case DSTORE.opcode   ⇒ storeInstruction(as[DSTORE](instruction).lvIndex)
-
-                case FLOAD_0.opcode  ⇒ loadInstruction(0, ComputationalTypeFloat)
-                case FLOAD_1.opcode  ⇒ loadInstruction(1, ComputationalTypeFloat)
-                case FLOAD_2.opcode  ⇒ loadInstruction(2, ComputationalTypeFloat)
-                case FLOAD_3.opcode  ⇒ loadInstruction(3, ComputationalTypeFloat)
-                case FLOAD.opcode ⇒
-                    loadInstruction(as[FLOAD](instruction).lvIndex, ComputationalTypeFloat)
-
-                case FSTORE_0.opcode ⇒ storeInstruction(0)
-                case FSTORE_1.opcode ⇒ storeInstruction(1)
-                case FSTORE_2.opcode ⇒ storeInstruction(2)
-                case FSTORE_3.opcode ⇒ storeInstruction(3)
-                case FSTORE.opcode   ⇒ storeInstruction(as[FSTORE](instruction).lvIndex)
-
-                case LLOAD_0.opcode  ⇒ loadInstruction(0, ComputationalTypeLong)
-                case LLOAD_1.opcode  ⇒ loadInstruction(1, ComputationalTypeLong)
-                case LLOAD_2.opcode  ⇒ loadInstruction(2, ComputationalTypeLong)
-                case LLOAD_3.opcode  ⇒ loadInstruction(3, ComputationalTypeLong)
-                case LLOAD.opcode ⇒
-                    loadInstruction(as[LLOAD](instruction).lvIndex, ComputationalTypeLong)
-
-                case LSTORE_0.opcode ⇒ storeInstruction(0)
-                case LSTORE_1.opcode ⇒ storeInstruction(1)
-                case LSTORE_2.opcode ⇒ storeInstruction(2)
-                case LSTORE_3.opcode ⇒ storeInstruction(3)
-                case LSTORE.opcode   ⇒ storeInstruction(as[LSTORE](instruction).lvIndex)
-
-                case IRETURN.opcode  ⇒ returnInstruction(OperandVar.IntReturnValue)
-                case LRETURN.opcode  ⇒ returnInstruction(OperandVar.LongReturnValue)
-                case FRETURN.opcode  ⇒ returnInstruction(OperandVar.FloatReturnValue)
-                case DRETURN.opcode  ⇒ returnInstruction(OperandVar.DoubleReturnValue)
-                case ARETURN.opcode  ⇒ returnInstruction(OperandVar.ReferenceReturnValue)
-                case RETURN.opcode   ⇒ statements(pc) = List(Return(pc))
-
-                case AALOAD.opcode   ⇒ arrayLoad(ComputationalTypeReference)
-                case DALOAD.opcode   ⇒ arrayLoad(ComputationalTypeDouble)
-                case FALOAD.opcode   ⇒ arrayLoad(ComputationalTypeFloat)
-                case IALOAD.opcode   ⇒ arrayLoad(ComputationalTypeInt)
-                case LALOAD.opcode   ⇒ arrayLoad(ComputationalTypeLong)
-                case SALOAD.opcode   ⇒ arrayLoad(ComputationalTypeInt)
-                case BALOAD.opcode   ⇒ arrayLoad(ComputationalTypeInt)
-                case CALOAD.opcode   ⇒ arrayLoad(ComputationalTypeInt)
-
-                case AASTORE.opcode | DASTORE.opcode |
-                    FASTORE.opcode | IASTORE.opcode |
-                    LASTORE.opcode | SASTORE.opcode |
-                    BASTORE.opcode | CASTORE.opcode ⇒
-                case ARRAYLENGTH.opcode ⇒
-                case BIPUSH.opcode | SIPUSH.opcode ⇒
-                case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
-                    IF_ICMPLT.opcode | IF_ICMPLE.opcode |
-                    IF_ICMPGT.opcode | IF_ICMPGE.opcode ⇒
-                case IFEQ.opcode | IFNE.opcode |
-                    IFLT.opcode | IFLE.opcode |
-                    IFGT.opcode | IFGE.opcode ⇒
-                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
-                case IFNONNULL.opcode | IFNULL.opcode ⇒
-                case DCMPG.opcode | FCMPG.opcode ⇒ compareValues(CMPG)
-                case DCMPL.opcode | FCMPL.opcode ⇒ compareValues(CMPL)
-                case LCMP.opcode                 ⇒ compareValues(CMP)
-                case SWAP.opcode ⇒
-                case DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode ⇒
-                case DDIV.opcode | FDIV.opcode | IDIV.opcode | LDIV.opcode ⇒
-                case DNEG.opcode | FNEG.opcode | INEG.opcode | LNEG.opcode ⇒
-                case DMUL.opcode | FMUL.opcode | IMUL.opcode | LMUL.opcode ⇒
-                case DREM.opcode | FREM.opcode | IREM.opcode | LREM.opcode ⇒
-                case DSUB.opcode | FSUB.opcode | ISUB.opcode | LSUB.opcode ⇒
-                case IINC.opcode ⇒
-                case IAND.opcode | LAND.opcode   ⇒ binaryArithmeticOperation(And)
-                case IOR.opcode | LOR.opcode     ⇒ binaryArithmeticOperation(Or)
-                case ISHL.opcode | LSHL.opcode   ⇒ binaryArithmeticOperation(ShiftLeft)
-                case ISHR.opcode | LSHR.opcode   ⇒ binaryArithmeticOperation(ShiftRight)
-                case IUSHR.opcode | LUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
-                case IXOR.opcode | LXOR.opcode   ⇒ binaryArithmeticOperation(XOr)
-              case ICONST_0.opcode | ICONST_1.opcode |
+                    ICONST_0.opcode | ICONST_1.opcode |
                     ICONST_2.opcode | ICONST_3.opcode |
                     ICONST_4.opcode | ICONST_5.opcode |
-                    ICONST_M1.opcode ⇒
-                case ACONST_NULL.opcode ⇒
-                case DCONST_0.opcode | DCONST_1.opcode ⇒
-                case FCONST_0.opcode | FCONST_1.opcode | FCONST_2.opcode ⇒
-                case LCONST_0.opcode | LCONST_1.opcode ⇒
-                case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
-                case INVOKEINTERFACE.opcode |
-                    INVOKESPECIAL.opcode |
-                    INVOKEVIRTUAL.opcode ⇒
-                  case INVOKESTATIC.opcode ⇒
-                case INVOKEDYNAMIC.opcode ⇒
-                case PUTSTATIC.opcode ⇒
-                case PUTFIELD.opcode ⇒
-                case GETSTATIC.opcode ⇒
-                case GETFIELD.opcode ⇒
+                    ICONST_M1.opcode |
+                    ACONST_NULL.opcode |
+                    DCONST_0.opcode | DCONST_1.opcode |
+                    FCONST_0.opcode | FCONST_1.opcode | FCONST_2.opcode |
+                    LCONST_0.opcode | LCONST_1.opcode |
+                    DCMPG.opcode | FCMPG.opcode | DCMPL.opcode | FCMPL.opcode |
+                    LCMP.opcode |
+
+                    NOP.opcode |
+                    POP.opcode | POP2.opcode |
+                    SWAP.opcode |
+                    DUP.opcode | DUP_X1.opcode | DUP_X2.opcode |
+                    DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode |
+                    D2F.opcode | I2F.opcode | L2F.opcode |
+                    D2I.opcode | F2I.opcode | L2I.opcode |
+                    D2L.opcode | I2L.opcode | F2L.opcode |
+                    F2D.opcode | I2D.opcode | L2D.opcode |
+                    I2C.opcode | I2B.opcode | I2S.opcode |
+                    MONITORENTER.opcode | MONITOREXIT.opcode |
+                    ATHROW.opcode ⇒
+                // Nothing to do; the opcode is already written!
+
+                case ALOAD.opcode | ASTORE.opcode |
+                    ILOAD.opcode | ISTORE.opcode |
+                    DLOAD.opcode | DSTORE.opcode |
+                    FLOAD.opcode | FSTORE.opcode |
+                    LLOAD.opcode | LSTORE.opcode ⇒
+                    val ExplicitLocalVariableIndex(index) = i
+                    if (modifiedByWide) {
+                        modifiedByWide = false
+                        instructions.writeShort(index)
+                    } else {
+                        instructions.writeByte(index)
+                    }
+
+                case BIPUSH.opcode ⇒
+                    val BIPUSH(value) = i
+                    instructions.writeByte(value)
+
+                case SIPUSH.opcode ⇒
+                    val SIPUSH(value) = i
+                    instructions.writeShort(value)
+
                 case NEW.opcode ⇒
-                case NEWARRAY.opcode ⇒
-                case ANEWARRAY.opcode ⇒
-                case MULTIANEWARRAY.opcode ⇒
-                case GOTO.opcode | GOTO_W.opcode ⇒
-                case JSR.opcode | JSR_W.opcode ⇒
-                case RET.opcode ⇒
-                case NOP.opcode ⇒
-                case POP.opcode ⇒
-                case POP2.opcode ⇒
-                case INSTANCEOF.opcode ⇒
+                    val NEW(objectType) = i
+                    instructions.writeShort(CPEClass(objectType))
+
                 case CHECKCAST.opcode ⇒
-                case MONITORENTER.opcode ⇒
-                case MONITOREXIT.opcode ⇒
-                case TABLESWITCH.opcode ⇒
-                case LOOKUPSWITCH.opcode ⇒
-                case DUP.opcode ⇒
-                case DUP_X1.opcode ⇒
-                case DUP_X2.opcode ⇒
-                case DUP2.opcode ⇒
-                case DUP2_X1.opcode ⇒
-                case DUP2_X2.opcode ⇒
-                case D2F.opcode | I2F.opcode | L2F.opcode ⇒ primitiveCastOperation(FloatType)
-                case D2I.opcode | F2I.opcode | L2I.opcode ⇒ primitiveCastOperation(IntegerType)
-                case D2L.opcode | I2L.opcode | F2L.opcode ⇒ primitiveCastOperation(LongType)
-                case F2D.opcode | I2D.opcode | L2D.opcode ⇒ primitiveCastOperation(DoubleType)
-                case I2C.opcode                           ⇒ primitiveCastOperation(CharType)
-                case I2B.opcode                           ⇒ primitiveCastOperation(ByteType)
-                case I2S.opcode                           ⇒ primitiveCastOperation(ShortType)
-                case ATHROW.opcode ⇒
-                case WIDE.opcode ⇒
-
-                */
-
-                // TODO use opcode to enable efficient switching (by means of a tableswitch)
-                case BIPUSH(value) ⇒ instructions.writeShort(value)
-                case CHECKCAST(referenceType) ⇒
-                    val cpeRef = constantPoolBuffer.CPEClass(referenceType)
+                    val CHECKCAST(referenceType) = i
+                    val cpeRef = CPEClass(referenceType)
                     instructions.writeShort(cpeRef)
 
-                case IINC(lvIndex, constValue) ⇒
+                case INSTANCEOF.opcode ⇒
+                    val INSTANCEOF(referenceType) = i
+                    instructions.writeShort(CPEClass(referenceType))
+
+                case IINC.opcode ⇒
+                    val IINC(lvIndex, constValue) = i
                     if (modifiedByWide) {
                         modifiedByWide = false
                         instructions.writeShort(lvIndex)
@@ -380,10 +304,69 @@ package object ba { ba ⇒
                         instructions.writeByte(constValue)
                     }
 
-                case INSTANCEOF(referenceType) ⇒
-                    instructions.writeShort(constantPoolBuffer.CPEClass(referenceType))
+                case JSR.opcode ⇒
+                    val JSR(branchoffset) = i
+                    instructions.writeShort(branchoffset)
+                case JSR_W.opcode ⇒
+                    val JSR_W(branchoffset) = i
+                    instructions.writeInt(branchoffset)
+                case RET.opcode ⇒
+                    val RET(lvIndex) = i
+                    instructions.writeByte(lvIndex)
 
-                case JSR_W(branchoffset) ⇒ instructions.writeInt(branchoffset)
+                case GOTO.opcode ⇒
+                    val GOTO(branchoffset) = i
+                    instructions.writeShort(branchoffset)
+                case GOTO_W.opcode ⇒
+                    val GOTO_W(branchoffset) = i
+                    instructions.writeInt(branchoffset)
+
+                case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
+                    IF_ICMPLT.opcode | IF_ICMPLE.opcode |
+                    IF_ICMPGT.opcode | IF_ICMPGE.opcode |
+                    IFEQ.opcode | IFNE.opcode |
+                    IFLT.opcode | IFLE.opcode |
+                    IFGT.opcode | IFGE.opcode |
+                    IF_ACMPEQ.opcode | IF_ACMPNE.opcode |
+                    IFNONNULL.opcode | IFNULL.opcode ⇒
+                    val SimpleConditionalBranchInstruction(branchoffset) = i
+                    instructions.writeShort(branchoffset)
+
+                case PUTSTATIC.opcode | PUTFIELD.opcode | GETSTATIC.opcode | GETFIELD.opcode ⇒
+                    val FieldAccess(declaringClass, fieldName, fieldType) = i
+                    val jvmFieldType = fieldType.toJVMTypeName
+                    val cpeRef = CPEFieldRef(declaringClass, fieldName, jvmFieldType)
+                    instructions.writeShort(cpeRef)
+
+                case INVOKEINTERFACE.opcode |
+                    INVOKESPECIAL.opcode |
+                    INVOKEVIRTUAL.opcode |
+                    INVOKESTATIC.opcode ⇒
+                    val MethodInvocationInstruction(declaringClass, isInterface, name, descriptor) = i
+                    val cpeRef =
+                        if (isInterface)
+                            CPEInterfaceMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
+                        else
+                            CPEMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
+                    instructions.writeShort(cpeRef)
+
+                case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
+
+                case INVOKEDYNAMIC.opcode                      ⇒ ???
+                case NEWARRAY.opcode                           ⇒ ???
+                case ANEWARRAY.opcode                          ⇒ ???
+                case MULTIANEWARRAY.opcode                     ⇒ ???
+                case TABLESWITCH.opcode                        ⇒ ???
+                case LOOKUPSWITCH.opcode                       ⇒ ???
+
+                case WIDE.opcode ⇒
+                    if (modifiedByWide)
+                        throw new IllegalArgumentException(s"the wide at $pc follows a wide")
+                    // modifiedByWide will be set to false by the subsequent instruction
+                    modifiedByWide = true
+
+                /*
+
                 case _: LDC[_] | _: LDC_W[_] ⇒ {
                     val value = i.asInstanceOf[LoadConstantInstruction[_]].value
                     val cpeRef = value match {
@@ -413,51 +396,8 @@ package object ba { ba ⇒
                         case d: Double ⇒ instructions.writeShort(constantPoolBuffer.CPEDouble(d))
                     }
                 }
-                //TODO: LOOKUPSWITCH, MULTIANEWARRAY
-                case NEW(objectType) ⇒
-                    instructions.writeShort(constantPoolBuffer.CPEClass(objectType))
+                */
 
-                //TODO: NEWARRAY
-                case RET(lvIndex)  ⇒ instructions.writeByte(lvIndex)
-                case SIPUSH(value) ⇒ instructions.writeShort(value)
-                //TODO: TABLESWITCH
-
-                //TODO: INVOKEDYNAMIC
-                case methodInvocation: MethodInvocationInstruction ⇒
-                    val cpeRef = constantPoolBuffer.CPEMethodRef(
-                        methodInvocation.declaringClass,
-                        methodInvocation.name,
-                        methodInvocation.methodDescriptor.toJVMDescriptor
-                    )
-                    instructions.writeShort(cpeRef)
-                case s: SimpleConditionalBranchInstruction ⇒ instructions.writeShort(s.branchoffset)
-                case u: UnconditionalBranchInstruction     ⇒ instructions.writeShort(u.branchoffset)
-
-                case f: FieldAccess ⇒ {
-                    val fieldType = f.fieldType.toJVMTypeName
-                    val cpeRef = constantPoolBuffer.CPEFieldRef(f.declaringClass, f.name, fieldType)
-                    instructions.writeShort(cpeRef)
-                }
-
-                case e: ExplicitLocalVariableIndex ⇒ {
-                    if (modifiedByWide) {
-                        modifiedByWide = false
-                        instructions.writeShort(e.lvIndex)
-                    } else {
-                        instructions.writeByte(e.lvIndex)
-                    }
-                }
-
-                case WIDE /*.opcode*/ ⇒
-                    if (modifiedByWide)
-                        throw new IllegalArgumentException(s"the wide at $pc follows a wide")
-                    // modifiedByWide will be set to false by the subsequent instruction
-                    modifiedByWide = true
-
-                case ALOAD_0 /*.opcode | ALOAD_1.opcode | ALOAD_2.opcode | ALOAD_3.opcode*/ |
-                    RETURN ⇒
-                // Nothing to do; these instructions have no parameters and the opcode
-                // is already written.
             }
 
         }
