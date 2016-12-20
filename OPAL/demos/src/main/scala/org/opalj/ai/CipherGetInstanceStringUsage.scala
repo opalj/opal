@@ -93,8 +93,8 @@ object CipherGetInstanceStringUsage extends DefaultOneStepAnalysis {
                     case invoke @ INVOKEINTERFACE(Key, "getAlgorithm", JustReturnsString) ⇒
                         report.add(m.toJava(cf, s"return value of ($pc): ${invoke.toString}"))
 
-                    case get @ GETFIELD(_, _, _) ⇒ println("unknwon value: "+get)
-                    case i                       ⇒ println("unknwon instruction: "+i)
+                    case get @ GETFIELD(_, _, _) ⇒ println("uknown value: "+get)
+                    case i                       ⇒ println("unsupported instruction: "+i)
                 }
             }
         }
