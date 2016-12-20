@@ -34,7 +34,7 @@ package br
  *
  * `ConstantClass` is, e.g., used by `anewarray` and `multianewarray` instructions.
  * A `ConstantClass` value is never a `Field` value. I.e., it is never used to
- * set the value of a static field.
+ * set the value of a static final field.
  */
 final case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
 
