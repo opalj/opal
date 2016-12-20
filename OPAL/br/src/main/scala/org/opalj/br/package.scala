@@ -233,7 +233,9 @@ package object br {
                 List(Text(""))
             else {
                 val parameterTypes = descriptor.parameterTypes.map(typeToXHTML(_, abbreviateTypes))
-                parameterTypes.tail.foldLeft(List(parameterTypes.head))((c, r) ⇒ r :: Text(", ") :: c).reverse
+                parameterTypes.tail.foldLeft(List(parameterTypes.head)) { (c, r) ⇒
+                    r :: Text(", ") :: c
+                }.reverse
             }
 
         <span class="method_signature">

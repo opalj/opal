@@ -69,6 +69,7 @@ object FieldAccess {
 
     val jvmExceptions = List(ObjectType.NullPointerException)
 
-    def unapply(fa: FieldAccess): Option[(ObjectType, String, FieldType)] =
+    def unapply(fa: FieldAccess): Option[(ObjectType, String, FieldType)] = {
         Some((fa.declaringClass, fa.name, fa.fieldType))
+    }
 }
