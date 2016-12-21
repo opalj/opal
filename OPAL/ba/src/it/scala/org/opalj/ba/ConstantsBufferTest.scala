@@ -244,8 +244,7 @@ class ConstantPoolBuilderTest extends FunSuite with Matchers {
 
     test("that the constant pool does not contain unexpected entries") {
         info(s"recreating the constant pool for ${daClassFiles.size} class files")
-        daClassFiles.par.foreach {
-            case (cf, source) ⇒
+        daClassFiles.par.foreach {            case (cf, source) ⇒
                 try {
                     testConstantPoolCreation(cf, source)
                 } catch {
@@ -254,7 +253,6 @@ class ConstantPoolBuilderTest extends FunSuite with Matchers {
                         t.printStackTrace()
                         throw t
                 }
-
         }
         info(s"recreating the constant pool took ${timer.getTime('ConstantPoolCreation).toSeconds} (CPU time)")
         info(s"comparing the constant pools took ${timer.getTime('ConstantPoolComparison).toSeconds} (CPU time)")
