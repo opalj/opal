@@ -71,7 +71,7 @@ import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.cp._ // we need ALL of them...
-import org.opalj.br.instructions._ // we need NEARY ALL of them...
+import org.opalj.br.instructions._ // we need ALL of them...
 
 /**
  * Implementation of an EDSL for creating Java bytecode. The EDSL is designed to facilitate
@@ -130,14 +130,14 @@ package object ba { ba ⇒
      * to the attributes in [[org.opalj.da]].
      */
     def toDA(classFile: br.ClassFile): da.ClassFile = {
-        implicit val constantPoolBuffer = new ConstantPoolBuffer()
-        val thisTypeCPRef = constantPoolBuffer.CPEClass(classFile.thisType)
+        implicit val constantsBuffer = ConstantsBuffer(ConstantsBuffer.collectLDCs(classFile))
+        val thisTypeCPRef = constantsBuffer.CPEClass(classFile.thisType, false)
         val superClassCPRef = classFile.superclassType match {
-            case Some(superclassType) ⇒ constantPoolBuffer.CPEClass(superclassType)
+            case Some(superclassType) ⇒ constantsBuffer.CPEClass(superclassType, false)
             case None                 ⇒ 0
         }
 
-        val interfaces = classFile.interfaceTypes.map(constantPoolBuffer.CPEClass)
+        val interfaces = classFile.interfaceTypes.map(i ⇒ constantsBuffer.CPEClass(i, false))
         val fields = classFile.fields.map(toDA)
         val methods = classFile.methods.map(toDA)
         val attributes = classFile.attributes.map(toDA)
@@ -162,7 +162,7 @@ package object ba { ba ⇒
         def toDA: da.ClassFile = ba.toDA(classFile)
     }
 
-    def toDA(field: br.Field)(implicit constantPoolBuffer: ConstantPoolBuffer): da.Field_Info = {
+    def toDA(field: br.Field)(implicit constantPoolBuffer: ConstantsBuffer): da.Field_Info = {
         da.Field_Info(
             access_flags = field.accessFlags,
             name_index = constantPoolBuffer.CPEUtf8(field.name),
@@ -171,7 +171,7 @@ package object ba { ba ⇒
         )
     }
 
-    def toDA(method: br.Method)(implicit constantPoolBuffer: ConstantPoolBuffer): da.Method_Info = {
+    def toDA(method: br.Method)(implicit constantPoolBuffer: ConstantsBuffer): da.Method_Info = {
         var attributes = method.attributes.map(toDA)
         if (method.body.isDefined) {
             attributes = method.body.get.toDA +: attributes
@@ -184,7 +184,7 @@ package object ba { ba ⇒
         )
     }
 
-    def toDA(code: Code)(implicit constantPoolBuffer: ConstantPoolBuffer): da.Code_attribute = {
+    def toDA(code: Code)(implicit constantPoolBuffer: ConstantsBuffer): da.Code_attribute = {
         import constantPoolBuffer._
         val data = new ByteArrayOutputStream(code.instructions.size)
         val instructions = new DataOutputStream(data)
@@ -215,8 +215,10 @@ package object ba { ba ⇒
 
                     ARRAYLENGTH.opcode |
                     AASTORE.opcode |
-                    DASTORE.opcode | FASTORE.opcode |
-                    IASTORE.opcode | LASTORE.opcode | SASTORE.opcode | BASTORE.opcode | CASTORE.opcode |
+                    IASTORE.opcode | SASTORE.opcode | BASTORE.opcode | CASTORE.opcode |
+                    FASTORE.opcode |
+                    LASTORE.opcode |
+                    DASTORE.opcode |
                     AALOAD.opcode |
                     DALOAD.opcode | FALOAD.opcode |
                     IALOAD.opcode | LALOAD.opcode | SALOAD.opcode | BALOAD.opcode | CALOAD.opcode |
@@ -283,16 +285,16 @@ package object ba { ba ⇒
 
                 case NEW.opcode ⇒
                     val NEW(objectType) = i
-                    instructions.writeShort(CPEClass(objectType))
+                    instructions.writeShort(CPEClass(objectType, false))
 
                 case CHECKCAST.opcode ⇒
                     val CHECKCAST(referenceType) = i
-                    val cpeRef = CPEClass(referenceType)
+                    val cpeRef = CPEClass(referenceType, false)
                     instructions.writeShort(cpeRef)
 
                 case INSTANCEOF.opcode ⇒
                     val INSTANCEOF(referenceType) = i
-                    instructions.writeShort(CPEClass(referenceType))
+                    instructions.writeShort(CPEClass(referenceType, false))
 
                 case IINC.opcode ⇒
                     val IINC(lvIndex, constValue) = i
@@ -343,7 +345,8 @@ package object ba { ba ⇒
                     INVOKESPECIAL.opcode |
                     INVOKEVIRTUAL.opcode |
                     INVOKESTATIC.opcode ⇒
-                    val MethodInvocationInstruction(declaringClass, isInterface, name, descriptor) = i
+                    val MethodInvocationInstruction(declaringClass, isInterface, name, descriptor) =
+                        i
                     val cpeRef =
                         if (isInterface)
                             CPEInterfaceMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
@@ -356,34 +359,27 @@ package object ba { ba ⇒
 
                 case ANEWARRAY.opcode ⇒
                     val ANEWARRAY(referenceType) = i
-                    instructions.writeShort(CPEClass(referenceType))
+                    instructions.writeShort(CPEClass(referenceType, false))
 
                 case MULTIANEWARRAY.opcode ⇒
                     val MULTIANEWARRAY(arrayType, dimensions) = i
-                    instructions.writeShort(CPEClass(arrayType))
+                    instructions.writeShort(CPEClass(arrayType, false))
                     instructions.writeByte(dimensions)
 
                 case LDC.opcode ⇒
-                    instructions.writeByte(
-                        i match {
-                            case LoadInt(value)          ⇒ CPEInteger(value)
-                            case LoadFloat(value)        ⇒ CPEFloat(value)
-                            case LoadClass(value)        ⇒ CPEClass(value)
-                            case LoadMethodHandle(value) ⇒ CPEMethodHandle(value)
-                            case LoadMethodType(value)   ⇒ CPEMethodType(value.toJVMDescriptor)
-                            case LoadString(value)       ⇒ CPEString(value)
-                        }
-                    )
+                    val cpIndex = ConstantsBuffer.getOrCreateCPEntry(i.asInstanceOf[LDC[_]])
+                    instructions.writeByte(cpIndex)
 
                 case LDC_W.opcode ⇒
                     instructions.writeShort(
                         i match {
-                            case LoadInt_W(value)          ⇒ CPEInteger(value)
-                            case LoadFloat_W(value)        ⇒ CPEFloat(value)
-                            case LoadClass_W(value)        ⇒ CPEClass(value)
-                            case LoadMethodHandle_W(value) ⇒ CPEMethodHandle(value)
-                            case LoadMethodType_W(value)   ⇒ CPEMethodType(value.toJVMDescriptor)
-                            case LoadString_W(value)       ⇒ CPEString(value)
+                            case LoadInt_W(value)          ⇒ CPEInteger(value, false)
+                            case LoadFloat_W(value)        ⇒ CPEFloat(value, false)
+                            case LoadClass_W(value)        ⇒ CPEClass(value, false)
+                            case LoadString_W(value)       ⇒ CPEString(value, false)
+                            case LoadMethodHandle_W(value) ⇒ CPEMethodHandle(value, false)
+                            case LoadMethodType_W(value) ⇒
+                                CPEMethodType(value.toJVMDescriptor, false)
                         }
                     )
 
@@ -428,7 +424,7 @@ package object ba { ba ⇒
             code: br.Code
     )(
             implicit
-            constantPoolBuffer: ConstantPoolBuffer
+            constantPoolBuffer: ConstantsBuffer
     ) {
         def toDA: da.Code_attribute = ba.toDA(code)
     }
@@ -437,10 +433,10 @@ package object ba { ba ⇒
         exceptionHandler: ExceptionHandler
     )(
         implicit
-        constantPoolBuffer: ConstantPoolBuffer
+        constantPoolBuffer: ConstantsBuffer
     ): da.ExceptionTableEntry = {
         val index = if (exceptionHandler.catchType.isDefined) {
-            constantPoolBuffer.CPEClass(exceptionHandler.catchType.get)
+            constantPoolBuffer.CPEClass(exceptionHandler.catchType.get, false)
         } else 0
         da.ExceptionTableEntry(
             exceptionHandler.startPC,
@@ -454,70 +450,59 @@ package object ba { ba ⇒
         attribute: Attribute
     )(
         implicit
-        constantPoolBuffer: ConstantPoolBuffer
+        constantPoolBuffer: ConstantsBuffer
     ): da.Attribute = {
+        import constantPoolBuffer._
         attribute match {
             case c: Code ⇒ c.toDA
 
             // direct conversions
             case br.SourceFile(s) ⇒
-                da.SourceFile_attribute(
-                    constantPoolBuffer.CPEUtf8(bi.SourceFileAttribute.Name),
-                    constantPoolBuffer.CPEUtf8(s)
-                )
+                da.SourceFile_attribute(CPEUtf8(bi.SourceFileAttribute.Name), CPEUtf8(s))
 
             case br.Deprecated ⇒
-                da.Deprecated_attribute(constantPoolBuffer.CPEUtf8(bi.DeprecatedAttribute.Name))
+                da.Deprecated_attribute(CPEUtf8(bi.DeprecatedAttribute.Name))
 
             case br.Synthetic ⇒
-                da.Synthetic_attribute(constantPoolBuffer.CPEUtf8(bi.SyntheticAttribute.Name))
+                da.Synthetic_attribute(CPEUtf8(bi.SyntheticAttribute.Name))
 
             case br.SourceDebugExtension(data) ⇒
-                da.SourceDebugExtension_attribute(
-                    constantPoolBuffer.CPEUtf8(bi.SourceDebugExtensionAttribute.Name),
-                    data
-                )
+                val attributeName = bi.SourceDebugExtensionAttribute.Name
+                da.SourceDebugExtension_attribute(CPEUtf8(attributeName), data)
 
             case br.EnclosingMethod(classType, nameOption, descriptorOption) ⇒
-                val classIndex = constantPoolBuffer.CPEClass(classType)
+                val classIndex = CPEClass(classType, false)
                 val nameAndTypeIndex = nameOption match {
-                    case Some(name) ⇒
-                        constantPoolBuffer.CPENameAndType(name, descriptorOption.get.toJVMDescriptor)
-                    case None ⇒
-                        0
+                    case Some(name) ⇒ CPENameAndType(name, descriptorOption.get.toJVMDescriptor)
+                    case None       ⇒ 0
                 }
+                val attributeName = bi.EnclosingMethodAttribute.Name
                 da.EnclosingMethod_attribute(
-                    constantPoolBuffer.CPEUtf8(bi.EnclosingMethodAttribute.Name),
-                    classIndex,
-                    nameAndTypeIndex
+                    CPEUtf8(attributeName), classIndex, nameAndTypeIndex
                 )
 
             // ALL CONSTANT FIELD VALUES
-            case br.ConstantDouble(value) ⇒
-                da.ConstantValue_attribute(
-                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
-                    constantPoolBuffer.CPEDouble(value)
-                )
             case br.ConstantFloat(value) ⇒
                 da.ConstantValue_attribute(
-                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
-                    constantPoolBuffer.CPEFloat(value)
+                    CPEUtf8(bi.ConstantValueAttribute.Name),
+                    CPEFloat(value, false)
                 )
             case br.ConstantInteger(value) ⇒
                 da.ConstantValue_attribute(
-                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
-                    constantPoolBuffer.CPEInteger(value)
-                )
-            case br.ConstantLong(value) ⇒
-                da.ConstantValue_attribute(
-                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
-                    constantPoolBuffer.CPELong(value)
+                    CPEUtf8(bi.ConstantValueAttribute.Name),
+                    CPEInteger(value, false)
                 )
             case br.ConstantString(value) ⇒
                 da.ConstantValue_attribute(
-                    constantPoolBuffer.CPEUtf8(bi.ConstantValueAttribute.Name),
-                    constantPoolBuffer.CPEString(value)
+                    CPEUtf8(bi.ConstantValueAttribute.Name),
+                    CPEString(value, false)
                 )
+
+            case br.ConstantDouble(value) ⇒
+                da.ConstantValue_attribute(CPEUtf8(bi.ConstantValueAttribute.Name), CPEDouble(value))
+            case br.ConstantLong(value) ⇒
+                da.ConstantValue_attribute(CPEUtf8(bi.ConstantValueAttribute.Name), CPELong(value))
+
         }
     }
 
