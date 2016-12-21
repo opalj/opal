@@ -141,8 +141,9 @@ package object ba { ba ⇒
         val fields = classFile.fields.map(toDA)
         val methods = classFile.methods.map(toDA)
         val attributes = classFile.attributes.map(toDA)
-        val constant_pool = constantPoolBuffer.toDA
-
+        val (constantPool, bootstrapMethods) = constantsBuffer.build
+        val constant_pool = constantPool.toDA
+        println(bootstrapMethods.mkString("\n")) // TODO create bootstrap methods attribute!
         da.ClassFile(
             constant_pool = constant_pool,
             minor_version = classFile.version.minor,
@@ -392,9 +393,16 @@ package object ba { ba ⇒
                         case LoadDouble(value) ⇒ instructions.writeShort(CPEDouble(value))
                     }
 
-                case INVOKEDYNAMIC.opcode ⇒ ???
-                case TABLESWITCH.opcode   ⇒ ???
-                case LOOKUPSWITCH.opcode  ⇒ ???
+                case INVOKEDYNAMIC.opcode ⇒
+                    val INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = i
+                    val jvmDescriptor = descriptor.toJVMDescriptor
+                    val cpEntryIndex = CPEInvokeDynamic(bootstrapMethod, name, jvmDescriptor)
+                    instructions.writeShort(cpEntryIndex)
+                    instructions.writeByte(0)
+                    instructions.writeByte(0)
+
+                case TABLESWITCH.opcode  ⇒ ???
+                case LOOKUPSWITCH.opcode ⇒ ???
 
                 case WIDE.opcode ⇒
                     if (modifiedByWide)
@@ -513,11 +521,8 @@ package object ba { ba ⇒
         }
     }
 
-    implicit def toDA(
-        implicit
-        constantPoolBuffer: ConstantPoolBuffer
-    ): Array[da.Constant_Pool_Entry] = {
-        constantPoolBuffer.toArray.map { cpEntry ⇒
+    def toDA(constantPool: Array[Constant_Pool_Entry]): Array[da.Constant_Pool_Entry] = {
+        constantPool.map { cpEntry ⇒
             if (cpEntry eq null)
                 null
             else {
@@ -583,8 +588,8 @@ package object ba { ba ⇒
         }
     }
 
-    implicit class BRConstantPoolBuffer(constantPoolBuffer: ConstantPoolBuffer) {
-        def toDA: Array[da.Constant_Pool_Entry] = ba.toDA(constantPoolBuffer)
+    implicit class BRConstantsBuffer(constantPool: Array[Constant_Pool_Entry]) {
+        def toDA: Array[da.Constant_Pool_Entry] = ba.toDA(constantPool)
     }
 
 }
