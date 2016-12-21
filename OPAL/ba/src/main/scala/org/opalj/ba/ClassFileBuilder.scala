@@ -110,8 +110,7 @@ class ClassFileBuilder(
         )) {
             this.methods :+= br.Method.defaultConstructor(this.superclassType.get)
         }
-        val classFile = br.ClassFile(
-            /*WE HAVE TO USE THE FACTORY METHOD TO ENSURE THAT THE MEMBERS ARE SORTED*/
+        val classFile = br.ClassFile( // <= THE FACTORY METHOD ENSURES THAT THE MEMBERS ARE SORTED
             version.minor,
             version.major,
             accessFlags,
