@@ -53,8 +53,8 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
     /**
      * Creates a new [[ClassFileBuilder]] with the given name and previously defined
      * AccessModifiers. The minorVersion is initialized as
-     * [[ClassFileBuilder.defaultMinorVersion]] and the majorVersion as
-     * [[ClassFileBuilder.defaultMajorVersion]].
+     * [[ClassFileBuilder.DefaultMajorVersion]] and the majorVersion as
+     * [[ClassFileBuilder.DefaultMajorVersion]].
      *
      * @param fqn The fully qualified class name in JVM notation, e.g. "MyClass" for a
      *            class in the default package or "my/package/MyClass" for a class in "my.package".
@@ -76,5 +76,34 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
             thisType = ObjectType(fqn),
             superclassType = superclassType
         )
+    }
+
+    /**
+     * Creates a new [[MethodBuilder]] with the previously defined [[AccessModifier]]s.
+     *
+     * @param name The method name
+     * @param parameters The method parameters in JVM notation, e.g. "()" for no parameters,
+     *                   "(IB)" for one integer and one boolean argument or
+     *                   "(Ljava/lang/String;)" for one String argument.
+     * @param returnType The returnType of this method in JVM notation, e.g. "I" for integer.
+     */
+    def apply(
+        name:       String,
+        parameters: String,
+        returnType: String
+    ): MethodBuilder = {
+        MethodBuilder(
+            accessFlags = accessFlags,
+            name = name,
+            descriptor = br.MethodDescriptor(parameters + returnType)
+        )
+    }
+
+    /**
+     * Adds this [[AccessModifier]]s AccessFlag to the AccessFlags of the given
+     * [[ClassFileMemberBuilder]].
+     */
+    def +(other: ClassFileMemberBuilder): other.type = {
+        other.addAccessFlags(accessFlags)
     }
 }
