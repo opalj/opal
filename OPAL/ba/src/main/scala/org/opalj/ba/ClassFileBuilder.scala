@@ -80,7 +80,7 @@ class ClassFileBuilder(
      */
     def apply(classFileElements: ClassFileMemberBuilder*): this.type = {
         val methodsAndAnnotations = classFileElements.collect {
-            case m: MethodBuilder ⇒ m.methodsAndMetaInformation
+            case m: MethodBuilder ⇒ m.buildMethod
         }.toMap
 
         methods ++= methodsAndAnnotations.keys.toIndexedSeq

@@ -63,7 +63,7 @@ case class MethodBuilder(
     /**
      * Returns the build [[org.opalj.br.Method]] and its annotations.
      */
-    def methodsAndMetaInformation: (br.Method, Map[br.PC, AnyRef]) = {
+    def buildMethod: (br.Method, Map[br.PC, AnyRef]) = {
         var tempAttributes = attributes
         var annotations = Map.empty[br.PC, AnyRef]
         if (body.isDefined) {
