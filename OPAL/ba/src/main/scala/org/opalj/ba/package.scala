@@ -505,9 +505,11 @@ package object ba { ba ⇒
                 )
 
             case br.ConstantDouble(value) ⇒
-                da.ConstantValue_attribute(CPEUtf8(bi.ConstantValueAttribute.Name), CPEDouble(value))
+                val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
+                da.ConstantValue_attribute(attributeNameIndex, CPEDouble(value))
             case br.ConstantLong(value) ⇒
-                da.ConstantValue_attribute(CPEUtf8(bi.ConstantValueAttribute.Name), CPELong(value))
+                val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
+                da.ConstantValue_attribute(attributeNameIndex, CPELong(value))
 
         }
     }
