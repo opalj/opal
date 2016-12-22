@@ -103,7 +103,7 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
      * Adds this [[AccessModifier]]s AccessFlag to the AccessFlags of the given
      * [[ClassFileMemberBuilder]].
      */
-    def +(other: ClassFileMemberBuilder): other.type = {
-        other.addAccessFlags(accessFlags)
+    def +(cfmBuilder: ClassFileMemberBuilder): cfmBuilder.type = {
+        cfmBuilder.addAccessFlags(accessFlags)
     }
 }

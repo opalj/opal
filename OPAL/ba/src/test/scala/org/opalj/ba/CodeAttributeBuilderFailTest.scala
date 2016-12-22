@@ -55,7 +55,7 @@ class CodeAttributeBuilderFailTest extends FlatSpec {
                 ILOAD_2,
                 IRETURN
             ) MAXSTACK 0 MAXLOCALS 0
-        ).buildMethod._1
+        ).methodsAndMetaInformation._1
 
         "the CodeAttributeBuilder" should "warn about a too small defined max_locals value" in {
             assert(stream.toString.contains("you defined max_locals of method "+
