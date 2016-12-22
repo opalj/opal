@@ -50,7 +50,7 @@ import org.opalj.util.InMemoryClassLoader
  */
 @RunWith(classOf[JUnitRunner])
 class MethodBuilderTest extends FlatSpec {
-    behavior of "Method Attributes"
+    behavior of "the MethodBuilder"
 
     val simpleMethodClass = (PUBLIC CLASS "SimpleMethodClass" EXTENDS "java/lang/Object")(
         FINAL + SYNTHETIC + PUBLIC("testMethod", "(Ljava/lang/String;)", "Ljava/lang/String;")(
