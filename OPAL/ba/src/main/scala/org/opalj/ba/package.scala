@@ -28,7 +28,6 @@
  */
 package org.opalj
 
-import scala.language.implicitConversions
 import scala.annotation.switch
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
@@ -125,6 +124,22 @@ package object ba { ba ⇒
     //
     // *********************************************************************************************
 
+    def createBoostrapMethodTableAttribute(constantsPool: ConstantsPool): da.Attribute = {
+        import constantsPool._
+        val bootstrap_methods = bootstrapMethods map { bootstrapMethod ⇒
+            new da.BootstrapMethod(
+                CPEMethodHandle(bootstrapMethod.handle, false),
+                bootstrapMethod.arguments map { arguement ⇒
+                    new da.BootstrapArgument(
+                        CPEntryForBootstrapArgument(arguement)
+                    )
+                }
+            )
+        }
+        val attributeNameIndex = constantsPool.CPEUtf8(bi.BootstrapMethodsAttribute.Name)
+        new da.BootstrapMethods_attribute(attributeNameIndex, bootstrap_methods)
+    }
+
     /**
      * Converts a [[org.opalj.br.ClassFile]] to a [[org.opalj.da.ClassFile]] and all its attributes
      * to the attributes in [[org.opalj.da]].
@@ -140,10 +155,12 @@ package object ba { ba ⇒
         val interfaces = classFile.interfaceTypes.map(i ⇒ constantsBuffer.CPEClass(i, false))
         val fields = classFile.fields.map(toDA)
         val methods = classFile.methods.map(toDA)
-        val attributes = classFile.attributes.map(toDA)
-        val (constantPool, bootstrapMethods) = constantsBuffer.build
-        val constant_pool = constantPool.toDA
-        println(bootstrapMethods.mkString("\n")) // TODO create bootstrap methods attribute!
+        var attributes = classFile.attributes.map(toDA)
+        val (constantPoolEntries, constantsPool) = constantsBuffer.build
+        if (constantsPool.bootstrapMethods.nonEmpty) {
+            attributes :+= createBoostrapMethodTableAttribute(constantsPool)
+        }
+        val constant_pool = constantPoolEntries.toDA
         da.ClassFile(
             constant_pool = constant_pool,
             minor_version = classFile.version.minor,
@@ -158,34 +175,30 @@ package object ba { ba ⇒
         )
     }
 
-    implicit class BRClassFile(classFile: br.ClassFile) {
-        def toDA: da.ClassFile = ba.toDA(classFile)
-    }
-
-    def toDA(field: br.Field)(implicit constantPoolBuffer: ConstantsBuffer): da.Field_Info = {
+    def toDA(field: br.Field)(implicit constantsBuffer: ConstantsBuffer): da.Field_Info = {
         da.Field_Info(
             access_flags = field.accessFlags,
-            name_index = constantPoolBuffer.CPEUtf8(field.name),
-            descriptor_index = constantPoolBuffer.CPEUtf8(field.fieldType.toJVMTypeName),
+            name_index = constantsBuffer.CPEUtf8(field.name),
+            descriptor_index = constantsBuffer.CPEUtf8(field.fieldType.toJVMTypeName),
             attributes = field.attributes.map(toDA)
         )
     }
 
-    def toDA(method: br.Method)(implicit constantPoolBuffer: ConstantsBuffer): da.Method_Info = {
+    def toDA(method: br.Method)(implicit constantsBuffer: ConstantsBuffer): da.Method_Info = {
         var attributes = method.attributes.map(toDA)
         if (method.body.isDefined) {
-            attributes = method.body.get.toDA +: attributes
+            attributes = toDA(method.body.get) +: attributes
         }
         da.Method_Info(
             access_flags = method.accessFlags,
-            name_index = constantPoolBuffer.CPEUtf8(method.name),
-            descriptor_index = constantPoolBuffer.CPEUtf8(method.descriptor.toJVMDescriptor),
+            name_index = constantsBuffer.CPEUtf8(method.name),
+            descriptor_index = constantsBuffer.CPEUtf8(method.descriptor.toJVMDescriptor),
             attributes = attributes
         )
     }
 
-    def toDA(code: Code)(implicit constantPoolBuffer: ConstantsBuffer): da.Code_attribute = {
-        import constantPoolBuffer._
+    def toDA(code: Code)(implicit constantsBuffer: ConstantsBuffer): da.Code_attribute = {
+        import constantsBuffer._
         val data = new ByteArrayOutputStream(code.instructions.size)
         val instructions = new DataOutputStream(data)
 
@@ -393,6 +406,8 @@ package object ba { ba ⇒
                     val INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = i
                     val jvmDescriptor = descriptor.toJVMDescriptor
                     val cpEntryIndex = CPEInvokeDynamic(bootstrapMethod, name, jvmDescriptor)
+                    // CPEInvokeDynamic automatically creates all cp entries required to
+                    // later on tranform the bootstrap method
                     instructions.writeShort(cpEntryIndex)
                     instructions.writeByte(0)
                     instructions.writeByte(0)
@@ -411,7 +426,7 @@ package object ba { ba ⇒
         instructions.flush
 
         da.Code_attribute(
-            attribute_name_index = constantPoolBuffer.CPEUtf8(bi.CodeAttribute.Name),
+            attribute_name_index = constantsBuffer.CPEUtf8(bi.CodeAttribute.Name),
             max_stack = code.maxStack,
             max_locals = code.maxLocals,
             code = da.Code(data.toByteArray),
@@ -420,23 +435,14 @@ package object ba { ba ⇒
         )
     }
 
-    implicit class BRCode(
-            code: br.Code
-    )(
-            implicit
-            constantPoolBuffer: ConstantsBuffer
-    ) {
-        def toDA: da.Code_attribute = ba.toDA(code)
-    }
-
-    implicit def toDA(
+    def toDA(
         exceptionHandler: ExceptionHandler
     )(
         implicit
-        constantPoolBuffer: ConstantsBuffer
+        constantsBuffer: ConstantsBuffer
     ): da.ExceptionTableEntry = {
         val index = if (exceptionHandler.catchType.isDefined) {
-            constantPoolBuffer.CPEClass(exceptionHandler.catchType.get, false)
+            constantsBuffer.CPEClass(exceptionHandler.catchType.get, false)
         } else 0
         da.ExceptionTableEntry(
             exceptionHandler.startPC,
@@ -446,15 +452,15 @@ package object ba { ba ⇒
         )
     }
 
-    implicit def toDA(
+    def toDA(
         attribute: Attribute
     )(
         implicit
-        constantPoolBuffer: ConstantsBuffer
+        constantsBuffer: ConstantsBuffer
     ): da.Attribute = {
-        import constantPoolBuffer._
+        import constantsBuffer._
         attribute match {
-            case c: Code ⇒ c.toDA
+            case code: Code ⇒ toDA(code)
 
             // direct conversions
             case br.SourceFile(s) ⇒
