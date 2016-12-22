@@ -414,8 +414,8 @@ package object ba { ba ⇒
 
                 case TABLESWITCH.opcode ⇒
                     val TABLESWITCH(defaultOffset, low, high, jumpOffsets) = i
-                    val padding = 3 - (pc % 4)
-                    instructions.write(Array.fill(padding) { 0.toByte })
+                    var padding = 3 - (pc % 4)
+                    while (padding > 0) { instructions.writeByte(0); padding -= 1 }
                     instructions.writeInt(defaultOffset)
                     instructions.writeInt(low)
                     instructions.writeInt(high)
@@ -424,8 +424,8 @@ package object ba { ba ⇒
                     }
                 case LOOKUPSWITCH.opcode ⇒
                     val LOOKUPSWITCH(defaultOffset, npairs) = i
-                    val padding = 3 - (pc % 4)
-                    instructions.write(Array.fill(padding) { 0.toByte })
+                    var padding = 3 - (pc % 4)
+                    while (padding > 0) { instructions.writeByte(0); padding -= 1 }
                     instructions.writeInt(defaultOffset)
                     instructions.writeInt(npairs.size)
                     npairs.foreach { pair ⇒
