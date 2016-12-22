@@ -79,12 +79,12 @@ class ClassFileBuilder(
      * @see [[ClassFileMemberBuilder]]
      */
     def apply(classFileElements: ClassFileMemberBuilder*): this.type = {
-        val annotations = classFileElements.collect {
+        val methodsAndAnnotations = classFileElements.collect {
             case m: MethodBuilder ⇒ m.methodsAndMetaInformation
         }.toMap
 
-        this.methods ++= annotations.keys.toIndexedSeq
-        this.annotations ++= annotations
+        methods ++= methodsAndAnnotations.keys.toIndexedSeq
+        annotations ++= methodsAndAnnotations
 
         this
     }
