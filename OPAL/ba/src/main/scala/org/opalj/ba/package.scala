@@ -412,8 +412,27 @@ package object ba { ba ⇒
                     instructions.writeByte(0)
                     instructions.writeByte(0)
 
-                case TABLESWITCH.opcode  ⇒ ???
-                case LOOKUPSWITCH.opcode ⇒ ???
+                case TABLESWITCH.opcode ⇒
+                    val TABLESWITCH(defaultOffset, low, high, jumpOffsets) = i
+                    val padding = 3 - (pc % 4)
+                    instructions.write(Array.fill(padding) { 0.toByte })
+                    instructions.writeInt(defaultOffset)
+                    instructions.writeInt(low)
+                    instructions.writeInt(high)
+                    jumpOffsets.foreach { offset ⇒
+                        instructions.writeInt(offset)
+                    }
+                case LOOKUPSWITCH.opcode ⇒
+                    val LOOKUPSWITCH(defaultOffset, npairs) = i
+                    val padding = 3 - (pc % 4)
+                    instructions.write(Array.fill(padding) { 0.toByte })
+                    instructions.writeInt(defaultOffset)
+                    instructions.writeInt(npairs.size)
+                    npairs.foreach { pair ⇒
+                        val (matchValue, offset) = pair
+                        instructions.writeInt(matchValue)
+                        instructions.writeInt(offset)
+                    }
 
                 case WIDE.opcode ⇒
                     if (modifiedByWide)
