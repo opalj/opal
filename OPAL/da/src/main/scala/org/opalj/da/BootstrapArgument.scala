@@ -27,20 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package da
 
-/**
- * Java 7's `BootstrapMethods_attribute`.
- *
- * @author Michael Eichberg
- */
-case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute {
+import scala.xml.Node
 
-    override def kindId: Int = BootstrapMethodTable.KindId
+case class BootstrapArgument(cp_ref: Constant_Pool_Index) {
 
-}
-object BootstrapMethodTable {
-
-    final val KindId = 42
+    def toXHTML(implicit cp: Constant_Pool): Node = <div>{ cp(cp_ref).asInlineNode }</div>
 
 }

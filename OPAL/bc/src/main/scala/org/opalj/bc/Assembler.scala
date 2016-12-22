@@ -29,10 +29,11 @@
 package org.opalj
 package bc
 
-import org.opalj.da._
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
+
 import org.opalj.bi.{ConstantPoolTags ⇒ CPTags}
+import org.opalj.da._
 import org.opalj.da.ClassFileReader.LineNumberTable_attribute
 
 /**
@@ -44,7 +45,8 @@ object Assembler {
 
     def as[T](x: AnyRef): T = x.asInstanceOf[T]
 
-    implicit object RichCONSTANT_Class_info extends ClassFileElement[CONSTANT_Class_info] {
+    implicit object RichCONSTANT_Class_info
+            extends ClassFileElement[CONSTANT_Class_info] {
         def write(
             ci: CONSTANT_Class_info
         )(
@@ -58,7 +60,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_Ref extends ClassFileElement[CONSTANT_Ref] {
+    implicit object RichCONSTANT_Ref
+            extends ClassFileElement[CONSTANT_Ref] {
         def write(
             cr: CONSTANT_Ref
         )(
@@ -73,7 +76,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_String_info extends ClassFileElement[CONSTANT_String_info] {
+    implicit object RichCONSTANT_String_info
+            extends ClassFileElement[CONSTANT_String_info] {
         def write(
             ci: CONSTANT_String_info
         )(
@@ -87,7 +91,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_Integer_info extends ClassFileElement[CONSTANT_Integer_info] {
+    implicit object RichCONSTANT_Integer_info
+            extends ClassFileElement[CONSTANT_Integer_info] {
         def write(
             ci: CONSTANT_Integer_info
         )(
@@ -101,7 +106,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_Float_info extends ClassFileElement[CONSTANT_Float_info] {
+    implicit object RichCONSTANT_Float_info
+            extends ClassFileElement[CONSTANT_Float_info] {
         def write(
             ci: CONSTANT_Float_info
         )(
@@ -115,7 +121,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_Long_info extends ClassFileElement[CONSTANT_Long_info] {
+    implicit object RichCONSTANT_Long_info
+            extends ClassFileElement[CONSTANT_Long_info] {
         def write(
             ci: CONSTANT_Long_info
         )(
@@ -129,7 +136,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_Double_info extends ClassFileElement[CONSTANT_Double_info] {
+    implicit object RichCONSTANT_Double_info
+            extends ClassFileElement[CONSTANT_Double_info] {
         def write(
             ci: CONSTANT_Double_info
         )(
@@ -143,7 +151,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_NameAndType_info extends ClassFileElement[CONSTANT_NameAndType_info] {
+    implicit object RichCONSTANT_NameAndType_info
+            extends ClassFileElement[CONSTANT_NameAndType_info] {
         def write(
             ci: CONSTANT_NameAndType_info
         )(
@@ -159,7 +168,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_Utf8_info extends ClassFileElement[CONSTANT_Utf8_info] {
+    implicit object RichCONSTANT_Utf8_info
+            extends ClassFileElement[CONSTANT_Utf8_info] {
         def write(
             ci: CONSTANT_Utf8_info
         )(
@@ -173,7 +183,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_MethodHandle_info extends ClassFileElement[CONSTANT_MethodHandle_info] {
+    implicit object RichCONSTANT_MethodHandle_info
+            extends ClassFileElement[CONSTANT_MethodHandle_info] {
         def write(
             ci: CONSTANT_MethodHandle_info
         )(
@@ -188,7 +199,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_MethodType_info extends ClassFileElement[CONSTANT_MethodType_info] {
+    implicit object RichCONSTANT_MethodType_info
+            extends ClassFileElement[CONSTANT_MethodType_info] {
         def write(
             ci: CONSTANT_MethodType_info
         )(
@@ -202,7 +214,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_InvokeDynamic_info extends ClassFileElement[CONSTANT_InvokeDynamic_info] {
+    implicit object RichCONSTANT_InvokeDynamic_info
+            extends ClassFileElement[CONSTANT_InvokeDynamic_info] {
         def write(
             ci: CONSTANT_InvokeDynamic_info
         )(
@@ -605,7 +618,7 @@ object Assembler {
             writeShort(name_index)
             writeShort(descriptor_index)
             writeShort(attributes.size)
-            attributes.foreach(serialize(_))
+            attributes foreach { serializeAs[Attribute] }
         }
     }
 
@@ -632,10 +645,10 @@ object Assembler {
             writeShort(this_class)
             writeShort(super_class)
             writeShort(interfaces.size)
-            interfaces.foreach { writeShort(_) }
+            interfaces.foreach { writeShort }
             segmentInformation("TypeInformation", out.size)
             writeShort(fields.size)
-            fields.foreach { serialize(_) }
+            fields.foreach { serializeAs[Field_Info] }
             segmentInformation("Fields", out.size)
             writeShort(methods.size)
             methods.foreach { m ⇒
@@ -644,7 +657,7 @@ object Assembler {
             }
             segmentInformation("Methods", out.size)
             writeShort(attributes.size)
-            attributes.foreach { serialize(_) }
+            attributes.foreach { serializeAs[Attribute] }
             segmentInformation("ClassFileAttributes", out.size)
         }
     }
@@ -658,14 +671,15 @@ object Assembler {
     )(
         implicit
         out:                DataOutputStream,
-        segmentInformation: (String, Int) ⇒ Unit, cfe: ClassFileElement[T]
+        segmentInformation: (String, Int) ⇒ Unit,
+        cfe:                ClassFileElement[T]
     ): Unit = {
         cfe.write(as[T](t))
     }
 
     /**
-     * @note  You should use serialize if the concrete/required type of the given parameter is
-     *      available/can be automatically inferred by the Scala compiler.
+     * @note    You should use serialize if the concrete/required type of the given parameter is
+     *          available/can be automatically inferred by the Scala compiler.
      */
     def serialize[T: ClassFileElement](
         t: T
@@ -678,10 +692,10 @@ object Assembler {
     }
 
     /**
-     * @param segmentInformation A function that will be called back to provide information about
-     *      the segment that was just written.
-     *      This is particularly useful when debugging the serializer to determine which segments
-     *      were successfully/completely written.
+     * @param   segmentInformation A function that will be called back to provide information about
+     *          the segment that was just written.
+     *          This is particularly useful when debugging the serializer to determine which
+     *          segments were successfully/completely written.
      */
     def apply(
         classFile:          ClassFile,
@@ -693,12 +707,6 @@ object Assembler {
         out.flush()
         data.toByteArray()
     }
-
-}
-
-trait ClassFileElement[T] {
-
-    def write(t: T)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit
 
 }
 

@@ -27,51 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package bc
 
-import java.net.URL
-
-import org.opalj.br.instructions._
-import org.opalj.br.analyses.{BasicReport, Project}
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Nanoseconds
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import java.io.DataOutputStream
 
 /**
- * Counts the number of static and virtual method calls.
+ * Generic interface which we use to implement the type classes.
  *
  * @author Michael Eichberg
  */
-object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
+trait ClassFileElement[T] {
 
-    override def description: String = "Counts the number of static and virtual method calls."
+    def write(t: T)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
-
-        var staticCalls = 0
-        var virtualCalls = 0
-        var executionTime = Nanoseconds.None
-        time {
-            for {
-                classFile ← project.allClassFiles
-                MethodWithBody(code) ← classFile.methods
-                instruction @ MethodInvocationInstruction(_, _, _, _) ← code.instructions
-            } {
-                if (instruction.isVirtualMethodCall)
-                    virtualCalls += 1
-                else
-                    staticCalls += 1
-            }
-        } { t ⇒ executionTime = t }
-
-        BasicReport(
-            "The sequential analysis took: "+executionTime.toSeconds+"\n"+
-                "\tNumber of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
-                "\tNumber of invokeinterface/invokevirtual instructions: "+virtualCalls
-        )
-    }
 }
+

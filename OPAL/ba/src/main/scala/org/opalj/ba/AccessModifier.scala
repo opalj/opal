@@ -53,7 +53,7 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
     /**
      * Creates a new [[ClassFileBuilder]] with the given name and previously defined
      * AccessModifiers. The minorVersion is initialized as
-     * [[ClassFileBuilder.DefaultMajorVersion]] and the majorVersion as
+     * [[ClassFileBuilder.DefaultMinorVersion]] and the majorVersion as
      * [[ClassFileBuilder.DefaultMajorVersion]].
      *
      * @param fqn The fully qualified class name in JVM notation, e.g. "MyClass" for a

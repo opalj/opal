@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.reflect.ClassTag
+
 import scala.collection.mutable
 import org.opalj.bi.reader.{Constant_PoolReader, Constant_PoolAbstractions}
 
