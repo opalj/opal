@@ -579,7 +579,7 @@ package object ba { ba ⇒
         }
     }
 
-    implicit class BRConstantsBuffer(constantPool: Array[Constant_Pool_Entry]) {
+    implicit class BRConstantsBuffer(val constantPool: Array[Constant_Pool_Entry]) extends AnyVal {
         def toDA: Array[da.Constant_Pool_Entry] = ba.toDA(constantPool)
     }
 
