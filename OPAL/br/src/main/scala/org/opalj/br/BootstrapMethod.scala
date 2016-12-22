@@ -30,17 +30,14 @@ package org.opalj
 package br
 
 /**
- * Java 7's `BootstrapMethods_attribute`.
+ * Java 7's 'BootstrapMethod'.
  *
  * @author Michael Eichberg
  */
-case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute {
+case class BootstrapMethod(
+        handle:    MethodHandle,
+        arguments: BootstrapArguments
+) {
 
-    override def kindId: Int = BootstrapMethodTable.KindId
-
-}
-object BootstrapMethodTable {
-
-    final val KindId = 42
-
+    def toJava: String = arguments.map(_.toJava).mkString(handle.toJava+"(", ",", ")")
 }
