@@ -108,7 +108,7 @@ class AssemberTest extends FlatSpec with Matchers {
 
                             try {
                                 val size = raw.length
-                                val failAfterStream= new FailAfterByteArrayOutputStream(i)(size)
+                                val failAfterStream = new FailAfterByteArrayOutputStream(i)(size)
                                 Assembler.serialize(classFile)(
                                     Assembler.RichClassFile,
                                     new DataOutputStream(failAfterStream),
@@ -117,8 +117,8 @@ class AssemberTest extends FlatSpec with Matchers {
                             } catch {
                                 case ioe: IOException ⇒ ioe.printStackTrace()
                             }
-                            val successfullyReadBytes = 
-                            s"(i.e., successfully read ${succeeded.last._2} bytes)"
+                            val successfullyReadBytes =
+                                s"(i.e., successfully read ${succeeded.last._2} bytes)"
                             val message =
                                 s"the class files differ starting with index $i ($failedSegment): "+
                                     s"found $c but expected $r"+
@@ -134,8 +134,8 @@ class AssemberTest extends FlatSpec with Matchers {
                 } catch {
                     case e: Exception ⇒
                         Lock.synchronized {
-                            val details =e.getMessage + e.getClass.getSimpleName
-                            val message = s"failed: $ze(${classFile.fqn}); message:"+ details
+                            val details = e.getMessage + e.getClass.getSimpleName
+                            val message = s"failed: $ze(${classFile.fqn}); message:"+details
                             val newException = new RuntimeException(message, e)
                             exceptions = newException :: exceptions
                         }

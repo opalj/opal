@@ -31,6 +31,7 @@ package br
 package cp
 
 import scala.collection.mutable
+
 import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LoadInt
 import org.opalj.br.instructions.LoadFloat
@@ -42,11 +43,9 @@ import org.opalj.br.instructions.LoadMethodType
 /**
  * This class can be used to (re)build a [[org.opalj.br.ClassFile]]'s constant pool.
  *
- * It is primarily intended to be used in combination with the [[ConstantPoolBuilder$]]'s factory
- * methods; the builder will try its best to create a valid constant pool and will also report
- * issues.
- *
- * @note    Use the factory method defined by the companion object [[ConstantsBuffer$]] to
+ * @note    The builder will try its best to create a valid constant pool and will also report
+ *          issues.
+ *          Use the factory method defined by the companion object [[ConstantsBuffer$]] to
  *          create an instance and to get information about the requirements.
  * @author  Andre Pacak
  * @author  Michael Eichberg
@@ -54,9 +53,10 @@ import org.opalj.br.instructions.LoadMethodType
 class ConstantsBuffer private (
         private var nextIndex:    Int,
         private val constantPool: mutable.Map[Constant_Pool_Entry, Constant_Pool_Index]
-) {
+) extends ConstantsPoolLike {
 
     private[this] val bootstrapMethods = new BootstrapMethodsBuffer()
+    private[this] var bootstrapMethodAttributeNameIndex: Int = _
 
     private[this] def getOrElseUpdate(cpEntry: Constant_Pool_Entry, entry_size: Int): Int = {
         constantPool.getOrElseUpdate(
@@ -69,21 +69,21 @@ class ConstantsBuffer private (
         )
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     private[this] def validateIndex(index: Int, requiresUByteIndex: Boolean): Int = {
         if (requiresUByteIndex && index > UByte.MaxValue) {
             val message = s"the constant pool index $index is larger than  ${UByte.MaxValue}"
-            throw new ConstantPoolCreationException(message)
+            throw new ConstantPoolException(message)
         }
 
         validateUShortIndex(index)
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     private[this] def validateUShortIndex(index: Int): Int = {
         if (index > UShort.MaxValue) {
             val message = s"the constant pool index $index is larger than ${UShort.MaxValue}"
-            throw new ConstantPoolCreationException(message)
+            throw new ConstantPoolException(message)
         }
         index
     }
@@ -93,39 +93,39 @@ class ConstantsBuffer private (
     // (These entries may be referenced using an unsigned byte or unsigned short value.)
     //
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEClass(referenceType: ReferenceType, requiresUByteIndex: Boolean): Int = {
         val cpeUtf8 = CPEUtf8OfCPEClass(referenceType)
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Class_info(cpeUtf8), 1)
         validateIndex(cpEntryIndex, requiresUByteIndex)
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEFloat(value: Float, requiresUByteIndex: Boolean): Int = {
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Float_info(ConstantFloat(value)), 1)
         validateIndex(cpEntryIndex, requiresUByteIndex)
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEInteger(value: Int, requiresUByteIndex: Boolean): Int = {
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Integer_info(ConstantInteger(value)), 1)
         validateIndex(cpEntryIndex, requiresUByteIndex)
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEString(value: String, requiresUByteIndex: Boolean): Int = {
         val cpEntryIndex = getOrElseUpdate(CONSTANT_String_info(CPEUtf8(value)), 1)
         validateIndex(cpEntryIndex, requiresUByteIndex)
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEMethodHandle(methodHandle: MethodHandle, requiresUByteIndex: Boolean): Int = {
         val (tag, cpRefIndex) = CPERefOfCPEMethodHandle(methodHandle)
         val cpEntryIndex = getOrElseUpdate(CONSTANT_MethodHandle_info(tag, cpRefIndex), 1)
         validateIndex(cpEntryIndex, requiresUByteIndex)
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEMethodType(descriptor: String, requiresUByteIndex: Boolean): Int = {
         val cpEntry = CONSTANT_MethodType_info(getOrElseUpdate(CONSTANT_Utf8_info(descriptor), 1))
         validateIndex(getOrElseUpdate(cpEntry, 1), requiresUByteIndex)
@@ -136,99 +136,32 @@ class ConstantsBuffer private (
     // (These entries are always referenced using an unsigned short value.)
     //
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEDouble(value: Double): Int = {
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Double_info(ConstantDouble(value)), 2)
         validateUShortIndex(cpEntryIndex)
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPELong(value: Long): Int = {
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Long_info(ConstantLong(value)), 2)
         validateUShortIndex(cpEntryIndex)
     }
 
-    @throws[ConstantPoolCreationException]
-    def CPEUtf8OfCPEClass(referenceType: ReferenceType): Int = {
-        val typeName =
-            if (referenceType.isObjectType)
-                referenceType.asObjectType.fqn // "just", e.g., "java/lang/Object"
-            else // an array type including L and ; in case of reference types
-                referenceType.toJVMTypeName
-        CPEUtf8(typeName)
-    }
-
-    /**
-     * @return  A pair of ints where the first value is the method handle's tag and the second one
-     *          is the constant pool index of the constant pool entry that the
-     *          CONSTANT_MethodHandle should reference.
-     */
-    @throws[ConstantPoolCreationException]
-    def CPERefOfCPEMethodHandle(
-        methodHandle: MethodHandle
-    ): (Int /*TAG*/ , Int /*Constant_Pool_Index*/ ) = {
-        methodHandle match {
-            case GetFieldMethodHandle(declType, name, fieldType) ⇒
-                val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
-                (1, cpFieldRef)
-
-            case GetStaticMethodHandle(declType, name, fieldType) ⇒
-                val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
-                (2, cpFieldRef)
-
-            case PutFieldMethodHandle(declType, name, fieldType) ⇒
-                val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
-                (3, cpFieldRef)
-
-            case PutStaticMethodHandle(declType, name, fieldType) ⇒
-                val cpFieldRef = CPEFieldRef(declType, name, fieldType.toJVMTypeName)
-                (4, cpFieldRef)
-
-            case InvokeVirtualMethodHandle(receiverType, name, descriptor) ⇒
-                val cpMethodRef = CPEMethodRef(receiverType, name, descriptor.toJVMDescriptor)
-                (5, cpMethodRef)
-
-            case InvokeStaticMethodHandle(receiverType, isInterface, name, descriptor) ⇒
-                val methodRef =
-                    if (isInterface)
-                        CPEInterfaceMethodRef(receiverType, name, descriptor.toJVMDescriptor)
-                    else
-                        CPEMethodRef(receiverType, name, descriptor.toJVMDescriptor)
-                (6, methodRef)
-
-            case InvokeSpecialMethodHandle(receiverType, isInterface, name, descriptor) ⇒
-                val methodRef =
-                    if (isInterface)
-                        CPEInterfaceMethodRef(receiverType, name, descriptor.toJVMDescriptor)
-                    else
-                        CPEMethodRef(receiverType, name, descriptor.toJVMDescriptor)
-                (7, methodRef)
-
-            case NewInvokeSpecialMethodHandle(receiverType, name, descriptor) ⇒
-                val cpMethodRef = CPEMethodRef(receiverType, name, descriptor.toJVMDescriptor)
-                (8, cpMethodRef)
-
-            case InvokeInterfaceMethodHandle(receiverType, name, descriptor) ⇒
-                val jvmDescriptor = descriptor.toJVMDescriptor
-                val cpMethodRef = CPEInterfaceMethodRef(receiverType, name, jvmDescriptor)
-                (9, cpMethodRef)
-        }
-    }
-
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEUtf8(value: String): Int = {
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Utf8_info(value), 1)
         validateUShortIndex(cpEntryIndex)
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPENameAndType(name: String, tpe: String): Int = {
         val nameIndex = CPEUtf8(name)
         val typeIndex = CPEUtf8(tpe)
         validateUShortIndex(getOrElseUpdate(CONSTANT_NameAndType_info(nameIndex, typeIndex), 1))
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEFieldRef(
         objectType: ObjectType,
         fieldName:  String,
@@ -241,7 +174,7 @@ class ConstantsBuffer private (
 
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEMethodRef(
         referenceType: ReferenceType,
         methodName:    String,
@@ -253,7 +186,7 @@ class ConstantsBuffer private (
         validateUShortIndex(cpIndex)
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEInterfaceMethodRef(
         objectType: ReferenceType,
         methodName: String,
@@ -265,17 +198,22 @@ class ConstantsBuffer private (
         validateUShortIndex(getOrElseUpdate(cpMethodRef, 1))
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def CPEInvokeDynamic(
         bootstrapMethod: BootstrapMethod,
         name:            String,
         descriptor:      String
     ): Int = {
+        if (bootstrapMethodAttributeNameIndex == 0)
+            bootstrapMethodAttributeNameIndex = CPEUtf8(bi.BootstrapMethodsAttribute.Name)
+
         //need to build up bootstrap_methods
         var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
 
         if (indexOfBootstrapMethod == -1) {
             bootstrapMethods += bootstrapMethod
+            CPEMethodHandle(bootstrapMethod.handle, false)
+            bootstrapMethod.arguments.foreach { CPEntryForBootstrapArgument }
             indexOfBootstrapMethod = bootstrapMethods.size - 1
         }
         val cpNameAndTypeIndex = CPENameAndType(name, descriptor)
@@ -283,15 +221,19 @@ class ConstantsBuffer private (
     }
 
     /**
-     * Converts this constant pool buffer to an array and also returns the BootstrapMethods table.
+     * Converts this constant pool buffer to an array and also returns an immutable view of the
+     * current state of the constants pool. This in particular enables the creation of the
+     * `BootstrapMethodTable` attribute - iff the table is not empty! If the table is empty
+     * it is not guaranteed that the name of the `BootstrapMethodTable` attribute is defined by
+     * the constant pool.
      */
-    def build: (Array[Constant_Pool_Entry], Array[BootstrapMethod]) = {
+    def build: (Array[Constant_Pool_Entry], ConstantsPool) = {
         val cp = new Array[Constant_Pool_Entry](nextIndex)
         constantPool.foreach { e ⇒
             val (cpe, index) = e
             cp(index) = cpe
         }
-        (cp, bootstrapMethods.toArray)
+        (cp, new ConstantsPool(constantPool.toMap, bootstrapMethods.toIndexedSeq))
     }
 }
 
@@ -314,7 +256,7 @@ object ConstantsBuffer {
         allLDC.toSet
     }
 
-    @throws[ConstantPoolCreationException]
+    @throws[ConstantPoolException]
     def getOrCreateCPEntry(ldc: LDC[_])(implicit constantsBuffer: ConstantsBuffer): Int = {
         import constantsBuffer._
         ldc match {
@@ -336,8 +278,8 @@ object ConstantsBuffer {
      * the constant pool reference used by LDC instructions is just one unsigned byte.
      *
      * @note    If a class has more than 254 unique constants and all of them use simple `LDC` (not
-     *          LDC_W) instructions, a [[ConstantPoolCreationException]] will be thrown.
-     *          Furthermore, a [[ConstantPoolCreationException]] if the maximum size of the pool
+     *          LDC_W) instructions, a [[ConstantPoolException]] will be thrown.
+     *          Furthermore, a [[ConstantPoolException]] if the maximum size of the pool
      *          (65535 entries) is exceeded.
      *
      * @param   ldcs the set of unique LDC instructions. For each constant referred to by an LDC
@@ -345,7 +287,7 @@ object ConstantsBuffer {
      *          ensure the index is an unsigned byte value.
      *          To collect a [[org.opalj.br.ClassFile]]'s ldc instructions use [[collectLDCs]].
      */
-    @throws[ConstantPoolCreationException]("if it is impossible to create a valid constant pool")
+    @throws[ConstantPoolException]("if it is impossible to create a valid constant pool")
     def apply(ldcs: Set[LDC[_]]): ConstantsBuffer = {
         val buffer = mutable.HashMap.empty[Constant_Pool_Entry, Constant_Pool_Index]
         //the first item is null because the constant_pool starts with the index 1

@@ -31,9 +31,10 @@ package br
 package cp
 
 /**
- * Used to report that the correct creation of the constant pool is not possible.
+ * Used to report that a requirement related to a constant pool entry cannot be satisfied by the
+ * constant pool. E.g., an index is too large.
  *
  * @author  Michael Eichberg
  */
-case class ConstantPoolCreationException(message: String) extends Exception(message)
+case class ConstantPoolException(message: String) extends Exception(message)
 
