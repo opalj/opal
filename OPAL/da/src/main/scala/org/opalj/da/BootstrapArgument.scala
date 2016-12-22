@@ -31,25 +31,8 @@ package da
 
 import scala.xml.Node
 
-/**
- * @author Michael Eichberg
- */
-case class BootstrapMethods_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        bootstrap_methods:    Seq[BootstrapMethod]
-) extends Attribute {
+case class BootstrapArgument(cp_ref: Constant_Pool_Index) {
 
-    override def attribute_length: Int = {
-        2 /* num_bootstrap_methods */ + bootstrap_methods.view.map(_.size).sum
-    }
+    def toXHTML(implicit cp: Constant_Pool): Node = <div>{ cp(cp_ref).asInlineNode }</div>
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details>
-            <summary>BootstrapMethods</summary>
-            { methodsToXHTML(cp) }
-        </details>
-    }
-
-    def methodsToXHTML(implicit cp: Constant_Pool): Seq[Node] = bootstrap_methods.map(_.toXHTML(cp))
 }
-
