@@ -57,14 +57,16 @@ class CodeAttributeBuilderFailTest extends FlatSpec {
             ) MAXSTACK 0 MAXLOCALS 0
         ).buildMethod._1
 
+        val warnMessage = s"you defined %s of method "+
+            s"'${failMethod.descriptor.toJava(failMethod.name)}' too small;"+
+            "explicitly configured value is nevertheless kept"
+
         "the CodeAttributeBuilder" should "warn about a too small defined max_locals value" in {
-            assert(stream.toString.contains("you defined max_locals of method "+
-                s"'${failMethod.descriptor.toJava(failMethod.name)}' too small"))
+            assert(stream.toString.contains(warnMessage.format("max_locals")))
         }
 
         it should "warn about a too small defined max_stack value" in {
-            assert(stream.toString.contains("you defined max_stack of method "+
-                s"'${failMethod.descriptor.toJava(failMethod.name)}' too small"))
+            assert(stream.toString.contains(warnMessage.format("max_stack")))
         }
     }
 

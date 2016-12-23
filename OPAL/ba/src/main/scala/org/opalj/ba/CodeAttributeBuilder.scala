@@ -43,7 +43,7 @@ import org.opalj.br.instructions.WIDE
  * @author Malte Limmeroth
  */
 case class CodeAttributeBuilder private (
-        private var methodElements:           IndexedSeq[CodeElement],
+        private var codeElements:             IndexedSeq[CodeElement],
         private var maxStack:                 Option[Int],
         private var maxLocals:                Option[Int],
         private var labeledExceptionHandlers: Option[br.ExceptionHandlers] //TODO: create a type and resolve
@@ -77,7 +77,7 @@ case class CodeAttributeBuilder private (
         var nextPC = 0
         var currentPC = 0
         var modifiedByWide = false
-        methodElements foreach { i ⇒
+        codeElements foreach { i ⇒
             instructionsWithPlaceholders.append(i)
 
             i match {
@@ -91,7 +91,7 @@ case class CodeAttributeBuilder private (
                     if (inst == WIDE) {
                         modifiedByWide = true
                     }
-                case _ ⇒
+                case LabelElement(l) ⇒ //nothing to do here, were just creating blanks for arguments
             }
         }
 
@@ -127,9 +127,12 @@ case class CodeAttributeBuilder private (
             finalInstructions
         )
 
+        val warnMessage = s"you defined %s of method '${descriptor.toJava(name)}' too small;"+
+            "explicitly configured value is nevertheless kept"
+
         if (maxLocals.isDefined) {
             if (maxLocals.get < _maxLocals) {
-                println(s"you defined max_locals of method '${descriptor.toJava(name)}' too small")
+                println(warnMessage.format("max_locals"))
             }
         }
 
@@ -140,7 +143,7 @@ case class CodeAttributeBuilder private (
 
         if (maxStack.isDefined) {
             if (maxStack.get < _maxStack) {
-                println(s"you defined max_stack of method '${descriptor.toJava(name)}' too small")
+                println(warnMessage.format("max_stack"))
             }
         }
 
@@ -156,11 +159,8 @@ case class CodeAttributeBuilder private (
     }
 
     private def buildCodeAttributes: br.Attributes = {
-        val attributes = scala.collection.mutable.ArrayBuffer.empty[br.Attribute]
-
         //TODO: LineNumberTable, LocalVariableTable, LocalVariableTypeTable, StackMapTable
-
-        attributes.toList
+        IndexedSeq.empty
     }
 }
 
