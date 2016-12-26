@@ -186,12 +186,12 @@ case class CFG(
     lazy val allBBs: Iterator[BasicBlock] = {
         //basicBlocks.view.filter(_ ne null).toSet
         new Iterator[BasicBlock] {
-			
+
             var currentStartPC = 0
-            
-			def hasNext: Boolean = currentStartPC < basicBlocks.length
-            
-			def next: BasicBlock = {
+
+            def hasNext: Boolean = currentStartPC < basicBlocks.length
+
+            def next: BasicBlock = {
                 val current = basicBlocks(currentStartPC)
                 currentStartPC = current.endPC + 1
                 while (currentStartPC < basicBlocks.length && (basicBlocks(currentStartPC) eq null)) {
@@ -302,7 +302,7 @@ case class CFG(
      * in {0,pcToIndex(0)} is created if necessary.
      *
      * @param  lastIndex The index of the last instruction of the underlying (non-empty) code array.
-     *         I.e., if the instruction array contains one instruction then the `lastIndex` has 
+     *         I.e., if the instruction array contains one instruction then the `lastIndex` has
      *         to be `0`.
      */
     def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
