@@ -29,14 +29,17 @@
 import sbt._
 import Keys._
 
-import sbtassembly.AssemblyPlugin.autoImport._
-
-import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
+import sbtassembly.AssemblyPlugin.autoImport._
+
+import com.typesafe.sbteclipse.plugin.EclipsePlugin._
+
 object OPALBuild extends Build {
+
+	lazy val IntegrationTest = config("it") extend(Test)
 
 	// Default settings without scoverage
 	lazy val buildSettings = Defaults.coreDefaultSettings ++

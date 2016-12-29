@@ -57,7 +57,7 @@ javaOptions in ThisBuild ++= Seq(
 
 addCommandAlias("compileAll","; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
 
-addCommandAlias("cleanAll","; clean ; cleanFiles ; cleanCache ; cleanLocal ")
+addCommandAlias("cleanAll","; clean ; test:clean ; it:clean ; cleanFiles ; cleanCache ; cleanLocal ")
 
 addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; compileAll ; unidoc ;  publishLocal ")
 

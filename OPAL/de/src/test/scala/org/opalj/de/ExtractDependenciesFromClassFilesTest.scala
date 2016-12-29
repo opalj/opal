@@ -34,10 +34,8 @@ import java.util.zip.ZipFile
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 
-import org.opalj.bi.TestSupport.locateTestResources
-
-import br._
-import br.reader.Java8Framework.ClassFile
+import org.opalj.bi.TestSupport.allManagedBITestJARs
+import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
 
 /**
  * Tests whether all class files contained in the "test/classfiles" directory
@@ -53,18 +51,16 @@ class ExtractDependenciesFromClassFilesTest extends FlatSpec with Matchers {
 
     val dependencyExtractor = new DependencyExtractor(DependencyProcessorAdapter)
 
-    for {
-        file ← locateTestResources("classfiles", "de").listFiles()
-        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
-    } {
+    for (file ← allManagedBITestJARs) {
         val zipfile = new ZipFile(file)
+        val jarName = zipfile.getName
         val zipentries = (zipfile).entries
         while (zipentries.hasMoreElements) {
             val zipentry = zipentries.nextElement
             if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-
-                it should ("be able to extract dependencies of class file "+zipentry.getName+" in "+zipfile.getName) in {
-                    val classFiles = ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+                val className = zipentry.getName
+                it should (s"be able to extract dependencies of $className in $jarName") in {
+                    val classFiles = ClassFileReader(() ⇒ zipfile.getInputStream(zipentry))
                     classFiles foreach (classFile ⇒ dependencyExtractor.process(classFile))
                 }
             }

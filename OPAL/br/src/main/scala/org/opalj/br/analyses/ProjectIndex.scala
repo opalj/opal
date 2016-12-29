@@ -35,7 +35,8 @@ import scala.collection.Map
 
 /**
  * An index that enables the efficient lookup of source elements (methods and fields)
- * given the method's/field's name and the descriptor/field type.
+ * given the method's/field's name and the descriptor/field type. The index contains fields
+ * with public, protected, `<default>` and private visibility.
  *
  * Basically an index of the source elements (methods and fields) of a project.
  *

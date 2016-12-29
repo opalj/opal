@@ -85,7 +85,7 @@ private object TypeAnnotationsTest {
     //
 
     val project = {
-        val testResources = locateTestResources("classfiles/TypeAnnotations.jar", "bi")
+        val testResources = locateTestResources("type_annotations.jar", "bi")
         Project(ClassFiles(testResources), Traversable.empty, true)
     }
 

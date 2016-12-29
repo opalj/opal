@@ -44,7 +44,7 @@ class ClassFileTest extends FunSuite with Matchers {
 
     import reader.Java8Framework.ClassFile
 
-    val codeJARFile = locateTestResources("classfiles/Code.jar", "bi")
+    val codeJARFile = locateTestResources("code.jar", "bi")
     val immutableList = ClassFile(codeJARFile, "code/ImmutableList.class").head
     val boundedBuffer = ClassFile(codeJARFile, "code/BoundedBuffer.class").head
     val quicksort = ClassFile(codeJARFile, "code/Quicksort.class").head
@@ -125,7 +125,7 @@ class ClassFileTest extends FunSuite with Matchers {
         boundedBuffer.findField("AnumberInBuffers") should be(Naught)
     }
 
-    val innerclassesJARFile = locateTestResources("classfiles/Innerclasses.jar", "bi")
+    val innerclassesJARFile = locateTestResources("innerclasses.jar", "bi")
     val innerclassesProject = analyses.Project(innerclassesJARFile)
     val outerClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass.class").head
     val innerPrinterOfXClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$InnerPrinterOfX.class").head
