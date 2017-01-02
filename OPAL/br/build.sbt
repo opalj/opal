@@ -6,4 +6,4 @@ name := "Bytecode Representation"
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation")
 scalacOptions in (Compile, console) := Seq("-deprecation")
 
-libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"

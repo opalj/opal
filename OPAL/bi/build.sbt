@@ -3,7 +3,7 @@ name := "Bytecode Infrastructure"
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure") 
 scalacOptions in (Compile, console) := Seq("-deprecation")
 
-libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.4"
+libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
 
 /* The following task compiles those Java files to the class files (`.class`) that are used
  * by subsequent tests. To ensure that always the same class file is generated, we use the 
