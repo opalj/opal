@@ -42,9 +42,10 @@ object OPALBuild extends Build {
 	lazy val IntegrationTest = config("it") extend(Test)
 
 	// Default settings without scoverage
-	lazy val buildSettings = Defaults.coreDefaultSettings ++
+	lazy val buildSettings = 
+		Defaults.coreDefaultSettings ++
 		SbtScalariform.scalariformSettingsWithIt ++
-		Seq(ScalariformKeys.preferences <<= baseDirectory.apply(getScalariformPreferences)) ++
+		Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value) ++
 		Seq(Defaults.itSettings : _*) ++
 		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
 		Seq(libraryDependencies  ++= Seq(
@@ -52,8 +53,10 @@ object OPALBuild extends Build {
 			"org.scalatest" %% "scalatest" % "3.0.1" % "test,it",
 			"org.scalacheck" %% "scalacheck" % "1.13.4" % "test,it"))
 
-	def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPreferences(
-		(file("Scalariform Formatter Preferences.properties").getPath))
+	def getScalariformPreferences(dir: File) = {
+		val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
+		PreferencesImporterExporter.loadPreferences((file(formatterPreferencesFile).getPath))
+	}
 
 	lazy val opal = Project(
 		id = "OPAL",
