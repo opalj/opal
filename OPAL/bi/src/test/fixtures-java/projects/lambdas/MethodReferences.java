@@ -28,13 +28,12 @@
  */
 package lambdas;
 
-import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
-import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
+import annotations.target.InvokedMethod;
+import static annotations.target.TargetResolution.*;
+
 
 /**
- * A few lambdas to demonstrate capturing of local variables.
- *
- * DO NOT RECOMPILE SINCE LAMBDA METHODS ARE COMPILER GENERATED, SO THE GIVEN NAMES MIGHT CHANGE!
+ * This class contains a few simple examples for method references introduced in Java 8.
  *
  * <!--
  * 
@@ -47,25 +46,42 @@ import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
  *
  * @author Arne Lottmann
  */
-public class LocalCapturing {
-	@InvokedMethod(resolution = DYNAMIC, receiverType = LocalCapturing.class, name = "lambda$capturePrimitive$0", isStatic = true, lineNumber = 55)
-	public void capturePrimitive() {
-		int x = 1;
-		Runnable r = () -> System.out.println(x);
-		r.run();
+public class MethodReferences {
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/MethodReferences$Value", name = "isEmpty", line = 52)
+	public void filterOutEmptyValues() {
+		java.util.List<Value> values = java.util.Arrays.asList(new Value("foo"), new Value(""));
+		values.stream().filter(Value::isEmpty);
+	}
+
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/MethodReferences$Value", name = "compare", line = 58, isStatic = true)
+	public void compareValues() {
+		java.util.Comparator<Value> comparator = Value::compare;
+		System.out.println(comparator.compare(new Value("a"), new Value("b")));
 	}
 	
-	@InvokedMethod(resolution = DYNAMIC, receiverType = LocalCapturing.class, name = "lambda$captureObject$1", isStatic = true, lineNumber = 62)
-	public void captureObject() {
-		String s = "string";
-		Runnable r = () -> System.out.println(s);
-		r.run();
+	public interface ValueCreator {
+		Value newValue(String value);
 	}
 	
-	@InvokedMethod(resolution = DYNAMIC, receiverType = LocalCapturing.class, name = "lambda$captureArray$2", isStatic = true, lineNumber = 69)
-	public void captureArray() {
-		int[] a = new int[] { 1 };
-		Runnable r = () -> { for (int i : a) System.out.println(i); };
-		r.run();
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/MethodReferences$Value", name = "<init>", line = 68)
+	public Value newValue(String value) {
+		ValueCreator v = Value::new;
+		return v.newValue(value);
 	}
-}
+
+	public static class Value {
+		private String value;
+
+		public Value(String value) {
+			this.value = value;
+		}
+
+		public boolean isEmpty() {
+			return value.isEmpty();
+		}
+
+		public static int compare(Value a, Value b) {
+			return a.value.compareTo(b.value);
+		}
+	}
+}	

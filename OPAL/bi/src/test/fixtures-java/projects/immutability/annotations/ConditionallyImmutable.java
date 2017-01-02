@@ -35,7 +35,8 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
- * Specifies that the annotated class is conditionally immutable.
+ * Specifies that the annotated class is conditionally immutable. I.e., the fields of the
+ * class are not mutable, but the referenced objects/arrays are.
  * 
  * @author Michael Eichberg
  */

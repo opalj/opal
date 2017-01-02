@@ -30,12 +30,14 @@ package lambdas;
 
 import java.util.function.Predicate;
 
-import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
-import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
-import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
+import annotations.target.InvokedMethod;
+import annotations.target.InvokedMethods;
+import static annotations.target.TargetResolution.*;
+
 
 /**
- * A simple predicate that matches if and only if exactly one of its parameters matches.
+ * Simple predicate implementation to test resolution of method references / lambdas that have
+ * been stores in an array.
  *
  * DO NOT RECOMPILE SINCE LAMBDA METHODS ARE COMPILER GENERATED, SO THE GIVEN NAMES MIGHT CHANGE!
  *
@@ -45,33 +47,50 @@ import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
  * 
- * 
  * -->
- *
  * @author Arne Lottmann
  */
-public class EitherOrPredicate<T> implements Predicate<T> {
-	private Predicate<T> a, b;
+@SuppressWarnings("unchecked")
+public class PartiallyMatchingPredicate<T> implements Predicate<T> {
+	private Predicate<T>[] predicates;
+	private double threshold;
 
-	public EitherOrPredicate(Predicate<T> a, Predicate<T> b) {
-		this.a = a;
-		this.b = b;
+	public PartiallyMatchingPredicate(double threshold, Predicate<T>... predicates) {
+		this.predicates = predicates;
+		this.threshold = threshold;
 	}
 
 	@Override
-	@InvokedMethods({
-		@InvokedMethod(resolution = DYNAMIC, receiverType = EitherOrPredicate.class, name = "lambda$main$0", parameterTypes = {String.class}, returnType = boolean.class, isStatic = true, lineNumber = 67),
-		@InvokedMethod(resolution = DYNAMIC, receiverType = String.class, name = "isEmpty", parameterTypes = {}, returnType = boolean.class)
-	})
 	public boolean test(T t) {
-		boolean A = a.test(t), B = b.test(t);
-		return (A && !B) || (!A && B);
+		double score = getScore(t);
+		return score >= threshold;
 	}
 
+	@InvokedMethods({
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "/java/lang/String", name = "isEmpty", parameterTypes = {}, returnType = boolean.class),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PartiallyMatchingPredicate", name = "lambda$main$0", parameterTypes = {String.class}, returnType = boolean.class, isStatic = true, line = 78),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PartiallyMatchingPredicate", name = "lambda$main$1", parameterTypes = {String.class}, returnType = boolean.class, isStatic = true, line = 78),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PartiallyMatchingPredicate", name = "lambda$main$2", parameterTypes = {String.class}, returnType = boolean.class, isStatic = true, line = 78),
+	})
+	public double getScore(T t) {
+		int successful = 0;
+		for (Predicate<T> p : predicates) {
+			if (p.test(t)) {
+				successful++;
+			}
+		}
+		double score = ((double) successful) / predicates.length;
+		return score;
+	}
+	
 	public static void main(String[] args) {
-		Predicate<String> tautology = new EitherOrPredicate<>(String::isEmpty, (String s) -> !s.isEmpty());
+		PartiallyMatchingPredicate<String> p = new PartiallyMatchingPredicate<>(0.7,
+				String::isEmpty,
+				((Predicate<String>) String::isEmpty).negate(),
+				(String s) -> s.length() > 2,
+				(String s) -> s.toUpperCase().equals("FOO"));
 		for (String arg : args) {
-			System.out.printf("Argument %s matches: %b%n", arg, tautology.test(arg));
+			System.out.printf("%s matches: %b; score: %.2f%n", arg, p.test(arg), p.getScore(arg));
 		}
 	}
 }

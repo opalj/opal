@@ -26,24 +26,46 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package immutability.annotations;
+package lambdas;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import annotations.target.InvokedMethod;
+import static annotations.target.TargetResolution.*;
 
 /**
- * Specifies that a instances of the annotated class are mutable.
+ * A few lambdas to demonstrate capturing of local variables.
+ *
+ * DO NOT RECOMPILE SINCE LAMBDA METHODS ARE COMPILER GENERATED, SO THE GIVEN NAMES MIGHT CHANGE!
+ *
+ * <!--
  * 
- * @author Andre Pacak
- * @author Michael Eichberg
+ * 
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
+ * -->
+ *
+ * @author Arne Lottmann
  */
-@Documented
-@Retention(value = RetentionPolicy.RUNTIME)
-@Target(value = ElementType.TYPE)
-public @interface Mutable {
-
-    String value();
+public class LocalCapturing {
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/LocalCapturing", name = "lambda$capturePrimitive$0", isStatic = true, line = 55)
+	public void capturePrimitive() {
+		int x = 1;
+		Runnable r = () -> System.out.println(x);
+		r.run();
+	}
+	
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/LocalCapturing", name = "lambda$captureObject$1", isStatic = true, line = 62)
+	public void captureObject() {
+		String s = "string";
+		Runnable r = () -> System.out.println(s);
+		r.run();
+	}
+	
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/LocalCapturing", name = "lambda$captureArray$2", isStatic = true, line = 69)
+	public void captureArray() {
+		int[] a = new int[] { 1 };
+		Runnable r = () -> { for (int i : a) System.out.println(i); };
+		r.run();
+	}
 }

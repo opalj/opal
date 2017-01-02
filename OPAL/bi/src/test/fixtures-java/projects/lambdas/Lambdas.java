@@ -28,11 +28,14 @@
  */
 package lambdas;
 
-import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
-import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
+import annotations.target.InvokedMethod;
+import static annotations.target.TargetResolution.*;
+
 
 /**
- * This class contains a few simple examples for method references introduced in Java 8.
+ * A few simple closures to test resolution of Java8 generated invokedynamic instructions.
+ *
+ * DO NOT RECOMPILE SINCE LAMBDA METHODS ARE COMPILER GENERATED, SO THE GIVEN NAMES MIGHT CHANGE!
  *
  * <!--
  * 
@@ -45,42 +48,32 @@ import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
  *
  * @author Arne Lottmann
  */
-public class MethodReferences {
-    @InvokedMethod(resolution = DYNAMIC, receiverType = Value.class, name = "isEmpty", lineNumber = 52)
-	public void filterOutEmptyValues() {
-		java.util.List<Value> values = java.util.Arrays.asList(new Value("foo"), new Value(""));
-		values.stream().filter(Value::isEmpty);
+public class Lambdas {
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/Lambdas", name = "lambda$plainLambda$0", isStatic = true, line = 54)
+	public void plainLambda() {
+		Runnable plainLambda = () -> System.out.println("Hello world!");
+		plainLambda.run();
 	}
 
-	@InvokedMethod(resolution = DYNAMIC, receiverType = Value.class, name = "compare", lineNumber = 58, isStatic = true)
-	public void compareValues() {
-		java.util.Comparator<Value> comparator = Value::compare;
-		System.out.println(comparator.compare(new Value("a"), new Value("b")));
-	}
-	
-	public interface ValueCreator {
-		Value newValue(String value);
-	}
-	
-	@InvokedMethod(resolution = DYNAMIC, receiverType = Value.class, name = "<init>", lineNumber = 68)
-	public Value newValue(String value) {
-		ValueCreator v = Value::new;
-		return v.newValue(value);
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/Lambdas", name = "lambda$localClosure$1", parameterTypes = { int.class }, isStatic = true, line = 61)
+	public void localClosure() {
+		int x = 0;
+		Runnable localClosure = () -> System.out.println(x);
+		localClosure.run();
 	}
 
-	public static class Value {
-		private String value;
+	private int x;
 
-		public Value(String value) {
-			this.value = value;
-		}
-
-		public boolean isEmpty() {
-			return value.isEmpty();
-		}
-
-		public static int compare(Value a, Value b) {
-			return a.value.compareTo(b.value);
-		}
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/Lambdas", name = "lambda$instanceClosure$2", line = 69)
+	public void instanceClosure() {
+		Runnable instanceClosure = () -> System.out.println(x);
+		instanceClosure.run();
 	}
-}	
+
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/Lambdas", name = "lambda$localAndInstanceClosure$3", line = 76)
+	public void localAndInstanceClosure() {
+		int y = 0;
+		Runnable localAndInstanceClosure = () -> System.out.println(x + y);
+		localAndInstanceClosure.run();
+	}
+}

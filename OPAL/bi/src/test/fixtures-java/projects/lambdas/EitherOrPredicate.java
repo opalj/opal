@@ -30,12 +30,12 @@ package lambdas;
 
 import java.util.function.Predicate;
 
-import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
-import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
-import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
+import annotations.target.InvokedMethod;
+import annotations.target.InvokedMethods;
+import static annotations.target.TargetResolution.*;
 
 /**
- * A few test cases exploring "higher order" and nested lambdas.
+ * A simple predicate that matches if and only if exactly one of its parameters matches.
  *
  * DO NOT RECOMPILE SINCE LAMBDA METHODS ARE COMPILER GENERATED, SO THE GIVEN NAMES MIGHT CHANGE!
  *
@@ -50,28 +50,28 @@ import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
  *
  * @author Arne Lottmann
  */
-public class HigherOrder {
-	@InvokedMethods({
-		@InvokedMethod(resolution = DYNAMIC, receiverType = HigherOrder.class, name = "lambda$higherOrderPredicate$0", parameterTypes = {Predicate.class}, returnType = boolean.class, isStatic = true, lineNumber = 60),
-		@InvokedMethod(resolution = DYNAMIC, receiverType = HigherOrder.class, name = "lambda$higherOrderPredicate$1", parameterTypes = {String.class}, returnType = boolean.class, isStatic = true, lineNumber = 59),
-	})
-	public void higherOrderPredicate() {
-		Predicate<Predicate<String>> acceptsEmptyString = (Predicate<String> p) -> p.test("");
-		acceptsEmptyString.test((String s) -> s.isEmpty());
+public class EitherOrPredicate<T> implements Predicate<T> {
+	private Predicate<T> a, b;
+
+	public EitherOrPredicate(Predicate<T> a, Predicate<T> b) {
+		this.a = a;
+		this.b = b;
 	}
-	
+
+	@Override
 	@InvokedMethods({
-		@InvokedMethod(resolution = DYNAMIC, receiverType = HigherOrder.class, name = "lambda$nestedPredicate$3", parameterTypes = { String.class }, returnType = boolean.class, isStatic = true, lineNumber = 75),
-		@InvokedMethod(resolution = DYNAMIC, receiverType = HigherOrder.class, name = "lambda$null$2", parameterTypes = { Character.class }, returnType = boolean.class, isStatic = true, lineNumber = 71)
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/EitherOrPredicate", name = "lambda$main$0", parameterTypes = {String.class}, returnType = boolean.class, isStatic = true, line = 67),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/String", name = "isEmpty", parameterTypes = {}, returnType = boolean.class)
 	})
-	public void nestedPredicate() {
-		Predicate<String> outer = (String s) -> {
-			Predicate<Character> inner = (Character c) -> c > 31;
-			for (char c : s.toCharArray()) {
-				if (!inner.test(c)) return false;
-			}
-			return true;
-		};
-		outer.test("foobar");
+	public boolean test(T t) {
+		boolean A = a.test(t), B = b.test(t);
+		return (A && !B) || (!A && B);
+	}
+
+	public static void main(String[] args) {
+		Predicate<String> tautology = new EitherOrPredicate<>(String::isEmpty, (String s) -> !s.isEmpty());
+		for (String arg : args) {
+			System.out.printf("Argument %s matches: %b%n", arg, tautology.test(arg));
+		}
 	}
 }

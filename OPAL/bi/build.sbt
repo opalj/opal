@@ -10,9 +10,9 @@ libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.4"
  * Eclipse Java compiler (4.6.1); this version is fixed!
  */
 // FOR DETAILS SEE ALSO: bi/src/test/fixtures-java/Readme.md
-unmanagedResourceDirectories in Test += (sourceDirectory in Test).value / "fixtures-java"
+
+unmanagedResourceDirectories in Test += (sourceDirectory in Test).value / "fixtures-java" 
 resourceGenerators in Test += Def.task {
-	
 	import org.eclipse.jdt.core.compiler.batch.BatchCompiler
 	import java.io.File 
 	import java.io.Writer
@@ -71,20 +71,29 @@ resourceGenerators in Test += Def.task {
 	val err = new PrintWriter(new LogWriter((s : String) => log.error(s)))
 
 	val resourceManagedFolder = (resourceManaged in Test).value 
-	val projectsFolder = (sourceDirectory in Test).value / "fixtures-java"
+	val projectsFolder = (sourceDirectory in Test).value / "fixtures-java" / "projects"
+	val supportFolder = (sourceDirectory in Test).value / "fixtures-java" / "support"
 	val createdJARs = for {
 			sourceFolder <- projectsFolder.listFiles
 			if sourceFolder.isDirectory
 			configFile = sourceFolder.getAbsoluteFile / "compiler.config"
 		} yield {
 			val hasConfigFile = configFile.exists
-			val defaultConfigurationOptions = 
+			val (supportLibraries,defaultConfigurationOptions) = 
 				if (hasConfigFile) {
-					fromFile(configFile).getLines.
+					val (requires,configurationOptions) = fromFile(configFile).getLines.
 						map(_.trim).
-						filter(l => l.nonEmpty && !l.startsWith("#")).toList
+						filter(l => l.nonEmpty && !l.startsWith("#")).toList.
+						partition(_.startsWith("requires"))
+					(
+						requires.
+							map(librarySpec => librarySpec.substring(librarySpec.indexOf('=')+1)). /* support library name */
+							map(libraryName => supportFolder / libraryName). /* support library folder */
+							mkString(" "),
+						configurationOptions
+					)	
 				} else {
-					Seq("-g -8 -parameters -genericsignature")
+					("", Seq("-g -8 -parameters -genericsignature"))
 				}
 			
 			for {configurationOptions <- defaultConfigurationOptions} yield {
@@ -110,7 +119,7 @@ resourceGenerators in Test += Def.task {
 						wasUpdatedVisitor.wasUpdated 
 					}
 				if (requiresCompilation){
-					val standardConfiguration = s"$sourceFolder -d $targetFolder -Xemacs -encoding utf8"
+					val standardConfiguration = s"$sourceFolder $supportLibraries -d $targetFolder -Xemacs -encoding utf8 "
 					val commandLine = s"$standardConfiguration $configurationOptions"
 					log.info(s"Compiling test fixtures: $commandLine")
 					if(!BatchCompiler.compile(commandLine,std, err, null)) {
@@ -157,59 +166,59 @@ resourceGenerators in Test += Def.task {
 // 
 //	Classpath options:
 //		 -cp -classpath <directories and ZIP archives separated by :>
-//												specify location for application classes and sources.
-//												Each directory or file can specify access rules for
-//												types between '[' and ']' (e.g. [-X] to forbid
-//												access to type X, [~X] to discourage access to type X,
-//												[+p/X:-p/*] to forbid access to all types in package p
-//												but allow access to p/X)
+//											specify location for application classes and sources.
+//											Each directory or file can specify access rules for
+//											types between '[' and ']' (e.g. [-X] to forbid
+//											access to type X, [~X] to discourage access to type X,
+//											[+p/X:-p/*] to forbid access to all types in package p
+//											but allow access to p/X)
 //		 -bootclasspath <directories and ZIP archives separated by :>
-//												specify location for system classes. Each directory or
-//												file can specify access rules for types between '['
-//												and ']'
+//											specify location for system classes. Each directory or
+//											file can specify access rules for types between '['
+//											and ']'
 //		 -sourcepath <directories and ZIP archives separated by :>
-//												specify location for application sources. Each directory
-//												or file can specify access rules for types between '['
-//												and ']'. Each directory can further specify a specific
-//												destination directory using a '-d' option between '['
-//												and ']'; this overrides the general '-d' option.
-//												.class files created from source files contained in a
-//												jar file are put in the user.dir folder in case no
-//												general '-d' option is specified. ZIP archives cannot
-//												override the general '-d' option
+//											specify location for application sources. Each directory
+//											or file can specify access rules for types between '['
+//											and ']'. Each directory can further specify a specific
+//											destination directory using a '-d' option between '['
+//											and ']'; this overrides the general '-d' option.
+//											.class files created from source files contained in a
+//											jar file are put in the user.dir folder in case no
+//											general '-d' option is specified. ZIP archives cannot
+//											override the general '-d' option
 //		 -extdirs <directories separated by :>
-//												specify location for extension ZIP archives
+//											specify location for extension ZIP archives
 //		 -endorseddirs <directories separated by :>
-//												specify location for endorsed ZIP archives
-//		 -d <dir>					 destination directory (if omitted, no directory is
-//												created); this option can be overridden per source
-//												directory
-//		 -d none						generate no .class files
-//		 -encoding <enc>		specify default encoding for all source files. Each
-//												file/directory can override it when suffixed with
-//												'['<enc>']' (e.g. X.java[utf8]).
-//												If multiple default encodings are specified, the last
-//												one will be used.
+//											specify location for endorsed ZIP archives
+//		 -d <dir>							destination directory (if omitted, no directory is
+//											created); this option can be overridden per source
+//											directory
+//		 -d none							generate no .class files
+//		 -encoding <enc>					specify default encoding for all source files. Each
+//											file/directory can override it when suffixed with
+//											'['<enc>']' (e.g. X.java[utf8]).
+//											If multiple default encodings are specified, the last
+//											one will be used.
 // 
 //	Compliance options:
-//		 -1.3							 use 1.3 compliance (-source 1.3 -target 1.1)
-//		 -1.4						 + use 1.4 compliance (-source 1.3 -target 1.2)
-//		 -1.5 -5 -5.0			 use 1.5 compliance (-source 1.5 -target 1.5)
-//		 -1.6 -6 -6.0			 use 1.6 compliance (-source 1.6 -target 1.6)
-//		 -1.7 -7 -7.0			 use 1.7 compliance (-source 1.7 -target 1.7)
-//		 -1.8 -8 -8.0			 use 1.8 compliance (-source 1.8 -target 1.8)
-//		 -source <version>	set source level: 1.3 to 1.8 (or 5, 5.0, etc)
-//		 -target <version>	set classfile target: 1.1 to 1.8 (or 5, 5.0, etc)
-//												cldc1.1 can also be used to generate the StackMap
-//												attribute
+//		 -1.3							 	use 1.3 compliance (-source 1.3 -target 1.1)
+//		 -1.4						 		+ use 1.4 compliance (-source 1.3 -target 1.2)
+//		 -1.5 -5 -5.0			 			use 1.5 compliance (-source 1.5 -target 1.5)
+//		 -1.6 -6 -6.0			 			use 1.6 compliance (-source 1.6 -target 1.6)
+//		 -1.7 -7 -7.0			 			use 1.7 compliance (-source 1.7 -target 1.7)
+//		 -1.8 -8 -8.0			 			use 1.8 compliance (-source 1.8 -target 1.8)
+//		 -source <version>					set source level: 1.3 to 1.8 (or 5, 5.0, etc)
+//		 -target <version>					set classfile target: 1.1 to 1.8 (or 5, 5.0, etc)
+//											cldc1.1 can also be used to generate the StackMap
+//											attribute
 // 
 //	Warning options:
-//		 -deprecation		 + deprecation outside deprecated code (equivalent to
-//												-warn:+deprecation)
+//		 -deprecation		 				+ deprecation outside deprecated code (equivalent to
+//											-warn:+deprecation)
 //		 -nowarn -warn:none disable all warnings
 //		 -nowarn:[<directories separated by :>]
-//												specify directories from which optional problems should
-//												be ignored
+//											specify directories from which optional problems should
+//											be ignored
 //		 -?:warn -help:warn display advanced warning options
 // 
 //	Error options:
@@ -221,7 +230,7 @@ resourceGenerators in Test += Def.task {
 //		 -properties <file>	 set warnings/errors option based on the properties
 //											file contents. This option can be used with -nowarn,
 //											-err:.. or -warn:.. options, but the last one on the
-//													command line sets the options to be used.
+//											command line sets the options to be used.
 // 
 //	Debug options:
 //		 -g[:lines,vars,source] custom debug info
@@ -234,12 +243,12 @@ resourceGenerators in Test += Def.task {
 //		These options are meaningful only in a 1.6 environment.
 //		 -Akey[=value]				options that are passed to annotation processors
 //		 -processorpath <directories and ZIP archives separated by :>
-//													specify locations where to find annotation processors.
-//													If this option is not used, the classpath will be
-//													searched for processors
+//											specify locations where to find annotation processors.
+//											If this option is not used, the classpath will be
+//											searched for processors
 //		 -processor <class1[,class2,...]>
-//													qualified names of the annotation processors to run.
-//													This bypasses the default annotation discovery process
+//											qualified names of the annotation processors to run.
+//											This bypasses the default annotation discovery process
 //		 -proc:only					 run annotation processors, but do not compile
 //		 -proc:none					 perform compilation but do not run annotation
 //													processors
@@ -251,34 +260,34 @@ resourceGenerators in Test += Def.task {
 //													qualified names of binary classes to process
 // 
 //	Advanced options:
-//		 @<file>						read command line arguments from file
-//		 -maxProblems <n>	 max number of problems per compilation unit (100 by
-//												default)
-//		 -log <file>				log to a file. If the file extension is '.xml', then
-//												the log will be a xml file.
+//		 @<file>							read command line arguments from file
+//		 -maxProblems <n>	 				max number of problems per compilation unit (100 by
+//											default)
+//		 -log <file>						log to a file. If the file extension is '.xml', then
+//											the log will be a xml file.
 //		 -proceedOnError[:Fatal]
-//												do not stop at first error, dumping class files with
-//												problem methods
-//												With ":Fatal", all optional errors are treated as fatal
-//		 -verbose					 enable verbose output
-//		 -referenceInfo		 compute reference info
-//		 -progress					show progress (only in -log mode)
-//		 -time							display speed information
-//		 -noExit						do not call System.exit(n) at end of compilation (n==0
-//												if no error)
-//		 -repeat <n>				repeat compilation process <n> times for perf analysis
-//		 -inlineJSR				 inline JSR bytecode (implicit if target >= 1.5)
-//		 -enableJavadoc		 consider references in javadoc
-//		 -parameters				generate method parameters attribute (for target >= 1.8)
-//		 -genericsignature	generate generic signature for lambda expressions
-//		 -Xemacs						used to enable emacs-style output in the console.
-//												It does not affect the xml log output
+//											do not stop at first error, dumping class files with
+//											problem methods
+//											With ":Fatal", all optional errors are treated as fatal
+//		 -verbose							enable verbose output
+//		 -referenceInfo		 				compute reference info
+//		 -progress							show progress (only in -log mode)
+//		 -time								display speed information
+//		 -noExit							do not call System.exit(n) at end of compilation (n==0
+//											if no error)
+//		 -repeat <n>						repeat compilation process <n> times for perf analysis
+//		 -inlineJSR				 			inline JSR bytecode (implicit if target >= 1.5)
+//		 -enableJavadoc		 				consider references in javadoc
+//		 -parameters						generate method parameters attribute (for target >= 1.8)
+//		 -genericsignature					generate generic signature for lambda expressions
+//		 -Xemacs							used to enable emacs-style output in the console.
+//											It does not affect the xml log output
 //		 -missingNullDefault	report missing default nullness annotation
 //		 -annotationpath <directories and ZIP archives separated by :>
-//												specify locations where to find external annotations
-//												to support annotation-based null analysis.
-//												The special name CLASSPATH will cause lookup of
-//												external annotations from the classpath and sourcepath.
+//											specify locations where to find external annotations
+//											to support annotation-based null analysis.
+//											The special name CLASSPATH will cause lookup of
+//											external annotations from the classpath and sourcepath.
 // 
 //		 -? -help					 print this help message
 //		 -v -version				print compiler version

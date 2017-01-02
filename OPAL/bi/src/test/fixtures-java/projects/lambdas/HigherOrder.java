@@ -28,11 +28,14 @@
  */
 package lambdas;
 
-import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
-import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
+import java.util.function.Predicate;
+
+import annotations.target.InvokedMethod;
+import annotations.target.InvokedMethods;
+import static annotations.target.TargetResolution.*;
 
 /**
- * A few lambdas to demonstrate capturing of instance variables.
+ * A few test cases exploring "higher order" and nested lambdas.
  *
  * DO NOT RECOMPILE SINCE LAMBDA METHODS ARE COMPILER GENERATED, SO THE GIVEN NAMES MIGHT CHANGE!
  *
@@ -47,28 +50,28 @@ import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
  *
  * @author Arne Lottmann
  */
-public class InstanceCapturing {
-	private int x = 1;
-	
-	private String s = "string";
-	
-	private int[] a = new int[] { 1 };
-	
-	@InvokedMethod(resolution = DYNAMIC, receiverType = InstanceCapturing.class, name = "lambda$capturePrimitive$0", lineNumber = 60)
-	public void capturePrimitive() {
-		Runnable r = () -> System.out.println(x);
-		r.run();
+public class HigherOrder {
+	@InvokedMethods({
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/HigherOrder", name = "lambda$higherOrderPredicate$0", parameterTypes = {Predicate.class}, returnType = boolean.class, isStatic = true, line = 60),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/HigherOrder", name = "lambda$higherOrderPredicate$1", parameterTypes = {String.class}, returnType = boolean.class, isStatic = true, line = 59),
+	})
+	public void higherOrderPredicate() {
+		Predicate<Predicate<String>> acceptsEmptyString = (Predicate<String> p) -> p.test("");
+		acceptsEmptyString.test((String s) -> s.isEmpty());
 	}
 	
-	@InvokedMethod(resolution = DYNAMIC, receiverType = InstanceCapturing.class, name = "lambda$captureObject$1", lineNumber = 66)
-	public void captureObject() {
-		Runnable r = () -> System.out.println(s);
-		r.run();
-	}
-	
-	@InvokedMethod(resolution = DYNAMIC, receiverType = InstanceCapturing.class, name = "lambda$captureArray$2", lineNumber = 72)
-	public void captureArray() {
-		Runnable r = () -> { for (int i : a) System.out.println(i); };
-		r.run();
+	@InvokedMethods({
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/HigherOrder", name = "lambda$nestedPredicate$3", parameterTypes = { String.class }, returnType = boolean.class, isStatic = true, line = 75),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/HigherOrder", name = "lambda$null$2", parameterTypes = { Character.class }, returnType = boolean.class, isStatic = true, line = 71)
+	})
+	public void nestedPredicate() {
+		Predicate<String> outer = (String s) -> {
+			Predicate<Character> inner = (Character c) -> c > 31;
+			for (char c : s.toCharArray()) {
+				if (!inner.test(c)) return false;
+			}
+			return true;
+		};
+		outer.test("foobar");
 	}
 }

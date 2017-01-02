@@ -30,12 +30,12 @@ package lambdas;
 
 import java.util.function.Predicate;
 
-import org.opalj.ai.test.invokedynamic.annotations.*;
-import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
+import annotations.target.InvokedMethod;
+import annotations.target.InvokedMethods;
+import static annotations.target.TargetResolution.*;
 
 /**
  * A few cases of lambda-predicates stored in arrays.
- *
  * <!--
  * 
  * 
@@ -44,17 +44,17 @@ import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
  * 
  * 
  * -->
- *
  * @author Arne Lottmann
  */
+@SuppressWarnings("unchecked")
 public class PredicatesInAnArray {
 	@InvokedMethods({
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInAnArray.class, name = "lambda$localArray$0", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 60),
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInAnArray.class, name = "lambda$localArray$0", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 61)
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInAnArray", name = "lambda$localArray$0", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 60),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInAnArray", name = "lambda$localArray$0", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 61)
 	})
 	private static void localArray() {
 		Predicate<Integer> p = (Integer i) -> i < 5;
-		Predicate[] predicates = new Predicate[] {
+		Predicate<Integer>[] predicates = (Predicate<Integer>[]) new Predicate[] {
 			p
 		};
 		System.out.println(predicates[0].test(4));
@@ -65,7 +65,7 @@ public class PredicatesInAnArray {
 		return i.compareTo(0) < 0;
 	}
 
-	private static Predicate[] predicates;
+	private static Predicate<Integer>[] predicates;
 	static {
 		Predicate<Integer> p = (Integer i) -> i > 3;
 		Predicate<Integer> p2 = PredicatesInAnArray::isNegative;
@@ -73,8 +73,8 @@ public class PredicatesInAnArray {
 	}
 
 	@InvokedMethods({
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInAnArray.class, name = "lambda$static$1", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 80),
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInAnArray.class, name = "lambda$static$1", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 81)
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInAnArray", name = "lambda$static$1", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 80),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInAnArray", name = "lambda$static$1", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 81)
 	})
 	private static void classArray() {
 		System.out.println(predicates[0].test(4));
@@ -82,10 +82,10 @@ public class PredicatesInAnArray {
 	}
 
 	@InvokedMethods({
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInAnArray.class, name = "isNegative", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 89),
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInAnArray.class, name = "isNegative", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 90)
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInAnArray", name = "isNegative", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 89),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInAnArray", name = "isNegative", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 90)
 	})
-	private static void paramArray(Predicate[] predicates) {
+	private static void paramArray(Predicate<Integer>[] predicates) {
 		System.out.println(predicates[1].test(2));
 		System.out.println(predicates[1].test(Integer.valueOf(2)));
 	}

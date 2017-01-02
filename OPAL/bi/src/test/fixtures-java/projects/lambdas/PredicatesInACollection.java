@@ -32,8 +32,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.opalj.ai.test.invokedynamic.annotations.*;
-import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
+import annotations.target.InvokedMethod;
+import annotations.target.InvokedMethods;
+import static annotations.target.TargetResolution.*;
+
 
 /**
  * A few cases of lambda-predicates stored in collections.
@@ -51,8 +53,8 @@ import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
  */
 public class PredicatesInACollection {
 	@InvokedMethods({
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInACollection.class, name = "lambda$localCollection$0", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 60),
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInACollection.class, name = "lambda$localCollection$0", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 61)
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInACollection", name = "lambda$localCollection$0", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 60),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInACollection", name = "lambda$localCollection$0", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 61)
 	})
 	private static void localCollection() {
 		Predicate<Integer> p = (Integer i) -> i < 5;
@@ -73,8 +75,8 @@ public class PredicatesInACollection {
 	}
 
 	@InvokedMethods({
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInACollection.class, name = "lambda$static$1", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 80),
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInACollection.class, name = "lambda$static$1", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 81)
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInACollection", name = "lambda$static$1", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 80),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInACollection", name = "lambda$static$1", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 81)
 	})
 	private static void classCollection() {
 		System.out.println(predicates.get(0).test(4));
@@ -82,8 +84,8 @@ public class PredicatesInACollection {
 	}
 
 	@InvokedMethods({
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInACollection.class, name = "isNegative", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 89),
-		@InvokedMethod(resolution = DYNAMIC, receiverType = PredicatesInACollection.class, name = "isNegative", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, lineNumber = 90)
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInACollection", name = "isNegative", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 89),
+		@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/PredicatesInACollection", name = "isNegative", parameterTypes = { Integer.class }, returnType = boolean.class, isStatic = true, line = 90)
 	})
 	private static void paramCollection(List<Predicate<Integer>> predicates) {
 		System.out.println(predicates.get(1).test(2));

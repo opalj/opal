@@ -28,11 +28,11 @@
  */
 package lambdas;
 
-import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
-import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
+import annotations.target.InvokedMethod;
+import static annotations.target.TargetResolution.*;
 
 /**
- * A few simple closures to test resolution of Java8 generated invokedynamic instructions.
+ * A few lambdas to demonstrate capturing of instance variables.
  *
  * DO NOT RECOMPILE SINCE LAMBDA METHODS ARE COMPILER GENERATED, SO THE GIVEN NAMES MIGHT CHANGE!
  *
@@ -47,32 +47,28 @@ import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
  *
  * @author Arne Lottmann
  */
-public class Lambdas {
-	@InvokedMethod(resolution = DYNAMIC, receiverType = Lambdas.class, name = "lambda$plainLambda$0", isStatic = true, lineNumber = 54)
-	public void plainLambda() {
-		Runnable plainLambda = () -> System.out.println("Hello world!");
-		plainLambda.run();
+public class InstanceCapturing {
+	private int x = 1;
+	
+	private String s = "string";
+	
+	private int[] a = new int[] { 1 };
+	
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/InstanceCapturing", name = "lambda$capturePrimitive$0", line = 60)
+	public void capturePrimitive() {
+		Runnable r = () -> System.out.println(x);
+		r.run();
 	}
-
-	@InvokedMethod(resolution = DYNAMIC, receiverType = Lambdas.class, name = "lambda$localClosure$1", parameterTypes = { int.class }, isStatic = true, lineNumber = 61)
-	public void localClosure() {
-		int x = 0;
-		Runnable localClosure = () -> System.out.println(x);
-		localClosure.run();
+	
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/InstanceCapturing", name = "lambda$captureObject$1", line = 66)
+	public void captureObject() {
+		Runnable r = () -> System.out.println(s);
+		r.run();
 	}
-
-	private int x;
-
-	@InvokedMethod(resolution = DYNAMIC, receiverType = Lambdas.class, name = "lambda$instanceClosure$2", lineNumber = 69)
-	public void instanceClosure() {
-		Runnable instanceClosure = () -> System.out.println(x);
-		instanceClosure.run();
-	}
-
-	@InvokedMethod(resolution = DYNAMIC, receiverType = Lambdas.class, name = "lambda$localAndInstanceClosure$3", lineNumber = 76)
-	public void localAndInstanceClosure() {
-		int y = 0;
-		Runnable localAndInstanceClosure = () -> System.out.println(x + y);
-		localAndInstanceClosure.run();
+	
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/InstanceCapturing", name = "lambda$captureArray$2", line = 72)
+	public void captureArray() {
+		Runnable r = () -> { for (int i : a) System.out.println(i); };
+		r.run();
 	}
 }
