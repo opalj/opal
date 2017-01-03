@@ -152,7 +152,7 @@ resourceGenerators in Test += Def.task {
 	if(createdFiles.nonEmpty)
 		log.info(createdFiles.mkString("Created archives:\n\t","\n\t","\n"))
 	else
-		log.info("The test fixtures were already compiled")
+		log.info("The test fixtures were already compiled.")
 		
 	createdFiles
 }.taskValue
