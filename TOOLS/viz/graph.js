@@ -34,8 +34,8 @@
 // Constants
 const API_NOT_SUPPORTED = 'Your browser does not support the necessary APIs (File, FileReader, FileList)';
 const COULD_NOT_LOAD_FILE = 'Failed to load file';
-const FONT_SIZE = '14pt';
-const FONT_FAMILY = 'Arial,sans-serif';
+const FONT_SIZE = '10pt';
+const FONT_FAMILY = 'Helvetica,sans-serif';
 const LINE_HEIGHT_FACTOR = 1.3;
 
 // We need this representation for faster accesses

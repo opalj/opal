@@ -1,7 +1,7 @@
 {
   "name": "OGViz",
   "version": "1.0.0",
-  "description": "OGViz is a standalone project within OPAL which visualizes arbitrary trees that follow the structure described in the Readme.md file.",
+  "description": "OGViz - Visualization of simple graphs",
   "main": "index.html",
   "dependencies": {
     "qunitjs": "^2.1.0"
