@@ -61,12 +61,11 @@ addCommandAlias("cleanAll","; clean ; test:clean ; it:clean ; cleanFiles ; clean
 
 addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; compileAll ; unidoc ;  publishLocal ")
 
-EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource)
-//EclipseKeys.createSrc := EclipseCreateSrc.Default
-
+//EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source)
+EclipseKeys.createSrc := EclipseCreateSrc.Default - EclipseCreateSrc.ManagedResources
 EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18)
-
 EclipseKeys.withSource := true
+EclipseKeys.withJavadoc := true
 
 //
 //
