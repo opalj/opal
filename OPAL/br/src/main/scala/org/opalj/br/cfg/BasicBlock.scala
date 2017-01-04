@@ -42,7 +42,7 @@ import org.opalj.br.Code
  * @author Michael Eichberg
  */
 class BasicBlock(
-        val startPC:             PC, // immutable, because it determines this basic blocks' hash value!
+        val startPC:             PC, // <= determines this basic blocks' hash value!
         private[cfg] var _endPC: PC = Int.MinValue
 ) extends CFGNode {
 

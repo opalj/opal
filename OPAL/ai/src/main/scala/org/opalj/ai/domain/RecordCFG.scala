@@ -169,14 +169,12 @@ trait RecordCFG
     /**
      * Returns the dominator tree.
      *
-     *
      * @note
      * To get the list of all evaluated instructions and their dominators.
      * {{{
      *  val result = AI(...,...,...)
      *  val evaluated = result.evaluatedInstructions
      * }}}
-     *
      */
     def dominatorTree: DominatorTree = {
         var theDominatorTree = this.theDominatorTree

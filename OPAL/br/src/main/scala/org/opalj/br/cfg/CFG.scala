@@ -47,17 +47,17 @@ import org.opalj.collection.mutable.UShortSet
  * This class is thread-safe; all data is effectively immutable
  * '''after construction''' time.
  *
- * @param     code The code for which the CFG was build.
- * @param     normalReturnNode The unique exit node of the control flow graph if the
- *             method returns normally. If the method always throws an exception this
- *             node will not have any predecessors.
- * @param     abnormalReturnNode The unique exit node of the control flow graph if the
- *             method returns abnormally (throws an exception). If the method is guaranteed
- *             to never throw an exception, this node will not have any predecessors.
- * @param     catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
- *             [[org.opalj.br.ExceptionHandler]].
- * @param     basicBlocks An implicit map between a program counter and its associated
- *             [[BasicBlock]]; it may be a sparse array!
+ * @param   code The code for which the CFG was build.
+ * @param   normalReturnNode The unique exit node of the control flow graph if the
+ *          method returns normally. If the method always throws an exception this
+ *          node will not have any predecessors.
+ * @param   abnormalReturnNode The unique exit node of the control flow graph if the
+ *          method returns abnormally (throws an exception). If the method is guaranteed
+ *          to never throw an exception, this node will not have any predecessors.
+ * @param   catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
+ *          [[org.opalj.br.ExceptionHandler]].
+ * @param   basicBlocks An implicit map between a program counter and its associated
+ *          [[BasicBlock]]; it may be a sparse array!
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
@@ -200,7 +200,6 @@ case class CFG(
                 current
             }
         }
-
     }
 
     /**
@@ -243,7 +242,7 @@ case class CFG(
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             var visited = UShortSet.empty
-            bb.successors.foreach { bb ⇒
+            bb.successors foreach { bb ⇒
                 val nextPC =
                     if (bb.isBasicBlock) bb.asBasicBlock.startPC
                     else if (bb.isCatchNode) bb.asCatchNode.handlerPC
@@ -263,7 +262,7 @@ case class CFG(
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
-            bb.predecessors.flatMap {
+            bb.predecessors flatMap {
                 case bb: BasicBlock ⇒ Set(bb.endPC)
                 case cn: CatchNode  ⇒ cn.predecessors.map(_.asBasicBlock.endPC)
             }
@@ -279,7 +278,7 @@ case class CFG(
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
             var visited = UShortSet.empty
-            bb.predecessors.foreach { bb ⇒
+            bb.predecessors foreach { bb ⇒
                 if (bb.isBasicBlock) {
                     f(bb.asBasicBlock.endPC)
                 } else if (bb.isCatchNode) {
