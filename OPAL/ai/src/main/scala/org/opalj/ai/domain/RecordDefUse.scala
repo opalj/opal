@@ -62,10 +62,9 @@ import org.opalj.ai.util.XHTML
  * the exception.
  *
  * ==General Usage==
- * This trait collects the def/use information after the abstract interpretation has
- * successfully completed and the control-flow graph is available. The information
+ * This trait collects the def/use information '''after the abstract interpretation has
+ * successfully completed''' and the control-flow graph is available. The information
  * is automatically made available, when this plug-in is mixed in.
- *
  *
  * ==Special Values==
  *
@@ -139,9 +138,7 @@ trait RecordDefUse extends RecordCFG {
 
         instructions = code.instructions
         val codeSize = instructions.size
-        // The following value for min is a conservative approx. which may lead to the
-        // use of a SmallValuesArray that can actually store larger values than
-        // necessary; however, this will occur only in a very small number of cases.
+        // The following value for min is a conservative approx.!
         val absoluteMin = -code.maxLocals
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
         defOps(0) = Naught // the operand stack is empty...
@@ -505,16 +502,14 @@ trait RecordDefUse extends RecordCFG {
                                 // information.... unless we have a JSR/RET and we are in
                                 // a subroutine!
                                 if (o eq null) {
-                                    if ((n ne null) &&
-                                        isSubroutineInstruction(successorPC)) {
+                                    if ((n ne null) && isSubroutineInstruction(successorPC)) {
                                         newUsage = true
                                         n
                                     } else {
                                         null
                                     }
                                 } else if (n eq null) {
-                                    if ((o ne null) &&
-                                        isSubroutineInstruction(successorPC)) {
+                                    if ((o ne null) && isSubroutineInstruction(successorPC)) {
                                         newUsage = true
                                         o
                                     } else {
@@ -613,7 +608,7 @@ trait RecordDefUse extends RecordCFG {
                 propagate(defOps(currentPC), defLocals(currentPC))
 
             case JSR.opcode | JSR_W.opcode ⇒
-                stackOp(0, true)
+                stackOp(0, pushesValue = true)
 
             case RET.opcode ⇒
                 val RET(lvIndex) = instruction
@@ -908,15 +903,16 @@ trait RecordDefUse extends RecordCFG {
 
         val operandsArray = aiResult.operandsArray
         val joinInstructions = aiResult.joinInstructions
-        def isSubroutineInstruction(pc: PC): Boolean = {
-            aiResult.subroutineInstructions.contains(pc)
-        }
 
         var subroutinePCs: Set[PC] = Set.empty
         val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0)
 
         def checkAndScheduleNextSubroutine(): Boolean = {
-            /* we want to evaluate the subroutines only once! */
+            /* We want to evaluate the subroutines only when strictly necessary;
+             * When we reach this point "nextPCs" is already empty!
+             *
+             * However, we have to ensure that all subroutines are actually evaluated
+             */
 
             // We have to make sure that – before we schedule the evaluation of an
             // instruction that is the return target of a subroutine - the call
@@ -924,23 +920,27 @@ trait RecordDefUse extends RecordCFG {
             // Otherwise, the context information may be missing.
 
             if (subroutinePCs.nonEmpty) {
-                nextPCs += subroutinePCs.head;
-                subroutinePCs = subroutinePCs.tail;
+                nextPCs ++= subroutinePCs
+                subroutinePCs = Set.empty
+                //nextPCs += subroutinePCs.head;
+                //subroutinePCs = subroutinePCs.tail;
                 true
-            } else
+            } else {
                 false
+            }
         }
 
         while (nextPCs.nonEmpty || checkAndScheduleNextSubroutine()) {
             val currPC = nextPCs.head
             nextPCs.remove(currPC)
+            println("ANALYZING: "+currPC+"; remaining: "+nextPCs.mkString(",")+"; subroutines: "+subroutinePCs.mkString(","))
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow,
                         joinInstructions,
-                        isSubroutineInstruction,
+                        aiResult.subroutineInstructions.contains,
                         operandsArray
                     )
                 } catch {
@@ -959,7 +959,11 @@ trait RecordDefUse extends RecordCFG {
                         }
                         message += ("\tCurrent PC: "+currPC+"; SuccessorPC: "+succPC)+"\n"
                         message += ("\tStack: "+defOps(currPC))+"\n"
-                        message += ("\tLocals: "+defLocals(currPC))+"\n"
+                        val localsDump =
+                            defLocals(currPC).
+                                zipWithIndex.
+                                map { e ⇒ val (local, index) = e; s"$index: $local" }
+                        message += (localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n"))
                         val bout = new ByteArrayOutputStream()
                         val pout = new PrintStream(bout)
                         e.printStackTrace(pout)
@@ -1004,13 +1008,13 @@ trait RecordDefUse extends RecordCFG {
                         else
                             succPC - 3 /*JSR_W*/
                     if (defOps(pcOfJSR) != null)
-                        handleSuccessor(false)(succPC)
+                        handleSuccessor(isExceptionalControlFlow = false)(succPC)
                     /* else postponed the scheduling of succPC */
                 } else {
-                    handleSuccessor(false)(succPC)
+                    handleSuccessor(isExceptionalControlFlow = false)(succPC)
                 }
             }
-            exceptionHandlerSuccessorsOf(currPC).foreach { handleSuccessor(true) }
+            exceptionHandlerSuccessorsOf(currPC) foreach { handleSuccessor(true) }
         }
     }
 
