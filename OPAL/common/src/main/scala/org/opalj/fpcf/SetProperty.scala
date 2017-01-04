@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.collection.mutable.ArrayMap
 
 /**
- * A set property is a property that is shared by a set of entities. A set property is
+ * A property that is shared by a set of entities. Compared to a normal property, a set property
  * generally cannot be refined and cannot be revoked.
  *
  * A [[SetProperty]] is compared with other properties using reference comparison. Hence, in

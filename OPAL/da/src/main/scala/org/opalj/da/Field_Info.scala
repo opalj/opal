@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -45,7 +45,7 @@ case class Field_Info(
         access_flags:     Int,
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes
+        attributes:       Attributes          = IndexedSeq.empty
 ) {
 
     def size: Int = 2 + 2 + 2 + 2 /* attributes_count*/ + attributes.view.map(_.size).sum

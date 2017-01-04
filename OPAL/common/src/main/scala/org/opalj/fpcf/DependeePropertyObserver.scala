@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -62,7 +62,7 @@ private[fpcf] abstract class DependeePropertyObserver(
         val isNotYetExecuted = isExecuted.compareAndSet(false, true)
         if (isNotYetExecuted) {
             deregisterObserver(dependerEPK)
-            // Note, between now and the point in time where the computation w.r.t. the new
+            // Note that between now and the point in time where the computation w.r.t. the new
             // property is actually performed, it is possible that further properties may
             // have changed. This situation is, however, handled by the property store
             // as it checks - when we have an intermediate result - that the dependee's

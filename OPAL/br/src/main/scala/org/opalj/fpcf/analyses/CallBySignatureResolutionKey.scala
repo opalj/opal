@@ -39,10 +39,10 @@ import org.opalj.br.analyses.ProjectInformationKey
  * The ''key'' object to get the interface methods for which call by signature resolution
  * needs to be done.
  *
- * @note To get call by signature information use the [[org.opalj.br.analyses.Project]]'s `get`
- * 		method and pass in `this` object.
+ * @note   To get call by signature information use the [[org.opalj.br.analyses.Project]]'s `get`
+ *         method and pass in `this` object.
  *
- * @see [[CallBySignatureResolution]] for further information.
+ * @see    [[CallBySignatureResolution]] for further information.
  *
  * @author Michael Reif
  */

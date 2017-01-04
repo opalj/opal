@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -53,8 +53,9 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
         val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
 
-        val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.methods.map { m ⇒
-            val t = testProject.classFile(m).thisType
+        val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.allMethodsWithContext map { mc ⇒
+            val (m, classFile) = mc
+            val t = classFile.thisType
             var proxy: ClassFile = null
 
             describe(s"generating a valid proxy for ${t.toJava} { ${m.toJava} }") {

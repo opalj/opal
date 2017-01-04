@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -229,10 +229,10 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * }
      * </pre>
      *
-     * @param in 	The `DataInputStream from which the class file will be read. The
-     *    			stream is not closed by this method.
-     *    			'''It is highly recommended that the stream is buffered; otherwise the
-     *    			performance will be terrible!'''
+     * @param in    The `DataInputStream from which the class file will be read. The
+     *              stream is not closed by this method.
+     *              '''It is highly recommended that the stream is buffered; otherwise the
+     *              performance will be terrible!'''
      */
     def ClassFile(in: DataInputStream): List[ClassFile] = {
         // magic

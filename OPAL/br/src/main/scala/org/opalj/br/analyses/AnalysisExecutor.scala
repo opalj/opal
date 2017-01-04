@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,7 +34,10 @@ import java.net.URL
 import java.io.File
 
 import scala.util.control.ControlThrowable
+
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
+
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
@@ -253,7 +256,11 @@ trait AnalysisExecutor {
         // 2. setup project context
         //
         val project: Project[URL] = try {
-            setupProject(cpFiles, libcpFiles, completelyLoadLibraries, analysisMode)
+            setupProject(
+                cpFiles, libcpFiles, completelyLoadLibraries,
+                analysisMode,
+                ConfigFactory.load()
+            )
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
@@ -288,7 +295,8 @@ trait AnalysisExecutor {
         cpFiles:                 Iterable[File],
         libcpFiles:              Iterable[File],
         completelyLoadLibraries: Boolean,
-        analysisMode:            AnalysisMode
+        analysisMode:            AnalysisMode,
+        fallbackConfiguration:   Config
     )(
         implicit
         initialLogContext: LogContext
@@ -296,7 +304,7 @@ trait AnalysisExecutor {
 
         val analysisModeSpecification = s"${AnalysisMode.ConfigKey} = $analysisMode"
         val analysisModeConfig = ConfigFactory.parseString(analysisModeSpecification)
-        val configuredConfig = analysisModeConfig.withFallback(ConfigFactory.load())
+        val configuredConfig = analysisModeConfig.withFallback(fallbackConfiguration)
 
         OPALLogger.info("creating project", "reading project class files")
         val JavaClassFileReader = Project.JavaClassFileReader(theConfig = configuredConfig)

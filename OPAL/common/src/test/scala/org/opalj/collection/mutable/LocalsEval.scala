@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -56,7 +56,7 @@ object LocalsEval extends App {
     /////////
 
     def evalUsingLocals(elems: Int): Unit = {
-        var lastAvg = 0l
+        var lastAvg = 0L
         println(elems+" elments stored in vector")
         val data_v = time(e, eMax, minRuns, {
             var data: Locals[Integer] = Locals(elems)
@@ -87,7 +87,7 @@ object LocalsEval extends App {
     }
 
     def evalUsingArray(elems: Int): Unit = {
-        var lastAvg = 0l
+        var lastAvg = 0L
         println(elems+" elments stored in array")
         val data_a = time(e, eMax, minRuns, {
             var data = new Array[Integer](elems)

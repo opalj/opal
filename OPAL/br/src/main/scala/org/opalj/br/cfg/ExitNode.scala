@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -56,7 +56,7 @@ class ExitNode(normalReturn: Boolean) extends CFGNode {
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
-    override def nodeId: Long = if (normalReturn) Long.MinValue else Long.MinValue + 1l
+    override def nodeId: Long = if (normalReturn) Long.MinValue else Long.MinValue + 1L
 
     override def toString(): String = s"ExitNode(normalReturn=$normalReturn)"
 

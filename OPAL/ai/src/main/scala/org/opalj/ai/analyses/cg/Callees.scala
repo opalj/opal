@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -76,7 +76,6 @@ trait Callees {
                 val result = project.lookupImplementingMethods(
                     declaringClassType, name, descriptor, classesFilter
                 )
-                println(result)
                 result
 
             case /*Unknown <=> the type is unknown */ _ ⇒

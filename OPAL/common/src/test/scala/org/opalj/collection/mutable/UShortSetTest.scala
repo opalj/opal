@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -173,7 +173,7 @@ class UShortSetTest extends FunSpec with Matchers {
         }
 
         it("it should be possible – though the datastructure is not intended to be used for that – to store a larger number of different values in the set") {
-            val seed = 72387238787323390l
+            val seed = 72387238787323390L
             val ValuesCount = 100000
             val rnd = new java.util.Random
             var uShortSet = UShortSet.empty
@@ -235,7 +235,7 @@ class UShortSetTest extends FunSpec with Matchers {
         }
 
         it("the number of leaf nodes should be close to 1/4 of the number of entries") {
-            val seed = -983432872323390l
+            val seed = -983432872323390L
             val ValuesCount = 10000
             val rnd = new java.util.Random
             var uShortSet = UShortSet.empty
@@ -270,7 +270,7 @@ class UShortSetTest extends FunSpec with Matchers {
         }
 
         it("it should be possible to add and remove values to sets of different sizes") {
-            val rnd = new java.util.Random(2398472349879l)
+            val rnd = new java.util.Random(2398472349879L)
 
             for { size ← 2 to 256 } {
                 var hSet = Set.empty[Int]

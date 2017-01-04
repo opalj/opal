@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -99,7 +99,7 @@ class CFACallGraphDomain[Source](
     callingDomain ⇒
 
     // we just want to be able to track "booleans"
-    override def maxCardinalityOfIntegerRanges: Long = 2l
+    override def maxCardinalityOfIntegerRanges: Long = 2L
 
     def shouldInvocationBePerformed(
         definingClass: ClassFile,

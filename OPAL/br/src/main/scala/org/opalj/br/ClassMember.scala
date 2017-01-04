@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,12 +29,12 @@
 package org.opalj
 package br
 
-import bi.ACC_FINAL
-import bi.ACC_PUBLIC
-import bi.ACC_PROTECTED
-import bi.ACC_PRIVATE
-import bi.ACC_STATIC
-import bi.VisibilityModifier
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_PROTECTED
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_STATIC
+import org.opalj.bi.VisibilityModifier
 import org.opalj.bi.ACC_SYNTHETIC
 
 /**
@@ -52,7 +52,7 @@ trait ClassMember extends ConcreteSourceElement {
 
     final def hasDefaultVisibility: Boolean = (VisibilityModifier.mask & accessFlags) == 0
 
-    final def isPackagePrivate = hasDefaultVisibility
+    final def isPackagePrivate: Boolean = hasDefaultVisibility
 
     final def isStatic: Boolean = (ACC_STATIC.mask & accessFlags) != 0
 

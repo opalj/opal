@@ -155,28 +155,28 @@ class CodeAttributeTest extends FlatSpec with Matchers {
     behavior of "the \"Code\" attribute's lookupLineNumber method"
 
     it should "be able to correctly extract the line number for the first instruction" in {
-        codeOfConstructor.lineNumberTable.get.lookupLineNumber(0) should be(Some(41))
+        codeOfConstructor.lineNumberTable.get.lookupLineNumber(0) should be(Some(47))
     }
 
     it should "be able to correctly extract the line number of some intermediate instruction" in {
-        codeOfConstructor.lineNumberTable.get.lookupLineNumber(14) should be(Some(44))
+        codeOfConstructor.lineNumberTable.get.lookupLineNumber(14) should be(Some(50))
     }
 
     it should "be able to correctly extract the line number of an instruction that is not directly associated with a line number" in {
-        codeOfConstructor.lineNumberTable.get.lookupLineNumber(5) should be(Some(39))
+        codeOfConstructor.lineNumberTable.get.lookupLineNumber(5) should be(Some(45))
     }
 
     it should "be able to correctly extract the line number of the last instruction" in {
-        codeOfConstructor.lineNumberTable.get.lookupLineNumber(34) should be(Some(46))
+        codeOfConstructor.lineNumberTable.get.lookupLineNumber(34) should be(Some(52))
     }
 
     behavior of "the \"Code\" attribute's firstLineNumber method"
 
     it should "be able to correctly extract the line number for the first instruction of aconstructor" in {
-        codeOfConstructor.firstLineNumber should be(Some(39))
+        codeOfConstructor.firstLineNumber should be(Some(45))
     }
     it should "be able to correctly extract the line number for the first instruction" in {
-        codeOfPut.firstLineNumber should be(Some(51))
+        codeOfPut.firstLineNumber should be(Some(57))
     }
 
     behavior of "the \"Code\" attribute's joinInstructions method"
@@ -239,7 +239,7 @@ private object CodeAttributeTest {
 
     val project =
         Project(
-            ClassFiles(locateTestResources("classfiles/Code.jar", "bi")) ++
+            ClassFiles(locateTestResources("code.jar", "bi")) ++
                 ClassFiles(locateTestResources("classfiles/cfgtest8.jar", "br")),
             Traversable.empty,
             true

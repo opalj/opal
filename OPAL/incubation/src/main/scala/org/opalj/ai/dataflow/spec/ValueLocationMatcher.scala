@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -85,7 +85,7 @@ case class Calls(
             classFile ← project.allProjectClassFiles
             method @ MethodWithBody(body) ← classFile.methods
             pc ← body collectWithIndex {
-                case (pc, MethodInvocationInstruction(receiver, name, descriptor)) if properties.isDefinedAt((receiver, name, descriptor)) &&
+                case (pc, MethodInvocationInstruction(receiver, _ /*isInterface*/ , name, descriptor)) if properties.isDefinedAt((receiver, name, descriptor)) &&
                     properties((receiver, name, descriptor)) ⇒ pc
             }
         } {

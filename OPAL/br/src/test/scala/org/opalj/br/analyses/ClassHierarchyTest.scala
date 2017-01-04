@@ -34,10 +34,12 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
-import reader.Java8Framework.ClassFiles
-import org.opalj.collection.immutable.UIDSet
+
 import org.opalj.log.GlobalLogContext
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Basic tests of the class hierarchy.
@@ -759,7 +761,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     //
     // -----------------------------------------------------------------------------------
 
-    val clusteringProject = {
+    final val clusteringProject = {
         val classFiles = ClassFiles(locateTestResources("classfiles/ClusteringTestProject.jar", "bi"))
         Project(classFiles, Traversable.empty, true)
     }
@@ -778,7 +780,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         classHierarchy.isSubtypeOf(window, simpleWindow) should be(No)
         classHierarchy.isSubtypeOf(simpleWindow, window) should be(Yes)
 
-        // check if the SimpleWindow is in the Set of all subtypes of Window
+        // check if the SimpleWindow is in the set of all subtypes of Window
         var subtypes = Set.empty[ObjectType]
         classHierarchy.foreachSubtype(window) { subtypes += _ }
         if (!subtypes.contains(simpleWindow))
@@ -788,12 +790,11 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
                 classHierarchy.asTSV)
 
         clusteringProject.classFile(simpleWindow).get.methods find { method ⇒
-            method.name == "draw" && method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
+            method.name == "draw" && method.descriptor == NoArgsAndReturnVoid
         } should be('defined)
 
-        clusteringProject.lookupImplementingMethods(
-            window, "draw", MethodDescriptor.NoArgsAndReturnVoid, (cf) ⇒ true
-        ) should be('nonEmpty)
+        import clusteringProject.resolveInterfaceMethodReference
+        resolveInterfaceMethodReference(window, "draw", NoArgsAndReturnVoid) should be('nonEmpty)
     }
 
 }

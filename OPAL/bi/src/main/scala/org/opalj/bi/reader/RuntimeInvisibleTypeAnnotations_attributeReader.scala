@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -84,14 +84,6 @@ trait RuntimeInvisibleTypeAnnotations_attributeReader extends AttributeReader {
     }
 
     registerAttributeReader(RuntimeInvisibleTypeAnnotationsAttribute.Name → parser)
-
-}
-/**
- * Common properties of `RuntimeInvisibleTypeAnnotations` attributes.
- */
-object RuntimeInvisibleTypeAnnotationsAttribute {
-
-    final val Name = "RuntimeInvisibleTypeAnnotations"
 
 }
 

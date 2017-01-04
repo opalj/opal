@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -184,6 +184,10 @@ sealed trait UIDSet[+T <: UID]
      */
     @throws[NoSuchElementException]("If the set is empty.") def tail(): UIDSet[T]
 
+    def -[X >: T <: UID](t: X): UIDSet[T] = filter(_.id != t.id)
+
+    def --[X >: T <: UID](ts: UIDSet[X]): UIDSet[T] = filter(!ts.contains(_))
+
     /**
      * Returns a new `UIDSet` that contains all elements which satisfy the given
      * predicate.
@@ -248,23 +252,23 @@ sealed trait UIDSet[+T <: UID]
     final def seq: this.type = this
 
     /**
-     * Creates a new `(UID)Set` which contains the mapped values as specified by the given
+     * Creates a new `collection` which contains the mapped values as specified by the given
      * function `f`.
      *
      * @example
-     * 		This class predefines two implicit functions create either UIDSets or regular sets.
-     * 		If the compiler is not able to select the correct one, it is usually sufficient
-     * 		to explicitly specify the target type.
+     *      This class predefines two implicit functions create either UIDSets or regular sets.
+     *      If the compiler is not able to select the correct one, it is usually sufficient
+     *      to explicitly specify the target type.
      * {{{
      * scala> case class MyUID(val id : Int) extends org.opalj.collection.UID
      * scala> var us = UIDSet(MyUID(1),MyUID(2)) + MyUID(-3)
      * scala> us.map(e => MyUID(e.id+1))
-     * 		  <console>:21: error: ambiguous implicit values:
-     * 		  both method canBuildFrom in object UIDSet of type ...
-     * 		  and method canBuildSetFromUIDSet in object UIDSet of type ...
-     * 		  match expected type ...
-     * 		  us.map(e => MyUID(e.id+1))
-     * 		  ^
+     *        <console>:21: error: ambiguous implicit values:
+     *        both method canBuildFrom in object UIDSet of type ...
+     *        and method canBuildSetFromUIDSet in object UIDSet of type ...
+     *        match expected type ...
+     *        us.map(e => MyUID(e.id+1))
+     *        ^
      * scala> // this problem is easily fixed by; e.g., specifying the type of the target
      * scala> // collection (e.g. by assigning the list to an appropriately typed variable)
      * scala> us = us.map(e => MyUID(e.id+1))
@@ -315,13 +319,13 @@ sealed trait UIDSet[+T <: UID]
  */
 object UIDSet0 extends UIDSet[Nothing] {
 
-    override def size = 0
+    override def size: Int = 0
 
-    override def isEmpty = true
+    override def isEmpty: Boolean = true
 
-    override def nonEmpty = false
+    override def nonEmpty: Boolean = false
 
-    override def isSingletonSet = false
+    override def isSingletonSet: Boolean = false
 
     override def head: Nothing = throw new NoSuchElementException("the set is empty")
 
@@ -329,7 +333,7 @@ object UIDSet0 extends UIDSet[Nothing] {
 
     override def exists(p: Nothing ⇒ Boolean): Boolean = false
 
-    override def forall(p: Nothing ⇒ Boolean) = true
+    override def forall(p: Nothing ⇒ Boolean): Boolean = true
 
     override def contains[X <: UID](o: X): Boolean = false
 
@@ -371,8 +375,8 @@ object UIDSet0 extends UIDSet[Nothing] {
 }
 
 private[collection] trait NonEmptyUIDSet[+T <: UID] extends UIDSet[T] {
-    final override def isEmpty = false
-    final override def nonEmpty = true
+    final override def isEmpty: Boolean = false
+    final override def nonEmpty: Boolean = true
 
     /** This nodes value. */
     private[collection] val e: T
@@ -402,7 +406,7 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
     private[collection] def left: NonEmptyUIDSet[T] = null
     private[collection] def right: NonEmptyUIDSet[T] = null
 
-    override def size = 1
+    override def size: Int = 1
 
     override def isSingletonSet: Boolean = true
 
@@ -446,7 +450,7 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
 
     override def reduce[X >: T](op: (X, X) ⇒ X): X = e
 
-    override def toSeq = e :: Nil
+    override def toSeq: List[T] = e :: Nil
 
     override def toIterator: Iterator[T] = Iterator.single(e)
 

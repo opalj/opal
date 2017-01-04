@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -69,7 +69,7 @@ trait ReportableAnalysisResult {
 
 object ReportableAnalysisResult {
 
-    def asReport(reports: Iterable[ReportableAnalysisResult]) = {
+    def asReport(reports: Iterable[ReportableAnalysisResult]): ReportableAnalysisResult = {
         new ReportableAnalysisResult {
             def toConsoleString: String = reports.view.map(_.toConsoleString).mkString("\n")
         }

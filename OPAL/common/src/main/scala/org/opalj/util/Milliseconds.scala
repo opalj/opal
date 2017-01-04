@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,24 +36,27 @@ package util
  */
 class Milliseconds(val timeSpan: Long) extends AnyVal {
 
-    final def +(other: Milliseconds): Milliseconds =
+    final def +(other: Milliseconds): Milliseconds = {
         new Milliseconds(this.timeSpan + other.timeSpan)
+    }
 
-    final def -(other: Milliseconds): Milliseconds =
+    final def -(other: Milliseconds): Milliseconds = {
         new Milliseconds(this.timeSpan - other.timeSpan)
+    }
 
     /**
      * Converts the specified number of milliseconds into seconds.
      */
     final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d)
 
-    final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000l * 1000l)
+    final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000L * 1000L)
 
     def toString(withUnit: Boolean): String = {
-        if (withUnit)
+        if (withUnit) {
             timeSpan+" ms"
-        else
+        } else {
             timeSpan.toString
+        }
     }
 
     override def toString: String = toString(withUnit = true)
@@ -66,7 +69,7 @@ class Milliseconds(val timeSpan: Long) extends AnyVal {
  */
 object Milliseconds {
 
-    final val None: Milliseconds = new Milliseconds(0l)
+    final val None: Milliseconds = new Milliseconds(0L)
 
     /**
      * Converts the specified time span and converts it into milliseconds.

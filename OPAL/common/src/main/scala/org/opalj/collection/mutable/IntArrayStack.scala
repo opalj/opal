@@ -31,7 +31,6 @@ package collection
 package mutable
 
 import scala.collection.mutable
-import scala.collection.mutable
 import scala.collection.generic
 import scala.collection.AbstractIterator
 
@@ -41,7 +40,7 @@ import scala.collection.AbstractIterator
  * index of the bottom value is (`length-1`).
  *
  * @param data The array containing the values.
- * @param size0	The number of stored values.
+ * @param size0 The number of stored values.
  * @author Michael Eichberg
  */
 final class IntArrayStack private (
@@ -187,8 +186,8 @@ final class IntArrayStack private (
     /**
      * Returns an iterator which produces the values in LIFO order.
      *
-     * @note 	The `next` method will throw an `IndexOutOfBoundsException`
-     * 			when all elements are already returned.
+     * @note    The `next` method will throw an `IndexOutOfBoundsException`
+     *          when all elements are already returned.
      */
     override def iterator: Iterator[Int] = {
         new AbstractIterator[Int] {

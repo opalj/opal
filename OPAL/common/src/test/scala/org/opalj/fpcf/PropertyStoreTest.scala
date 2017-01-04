@@ -242,7 +242,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     final val ReachableNodesKey: PropertyKey[ReachableNodes] = {
         PropertyKey.create(
             "ReachableNodes",
-            (ps: PropertyStore, e: Entity) ⇒ throw new UnknownError /*IDIOM IF NO FALLBACK IS EXPECTED/SUPPORTED*/ ,
+            (ps: PropertyStore, e: Entity) ⇒ {
+                /*IDIOM IF NO FALLBACK IS EXPECTED/SUPPORTED*/
+                throw new UnknownError(s"no fallback for ReachableNodes property for $e available")
+            },
             (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ {
                 //                val allReachableNodes = epks.foldLeft(Set.empty[Node]) { (c, epk) ⇒
                 //                    c ++ ps(epk.e, ReachableNodesKey /* <=> epk.pk */ ).get.nodes
@@ -780,8 +783,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 while (System.currentTimeMillis() - startTime < TestDuration * 60 * 1000) {
                     runs += 1
                     /* The following analysis only uses the new information given to it and updates
-                 	 * the set of observed dependees.
-                 	 */
+                     * the set of observed dependees.
+                     */
                     def analysis(level: Int)(n: Node): PropertyComputationResult = {
                         val nextPCs: Traversable[(PropertyComputation[Node], Node)] =
                             n.targets.map(t ⇒ (analysis(level + 1) _, t))
@@ -886,8 +889,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 while (System.currentTimeMillis() - startTime < TestDuration * 60 * 1000) {
                     runs += 1
                     /* The following analysis only uses the new information given to it and updates
-                 	 * the set of observed dependees.
-                 	 */
+                     * the set of observed dependees.
+                     */
                     def analysis(n: Node): PropertyComputationResult = {
                         val nTargets = n.targets
                         if (nTargets.isEmpty)
@@ -944,7 +947,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     }
 
                     ps <||< ({ case n: Node ⇒ n }, analysis)
-                    ps.waitOnPropertyComputationCompletion(true)
+                    ps.waitOnPropertyComputationCompletion(false)
 
                     try {
                         // the graph:
@@ -966,7 +969,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             info(s"test failed on run $runs\n"+ps.toString(true))
                             try { ps.validate(None) } catch {
                                 case ae: AssertionError ⇒
-                                    info(s"validation failed on run $runs\n"+ae.getMessage.toString)
+                                    info(s"validation failed on run $runs\n"+ae.getMessage)
                             }
                             throw t
                     }
@@ -1053,7 +1056,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     }
 
                     ps <||< ({ case n: Node ⇒ n }, analysis)
-                    ps.waitOnPropertyComputationCompletion(true)
+                    ps.waitOnPropertyComputationCompletion(false)
 
                     try {
                         // the graph:

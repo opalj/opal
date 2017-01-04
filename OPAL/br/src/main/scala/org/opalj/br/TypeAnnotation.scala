@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -63,13 +63,11 @@ sealed trait TypeAnnotationPathElement
  * @author Michael Eichberg
  */
 case class TypeAnnotation(
-        target:            TypeAnnotationTarget,
-        path:              TypeAnnotationPath,
-        annotationType:    FieldType,
-        elementValuePairs: ElementValuePairs
-) {
-
-}
+    target:            TypeAnnotationTarget,
+    path:              TypeAnnotationPath,
+    annotationType:    FieldType,
+    elementValuePairs: ElementValuePairs
+)
 
 case class TAOfCastExpression(
     offset:              Int,

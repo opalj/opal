@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -84,7 +84,7 @@ case class Code_attribute(
 
     }
 
-    def attributesAsXHTML(implicit cp: Constant_Pool) = attributes.map(_.toXHTML(cp))
+    def attributesAsXHTML(implicit cp: Constant_Pool): Seq[Node] = attributes.map(_.toXHTML(cp))
 
     def exception_handlersAsXHTML(implicit cp: Constant_Pool): Node = {
         if (exceptionTable.length > 0)

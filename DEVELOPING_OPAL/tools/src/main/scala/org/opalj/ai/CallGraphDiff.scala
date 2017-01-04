@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -53,13 +53,15 @@ object CallGraphDiff extends DefaultOneStepAnalysis {
 
     override def title: String = "identifies differences between two call graphs"
 
-    override def description: String = "Identifies methods that do not have the same call graph information."
+    override def description: String = {
+        "identifies methods that do not have the same call graph information"
+    }
 
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
         val (unexpected, additional) = callGraphDiff(project, Console.println, isInterrupted)
         if (unexpected.nonEmpty || additional.nonEmpty) {
             var r = "Found the following difference(s):\n"
@@ -98,7 +100,7 @@ object CallGraphDiff extends DefaultOneStepAnalysis {
                 project,
                 entryPoints,
                 new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
-                    override def Domain[Source](
+                    override def Domain(
                         classFile: ClassFile,
                         method:    Method
                     ) =

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -44,13 +44,13 @@ package analyses
  * the (singleton) instance of the respective `ProjectInformationKey` to get
  * the respective project information.
  *
- * For example, let's assume that a call graph is needed. In this case the
- * code to get the respective call graph would be:
+ * For example, let's assume that an index of all fields and methods is needed. In this case the
+ * code to get the index would be:
  * {{{
- * import ...{ComputedCallGraph,CHACallGraphKey}
+ * import ...{ProjectIndex,ProjectIndexKey}
  * val project : Project = ???
- * val ComputedCallGraph(callGraph,unresolved,ex) = project.get(CHACallGraphKey)
- * // do something with the call graph
+ * val projectIndex = project.get(ProjectIndexKey)
+ * // do something with the index
  * }}}
  *
  * ==Providing Project Information/Implementing `ProjectInformationKey` ==
@@ -96,7 +96,7 @@ trait ProjectInformationKey[T <: AnyRef] {
      * If the analysis has no special requirements `Nil` can be returned.
      *
      * @note '''All requirements must be listed; failing to specify a requirement can
-     * 		end up in a deadlock.'''
+     *      end up in a deadlock.'''
      *
      * @note Classes/Objects that implement this trait should not make the method `public`
      *      to avoid that this method is called accidentally by regular user code.
@@ -134,4 +134,3 @@ private object ProjectInformationKey {
     private[ProjectInformationKey] def nextId: Int = idGenerator.getAndIncrement()
 
 }
-

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -151,8 +151,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         theOutgoingDependencies
 
     // calculated after all class files have been loaded
-    private[this] var theIncomingDependencies: MutableMap[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]] =
+    private[this] var theIncomingDependencies: MutableMap[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]] = {
         scala.collection.mutable.OpenHashMap.empty
+    }
 
     /**
      * Mapping between a source element and those source elements that depend on it.
@@ -237,16 +238,16 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     /**
      * Returns the class files stored at the given location.
      */
-    implicit def FileToClassFileProvider(file: java.io.File): Seq[(ClassFile, URL)] =
+    implicit def FileToClassFileProvider(file: java.io.File): Seq[(ClassFile, URL)] = {
         ClassFiles(file)
+    }
 
     var architectureCheckers: List[ArchitectureChecker] = Nil
 
     case class GlobalIncomingConstraint(
-        targetEnsemble:  Symbol,
-        sourceEnsembles: Seq[Symbol]
-    )
-            extends DependencyChecker {
+            targetEnsemble:  Symbol,
+            sourceEnsembles: Seq[Symbol]
+    ) extends DependencyChecker {
 
         override def targetEnsembles: Seq[Symbol] = Seq(targetEnsemble)
 
@@ -274,8 +275,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             }
         }
 
-        override def toString =
+        override def toString: String = {
             targetEnsemble+" is_only_to_be_used_by ("+sourceEnsembles.mkString(",")+")"
+        }
     }
 
     /**
@@ -288,11 +290,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * belonging to `ey` then a [[SpecificationViolation]] is generated.
      */
     case class LocalOutgoingNotAllowedConstraint(
-        dependencyTypes: Set[DependencyType],
-        sourceEnsemble:  Symbol,
-        targetEnsembles: Seq[Symbol]
-    )
-            extends DependencyChecker {
+            dependencyTypes: Set[DependencyType],
+            sourceEnsemble:  Symbol,
+            targetEnsembles: Seq[Symbol]
+    ) extends DependencyChecker {
 
         if (targetEnsembles.isEmpty)
             throw SpecificationError("no target ensembles specified: "+toString())
@@ -356,11 +357,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * to `ey` then a [[SpecificationViolation]] is generated.
      */
     case class LocalOutgoingOnlyAllowedConstraint(
-        dependencyTypes: Set[DependencyType],
-        sourceEnsemble:  Symbol,
-        targetEnsembles: Seq[Symbol]
-    )
-            extends DependencyChecker {
+            dependencyTypes: Set[DependencyType],
+            sourceEnsemble:  Symbol,
+            targetEnsembles: Seq[Symbol]
+    ) extends DependencyChecker {
 
         if (targetEnsembles.isEmpty)
             throw SpecificationError("no target ensembles specified: "+toString())
@@ -427,18 +427,17 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * source element `x` which belongs to ensemble `ex` has no annotation that matches
      * `ey` then a [[SpecificationViolation]] is generated.
      *
-     * 	@param sourceEnsemble An ensemble containing elements, that should be annotated.
+     *  @param sourceEnsemble An ensemble containing elements, that should be annotated.
      *  @param annotationPredicates The annotations that should match.
      *  @param property A description of the property that is checked.
      *  @param matchAny true if only one match is needed, false if all annotations should match
      */
     case class LocalOutgoingAnnotatedWithConstraint(
-        sourceEnsemble:       Symbol,
-        annotationPredicates: Seq[AnnotationPredicate],
-        property:             String,
-        matchAny:             Boolean
-    )
-            extends PropertyChecker {
+            sourceEnsemble:       Symbol,
+            annotationPredicates: Seq[AnnotationPredicate],
+            property:             String,
+            matchAny:             Boolean
+    ) extends PropertyChecker {
 
         def this(
             sourceEnsemble:       Symbol,
@@ -508,8 +507,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             }
         }
 
-        override def toString =
-            s"$sourceEnsemble every_element_should_be_annotated_with "+property
+        override def toString: String = {
+            s"$sourceEnsemble every_element_should_be_annotated_with $property"
+        }
     }
 
     /**
@@ -517,7 +517,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * method. The source ensemble should contain only class elements
      * otherwise a [[SpecificationError]] will be thrown.
      *
-     * 	@param sourceEnsemble An ensemble containing classes, that should implement the given method.
+     *  @param sourceEnsemble An ensemble containing classes, that should implement the given method.
      *  @param methodPredicate The method to match.
      */
     case class LocalOutgoingShouldImplementMethodConstraint(
@@ -551,8 +551,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             }
         }
 
-        override def toString =
-            s"$sourceEnsemble every_element_should_implement_method ("+property+")"
+        override def toString: String = {
+            s"$sourceEnsemble every_element_should_implement_method ($property)"
+        }
     }
 
     /**
@@ -560,14 +561,13 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * the given elements. The source ensemble should contain only class elements
      * otherwise a [[SpecificationError]] will be thrown.
      *
-     * 	@param sourceEnsemble An ensemble containing classes, that should implement the given method.
+     *  @param sourceEnsemble An ensemble containing classes, that should implement the given method.
      *  @param targetEnsembles Ensembles containing elements, that should be extended by the given classes.
      */
     case class LocalOutgoingShouldExtendConstraint(
-        sourceEnsemble:  Symbol,
-        targetEnsembles: Seq[Symbol]
-    )
-            extends PropertyChecker {
+            sourceEnsemble:  Symbol,
+            targetEnsembles: Seq[Symbol]
+    ) extends PropertyChecker {
 
         override def property: String = targetEnsembles.mkString(", ")
 
@@ -600,8 +600,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             }
         }
 
-        override def toString =
-            s"$sourceEnsemble every_element_should_extend ("+targetEnsembles.mkString(",")+")"
+        override def toString: String = {
+            targetEnsembles.mkString(s"$sourceEnsemble every_element_should_extend (", ",", ")")
+        }
     }
 
     /**
@@ -700,8 +701,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
     protected implicit def EnsembleSymbolToSpecificationElementFactory(
         ensembleSymbol: Symbol
-    ): SpecificationFactory =
+    ): SpecificationFactory = {
         SpecificationFactory(ensembleSymbol)
+    }
 
     protected implicit def EnsembleToSourceElementMatcher(
         ensembleSymbol: Symbol

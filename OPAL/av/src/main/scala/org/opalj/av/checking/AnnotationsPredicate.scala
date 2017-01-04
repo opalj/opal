@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -70,8 +70,9 @@ case class HasAtLeastTheAnnotations(
 }
 object HasAtLeastTheAnnotations {
 
-    def apply(annotationPredicate: AnnotationPredicate) =
+    def apply(annotationPredicate: AnnotationPredicate): HasAtLeastTheAnnotations = {
         new HasAtLeastTheAnnotations(Set(annotationPredicate))
+    }
 }
 
 /**
@@ -89,8 +90,9 @@ case class HasTheAnnotations(
 }
 object HasTheAnnotations {
 
-    def apply(annotationPredicate: AnnotationPredicate) =
+    def apply(annotationPredicate: AnnotationPredicate): HasTheAnnotations = {
         new HasTheAnnotations(Set(annotationPredicate))
+    }
 }
 
 /**

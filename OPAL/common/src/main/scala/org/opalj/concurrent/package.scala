@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,18 +29,19 @@
 package org
 package opalj
 
-import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext
-import scala.collection.parallel.ExecutionContextTaskSupport
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentLinkedQueue
+
+import scala.collection.JavaConverters._
+import scala.collection.parallel.ExecutionContextTaskSupport
+import scala.util.control.ControlThrowable
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
-import java.util.concurrent.ConcurrentLinkedQueue
-import scala.util.Failure
-import scala.util.control.ControlThrowable
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -240,73 +241,4 @@ package object concurrent {
         exceptions.asScala.toList
     }
 
-    /**
-     * Executes a given function f for each element in the given workqueue. `f` is – of course –
-     * also allowed to add elements to the workqueue; however `f` must do so concurrently. Given
-     * that `f` may be executed in parallel, `f` has to be thread-safe. The exceptions that occur
-     * while executing `f` are collected and returned at the end.
-     *
-     * @example
-     * {{{
-     * val workQueue = new ConcurrentLinkedQueue[T]()
-     * workQueue.add(<T>)
-     * val exceptions =
-     * 		whileNonEmpty(workQueue) { t ⇒
-     * 			// do something with t
-     * 			if (<some condition>) { workQueue.add(nextT) }
-     * 		}
-     * }}}
-     */
-    def whileNonEmpty[T >: Null <: AnyRef, U](
-        // the workQueue may be filled as a side effect of executing f
-        workQueue:     ConcurrentLinkedQueue[T],
-        isInterrupted: () ⇒ Boolean             = () ⇒ Thread.currentThread().isInterrupted()
-    )(
-        f: T ⇒ U
-    )(
-        implicit
-        executionContext: ExecutionContext
-    ): List[Throwable] = {
-
-        val exceptionsMutex = new Object
-        var exceptions: List[Throwable] = Nil
-
-        val futuresCountMutex = new Object
-        var futuresCount = 0
-
-        def schedule(): Unit = {
-            while (!workQueue.isEmpty()) {
-                val next = workQueue.poll()
-                // schedule is executed concurrently, hence some other thread
-                // may have grapped the (last remaining) value in between.
-                if (next != null) {
-                    futuresCountMutex.synchronized { futuresCount += 1 }
-                    val future = Future[Unit] { f(next) }(executionContext)
-                    future.onComplete { result ⇒
-                        // the workQueue may contain one to many new entries to work on
-                        result match {
-                            case Failure(t) ⇒
-                                exceptionsMutex.synchronized { exceptions = t :: exceptions }
-                            case _ ⇒
-                            /* nothing special to do */
-                        }
-                        schedule();
-                        futuresCountMutex.synchronized {
-                            futuresCount -= 1
-                            if (futuresCount == 0) futuresCountMutex.notify()
-                        }
-                    }(executionContext)
-                }
-            }
-        }
-
-        schedule();
-
-        // let's wait until the workqueue is empty
-        futuresCountMutex.synchronized {
-            while (futuresCount > 0) futuresCountMutex.wait();
-        }
-
-        exceptionsMutex.synchronized { exceptions }
-    }
 }

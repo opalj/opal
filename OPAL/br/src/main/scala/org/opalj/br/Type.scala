@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -409,7 +409,13 @@ object ReferenceType {
     /**
      * Creates a representation of the described [[ReferenceType]].
      *
-     * @param rt A string as passed to `java.lang.Class.forName(...)`.
+     * @param   rt A string as passed to `java.lang.Class.forName(...)` but in binary notation.
+     *          Examples:
+     *          {{{
+     *          "[B" // in case of an array of Booleans
+     *          "java/lang/Object" // for the class type java.lang.Object
+     *          "[Ljava/lang/Object;" // for the array of java.lang.Object
+     *          }}}
      */
     @throws[IllegalArgumentException](
         "if the given string is not a valid reference type descriptor"
@@ -975,7 +981,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     def simpleName: String = ObjectType.simpleName(fqn)
 
-    def packageName: String = ObjectType.packageName(fqn)
+    final val packageName: String = ObjectType.packageName(fqn).intern()
 
     override def toJava: String = fqn.replace('/', '.')
 
@@ -996,6 +1002,10 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         ObjectType.unboxValue(targetType)
+    }
+
+    def isSubtyeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
+        classHierarchy.isSubtypeOf(this, that)
     }
 
     // The default equals and hashCode methods are a perfect fit.

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -50,7 +50,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
         val ps = project.get(SourceElementsPropertyStoreKey)
         ps <||< (PropertyStore.entitySelector[Method], new ThrownExceptionsFallbackAnalysis(ps))
         ps.waitOnPropertyComputationCompletion(true)

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,6 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+/*
 package org.opalj
 package br
 package cp
@@ -43,8 +44,8 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  */
 object ConstantPoolBuilder {
 
-    def build(classFile: ClassFile): Array[Constant_Pool_Entry] = {
-        val cp = new ConstantPoolBuffer()
+    def build(classFile: ClassFile): ConstantsBuffer = {
+        val cp = ConstantsBuffer()
         val bootstrapMethods = new BootstrapMethodsBuffer()
 
         def CPEElementValue(elementValue: ElementValue): Unit = elementValue match {
@@ -111,6 +112,7 @@ object ConstantPoolBuilder {
             case default ⇒ collectFromGeneralAttribute(default)
 
         }
+
         def collectFromGeneralAttribute(attribute: Attribute): Unit = attribute match {
             case Synthetic  ⇒ cp.CPEUtf8("Synthetic")
             case Deprecated ⇒ cp.CPEUtf8("Deprecated")
@@ -128,98 +130,103 @@ object ConstantPoolBuilder {
 
             case UnknownAttribute(name, info) ⇒ cp.CPEUtf8(name)
 
-            case _                            ⇒ new BytecodeProcessingFailedException(s"unknown attribute: $attribute")
+            case _ ⇒
+                new BytecodeProcessingFailedException(s"unknown attribute: $attribute")
         }
 
-        def collectFromMethodAttribute(attribute: Attribute): Unit = attribute match {
-            // TODO use KindIds...
-            case Code(_, _, instructions, exceptionHandlers, attributes) ⇒
-                cp.CPEUtf8("Code")
-                for {
-                    exceptionHandler ← exceptionHandlers
-                    catchType ← exceptionHandler.catchType
-                } {
-                    cp.CPEClass(catchType)
-                }
-                attributes.foreach { collectFromCodeAttribute }
-
-            case ExceptionTable(exceptions) ⇒
-                cp.CPEUtf8("Exceptions")
-                exceptions.foreach(cp.CPEClass)
-
-            case RuntimeVisibleParameterAnnotationTable(annotations) ⇒
-                cp.CPEUtf8("RuntimeVisibleParameterAnnotations")
-                for {
-                    parameterAnnotations ← annotations
-                    annotation ← parameterAnnotations
-                } {
-                    processAnnotation(annotation)
-                }
-            case RuntimeInvisibleParameterAnnotationTable(annotations) ⇒
-                cp.CPEUtf8("RuntimeInvisibleParameterAnnotations")
-                for {
-                    parameterAnnotations ← annotations
-                    annotation ← parameterAnnotations
-                } {
-                    processAnnotation(annotation)
-                }
-
-            case MethodParameterTable(parameters) ⇒
-                cp.CPEUtf8("MethodParameters")
-                parameters.foreach { mp ⇒ cp.CPEUtf8(mp.name) }
-
-            case signature: MethodTypeSignature ⇒
-                cp.CPEUtf8("Signature")
-                cp.CPEUtf8(signature.toJVMSignature)
-
-            case UnknownAttribute(name, info) ⇒ cp.CPEUtf8(name)
-
-            case generalAttribute             ⇒ collectFromGeneralAttribute(generalAttribute)
-
-        }
-
-        def collectFromCodeAttribute(attribute: Attribute): Unit = attribute.kindId match {
-            case LineNumberTable.KindId ⇒ cp.CPEUtf8("LineNumberTable")
-
-            case LocalVariableTable.KindId ⇒
-                val LocalVariableTable(localVariables) = attribute
-                cp.CPEUtf8("LocalVariableTable")
-                localVariables.foreach { lv ⇒
-                    cp.CPEUtf8(lv.name)
-                    cp.CPEUtf8(lv.fieldType.toJVMTypeName)
-                }
-            case LocalVariableTypeTable.KindId ⇒
-                val LocalVariableTypeTable(localVariableTypes) = attribute
-                cp.CPEUtf8("LocalVariableTypeTable")
-                localVariableTypes.foreach { lvt ⇒
-                    cp.CPEUtf8(lvt.name)
-                    cp.CPEUtf8(lvt.signature.toJVMSignature)
-                }
-            case StackMapTable.KindId ⇒
-                val StackMapTable(stackMapFrames) = attribute
-                cp.CPEUtf8("StackMapTable")
-
-                def CPEVerificationTypeInfo(vti: VerificationTypeInfo): Unit = {
-                    if (vti.isObjectVariableInfo) {
-                        cp.CPEClass(vti.asObjectVariableInfo.clazz)
+        def collectFromMethodAttribute(attribute: Attribute): Unit = {
+            attribute match {
+                // TODO use KindIds...
+                case Code(_, _, instructions, exceptionHandlers, attributes) ⇒
+                    cp.CPEUtf8("Code")
+                    for {
+                        exceptionHandler ← exceptionHandlers
+                        catchType ← exceptionHandler.catchType
+                    } {
+                        cp.CPEClass(catchType)
                     }
-                }
+                    attributes.foreach { collectFromCodeAttribute }
 
-                stackMapFrames.foreach {
-                    case SameLocals1StackItemFrame(_, verificationType) ⇒
-                        CPEVerificationTypeInfo(verificationType)
-                    case frame: SameLocals1StackItemFrameExtended ⇒
-                        CPEVerificationTypeInfo(frame.verificationTypeInfoStackItem)
-                    case frame: AppendFrame ⇒
-                        frame.verificationTypeInfoLocals.foreach { CPEVerificationTypeInfo }
-                    case FullFrame(_, _, verificationTypeLocals, verificationTypeStack) ⇒
-                        verificationTypeLocals.foreach { CPEVerificationTypeInfo }
-                        verificationTypeStack.foreach { CPEVerificationTypeInfo }
+                case ExceptionTable(exceptions) ⇒
+                    cp.CPEUtf8("Exceptions")
+                    exceptions.foreach(cp.CPEClass)
 
-                    case _ ⇒ /*nothing to do*/
-                }
+                case RuntimeVisibleParameterAnnotationTable(annotations) ⇒
+                    cp.CPEUtf8("RuntimeVisibleParameterAnnotations")
+                    for {
+                        parameterAnnotations ← annotations
+                        annotation ← parameterAnnotations
+                    } {
+                        processAnnotation(annotation)
+                    }
+                case RuntimeInvisibleParameterAnnotationTable(annotations) ⇒
+                    cp.CPEUtf8("RuntimeInvisibleParameterAnnotations")
+                    for {
+                        parameterAnnotations ← annotations
+                        annotation ← parameterAnnotations
+                    } {
+                        processAnnotation(annotation)
+                    }
 
-            case _ ⇒ new BytecodeProcessingFailedException(s"unsupported attribute: $attribute")
+                case MethodParameterTable(parameters) ⇒
+                    cp.CPEUtf8("MethodParameters")
+                    parameters.foreach { mp ⇒ cp.CPEUtf8(mp.name) }
+
+                case signature: MethodTypeSignature ⇒
+                    cp.CPEUtf8("Signature")
+                    cp.CPEUtf8(signature.toJVMSignature)
+
+                case UnknownAttribute(name, info) ⇒ cp.CPEUtf8(name)
+
+                case generalAttribute             ⇒ collectFromGeneralAttribute(generalAttribute)
+
+            }
+        }
+
+        def collectFromCodeAttribute(attribute: Attribute): Unit = {
+            attribute.kindId match {
+                case LineNumberTable.KindId ⇒ cp.CPEUtf8("LineNumberTable")
+
+                case LocalVariableTable.KindId ⇒
+                    val LocalVariableTable(localVariables) = attribute
+                    cp.CPEUtf8("LocalVariableTable")
+                    localVariables.foreach { lv ⇒
+                        cp.CPEUtf8(lv.name)
+                        cp.CPEUtf8(lv.fieldType.toJVMTypeName)
+                    }
+                case LocalVariableTypeTable.KindId ⇒
+                    val LocalVariableTypeTable(localVariableTypes) = attribute
+                    cp.CPEUtf8("LocalVariableTypeTable")
+                    localVariableTypes.foreach { lvt ⇒
+                        cp.CPEUtf8(lvt.name)
+                        cp.CPEUtf8(lvt.signature.toJVMSignature)
+                    }
+                case StackMapTable.KindId ⇒
+                    val StackMapTable(stackMapFrames) = attribute
+                    cp.CPEUtf8("StackMapTable")
+
+                    def CPEVerificationTypeInfo(vti: VerificationTypeInfo): Unit = {
+                        if (vti.isObjectVariableInfo) {
+                            cp.CPEClass(vti.asObjectVariableInfo.clazz)
+                        }
+                    }
+
+                    stackMapFrames.foreach {
+                        case SameLocals1StackItemFrame(_, verificationType) ⇒
+                            CPEVerificationTypeInfo(verificationType)
+                        case frame: SameLocals1StackItemFrameExtended ⇒
+                            CPEVerificationTypeInfo(frame.verificationTypeInfoStackItem)
+                        case frame: AppendFrame ⇒
+                            frame.verificationTypeInfoLocals.foreach { CPEVerificationTypeInfo }
+                        case FullFrame(_, _, verificationTypeLocals, verificationTypeStack) ⇒
+                            verificationTypeLocals.foreach { CPEVerificationTypeInfo }
+                            verificationTypeStack.foreach { CPEVerificationTypeInfo }
+
+                        case _ ⇒ /*nothing to do*/
+                    }
+
+                case _ ⇒ new BytecodeProcessingFailedException(s"unsupported attribute: $attribute")
+            }
         }
 
         def collectFromFieldAttribute(attribute: Attribute): Unit = attribute.kindId match {
@@ -390,9 +397,10 @@ object ConstantPoolBuilder {
             }
         }
 
-        cp.toArray
+        cp
     }
 
-    def apply(classFile: ClassFile): Array[Constant_Pool_Entry] = build(classFile)
+    def apply(classFile: ClassFile): Array[Constant_Pool_Entry] = build(classFile).toArray
 
 }
+*/ 

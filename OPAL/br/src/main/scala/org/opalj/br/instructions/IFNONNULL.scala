@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction {
+trait IFNONNULLLike extends IFXNullInstructionLike {
 
     final def opcode: Opcode = IFNONNULL.opcode
 
@@ -45,8 +45,30 @@ case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction {
 
     final def condition: RelationalOperator = RelationalOperators.NE
 }
+
+case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction with IFNONNULLLike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IFNONNULL {
 
     final val opcode = 199
 
+    /**
+     * Creates [[LabeledIFNONNULL]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledIFNONNULL = LabeledIFNONNULL(branchTarget)
+
+}
+
+case class LabeledIFNONNULL(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFNONNULLLike {
+
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFNONNULL = {
+        IFNONNULL(pcs(branchTarget) - pc)
+    }
 }

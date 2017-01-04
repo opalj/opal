@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction {
+trait IF_ICMPEQLike extends IFICMPInstructionLike {
 
     final def opcode: Opcode = IF_ICMPEQ.opcode
 
@@ -46,8 +46,30 @@ case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction {
     final def condition: RelationalOperator = RelationalOperators.EQ
 
 }
+
+case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction with IF_ICMPEQLike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IF_ICMPEQ {
 
     final val opcode = 159
 
+    /**
+     * Creates [[LabeledIF_ICMPEQ]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledIF_ICMPEQ = LabeledIF_ICMPEQ(branchTarget)
+
+}
+
+case class LabeledIF_ICMPEQ(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPEQLike {
+
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IF_ICMPEQ = {
+        IF_ICMPEQ(pcs(branchTarget) - pc)
+    }
 }

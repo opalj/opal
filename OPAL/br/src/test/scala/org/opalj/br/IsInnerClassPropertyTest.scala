@@ -48,7 +48,7 @@ import org.opalj.bi.TestSupport.locateTestResources
 class IsInnerClassPropertyTest extends FlatSpec with Matchers {
 
     val project = {
-        val testResources = locateTestResources("classfiles/Innerclasses.jar", "bi")
+        val testResources = locateTestResources("innerclasses.jar", "bi")
         Project(ClassFiles(testResources), Traversable.empty, true)
     }
 

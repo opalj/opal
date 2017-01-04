@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,9 +36,9 @@ import scala.math.Ordered
  * A method descriptor represents the parameters that the method takes and
  * the value that it returns.
  *
- * @note The `equals(Any):Boolean` method takes the number of parameters and types
- *      into account. I.e., two method descriptor objects are equal if they have
- *      the same number of parameters and each parameter has the same [[Type]].
+ * @note    The `equals(Any):Boolean` method takes the number of parameters and types
+ *          into account. I.e., two method descriptor objects are equal if they have
+ *          the same number of parameters and each parameter has the same [[Type]].
  *
  * @author Michael Eichberg
  */
@@ -51,6 +51,13 @@ sealed abstract class MethodDescriptor
     def parameterType(index: Int): FieldType
 
     def parametersCount: Int
+
+    final def copy(
+        parameterTypes: IndexedSeq[FieldType] = this.parameterTypes,
+        returnType:     Type                  = this.returnType
+    ): MethodDescriptor = {
+        MethodDescriptor(parameterTypes, returnType)
+    }
 
     /**
      * The number of registers required to store the method parameters.
@@ -174,29 +181,28 @@ sealed abstract class MethodDescriptor
 
 //
 // To optimize the overall memory consumption and to facilitate the storage of
-// method descriptors in sets, we have specialized the MethodDescriptor
-// (Done after a study of the heap memory usage)
+// method descriptors in sets, we have specialized the MethodDescriptor.
+// (Done after a study of the heap memory usage.)
 //
 
 private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescriptor {
 
-    override def returnType = VoidType
+    override def returnType: VoidType = VoidType
 
-    override def parameterTypes = IndexedSeq.empty
+    override def parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty
 
     override def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
 
     override def parametersCount: Int = 0
 
-    override def equalParameters(other: MethodDescriptor): Boolean =
+    override def equalParameters(other: MethodDescriptor): Boolean = {
         other.parametersCount == 0
+    }
 
     // the default equals and hashCode implementations are a perfect fit
 }
 
-private final class NoArgumentMethodDescriptor(
-        val returnType: Type
-) extends MethodDescriptor {
+private final class NoArgumentMethodDescriptor(val returnType: Type) extends MethodDescriptor {
 
     override def parameterTypes = IndexedSeq.empty
 
@@ -207,7 +213,7 @@ private final class NoArgumentMethodDescriptor(
     override def equalParameters(other: MethodDescriptor): Boolean =
         other.parametersCount == 0
 
-    override def hashCode: Int = returnType.hashCode()
+    override def hashCode: Int = returnType.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -242,8 +248,7 @@ private final class SingleArgumentMethodDescriptor(
     override def equals(other: Any): Boolean = {
         other match {
             case that: SingleArgumentMethodDescriptor ⇒
-                (that.parameterType eq this.parameterType) &&
-                    (that.returnType eq this.returnType)
+                (that.parameterType eq this.parameterType) && (that.returnType eq this.returnType)
             case _ ⇒
                 false
         }
@@ -260,26 +265,24 @@ private final class TwoArgumentsMethodDescriptor(
 
     override def parameterType(index: Int): FieldType = {
         index match {
-            case 0 ⇒
-                firstParameterType
-            case 1 ⇒
-                secondParameterType
-            case _ ⇒
-                throw new IndexOutOfBoundsException()
+            case 0 ⇒ firstParameterType
+            case 1 ⇒ secondParameterType
+            case _ ⇒ throw new IndexOutOfBoundsException()
         }
     }
 
     override def parametersCount: Int = 2
 
-    override def equalParameters(other: MethodDescriptor): Boolean =
+    override def equalParameters(other: MethodDescriptor): Boolean = {
         (other.parametersCount == 2) &&
             (other.parameterType(0) == firstParameterType) &&
             (other.parameterType(1) == secondParameterType)
+    }
 
-    override lazy val hashCode: Int =
-        ((returnType.hashCode() * 61) +
-            firstParameterType.hashCode) * 13 +
-            secondParameterType.hashCode
+    override lazy val hashCode: Int = {
+        (firstParameterType.hashCode * 13 + secondParameterType.hashCode) * 61 +
+            returnType.hashCode()
+    }
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -302,23 +305,23 @@ private final class MultiArgumentsMethodDescriptor(
 
     override def parametersCount: Int = parameterTypes.size
 
-    override def equalParameters(other: MethodDescriptor): Boolean =
+    override def equalParameters(other: MethodDescriptor): Boolean = {
         other.parameterTypes == this.parameterTypes
+    }
 
-    override lazy val hashCode: Int =
-        (returnType.hashCode() * 13) + parameterTypes.hashCode
+    override lazy val hashCode: Int = (returnType.hashCode * 13) + parameterTypes.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
             case that: MethodDescriptor ⇒
-                this.parametersCount == that.parametersCount &&
-                    (this.returnType eq that.returnType) &&
+                (this.returnType eq that.returnType) &&
+                    this.parametersCount == that.parametersCount &&
                     {
                         var i = parametersCount
                         while (i > 0) {
                             i = i - 1
                             if (this.parameterTypes(i) ne that.parameterTypes(i))
-                                return false
+                                return false;
                         }
                         true
                     }
@@ -330,50 +333,76 @@ private final class MultiArgumentsMethodDescriptor(
 
 object HasNoArgsAndReturnsVoid {
 
-    def unapply(md: MethodDescriptor): Boolean =
+    def unapply(md: MethodDescriptor): Boolean = {
         md match {
             case NoArgumentAndNoReturnValueMethodDescriptor ⇒ true
             case _                                          ⇒ false
         }
+    }
 }
 
 object NoArgumentMethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[Type] =
+    def unapply(md: MethodDescriptor): Option[Type] = {
         md match {
             case md: NoArgumentMethodDescriptor ⇒ Some(md.returnType)
             case _                              ⇒ None
         }
+    }
 }
 
+/**
+ * Extractor for method descriptors defining a single parameter type and some return type.
+ *
+ * @author Michael Eichberg
+ */
 object SingleArgumentMethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[(FieldType, Type)] =
+    def apply(parameterType: FieldType, returnType: Type = VoidType): MethodDescriptor = {
+        new SingleArgumentMethodDescriptor(parameterType, returnType)
+    }
+
+    def unapply(md: MethodDescriptor): Option[(FieldType, Type)] = {
         md match {
             case md: SingleArgumentMethodDescriptor ⇒ Some((md.parameterType, md.returnType))
             case _                                  ⇒ None
         }
+    }
 }
 
+/**
+ * Extractor for method descriptors defining a single parameter type.
+ *
+ * @author Michael Eichberg
+ */
 object TheArgument {
 
-    def unapply(md: MethodDescriptor): Option[FieldType] =
-        if (md.parametersCount == 1)
+    /**
+     * Returns `Some(FieldType)` of the first paramter type if the given method
+     * descriptor just defines a single paramter.
+     *
+     * @author Michael Eichberg
+     */
+    def unapply(md: MethodDescriptor): Option[FieldType] = {
+        if (md.parametersCount == 1) {
             Some(md.parameterType(0))
-        else
+        } else {
             None
+        }
+    }
 
 }
 
 object TwoArgumentsMethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[(FieldType, FieldType, Type)] =
+    def unapply(md: MethodDescriptor): Option[(FieldType, FieldType, Type)] = {
         md match {
             case md: TwoArgumentsMethodDescriptor ⇒
                 Some((md.firstParameterType, md.secondParameterType, md.returnType))
             case _ ⇒
                 None
         }
+    }
 }
 
 /**
@@ -388,6 +417,10 @@ object MethodDescriptor {
     }
 
     final val NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
+
+    final def DefaultConstructorDescriptor: MethodDescriptor = {
+        NoArgumentAndNoReturnValueMethodDescriptor
+    }
 
     /**
      * The signature of a signature polymorphic method.
@@ -416,14 +449,17 @@ object MethodDescriptor {
 
     final val JustReturnsLong: MethodDescriptor = new NoArgumentMethodDescriptor(LongType)
 
-    final val JustReturnsObject: MethodDescriptor =
+    final val JustReturnsObject: MethodDescriptor = {
         new NoArgumentMethodDescriptor(ObjectType.Object)
+    }
 
-    final val JustReturnsClass: MethodDescriptor =
+    final val JustReturnsClass: MethodDescriptor = {
         new NoArgumentMethodDescriptor(ObjectType.Class)
+    }
 
-    final val JustReturnsString: MethodDescriptor =
+    final val JustReturnsString: MethodDescriptor = {
         new NoArgumentMethodDescriptor(ObjectType.String)
+    }
 
     final val JustTakesObject: MethodDescriptor = apply(ObjectType.Object, VoidType)
 
@@ -446,30 +482,34 @@ object MethodDescriptor {
     /**
      * Descriptor of the method `java.lang.invoke.LambdaMetafactory.metafactory`.
      */
-    final val LambdaMetafactoryDescriptor = MethodDescriptor(
-        IndexedSeq(
-            ObjectType.MethodHandles$Lookup,
-            ObjectType.String,
-            ObjectType.MethodType,
-            ObjectType.MethodType,
-            ObjectType.MethodHandle,
-            ObjectType.MethodType
-        ),
-        ObjectType.CallSite
-    )
+    final val LambdaMetafactoryDescriptor = {
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ObjectType.MethodType,
+                ObjectType.MethodHandle,
+                ObjectType.MethodType
+            ),
+            ObjectType.CallSite
+        )
+    }
 
     /**
      * Descriptor of the method `java.lang.invoke.LambdaMetafactory.altMetafactory`.
      */
-    final val LambdaAltMetafactoryDescriptor = MethodDescriptor(
-        IndexedSeq(
-            ObjectType.MethodHandles$Lookup,
-            ObjectType.String,
-            ObjectType.MethodType,
-            ArrayType.ArrayOfObjects
-        ),
-        ObjectType.CallSite
-    )
+    final val LambdaAltMetafactoryDescriptor = {
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ArrayType.ArrayOfObjects
+            ),
+            ObjectType.CallSite
+        )
+    }
 
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {
@@ -493,10 +533,7 @@ object MethodDescriptor {
         new SingleArgumentMethodDescriptor(parameterType, returnType)
     }
 
-    def apply(
-        parameterTypes: IndexedSeq[FieldType],
-        returnType:     Type
-    ): MethodDescriptor = {
+    def apply(parameterTypes: IndexedSeq[FieldType], returnType: Type): MethodDescriptor = {
         (parameterTypes.size: @annotation.switch) match {
             case 0 ⇒
                 withNoArgs(returnType)
@@ -545,4 +582,13 @@ object MethodDescriptor {
                 )
         }
     }
+}
+
+/**
+ * Extractor for JVM method descriptors (for example, "(I[Ljava/lang/Object;])V").
+ */
+object JVMMethodDescriptor {
+
+    def unapply(md: MethodDescriptor): Some[String] = Some(md.toJVMDescriptor)
+
 }

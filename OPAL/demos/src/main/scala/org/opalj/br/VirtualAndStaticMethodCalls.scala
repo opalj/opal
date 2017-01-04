@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -48,9 +48,9 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
 
     def doAnalyze(
         project:       Project[URL],
-        parameters:    Seq[String]  = List.empty,
+        parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         var staticCalls = 0
         var virtualCalls = 0
@@ -59,9 +59,9 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
             for {
                 classFile ← project.allClassFiles
                 MethodWithBody(code) ← classFile.methods
-                instruction @ MethodInvocationInstruction(_, _, _) ← code.instructions
+                instruction @ MethodInvocationInstruction(_, _, _, _) ← code.instructions
             } {
-                if (instruction.asInstanceOf[MethodInvocationInstruction].isVirtualMethodCall)
+                if (instruction.isVirtualMethodCall)
                     virtualCalls += 1
                 else
                     staticCalls += 1
@@ -69,10 +69,9 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
         } { t ⇒ executionTime = t }
 
         BasicReport(
-            "Total time: "+executionTime.toSeconds+"\n"+
-                "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
-                "Number of invokeinterface/invokevirtual instructions: "+virtualCalls
+            "The sequential analysis took: "+executionTime.toSeconds+"\n"+
+                "\tNumber of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
+                "\tNumber of invokeinterface/invokevirtual instructions: "+virtualCalls
         )
-
     }
 }

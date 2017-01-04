@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,11 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.charset.StandardCharsets
 import java.io.File
+
 import scala.xml.Node
+
+import com.typesafe.config.Config
+
 import org.opalj.io.writeAndOpen
 import org.opalj.io.process
 import org.opalj.log.OPALLogger
@@ -57,6 +61,8 @@ import org.opalj.log.LogContext
 object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
     val analysis = this
+
+    final val IDLFileOutputNameMatcher = """-idl=([\w-_\.\:/\\]+)""".r
 
     final val HTMLFileOutputNameMatcher = """-html=([\w-_\.\:/\\]+)""".r
 
@@ -129,17 +135,22 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
     private[this] var libcpFiles: Iterable[File] = null
 
     override def setupProject(
-        cpFiles:      Iterable[File],
-        libcpFiles:   Iterable[File],
+        cpFiles:                 Iterable[File],
+        libcpFiles:              Iterable[File],
         completelyLoadLibraries: Boolean,
-        analysisMode: AnalysisMode
+        analysisMode:            AnalysisMode,
+        fallbackConfiguration:   Config
     )(
         implicit
         initialLogContext: LogContext
     ): Project[URL] = {
         this.cpFiles = cpFiles
         this.libcpFiles = libcpFiles
-        super.setupProject(cpFiles, libcpFiles, completelyLoadLibraries, analysisMode)
+        super.setupProject(
+            cpFiles, libcpFiles, completelyLoadLibraries,
+            analysisMode,
+            fallbackConfiguration
+        )
     }
 
     override def analyze(
@@ -185,12 +196,15 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         // Generate a report using the bug description language
         //
         if (parameters.contains("-idl")) {
-            val formattedIssues = issues.map { issue ⇒ issue.toIDL }
+            val formattedIssues = issues.map { issue ⇒ issue.toIDL.toString }
             println(s"Analysis of "+cpFiles.mkString(", "))
             println("Parameters")
             println(parameters.mkString("\n"))
             println("Issues")
-            println(formattedIssues.toSeq.sorted.mkString("\n"))
+            val idlReport = "["+formattedIssues.toSeq.mkString(",\n")+"]"
+            println(idlReport)
+
+            writeAndOpen(idlReport, "BugPickerAnalysisResults", ".json")
         }
 
         // Generate the HTML report

@@ -1,5 +1,5 @@
-/* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,10 +13,6 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
- *    prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -26,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -42,13 +38,13 @@ sealed trait ConstantFieldValue[T >: Nothing] extends Attribute with ConstantVal
 
 final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] {
 
-    override def toLong = value
+    override def toLong: Long = value
 
-    override def valueToString = value.toString
+    override def valueToString: String = value.toString
 
-    final def toJava = valueToString+"l"
+    final def toJava: String = valueToString+"l"
 
-    override def valueType = LongType
+    override def valueType: LongType = LongType
 
     override def kindId: Int = ConstantLong.KindId
 
@@ -61,21 +57,21 @@ object ConstantLong {
 
 final case class ConstantInteger(value: Int) extends ConstantFieldValue[Int] {
 
-    override def toBoolean = value != 0
+    override def toBoolean: Boolean = value != 0
 
-    override def toByte = value.toByte
+    override def toByte: Byte = value.toByte
 
-    override def toChar = value.toChar
+    override def toChar: Char = value.toChar
 
-    override def toShort = value.toShort
+    override def toShort: Short = value.toShort
 
-    override def toInt = value
+    override def toInt: Int = value
 
-    override def valueToString = value.toString
+    override def valueToString: String = value.toString
 
-    final def toJava = valueToString
+    final def toJava: String = valueToString
 
-    override def valueType = IntegerType
+    override def valueType: IntegerType = IntegerType
 
     override def kindId: Int = ConstantInteger.KindId
 
@@ -88,13 +84,13 @@ object ConstantInteger {
 
 final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double] {
 
-    override def toDouble = value
+    override def toDouble: Double = value
 
-    override def valueToString = value.toString
+    override def valueToString: String = value.toString
 
-    final def toJava = valueToString+"d"
+    final def toJava: String = valueToString+"d"
 
-    override def valueType = DoubleType
+    override def valueType: DoubleType = DoubleType
 
     override def kindId: Int = ConstantDouble.KindId
 
@@ -118,13 +114,13 @@ object ConstantDouble {
 
 final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] {
 
-    override def toFloat = value
+    override def toFloat: Float = value
 
-    override def valueToString = value.toString
+    override def valueToString: String = value.toString
 
-    final def toJava = valueToString+"f"
+    final def toJava: String = valueToString+"f"
 
-    override def valueType = FloatType
+    override def valueType: FloatType = FloatType
 
     override def kindId: Int = ConstantFloat.KindId
 
@@ -148,13 +144,13 @@ object ConstantFloat {
 
 final case class ConstantString(value: String) extends ConstantFieldValue[String] {
 
-    override def toUTF8 = value
+    override def toUTF8: String = value
 
-    override def valueToString = value.toString
+    override def valueToString: String = value.toString
 
-    final def toJava = s""""$valueToString""""
+    final def toJava: String = s""""$valueToString""""
 
-    override def valueType = ObjectType.String
+    override def valueType: ObjectType = ObjectType.String
 
     override def kindId: Int = ConstantString.KindId
 

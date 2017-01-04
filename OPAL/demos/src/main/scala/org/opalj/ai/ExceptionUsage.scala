@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -50,7 +50,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         if (theProject.classFile(ObjectType("java/lang/Object")).isEmpty) {
             Console.err.println(
@@ -184,7 +184,7 @@ case class ExceptionUsage(
             RESET+" }"+" }"
     }
 
-    def compare(that: ExceptionUsage) = this.toString.compare(that.toString)
+    def compare(that: ExceptionUsage): Int = this.toString.compare(that.toString)
 }
 
 object UsageKind extends Enumeration {
@@ -213,7 +213,9 @@ class ExceptionUsageAnalysisDomain(val project: Project[java.net.URL], val metho
         with domain.TheProject
         with domain.TheMethod {
 
-    def throwExceptionsOnMethodCall = ExceptionsRaisedByCalledMethods.Any
+    def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethods.Value = {
+        ExceptionsRaisedByCalledMethods.Any
+    }
 
     def throwArithmeticExceptions: Boolean = false
 

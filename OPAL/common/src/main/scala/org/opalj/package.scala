@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,12 +32,12 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
- * OPAL is a Scala-based framework for the static analysis of Java bytecode
- * that is designed with performance, scalability and adaptability in mind.
+ * OPAL is a Scala-based framework for the static analysis of Java bytecode.
+ * OPAL is designed with performance, scalability and adaptability in mind.
  *
  * Its main components are:
- *  - a library (`Common`) that defines functionality that is generally useful
- *    in the context of static analyses.
+ *  - a library (`Common`) which provides generally useful data-structures and algorithms
+ *    for writing static analyses.
  *  - a framework for parsing Java bytecode (`Bytecode Infrastructure`) that can be used to
  *    create arbitrary representations.
  *  - a library to create a one-to-one in-memory representation of Java bytecode

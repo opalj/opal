@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -129,6 +129,9 @@ object TAC {
             println(Usage)
             sys.exit(-1)
         }
+        /*
+        println("Sleeping for five seconds");         Thread.sleep(5000)
+        */
 
         val jarName = args(0)
         val classFiles = Java8Framework.ClassFiles(new java.io.File(jarName))

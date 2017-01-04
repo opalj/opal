@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class GOTO(branchoffset: Int) extends GotoInstruction {
+trait GOTOLike extends GotoInstructionLike {
 
     final def opcode: Opcode = GOTO.opcode
 
@@ -46,8 +46,35 @@ case class GOTO(branchoffset: Int) extends GotoInstruction {
     final def stackSlotsChange: Int = 0
 }
 
+case class GOTO(branchoffset: Int) extends GotoInstruction with GOTOLike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object GOTO {
 
     final val opcode = 167
+
+    /**
+     * Creates [[LabeledGOTO]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledGOTO = LabeledGOTO(branchTarget)
+
+}
+
+case class LabeledGOTO(
+        branchTarget: Symbol
+) extends LabeledUnconditionalBranchInstruction with GOTOLike {
+
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): GotoInstruction = {
+        val branchoffset = pcs(branchTarget) - currentPC
+        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
+            GOTO_W(branchoffset)
+        } else {
+            GOTO(branchoffset)
+        }
+    }
 
 }

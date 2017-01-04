@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -42,7 +42,7 @@ package ai
  */
 class BaseAI extends AI[Domain] {
 
-    override def isInterrupted = Thread.interrupted()
+    override def isInterrupted: Boolean = Thread.interrupted()
 
 }
 

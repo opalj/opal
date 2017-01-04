@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,6 +31,23 @@ package org.opalj
 import java.io.File
 import java.net.URL
 
+import play.api.libs.json.Writes
+
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+import play.api.libs.json.JsObject
+
+import org.opalj.br.LocalVariable
+import org.opalj.br.Type
+import org.opalj.br.BaseType
+import org.opalj.br.VoidType
+import org.opalj.br.BooleanType
+import org.opalj.br.ObjectType
+import org.opalj.br.ArrayType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.methodAccessFlagsToString
+import org.opalj.ai.domain.l1.IntegerRangeValues
+
 /**
  * Defines implicit conversions to wrap some types of analyses such that they generate
  * results of type [[org.opalj.br.analyses.ReportableAnalysisResult]].
@@ -38,6 +55,18 @@ import java.net.URL
  * @author Michael Eichberg
  */
 package object issues {
+
+    implicit object IssueDetailsWrites extends Writes[IssueDetails] {
+        def writes(issueDetails: IssueDetails): JsValue = issueDetails.toIDL
+    }
+
+    implicit object IssueLocationWrites extends Writes[IssueLocation] {
+        def writes(issueLocation: IssueLocation): JsValue = issueLocation.toIDL
+    }
+
+    implicit object RelevanceWrites extends Writes[Relevance] {
+        def writes(relevance: Relevance): JsValue = relevance.toIDL
+    }
 
     /**
      * Shortens an absolute path to one relative to the current working directory.
@@ -75,5 +104,48 @@ package object issues {
     }
 
     def fileToLocationIdentifier(file: File): String = file.getAbsolutePath()
+
+    /**
+     * Given a `LocalVariable` object and its current value a human readable `String`
+     * is created.
+     */
+    def localVariableToString(localVariable: LocalVariable, value: AnyRef): String = {
+        if ((localVariable.fieldType eq BooleanType) &&
+            // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
+            value.isInstanceOf[IntegerRangeValues#IntegerRange]) {
+            val range = value.asInstanceOf[IntegerRangeValues#IntegerRange]
+            if ( /*range.lowerBound == 0 &&*/ range.upperBound == 0)
+                "false"
+            else if (range.lowerBound == 1 /* && range.upperBound == 1*/ )
+                "true"
+            else
+                "true or false"
+        } else
+            value.toString
+    }
+
+    def typeToIDL(t: Type): JsValue = {
+        t match {
+            case bt: BaseType   ⇒ Json.obj("bt" → bt.toJava)
+            case vt: VoidType   ⇒ Json.obj("vt" → "void")
+            case ot: ObjectType ⇒ Json.obj("ot" → ot.toJava, "simpleName" → ot.simpleName)
+            case at: ArrayType ⇒
+                Json.obj("at" → typeToIDL(at.elementType), "dimensions" → at.dimensions)
+
+        }
+    }
+
+    def methodToIDL(
+        accessFlags: Int,
+        name:        String,
+        descriptor:  MethodDescriptor
+    ): JsObject = {
+        Json.obj(
+            "accessFlags" → methodAccessFlagsToString(accessFlags),
+            "name" → name,
+            "returnType" → typeToIDL(descriptor.returnType),
+            "parameters" → descriptor.parameterTypes.map(typeToIDL)
+        )
+    }
 
 }

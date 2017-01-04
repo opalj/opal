@@ -75,7 +75,7 @@ import scala.collection.mutable
  * [[org.opalj.fpcf.properties.InheritableByNewTypes]] property.
  *
  * @note This analysis implements a direct property computation that is only executed when
- * 		required.
+ *      required.
  * @author Michael Reif
  */
 class InheritableByNewSubtypesAnalysis private (val project: SomeProject) extends FPCFAnalysis {

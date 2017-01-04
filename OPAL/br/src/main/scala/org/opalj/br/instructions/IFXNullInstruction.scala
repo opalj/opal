@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,7 +36,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class IFXNullInstruction extends SimpleConditionalBranchInstruction {
+trait IFXNullInstructionLike extends SimpleConditionalBranchInstructionLike {
 
     final def operandCount = 1
 
@@ -44,3 +44,5 @@ abstract class IFXNullInstruction extends SimpleConditionalBranchInstruction {
 
     final def stackSlotsChange: Int = -1
 }
+
+trait IFXNullInstruction extends SimpleConditionalBranchInstruction with IFXNullInstructionLike

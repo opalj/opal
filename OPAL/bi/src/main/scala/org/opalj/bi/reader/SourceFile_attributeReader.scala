@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -79,10 +79,4 @@ trait SourceFile_attributeReader extends AttributeReader {
     }
 
     registerAttributeReader(SourceFileAttribute.Name → parser)
-}
-
-object SourceFileAttribute {
-
-    final val Name = "SourceFile"
-
 }

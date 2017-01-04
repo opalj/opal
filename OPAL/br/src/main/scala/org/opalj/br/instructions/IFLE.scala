@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFLE(branchoffset: Int) extends IF0Instruction {
+trait IFLELike extends IF0InstructionLike {
 
     final def opcode: Opcode = IFLE.opcode
 
@@ -46,8 +46,30 @@ case class IFLE(branchoffset: Int) extends IF0Instruction {
     final def condition: RelationalOperator = RelationalOperators.LE
 
 }
+
+case class IFLE(branchoffset: Int) extends IF0Instruction with IFLELike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IFLE {
 
     final val opcode = 158
 
+    /**
+     * Creates [[LabeledIFLE]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledIFLE = LabeledIFLE(branchTarget)
+
+}
+
+case class LabeledIFLE(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFLELike {
+
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFLE = {
+        IFLE(pcs(branchTarget) - pc)
+    }
 }

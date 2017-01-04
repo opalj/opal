@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPGT(branchoffset: Int) extends IFICMPInstruction {
+trait IF_ICMPGTLike extends IFICMPInstructionLike {
 
     final def opcode: Opcode = IF_ICMPGT.opcode
 
@@ -44,9 +44,32 @@ case class IF_ICMPGT(branchoffset: Int) extends IFICMPInstruction {
     final def operator: String = ">"
 
     final def condition: RelationalOperator = RelationalOperators.GT
+
 }
+
+case class IF_ICMPGT(branchoffset: Int) extends IFICMPInstruction with IF_ICMPGTLike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IF_ICMPGT {
 
     final val opcode = 163
 
+    /**
+     * Creates [[LabeledIF_ICMPGT]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledIF_ICMPGT = LabeledIF_ICMPGT(branchTarget)
+
+}
+
+case class LabeledIF_ICMPGT(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPGTLike {
+
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IF_ICMPGT = {
+        IF_ICMPGT(pcs(branchTarget) - pc)
+    }
 }

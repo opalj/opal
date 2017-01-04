@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -101,31 +101,31 @@ object GuardedAndUnguardedAccessAnalysis {
         // TODO We should also log those that are assertions related!
 
         for {
-            (pc,instr : IFXNullInstruction) <- code
+            (pc, instr: IFXNullInstruction) ← code
             if operandsArray(pc) ne null
-            }{
+        } {
 
-                import code.instructions
-                import code.pcOfNextInstruction
-                // let's check if the guard is related to an assert statement
-                val isAssertionRelated: Boolean =
-                    (instr match {
-                        case _: IFNONNULL         ⇒ Some(instructions(pcOfNextInstruction(pc)))
-                        case IFNULL(branchOffset) ⇒ Some(instructions(pc + branchOffset))
-                        case _                    ⇒ None
-                    }) match {
-                        case Some(NEW(AssertionError)) ⇒ true
-                        case _                         ⇒ false
-                    }
+            import code.instructions
+            import code.pcOfNextInstruction
+            // let's check if the guard is related to an assert statement
+            val isAssertionRelated: Boolean =
+                (instr match {
+                    case _: IFNONNULL         ⇒ Some(instructions(pcOfNextInstruction(pc)))
+                    case IFNULL(branchOffset) ⇒ Some(instructions(pc + branchOffset))
+                    case _                    ⇒ None
+                }) match {
+                    case Some(NEW(AssertionError)) ⇒ true
+                    case _                         ⇒ false
+                }
 
-                if (!isAssertionRelated)
-                    operandsArray(pc).head match {
-                        case domain.DomainSingleOriginReferenceValue(sov) ⇒
-                            origins += ((sov.origin, pc))
-                            timestamps += ((sov.t, pc))
-                        case domain.DomainMultipleReferenceValues(mov) ⇒
-                            timestamps += ((mov.t, pc))
-                    }
+            if (!isAssertionRelated)
+                operandsArray(pc).head match {
+                    case domain.DomainSingleOriginReferenceValue(sov) ⇒
+                        origins += ((sov.origin, pc))
+                        timestamps += ((sov.t, pc))
+                    case domain.DomainMultipleReferenceValues(mov) ⇒
+                        timestamps += ((mov.t, pc))
+                }
 
         }
 

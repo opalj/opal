@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -84,12 +84,12 @@ object PropertyKey {
      * the same category.
      *
      * @param name The unique name associated with the property. To ensure
-     * 				uniqueness it is recommended to prepend (parts of) the package name of property.
-     * 				Properties defined by OPAL start with "opalj."
+     *              uniqueness it is recommended to prepend (parts of) the package name of property.
+     *              Properties defined by OPAL start with "opalj."
      * @param fallbackProperty A function that returns the property that will be associated
-     * 				with those entities for which the property is not explicitly computed.
+     *              with those entities for which the property is not explicitly computed.
      * @param cycleResolutionStrategy The strategy that will be used to resolve unfinished cyclic
-     * 				computations. The strategy can be adapted by an analysis to its own needs.
+     *              computations. The strategy can be adapted by an analysis to its own needs.
      */
     def create[P <: Property](
         name:                    String,

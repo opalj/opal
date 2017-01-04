@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,14 +31,16 @@ package br
 package analyses
 
 import net.ceedubs.ficus.Ficus._
+
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.fpcf.PropertyStore
 
 /**
- * The ''key'' object to get access to the [[org.opalj.fpcf.PropertyStore]].
+ * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
  *
  * @note It is possible to set the project's `debug` flag using the project's
- * 		`org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
+ *      `org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
  *
  * @author Michael Eichberg
  */
@@ -53,9 +55,7 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
      * The value must be larger than 0 and should be smaller or equal to the number
      * of (hyperthreaded) cores.
      */
-    @volatile var parallelismLevel: Int = {
-        Math.max(org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks, 2)
-    }
+    @volatile var parallelismLevel: Int = Math.max(NumberOfThreadsForCPUBoundTasks, 2)
 
     /**
      * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
@@ -65,7 +65,7 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
     override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
     /**
-     * Creates a new empty property store.
+     * Creates a new empty property store using the current [[parallelismLevel]].
      */
     override protected def compute(project: SomeProject): PropertyStore = {
         val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,8 +37,8 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class SimpleConditionalBranchInstruction
-        extends ConditionalBranchInstruction
+trait SimpleConditionalBranchInstructionLike
+        extends ConditionalBranchInstructionLike
         with ConstantLengthInstruction {
 
     /**
@@ -47,14 +47,19 @@ abstract class SimpleConditionalBranchInstruction
      */
     def operator: String
 
-    def branchoffset: Int
-
     final def length: Int = 3
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (this == other)
     }
+}
+
+trait SimpleConditionalBranchInstruction
+        extends ConditionalBranchInstruction
+        with SimpleConditionalBranchInstructionLike {
+
+    def branchoffset: Int
 
     final def nextInstructions(
         currentPC:             PC,
@@ -67,9 +72,13 @@ abstract class SimpleConditionalBranchInstruction
     }
 
     override def toString(currentPC: Int) = {
-        getClass.getSimpleName+
-            "(true="+(currentPC + branchoffset) + (if (branchoffset >= 0) "↓" else "↑")+
-            ", false=↓)"
+        getClass.getSimpleName +
+            s"(true=${currentPC + branchoffset}${if (branchoffset >= 0) "↓" else "↑"}, false=↓)"
     }
-}
 
+}
+object SimpleConditionalBranchInstruction {
+
+    def unapply(i: SimpleConditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
+
+}

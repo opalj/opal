@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -61,7 +61,7 @@ trait BaseDomain[Source]
         with domain.l1.DefaultIntegerRangeValues {
     domain: Configuration ⇒
 
-    override def maxCardinalityOfIntegerRanges: Long = 20l
+    override def maxCardinalityOfIntegerRanges: Long = 20L
 
 }
 

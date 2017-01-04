@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -89,7 +89,7 @@ class DefaultDomain(
         with domain.RecordCFG
         with domain.l1.RecordAllThrownExceptions {
 
-    override val maxCardinalityOfIntegerRanges: Long = 16l
+    override val maxCardinalityOfIntegerRanges: Long = 16L
 
     val fieldValueInformation: FieldValueInformation = project.get(FieldValuesKey)
 

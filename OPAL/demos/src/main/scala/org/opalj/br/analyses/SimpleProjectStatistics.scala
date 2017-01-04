@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -40,16 +40,15 @@ import java.net.URL
  */
 object SimpleProjectStatistics extends DefaultOneStepAnalysis {
 
-    override def title: String = "Collects Project Statistics"
+    override def title: String = "collects project statistics"
 
-    override def description: String =
-        "Collects basic size metrics about a project."
+    override def description: String = "collects basic size metrics about a project"
 
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         // the following is highly inefficient
 
@@ -122,11 +121,16 @@ object SimpleProjectStatistics extends DefaultOneStepAnalysis {
 
         BasicReport(
             classFilesDistribution.mkString("classFilesDistribution:\n\t", "\n\t", "\n")+
-                "maxInstanceFieldsInAClass: "+maxInstanceFieldsInAClass+"("+classWithMaxInstanceFields+")\n"+
-                "maxClassFieldsInAClass: "+maxClassFieldsInAClass+"("+classWithMaxClassFields+")\n"+
-                "maxMethodsInAClass: "+maxMethodsInAClass+"("+classWithMaxMethods+")\n"+
-                "longestMethodInAClass: "+longestMethodInAClass+"("+theLongestMethod+")\n"+
-                "methodWithMostRegisterVariableInAClass: "+methodWithMostRegisterVariableInAClass+"("+theMethodWithTheMostLocalVariables+")\n"
+                "maxInstanceFieldsInAClass: "+
+                maxInstanceFieldsInAClass+"("+classWithMaxInstanceFields+")\n"+
+                "maxClassFieldsInAClass: "+
+                maxClassFieldsInAClass+"("+classWithMaxClassFields+")\n"+
+                "maxMethodsInAClass: "+
+                maxMethodsInAClass+"("+classWithMaxMethods+")\n"+
+                "longestMethodInAClass: "+
+                longestMethodInAClass+"("+theLongestMethod+")\n"+
+                "methodWithMostRegisterVariableInAClass: "+
+                methodWithMostRegisterVariableInAClass+"("+theMethodWithTheMostLocalVariables+")\n"
         )
     }
 }

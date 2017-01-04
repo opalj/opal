@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -292,8 +292,8 @@ trait DefaultTypeLevelReferenceValues
                             supertype.isObjectType &&
                             classHierarchy.isKnown(supertype.asObjectType) &&
                             classHierarchy.isKnown(theUpperTypeBound) &&
-                            !classHierarchy.isInterface(supertype.asObjectType) &&
-                            !classHierarchy.isInterface(theUpperTypeBound) &&
+                            classHierarchy.isInterface(supertype.asObjectType).isNo &&
+                            classHierarchy.isInterface(theUpperTypeBound).isNo &&
                             domain.isSubtypeOf(supertype, theUpperTypeBound).isNo
                         ) ⇒
                     No
@@ -471,7 +471,7 @@ trait DefaultTypeLevelReferenceValues
 
         override def summarize(origin: ValueOrigin): this.type = this
 
-        override def toString() = {
+        override def toString: String = {
             upperTypeBound.map(_.toJava).mkString("ReferenceValue(", " with ", ")")
         }
     }

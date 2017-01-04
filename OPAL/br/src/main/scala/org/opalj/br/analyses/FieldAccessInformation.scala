@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -42,23 +42,20 @@ class FieldAccessInformation(
         val project:          SomeProject,
         val allReadAccesses:  Map[Field, Seq[(Method, PCs)]],
         val allWriteAccesses: Map[Field, Seq[(Method, PCs)]],
-        val unresolved:       IndexedSeq[(Method, PCs)]
+        val unresolved:       Vector[(Method, PCs)]
 ) {
+
+    import project.classFile
 
     private[this] def accesses(
         accessInformation:  Map[Field, Seq[(Method, PCs)]],
         declaringClassType: ObjectType,
         fieldName:          String
     ): Seq[(Method, PCs)] = {
-        for {
-            (field, accessSites) ← accessInformation
-            if project.classFile(field).thisType eq declaringClassType
-            if field.name == fieldName
-        } {
-            return accessSites;
-        }
-
-        Seq.empty
+        accessInformation.collectFirst {
+            case (field, accesses) if field.name == fieldName &&
+                (classFile(field).thisType eq declaringClassType) ⇒ accesses
+        }.getOrElse(Seq.empty)
     }
 
     final def writeAccesses(declaringClass: ClassFile, field: Field): Seq[(Method, PCs)] = {
@@ -80,11 +77,12 @@ class FieldAccessInformation(
     /**
      * Basic statistics about the number of field reads and writes.
      */
-    def statistics: Map[String, Int] =
+    def statistics: Map[String, Int] = {
         Map(
             "field reads" → allReadAccesses.values.map(_.map(_._2.size).sum).sum,
             "field writes" → allWriteAccesses.values.map(_.map(_._2.size).sum).sum,
             "unresolved field accesses" → unresolved.map(_._2.size).sum
         )
+    }
 
 }

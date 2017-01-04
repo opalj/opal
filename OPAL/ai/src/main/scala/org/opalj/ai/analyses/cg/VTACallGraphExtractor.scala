@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -72,7 +72,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             name:               String,
             descriptor:         MethodDescriptor,
             operands:           domain.Operands
-        ) = {
+        ): Unit = {
 
             def handleUnresolvedMethodCall() = {
                 addUnresolvedMethodCall(
@@ -140,7 +140,6 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             operands:           domain.Operands
         ): Unit = {
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
-            println(callees.mkString(":", "; ", "."))
             if (callees.isEmpty) {
                 addUnresolvedMethodCall(
                     classFile.thisType, method, pc, declaringClassType, name, descriptor
@@ -322,8 +321,6 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         implicit
         project: SomeProject
     ): CallGraphExtractor.LocalCallGraphInformation = {
-
-        println("extract:"+method.toJava(classFile))
 
         // The following optimization (which uses the plain CHA algorithm for all methods
         // that do not have virtual method calls) may lead to some additional edges (if

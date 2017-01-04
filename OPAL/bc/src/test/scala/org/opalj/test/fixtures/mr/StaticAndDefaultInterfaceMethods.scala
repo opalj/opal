@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2016
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -58,37 +58,6 @@ import org.opalj.bi.ACC_STATIC
  */
 object StaticAndDefaultInterfaceMethods extends App {
 
-    /* interface demo.Intf extends demo.SuperIntf
-  flags: ACC_INTERFACE, ACC_ABSTRACT
-Constant pool:
-   #1 = Class              #2             // mr/SuperIntf
-   #2 = Utf8               mr/SuperIntf
-   #3 = Class              #4             // java/lang/Object
-   #4 = Utf8               java/lang/Object
-   #5 = Class              #6             // mr/SuperIntf
-   #6 = Utf8               mr/SuperIntf
-   #7 = Utf8               m
-   #8 = Utf8               ()V
-   #9 = Utf8               Code
-  #10 = String             #11            // Intf.m
-  #11 = Utf8               SuperIntf.m
-  #12 = Methodref          #13.#15        // mr/Helper.println:(Ljava/lang/String;)V
-  #13 = Class              #14            // mr/Helper
-  #14 = Utf8               mr/Helper
-  #15 = NameAndType        #16:#17        // println:(Ljava/lang/String;)V
-  #16 = Utf8               println
-  #17 = Utf8               (Ljava/lang/String;)V
-{
-  public void m();
-    descriptor: ()V
-    flags: ACC_PUBLIC
-    Code:
-      stack=1, locals=1, args_size=1
-         0: ldc           #10                 // String SuperIntf.m
-         2: invokestatic  #12                 // Method mr/Helper.println:(Ljava/lang/String;)V
-         5: return
-}
-         */
     val superIntfCF = ClassFile(
         Array[Constant_Pool_Entry](
             /*  0 */ null,

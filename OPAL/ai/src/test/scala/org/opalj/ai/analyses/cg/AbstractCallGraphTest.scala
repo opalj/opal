@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -327,7 +327,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     // TESTS
     //
 
-    "A computed Call Graph" should "not reference any exceptions" in {
+    "the computation of a call graph" should "should not throw any exceptions" in {
         exceptions should be(Nil)
     }
 
@@ -336,69 +336,68 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         classFile ← project.allClassFiles
         method ← classFile.methods
     } {
-        it should ("correctly identify all call targets for the method "+
-            method.toJava+" in class "+classFile.fqn) in {
+        it should ("correctly identify all call targets for "+method.toJava(classFile)) in {
 
-                // single invocation per method
-                method.runtimeVisibleAnnotations filter { annotation ⇒
-                    annotation.annotationType == invokedMethodAnnotation
-                } foreach { invokedMethod ⇒
+            // single invocation per method
+            method.runtimeVisibleAnnotations filter { annotation ⇒
+                annotation.annotationType == invokedMethodAnnotation
+            } foreach { invokedMethod ⇒
+                singleMethodTest(method, invokedMethod)
+            }
+
+            // multiple invocations per Method
+            method.runtimeVisibleAnnotations filter { annotation ⇒
+                annotation.annotationType == invokedMethodsAnnotation
+            } foreach { invokedMethodsAnnotation ⇒
+                val Some(annotationArray) =
+                    invokedMethodsAnnotation.elementValuePairs collectFirst {
+                        case ElementValuePair("value", ArrayValue(array)) ⇒ array
+                    }
+                annotationArray foreach { anInvokedMethod ⇒
+                    val AnnotationValue(invokedMethod) = anInvokedMethod
                     singleMethodTest(method, invokedMethod)
-                }
 
-                // multiple invocations per Method
-                method.runtimeVisibleAnnotations filter { annotation ⇒
-                    annotation.annotationType == invokedMethodsAnnotation
-                } foreach { invokedMethodsAnnotation ⇒
-                    val Some(annotationArray) =
-                        invokedMethodsAnnotation.elementValuePairs collectFirst {
-                            case ElementValuePair("value", ArrayValue(array)) ⇒ array
-                        }
-                    annotationArray foreach { anInvokedMethod ⇒
-                        val AnnotationValue(invokedMethod) = anInvokedMethod
-                        singleMethodTest(method, invokedMethod)
-
-                    }
-                }
-
-                // single constructor call per method
-                method.runtimeVisibleAnnotations filter {
-                    _.annotationType equals (invokedConstructorAnnotation)
-                } foreach (singleConstructorTest(method, _))
-
-                // multiple constructor calls per method
-                method.runtimeVisibleAnnotations filter {
-                    _.annotationType equals (invokedConstructorsAnnotation)
-                } foreach { invokedConstructorsAnnotation ⇒
-                    val Some(annotationArray) =
-                        invokedConstructorsAnnotation.elementValuePairs collectFirst {
-                            case ElementValuePair("value", ArrayValue(array)) ⇒ array
-                        }
-                    val annotations =
-                        annotationArray collect {
-                            case AnnotationValue(annotation) ⇒ annotation
-                        }
-                    annotations foreach (singleConstructorTest(method, _))
-                }
-
-                // single field access per method
-                method.runtimeVisibleAnnotations filter {
-                    _.annotationType equals (accessedFieldAnnotation)
-                } foreach (singleFieldAccessTest(method, _))
-
-                // multiple field accesses per method
-                method.runtimeVisibleAnnotations filter {
-                    _.annotationType equals (accessedFieldsAnnotation)
-                } foreach { accessedFieldsAnnotation ⇒
-                    val Some(annotationArray) =
-                        accessedFieldsAnnotation.elementValuePairs collectFirst {
-                            case ElementValuePair("value", ArrayValue(array)) ⇒ array
-                        }
-                    val annotations = annotationArray collect {
-                        case AnnotationValue(annotation) ⇒ annotation
-                    }
-                    annotations foreach (singleFieldAccessTest(method, _))
                 }
             }
+
+            // single constructor call per method
+            method.runtimeVisibleAnnotations filter {
+                _.annotationType equals (invokedConstructorAnnotation)
+            } foreach (singleConstructorTest(method, _))
+
+            // multiple constructor calls per method
+            method.runtimeVisibleAnnotations filter {
+                _.annotationType equals (invokedConstructorsAnnotation)
+            } foreach { invokedConstructorsAnnotation ⇒
+                val Some(annotationArray) =
+                    invokedConstructorsAnnotation.elementValuePairs collectFirst {
+                        case ElementValuePair("value", ArrayValue(array)) ⇒ array
+                    }
+                val annotations =
+                    annotationArray collect {
+                        case AnnotationValue(annotation) ⇒ annotation
+                    }
+                annotations foreach (singleConstructorTest(method, _))
+            }
+
+            // single field access per method
+            method.runtimeVisibleAnnotations filter {
+                _.annotationType equals (accessedFieldAnnotation)
+            } foreach (singleFieldAccessTest(method, _))
+
+            // multiple field accesses per method
+            method.runtimeVisibleAnnotations filter {
+                _.annotationType equals (accessedFieldsAnnotation)
+            } foreach { accessedFieldsAnnotation ⇒
+                val Some(annotationArray) =
+                    accessedFieldsAnnotation.elementValuePairs collectFirst {
+                        case ElementValuePair("value", ArrayValue(array)) ⇒ array
+                    }
+                val annotations = annotationArray collect {
+                    case AnnotationValue(annotation) ⇒ annotation
+                }
+                annotations foreach (singleFieldAccessTest(method, _))
+            }
+        }
     }
 }

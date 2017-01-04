@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,7 +37,7 @@ import scala.annotation.switch
  *
  * @author Michael Eichberg
  */
-abstract class GotoInstruction extends UnconditionalBranchInstruction {
+trait GotoInstructionLike extends UnconditionalBranchInstructionLike {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
@@ -59,3 +59,4 @@ object GotoInstruction {
     }
 }
 
+trait GotoInstruction extends UnconditionalBranchInstruction with GotoInstructionLike

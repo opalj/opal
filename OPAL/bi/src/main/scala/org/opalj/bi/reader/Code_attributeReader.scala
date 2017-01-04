@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -132,12 +132,6 @@ trait Code_attributeReader extends AttributeReader {
     }
 
     registerAttributeReader(CodeAttribute.Name → parser)
-
-}
-
-object CodeAttribute {
-
-    final val Name = "Code"
 
 }
 

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -145,6 +145,8 @@ object Answer {
      * [[org.opalj.No]] otherwise.
      */
     def apply(value: Boolean): Answer = if (value) Yes else No
+
+    def apply(result: Option[_]): Answer = if (result.isDefined) Yes else No
 }
 
 /**
@@ -224,4 +226,3 @@ final case object Unknown extends Answer {
 
     override def ifUnknown(f: ⇒ Answer): Answer = f
 }
-

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -72,7 +72,7 @@ trait UShortSet extends SmallValuesSet {
      */
     def contains(value: UShort): Boolean
 
-    def map[T](f: UShort ⇒ T): scala.collection.mutable.Set[T] = {
+    override def map[T](f: UShort ⇒ T): scala.collection.mutable.Set[T] = {
         foldLeft(scala.collection.mutable.Set.empty[T])((s, v) ⇒ s += f(v))
     }
 

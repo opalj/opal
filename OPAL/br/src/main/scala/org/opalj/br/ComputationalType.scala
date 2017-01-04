@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -38,32 +38,29 @@ sealed abstract class ComputationalType(val category: ComputationalTypeCategory)
 
     def categoryId: Int = category.id
 
-    def operandSize = category.operandSize
+    def operandSize: Int = category.operandSize
 
     def isComputationalTypeReturnAddress: Boolean
 
 }
-case object ComputationalTypeInt
-        extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
+case object ComputationalTypeInt extends ComputationalType(Category1ComputationalTypeCategory) {
+    def isComputationalTypeReturnAddress: Boolean = false
 }
-case object ComputationalTypeFloat
-        extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
+case object ComputationalTypeFloat extends ComputationalType(Category1ComputationalTypeCategory) {
+    def isComputationalTypeReturnAddress: Boolean = false
+}
+case object ComputationalTypeLong extends ComputationalType(Category2ComputationalTypeCategory) {
+    def isComputationalTypeReturnAddress: Boolean = false
+}
+case object ComputationalTypeDouble extends ComputationalType(Category2ComputationalTypeCategory) {
+    def isComputationalTypeReturnAddress: Boolean = false
 }
 case object ComputationalTypeReference
         extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
+    def isComputationalTypeReturnAddress: Boolean = false
 }
 case object ComputationalTypeReturnAddress
         extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = true
+    def isComputationalTypeReturnAddress: Boolean = true
 }
-case object ComputationalTypeLong
-        extends ComputationalType(Category2ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
-}
-case object ComputationalTypeDouble
-        extends ComputationalType(Category2ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
-}
+

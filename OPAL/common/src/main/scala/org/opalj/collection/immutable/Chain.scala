@@ -178,6 +178,8 @@ sealed trait Chain[@specialized(Int) +T]
         rest.head
     }
 
+    def isSingletonList: Boolean
+
     override def nonEmpty: Boolean
 
     /**
@@ -346,6 +348,8 @@ sealed trait Chain[@specialized(Int) +T]
 
     def filter(f: T ⇒ Boolean): Chain[T]
 
+    def filterNot(f: T ⇒ Boolean): Chain[T] = filter(t ⇒ !f(t))
+
     def drop(n: Int): Chain[T]
 
     def dropWhile(f: T ⇒ Boolean): Chain[T] = {
@@ -506,9 +510,7 @@ sealed trait Chain[@specialized(Int) +T]
     def fuse[X >: T <: AnyRef](that: Chain[X], onDiff: (T, X) ⇒ X): Chain[X]
 }
 
-trait ChainLowPriorityImplicits {
-
-}
+trait ChainLowPriorityImplicits
 
 /**
  * Factory for [[Chain]]s.
@@ -556,6 +558,11 @@ object Chain extends ChainLowPriorityImplicits {
         specializedCanBuildFrom
     }
 
+    val GenericSpecializedCBF = new CanBuildFrom[Any, Int, Chain[Int]] {
+        def apply(from: Any) = new ChainBuilder[Int]
+        def apply() = new ChainBuilder[Int]
+    }
+
     implicit def toTraversable[T](cl: Chain[T]): Traversable[T] = cl.toIterable
 
     def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainBuilder[T] = {
@@ -580,7 +587,7 @@ object Chain extends ChainLowPriorityImplicits {
 
     /**
      * @note     The recommended way to create a Chain with one element is to
-     *             use the `singleton` method.
+     *           use the `singleton` method.
      */
     def apply[@specialized(Int) T](es: T*): Chain[T] = {
         if (es.isEmpty)
@@ -610,6 +617,7 @@ case object Naught extends Chain[Nothing] {
     def headOption: Option[Nothing] = None
     def tail: Nothing = throw listIsEmpty
     def isEmpty: Boolean = true
+    def isSingletonList: Boolean = false
     override def nonEmpty: Boolean = false
     def :&::[X >: Nothing](x: Chain[X]): Chain[X] = x
     def take(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
@@ -641,6 +649,8 @@ final case class :&:[@specialized(Int) T](
     def headOption: Option[T] = Some(head)
 
     def tail: Chain[T] = rest
+
+    def isSingletonList: Boolean = rest eq Naught
 
     def isEmpty: Boolean = false
 

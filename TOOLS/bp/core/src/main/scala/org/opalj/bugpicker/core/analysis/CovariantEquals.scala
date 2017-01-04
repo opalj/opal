@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -88,17 +88,17 @@ object CovariantEquals {
     ): Boolean = {
 
         if (classFile.thisType eq ObjectType.Object)
-                return false;
+            return false;
 
         val superclassType = classFile.superclassType.get
-           if (superclassType eq ObjectType.Object)
+        if (superclassType eq ObjectType.Object)
             return false;
 
         import MethodDescriptor.JustReturnsInteger
-        project.lookupMethodDefinition(superclassType, "hashCode", JustReturnsInteger        ) match {
-                case Some(m) ⇒ project.classFile(m).thisType ne ObjectType.Object
-                case _       ⇒ false
-            }
+        project.lookupMethodDefinition(superclassType, "hashCode", JustReturnsInteger) match {
+            case Some(m) ⇒ project.classFile(m).thisType ne ObjectType.Object
+            case _       ⇒ false
+        }
     }
 
     /**

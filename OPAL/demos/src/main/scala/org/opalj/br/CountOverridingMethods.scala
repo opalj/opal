@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -39,14 +39,7 @@ import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 
 /**
- * Counts the number of methods that override a concrete method.
- *
- * This analysis is an overapproximation due to the fact that we do not consider
- * the relation between the visibility modifiers and packages.
- *
- * For example, a method m in a Class C in package c that is public does not override
- * the method m in C's superclass B that is in package b and where the method has
- * default (package) visibility
+ * Counts the number of methods that override/implement an instance method.
  *
  * @author Michael Eichberg
  */
@@ -54,59 +47,30 @@ object CountOverridingMethods extends AnalysisExecutor {
 
     val analysis = new OneStepAnalysis[URL, BasicReport] {
 
-        override def description: String =
-            "Counts the number of methods that override a method."
+        override def description: String = "Counts the number of methods that override a method."
 
         def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
             isInterrupted: () ⇒ Boolean
         ) = {
-            import project.classHierarchy
 
-            var methodsCount = 0
-            var methodsThatOverrideAnotherMethodCount = 0
-
-            def classFileHasImplementedMethod(
-                methodName:       String,
-                methodDescriptor: MethodDescriptor
-            )(
-                classFile: ClassFile
-            ): Boolean = {
-
-                classFile.findMethod(methodName, methodDescriptor).map(method ⇒
-                    !method.isAbstract && !method.isPrivate).getOrElse(false)
-            }
-
-            var results = List[String]()
-            for {
-                classFile ← project.allClassFiles
-                if !classFile.isInterfaceDeclaration
-                method ← classFile.methods
-                if !method.isPrivate
-                if !method.isAbstract
-                if !method.isStatic
-                if method.name != "<init>" && method.name != "<clinit>"
-            } {
-                val implementsMethod = classFileHasImplementedMethod(method.name, method.descriptor) _
-
-                methodsCount += 1
-                classHierarchy.superclasses(classFile.thisType, project) {
-                    !(_: ClassFile).isInterfaceDeclaration
-                }.find(superclass ⇒ implementsMethod(superclass)) match {
-                    case Some(cf) ⇒
-                        results = (classFile.fqn+
-                            " inherits from "+cf.fqn+
-                            " overrides "+method.name + method.descriptor.toUMLNotation) :: results
-                        methodsThatOverrideAnotherMethodCount += 1
-                    case None ⇒ /*OK*/
-                }
-            }
+            val overridingMethodsInfo =
+                project.overridingMethods.view.
+                    map(ms ⇒ (ms._1, ms._2 - ms._1)).
+                    filter(_._2.nonEmpty).map { ms ⇒
+                        val (method, allOverridingMethods) = ms
+                        val overridingMethods = allOverridingMethods.map(m ⇒ project.classFile(m).fqn)
+                        (method, (overridingMethods, overridingMethods.size))
+                        val count = overridingMethods.size
+                        method.toJava(
+                            project.classFile(method),
+                            overridingMethods.mkString(s"\n\thas $count overridde(s):\n\t\t", "\n\t\t", "\n")
+                        )
+                    }
 
             BasicReport(
-                "Overridden methods:"+results.mkString("\n\t", "\n\t", "\n")+
-                    "Overall number of relevant methods: "+methodsCount+
-                    "\nNumber of methods that override a parent's (non-abstract) method: "+methodsThatOverrideAnotherMethodCount
+                "Overriding\n"+overridingMethodsInfo.mkString("\n")
             )
         }
     }

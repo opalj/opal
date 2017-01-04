@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,8 +30,7 @@ package org.opalj
 package br
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import java.net.URL
 
@@ -41,14 +40,18 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-object PrivateMethodsWithObjectTypeParameterCounter extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
+object PrivateMethodsWithObjectTypeParameterCounter extends DefaultOneStepAnalysis {
 
-    val analysis = this
+    override def description: String = {
+        "counts the number of package private and private methods "+
+            "with a body with at least one parameter that is an object type"
+    }
 
-    override def description: String =
-        "Counts the number of package private and private methods with a body with at least one parameter that is an object type."
-
-    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
         val overallPotential = new java.util.concurrent.atomic.AtomicInteger(0)
         val methods = (
             for {
@@ -57,19 +60,13 @@ object PrivateMethodsWithObjectTypeParameterCounter extends AnalysisExecutor wit
                 if method.isPrivate //|| method.isPackagePrivate
                 if method.name != "readObject" && method.name != "writeObject"
                 potential = (method.descriptor.parameterTypes.collect {
-                    case ot: ObjectType ⇒
-                        project.classHierarchy.allSubtypes(ot, false).size
-                    case _ ⇒
-                        0
+                    case ot: ObjectType ⇒ project.classHierarchy.allSubtypes(ot, false).size
+                    case _              ⇒ 0
                 }).sum
                 if potential >= 5
             } yield {
                 overallPotential.addAndGet(potential)
-                classFile.thisType.toJava+
-                    "{ "+
-                    (if (method.isPrivate) "private " else "") + method.toJava+
-                    " /* Potential: "+potential+" */ "+
-                    "}"
+                method.toJava(classFile, s" /* Potential: $potential */ ")
             }
         ).seq
 

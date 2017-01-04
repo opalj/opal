@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -41,7 +41,7 @@ case class MainClass_attribute(
         main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
 ) extends Attribute {
 
-    def attribute_length = 2
+    def attribute_length: Int = 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="simple_attribute">

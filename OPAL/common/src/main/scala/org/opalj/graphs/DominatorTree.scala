@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,10 +37,10 @@ import org.opalj.collection.mutable.IntArrayStack
  * To compute a post dominator tree use the factory
  * method defined in [[org.opalj.graphs.PostDominatorTree]].
  *
- * @param	idom An array that contains for each node its immediate dominator.
- * 			If not all unique ids are used, then the array is a sparse array and external
- * 			knowledge is necessary to determine which elements of the array contain useful
- * 			information.
+ * @param   idom An array that contains for each node its immediate dominator.
+ *          If not all unique ids are used, then the array is a sparse array and external
+ *          knowledge is necessary to determine which elements of the array contain useful
+ *          information.
  *
  * @author Michael Eichberg
  */
@@ -49,7 +49,7 @@ final class DominatorTree private (
         final val startNode:            Int
 ) {
 
-    final def maxNode = idom.length - 1
+    final def maxNode: Int = idom.length - 1
 
     assert(startNode <= maxNode, s"start node ($startNode) out of range ([0,$maxNode])")
 
@@ -77,7 +77,7 @@ final class DominatorTree private (
      */
     @scala.annotation.tailrec final def strictlyDominates(n: Int, w: Int): Boolean = {
         if (n == w)
-            // a node never strictly dominates itself 
+            // a node never strictly dominates itself
             return false;
 
         val wIDom = idom(w)
@@ -109,9 +109,9 @@ final class DominatorTree private (
     def immediateDominators: IndexedSeq[Int] = idom
 
     /**
-     * @param 	isIndexValid A function that returns `true` if an element in the iDom array with a
-     * 			specific index is actually containing some valid data. This is particularly useful/
-     * 			required if the `idom` array given at initialization time is a sparse array.
+     * @param   isIndexValid A function that returns `true` if an element in the iDom array with a
+     *          specific index is actually containing some valid data. This is particularly useful/
+     *          required if the `idom` array given at initialization time is a sparse array.
      */
     def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
         val g = Graph.empty[Int]
@@ -173,32 +173,32 @@ object DominatorTree {
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
      * [0..maxNode], although not all ids need to be used.
      *
-     * @param 	startNode The id of the unique root node of the graph. (E.g., (pc=)"0" for the CFG
-     * 			computed for some method or the id of the artificial start node created when
-     * 			computing a reverse CFG.
-     * @param 	hasStartNodePredecessors If `true` an artificial start node with the id `maxNode+1`
-     * 			will be created and added to the graph.
-     * @param 	foreachSuccessorOf A function that given a node subsequently executes the given
-     * 			function for each direct successor of the given node.
-     * @param 	foreachPredecessorOf A function that given a node executes the given function for
-     * 			each direct predecessor. The signature of a function that can directly be passed
-     * 			as a parameter is:
-     * 			{{{
-     *  		def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
-     *  		}}}
-     * @param 	maxNode The largest unique int id that identifies a node. (E.g., in case of
-     * 			the analysis of some code it is equivalent to the length of the code-1.)
+     * @param   startNode The id of the unique root node of the graph. (E.g., (pc=)"0" for the CFG
+     *          computed for some method or the id of the artificial start node created when
+     *          computing a reverse CFG.
+     * @param   hasStartNodePredecessors If `true` an artificial start node with the id `maxNode+1`
+     *          will be created and added to the graph.
+     * @param   foreachSuccessorOf A function that given a node subsequently executes the given
+     *          function for each direct successor of the given node.
+     * @param   foreachPredecessorOf A function that given a node executes the given function for
+     *          each direct predecessor. The signature of a function that can directly be passed
+     *          as a parameter is:
+     *          {{{
+     *          def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
+     *          }}}
+     * @param   maxNode The largest unique int id that identifies a node. (E.g., in case of
+     *          the analysis of some code it is equivalent to the length of the code-1.)
      *
-     * @return 	The computed dominator tree.
+     * @return  The computed dominator tree.
      *
-     * @note 	This is an implementation of the "fast dominators" algorithm
-     * 			presented by T. Lengauaer and R. Tarjan in
-     * 			A Fast Algorithm for Finding Dominators in a Flowgraph
-     * 			ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
+     * @note    This is an implementation of the "fast dominators" algorithm
+     *          presented by T. Lengauaer and R. Tarjan in
+     *          A Fast Algorithm for Finding Dominators in a Flowgraph
+     *          ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
      *
-     * 			'''This implementation does not use non-tailrecursive methods anymore and hence
-     * 			also handles very large degenerated graphs (e.g., a graph which consists of a
-     * 			a very long single path.).'''
+     *          '''This implementation does not use non-tailrecursive methods anymore and hence
+     *          also handles very large degenerated graphs (e.g., a graph which consists of a
+     *          a very long single path.).'''
      */
     def apply(
         startNode:                Int,
@@ -250,7 +250,7 @@ object DominatorTree {
         vertexStack.push(startNode)
         while (vertexStack.nonEmpty) {
             val v = vertexStack.pop()
-            // The following "if" is necessary, because the recursive DFS impl. in the paper 
+            // The following "if" is necessary, because the recursive DFS impl. in the paper
             // performs an eager decent. This may already initialize a node that is also pushed
             // on the stack and, hence, must not be visited again.
             if (semi(v) == 0) {

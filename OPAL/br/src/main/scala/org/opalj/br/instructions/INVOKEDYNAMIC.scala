@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -103,12 +103,12 @@ case object INCOMPLETE_INVOKEDYNAMIC extends INVOKEDYNAMIC {
  * Represents an `invokedynamic` instruction where we have no further, immediately usable
  * information regarding the target.
  *
- * @param 	bootstrapMethod This is the bootstrap method that needs to be executed in order
- * 			to resolve the instruction's target.
- * @param 	name This is the name of the method that this `invokedynamic` instruction intends
- * 			to invoke.
- * @param 	methodDescriptor This is the descriptor belonging to the instruction's intended
- * 			invocation target.
+ * @param   bootstrapMethod This is the bootstrap method that needs to be executed in order
+ *          to resolve the instruction's target.
+ * @param   name This is the name of the method that this `invokedynamic` instruction intends
+ *          to invoke.
+ * @param   methodDescriptor This is the descriptor belonging to the instruction's intended
+ *          invocation target.
  *
  * @author Arne Lottmann
  */

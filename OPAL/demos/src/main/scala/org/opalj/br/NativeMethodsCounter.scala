@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,38 +29,36 @@
 package org.opalj
 package br
 
-import analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
 import java.net.URL
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of native methods.
  *
  * @author Michael Eichberg
  */
-object NativeMethodsCounter extends AnalysisExecutor {
+object NativeMethodsCounter extends DefaultOneStepAnalysis {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    override def description: String = "Counts the number of native methods."
 
-        override def description: String = "Counts the number of native methods."
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
+        val nativeMethods =
+            (
+                for {
+                    classFile ← project.allClassFiles.par
+                    method ← classFile.methods
+                    if method.isNative
+                } yield method.toJava(classFile)
+            ).seq
 
-        def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
-        ) = {
-            val nativeMethods =
-                (
-                    for {
-                        classFile ← project.allClassFiles.par
-                        method ← classFile.methods
-                        if method.isNative
-                    } yield classFile.thisType.toJava+"{ "+method.toJava+" }"
-                ).seq
-
-            BasicReport(
-                nativeMethods.size+" native methods found:"+
-                    nativeMethods.mkString("\n\t", "\n\t", "\n")
-            )
-        }
+        BasicReport(
+            nativeMethods.mkString(nativeMethods.size+" native methods found:\n\t", "\n\t", "\n")
+        )
     }
 }

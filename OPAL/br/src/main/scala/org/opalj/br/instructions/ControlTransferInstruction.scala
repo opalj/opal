@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,10 +35,12 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class ControlTransferInstruction extends Instruction {
+trait ControlTransferInstructionLike extends InstructionLike {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def expressionResult: NoExpression.type = NoExpression
 
 }
+
+trait ControlTransferInstruction extends Instruction with ControlTransferInstructionLike

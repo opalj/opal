@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,10 +36,12 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEVIRTUAL(
-        declaringClass:   ReferenceType, // an interface, class or array type to be precise
+        declaringClass:   ReferenceType, // an class or array type to be precise
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {
+
+    final def isInterfaceCall: Boolean = false
 
     final def opcode: Opcode = INVOKEVIRTUAL.opcode
 
@@ -55,8 +57,35 @@ case class INVOKEVIRTUAL(
     override def toString = super.toString
 
 }
+
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object INVOKEVIRTUAL {
 
     final val opcode = 182
+
+    /**
+     * Factory method to create [[INVOKEVIRTUAL]] instructions.
+     *
+     * @param   declaringClass the method's declaring class name in JVM notation,
+     *          e.g. `java/lang/Object` or `[java/lang/Object` in case of a method call on
+     *          an array object. In the latter case, the called method has to be a method defined
+     *          by `java/lang/Object`; e.g., `clone` or `wait`.
+     * @param   isInterface has to be `true` if declaring class identifies an interface.
+     *          (Determines how the target method is resolved - relevant for Java 8 onwards.)
+     * @param   methodDescriptor the method descriptor in JVM notation,
+     *          e.g. "()V" for a method without parameters which returns void.
+     */
+    def apply(
+        declaringClass:   String,
+        methodName:       String,
+        methodDescriptor: String
+    ): INVOKEVIRTUAL = {
+        val declaringClassType = ReferenceType(declaringClass)
+        INVOKEVIRTUAL(declaringClassType, methodName, MethodDescriptor(methodDescriptor))
+    }
 
 }

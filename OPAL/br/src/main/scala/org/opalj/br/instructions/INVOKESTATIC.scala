@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,11 +36,13 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESTATIC(
-        declaringClass:   ObjectType, // a class type to be precise
+        declaringClass:   ObjectType, // a class or interface (Java 8) type
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends NonVirtualMethodInvocationInstruction {
+
+    final def isInterfaceCall: Boolean = isInterface
 
     final def opcode: Opcode = INVOKESTATIC.opcode
 
@@ -56,12 +58,42 @@ case class INVOKESTATIC(
         methodDescriptor.parametersCount
     }
 
-    // Required to avoid that Scala generates a default toString method!
-    override def toString = super.toString
+    override def toString = {
+        if (isInterface)
+            "/* interface */"+super.toString
+        else
+            super.toString
+    }
 
 }
+
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object INVOKESTATIC {
 
     final val opcode = 184
+
+    /**
+     * Factory method to create [[INVOKESTATIC]] instructions.
+     *
+     * @param   declaringClass the method's declaring class name in JVM notation,
+     *          e.g. "java/lang/Object".
+     * @param   isInterface has to be `true` if declaring class identifies an interface.
+     *          (Determines how the target method is resolved - relevant for Java 8 onwards.)
+     * @param   methodDescriptor the method descriptor in JVM notation,
+     *          e.g. "()V" for a method without parameters which returns void.
+     */
+    def apply(
+        declaringClass:   String,
+        isInterface:      Boolean,
+        methodName:       String,
+        methodDescriptor: String
+    ): INVOKESTATIC = {
+        val declaringClassType = ObjectType(declaringClass)
+        INVOKESTATIC(declaringClassType, isInterface, methodName, MethodDescriptor(methodDescriptor))
+    }
 
 }

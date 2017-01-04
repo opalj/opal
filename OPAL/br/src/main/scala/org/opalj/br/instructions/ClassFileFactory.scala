@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,6 +33,7 @@ package instructions
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.br.MethodDescriptor.DefaultConstructorDescriptor
 
 /**
  * Provides helper methods to facilitate the generation of classes.
@@ -229,48 +230,48 @@ object ClassFileFactory {
                 IndexedSeq(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
         val additionalFieldsForStaticParameters =
-            receiverParameters.dropRight(interfaceMethodParametersCount).
-                zipWithIndex.map { p ⇒
-                    val (fieldType, index) = p
-                    createField(fieldType = fieldType, name = s"staticParameter$index")
-                }
+            receiverParameters.dropRight(interfaceMethodParametersCount).zipWithIndex map { p ⇒
+                val (fieldType, index) = p
+                createField(fieldType = fieldType, name = s"staticParameter$index")
+            }
         val fields: IndexedSeq[Field] =
             receiverField ++ additionalFieldsForStaticParameters
 
         val constructor: Method = createConstructor(definingType, fields)
 
         val factoryMethodName: String =
-            if (methodName == DefaultFactoryMethodName)
+            if (methodName == DefaultFactoryMethodName) {
                 AlternativeFactoryMethodName
-            else
+            } else {
                 DefaultFactoryMethodName
+            }
 
-        val methods: IndexedSeq[Method] = IndexedSeq(
-            proxyMethod(
-                definingType.objectType,
+        val methods: Array[Method] = new Array(if (bridgeMethodDescriptor.isDefined) 4 else 3)
+        methods(0) = proxyMethod(
+            definingType.objectType,
+            methodName,
+            methodDescriptor,
+            additionalFieldsForStaticParameters,
+            receiverType,
+            receiverIsInterface,
+            receiverMethodName,
+            receiverMethodDescriptor,
+            invocationInstruction
+        )
+        methods(1) = constructor
+        methods(2) = createFactoryMethod(
+            definingType.objectType,
+            fields.map(_.fieldType),
+            factoryMethodName
+        )
+        if (bridgeMethodDescriptor.isDefined) {
+            methods(3) = createBridgeMethod(
                 methodName,
+                bridgeMethodDescriptor.get,
                 methodDescriptor,
-                additionalFieldsForStaticParameters,
-                receiverType,
-                receiverIsInterface,
-                receiverMethodName,
-                receiverMethodDescriptor,
-                invocationInstruction
-            ),
-            constructor,
-            createFactoryMethod(
-                definingType.objectType,
-                fields.map(_.fieldType),
-                factoryMethodName
+                definingType.objectType
             )
-        ) ++ bridgeMethodDescriptor.map { bridgeMethodDescriptor ⇒
-                IndexedSeq(createBridgeMethod(
-                    methodName,
-                    bridgeMethodDescriptor,
-                    methodDescriptor,
-                    definingType.objectType
-                ))
-            }.getOrElse(IndexedSeq.empty)
+        }
 
         ClassFile(0, 49,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
@@ -375,18 +376,13 @@ object ClassFileFactory {
      * Returns the instructions necessary to perform a call to the constructor of the
      * given superclass.
      */
-    def callSuperDefaultConstructor(
-        theSuperclassType: ObjectType
-    ): Array[Instruction] =
+    def callSuperDefaultConstructor(theSuperclassType: ObjectType): Array[Instruction] = {
         Array(
             ALOAD_0,
-            INVOKESPECIAL(
-                theSuperclassType, false,
-                "<init>", NoArgumentAndNoReturnValueMethodDescriptor
-            ),
-            null,
-            null
+            INVOKESPECIAL(theSuperclassType, false, "<init>", DefaultConstructorDescriptor),
+            null, null
         )
+    }
 
     /**
      * Creates an array of instructions that populates the given `fields` in `declaringType`
@@ -561,17 +557,13 @@ object ClassFileFactory {
                 Array()
             } else if (receiverMethodName == "<init>") {
                 Array(
-                    NEW(receiverType),
-                    null,
-                    null,
+                    NEW(receiverType), null, null,
                     DUP
                 )
             } else {
                 Array(
                     ALOAD_0,
-                    GETFIELD(definingType, ReceiverFieldName, receiverType),
-                    null,
-                    null
+                    GETFIELD(definingType, ReceiverFieldName, receiverType), null, null
                 )
             }
 
@@ -591,9 +583,7 @@ object ClassFileFactory {
                         INVOKESTATIC(
                             receiverType, receiverIsInterface,
                             receiverMethodName, receiverMethodDescriptor
-                        ),
-                        null,
-                        null
+                        ), null, null
                     )
                 case INVOKESPECIAL.opcode ⇒
                     val methodDescriptor =
@@ -602,28 +592,17 @@ object ClassFileFactory {
                         } else {
                             receiverMethodDescriptor
                         }
-                    Array(
-                        INVOKESPECIAL(
-                            receiverType, receiverIsInterface,
-                            receiverMethodName, methodDescriptor
-                        ),
-                        null,
-                        null
+                    val invoke = INVOKESPECIAL(
+                        receiverType, receiverIsInterface,
+                        receiverMethodName, methodDescriptor
                     )
+                    Array(invoke, null, null)
                 case INVOKEINTERFACE.opcode ⇒
-                    Array(
-                        INVOKEINTERFACE(receiverType, receiverMethodName, receiverMethodDescriptor),
-                        null,
-                        null,
-                        null,
-                        null
-                    )
+                    val invoke = INVOKEINTERFACE(receiverType, receiverMethodName, receiverMethodDescriptor)
+                    Array(invoke, null, null, null, null)
                 case INVOKEVIRTUAL.opcode ⇒
-                    Array(
-                        INVOKEVIRTUAL(receiverType, receiverMethodName, receiverMethodDescriptor),
-                        null,
-                        null
-                    )
+                    val invoke = INVOKEVIRTUAL(receiverType, receiverMethodName, receiverMethodDescriptor)
+                    Array(invoke, null, null)
             }
 
         val forwardingInstructions: Array[Instruction] =

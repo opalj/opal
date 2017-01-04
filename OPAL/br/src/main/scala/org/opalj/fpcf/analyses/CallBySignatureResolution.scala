@@ -44,8 +44,8 @@ import org.opalj.fpcf.analysis.CallBySignatureTargetAnalysis
  * given the method's name and the descriptor type.
  *
  * @note To get call by signature resolution information call
- * 		[[org.opalj.br.analyses.Project]]'s method and pass in the
- * 		[[CallBySignatureResolutionKey]] object.
+ *      [[org.opalj.br.analyses.Project]]'s method and pass in the
+ *      [[CallBySignatureResolutionKey]] object.
  * @author Michael Reif
  */
 class CallBySignatureResolution private (

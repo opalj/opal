@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -51,6 +51,8 @@ case class LineNumberTable_attribute(
         </details>
     }
 
-    def line_number_tableToXHTML(implicit cp: Constant_Pool) = line_number_table.map(_.toXHTML(cp))
+    def line_number_tableToXHTML(implicit cp: Constant_Pool): Seq[Node] = {
+        line_number_table.map(_.toXHTML(cp))
+    }
 
 }

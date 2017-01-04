@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -310,6 +310,11 @@ object ChainProperties extends Properties("Chain") {
         l.size == fl.size
     }
 
+    property("isSingletonList") = forAll { l: List[String] ⇒
+        val fl = Chain(l: _*)
+        (l.size == 1) == (fl.isSingletonList)
+    }
+
     property(":&:") = forAll { (l: List[String], es: List[String]) ⇒
         var fle = Chain(l: _*)
         var le = l
@@ -424,6 +429,12 @@ object ChainProperties extends Properties("Chain") {
         def filter(s: String): Boolean = s.length() >= c
         val fl = Chain(l: _*)
         fl.filter(filter) == Chain(l.filter(filter): _*)
+    }
+
+    property("filterNot") = forAll { (l: List[String], c: Int) ⇒
+        def filter(s: String): Boolean = s.length() >= c
+        val fl = Chain(l: _*)
+        fl.filterNot(filter) == Chain(l.filterNot(filter): _*)
     }
 
     property("drop") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒

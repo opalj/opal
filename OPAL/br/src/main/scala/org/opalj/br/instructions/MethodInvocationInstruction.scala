@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,8 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import scala.annotation.switch
-
 /**
  * An instruction that invokes another method (does not consider invokedynamic
  * instructions.)
@@ -41,6 +39,8 @@ import scala.annotation.switch
 abstract class MethodInvocationInstruction extends InvocationInstruction {
 
     /* abstract */ def declaringClass: ReferenceType
+
+    def isInterfaceCall: Boolean
 
     /**
      * Returns `true` if the called method is an instance method and virtual method
@@ -63,23 +63,15 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
  */
 object MethodInvocationInstruction {
 
-    def unapply(instruction: Instruction): Option[(ReferenceType, String, MethodDescriptor)] = {
-        if (instruction eq null)
-            return None;
-
-        (instruction.opcode: @switch) match {
-            case INVOKEINTERFACE.opcode |
-                INVOKEVIRTUAL.opcode |
-                INVOKESTATIC.opcode |
-                INVOKESPECIAL.opcode ⇒
-                val invocationInstruction = instruction.asInstanceOf[MethodInvocationInstruction]
-                Some((
-                    invocationInstruction.declaringClass,
-                    invocationInstruction.name,
-                    invocationInstruction.methodDescriptor
-                ))
-            case _ ⇒ None
-        }
+    def unapply(
+        instruction: MethodInvocationInstruction
+    ): Option[(ReferenceType, Boolean, String, MethodDescriptor)] = {
+        Some((
+            instruction.declaringClass,
+            instruction.isInterfaceCall,
+            instruction.name,
+            instruction.methodDescriptor
+        ))
     }
 
     val jvmExceptions = List(ObjectType.NullPointerException)
@@ -93,8 +85,9 @@ abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstru
 
     def isVirtualMethodCall: Boolean = true
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
         1 + methodDescriptor.parametersCount
+    }
 
 }
 

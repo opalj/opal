@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -46,7 +46,7 @@ sealed trait MethodReturnValuePropertyMetaInformation extends PropertyMetaInform
  * In the worst case the information about the return value is just the declared type.
  *
  * @param returnValue The value returned by the method when the method does not throw an exception.
- * 		If the method always throws an exception, then the returnValue is `None`.
+ *      If the method always throws an exception, then the returnValue is `None`.
  */
 case class MethodReturnValue private (
         returnValue: Option[Domain#Value]
@@ -56,7 +56,7 @@ case class MethodReturnValue private (
 
     def this(returnValue: Domain#Value) { this(Some(returnValue)) }
 
-    final def key = MethodReturnValue.key
+    final def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
 
     final def isRefineable = true
 

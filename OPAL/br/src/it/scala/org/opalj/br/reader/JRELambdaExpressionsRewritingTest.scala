@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -70,8 +70,8 @@ class JRELambdaExpressionsRewritingTest extends FunSpec with Matchers {
             val jreProject = Project(jrePath, logContext, config)
 
             it("there should be no more invokedynamic instructions in the loaded class files") {
-                val invokedynamics = (jreProject.methods.collect {
-                    case MethodWithBody(body) ⇒ body.collect { case i: INVOKEDYNAMIC ⇒ i }
+                val invokedynamics = (jreProject.allMethodsWithBody.map { method ⇒
+                    method.body.get.collect { case i: INVOKEDYNAMIC ⇒ i }
                 }).flatten
                 // if the test fails we want to know the invokedynamic instructions
                 invokedynamics should be('empty)
@@ -84,8 +84,8 @@ class JRELambdaExpressionsRewritingTest extends FunSpec with Matchers {
                 }
 
                 it("but there should be calls to proxy factories (on JDK8 only)") {
-                    val invokestatics: Iterable[INVOKESTATIC] = (jreProject.methods.collect {
-                        case MethodWithBody(body) ⇒ body.collectInstructions { case i: INVOKESTATIC ⇒ i }
+                    val invokestatics: Iterable[INVOKESTATIC] = (jreProject.allMethodsWithBody.map { method ⇒
+                        method.body.get.collectInstructions { case i: INVOKESTATIC ⇒ i }
                     }).flatten
                     val proxyFactoryCalls = invokestatics.filter(isProxyFactoryCall)
                     proxyFactoryCalls should not be ('empty)
