@@ -99,7 +99,7 @@ object DeadEdgesAnalysis {
         */
         def isAlwaysExceptionThrowingMethodCall(pc: PC): Boolean = {
             instructions(pc) match {
-                case MethodInvocationInstruction(receiver: ObjectType, name, descriptor) ⇒
+                case MethodInvocationInstruction(receiver: ObjectType, _, name, descriptor) ⇒
                     val callees = domain.callees(receiver, name, descriptor)
                     if (callees.size != 1)
                         return false;

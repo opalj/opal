@@ -27,19 +27,13 @@ object BugPickerBuild extends Build {
 			EclipseKeys.withSource := true
 		) ++
 		Seq(libraryDependencies ++= Seq(
-			"de.opal-project" %% "abstract-interpretation-framework" % "0.9.0-SNAPSHOT",
+			"de.opal-project" %% "bugpicker-core" % "0.9.0-SNAPSHOT",
 			"de.opal-project" %% "bytecode-disassembler" % "0.9.0-SNAPSHOT"
 		)) ++
 		Seq(resolvers ++= Seq(
 			"Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 		))
 	
-	lazy val core = Project(
-		id = "BugPickerCore",
-		base = file("core"),
-		settings = buildSettings
-	)
-
 	lazy val ui = Project(
 		id = "BugPickerUI",
 		base = file("ui"),
@@ -59,5 +53,5 @@ object BugPickerBuild extends Build {
 					Seq(versionFile)
 				}
 			)
-	).dependsOn(core)
+	)
 }

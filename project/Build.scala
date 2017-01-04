@@ -72,6 +72,7 @@ object OPALBuild extends Build {
 		bc,
         ba,
 		ai,
+        bp,
 		de,
 		av,
 		DeveloperTools,
@@ -145,13 +146,20 @@ object OPALBuild extends Build {
 	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
+  	lazy val bp = Project(
+  		id = "BugPicker",
+  		base = file("OPAL/bp"),
+  		settings = buildSettings 
+  	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+  	 .configs(IntegrationTest)
+
 	lazy val av = Project(
 		id = "ArchitectureValidation",
 		base = file("OPAL/av"),
 		settings = buildSettings
 	).dependsOn(de % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
-	 
+     
 	lazy val DeveloperTools = Project(
 		id = "OPAL-DeveloperTools",
 		base = file("DEVELOPING_OPAL/tools"),

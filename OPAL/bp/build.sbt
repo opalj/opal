@@ -4,4 +4,4 @@ name := "BugPicker - Core"
 // scaladoc as errors if we publish the projects; hence, we do not use the 
 // standard compiler settings!
 scalacOptions in (Compile, doc) := Opts.doc.title("BugPicker - Core")
-
+scalacOptions in (Compile, console) := Seq("-deprecation")
