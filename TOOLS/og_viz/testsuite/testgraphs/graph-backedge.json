@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "label": "1",
+    "level": 0,
+    "nodeAttributes": {},
+    "children": [2, 3, 4]
+  },
+  {
+    "id": 2,
+    "label": "2",
+    "level": 1,
+    "nodeAttributes": {},
+    "children": []
+  },
+  {
+    "id": 3,
+    "label": "3",
+    "level": 2,
+    "nodeAttributes": {},
+    "children": []
+  },
+  {
+    "id": 4,
+    "label": "4",
+    "level": 3,
+    "nodeAttributes": {},
+    "children": [5]
+  },
+  {
+    "id": 5,
+    "label": "5",
+    "level": 4,
+    "nodeAttributes": {},
+    "children": [1]
+  }
+]
