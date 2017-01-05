@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -64,7 +64,7 @@ abstract class StringPassedToClassForName[Source]
         {
             case method @ Method(PUBLIC___OR___PROTECTED_AND_NOT_FINAL(), _, md) ⇒
                 md.selectParameter(_ == ObjectType.String).toSet.map(
-                    parameterToValueIndex(method.isStatic, method.descriptor, _: Int)
+                    parameterIndexToValueOrigin(method.isStatic, method.descriptor, _: Int)
                 )
         }
     )
@@ -122,9 +122,9 @@ object StringPassedToClassForName extends DataFlowProblemFactory with DataFlowPr
     // Handling for the specified "java.security" file.
     //
 
-    override def title = "StringPassedToClassForName"
+    override def title: String = "StringPassedToClassForName"
 
-    override def description = "Finds calls to Class.forName from non-privliged code"
+    override def description: String = "Finds calls to Class.forName from non-privliged code"
 
     final val javaSecurityParameter = "-java.security="
 

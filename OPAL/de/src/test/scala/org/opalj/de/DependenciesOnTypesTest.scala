@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -54,7 +54,7 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
     val extractedArrayTypes = scala.collection.mutable.Set.empty[ArrayType]
     val extractedObjectTypes = scala.collection.mutable.Set.empty[ObjectType]
 
-    def dependencyExtractor =
+    def dependencyExtractor: DependencyExtractor = {
         new DependencyExtractor(
             new DependencyProcessorAdapter {
 
@@ -73,24 +73,28 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
                     source:   VirtualSourceElement,
                     baseType: BaseType,
                     dType:    DependencyType
-                ): Unit =
+                ): Unit = {
                     extractedBaseTypes += baseType
+                }
 
                 override def processDependency(
                     source:    VirtualSourceElement,
                     arrayType: ArrayType,
                     dType:     DependencyType
-                ): Unit =
+                ): Unit = {
                     extractedArrayTypes += arrayType
+                }
             }
         )
+    }
 
     //
     //
     // EXERCISE
     //
     //
-    val classFiles = ClassFile(locateTestResources("classfiles/Types.jar", "de"), "types/TypeDeclarations.class")
+    val typesJAR = locateTestResources("types.jar", "bi")
+    val classFiles = ClassFile(typesJAR, "types/TypeDeclarations.class")
     classFiles foreach (classFile ⇒ dependencyExtractor.process(classFile))
 
     //

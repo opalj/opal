@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,7 +29,7 @@
 package classhierarchy;
 
 /**
- * This class models a Generic class with a class suffix. A class suffix is created by
+ * This class models a generic class with a class suffix. A class suffix is created by
  * refering to an inner class.
  * 
  * @example {{{

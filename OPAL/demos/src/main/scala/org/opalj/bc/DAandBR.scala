@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2016
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -55,9 +55,9 @@ import org.opalj.br.reader.Java8Framework
  * to interact between br and da.
  * {{{
  * public class Test {
- * 	public static void main(String[] args) {
- * 		System.out.println("Hello World");
- * 	}
+ *  public static void main(String[] args) {
+ *      System.out.println("Hello World");
+ *  }
  * }
  * }}}
  * {{{

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -66,9 +66,7 @@ package object analyses {
     type MultipleResultsAnalysis[Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
 
     implicit object MethodDeclarationContextOrdering extends Ordering[MethodDeclarationContext] {
-        def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = {
-            x compare y
-        }
+        def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = x compare y
     }
 
 }

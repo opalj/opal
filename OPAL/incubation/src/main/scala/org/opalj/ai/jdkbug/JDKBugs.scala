@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -106,7 +106,7 @@ object JDKTaintAnalysis
         with OneStepAnalysis[URL, ReportableAnalysisResult]
         with AnalysisExecutor {
 
-    def ai = new AI[Domain with OptionalReport] {}
+    def ai: AI[Domain with OptionalReport] = new AI[Domain with OptionalReport] {}
 
     override def description: String = "Finds unsafe Class.forName(...) calls."
 
@@ -255,13 +255,14 @@ trait TaintAnalysisDomain[Source]
     import ObjectType._
 
     protected def declaringClass = id.classFile.thisType
-    def method = id.method
+    def method: Method = id.method
     protected def methodName = id.method.name
     protected def methodDescriptor = id.method.descriptor
-    def code = method.body.get
+    def code: Code = method.body.get
 
-    protected def contextIdentifier =
-        declaringClass.fqn+"{ "+methodDescriptor.toJava(methodName)+" }"
+    protected def contextIdentifier = {
+        s"${declaringClass.fqn}{ ${methodDescriptor.toJava(methodName)} }"
+    }
 
     /**
      * Identifies the node in the analysis graph that represents the call
@@ -421,8 +422,8 @@ trait TaintAnalysisDomain[Source]
         /*
        *invokeinterface is currently disabled due to the following reasons
        *  1) caching interfaces does not work properly:
-       *  	- problem with adapting some values the cached domain
-       *   	- similar operands are not matched as equal due to different instance of RefValue
+       *    - problem with adapting some values the cached domain
+       *    - similar operands are not matched as equal due to different instance of RefValue
        *  2) invokeinterface does not find and Class.forName bugs only more pathes to it.
        */
 

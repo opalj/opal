@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -89,15 +89,15 @@ object InterpretMethods extends AnalysisExecutor {
  */
 class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
-    override def title = "Interpret Methods"
+    override def title: String = "interpret methods"
 
-    override def description = "Performs an abstract interpretation of all methods."
+    override def description: String = "performs an abstract interpretation of all methods"
 
     override def analyze(
         project:                Project[Source],
         parameters:             Seq[String]                = List.empty,
         initProgressManagement: (Int) ⇒ ProgressManagement
-    ) = {
+    ): BasicReport = {
         implicit val logContext = project.logContext
 
         val verbose = parameters.size > 0 &&

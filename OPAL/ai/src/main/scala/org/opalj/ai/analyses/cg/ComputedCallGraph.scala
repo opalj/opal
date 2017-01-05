@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -55,24 +55,26 @@ object ComputedCallGraph {
         entryPoints:            () ⇒ Iterable[Method],
         unresolvedMethodCalls:  List[UnresolvedMethodCall],
         constructionExceptions: List[CallGraphConstructionException]
-    ) =
+    ): ComputedCallGraph = {
         new ComputedCallGraph(
             callGraph,
             entryPoints,
             unresolvedMethodCalls,
             constructionExceptions
         )
+    }
 
     def unapply(
         cg: ComputedCallGraph
     ): Some[(CallGraph, List[UnresolvedMethodCall], List[CallGraphConstructionException])] =
         Some((cg.callGraph, cg.unresolvedMethodCalls, cg.constructionExceptions))
 
-    def empty(project: SomeProject) =
+    def empty(project: SomeProject): ComputedCallGraph = {
         apply(
             new CallGraph(project, Map.empty, Map.empty),
             () ⇒ List.empty,
             List.empty,
             List.empty
         )
+    }
 }

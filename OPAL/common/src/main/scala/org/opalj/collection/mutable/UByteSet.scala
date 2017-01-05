@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -72,7 +72,7 @@ sealed trait UByteSet extends SmallValuesSet {
     private[mutable] def asTreeNode: UByteSetNode
     private[mutable] def asNonEmptyLeafNode: UByteSet4
 
-    override def toString = mkString("UByteSet(", ",", ")", 0)
+    override def toString: String = mkString("UByteSet(", ",", ")", 0)
 
     /*FOR DEBUGGING AND OPTIMIZATION PURPOSES*/
     /**
@@ -99,8 +99,8 @@ object UByteSet {
  */
 private[mutable] object EmptyUByteSet extends UByteSet {
 
-    def isEmpty = true
-    def isSingletonSet = false
+    def isEmpty: Boolean = true
+    def isSingletonSet: Boolean = false
     def size: Int = 0
     def min: UByte = throw new UnsupportedOperationException("this set is empty")
     def max: UByte = throw new UnsupportedOperationException("this set is empty")
@@ -163,9 +163,9 @@ private[mutable] final class UByteSet4(private var value: Int) extends UByteSet 
             this
     }
 
-    def isEmpty = false
+    def isEmpty: Boolean = false
 
-    def isSingletonSet = (value & Value2_3_4Mask) == 0
+    def isSingletonSet: Boolean = (value & Value2_3_4Mask) == 0
 
     def size: Int = {
         if (value3 == 0) {
@@ -181,9 +181,9 @@ private[mutable] final class UByteSet4(private var value: Int) extends UByteSet 
         }
     }
 
-    def min = value1
+    def min: Int = value1
 
-    def max = {
+    def max: Int = {
         val value3 = this.value3
         if (value3 != 0) {
             val value4 = this.value4
@@ -406,14 +406,14 @@ private final class UByteSetNode(
 ) extends UByteSet {
 
     private[this] var currentMax = set2.max
-    def max = currentMax
+    def max: Int = currentMax
 
-    def min = set1.min
+    def min: Int = set1.min
 
-    def size = set1.size + set2.size
+    def size: Int = set1.size + set2.size
 
-    def isEmpty = false
-    def isSingletonSet = false
+    def isEmpty: Boolean = false
+    def isSingletonSet: Boolean = false
 
     private[mutable] def isLeafNode: Boolean = false
     private[mutable] def asTreeNode: UByteSetNode = this

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -85,10 +85,22 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 
 }
 
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ * @author Michael Eichberg
+ */
 object NEW {
 
     final val opcode = 187
 
     final val jvmExceptions = List(ObjectType.OutOfMemoryError)
+
+    /**
+     * Creates a new [[NEW]] instruction given the fully qualified name in binary notation.
+     * @see     [[org.opalj.br.ObjectType$]] for details.
+     */
+    def apply(fqn: String): NEW = NEW(ObjectType(fqn))
 
 }

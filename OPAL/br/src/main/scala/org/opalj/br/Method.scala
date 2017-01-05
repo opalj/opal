@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,6 +43,9 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.VisibilityModifier
+import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.Instruction
 
 /**
@@ -90,9 +93,9 @@ final class Method private (
 
     final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
 
-    final override def isMethod = true
+    final override def isMethod: Boolean = true
 
-    final override def asMethod = this
+    final override def asMethod: this.type = this
 
     final def asVirtualMethod(declaringClassFile: ClassFile): VirtualMethod = {
         asVirtualMethod(declaringClassFile.thisType)
@@ -181,7 +184,7 @@ final class Method private (
 
     // This is directly supported due to its need for the resolution of signature
     // polymorphic methods.
-    final def isNativeAndVarargs = Method.isNativeAndVarargs(accessFlags)
+    final def isNativeAndVarargs: Boolean = Method.isNativeAndVarargs(accessFlags)
 
     final def isVarargs: Boolean = (ACC_VARARGS.mask & accessFlags) != 0
 
@@ -189,7 +192,7 @@ final class Method private (
 
     final def isBridge: Boolean = (ACC_BRIDGE.mask & accessFlags) != 0
 
-    final def isNative = (ACC_NATIVE.mask & accessFlags) != 0
+    final def isNative: Boolean = (ACC_NATIVE.mask & accessFlags) != 0
 
     final def isStrict: Boolean = (ACC_STRICT.mask & accessFlags) != 0
 
@@ -223,15 +226,15 @@ final class Method private (
             !isStaticInitializer // before Java 8 <clinit> was not required to be static
     }
 
-    def returnType = descriptor.returnType
+    def returnType: Type = descriptor.returnType
 
-    def parameterTypes = descriptor.parameterTypes
+    def parameterTypes: IndexedSeq[FieldType] = descriptor.parameterTypes
 
     /**
      * The number of explicit and implicit – that is, including `this` in case of a
      * non-static method – parameters of this method.
      */
-    def parametersCount = (if (isStatic) 0 else 1) + descriptor.parametersCount
+    def parametersCount: Int = (if (isStatic) 0 else 1) + descriptor.parametersCount
 
     /**
      * Each method optionally defines a method type signature.
@@ -258,6 +261,13 @@ final class Method private (
             this.name.compareTo(other.name)
     }
 
+    def compare(otherName: String, otherDescriptor: MethodDescriptor): Int = {
+        if (this.name eq otherName)
+            this.descriptor.compare(otherDescriptor)
+        else
+            this.name.compareTo(otherName)
+    }
+
     def toJava(): String = {
         val visibility = VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("")
         visibility + descriptor.toJava(name)
@@ -265,10 +275,16 @@ final class Method private (
 
     def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
 
+    def toJava(project: ClassFileRepository): String = toJava(project.classFile(this).thisType)
+
     def toJava(declaringType: ObjectType): String = s"${declaringType.toJava}{ $toJava }"
 
     def toJava(declaringClass: ClassFile, methodInfo: String): String = {
         toJava(declaringClass.thisType, methodInfo)
+    }
+
+    def toJava(methodInfo: String)(implicit project: ClassFileRepository): String = {
+        toJava(project.classFile(this), methodInfo)
     }
 
     def toJava(declaringType: ObjectType, methodInfo: String): String = {
@@ -315,7 +331,7 @@ object Method {
      *       is at least `Serializable`.
      *
      * @param method A method defined by a class that inherits from Serializable or which has
-     * 			at least one sublcass that is Serializable and that inherits the given method.
+     *          at least one sublcass that is Serializable and that inherits the given method.
      * @param isInheritedBySerializableOnlyClass This parameter should be `Yes` iff this method is
      *      defined in a `Serializable` class or is inherited by at least one class that is
      *      (just) `Serializable`, but which is not `Externalizable`.
@@ -381,9 +397,9 @@ object Method {
     }
 
     /**
-     * @param 	name The name of the method. In case of a constructor the method
-     *      	name has to be "<init>". In case of a static initializer the name has to
-     *      	be "<clinit>".
+     * @param   name The name of the method. In case of a constructor the method
+     *          name has to be "<init>". In case of a static initializer the name has to
+     *          be "<clinit>".
      */
     def apply(
         accessFlags: Int,
@@ -408,10 +424,10 @@ object Method {
      * Factory for Method objects.
      *
      * @example A new method that is public abstract that takes no parameters and
-     * 			returns void and has the name "myMethod" can be created as shown next:
-     * 			{{{
-     *  		val myMethod = Method(name="myMethod");
-     * 			}}}
+     *          returns void and has the name "myMethod" can be created as shown next:
+     *          {{{
+     *          val myMethod = Method(name="myMethod");
+     *          }}}
      */
     def apply(
         accessFlags:    Int                   = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
@@ -423,6 +439,23 @@ object Method {
         Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
     }
 
-    def unapply(method: Method): Option[(Int, String, MethodDescriptor)] =
+    def unapply(method: Method): Option[(Int, String, MethodDescriptor)] = {
         Some((method.accessFlags, method.name, method.descriptor))
+    }
+
+    def defaultConstructor(superclassType: ObjectType = ObjectType.Object) = {
+        import MethodDescriptor.NoArgsAndReturnVoid
+        val theBody = Code(
+            maxStack = 1,
+            maxLocals = 1,
+            instructions = Array(
+                ALOAD_0,
+                INVOKESPECIAL(superclassType, false, "<init>", NoArgsAndReturnVoid),
+                null,
+                null,
+                RETURN
+            )
+        )
+        new Method(ACC_PUBLIC.mask, "<init>", NoArgsAndReturnVoid, Some(theBody), IndexedSeq.empty)
+    }
 }

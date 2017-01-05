@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -49,13 +49,13 @@ final class BinaryString private (private val string: String) {
         }
     }
 
-    override def hashCode() = string.hashCode()
+    override def hashCode: Int = string.hashCode()
 
-    override def toString() = string.toString()
+    override def toString: String = string.toString()
 }
 
 object BinaryString {
 
-    def apply(string: String) = new BinaryString(string.replace('.', '/'))
+    def apply(string: String): BinaryString = new BinaryString(string.replace('.', '/'))
 
 }

@@ -15,10 +15,10 @@
  *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY ETPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, ETEMPLARY, OR
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
@@ -39,7 +39,7 @@ import scala.collection.IndexedSeqOptimized
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayBuffer
-
+import org.opalj.control.{find ⇒ findInArray}
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
  * therefore also no longer mutable if ConstArray is the soler owner.
@@ -113,16 +113,20 @@ object ConstArray extends LowLevelConstArrayImplicits {
 
     final val EmptyConstArray = new ConstArray[Null](new Array[Null](0))
 
-    def empty[T <: AnyRef] = EmptyConstArray.asInstanceOf[ConstArray[T]]
+    def find[T <: AnyRef](sortedConstArray: ConstArray[T])(evaluate: T ⇒ Int): Option[T] = {
+        findInArray(sortedConstArray.data)(evaluate)
+    }
 
-    def apply[T <: AnyRef: ClassTag](data: T*) = new ConstArray(data.toArray)
+    def empty[T <: AnyRef]: ConstArray[T] = EmptyConstArray.asInstanceOf[ConstArray[T]]
+
+    def apply[T <: AnyRef: ClassTag](data: T*): ConstArray[T] = new ConstArray(data.toArray)
 
     /**
      * Creates a new [[ConstArray]] by cloning the given array.
      *
      * I.e., modifications to the given array will not be reflected.
      */
-    def apply[T <: AnyRef](data: Array[T]) = new ConstArray(data.clone())
+    def apply[T <: AnyRef](data: Array[T]): ConstArray[T] = new ConstArray(data.clone())
 
     /**
      * Creates a new [[ConstArray]] from the given array. Hence, changes to the underlying array
@@ -130,6 +134,6 @@ object ConstArray extends LowLevelConstArrayImplicits {
      * alias to the given array to ensure that the underlying array is not mutated.'''
      */
     // IMPROVE Use an ownership annotation to specify that ConstArray takes over the ownership of the array.
-    def from[T <: AnyRef](data: Array[T]) = new ConstArray(data)
+    def from[T <: AnyRef](data: Array[T]): ConstArray[T] = new ConstArray(data)
 
 }

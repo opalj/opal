@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -84,11 +84,4 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
 
     registerAttributeReader(RuntimeVisibleTypeAnnotationsAttribute.Name → parser)
 }
-/**
- * Common properties of `RuntimeVisibleTypeAnnotations` attributes.
- */
-object RuntimeVisibleTypeAnnotationsAttribute {
 
-    final val Name = "RuntimeVisibleTypeAnnotations"
-
-}

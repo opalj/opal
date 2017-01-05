@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -44,18 +44,18 @@ import org.opalj.collection.immutable.Naught
  * Representation of a method's code attribute, that is, representation of a method's
  * implementation.
  *
- * @param maxStack The maximum size of the stack during the execution of the method.
- *      This value is determined by the compiler and is not necessarily the minimum.
- *      However, in the vast majority of cases it is the minimum.
- * @param maxLocals The number of registers/local variables needed to execute the method.
- *      As in case of `maxStack` this number is expected to be the minimum, but this is
- *      not guaranteed.
- * @param instructions The instructions of this `Code` array/`Code` block. Since the code
- *      array is not completely filled (it contains `null` values) the preferred way
- *      to iterate over all instructions is to use for-comprehensions and pattern
- *      matching or to use one of the predefined methods [[foreach]], [[collect]],
- *      [[collectPair]], [[collectWithIndex]], etc..
- *      The `instructions` array must not be mutated!
+ * @param   maxStack The maximum size of the stack during the execution of the method.
+ *          This value is determined by the compiler and is not necessarily the minimum.
+ *          However, in the vast majority of cases it is the minimum.
+ * @param   maxLocals The number of registers/local variables needed to execute the method.
+ *          As in case of `maxStack` this number is expected to be the minimum, but this is
+ *          not guaranteed.
+ * @param   instructions The instructions of this `Code` array/`Code` block. Since the code
+ *          array is not completely filled (it contains `null` values) the preferred way
+ *          to iterate over all instructions is to use for-comprehensions and pattern
+ *          matching or to use one of the predefined methods [[foreach]], [[collect]],
+ *          [[collectPair]], [[collectWithIndex]], etc..
+ *          The `instructions` array must not be mutated!
  *
  * @author Michael Eichberg
  */
@@ -80,7 +80,7 @@ final class Code private (
             bf: CanBuildFrom[Nothing, B, That]
         ): That = {
             val that = bf()
-            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+            code foreach { (pcInstruction: (PC, Instruction)) ⇒
                 if (p(pcInstruction)) that += f(pcInstruction)
             }
             that.result
@@ -93,7 +93,7 @@ final class Code private (
             bf: CanBuildFrom[Nothing, B, That]
         ): That = {
             val that = bf()
-            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+            code foreach { (pcInstruction: (PC, Instruction)) ⇒
                 if (p(pcInstruction)) that ++= f(pcInstruction).seq
             }
             that.result
@@ -560,11 +560,11 @@ final class Code private (
     /**
      * Returns the line number table - if any.
      *
-     * @note A code attribute is allowed to have multiple line number tables. However, all
-     *      tables are merged into one by OPAL at class loading time.
+     * @note    A code attribute is allowed to have multiple line number tables. However, all
+     *          tables are merged into one by OPAL at class loading time.
      *
-     * @note Depending on the configuration of the reader for `ClassFile`s this
-     *      attribute may not be reified.
+     * @note    Depending on the configuration of the reader for `ClassFile`s this
+     *          attribute may not be reified.
      */
     def lineNumberTable: Option[LineNumberTable] = {
         attributes collectFirst { case lnt: LineNumberTable ⇒ lnt }

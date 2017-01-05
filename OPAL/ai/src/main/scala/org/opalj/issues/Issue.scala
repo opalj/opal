@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,6 +33,9 @@ import scala.xml.Node
 import scala.xml.Group
 import scala.xml.Unparsed
 
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+
 /**
  * Describes some issue found in source code.
  *
@@ -43,12 +46,12 @@ import scala.xml.Unparsed
  * @param summary The issue in one short sentence (no line breaks)!
  *
  * @param categories A string that uses small letters and which describes the category of the issue.
- * 			The category basically describes '''the property of the software that is
- * 			affected ''' by this issue (see [[IssueCategory]] for further details).
+ *          The category basically describes '''the property of the software that is
+ *          affected ''' by this issue (see [[IssueCategory]] for further details).
  *
  * @param kinds A string that uses small letters and which describes the kind of the issue.
- * 			The kind describes how '''this issue manifests itself in the source code'''
- * 			(see [[IssueKind]] for further details).
+ *          The kind describes how '''this issue manifests itself in the source code'''
+ *          (see [[IssueKind]] for further details).
  *
  * @param locations The source code locations related to this issue. This seq must not be empty!
  *
@@ -122,15 +125,15 @@ case class Issue(
         )
     }
 
-    def toIDL: String = {
-        this.analysis+"\n"+
-            "{"+"\n"+
-            categories.mkString("\tCategories: ", ", ", "\n") +
-            kinds.mkString("\tKinds: ", ", ", "\n")+
-            "\tRelevance: "+relevance.value.toString()+"\n"+
-            "\tSummary: "+summary+"\n"+
-            locations.map(_.toIDL).filter(_.nonEmpty).mkString("\n")+
-            "}"
+    override def toIDL: JsValue = {
+        Json.obj(
+            "analysis" → analysis,
+            "relevance" → relevance,
+            "summary" → summary,
+            "categories" → categories,
+            "kinds" → kinds,
+            "details" → details,
+            "locations" → locations
+        )
     }
-
 }

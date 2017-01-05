@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -45,7 +45,7 @@ class AccessFlagsIterator private (
 
     private[this] var index = -1
 
-    override def hasNext = flags != 0
+    override def hasNext: Boolean = flags != 0
 
     override def next: AccessFlag = {
         while ((index + 1) < potentialAccessFlags.size) {
@@ -72,7 +72,7 @@ object AccessFlagsIterator {
      *      flags bit vector partially depends on the concrete source element that
      *      defines the accessFlags.
      */
-    def apply(accessFlags: Int, ctx: AccessFlagsContext) = {
+    def apply(accessFlags: Int, ctx: AccessFlagsContext): AccessFlagsIterator = {
         new AccessFlagsIterator(accessFlags, AccessFlagsContexts.potentialAccessFlags(ctx))
     }
 }

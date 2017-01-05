@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -47,7 +47,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
  */
 object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
 
-    override def description: String = "Provides information about field accesses."
+    override def description: String = "provides information about field accesses"
 
     override def analysisSpecificParametersDescription: String = {
         "[-field=\"<The field for which we want read/write access information "+
@@ -55,17 +55,18 @@ object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
     }
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
-        if (parameters.isEmpty || (parameters.size == 1 && parameters.head.startsWith("-field=")))
+        if (parameters.isEmpty || (parameters.size == 1 && parameters.head.startsWith("-field="))) {
             Seq.empty
-        else
+        } else {
             Seq("unknown parameters: "+parameters.mkString(" "))
+        }
     }
 
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         import org.opalj.util.PerformanceEvaluation.{memory, asMB}
         var memoryUsage = ""

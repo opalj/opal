@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -124,8 +124,9 @@ object OPALLogger extends OPALLogger {
             nextId += 1
         } else if (ctx.id >= 0) {
             throw new RuntimeException("reregistration of a log context is not supported")
-        } else
-            throw new RuntimeException("reregistration of an unregistered log context is not supported")
+        } else {
+            throw new RuntimeException("log contexts cannot be reregistered")
+        }
     }
 
     def unregister(ctx: LogContext): Unit = this.synchronized {
@@ -135,10 +136,13 @@ object OPALLogger extends OPALLogger {
         }
 
         val ctxId = ctx.id
+        // try to reuse log context id if possible
         if (ctxId + 1 == nextId) nextId = ctxId
         loggers(ctxId) = null
         ctx.id = -2
     }
+
+    def isUnregistered(ctx: LogContext): Boolean = this.synchronized { ctx.id == -2 }
 
     def logger(ctx: LogContext): OPALLogger = this.synchronized { loggers(ctx.id) }
 
@@ -247,4 +251,3 @@ object OPALLogger extends OPALLogger {
         log(Error(category, message, t))
     }
 }
-

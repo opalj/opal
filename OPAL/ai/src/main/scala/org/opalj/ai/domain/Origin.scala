@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -62,15 +62,14 @@ trait Origin { domain: ValuesDomain ⇒
      */
     trait SingleOriginValue extends ValueWithOriginInformation {
         def origin: ValueOrigin
-        final def origins = Iterable(origin)
+        final def origins: Iterable[ValueOrigin] = Iterable(origin)
     }
 
     /**
      * Should be mixed in by `Value` classes that capture information about all origins
      * of a value.
      */
-    trait MultipleOriginsValue extends ValueWithOriginInformation {
-    }
+    trait MultipleOriginsValue extends ValueWithOriginInformation
 
     /**
      * Returns the origin(s) of the given value if the information is available.
@@ -100,14 +99,14 @@ trait Origin { domain: ValuesDomain ⇒
 
 object Origin {
 
-    def unapply(value: Origin#SingleOriginValue): Option[Int] =
-        Some(value.origin)
+    def unapply(value: Origin#SingleOriginValue): Option[Int] = Some(value.origin)
 
 }
 
 object Origins {
 
-    def unapply(value: Origin#ValueWithOriginInformation): Option[Iterable[ValueOrigin]] =
+    def unapply(value: Origin#ValueWithOriginInformation): Option[Iterable[ValueOrigin]] = {
         Some(value.origins)
+    }
 
 }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,9 +37,9 @@ import java.io.IOException
  * some bytes, if the given boudary (`failAfter`) is surpased.
  *
  * @param failAfter Sets the boundary after which a `write` will throw an
- * 		exception.
+ *      exception.
  * @param initialSize Sets the initial size of the array used to the store the content.
- * 		This serves optimization purposes only.
+ *      This serves optimization purposes only.
  * @author Michael Eichberg
  */
 class FailAfterByteArrayOutputStream(

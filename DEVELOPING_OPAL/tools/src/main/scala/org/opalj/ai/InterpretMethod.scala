@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -51,7 +51,7 @@ object InterpretMethod {
 
     private object AI extends AI[Domain] {
 
-        override def isInterrupted = Thread.interrupted()
+        override def isInterrupted: Boolean = Thread.interrupted()
 
         override val tracer = {
             val consoleTracer = new ConsoleTracer { override val printOIDs = true }
@@ -66,10 +66,10 @@ object InterpretMethod {
      * Traces the interpretation of a single method and prints out the results.
      *
      * @param args The first element must be the name of a class file, a jar file
-     * 		or a directory containing the former. The second element must
-     * 		denote the name of a class and the third must denote the name of a method
-     * 		of the respective class. If the method is overloaded the first method
-     * 		is returned.
+     *      or a directory containing the former. The second element must
+     *      denote the name of a class and the third must denote the name of a method
+     *      of the respective class. If the method is overloaded the first method
+     *      is returned.
      */
     def main(args: Array[String]): Unit = {
         import Console.{RED, RESET}
@@ -266,26 +266,35 @@ object InterpretMethod {
 
                 def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
                     val context =
-                        if (nested)
-                            ife.localsArray(0).toSeq.filter(_ != null).map(_.toString).mkString("Parameters:<i>", ", ", "</i><br>")
-                        else
+                        if (nested) {
+                            ife.localsArray(0).toSeq.
+                                filter(_ != null).map(_.toString).
+                                mkString("Parameters:<i>", ", ", "</i><br>")
+                        } else
                             ""
 
                     val d =
                         "<p><b>"+ife.domain.getClass.getName+"("+ife.domain.toString+")"+"</b></p>"+
                             context+
                             "Current instruction: "+ife.pc+"<br>"+
-                            XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
-                            ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                            XHTML.evaluatedInstructionsToXHTML(ife.evaluated) + {
+                                if (ife.worklist.nonEmpty)
+                                    ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                                else
+                                    "Remaining worklist: <i>EMPTY</i><br>"
+                            }
 
                     ife.cause match {
                         case ct: ControlThrowable ⇒ throw ct
                         case ife: InterpretationFailedException ⇒
-                            d + ife.cause.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
+                            d + ife.cause.
+                                getStackTrace.
+                                mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                                 "<div style='margin-left:5em'>"+causeToString(ife, true)+"</div>"
                         case e: Throwable ⇒
-                            d+"<br>"+"Underlying cause: "+e.getMessage() +
-                                e.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")
+                            d+"<br>"+
+                                "Underlying cause: "+util.XHTML.htmlify(e.getMessage()) //+
+                        // e.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")
                         case _ ⇒
                             d
                     }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,23 +32,21 @@ package br
 /**
  * A method's line number table.
  *
- * @param lineNumbers
- * 			<pre>
- * 			LineNumberTable_attribute {
- *   			DATA:
- *   			{  	u2 start_pc;
- *      			u2 line_number;
- *   			}
- * 			}
- * 			</pre>
+ * @param   lineNumbers
+ *          <pre>
+ *          LineNumberTable_attribute {
+ *              DATA:
+ *              {   u2 start_pc;
+ *                  u2 line_number;
+ *              }
+ *          }
+ *          </pre>
  *
  * @author Michael Eichberg
  */
 case class CompactLineNumberTable(lineNumbers: Array[Byte]) extends LineNumberTable {
 
-    def asUnsignedShort(hb: Byte, lb: Byte): Int = {
-        ((hb & 0xFF) << 8) + (lb & 0xFF)
-    }
+    def asUnsignedShort(hb: Byte, lb: Byte): Int = ((hb & 0xFF) << 8) + (lb & 0xFF)
 
     def lookupLineNumber(pc: PC): Option[Int] = {
         var lastLineNumber = -1
@@ -56,11 +54,9 @@ case class CompactLineNumberTable(lineNumbers: Array[Byte]) extends LineNumberTa
         val entries = lineNumbers.size / 4
         while (e < entries) {
             val index = e * 4
-            val startPC = ((lineNumbers(index) & 0xFF) << 8) + (lineNumbers(index + 1) & 0xFF)
+            val startPC = asUnsignedShort(lineNumbers(index), lineNumbers(index + 1))
             if (startPC <= pc) {
-                val currentLineNumber =
-                    ((lineNumbers(index + 2) & 0xFF) << 8) + (lineNumbers(index + 3) & 0xFF)
-                lastLineNumber = currentLineNumber
+                lastLineNumber = asUnsignedShort(lineNumbers(index + 2), lineNumbers(index + 3))
             } else if (lastLineNumber == -1) {
                 return None;
             } else {
@@ -75,7 +71,7 @@ case class CompactLineNumberTable(lineNumbers: Array[Byte]) extends LineNumberTa
         if (lineNumbers.length == 0)
             return None;
 
-        val raw_pc_lns = lineNumbers.toIndexedSeq.grouped(2).zipWithIndex.filter(_._2 % 2 == 1)
+        val raw_pc_lns = lineNumbers.grouped(2).zipWithIndex.filter(_._2 % 2 == 1)
         val raw_lns = raw_pc_lns.map(_._1)
         val lns =
             raw_lns map { bytes ⇒

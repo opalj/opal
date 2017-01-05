@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -58,7 +58,7 @@ case class FlowEntity(
 private[ai] object FlowEntity {
     private var flowId = -1
     private def nextFlowId = { flowId += 1; flowId }
-    def lastFlowId = flowId - 1
+    def lastFlowId: Int = flowId - 1
 }
 
 /**
@@ -186,30 +186,30 @@ trait XHTMLTracer extends AITracer {
                 </script>
                 <style>
                     table {{
-			width:100%;
-			font-size: 12px;
-			font-family: Tahoma;
-			margin: 0px;
-        	padding: 0px;
-			border: 1px solid gray;
-        	border-collapse: collapse;
-		}}
+            width:100%;
+            font-size: 12px;
+            font-family: Tahoma;
+            margin: 0px;
+            padding: 0px;
+            border: 1px solid gray;
+            border-collapse: collapse;
+        }}
         tr {{
-        	margin: 0px;
-        	padding: 0px;
-        	border: 0px:
+            margin: 0px;
+            padding: 0px;
+            border: 0px:
         }}
         td {{
-        	margin: 0px;
-        	padding: 0px;
-        	border: 0px;
+            margin: 0px;
+            padding: 0px;
+            border: 0px;
         }}
         td ~ td {{
-        	border-right: 1px solid #999;
+            border-right: 1px solid #999;
         }}
         td.hovered {{
-        	background-color: lightblue;
-        	color: #666;
+            background-color: lightblue;
+            color: #666;
         }}
         /*
         ui-dialog: The outer container of the dialog.
@@ -221,8 +221,8 @@ trait XHTMLTracer extends AITracer {
         ui-dialog-buttonset: The container around the buttons themselves.
         */
         .ui-dialog-content {{
-        	font-family: Tahoma,Arial;
-        	font-size: 11px;
+            font-family: Tahoma,Arial;
+            font-size: 11px;
         }}
                 </style>
             </head>
@@ -241,32 +241,32 @@ trait XHTMLTracer extends AITracer {
                 { dialogs }
                 <script>
                     $('tbody tr').hover(function(){{
-        	$(this).find('td').addClass('hovered');
+            $(this).find('td').addClass('hovered');
         }}, function(){{
-        	$(this).find('td').removeClass('hovered');
+            $(this).find('td').removeClass('hovered');
         }});
         function filter(selector, query) {{
-        	$(selector).each(function() {{
-        		($(this).text().search(new RegExp(query, 'i')){ xml.Unparsed("<") }
+            $(selector).each(function() {{
+                ($(this).text().search(new RegExp(query, 'i')){ xml.Unparsed("<") }
                     0) ? $(this).show().addClass('visible') : $(this).hide().removeClass('visible');
-        	}});
+            }});
         }};
         //default each row to visible
         $('tbody tr').addClass('visible');
 
         $('#filter').keyup(function(event) {{
-        		//if esc is pressed or nothing is entered
-        		if (event.keyCode == 27 || $(this).val() == '') {{
-        			//if esc is pressed we want to clear the value of search box
-        			$(this).val('');
-        			//we want each row to be visible because if nothing
-        			//is entered then all rows are matched.
-        			$('tbody tr').removeClass('visible').show().addClass('visible');
-        		}}
-        		//if there is text, lets filter
-        		else {{
-        			filter('tbody tr', $(this).val());
-        		}}
+                //if esc is pressed or nothing is entered
+                if (event.keyCode == 27 || $(this).val() == '') {{
+                    //if esc is pressed we want to clear the value of search box
+                    $(this).val('');
+                    //we want each row to be visible because if nothing
+                    //is entered then all rows are matched.
+                    $('tbody tr').removeClass('visible').show().addClass('visible');
+                }}
+                //if there is text, lets filter
+                else {{
+                    filter('tbody tr', $(this).val());
+                }}
         }});
                 </script>
             </body>
@@ -301,7 +301,7 @@ trait XHTMLTracer extends AITracer {
         currentPC:                PC,
         successorPC:              PC,
         isExceptionalControlFlow: Boolean
-    ) = {
+    ): Unit = {
         continuingWithBranch = currentPC < successorPC
     }
 

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -42,7 +42,7 @@ import org.opalj.util.Nanoseconds
  * @author Michael Eichberg
  */
 class TimeBoundedAI[D <: Domain](
-        val maxEffort: Nanoseconds = new Milliseconds(150l).toNanoseconds
+        val maxEffort: Nanoseconds = new Milliseconds(150L).toNanoseconds
 ) extends AI[D] {
 
     private[this] final val CheckInterval = 100

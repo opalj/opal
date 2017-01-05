@@ -510,9 +510,7 @@ sealed trait Chain[@specialized(Int) +T]
     def fuse[X >: T <: AnyRef](that: Chain[X], onDiff: (T, X) ⇒ X): Chain[X]
 }
 
-trait ChainLowPriorityImplicits {
-
-}
+trait ChainLowPriorityImplicits
 
 /**
  * Factory for [[Chain]]s.
@@ -560,6 +558,11 @@ object Chain extends ChainLowPriorityImplicits {
         specializedCanBuildFrom
     }
 
+    val GenericSpecializedCBF = new CanBuildFrom[Any, Int, Chain[Int]] {
+        def apply(from: Any) = new ChainBuilder[Int]
+        def apply() = new ChainBuilder[Int]
+    }
+
     implicit def toTraversable[T](cl: Chain[T]): Traversable[T] = cl.toIterable
 
     def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainBuilder[T] = {
@@ -584,7 +587,7 @@ object Chain extends ChainLowPriorityImplicits {
 
     /**
      * @note     The recommended way to create a Chain with one element is to
-     *             use the `singleton` method.
+     *           use the `singleton` method.
      */
     def apply[@specialized(Int) T](es: T*): Chain[T] = {
         if (es.isEmpty)

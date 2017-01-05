@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -46,9 +46,9 @@ import org.opalj.collection.mutable.IntArrayStack
  * exception, which may result in a different control-flow, is also a `predicate` additionally to
  * all ifs and switches.
  *
- * @param 	controlDependentOn Contains for each node of the graph (represented by its positive,
- * 			unique int id) the information on which node it is directly dependent on or `-1` if
- * 			the instruction is not control dependent on any other node.
+ * @param   controlDependentOn Contains for each node of the graph (represented by its positive,
+ *          unique int id) the information on which node it is directly dependent on or `-1` if
+ *          the instruction is not control dependent on any other node.
  *
  * @author Michael Eichberg
  */
@@ -56,11 +56,11 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
 
     /**
      * @return  The of nodes/basic block on which the given node/basic block is '''directly'''
-     * 			control dependent on. That is, the set of node which directly control whether x is
-     * 			executed or not.
-     * 			'''Directly''' means that there is at least one path  between a node Y in
-     * 			`Control(X)/*the returned set*/` and X, whose selection is controlled by Y and
-     * 			which contains no nodes that may prevent the execution of X.
+     *          control dependent on. That is, the set of node which directly control whether x is
+     *          executed or not.
+     *          '''Directly''' means that there is at least one path  between a node Y in
+     *          `Control(X)/*the returned set*/` and X, whose selection is controlled by Y and
+     *          which contains no nodes that may prevent the execution of X.
      */
     def xIsDirectlyControlDependentOn(x: Int): SmallValuesSet = {
         dominanceFrontiers(x)
@@ -108,9 +108,9 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
  * // A graph taken from the paper:
  * // Efficiently Computing Static Single Assignment Form and the Control Dependence Graph
  * val g = org.opalj.graphs.Graph.empty[Int] +=
- * 			(0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) +=
- * 			(6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) +=
- * 			(11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
+ *          (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) +=
+ *          (6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) +=
+ *          (11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
  * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
  * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
  * val dtf = org.opalj.graphs.DominatorTreeFactory(0, false, foreachSuccessor, foreachPredecessor, 13)
@@ -136,9 +136,9 @@ object ControlDependenceGraph {
      *
      * A node (basic block) Y is control-dependent on another X iff X determines whether Y
      * executes, i.e.
-     * 	-	there exists a path from X to Y such that every node in the path other than X & Y is
-     * 		post-dominated by Y
-     * 	-	X is not post-dominated by Y
+     *  -   there exists a path from X to Y such that every node in the path other than X & Y is
+     *      post-dominated by Y
+     *  -   X is not post-dominated by Y
      *
      * @return The triple `(`(Post)`[[DominatorTree]], [[DominanceFrontiers]], [[ControlDependencies]])`
      */
@@ -163,10 +163,10 @@ object ControlDependenceGraph {
     }
 
     /**
-     * @param 	pdtf A DominatorTreeFactory that creates the post dominator tree.
-     * @param 	rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
-     * 			the post dominator tree computed by the `pdtf`.
-     * @see 	[[PostDominatorTree$]] and [[DominanceFrontiers]]
+     * @param   pdtf A DominatorTreeFactory that creates the post dominator tree.
+     * @param   rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
+     *          the post dominator tree computed by the `pdtf`.
+     * @see     [[PostDominatorTree$]] and [[DominanceFrontiers]]
      */
     def apply(
         pdtf:        DominatorTreeFactory,
@@ -176,10 +176,10 @@ object ControlDependenceGraph {
     }
 
     /**
-     * @param 	pdtf A DominatorTreeFactory that creates the post dominator tree.
-     * @param 	rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
-     * 			the post dominator tree computed by the `pdtf`.
-     * @see 	[[PostDominatorTree$]] and [[DominanceFrontiers]]
+     * @param   pdtf A DominatorTreeFactory that creates the post dominator tree.
+     * @param   rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
+     *          the post dominator tree computed by the `pdtf`.
+     * @see     [[PostDominatorTree$]] and [[DominanceFrontiers]]
      */
     def apply(
         pdtf: DominatorTreeFactory,

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -68,7 +68,7 @@ trait CallGraphExtractor { extractor ⇒
         def classFile: ClassFile
         def method: Method
 
-        @inline final def cache = extractor.cache
+        @inline final def cache: CallGraphCache[MethodSignature, Set[Method]] = extractor.cache
 
         //
         //

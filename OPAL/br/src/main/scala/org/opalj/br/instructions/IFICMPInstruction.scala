@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,12 +36,13 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class IFICMPInstruction extends SimpleConditionalBranchInstruction {
+trait IFICMPInstructionLike extends SimpleConditionalBranchInstructionLike {
 
     final def operandCount = 2
 
-    def condition: RelationalOperator
-
     final def stackSlotsChange: Int = -2
 
+    def condition: RelationalOperator
 }
+
+trait IFICMPInstruction extends SimpleConditionalBranchInstruction with IFICMPInstructionLike

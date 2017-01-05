@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -162,11 +162,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         intValues(left, right) { (v1, v2) ⇒ Answer(v1 < v2) } { Unknown }
     }
 
-    override def intIsLessThanOrEqualTo(
-        pc:    PC,
-        left:  DomainValue,
-        right: DomainValue
-    ): Answer = {
+    override def intIsLessThanOrEqualTo(pc: PC, left: DomainValue, right: DomainValue): Answer = {
         intValues(left, right) { (v1, v2) ⇒ Answer(v1 <= v2) } { Unknown }
     }
 
@@ -179,11 +175,12 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     //
     // UNARY EXPRESSIONS
     //
-    override def ineg(pc: PC, value: DomainValue) =
+    override def ineg(pc: PC, value: DomainValue): DomainValue = {
         value match {
             case TheIntegerValue(v) ⇒ IntegerValue(pc, -v)
             case v                  ⇒ v
         }
+    }
 
     //
     // BINARY EXPRESSIONS

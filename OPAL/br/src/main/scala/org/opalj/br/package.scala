@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -28,13 +28,15 @@
  */
 package org.opalj
 
-import org.opalj.collection.immutable.UIDSet
-import scala.xml.Node
-import scala.xml.Text
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
+
+import scala.xml.Node
+import scala.xml.Text
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 
@@ -203,6 +205,10 @@ package object br {
         <span class="access_flags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.CLASS) }</span>
     }
 
+    def classAccessFlagsToString(accessFlags: Int): String = {
+        AccessFlags.toString(accessFlags, AccessFlagsContexts.CLASS)
+    }
+
     def typeToXHTML(accessFlags: Int, t: Type, abbreviateTypes: Boolean): Node = {
 
         val signature = typeToXHTML(t, abbreviateTypes)
@@ -227,7 +233,9 @@ package object br {
                 List(Text(""))
             else {
                 val parameterTypes = descriptor.parameterTypes.map(typeToXHTML(_, abbreviateTypes))
-                parameterTypes.tail.foldLeft(List(parameterTypes.head))((c, r) ⇒ r :: Text(", ") :: c).reverse
+                parameterTypes.tail.foldLeft(List(parameterTypes.head)) { (c, r) ⇒
+                    r :: Text(", ") :: c
+                }.reverse
             }
 
         <span class="method_signature">
@@ -247,9 +255,13 @@ package object br {
         val signature = methodToXHTML(name, descriptor, abbreviateTypes)
 
         <span class="method_signature_with_access_flags">
-            <span class="access_flags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD) }</span>
+            <span class="access_flags">{ methodAccessFlagsToString(accessFlags) }</span>
             { signature }
         </span>
+    }
+
+    def methodAccessFlagsToString(accessFlags: Int): String = {
+        AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD)
     }
 
 }

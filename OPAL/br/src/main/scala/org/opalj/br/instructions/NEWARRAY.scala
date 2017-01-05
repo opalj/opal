@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -87,7 +87,7 @@ object NEWARRAY {
 
     final val opcode = 188
 
-    def unapply(newarray: NEWARRAY): Option[BaseType] = Some(newarray.elementType)
+    def unapply(newarray: NEWARRAY): Some[BaseType] = Some(newarray.elementType)
 
     def apply(atype: Int): NEWARRAY = {
         (atype: @annotation.switch) match {

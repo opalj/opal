@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,7 +13,6 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -61,11 +60,12 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
         fieldType
     }
 
-    override def asFieldTypeSignature =
+    override def asFieldTypeSignature = {
         // should be called at most once => caching doesn't make sense
         SignatureParser.parseFieldTypeSignature(value)
+    }
 
-    override def asSignature(ap: AttributeParent): Signature =
+    override def asSignature(ap: AttributeParent): Signature = {
         // should be called at most once => caching doesn't make sense
         ap match {
             case AttributesParent.Field     ⇒ SignatureParser.parseFieldTypeSignature(value)
@@ -75,8 +75,11 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
                 val message = s"code attribute has an unexpected signature attribute: $value"
                 throw new BytecodeProcessingFailedException(message)
         }
+    }
 
-    override def asConstantValue(cp: Constant_Pool): ConstantString =
-        // required to support annotations; should be called at most once => caching doesn't make sense
+    override def asConstantValue(cp: Constant_Pool): ConstantString = {
+        // required to support annotations; should be called at most once 
+        // => caching doesn't make sense
         ConstantString(value)
+    }
 }

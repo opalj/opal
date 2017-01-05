@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,15 +30,29 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.immutable.Chain
+
 /**
  * Common super class of all compound conditional branch instructions
  * (switch instructions!).
  *
  * @author Michael Eichberg
  */
-abstract class CompoundConditionalBranchInstruction extends ConditionalBranchInstruction {
+trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstructionLike {
 
     def operandCount: Int = 1
+
+    final def stackSlotsChange: Int = -1
+
+    /**
+     * Returns all case values that are '''not related to the default branch'''.
+     */
+    def caseValues: Iterable[Int]
+}
+
+trait CompoundConditionalBranchInstruction
+        extends ConditionalBranchInstruction
+        with CompoundConditionalBranchInstructionLike {
 
     def defaultOffset: Int
 
@@ -49,10 +63,6 @@ abstract class CompoundConditionalBranchInstruction extends ConditionalBranchIns
      * If the `jumpOffset` is also the `defaultOffset`, the return value's second
      * value is true.
      */
-    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean)
-
-    def caseValues: Seq[Int]
-
-    final def stackSlotsChange: Int = -1
+    def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean)
 
 }

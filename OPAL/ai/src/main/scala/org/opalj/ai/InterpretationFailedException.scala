@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,9 +37,9 @@ import org.opalj.collection.immutable.{Chain ⇒ List}
  *
  * To create an instance use the companion object [[InterpretationFailedException$]].
  *
- * @param 	pc The program counter of the instruction for which the interpretation failed.
- * 			If `pc == code.length` then the interpretation completed successfully,
- * 			but the post-processing failed.
+ * @param   pc The program counter of the instruction for which the interpretation failed.
+ *          If `pc == code.length` then the interpretation completed successfully,
+ *          but the post-processing failed.
  *
  * @author Michael Eichberg
  */

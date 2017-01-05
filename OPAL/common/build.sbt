@@ -8,5 +8,8 @@ scalacOptions in (Compile, console) := Seq("-deprecation")
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
+
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.5.10"
+
 //[FICUS HAS MOVED TO COM.IHEART]libraryDependencies += "net.ceedubs" %% "ficus" % "1.1.2"
-libraryDependencies += "com.iheart" %% "ficus" % "1.2.6"
+libraryDependencies += "com.iheart" %% "ficus" % "1.4.0"

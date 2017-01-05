@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -45,9 +45,9 @@ sealed trait PropertyComputationResult {
  * A final result is only to be used if no further refinement is possible or may happen.
  *
  * @note The framework will invoke and deregister all dependent computations (observers). If –
- * 		after having a result another result w.r.t. the given entity and property is given to
- * 		the property store – the behavior is undefined and may/will result in immediate but
- * 		also deferred arbitrary failures!
+ *      after having a result another result w.r.t. the given entity and property is given to
+ *      the property store – the behavior is undefined and may/will result in immediate but
+ *      also deferred arbitrary failures!
  */
 sealed trait FinalPropertyComputationResult extends PropertyComputationResult
 
@@ -98,7 +98,9 @@ private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
  *
  * @see [[FinalPropertyComputationResult]] for further information.
  */
-case class ImmediateMultiResult(properties: ComputationResults) extends FinalPropertyComputationResult {
+case class ImmediateMultiResult(
+        properties: ComputationResults
+) extends FinalPropertyComputationResult {
 
     private[fpcf] final def id = ImmediateMultiResult.id
 
@@ -122,15 +124,15 @@ object NoResult extends PropertyComputationResult {
  * All current computations that depend on the property of the entity will be invoked.
  *
  * @param dependees A traversable of entity/property (kind) pairs the analysis depends on. Each
- * 		entity/property kind must occur at most once in the list.
+ *      entity/property kind must occur at most once in the list.
  *
  * @param c
- * 		The function which is called if a property of any of the dependees is updated.
- * 		`c` does not have to be thread safe unless the same instance of c is returned multiple
- * 		times for different entities (`e`).
+ *      The function which is called if a property of any of the dependees is updated.
+ *      `c` does not have to be thread safe unless the same instance of c is returned multiple
+ *      times for different entities (`e`).
  *
  * @note All elements on which the result declares to be dependent on must have been queried
- * 		before (using one of the `apply` functions of the property store.)
+ *      before (using one of the `apply` functions of the property store.)
  */
 case class IntermediateResult(
         e:         Entity,
@@ -213,8 +215,8 @@ private[fpcf] object Results {
  * entity A some knowledge may be derived about an entity B and if there maybe an entity
  * C, which when analyzed, will also derive the same knowledge about B.
  *
- * @note 	In simple cases, i.e., where a property is always unknown or has one specific
- * 			value it may be easier and more efficient to just `set` or `put` the value directly.
+ * @note    In simple cases, i.e., where a property is always unknown or has one specific
+ *          value it may be easier and more efficient to just `set` or `put` the value directly.
  *
  * @param   f A function that is given the current property associated with e and
  *          which computes the new property or leaves the property unchanged.

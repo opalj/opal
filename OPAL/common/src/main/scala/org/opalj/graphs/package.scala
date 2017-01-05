@@ -30,6 +30,8 @@ package org.opalj
 
 import scala.collection.mutable
 
+import play.api.libs.json.Json
+
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
  * and trees.
@@ -40,6 +42,8 @@ import scala.collection.mutable
  * @author Michael Eichberg
  */
 package object graphs {
+
+    implicit val nodeWrites = Json.writes[VizNode]
 
     /**
      * Generates a string that describes a (multi-)graph using the ".dot/.gv" file format

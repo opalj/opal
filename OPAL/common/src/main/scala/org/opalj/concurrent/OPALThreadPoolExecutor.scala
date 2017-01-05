@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -55,7 +55,7 @@ class OPALThreadPoolExecutor(
     new LinkedBlockingQueue[Runnable](),
     new ThreadFactory {
 
-        val nextID = new AtomicLong(0l)
+        val nextID = new AtomicLong(0L)
 
         def newThread(r: Runnable): Thread = {
             val id = s"${nextID.incrementAndGet()}"

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,6 +31,7 @@ package ai
 package domain
 
 import org.opalj.log.LogContext
+import org.opalj.br.{ClassHierarchy ⇒ BRClassHierarchy}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
@@ -72,7 +73,7 @@ trait TheProject extends ClassHierarchy with LogContextProvider with TheProperty
     /**
      * Returns the project's class hierarchy.
      */
-    @inline final override implicit def classHierarchy = project.classHierarchy
+    @inline final override implicit def classHierarchy: BRClassHierarchy = project.classHierarchy
 
     final override lazy val propertyStore = project.get(SourceElementsPropertyStoreKey)
 }

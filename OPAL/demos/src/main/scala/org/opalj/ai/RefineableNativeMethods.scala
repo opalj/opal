@@ -47,16 +47,18 @@ import org.opalj.fpcf.analysis.CallableFromClassesInOtherPackagesAnalysis
  */
 object RefineableNativeMethods extends DefaultOneStepAnalysis {
 
-    override def title: String = "Finds all native methods for which it may be possible to refine the parameter types."
+    override def title: String = "native methods with refineable paramter type(s)"
 
-    override def description: String =
-        """Identifies all native methods that are not directly client callable.""".stripMargin
+    override def description: String = {
+        "identifies all native methods that are not directly client callable and "+
+            "which have a refineable paramter type"
+    }
 
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         val callGraph = project.get(VTACallGraphKey).callGraph
 

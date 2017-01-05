@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -48,10 +48,12 @@ class ClassFileReaderTest extends FlatSpec with Matchers {
     behavior of "ClassFile reader"
 
     it should "be able to read class files stored in jar files stored within jar files (nested jar files)" in {
-        val codeJARFile = locateTestResources("classfiles/AttributesAndCode.jar", "bi")
-        if (!ClassFiles(codeJARFile).exists(_._1.fqn == "attributes/DeprecatedByAnnotation"))
+        val classFiles = ClassFiles(locateTestResources("classfiles/JarsInAJar.jar", "bi"))
+        if (!classFiles.exists(_._1.fqn == "attributes/DeprecatedByAnnotation"))
             fail("could not find the class attributes.DeprecatedByAnnotation")
 
+        if (!classFiles.exists(_._1.fqn == "code/BoundedBuffer"))
+            fail("could not find the class code.BoundedBuffer")
     }
 
     it should "not crash when trying to read an empty (0-byte) .jar" in {

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -40,7 +40,7 @@ import org.opalj.fpcf.PropertyStore
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
  *
  * @note It is possible to set the project's `debug` flag using the project's
- * 		`org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
+ *      `org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
  *
  * @author Michael Eichberg
  */

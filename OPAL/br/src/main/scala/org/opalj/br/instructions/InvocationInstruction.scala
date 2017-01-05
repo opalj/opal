@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,16 +43,16 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
     /**
      * The simple name of the called method.
      *
-     * @note	This information is – in case of [[INCOMPLETE_INVOKEDYNAMIC]] instructions
-     * 			– only available after loading the entire class file.
+     * @note    This information is – in case of [[INCOMPLETE_INVOKEDYNAMIC]] instructions
+     *          – only available after loading the entire class file.
      */
     def name: String
 
     /**
      * The method descriptor of the called method.
      *
-     * @note	This information is – in case of [[INCOMPLETE_INVOKEDYNAMIC]] instructions
-     * 			– only available after loading the entire class file.
+     * @note    This information is – in case of [[INCOMPLETE_INVOKEDYNAMIC]] instructions
+     *          – only available after loading the entire class file.
      */
     def methodDescriptor: MethodDescriptor
 

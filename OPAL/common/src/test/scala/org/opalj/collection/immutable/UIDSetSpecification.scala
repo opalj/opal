@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -206,7 +206,7 @@ object UIDSetSpecification extends Properties("UIDSet") {
     }
 
     property("find") = forAll { (s: Set[Int]) ⇒
-        def test(suid: SUID) = suid.id < 0
+        def test(suid: SUID): Boolean = suid.id < 0
         val us = toSUIDSet(s)
         val ssuid = (SortedSet.empty[Int] ++ s).toList.map(SUID(_))
         val usFound = us.find(test)
@@ -250,13 +250,13 @@ object UIDSetSpecification extends Properties("UIDSet") {
     }
 
     property("filter") = forAll { (s: Set[Int], i: Int) ⇒
-        def test(s: SUID) = s.id < 0
+        def test(s: SUID): Boolean = s.id < 0
         val us = toSUIDSet(s).filter(test)
         toSUIDSet(s.filter(i ⇒ test(SUID(i)))) == us && isSorted(us)
     }
 
     property("filterNot") = forAll { (s: Set[Int], i: Int) ⇒
-        def test(s: SUID) = s.id < 0
+        def test(s: SUID): Boolean = s.id < 0
         val us = toSUIDSet(s).filterNot(test)
         toSUIDSet(s.filterNot(i ⇒ test(SUID(i)))) == us && isSorted(us)
     }
@@ -371,6 +371,6 @@ object UIDSetSpecification extends Properties("UIDSet") {
             }
         }
     }
-	*/
+    */
 
 }

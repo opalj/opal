@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -62,7 +62,7 @@ object ReferenceKind {
             /* 9*/ REF_invokeInterface
         )
 
-    def apply(referenceKindID: Int) = referenceKinds(referenceKindID)
+    def apply(referenceKindID: Int): ReferenceKind = referenceKinds(referenceKindID)
 }
 
 case object REF_getField extends ReferenceKind {

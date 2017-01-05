@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,48 +43,53 @@ import scala.collection.mutable
  * ==Thread Safety==
  * This class is thread safe.
  *
- * @note The sum relies on integers, it is therefore not suitable to get higher sums than the integer range provides.
  *
  * @author Michael Reif
  */
 trait Counting extends Locking {
 
-    private[this] val count = mutable.Map.empty[Symbol, Int]
+    private[this] val count = mutable.Map.empty[Symbol, Long]
 
-    /**
-     * Increases or decreases the count of the current statistics which is defined over the passed `symbol`.
-     * If the passed `value` is positive the count will be increases whereas it will decreases when a negative number is passed.
-     *
-     * @param s Symbol used to put multiple statistics into relation.
-     * @param value The value that will be added to the statistics. A negative number will reduce the current count.
-     */
-    final def updateStatistics(s: Symbol, value: Int): Unit = {
-        withWriteLock { doUpdateStatistics(s, value) }
+    final def incrementCount(s: Symbol): Unit = {
+        withWriteLock { updateCount(s, 1L) }
     }
 
     /**
-     * Called by the `updateStatistics(Symbol, Int)` method.
+     * Updates the count related to the entity identified by the given symbol.
+     *
+     * If the passed `value` is positive the count will be increased whereas it will be
+     * decreased when a negative number is passed.
+     *
+     * @param   s Symbol used to correlate values related to the same entity.
+     * @param   value The value that will be added to the entity's current value.
+     */
+    final def updateCount(s: Symbol, value: Long): Unit = {
+        withWriteLock { doUpdateCount(s, value) }
+    }
+
+    /**
+     * Called by the `updateCount(Symbol, Int)` method.
      *
      * ==Thread Safety==
-     * The `updateStatistics` method takes care of the synchronization.
+     * The `updateCount` method takes care of the synchronization.
      */
-    protected[this] def doUpdateStatistics(s: Symbol, value: Int): Unit = {
-        val oldValue = count.getOrElseUpdate(s, 0)
+    protected[this] def doUpdateCount(s: Symbol, value: Long): Unit = {
+        val oldValue = count.getOrElseUpdate(s, 0L)
         count.update(s, oldValue + value)
     }
 
     /**
-     * Returns the overall count that has been summed up with the given symbol `s`.
+     * Returns the overall `count` that has been summed up with the given symbol `s`.
      */
-    def getCount(s: Symbol): Int = withReadLock { doGetCount(s) }
+    def getCount(s: Symbol): Long = withReadLock { doGetCount(s) }
 
     /**
      * Called by the `getCount(Symbol)` method.
      *
      * ==Thread Safety==
-     * The `getTime` method takes care of the synchronization.
+     * The `getCount` method takes care of the synchronization.
      */
-    protected[this] def doGetCount(s: Symbol): Int = count.getOrElse(s, 0)
+    protected[this] def doGetCount(s: Symbol): Long = count.getOrElse(s, 0L)
 
     /**
      * Resets the overall count of the given symbol.
@@ -113,41 +118,6 @@ trait Counting extends Locking {
      */
     private[this] def doResetAll(): Unit = count.clear()
 
-}
-
-/**
- * Counts how often some piece of code is executed. Usually it is sufficient
- * to create an instance of this object and to execute some piece of code using
- * the function `time(Symbol)(=>T)`. Afterwards it is possible to query this object
- * to get detailed information: (1) how often the function given to `time` was evaluated
- * and (2) about the accumulated time.
- *
- * ==Thread Safety==
- * This class is thread safe.
- *
- * @author Michael Eichberg
- * @author Michael Reif
- */
-class PerformanceCounting extends PerformanceEvaluation with Counting {
-
-    /**
-     * Times and counts the execution of `f` and associates the information with the
-     * given symbol `s`.
-     */
-    override protected[this] def doUpdateTimes(s: Symbol, duration: Nanoseconds): Unit = {
-        super.doUpdateTimes(s, duration)
-        super.updateStatistics(s, super.getCount(s) + 1)
-    }
-
-    final override def reset(symbol: Symbol): Unit = {
-        super[PerformanceEvaluation].reset(symbol)
-        super[Counting].reset(symbol)
-    }
-
-    final override def resetAll(): Unit = {
-        super[PerformanceEvaluation].resetAll()
-        super[Counting].resetAll()
-    }
 }
 
 class IntStatistics extends Counting

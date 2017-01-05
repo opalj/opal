@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,8 @@ import scala.collection.Map
 
 /**
  * An index that enables the efficient lookup of source elements (methods and fields)
- * given the method's/field's name and the descriptor/field type.
+ * given the method's/field's name and the descriptor/field type. The index contains fields
+ * with public, protected, `<default>` and private visibility.
  *
  * Basically an index of the source elements (methods and fields) of a project.
  *
@@ -94,9 +95,7 @@ class ProjectIndex private (
         val mostOftenUsedFieldName = getMostOftenUsed(fieldsWithSharedName)
 
         val methodsWithSharedName =
-            methods.view.filter { kv ⇒
-                kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1
-            }
+            methods.view.filter(kv ⇒ kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1)
         val mostOftenUsedMethodName = getMostOftenUsed(methodsWithSharedName)
 
         Map(

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -80,7 +80,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * A map that contains the refined values (the map's values) of some old values (the
      * map's keys).
      */
-    type Refinements = IdentityHashMap[ /*old*/ AReferenceValue, /*new*/ AReferenceValue]
+    type Refinements = IdentityHashMap[AReferenceValue /*old*/ , AReferenceValue /*new*/ ]
 
     /**
      * Defines a total order on reference values with a single origin by subtracting
@@ -779,8 +779,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     /**
-     * @param origin The origin of the value (or the pseudo-origin (e.g., the index of
-     *      the parameter) if the true origin is not known.)
+     * @param   origin The origin of the value (or the pseudo-origin (e.g., the index of
+     *          the parameter) if the true origin is not known.)
      */
     protected class SObjectValue(
         override val origin:    ValueOrigin,
@@ -798,7 +798,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         assert(
             !isPrecise ||
                 !classHierarchy.isKnown(theUpperTypeBound) ||
-                !classHierarchy.isInterface(theUpperTypeBound),
+                classHierarchy.isInterface(theUpperTypeBound).isNo,
             s"the type ${theUpperTypeBound.toJava} defines an interface and, "+
                 "hence, cannnot be the concrete(precise) type of an object instance "+
                 "(if this assertion fails, the project configuration may be bogus))"

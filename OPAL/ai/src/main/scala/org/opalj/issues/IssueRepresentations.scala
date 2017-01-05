@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,6 +30,9 @@ package org.opalj
 package issues
 
 import scala.xml.Node
+
+import play.api.libs.json.JsValue
+
 import org.opalj.br.analyses.ReportableAnalysisResult
 
 /**
@@ -50,9 +53,10 @@ trait IssueRepresentations extends ReportableAnalysisResult {
     def toEclipseConsoleString: String
 
     /**
-     * A representation of this issue using the Issues Description Language.
+     * A representation of this issue using the Issues Description Language (which is a JSON
+     * dialect.)
      */
-    def toIDL: String
+    def toIDL: JsValue
 
     /**
      * Representation of this issue well suited for console output if the
@@ -98,4 +102,3 @@ trait IssueRepresentations extends ReportableAnalysisResult {
     }
 
 }
-

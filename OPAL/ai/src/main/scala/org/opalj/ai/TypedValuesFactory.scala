@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -89,7 +89,7 @@ trait TypedValuesFactory {
             case ShortType.id   ⇒ ShortValue(origin, 0)
             case IntegerType.id ⇒ IntegerValue(origin, 0)
             case FloatType.id   ⇒ FloatValue(origin, 0.0f)
-            case LongType.id    ⇒ LongValue(origin, 0l)
+            case LongType.id    ⇒ LongValue(origin, 0L)
             case DoubleType.id  ⇒ DoubleValue(origin, 0.0d)
             case VoidType.id    ⇒ throw DomainException("cannot create void typed value")
             case _              ⇒ NullValue(origin)

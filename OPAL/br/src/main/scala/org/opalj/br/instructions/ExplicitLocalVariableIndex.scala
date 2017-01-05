@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -59,5 +59,11 @@ trait ExplicitLocalVariableIndex extends Instruction {
         else
             currentPC + 2
     }
+
+}
+
+object ExplicitLocalVariableIndex {
+
+    def unapply(i: ExplicitLocalVariableIndex): Some[Int] = Some(i.lvIndex)
 
 }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,6 +43,8 @@ case class INVOKESPECIAL(
         methodDescriptor: MethodDescriptor
 ) extends NonVirtualMethodInvocationInstruction {
 
+    final def isInterfaceCall: Boolean = isInterface
+
     final def opcode: Opcode = INVOKESPECIAL.opcode
 
     final def mnemonic: String = "invokespecial"
@@ -61,8 +63,34 @@ case class INVOKESPECIAL(
     override def toString = super.toString
 
 }
+
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object INVOKESPECIAL {
 
     final val opcode = 183
+
+    /**
+     * Factory method to create [[INVOKESPECIAL]] instructions.
+     *
+     * @param   declaringClass the method's declaring class name in JVM notation,
+     *          e.g. "java/lang/Object".
+     * @param   isInterface has to be `true` if declaring class identifies an interface.
+     *          (Determines how the target method is resolved - relevant for Java 8 onwards.)
+     * @param   methodDescriptor the method descriptor in JVM notation,
+     *          e.g. "()V" for a method without parameters which returns void.
+     */
+    def apply(
+        declaringClass:   String,
+        isInterface:      Boolean,
+        methodName:       String,
+        methodDescriptor: String
+    ): INVOKESPECIAL = {
+        val declaringClassType = ObjectType(declaringClass)
+        INVOKESPECIAL(declaringClassType, isInterface, methodName, MethodDescriptor(methodDescriptor))
+    }
 
 }

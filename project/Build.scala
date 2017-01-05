@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,28 +29,38 @@
 import sbt._
 import Keys._
 
-import sbtassembly.AssemblyPlugin.autoImport._
-
-import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
+import sbtassembly.AssemblyPlugin.autoImport._
+
+// import com.typesafe.sbteclipse.plugin.EclipsePlugin._
+
 object OPALBuild extends Build {
 
+	lazy val IntegrationTest = config("it") extend(Test)
+
 	// Default settings without scoverage
-	lazy val buildSettings = Defaults.coreDefaultSettings ++
+	lazy val buildSettings = 
+		Defaults.coreDefaultSettings ++
 		SbtScalariform.scalariformSettingsWithIt ++
-		Seq(ScalariformKeys.preferences <<= baseDirectory.apply(getScalariformPreferences)) ++
-		Seq(Defaults.itSettings : _*) ++
-		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
+		Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value) ++
 		Seq(libraryDependencies  ++= Seq(
 			"junit" % "junit" % "4.12" % "test,it",
-			"org.scalatest" %% "scalatest" % "3.0.0" % "test,it",
-			"org.scalacheck" %% "scalacheck" % "1.13.3" % "test,it"))
+			"org.scalatest" %% "scalatest" % "3.0.1" % "test,it",
+			"org.scalacheck" %% "scalacheck" % "1.13.4" % "test,it")) ++
+		Seq(Defaults.itSettings : _*) ++
+        Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
+        Seq(unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil) ++
+        Seq(unmanagedSourceDirectories in IntegrationTest := (scalaSource in IntegrationTest).value :: Nil) 
 
-	def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPreferences(
-		(file("Scalariform Formatter Preferences.properties").getPath))
+		// Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest))
+        
+	def getScalariformPreferences(dir: File) = {
+		val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
+		PreferencesImporterExporter.loadPreferences((file(formatterPreferencesFile).getPath))
+	}
 
 	lazy val opal = Project(
 		id = "OPAL",
@@ -62,9 +72,11 @@ object OPALBuild extends Build {
 		common,
 		bi,
 		br,
-		ai,
 		da,
 		bc,
+        ba,
+		ai,
+        bp,
 		de,
 		av,
 		DeveloperTools,
@@ -112,6 +124,15 @@ object OPALBuild extends Build {
  	).dependsOn(da % "it->it;it->test;test->test;compile->compile")
  	 .configs(IntegrationTest)
 
+  	lazy val ba = Project(
+  		id = "BytecodeAssembler",
+  		base = file("OPAL/ba"),
+  		settings = buildSettings
+  	).dependsOn(
+        bc % "it->it;it->test;test->test;compile->compile",
+        br % "it->it;it->test;test->test;compile->compile")
+  	 .configs(IntegrationTest)
+
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
 		base = file("OPAL/ai"),
@@ -129,23 +150,31 @@ object OPALBuild extends Build {
 	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
+  	lazy val bp = Project(
+  		id = "BugPicker",
+  		base = file("OPAL/bp"),
+  		settings = buildSettings 
+  	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+  	 .configs(IntegrationTest)
+
 	lazy val av = Project(
 		id = "ArchitectureValidation",
 		base = file("OPAL/av"),
 		settings = buildSettings
 	).dependsOn(de % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
-	 
+     
 	lazy val DeveloperTools = Project(
 		id = "OPAL-DeveloperTools",
 		base = file("DEVELOPING_OPAL/tools"),
 		settings = buildSettings 
 	).dependsOn(
 		av % "test->test;compile->compile",
-		bc % "test->test;compile->compile;it->it")
+		ba % "test->test;compile->compile;it->it")
 	 .configs(IntegrationTest)
 
-	// This project validates OPAL's implemented architecture; hence
+	// This project validates OPAL's implemented architecture and 
+    // contains overall integration tests; hence
 	// it is not a "project" in the classical sense!
 	lazy val Validate = Project(
 		id = "OPAL-Validate",
@@ -159,7 +188,7 @@ object OPALBuild extends Build {
 		id = "Demos",
 		base = file("OPAL/demos"),
 		settings = buildSettings ++ Seq(publishArtifact := false)
-	).dependsOn(av,bc)
+	).dependsOn(av,ba)
 	 .configs(IntegrationTest)
 
 	/*****************************************************************************
@@ -172,7 +201,9 @@ object OPALBuild extends Build {
 		id = "Incubation",
 		base = file("OPAL/incubation"),
 		settings = buildSettings ++ Seq(publishArtifact := false)
-	).dependsOn(av % "it->it;it->test;test->test;compile->compile")
+	).dependsOn(
+        av % "it->it;it->test;test->test;compile->compile",
+        ba % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
 }

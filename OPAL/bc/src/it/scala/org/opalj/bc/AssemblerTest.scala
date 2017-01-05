@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -65,7 +65,6 @@ class AssemberTest extends FlatSpec with Matchers {
         file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
         if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
     } {
-
         it should (s"be able to process every class of $file") in {
 
             val zipFile = new ZipFile(file)
@@ -104,25 +103,29 @@ class AssemberTest extends FlatSpec with Matchers {
                     reassembledClassFile.zip(raw).zipWithIndex.foreach { e ⇒
                         val ((c, r), i) = e
                         if (c != r) {
-                            val (succeededSegments, remainingSegments) = segmentInformation.partition(_._2 < i)
-                            val failedSegment = remainingSegments.head._1
+                            val (succeeded, remaining) = segmentInformation.partition(_._2 < i)
+                            val failedSegment = remaining.head._1
 
                             try {
+                                val size = raw.length
+                                val failAfterStream = new FailAfterByteArrayOutputStream(i)(size)
                                 Assembler.serialize(classFile)(
                                     Assembler.RichClassFile,
-                                    new DataOutputStream(new FailAfterByteArrayOutputStream(i)(raw.length)),
+                                    new DataOutputStream(failAfterStream),
                                     (s, i) ⇒ {}
                                 )
                             } catch {
                                 case ioe: IOException ⇒ ioe.printStackTrace()
                             }
+                            val successfullyReadBytes =
+                                s"(i.e., successfully read ${succeeded.last._2} bytes)"
                             val message =
                                 s"the class files differ starting with index $i ($failedSegment): "+
                                     s"found $c but expected $r"+
-                                    succeededSegments.map(_._1).mkString(
+                                    succeeded.map(_._1).mkString(
                                         "; successfully read segments: ",
                                         ",",
-                                        s"(i.e., successfully read ${succeededSegments.last._2} bytes)"
+                                        successfullyReadBytes
                                     )
                             fail(message)
                         }
@@ -131,7 +134,8 @@ class AssemberTest extends FlatSpec with Matchers {
                 } catch {
                     case e: Exception ⇒
                         Lock.synchronized {
-                            val message = s"failed: $ze(${classFile.fqn}); message:"+e.getMessage + e.getClass.getSimpleName
+                            val details = e.getMessage + e.getClass.getSimpleName
+                            val message = s"failed: $ze(${classFile.fqn}); message:"+details
                             val newException = new RuntimeException(message, e)
                             exceptions = newException :: exceptions
                         }
@@ -139,11 +143,12 @@ class AssemberTest extends FlatSpec with Matchers {
             }
 
             if (exceptions.nonEmpty) {
+                val succeededCount = entriesCount.get
                 val message =
                     exceptions.mkString(
                         s"assembling the class file failed for :\n",
                         "\n",
-                        s"\n${exceptions.size} class files (and succeeded for: ${entriesCount.get})\n"
+                        s"\n${exceptions.size} class files (and succeeded for: $succeededCount)\n"
                     )
                 fail(message)
             } else {

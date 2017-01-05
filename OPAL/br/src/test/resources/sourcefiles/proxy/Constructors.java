@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -75,5 +75,7 @@ public class Constructors {
 	
 	public Constructors(double d, int i, double e, int j, double f) {}
 	
-	public Constructors(double d, float f, long l, int i, short s, byte b, char c, boolean bo, String str, Object[] array) {}
+	public Constructors(
+			double d, float f, long l, int i, short s, byte b, char c, boolean bo, 
+			String str, Object[] array) {}
 }

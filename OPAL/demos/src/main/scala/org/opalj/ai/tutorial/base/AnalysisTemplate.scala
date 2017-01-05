@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,13 +34,16 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 
+/**
+ * @author Michael Eichberg
+ */
 object AnalysisTemplate extends DefaultOneStepAnalysis {
 
     def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
         BasicReport(theProject.statistics.mkString("\n"))
     }
 

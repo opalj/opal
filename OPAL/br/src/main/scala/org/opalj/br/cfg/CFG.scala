@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -158,7 +158,7 @@ case class CFG(
             map(bb ⇒ bb.predecessors.find(predBB ⇒ !predBB.successors.contains(bb)).map(predBB ⇒
                 s"predBB is a predecessor of $bb, but does not list it as a successor").get).get
     )
-	*/
+    */
 
     /**
      * The basic block associated with the very first instruction.
@@ -310,7 +310,7 @@ case class CFG(
     def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
 
         /*
-		// [USED FOR DEBUGGING PURPOSES] *********************************************************
+        // [USED FOR DEBUGGING PURPOSES] *********************************************************
         println(
             basicBlocks.
                 filter(_ != null).
@@ -328,7 +328,7 @@ case class CFG(
         println(catchNodes.mkString("CatchNodes:", ",", "\n"))
         println(pcToIndex.zipWithIndex.map(_.swap).mkString("Mapping:", ",", "\n"))
         //
-		// ********************************************************* [USED FOR DEBUGGING PURPOSES]
+        // ********************************************************* [USED FOR DEBUGGING PURPOSES]
         */
 
         val bbsLength = basicBlocks.length

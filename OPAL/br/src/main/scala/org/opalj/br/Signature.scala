@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -47,17 +47,11 @@ trait SignatureElement {
 
 }
 
-trait ReturnTypeSignature extends SignatureElement {
-    // EMPTY
-}
+trait ReturnTypeSignature extends SignatureElement
 
-trait TypeSignature extends ReturnTypeSignature {
-    // EMPTY
-}
+trait TypeSignature extends ReturnTypeSignature
 
-sealed trait ThrowsSignature extends SignatureElement {
-    // EMPTY
-}
+sealed trait ThrowsSignature extends SignatureElement
 
 /**
  * An attribute-level signature as defined in the JVM specification.
@@ -495,9 +489,7 @@ case class ProperTypeArgument(
 /**
  * Indicates a TypeArgument's variance.
  */
-sealed trait VarianceIndicator extends SignatureElement {
-    // EMPTY
-}
+sealed trait VarianceIndicator extends SignatureElement
 
 /**
  * If you have a declaration such as &lt;? extends Entry&gt; then the "? extends" part

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -260,17 +260,18 @@ case object ComputationFailed extends Computation[Nothing, Nothing] {
 
     def hasResult: Boolean = false
 
-    def result = throw new UnsupportedOperationException("the computation failed")
+    def result: Nothing = throw new UnsupportedOperationException("the computation failed")
 
     def updateResult[X](result: X): ComputationFailed.type =
         throw new UnsupportedOperationException("the computation failed")
 
     def throwsException: Boolean = false
 
-    def exceptions = throw new UnsupportedOperationException("the computation failed")
+    def exceptions: Nothing = throw new UnsupportedOperationException("the computation failed")
 
-    def updateExceptions[X](es: X): ComputationFailed.type =
+    def updateExceptions[X](es: X): ComputationFailed.type = {
         throw new UnsupportedOperationException("the computation failed")
+    }
 }
 
 // -------------------------------------------------------------------------------------------------

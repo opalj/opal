@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,7 +29,12 @@
 package org.opalj
 package issues
 
-import scala.Console.{RED, YELLOW, RESET}
+import scala.Console.YELLOW
+import scala.Console.RESET
+import scala.Console.RED
+
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
 
 /**
  * Describes the overall relevance of a finding.
@@ -75,6 +80,8 @@ final case class Relevance(value: Int) extends AnyVal {
         else
             Relevance.toCategoryName(this)
     }
+
+    def toIDL: JsValue = Json.obj("name" → name, "value" → value)
 
 }
 

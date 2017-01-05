@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -92,7 +92,7 @@ object DependencyTypes extends Enumeration(0 /* <= value of first enumeration va
     // signature/type parameter related dependency types
     val TYPE_IN_TYPE_PARAMETERS = Value("the TYPE is used in the declaration of a TYPE PARAMETER (signature)")
 
-    def bitMask(v: Value): Long = 1l << v.id
+    def bitMask(v: Value): Long = 1L << v.id
 
     def toSet(set: DependencyTypesBitSet): scala.collection.Set[DependencyType] = {
         val max = maxId

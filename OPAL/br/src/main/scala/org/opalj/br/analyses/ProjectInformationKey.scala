@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -96,7 +96,7 @@ trait ProjectInformationKey[T <: AnyRef] {
      * If the analysis has no special requirements `Nil` can be returned.
      *
      * @note '''All requirements must be listed; failing to specify a requirement can
-     * 		end up in a deadlock.'''
+     *      end up in a deadlock.'''
      *
      * @note Classes/Objects that implement this trait should not make the method `public`
      *      to avoid that this method is called accidentally by regular user code.

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -47,7 +47,7 @@ import org.opalj.br.ClassFile
 object FieldTypesAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String =
-        "Tries to derive more precise information about the fields of a class."
+        "tries to derive more precise information about the fields of a class"
 
     override def description: String =
         "Identifies fields of a class where we can – statically – derive more precise type/value information."
@@ -56,7 +56,7 @@ object FieldTypesAnalysis extends DefaultOneStepAnalysis {
         theProject:    Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
 
         val refinedFieldValues =
             org.opalj.ai.analyses.FieldValuesAnalysis.doAnalyze(

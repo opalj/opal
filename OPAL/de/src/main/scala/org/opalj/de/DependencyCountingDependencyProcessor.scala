@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,7 +29,7 @@
 package org.opalj
 package de
 
-import br._
+import org.opalj.br._
 
 /**
  * A dependency processor that just counts the number of dependencies.
@@ -52,7 +52,7 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     ): Unit = {
         dependencyCount.incrementAndGet()
     }
-    def currentDependencyCount = dependencyCount.get
+    def currentDependencyCount: Int = dependencyCount.get
 
     protected[this] val dependencyOnArraysCount = new AtomicInteger(0)
     override def processDependency(
@@ -62,7 +62,7 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     ): Unit = {
         dependencyOnArraysCount.incrementAndGet()
     }
-    def currentDependencyOnArraysCount = dependencyOnArraysCount.get
+    def currentDependencyOnArraysCount: Int = dependencyOnArraysCount.get
 
     protected[this] val dependencyOnPrimitivesCount = new AtomicInteger(0)
     override def processDependency(
@@ -72,7 +72,7 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     ): Unit = {
         dependencyOnPrimitivesCount.incrementAndGet()
     }
-    def currentDependencyOnPrimitivesCount = dependencyOnPrimitivesCount.get
+    def currentDependencyOnPrimitivesCount: Int = dependencyOnPrimitivesCount.get
 
     final val DummyClassType = ObjectType("<-DUMMY_CLASSTYPE->")
 

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -77,11 +77,11 @@ import scalafx.stage.StageStyle
 
 //FIXME currentParamters are not used anymore
 class DiffView(
-    currentName: String,
-     currentIssues: Iterable[Node],
-     currentParameters: Seq[String] = Seq.empty,
-     oldAnalysis: StoredAnalysis
- ) extends Stage {
+        currentName:       String,
+        currentIssues:     Iterable[Node],
+        currentParameters: Seq[String]    = Seq.empty,
+        oldAnalysis:       StoredAnalysis
+) extends Stage {
     self ⇒
 
     showing.onChange((_, _, newShow) ⇒ {

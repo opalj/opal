@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -38,10 +38,11 @@ class Seconds(val timeSpan: Double) extends AnyVal {
 
     def toString(withUnit: Boolean): String = {
         val time = f"$timeSpan%.4f"
-        if (withUnit)
+        if (withUnit) {
             time+" s"
-        else
+        } else {
             time
+        }
     }
 
     def +(other: Seconds): Seconds = new Seconds(this.timeSpan + other.timeSpan)

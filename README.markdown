@@ -26,8 +26,7 @@ OPAL consists of several projects which are found in the folder OPAL:
 
 * **BugPicker**(OPAL/TOOLS/bp): A tool to find data-flow dependent issues in source code. The kind of issues that are identified range from useless defensive checks to bugs that lead to (unhandled) runtime exceptions.
 
-# Building OPAL #
-
+# Building OPAL 
 The following applies to the "Master" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
@@ -44,15 +43,14 @@ Go to OPAL's root folder.
 
 You are ready to go.
 
-# Using OPAL #
-To get started, go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
+# Using OPAL 
+To get started, go to the webpage of the project [The OPAL Project](http://www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
 
-# Example Usage #
-
+# Example Usage 
 Start the sbt console. (In OPAL's root folder call `sbt` on the command line.)
 Change the project to Demors using the command `project Demos` and type `run` to run one of the demos.
 
-# Contributing to OPAL #
+# Contributing to OPAL 
 Everybody is welcome to contribute to OPAL and to submit pull requests. However, a pull request is only taken into consideration if:
 
 * ___the pull request consists of only **one commit** and this commit **implements a single feature**___
@@ -70,9 +68,9 @@ Additionally, the pull request has to meet the following conditions:
 A recommended read (to speed up the process of getting your pull request pulled):
  [The Twitter Scala Style Guide](http://twitter.github.io/effectivescala/)
 
-* OPAL is build using Shippable.
+* OPAL is (also) build using Shippable.
 
-# Further Information #
-
+# Further Information 
+* [The OPAL Gitter chatroom](https://gitter.im/OPAL-Project)
 * [Questions regarding how to write analyses (Stackoverflow)](http://stackoverflow.com/questions/tagged/opal-framework?sort=newest)
 * [OPAL Project](http://www.opal-project.de)

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -55,7 +55,7 @@ trait ConcealedPackages_attributeReader extends AttributeReader {
 
     /**
      * @param packageIndex Points to the name in internal form of a package in
-     * 		the current module that is ''not to be exported''.
+     *      the current module that is ''not to be exported''.
      */
     def ConcealedPackagesEntry(
         constant_pool: Constant_Pool,

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -49,7 +49,7 @@ import org.opalj.br.ClassFile
  * class file.
  *
  * @note This test supports only property tests where only one annotation field
- * 		is used. It's not possible to check multiple values.
+ *      is used. It's not possible to check multiple values.
  *
  * @author Michael Reif
  */

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -172,7 +172,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         project,
                         entryPoints,
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
-                            override def Domain[Source](
+                            override def Domain(
                                 classFile: ClassFile,
                                 method:    Method
                             ): CallGraphDomain =
@@ -192,7 +192,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         project,
                         entryPoints,
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
-                            override def Domain[Source](
+                            override def Domain(
                                 classFile: ClassFile,
                                 method:    Method
                             ): CallGraphDomain =
@@ -230,7 +230,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         project,
                         entryPoints,
                         new VTACallGraphAlgorithmConfiguration(project) {
-                            override def Domain[Source](
+                            override def Domain(
                                 classFile: ClassFile,
                                 method:    Method
                             ): CallGraphDomain =
@@ -246,7 +246,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         project,
                         entryPoints,
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
-                            override def Domain[Source](
+                            override def Domain(
                                 classFile: ClassFile,
                                 method:    Method
                             ): CallGraphDomain =
@@ -274,7 +274,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         project,
                         entryPoints,
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
-                            override def Domain[Source](
+                            override def Domain(
                                 classFile: ClassFile,
                                 method:    Method
                             ): CallGraphDomain =
@@ -302,7 +302,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         project,
                         entryPoints,
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
-                            override def Domain[Source](
+                            override def Domain(
                                 classFile: ClassFile,
                                 method:    Method
                             ): CallGraphDomain =

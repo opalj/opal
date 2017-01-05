@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -105,7 +105,7 @@ sealed class EP[+E <: Entity, +P <: Property](
 
     def isPropertyFinal: Boolean = p.isFinal
 
-    def hasProperty = true
+    def hasProperty: Boolean = true
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -169,8 +169,8 @@ final class EPK[+E <: Entity, +P <: Property](
         val pk: PropertyKey[P]
 ) extends EOptionP[E, P] with Product2[E, PropertyKey[P]] {
 
-    override def _1 = e
-    override def _2 = pk
+    override def _1: E = e
+    override def _2: PropertyKey[P] = pk
 
     def isPropertyFinal: Boolean = false
 

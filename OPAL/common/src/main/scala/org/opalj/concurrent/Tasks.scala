@@ -42,9 +42,9 @@ import scala.collection.JavaConverters._
  * @example
  * {{{
  * val tasks = new Tasks[T] { (tasks : Tasks[T], t : T) ⇒
- * 			// do something with t
- * 			if (<some condition>) { tasks.submit(nextT) }
- * 		}
+ *          // do something with t
+ *          if (<some condition>) { tasks.submit(nextT) }
+ *      }
  * val exceptions = tasks.join()
  * }}}
  * @author Michael Eichberg
@@ -95,10 +95,11 @@ class Tasks[T](
             latch.await()
         }
 
-        if (exceptions ne null)
+        if (exceptions ne null) {
             exceptions.asScala.toList
-        else
+        } else {
             Nil
+        }
     }
 }
 /**

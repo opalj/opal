@@ -103,7 +103,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     sealed trait PalindromeProperty extends Property {
         type Self = PalindromeProperty
         def key = PalindromeKey
-        def isRefineable = false
+        def isRefineable: Boolean = false
     }
     // Multiple properties can share the same property instance
     case object Palindrome extends PalindromeProperty
@@ -122,7 +122,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case class BitsProperty(bits: Int) extends Property {
         type Self = BitsProperty
         def key = BitsKey
-        def isRefineable = false
+        def isRefineable: Boolean = false
     }
 
     // HERE: we consider a palindrome to be a super palindrome if the lead is itself a
@@ -137,7 +137,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     sealed trait SuperPalindromeProperty extends Property {
         type Self = SuperPalindromeProperty
         def key = SuperPalindromeKey
-        def isRefineable = false
+        def isRefineable: Boolean = false
     }
     // Multiple properties can share the same property instance
     case object SuperPalindrome extends SuperPalindromeProperty
@@ -153,7 +153,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     sealed trait TaintedProperty extends Property {
         type Self = TaintedProperty
         def key = TaintedKey
-        def isRefineable = false
+        def isRefineable: Boolean = false
     }
     // Multiple properties can share the same property instance
     case object Tainted extends TaintedProperty
@@ -169,7 +169,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case class StringLength(length: Int) extends Property {
         final type Self = StringLength
         final def key = StringLengthKey
-        final def isRefineable = false
+        final def isRefineable: Boolean = false
     }
 
     final val CountKey: PropertyKey[Count] = {
@@ -182,7 +182,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case class Count(count: Int) extends Property {
         final type Self = Count
         final def key = CountKey
-        final def isRefineable = true
+        final def isRefineable: Boolean = true
     }
 
     final val PurityKey: PropertyKey[Purity] = {
@@ -195,11 +195,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     sealed trait Purity extends Property {
         final type Self = Purity
         final def key = PurityKey
-
     }
-    case object Pure extends Purity { final override def isRefineable = false }
-    case object Impure extends Purity { final override def isRefineable = false }
-    case object ConditionallyPure extends Purity { final override def isRefineable = true }
+    case object Pure extends Purity { final override def isRefineable: Boolean = false }
+    case object Impure extends Purity { final override def isRefineable: Boolean = false }
+    case object ConditionallyPure extends Purity { final override def isRefineable: Boolean = true }
 
     object EvenNumberOfChars extends SetProperty[String]
 
@@ -242,7 +241,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     final val ReachableNodesKey: PropertyKey[ReachableNodes] = {
         PropertyKey.create(
             "ReachableNodes",
-            (ps: PropertyStore, e: Entity) ⇒ throw new UnknownError /*IDIOM IF NO FALLBACK IS EXPECTED/SUPPORTED*/ ,
+            (ps: PropertyStore, e: Entity) ⇒ {
+                /*IDIOM IF NO FALLBACK IS EXPECTED/SUPPORTED*/
+                throw new UnknownError(s"no fallback for ReachableNodes property for $e available")
+            },
             (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ {
                 //                val allReachableNodes = epks.foldLeft(Set.empty[Node]) { (c, epk) ⇒
                 //                    c ++ ps(epk.e, ReachableNodesKey /* <=> epk.pk */ ).get.nodes
@@ -780,8 +782,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 while (System.currentTimeMillis() - startTime < TestDuration * 60 * 1000) {
                     runs += 1
                     /* The following analysis only uses the new information given to it and updates
-                 	 * the set of observed dependees.
-                 	 */
+                     * the set of observed dependees.
+                     */
                     def analysis(level: Int)(n: Node): PropertyComputationResult = {
                         val nextPCs: Traversable[(PropertyComputation[Node], Node)] =
                             n.targets.map(t ⇒ (analysis(level + 1) _, t))
@@ -886,8 +888,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 while (System.currentTimeMillis() - startTime < TestDuration * 60 * 1000) {
                     runs += 1
                     /* The following analysis only uses the new information given to it and updates
-                 	 * the set of observed dependees.
-                 	 */
+                     * the set of observed dependees.
+                     */
                     def analysis(n: Node): PropertyComputationResult = {
                         val nTargets = n.targets
                         if (nTargets.isEmpty)
@@ -944,7 +946,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     }
 
                     ps <||< ({ case n: Node ⇒ n }, analysis)
-                    ps.waitOnPropertyComputationCompletion(true)
+                    ps.waitOnPropertyComputationCompletion(false)
 
                     try {
                         // the graph:
@@ -966,7 +968,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             info(s"test failed on run $runs\n"+ps.toString(true))
                             try { ps.validate(None) } catch {
                                 case ae: AssertionError ⇒
-                                    info(s"validation failed on run $runs\n"+ae.getMessage.toString)
+                                    info(s"validation failed on run $runs\n"+ae.getMessage)
                             }
                             throw t
                     }
@@ -1053,7 +1055,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     }
 
                     ps <||< ({ case n: Node ⇒ n }, analysis)
-                    ps.waitOnPropertyComputationCompletion(true)
+                    ps.waitOnPropertyComputationCompletion(false)
 
                     try {
                         // the graph:

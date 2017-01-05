@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -75,12 +75,12 @@ object CFGFactory {
      * @note  The algorithm supports all Java bytecode instructions. (In particular JSR/RET)
      *
      * @note  The code is only parsed linearly and the graph is therefore constructed implicitly.
-     * 		  Hence, it is possible that the graph contains node that cannot be reached from
+     *        Hence, it is possible that the graph contains node that cannot be reached from
      *        the start node.
      *
      * @param method A method with a body (i.e., with some code.)
      * @param classHierarchy The class hierarchy that will be used to determine
-     * 		if a certain exception is potentially handled by an exception handler.
+     *      if a certain exception is potentially handled by an exception handler.
      */
     def apply(
         implicit

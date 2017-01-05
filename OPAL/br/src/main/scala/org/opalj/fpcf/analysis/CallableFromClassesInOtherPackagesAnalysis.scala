@@ -56,9 +56,9 @@ import org.opalj.fpcf.properties.ClientCallable
  * In the following scenario, m defined by B overrides m in C and (in this specific scenario) m in C is
  * also always overridden.
  * {{{
- * 		/*package visible*/ class C { public Object m() }
- * 		/*package visible*/ abstract class A extends C { /*empty*/ }
- * 		public class B extends A { public Object m() }
+ *      /*package visible*/ class C { public Object m() }
+ *      /*package visible*/ abstract class A extends C { /*empty*/ }
+ *      public class B extends A { public Object m() }
  * }}}
  *
  * @author Michael Reif

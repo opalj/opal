@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -69,6 +69,7 @@ object FieldAccess {
 
     val jvmExceptions = List(ObjectType.NullPointerException)
 
-    def unapply(fa: FieldAccess): Option[(ObjectType, String, FieldType)] =
+    def unapply(fa: FieldAccess): Option[(ObjectType, String, FieldType)] = {
         Some((fa.declaringClass, fa.name, fa.fieldType))
+    }
 }

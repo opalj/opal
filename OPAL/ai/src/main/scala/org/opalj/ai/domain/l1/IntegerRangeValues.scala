@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -124,7 +124,7 @@ trait IntegerRangeValues
      *
      * This setting can be adapted at runtime.
      */
-    def maxCardinalityOfIntegerRanges: Long = 16l
+    def maxCardinalityOfIntegerRanges: Long = 16L
 
     // -----------------------------------------------------------------------------------
     //

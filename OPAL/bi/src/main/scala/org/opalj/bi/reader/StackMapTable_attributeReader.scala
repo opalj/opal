@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -68,7 +68,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
     /**
      * <pre>
      * StackMapTable_attribute {
-     *  	u2              attribute_name_index;
+     *      u2              attribute_name_index;
      *      u4              attribute_length;
      *      u2              number_of_entries;
      *      stack_map_frame entries[number_of_entries];
@@ -95,11 +95,5 @@ trait StackMapTable_attributeReader extends AttributeReader {
     }
 
     registerAttributeReader(StackMapTableAttribute.Name → parser)
-}
-
-object StackMapTableAttribute {
-
-    final val Name = "StackMapTable"
-
 }
 

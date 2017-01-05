@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,18 +31,19 @@ package ai
 package domain
 package l0
 
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
-import org.opalj.br.{Method, ClassFile}
 
 /**
  * A complete domain that performs all computations at the type level and which has
  * a configurable identifier.
  *
- * @note 	This domain is intended to be used for '''demo purposes only'''.
- *      	'''Tests should create their own domains to make sure that
- *      	the test results remain stable. The configuration of this
- *      	domain just reflects a reasonable configuration that may
- *      	change without further notice.'''
+ * @note    This domain is intended to be used for '''demo purposes only'''.
+ *          '''Tests should create their own domains to make sure that
+ *          the test results remain stable. The configuration of this
+ *          domain just reflects a reasonable configuration that may
+ *          change without further notice.'''
  *
  * @author Michael Eichberg
  */
@@ -92,3 +93,14 @@ object BaseDomain {
     }
 
 }
+
+/**
+ * Configuration of a domain that uses the `l0` domains and
+ * which also records the abstract-interpretation time control flow graph and def/use
+ * information.
+ */
+class BaseDomainWithDefUse[Source](
+    project:   Project[Source],
+    classFile: ClassFile,
+    method:    Method
+) extends BaseDomain[Source](project, classFile, method) with RecordDefUse

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFEQ(branchoffset: Int) extends IF0Instruction {
+trait IFEQLike extends IF0InstructionLike {
 
     final def opcode: Opcode = IFEQ.opcode
 
@@ -47,8 +47,29 @@ case class IFEQ(branchoffset: Int) extends IF0Instruction {
 
 }
 
+case class IFEQ(branchoffset: Int) extends IF0Instruction with IFEQLike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IFEQ {
 
     final val opcode = 153
 
+    /**
+     * Creates [[LabeledIFEQ]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledIFEQ = LabeledIFEQ(branchTarget)
+
+}
+
+case class LabeledIFEQ(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFEQLike {
+
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFEQ = {
+        IFEQ(pcs(branchTarget) - pc)
+    }
 }

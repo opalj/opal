@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -83,6 +83,12 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      * the smallest value.
      */
     def foreach[U](f: Int ⇒ U): Unit
+
+    def map[U](f: Int ⇒ U): scala.collection.mutable.Set[U] = {
+        val m = scala.collection.mutable.Set.empty[U]
+        foreach(e ⇒ m += f(e))
+        m
+    }
 
     def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B
 

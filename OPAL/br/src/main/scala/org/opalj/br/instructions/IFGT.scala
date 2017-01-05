@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFGT(branchoffset: Int) extends IF0Instruction {
+trait IFGTLike extends IF0InstructionLike {
 
     final def opcode: Opcode = IFGT.opcode
 
@@ -46,8 +46,29 @@ case class IFGT(branchoffset: Int) extends IF0Instruction {
     final def condition: RelationalOperator = RelationalOperators.GT
 }
 
+case class IFGT(branchoffset: Int) extends IF0Instruction with IFGTLike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object IFGT {
 
     final val opcode = 157
 
+    /**
+     * Creates [[LabeledIFGT]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledIFGT = LabeledIFGT(branchTarget)
+
+}
+
+case class LabeledIFGT(
+        branchTarget: Symbol
+) extends LabeledSimpleConditionalBranchInstruction with IFGTLike {
+
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFGT = {
+        IFGT(pcs(branchTarget) - pc)
+    }
 }

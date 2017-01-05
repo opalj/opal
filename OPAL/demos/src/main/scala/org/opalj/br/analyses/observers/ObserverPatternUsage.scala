@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -52,14 +52,6 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        if (project.classHierarchy.rootTypes.tail.nonEmpty) {
-            Console.err.println(
-                "Warning: Class Hierarchy Not Complete: "+
-                    project.classHierarchy.rootTypes.
-                    filter(_ != ObjectType.Object).
-                    map(_.toJava).mkString(", ")
-            )
-        }
         val appClassFiles = project.allProjectClassFiles
         val libClassFiles = project.allLibraryClassFiles
         println("Application:\n\tClasses:"+appClassFiles.size)
@@ -72,6 +64,7 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
         //val libTypes = libClassFiles.map(_.thisType).toSet
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
+        import classHierarchy.isInterface
 
         // PART 0 - Identifying Observers
         // Collect all classes that end with "Observer" or "Listener" or which are
@@ -96,13 +89,11 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
                         // a class as being observable, because it has a field of type,
                         // e.g., JButton (which is an observer, but for different
                         // elements.)
-                        if (classHierarchy.isInterface(objectType)) {
+                        if (isInterface(objectType).isYes) {
                             allObserverInterfaces += objectType
-                            if (appTypes.contains(objectType))
-                                appObserverInterfaces += objectType
+                            if (appTypes.contains(objectType)) appObserverInterfaces += objectType
                         } else {
-                            if (appTypes.contains(objectType))
-                                appObserverClasses += objectType
+                            if (appTypes.contains(objectType)) appObserverClasses += objectType
                         }
                     }
                 }

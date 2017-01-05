@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,10 +36,12 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEINTERFACE(
-        declaringClass:   ObjectType, // an interface or class type to be precise
+        declaringClass:   ObjectType, // an interface type
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {
+
+    final def isInterfaceCall: Boolean = true
 
     final def opcode: Opcode = INVOKEINTERFACE.opcode
 
@@ -55,8 +57,29 @@ case class INVOKEINTERFACE(
     override def toString = super.toString
 
 }
+
+/**
+ * General information and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object INVOKEINTERFACE {
 
     final val opcode = 185
 
+    /**
+     * Factory method to create [[INVOKEINTERFACE]] instructions.
+     *
+     * @param   declaringClass the method's declaring class name in JVM notation,
+     *          e.g. "java/lang/Object".
+     * @param   methodDescriptor the method descriptor in JVM notation,
+     *          e.g. "()V" for a method without parameters which returns void.
+     */
+    def apply(
+        declaringClass:   String,
+        methodName:       String,
+        methodDescriptor: String
+    ): INVOKEINTERFACE = {
+        INVOKEINTERFACE(ObjectType(declaringClass), methodName, MethodDescriptor(methodDescriptor))
+    }
 }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -269,10 +269,10 @@ sealed abstract class Type extends UID with Ordered[Type] {
             1
     }
 
-    override def <(other: Type) = this.id < other.id
-    override def >(other: Type) = this.id > other.id
-    override def >=(other: Type) = this.id >= other.id
-    override def <=(other: Type) = this.id <= other.id
+    override def <(other: Type): Boolean = this.id < other.id
+    override def >(other: Type): Boolean = this.id > other.id
+    override def >=(other: Type): Boolean = this.id >= other.id
+    override def <=(other: Type): Boolean = this.id <= other.id
 
 }
 
@@ -316,7 +316,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     final val id = Int.MinValue
 
-    final override def isVoidType = true
+    final override def isVoidType: Boolean = true
 
     final override def computationalType: ComputationalType =
         throw new UnsupportedOperationException("void does not have a computational type")
@@ -346,7 +346,7 @@ case object VoidType extends VoidType
  */
 sealed abstract class FieldType extends Type {
 
-    final override def isFieldType = true
+    final override def isFieldType: Boolean = true
 
     final override def asFieldType: this.type = this
 
@@ -388,7 +388,7 @@ object FieldType {
 
 sealed abstract class ReferenceType extends FieldType {
 
-    final override def isReferenceType = true
+    final override def isReferenceType: Boolean = true
 
     final override def asReferenceType: ReferenceType = this
 
@@ -409,7 +409,13 @@ object ReferenceType {
     /**
      * Creates a representation of the described [[ReferenceType]].
      *
-     * @param rt A string as passed to `java.lang.Class.forName(...)`.
+     * @param   rt A string as passed to `java.lang.Class.forName(...)` but in binary notation.
+     *          Examples:
+     *          {{{
+     *          "[B" // in case of an array of Booleans
+     *          "java/lang/Object" // for the class type java.lang.Object
+     *          "[Ljava/lang/Object;" // for the array of java.lang.Object
+     *          }}}
      */
     @throws[IllegalArgumentException](
         "if the given string is not a valid reference type descriptor"
@@ -424,7 +430,7 @@ object ReferenceType {
 
 sealed abstract class BaseType extends FieldType with TypeSignature {
 
-    final override def isBaseType = true
+    final override def isBaseType: Boolean = true
 
     final override def asBaseType: this.type = this
 
@@ -554,9 +560,9 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Byte
 
-    final override def isByteType = true
+    final override def isByteType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -605,9 +611,9 @@ sealed abstract class CharType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Character
 
-    final override def isCharType = true
+    final override def isCharType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -650,9 +656,9 @@ case object CharType extends CharType
 
 sealed abstract class DoubleType private () extends NumericType {
 
-    final override def isDoubleType = true
+    final override def isDoubleType: Boolean = true
 
-    final override def computationalType = ComputationalTypeDouble
+    final override def computationalType: ComputationalType = ComputationalTypeDouble
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -709,9 +715,9 @@ sealed abstract class FloatType private () extends NumericType {
 
     final val WrapperType = ObjectType.Float
 
-    final override def isFloatType = true
+    final override def isFloatType: Boolean = true
 
-    final override def computationalType = ComputationalTypeFloat
+    final override def computationalType: ComputationalType = ComputationalTypeFloat
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -761,9 +767,9 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Short
 
-    final override def isShortType = true
+    final override def isShortType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -812,9 +818,9 @@ sealed abstract class IntegerType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Integer
 
-    final override def isIntegerType = true
+    final override def isIntegerType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -867,9 +873,9 @@ sealed abstract class LongType private () extends NumericType {
 
     final val WrapperType = ObjectType.Long
 
-    final override def isLongType = true
+    final override def isLongType: Boolean = true
 
-    final override def computationalType = ComputationalTypeLong
+    final override def computationalType: ComputationalType = ComputationalTypeLong
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -926,9 +932,9 @@ sealed abstract class BooleanType private () extends BaseType {
 
     final val WrapperType = ObjectType.Boolean
 
-    final override def isBooleanType = true
+    final override def isBooleanType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -996,6 +1002,10 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         typeConversionFactory: TypeConversionFactory[T]
     ): T = {
         ObjectType.unboxValue(targetType)
+    }
+
+    def isSubtyeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
+        classHierarchy.isSubtypeOf(this, that)
     }
 
     // The default equals and hashCode methods are a perfect fit.

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -61,7 +61,7 @@ object XHTML {
      * We generate dumps on errors only if the specified time has passed by to avoid that
      * we are drowned in dumps. Often, a single bug causes many dumps to be created.
      */
-    private[this] var _lastDump = new java.util.concurrent.atomic.AtomicLong(0l)
+    private[this] var _lastDump = new java.util.concurrent.atomic.AtomicLong(0L)
 
     private[this] def lastDump_=(currentTimeMillis: Long): Unit = {
         _lastDump.set(currentTimeMillis)
@@ -74,7 +74,7 @@ object XHTML {
         method:              Method,
         ai:                  AI[_ >: D],
         theDomain:           D,
-        minimumDumpInterval: Long       = 500l
+        minimumDumpInterval: Long       = 500L
     )(
         f: AIResult { val domain: theDomain.type } ⇒ T
     ): T = {
@@ -120,7 +120,7 @@ object XHTML {
         method:              Option[Method],
         code:                Code,
         result:              AIResult,
-        minimumDumpInterval: Long              = 500l
+        minimumDumpInterval: Long              = 500L
     )(
         f: ⇒ T
     ): T = {

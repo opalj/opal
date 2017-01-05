@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -71,7 +71,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
      *      u2 attribute_name_index;
      *      u4 attribute_length;
      *      u1 parameters_count;
-     *      {	u2 name_index;
+     *      {   u2 name_index;
      *          u2 access_flags;
      *      } parameters[parameters_count];
      * }
@@ -99,11 +99,5 @@ trait MethodParameters_attributeReader extends AttributeReader {
     }
 
     registerAttributeReader(MethodParametersAttribute.Name → parser)
-}
-
-object MethodParametersAttribute {
-
-    final val Name = "MethodParameters"
-
 }
 
