@@ -54,7 +54,7 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
     val extractedArrayTypes = scala.collection.mutable.Set.empty[ArrayType]
     val extractedObjectTypes = scala.collection.mutable.Set.empty[ObjectType]
 
-    def dependencyExtractor =
+    def dependencyExtractor: DependencyExtractor = {
         new DependencyExtractor(
             new DependencyProcessorAdapter {
 
@@ -73,17 +73,20 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
                     source:   VirtualSourceElement,
                     baseType: BaseType,
                     dType:    DependencyType
-                ): Unit =
+                ): Unit = {
                     extractedBaseTypes += baseType
+                }
 
                 override def processDependency(
                     source:    VirtualSourceElement,
                     arrayType: ArrayType,
                     dType:     DependencyType
-                ): Unit =
+                ): Unit = {
                     extractedArrayTypes += arrayType
+                }
             }
         )
+    }
 
     //
     //

@@ -27,32 +27,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
-
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+package graphs
 
 /**
- * Tests the support for "project" related functionality.
+ * A node that directly supports Json serialization to OPAL's graph visualization format.
+ *
+ * @example
+ * [
+ * {
+ * "id": 1,
+ * "label": "1",
+ * "level": 0,
+ * "nodeAttributes": {},
+ * "children": [2, 3, 4, 5, 6]
+ * },
+ * ...
+ * ]
  *
  * @author Michael Eichberg
  */
-@RunWith(classOf[JUnitRunner])
-class ProjectJDKTest extends FunSpec with Matchers {
-
-    describe("Project") {
-
-        val project = TestSupport.createJREProject
-
-        it(s"should return only those methods that have a body when using the mehod methodsWithBody") {
-
-            project.allMethodsWithBody.foreach { m ⇒
-                assert(m.body.isDefined)
-            }
-        }
-    }
-
-}
+case class VizNode(id: Int, label: String, level: Int, children: List[Int])

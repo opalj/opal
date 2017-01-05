@@ -35,7 +35,7 @@ import scalariform.formatter.preferences._
 
 import sbtassembly.AssemblyPlugin.autoImport._
 
-import com.typesafe.sbteclipse.plugin.EclipsePlugin._
+// import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 
 object OPALBuild extends Build {
 
@@ -46,13 +46,17 @@ object OPALBuild extends Build {
 		Defaults.coreDefaultSettings ++
 		SbtScalariform.scalariformSettingsWithIt ++
 		Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value) ++
-		Seq(Defaults.itSettings : _*) ++
-		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
 		Seq(libraryDependencies  ++= Seq(
 			"junit" % "junit" % "4.12" % "test,it",
 			"org.scalatest" %% "scalatest" % "3.0.1" % "test,it",
-			"org.scalacheck" %% "scalacheck" % "1.13.4" % "test,it"))
+			"org.scalacheck" %% "scalacheck" % "1.13.4" % "test,it")) ++
+		Seq(Defaults.itSettings : _*) ++
+        Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
+        Seq(unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil) ++
+        Seq(unmanagedSourceDirectories in IntegrationTest := (scalaSource in IntegrationTest).value :: Nil) 
 
+		// Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest))
+        
 	def getScalariformPreferences(dir: File) = {
 		val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
 		PreferencesImporterExporter.loadPreferences((file(formatterPreferencesFile).getPath))
@@ -72,6 +76,7 @@ object OPALBuild extends Build {
 		bc,
         ba,
 		ai,
+        bp,
 		de,
 		av,
 		DeveloperTools,
@@ -145,13 +150,20 @@ object OPALBuild extends Build {
 	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
+  	lazy val bp = Project(
+  		id = "BugPicker",
+  		base = file("OPAL/bp"),
+  		settings = buildSettings 
+  	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+  	 .configs(IntegrationTest)
+
 	lazy val av = Project(
 		id = "ArchitectureValidation",
 		base = file("OPAL/av"),
 		settings = buildSettings
 	).dependsOn(de % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
-	 
+     
 	lazy val DeveloperTools = Project(
 		id = "OPAL-DeveloperTools",
 		base = file("DEVELOPING_OPAL/tools"),

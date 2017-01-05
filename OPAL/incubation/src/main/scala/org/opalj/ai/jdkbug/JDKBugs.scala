@@ -258,7 +258,7 @@ trait TaintAnalysisDomain[Source]
     def method: Method = id.method
     protected def methodName = id.method.name
     protected def methodDescriptor = id.method.descriptor
-    def code = method.body.get
+    def code: Code = method.body.get
 
     protected def contextIdentifier = {
         s"${declaringClass.fqn}{ ${methodDescriptor.toJava(methodName)} }"

@@ -77,8 +77,12 @@ object TestSupport {
 
     def createRTJarProject(): Project[URL] = Project(readRTJarClassFiles(), Traversable.empty, true)
 
-    def biProject(projectJARName: String) = Project(locateTestResources(projectJARName, "bi"))
+    def biProject(projectJARName: String): Project[URL] = {
+        Project(locateTestResources(projectJARName, "bi"))
+    }
 
-    def brProject(projectJARName: String) = Project(locateTestResources(projectJARName, "br"))
+    def brProject(projectJARName: String): Project[URL] = {
+        Project(locateTestResources(projectJARName, "br"))
+    }
 
 }

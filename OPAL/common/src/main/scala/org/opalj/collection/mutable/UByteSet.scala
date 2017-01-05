@@ -165,7 +165,7 @@ private[mutable] final class UByteSet4(private var value: Int) extends UByteSet 
 
     def isEmpty: Boolean = false
 
-    def isSingletonSet = (value & Value2_3_4Mask) == 0
+    def isSingletonSet: Boolean = (value & Value2_3_4Mask) == 0
 
     def size: Int = {
         if (value3 == 0) {
