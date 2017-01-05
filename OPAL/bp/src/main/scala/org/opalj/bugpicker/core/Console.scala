@@ -157,7 +157,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         theProject:             Project[URL],
         parameters:             Seq[String],
         initProgressManagement: (Int) ⇒ ProgressManagement
-    ) = {
+    ): BasicReport = {
 
         import theProject.logContext
 
@@ -302,14 +302,14 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                 case MaxEvalTimePattern(l) ⇒
                     try {
                         val maxTime = java.lang.Long.parseLong(l).toLong
-                        maxTime >= 10 && maxTime <= 1000000
+                        maxTime >= 10L && maxTime <= 1000000L
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
                 case MaxCardinalityOfIntegerRangesPattern(i) ⇒
                     try {
                         val cardinality = java.lang.Long.parseLong(i).toLong
-                        cardinality >= 1 && cardinality <= 4294967295l
+                        cardinality >= 1L && cardinality <= 4294967295L
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
