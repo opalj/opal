@@ -494,14 +494,14 @@ object BugPickerAnalysis {
     final val DefaultMaxEvalFactor = 1.75d
 
     final val MaxEvalTimePattern = """-maxEvalTime=(\d+)""".r
-    final val DefaultMaxEvalTime: Milliseconds = new Milliseconds(10000) // in ms => 10secs.
+    final val DefaultMaxEvalTime: Milliseconds = new Milliseconds(10000L) // in ms => 10secs.
 
     final val MaxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
     final val DefaultMaxCallChainLength = 1
 
     final val MaxCardinalityOfIntegerRangesPattern =
         """-maxCardinalityOfIntegerRanges=(\d+)""".r
-    final val DefaultMaxCardinalityOfIntegerRanges = 16l
+    final val DefaultMaxCardinalityOfIntegerRanges = 16L
 
     final val MaxCardinalityOfLongSetsPattern =
         """-maxCardinalityOfLongSets=(\d+)""".r

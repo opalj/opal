@@ -72,7 +72,7 @@ import org.opalj.issues.IssueKind
  * control and data-dependency to a derived value. E.g.,
  * {{{
  * def printSize(f : File) : Unit = {
- * 	val name = if(f eq null) null else f.getName
+ *  val name = if(f eq null) null else f.getName
  *  if(name == null) throw new NullPointerException;
  *  // here... f is not null; because if f is null at the beginning, name would be null to
  *  // and the method call would have returned abnormally (raised a NullPointerException).

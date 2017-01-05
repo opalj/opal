@@ -226,7 +226,7 @@ class InvocationBugPickerAnalysisDomain(
         with ChildPerformInvocationsWithRecursionDetection {
     callingDomain ⇒
 
-    override def calledMethodDomain(classFile: ClassFile, method: Method) =
+    override def calledMethodDomain(classFile: ClassFile, method: Method) = {
         new InvocationBugPickerAnalysisDomain(
             project,
             fieldValueInformation,
@@ -240,6 +240,7 @@ class InvocationBugPickerAnalysisDomain(
             debug
         ) {
         }
+    }
 
     def calledMethodAI = callerDomain.calledMethodAI
 
