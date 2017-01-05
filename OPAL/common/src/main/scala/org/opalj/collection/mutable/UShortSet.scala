@@ -461,7 +461,7 @@ private final class UShortSet4(private var value: Long) extends UShortSet { self
         }
     }
 
-    def iterable: Iterable[UShort] = new Iterable[UShort] { def iterator = self.iterator }
+    def iterable: Iterable[UShort] = new Iterable[UShort] { def iterator: Iterator[Int] = self.iterator }
 
     private[mutable] def isLeafNode: Boolean = true
     private[mutable] def isU2Set: Boolean = false
@@ -494,9 +494,9 @@ private final class UShortSetNode(
 
     private[mutable] def isFull: Boolean = set1.isFull && set2.isFull
 
-    def max = currentMax
+    def max: Int = currentMax
 
-    def min = (set1: SmallValuesSet).min
+    def min: Int = (set1: SmallValuesSet).min
 
     def mutableCopy: mutable.UShortSet = {
         val set1 = this.set1
@@ -532,7 +532,7 @@ private final class UShortSetNode(
             }
         }
 
-    def iterable = set1.iterable ++ set2.iterable
+    def iterable: Iterable[Int] = set1.iterable ++ set2.iterable
 
     override def size: Int = set1.size + set2.size
 
@@ -684,8 +684,8 @@ private object EmptyUShortSet extends UShortSet {
     def isSingletonSet: Boolean = false
     override def size: Int = 0
     def mutableCopy: mutable.UShortSet = this
-    def iterator = Iterator.empty
-    def iterable = Iterable.empty
+    def iterator: Iterator[Int] = Iterator.empty
+    def iterable: Iterable[Int] = Iterable.empty
     def contains(uShortValue: UShort): Boolean = false
     def exists(f: UShort ⇒ Boolean): Boolean = false
     def foreach[U](f: UShort ⇒ U): Unit = { /*Nothing to do.*/ }
@@ -693,8 +693,8 @@ private object EmptyUShortSet extends UShortSet {
 
     override def forall(f: UShort ⇒ Boolean): Boolean = true
     def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
-    def max = throw new NoSuchElementException("the set is empty")
-    def min = throw new NoSuchElementException("the set is empty")
+    def max: Int = throw new NoSuchElementException("the set is empty")
+    def min: Int = throw new NoSuchElementException("the set is empty")
     def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)
     def -(value: UByte): UShortSet = this
 

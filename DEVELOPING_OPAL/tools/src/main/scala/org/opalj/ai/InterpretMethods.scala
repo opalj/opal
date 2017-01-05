@@ -97,7 +97,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
         project:                Project[Source],
         parameters:             Seq[String]                = List.empty,
         initProgressManagement: (Int) ⇒ ProgressManagement
-    ) = {
+    ): BasicReport = {
         implicit val logContext = project.logContext
 
         val verbose = parameters.size > 0 &&

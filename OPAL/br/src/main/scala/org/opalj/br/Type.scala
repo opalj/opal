@@ -269,10 +269,10 @@ sealed abstract class Type extends UID with Ordered[Type] {
             1
     }
 
-    override def <(other: Type) = this.id < other.id
-    override def >(other: Type) = this.id > other.id
-    override def >=(other: Type) = this.id >= other.id
-    override def <=(other: Type) = this.id <= other.id
+    override def <(other: Type): Boolean = this.id < other.id
+    override def >(other: Type): Boolean = this.id > other.id
+    override def >=(other: Type): Boolean = this.id >= other.id
+    override def <=(other: Type): Boolean = this.id <= other.id
 
 }
 
@@ -316,7 +316,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     final val id = Int.MinValue
 
-    final override def isVoidType = true
+    final override def isVoidType: Boolean = true
 
     final override def computationalType: ComputationalType =
         throw new UnsupportedOperationException("void does not have a computational type")
@@ -346,7 +346,7 @@ case object VoidType extends VoidType
  */
 sealed abstract class FieldType extends Type {
 
-    final override def isFieldType = true
+    final override def isFieldType: Boolean = true
 
     final override def asFieldType: this.type = this
 
@@ -388,7 +388,7 @@ object FieldType {
 
 sealed abstract class ReferenceType extends FieldType {
 
-    final override def isReferenceType = true
+    final override def isReferenceType: Boolean = true
 
     final override def asReferenceType: ReferenceType = this
 
@@ -430,7 +430,7 @@ object ReferenceType {
 
 sealed abstract class BaseType extends FieldType with TypeSignature {
 
-    final override def isBaseType = true
+    final override def isBaseType: Boolean = true
 
     final override def asBaseType: this.type = this
 
@@ -560,9 +560,9 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Byte
 
-    final override def isByteType = true
+    final override def isByteType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -611,9 +611,9 @@ sealed abstract class CharType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Character
 
-    final override def isCharType = true
+    final override def isCharType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -656,9 +656,9 @@ case object CharType extends CharType
 
 sealed abstract class DoubleType private () extends NumericType {
 
-    final override def isDoubleType = true
+    final override def isDoubleType: Boolean = true
 
-    final override def computationalType = ComputationalTypeDouble
+    final override def computationalType: ComputationalType = ComputationalTypeDouble
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -715,9 +715,9 @@ sealed abstract class FloatType private () extends NumericType {
 
     final val WrapperType = ObjectType.Float
 
-    final override def isFloatType = true
+    final override def isFloatType: Boolean = true
 
-    final override def computationalType = ComputationalTypeFloat
+    final override def computationalType: ComputationalType = ComputationalTypeFloat
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -767,9 +767,9 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Short
 
-    final override def isShortType = true
+    final override def isShortType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -818,9 +818,9 @@ sealed abstract class IntegerType private () extends IntLikeType {
 
     final val WrapperType = ObjectType.Integer
 
-    final override def isIntegerType = true
+    final override def isIntegerType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -873,9 +873,9 @@ sealed abstract class LongType private () extends NumericType {
 
     final val WrapperType = ObjectType.Long
 
-    final override def isLongType = true
+    final override def isLongType: Boolean = true
 
-    final override def computationalType = ComputationalTypeLong
+    final override def computationalType: ComputationalType = ComputationalTypeLong
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -932,9 +932,9 @@ sealed abstract class BooleanType private () extends BaseType {
 
     final val WrapperType = ObjectType.Boolean
 
-    final override def isBooleanType = true
+    final override def isBooleanType: Boolean = true
 
-    final override def computationalType = ComputationalTypeInt
+    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
