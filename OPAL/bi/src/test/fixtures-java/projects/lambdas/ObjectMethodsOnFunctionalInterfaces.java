@@ -49,6 +49,7 @@ import static annotations.target.TargetResolution.*;
  * @author Arne Lottmann
  */
 public class ObjectMethodsOnFunctionalInterfaces {
+  
 	@InvokedMethod(resolution = DEFAULT, receiverType = "java/lang/Object", name = "equals", parameterTypes = { Object.class }, returnType = boolean.class, isStatic = false, line = 54)
 	public void lambdaEquals() {
 		Runnable lambda = () -> System.out.println("Hello world!");

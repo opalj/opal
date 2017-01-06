@@ -67,19 +67,19 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     // ANNOTATIONTYPES
     //
     val invokedMethodAnnotation =
-        ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
+        ObjectType("annotations/target/InvokedMethod")
     val invokedMethodsAnnotation =
-        ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethods")
+        ObjectType("annotations/target/InvokedMethods")
 
     val invokedConstructorAnnotation =
-        ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedConstructor")
+        ObjectType("annotations/target/InvokedConstructor")
     val invokedConstructorsAnnotation =
-        ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedConstructors")
+        ObjectType("annotations/target/InvokedConstructors")
 
     val accessedFieldAnnotation =
-        ObjectType("org/opalj/ai/test/invokedynamic/annotations/AccessedField")
+        ObjectType("annotations/target/AccessedField")
     val accessedFieldsAnnotation =
-        ObjectType("org/opalj/ai/test/invokedynamic/annotations/AccessedFields")
+        ObjectType("annotations/target/AccessedFields")
 
     //
     // PROJECT SETUP
@@ -125,10 +125,10 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 evps collectFirst {
                     case ElementValuePair("isContainedIn", ArrayValue(isContainedIn)) ⇒
                         isContainedIn collect {
-                            case (EnumValue(ObjectType("org/opalj/ai/test/invokedynamic/annotations/CallGraphAlgorithm"), "CHA"))        ⇒ CallGraphAlgorithm.CHA
-                            case (EnumValue(ObjectType("org/opalj/ai/test/invokedynamic/annotations/CallGraphAlgorithm"), "DefaultVTA")) ⇒ CallGraphAlgorithm.DefaultVTA
-                            case (EnumValue(ObjectType("org/opalj/ai/test/invokedynamic/annotations/CallGraphAlgorithm"), "BasicVTA"))   ⇒ CallGraphAlgorithm.BasicVTA
-                            case (EnumValue(ObjectType("org/opalj/ai/test/invokedynamic/annotations/CallGraphAlgorithm"), "ExtVTA"))     ⇒ CallGraphAlgorithm.ExtVTA
+                            case (EnumValue(ObjectType("annotations/target/CallGraphAlgorithm"), "CHA"))        ⇒ CallGraphAlgorithm.CHA
+                            case (EnumValue(ObjectType("annotations/target/CallGraphAlgorithm"), "DefaultVTA")) ⇒ CallGraphAlgorithm.DefaultVTA
+                            case (EnumValue(ObjectType("annotations/target/CallGraphAlgorithm"), "BasicVTA"))   ⇒ CallGraphAlgorithm.BasicVTA
+                            case (EnumValue(ObjectType("annotations/target/CallGraphAlgorithm"), "ExtVTA"))     ⇒ CallGraphAlgorithm.ExtVTA
                         }
                 }
             )

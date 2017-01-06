@@ -240,7 +240,7 @@ private object CodeAttributeTest {
     val project =
         Project(
             ClassFiles(locateTestResources("code.jar", "bi")) ++
-                ClassFiles(locateTestResources("classfiles/cfgtest8.jar", "br")),
+                ClassFiles(locateTestResources("controlflow.jar", "bi")),
             Traversable.empty,
             true
         )

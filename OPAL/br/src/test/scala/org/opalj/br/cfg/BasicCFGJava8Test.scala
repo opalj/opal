@@ -32,7 +32,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport
+import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
 import org.opalj.io.writeAndOpen
@@ -53,8 +53,8 @@ import org.opalj.io.writeAndOpen
 @RunWith(classOf[JUnitRunner])
 class BasicCFGJava8Test extends FunSpec with Matchers {
 
-    val testJAR = "classfiles/cfgtest8.jar"
-    val testFolder = TestSupport.locateTestResources(testJAR, "br")
+    val testJAR = "controlflow.jar"
+    val testFolder = locateTestResources(testJAR, "bi")
     val testProject = Project(testFolder)
 
     private def test(methodName: String, cfg: CFG)(f: ⇒ Unit): Unit = {

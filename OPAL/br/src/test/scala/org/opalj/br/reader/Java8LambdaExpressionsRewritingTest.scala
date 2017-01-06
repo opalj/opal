@@ -39,7 +39,7 @@ import org.opalj.br.ElementValuePair
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
 import org.opalj.br.StringValue
-import org.opalj.bi.TestSupport
+import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.log.GlobalLogContext
@@ -57,9 +57,9 @@ import com.typesafe.config.ConfigValueFactory
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
-    val InvokedMethod = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
+    val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 
-    val testResources = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
+    val testResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
         for {

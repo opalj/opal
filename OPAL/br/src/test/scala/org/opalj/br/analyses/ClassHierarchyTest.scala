@@ -88,21 +88,21 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val longArray = ArrayType(LongType)
 
     // Commonly used package names
-    val pgk = Some("classhierarchy/")
+    val pgk = Some("generictypes/")
 
     val SimpleCTS = SimpleClassTypeSignature
     val CTS = ClassTypeSignature
-    def CTS(cn: String, ptas: List[TypeArgument], suffix: List[SimpleClassTypeSignature] = Nil) =
+    def CTS(cn: String, ptas: List[TypeArgument], suffix: List[SimpleClassTypeSignature] = Nil) = {
         ClassTypeSignature(pgk, SimpleCTS(cn, ptas), suffix)
+    }
 
-    def elementType(cts: ClassTypeSignature) =
-        ProperTypeArgument(None, cts)
+    def elementType(cts: ClassTypeSignature) = ProperTypeArgument(None, cts)
 
-    def upperBoundType(cts: ClassTypeSignature) =
-        ProperTypeArgument(Some(CovariantIndicator), cts)
+    def upperBoundType(cts: ClassTypeSignature) = ProperTypeArgument(Some(CovariantIndicator), cts)
 
     def lowerBoundType(cts: ClassTypeSignature) =
         ProperTypeArgument(Some(ContravariantIndicator), cts)
+
     /*SimpleClassTypeSignatures*/
     val baseSCTS = SimpleCTS("Base", Nil)
     val extBaseSCTS = SimpleCTS("ExtendedBase", Nil)
@@ -120,7 +120,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val altInterfaceCTS = CTS(pgk, SimpleCTS("AltInterface", Nil), Nil)
 
     /** UContainer<UnknownType> */
-    val unknownContainer = CTS("UContainer", List(elementType(CTS(pgk, SimpleCTS("UnknownType", Nil), Nil))))
+    val unknownContainer =
+        CTS("UContainer", List(elementType(CTS(pgk, SimpleCTS("UnknownType", Nil), Nil))))
 
     /** Interface<Base> */
     val iContainerWithBase = CTS("Interface", List(elementType(baseCTS)))
@@ -171,20 +172,16 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val contravariantContainer = CTS("SimpleGeneric", List(lowerBoundType(extBaseCTS)))
 
     /**  SimpleGeneric<? super SimpleGenericBase>*/
-    val contravariantWithContainer =
-        CTS("SimpleGeneric", List(lowerBoundType(baseContainer)))
+    val contravariantWithContainer = CTS("SimpleGeneric", List(lowerBoundType(baseContainer)))
 
     /**  SimpleGeneric<? super Base> */
-    val contravariantBaseContainer =
-        CTS("SimpleGeneric", List(lowerBoundType(baseCTS)))
+    val contravariantBaseContainer = CTS("SimpleGeneric", List(lowerBoundType(baseCTS)))
 
     /** SubGenericET<SimpleGeneric<Base>, SimpleGeneric<ExtendedBase>>*/
-    val doubleContainerET =
-        CTS("SubGenericET", List(elementType(baseCTS), elementType(extBaseCTS)))
+    val doubleContainerET = CTS("SubGenericET", List(elementType(baseCTS), elementType(extBaseCTS)))
 
     /** SubGenericTE<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
-    val doubleContainerTE =
-        CTS("SubGenericTE", List(elementType(extBaseCTS), elementType(baseCTS)))
+    val doubleContainerTE = CTS("SubGenericTE", List(elementType(extBaseCTS), elementType(baseCTS)))
 
     /** IndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
     val doubleContainerBase =
@@ -199,32 +196,25 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         CTS("SubGenericET", List(elementType(extBaseCTS), elementType(baseCTS)))
 
     /** SimpleGeneric<SimpleGeneric<Base>> */
-    val nestedBase =
-        CTS("SimpleGeneric", List(elementType(baseContainer)))
+    val nestedBase = CTS("SimpleGeneric", List(elementType(baseContainer)))
 
     /** SimpleGeneric<SimpleGeneric<ExtendedBase>> */
-    val nestedExtBase =
-        CTS("SimpleGeneric", List(elementType(extBaseContainer)))
+    val nestedExtBase = CTS("SimpleGeneric", List(elementType(extBaseContainer)))
 
     /** SimpleGeneric<SimpleGeneric<lvlTwoContainer>> */
-    val nestedLvlTwoBase =
-        CTS("SimpleGeneric", List(elementType(lvlTwoContainer)))
+    val nestedLvlTwoBase = CTS("SimpleGeneric", List(elementType(lvlTwoContainer)))
 
     /** SimpleGeneric<SimpleGeneric<AlternativeBase>> */
-    val nestedAltBase =
-        CTS("SimpleGeneric", List(elementType(altContainer)))
+    val nestedAltBase = CTS("SimpleGeneric", List(elementType(altContainer)))
 
     /** SimpleGeneric<ExtendedGeneric<Base>> */
-    val nestedSubGenBase =
-        CTS("SimpleGeneric", List(elementType(extGenContainer)))
+    val nestedSubGenBase = CTS("SimpleGeneric", List(elementType(extGenContainer)))
 
     /** SimpleGeneric<SimpleGeneric<? extends Base>> */
-    val nestedInnerCovariantContainer =
-        CTS("SimpleGeneric", List(elementType(covariantContainer)))
+    val nestedInnerCovariantContainer = CTS("SimpleGeneric", List(elementType(covariantContainer)))
 
     /** SimpleGeneric<? extends SimpleGeneric<Base>> */
-    val nestedOutterCovariantContainer =
-        CTS("SimpleGeneric", List(upperBoundType(baseContainer)))
+    val nestedOutterCovariantContainer = CTS("SimpleGeneric", List(upperBoundType(baseContainer)))
 
     /** SimpleGeneric<? super SimpleGeneric<Base>> */
     val nestedContravariantContainer =
@@ -364,9 +354,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     it should "identify the same set of class as allSupertypes if the bound contains only one element" in {
         val supertypesOfString = javaLangCH.allSupertypes(ObjectType.String, true)
 
-        supertypesOfString should be(
-            javaLangCH.allSupertypesOf(UIDSet(ObjectType.String), true)
-        )
+        supertypesOfString should be(javaLangCH.allSupertypesOf(UIDSet(ObjectType.String), true))
     }
 
     behavior of "the default ClassHierarchy's leafTypes method w.r.t. class types"
@@ -487,18 +475,18 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
 
     val typesProject =
         Project(
-            ClassFiles(locateTestResources("classfiles/types.jar", "br")),
+            ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
             Traversable.empty,
             true
         )
 
-    val cRootType = ObjectType("types/CRoot")
-    val cRootAType = ObjectType("types/CRootA")
-    val cRootAABType = ObjectType("types/CRootAAB")
-    val cRootAAABBCType = ObjectType("types/CRootAAABBC")
-    val iRootAType = ObjectType("types/IRootA")
-    val iRootBType = ObjectType("types/IRootB")
-    val iRootCType = ObjectType("types/IRootC")
+    val cRootType = ObjectType("classhierarchy/CRoot")
+    val cRootAType = ObjectType("classhierarchy/CRootA")
+    val cRootAABType = ObjectType("classhierarchy/CRootAAB")
+    val cRootAAABBCType = ObjectType("classhierarchy/CRootAAABBC")
+    val iRootAType = ObjectType("classhierarchy/IRootA")
+    val iRootBType = ObjectType("classhierarchy/IRootB")
+    val iRootCType = ObjectType("classhierarchy/IRootC")
 
     it should "return the given upper type bound if it just contains a single type" in {
         import typesProject.classHierarchy.directSubtypesOf
@@ -801,7 +789,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
 
 object ClassHierarchyTest {
 
-    val generics = locateTestResources("classfiles/genericTypes.jar", "br")
+    val generics = locateTestResources("generictypes.jar", "bi")
     val genericProject = Project(ClassFiles(generics), Traversable.empty, true)
 
 }
