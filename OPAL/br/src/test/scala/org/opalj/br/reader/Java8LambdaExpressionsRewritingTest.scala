@@ -30,11 +30,19 @@ package org.opalj
 package br
 package reader
 
-import analyses.{Project, SomeProject}
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
-import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
@@ -42,11 +50,6 @@ import org.opalj.br.StringValue
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.log.GlobalLogContext
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.Config
-import org.opalj.log.LogContext
-import com.typesafe.config.ConfigValueFactory
 
 /**
  * Tests the rewriting of Java8 lambda expressions based [[INVOKEDYNAMIC]] instruction.
@@ -100,8 +103,9 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             } else {
                 invocationInstruction.methodDescriptor
             }
-        project.classFile(declaringType).flatMap(_.
-            findMethod(targetMethodName, targetMethodDescriptor))
+        project.classFile(declaringType).flatMap(
+            _.findMethod(targetMethodName, targetMethodDescriptor)
+        )
     }
 
     /**
@@ -121,9 +125,9 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             for {
                 invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
                 pairs = invokedMethod.elementValuePairs
-                ElementValuePair("receiverType", ClassValue(receiverType)) ← pairs
+                ElementValuePair("receiverType", StringValue(receiverType)) ← pairs
                 ElementValuePair("name", StringValue(methodName)) ← pairs
-                classFile ← project.classFile(receiverType.asObjectType)
+                classFile ← project.classFile(ObjectType(receiverType))
             } yield {
                 classFile.findMethod(methodName).headOption
             }

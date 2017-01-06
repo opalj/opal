@@ -129,7 +129,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         val configValueFalse = ConfigValueFactory.fromAnyRef(false)
 
         describe("testing the rewritten methods of the lambdas test project") {
-            val lambdasJar = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
+            val lambdasJar = TestSupport.locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
             val config = Java8LambdaExpressionsRewriting.defaultConfig(
                 rewrite = true,
                 logRewrites = false
