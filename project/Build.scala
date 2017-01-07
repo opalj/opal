@@ -169,6 +169,7 @@ object OPALBuild extends Build {
         settings = buildSettings 
     ).dependsOn(
         av % "test->test;compile->compile",
+        bp % "test->test;compile->compile",
         ba % "test->test;compile->compile;it->it")
      .configs(IntegrationTest)
 
