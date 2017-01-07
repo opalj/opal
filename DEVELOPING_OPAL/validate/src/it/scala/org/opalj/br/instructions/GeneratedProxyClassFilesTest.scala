@@ -40,7 +40,6 @@ import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
 
-
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
  *
