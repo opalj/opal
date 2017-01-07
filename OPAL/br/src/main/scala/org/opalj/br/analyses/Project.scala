@@ -292,17 +292,17 @@ class Project[Source] private (
                         if declaredMethod.isVirtualMethodDeclaration
                         declaredMethodContext = MethodDeclarationContext(declaredMethod, classFile)
                     } {
-                        // We have to filter multiple methods when we inherit (w.r.t. the visibility)
-                        // multiple conflicting methods!
-                        definedMethods = definedMethods.filterNot(declaredMethodContext.directlyOverrides)
+                        // We have to filter multiple methods when we inherit (w.r.t. the
+                        // visibility) multiple conflicting methods!
+                        definedMethods =
+                            definedMethods.filterNot(declaredMethodContext.directlyOverrides)
 
                         // Recall that it is possible to make a method "abstract" again...
                         if (declaredMethod.isNotAbstract) {
                             definedMethods :&:= declaredMethodContext
                         }
                     }
-                case None ⇒
-                // this point is only reached in case of a rather incomplete projects...
+                case None ⇒ // ... reached only in case of a rather incomplete projects...
             }
             methods.put(objectType, definedMethods)
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
