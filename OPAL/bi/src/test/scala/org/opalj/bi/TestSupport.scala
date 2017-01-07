@@ -107,11 +107,7 @@ object TestSupport {
             pathFunction(s"bi/$managedResourcesFolder") map { fCandidate ⇒
                 val f = new File(fCandidate)
                 if (f.exists && f.isDirectory) {
-                    val s = f.listFiles(new FileFilter {
-                        def accept(path: File): Boolean = {
-                            path.isFile && path.getName.endsWith(".jar") && path.canRead
-                        }
-                    })
+                    val s = f.listFiles(JARsFileFilter)
                     allJARs ++= s
                 }
             }
@@ -119,4 +115,22 @@ object TestSupport {
         allJARs
     }
 
+    def allUnmanagedBITestJARs(): Traversable[File] = {
+        var allJARs: List[File] = Nil
+        val f = locateTestResources("classfiles", "bi")
+        if (f.exists && f.isDirectory) {
+            allJARs ++= f.listFiles(JARsFileFilter)
+        }
+        allJARs
+    }
+
+    def allBITestJARs(): Traversable[File] = allManagedBITestJARs() ++ allUnmanagedBITestJARs
+
 }
+
+object JARsFileFilter extends FileFilter {
+    def accept(path: File): Boolean = {
+        path.isFile && path.getName.endsWith(".jar") && path.canRead
+    }
+}
+
