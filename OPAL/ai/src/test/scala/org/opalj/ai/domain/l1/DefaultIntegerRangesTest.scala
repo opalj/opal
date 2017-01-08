@@ -36,6 +36,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.br.{ObjectType, ArrayType, IntegerType}
 import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
 
@@ -3386,7 +3387,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
 
                 // we don't know the size of the array
                 domain.allReturnedValues.head._2 abstractsOver (
-                    domain.InitializedArrayValue(2, ArrayType(IntegerType), List(10))
+                    domain.InitializedArrayValue(2, ArrayType(IntegerType), Chain(10))
                 ) should be(true)
 
                 // get the loop counter at the "icmple instruction" which controls the

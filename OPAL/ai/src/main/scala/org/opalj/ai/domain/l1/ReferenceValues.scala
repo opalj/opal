@@ -32,14 +32,16 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
+import scala.annotation.tailrec
 
 import java.util.IdentityHashMap
-import scala.annotation.tailrec
+
 import scala.collection.SortedSet
 import scala.collection.immutable.{SortedSet ⇒ ImmutableSortedSet}
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.collection.immutable.IdentityPair
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0
 import org.opalj.collection.immutable.UIDSet1
@@ -106,6 +108,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      *
      * However, two domain values that have the same timestamp are guaranteed to refer
      * to the same object at runtime.
+     *
+     * Timestamps are required to determine changes in the memory layout. I.e., to
+     * determine if two values created by the same instruction are aliases or "just"
+     * maybe aliases. This information is particularly relevant if two values -
+     * stored in registers - are no longer guaranteed to be aliases!
      */
     type Timestamp = Int
 
@@ -679,14 +686,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     protected class ArrayValue(
-        override val origin:    ValueOrigin,
-        override val isNull:    Answer,
-        override val isPrecise: Boolean,
-        theUpperTypeBound:      ArrayType,
-        override val t:         Timestamp
-    )
-            extends super.ArrayValue(theUpperTypeBound)
-            with NonNullSingleOriginSReferenceValue {
+            override val origin:    ValueOrigin,
+            override val isNull:    Answer,
+            override val isPrecise: Boolean,
+            theUpperTypeBound:      ArrayType,
+            override val t:         Timestamp
+    ) extends super.ArrayValue(theUpperTypeBound) with NonNullSingleOriginSReferenceValue {
         this: DomainArrayValue ⇒
 
         assert(isNull.isNoOrUnknown)
@@ -728,21 +733,21 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         override def adapt(
             targetDomain: TargetDomain,
             targetOrigin: ValueOrigin
-        ): targetDomain.DomainValue =
-            targetDomain match {
+        ): targetDomain.DomainValue = {
+            val adaptedValue = targetDomain match {
 
                 case thatDomain: l1.ReferenceValues ⇒
-                    thatDomain.
-                        ArrayValue(targetOrigin, isNull, isPrecise, theUpperTypeBound, thatDomain.nextT()).
-                        asInstanceOf[targetDomain.DomainValue]
+                    thatDomain.ArrayValue(
+                        targetOrigin, isNull, isPrecise, theUpperTypeBound, thatDomain.nextT()
+                    )
 
                 case thatDomain: l0.DefaultTypeLevelReferenceValues ⇒
-                    thatDomain.
-                        ReferenceValue(targetOrigin, theUpperTypeBound).
-                        asInstanceOf[targetDomain.DomainValue]
+                    thatDomain.ReferenceValue(targetOrigin, theUpperTypeBound)
 
                 case _ ⇒ super.adapt(targetDomain, targetOrigin)
             }
+            adaptedValue.asInstanceOf[targetDomain.DomainValue]
+        }
 
         protected def canEqual(other: ArrayValue): Boolean = true
 
@@ -764,11 +769,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def hashCode: Int =
+        override def hashCode: Int = {
             (((origin) * 41 +
                 (if (isPrecise) 101 else 3)) * 13 +
                 isNull.hashCode()) * 79 +
                 upperTypeBound.hashCode()
+        }
 
         override def toString(): String = toString(theUpperTypeBound.toJava)
 
@@ -1858,29 +1864,37 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
         ObjectValue(pc, No, true, objectType, nextT())
 
-    override def StringValue(pc: PC, value: String): DomainObjectValue =
+    override def StringValue(pc: PC, value: String): DomainObjectValue = {
         ObjectValue(pc, No, true, ObjectType.String, nextT())
+    }
 
-    override def ClassValue(pc: PC, t: Type): DomainObjectValue =
+    override def ClassValue(pc: PC, t: Type): DomainObjectValue = {
         ObjectValue(pc, No, true, ObjectType.Class, nextT())
+    }
 
-    override def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
+    override def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, Unknown, false, objectType, nextT())
+    }
 
-    override def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue =
+    override def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
         ObjectValue(pc, Unknown, upperTypeBound, nextT())
+    }
 
     override def InitializedArrayValue(
         pc:        PC,
-        arrayType: ArrayType, counts: List[Int]
-    ): DomainArrayValue =
+        arrayType: ArrayType,
+        counts:    Chain[Int]
+    ): DomainArrayValue = {
         ArrayValue(pc, No, true, arrayType, nextT())
+    }
 
-    override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue =
+    override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, No, true, arrayType, nextT())
+    }
 
-    override def NewArray(pc: PC, counts: Operands, arrayType: ArrayType): DomainArrayValue =
+    override def NewArray(pc: PC, counts: Operands, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, No, true, arrayType, nextT())
+    }
 
     override protected[domain] def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue = {
         if (arrayType.elementType.isBaseType)
@@ -1935,16 +1949,18 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         origin:         ValueOrigin,
         isNull:         Answer,
         upperTypeBound: UIDSet[ObjectType]
-    ): DomainObjectValue =
+    ): DomainObjectValue = {
         ObjectValue(origin, isNull, upperTypeBound, nextT())
+    }
 
     protected[domain] def ObjectValue( // for SObjectValue
         origin:            ValueOrigin,
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: ObjectType
-    ): DomainObjectValue =
+    ): DomainObjectValue = {
         ObjectValue(origin, isNull, isPrecise, theUpperTypeBound, nextT())
+    }
 
     //
     // DECLARATION OF ADDITIONAL DOMAIN VALUE FACTORY METHODS
