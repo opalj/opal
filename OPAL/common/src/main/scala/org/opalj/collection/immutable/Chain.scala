@@ -152,6 +152,33 @@ sealed trait Chain[@specialized(Int) +T]
         true
     }
 
+    /**
+     *  Computes the shared prefix.
+     */
+    def sharedPrefix[X >: T](other: Chain[X]): Chain[T] = {
+        val Nil = Naught
+        var prefixHead: Chain[T] = Nil
+        var prefixLast: :&:[T] = null
+        var thisRest = this
+        var otherRest = other
+        while (thisRest.nonEmpty && otherRest.nonEmpty && thisRest.head == otherRest.head) {
+            if (prefixLast == null) {
+                prefixLast = new :&:[T](thisRest.head, Nil)
+                prefixHead = prefixLast
+            } else {
+                prefixLast.rest = new :&:[T](thisRest.head, Nil)
+            }
+            thisRest = thisRest.tail
+            otherRest = otherRest.tail
+        }
+        if (thisRest.isEmpty)
+            this
+        else if (otherRest.isEmpty)
+            other.asInstanceOf[Chain[T]]
+        else
+            prefixHead
+    }
+
     def forFirstN[U](n: Int)(f: (T) ⇒ U): Unit = {
         var rest = this
         var i = 0
@@ -322,16 +349,17 @@ sealed trait Chain[@specialized(Int) +T]
      * If this list is empty, the last element is null.
      */
     private[opalj] def copy[X >: T](): (Chain[X], :&:[X]) = {
+        val Nil = Naught
         if (isEmpty)
             return (this, null);
 
-        val result = new :&:[T](head, Naught)
+        val result = new :&:[T](head, Nil)
         var last = result
         var rest: Chain[T] = this.tail
         while (rest.nonEmpty) {
             val x = rest.head
             rest = rest.tail
-            val newLast = new :&:[T](x, Naught)
+            val newLast = new :&:[T](x, Nil)
             last.rest = newLast
             last = newLast
         }

@@ -159,6 +159,30 @@ object ChainProperties extends Properties("Chain") {
         }
     }
 
+    property("sharedPrefix") = forAll(listsOfSingleCharStringsGen) { ls ⇒
+        val (l1: List[String], l2: List[String]) = ls
+        val fl1 = Chain(l1: _*)
+        val fl2 = Chain(l2: _*)
+        val sharedPrefixList = org.opalj.collection.commonPrefix(l1, l2)
+        classify(sharedPrefixList.nonEmpty, "non-empty shared prefix list") {
+            val sharedPrefixChain = fl1.sharedPrefix(fl2)
+            classify(sharedPrefixChain eq fl1, "the result is chain 1") {
+                classify(sharedPrefixChain eq fl2, "the result is chain 2") {
+                    Chain(sharedPrefixList: _*) == sharedPrefixChain && {
+                        ((sharedPrefixList eq l1) && (sharedPrefixChain eq fl1)) ||
+                            ((sharedPrefixList eq l2) && (sharedPrefixChain eq fl2)) ||
+                            (
+                                (sharedPrefixList ne l1) &&
+                                (sharedPrefixChain ne fl1) &&
+                                (sharedPrefixList ne l2) &&
+                                (sharedPrefixChain ne fl2)
+                            )
+                    }
+                }
+            }
+        }
+    }
+
     property("WithFilter") = forAll { orig: List[String] ⇒
         def test(s: String): Boolean = s.length > 0
         val cl = Chain(orig: _*).withFilter(test).map[String, Chain[String]](s ⇒ s)
