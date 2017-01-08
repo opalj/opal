@@ -432,8 +432,9 @@ trait ValuesDomain {
         }
 
         @throws[DomainException]("\"summarize\" is not defined on illegal values")
-        override def summarize(pc: PC): DomainValue =
+        override def summarize(pc: PC): DomainValue = {
             throw DomainException("creating a summary of an illegal value is meaningless")
+        }
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.TheIllegalValue

@@ -32,17 +32,21 @@ package graphs
 /**
  * A node that directly supports Json serialization to OPAL's graph visualization format.
  *
- * @example
+ * @see [[org.opalj.graphs.VizNodeWrites]]
+ *
+ * @example A `VizNode(1,"add",0,List(2,3,7))` will be serialized as:
+ * <pre>
  * [
- * {
- * "id": 1,
- * "label": "1",
- * "level": 0,
- * "nodeAttributes": {},
- * "children": [2, 3, 4, 5, 6]
- * },
- * ...
+ *     {
+ *         "id": 1,
+ *         "label": "add",
+ *         "level": 0,
+ *         "nodeAttributes": {},
+ *         "children": [2, 3, 7]
+ *     },
+ *     ...
  * ]
+ * </pre>
  *
  * @author Michael Eichberg
  */

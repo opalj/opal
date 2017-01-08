@@ -36,7 +36,7 @@ package tactest;
  */
 public class ArithmeticExpressions {
 
-	//Integer operations
+	// Integer operations ****************************************************************************
 	int integerAdd(int a, int b){
 		return a + b;
 	}
@@ -107,7 +107,7 @@ public class ArithmeticExpressions {
 		return c;
 	}
 	
-	//Double operations
+	// Double operations *****************************************************************************
 	double doubleAdd(double a, double b){
 		return a + b;
 	}
@@ -140,7 +140,7 @@ public class ArithmeticExpressions {
 		return a < b;
 	}
 	
-	//Float operations
+	// Float operations ******************************************************************************
 	float floatAdd(float a, float b){
 		return a + b;
 	}
@@ -169,7 +169,7 @@ public class ArithmeticExpressions {
 		return a - b;
 	}
 	
-	//Long operations
+	// Long operations *******************************************************************************
 	long longAdd(long a, long b){
 		return a + b;
 	}

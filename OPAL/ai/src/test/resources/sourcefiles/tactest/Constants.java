@@ -32,7 +32,6 @@ package tactest;
  * Class with simple methods containing instructions loading constants.
  * 
  * @author Roberts Kolosovs
- *
  */
 public class Constants {
 

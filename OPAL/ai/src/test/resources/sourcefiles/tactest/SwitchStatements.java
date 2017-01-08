@@ -32,7 +32,6 @@ package tactest;
  * Class with simple methods containing switch statements.
  * 
  * @author Roberts Kolosovs
- *
  */
 public class SwitchStatements {
 

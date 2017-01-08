@@ -32,7 +32,6 @@ package tactest;
  * Class with simple methods containing control sequences like if-then.
  * 
  * @author Roberts Kolosovs
- *
  */
 public class ControlSequences {
 

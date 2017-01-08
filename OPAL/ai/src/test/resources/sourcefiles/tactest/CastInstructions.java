@@ -28,13 +28,12 @@
  */
 package tactest;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * Class with simple methods containing cast and typecheck instructions.
  * 
  * @author Roberts Kolosovs
- *
  */
 public class CastInstructions {
 	

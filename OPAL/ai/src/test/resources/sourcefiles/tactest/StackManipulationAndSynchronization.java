@@ -28,14 +28,13 @@
  */
 package tactest;
 
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * Class with simple methods containing instructions for stack manipulation and
  * synchronization.
  * 
  * @author Roberts Kolosovs
- *
  */
 public class StackManipulationAndSynchronization {
 

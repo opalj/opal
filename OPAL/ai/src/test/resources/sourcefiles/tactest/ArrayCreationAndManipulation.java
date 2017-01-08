@@ -32,7 +32,6 @@ package tactest;
  * Class with simple methods containing array creation and manipulation instructions.
  * 
  * @author Roberts Kolosovs
- *
  */
 public class ArrayCreationAndManipulation {
 
