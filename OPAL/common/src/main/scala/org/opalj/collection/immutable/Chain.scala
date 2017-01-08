@@ -46,13 +46,13 @@ import scala.collection.generic.FilterMonadic
  * makes this list far more efficient when use for storing lists of int values.
  *
  * @note    In most cases a `Chain` can be used as a drop-in replacement for a standard
- *             Scala List.
+ *          Scala List.
  *
- * @note     Some core methods, e.g. `drop` and `take`, have different
- *             semantics when compared to the methods with the same name defined
- *             by the Scala collections API. In this case these methods may
- *             fail arbitrarily if the list is not long enough.
- *             Therefore, `Chain` does not inherit from `scala...Seq`.
+ * @note    Some core methods, e.g. `drop` and `take`, have different
+ *          semantics when compared to the methods with the same name defined
+ *          by the Scala collections API. In this case these methods may
+ *          fail arbitrarily if the list is not long enough.
+ *          Therefore, `Chain` does not inherit from `scala...Seq`.
  *
  * @author Michael Eichberg
  */
@@ -123,6 +123,33 @@ sealed trait Chain[@specialized(Int) +T]
             f(rest.head)
             rest = rest.tail
         }
+    }
+
+    /**
+     * Executes the given function `f` for each element of this chain as long as
+     * it returns `true`.
+     */
+    def foreachWhile(f: T ⇒ Boolean): Boolean = {
+        var rest = this
+        while (rest.nonEmpty) {
+            if (!f(rest.head))
+                return false;
+
+            rest = rest.tail
+        }
+        return true;
+    }
+
+    def startsWith[X >: T](other: Chain[X]): Boolean = {
+        var thisRest = this
+        var otherRest = other
+        while (otherRest.nonEmpty) {
+            if (thisRest.isEmpty || thisRest.head != otherRest.head)
+                return false;
+            thisRest = thisRest.tail
+            otherRest = otherRest.tail
+        }
+        true
     }
 
     def forFirstN[U](n: Int)(f: (T) ⇒ U): Unit = {
@@ -344,6 +371,14 @@ sealed trait Chain[@specialized(Int) +T]
      */
     def take(n: Int): Chain[T]
 
+    /**
+     * Takes up to the first n elements of this list. The returned list will contain at most
+     * `this.size` elements.
+     * @param n    An int value euqal or larger than 0.
+     * @return     A list consisting of the first n value.
+     */
+    def takeUpTo(n: Int): Chain[T]
+
     def takeWhile(f: T ⇒ Boolean): Chain[T]
 
     def filter(f: T ⇒ Boolean): Chain[T]
@@ -489,23 +524,23 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     /**
-     * Merges this list with the given list by merging the values using the given function.
-     * If all results are the same (reference equality) as this list's elements then the result
+     * Merges this chain with the given chain by merging the values using the given function.
+     * If all results are the same (reference equality) as this chain's elements then the result
      * will be `this`. Otherwise, only the tail that is identical will be kept.
      *
-     * @param     other A list with the same number of elements as this list. If the size of
-     *             the lists it not equal, the result is undefined.
+     * @param     other A chain with the same number of elements as this chain. If the size of
+     *            the chains it not equal, the result is undefined.
      */
     def merge[X <: AnyRef, Z >: T <: AnyRef](that: Chain[X])(f: (T, X) ⇒ Z): Chain[Z]
 
     /**
-     * Fuses this list with the given list by fusing the values using the given function.
+     * Fuses this chain with the given chain by fusing the values using the given function.
      * The function `onDiff` is only called if the given list's element and this list's
      * element differ. Hence, when the tail of both lists is equal fusing both lists
      * will terminate immediately and the common tail is attached to the new heading.
      *
-     * @param     other A list with the same number of elements as this list. If the size of
-     *             the lists it not equal, the result is undefined.
+     * @param     other A chain with the same number of elements as this chain. If the size of
+     *            the chains it not equal, the result is undefined.
      */
     def fuse[X >: T <: AnyRef](that: Chain[X], onDiff: (T, X) ⇒ X): Chain[X]
 }
@@ -621,6 +656,7 @@ case object Naught extends Chain[Nothing] {
     override def nonEmpty: Boolean = false
     def :&::[X >: Nothing](x: Chain[X]): Chain[X] = x
     def take(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
+    def takeUpTo(n: Int): this.type = this
     def takeWhile(f: Nothing ⇒ Boolean): Chain[Nothing] = this
     def filter(f: Nothing ⇒ Boolean): Chain[Nothing] = this
     def drop(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
@@ -685,6 +721,28 @@ final case class :&:[@specialized(Int) T](
             taken += 1
         }
         result
+    }
+
+    def takeUpTo(n: Int): Chain[T] = {
+        val Nil = Naught
+
+        if (n == 0)
+            return Nil;
+
+        var taken = 1
+        val result = new :&:[T](head, Nil)
+        var last = result
+        var rest: Chain[T] = this.rest
+        while (taken < n && rest.nonEmpty) {
+            val x = rest.head
+            rest = rest.tail
+            val newLast = new :&:[T](x, Nil)
+            last.rest = newLast
+            last = newLast
+            taken += 1
+        }
+        result
+
     }
 
     def takeWhile(f: T ⇒ Boolean): Chain[T] = {
