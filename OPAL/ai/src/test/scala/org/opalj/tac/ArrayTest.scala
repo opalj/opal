@@ -32,8 +32,7 @@ package tac
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -48,9 +47,7 @@ class ArrayTest extends TACTest {
 
     val ArrayInstructionsType = ObjectType("tactest/ArrayCreationAndManipulation")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
+    val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val ArrayInstructionsClassFile = project.classFile(ArrayInstructionsType).get
 

@@ -28,47 +28,54 @@
  */
 package tactest;
 
+import java.util.List;
+import java.util.ArrayList;
+
 /**
- * Class with simple methods containing instructions loading constants.
- * 
+ * Class with simple methods containing instructions for stack manipulation and
+ * synchronization.
+ *
  * @author Roberts Kolosovs
  */
-public class Constants {
+@SuppressWarnings("all")
+public class StackManipulationAndSynchronization {
 
-	void intConsts(){
-		int zero = 0;
-		int one = 1;
-		int two = 2;
-		int three = 3;
-		int four = 4;
-		int five = 5;
-		int mone = -1;
+	static int staticMethod(int arg1, int arg2) {
+		return arg1 + arg2;
 	}
-	
-	void longConsts(){
-		long zero = 0L;
-		long one = 1L;
+
+	int returnInt() {
+		return 1;
 	}
-	
-	void floatConsts(){
-		float zero = 0.0f;
-		float one = 1.0f;
-		float two = 2.0f;
+
+	double returnDouble() {
+		return 1.0d;
 	}
-	
-	void doubleConsts(){
-		double zero = 0.0d;
-		double one = 1.0d;
+
+	void pop() {
+		returnInt();
 	}
-	
-	void nullReferenceConst(){
-		Object nil = null;
+
+	void pop2case2() {
+		returnDouble();
 	}
-	
-	void loadConstants(){
-		int intTen = 10;
-		float floatTen = 10.0f;
-		long longTen = 10L;
-		double doubleTen = 10.0d;
+
+	void dup() {
+		Object o = new Object();
+	}
+
+	void monitorEnterAndExit() {
+		synchronized (this) {
+            pop();
+		}
+	}
+
+	void invokeStatic() {
+		int res = staticMethod(1, 2);
+	}
+
+	void invokeInterface() {
+		List l = new ArrayList();
+		l.add(new Object());
 	}
 }

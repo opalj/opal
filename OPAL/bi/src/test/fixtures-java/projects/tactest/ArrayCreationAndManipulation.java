@@ -28,86 +28,64 @@
  */
 package tactest;
 
-import java.util.List;
-
 /**
- * Class with simple methods containing cast and typecheck instructions.
- * 
+ * Class with simple methods containing array creation and manipulation instructions.
+ *
  * @author Roberts Kolosovs
  */
-public class CastInstructions {
-	
-	void typecheckString(String s){
-		boolean result = s instanceof Object;
-	}
-	
-	void typecheckList(ArrayList l){
-		boolean result = l instanceof List;
-	}
-	
-	void checkcast(Object o){
-		List l = (List) o;
+@SuppressWarnings("unused")
+public class ArrayCreationAndManipulation {
+
+	void refArray(){
+		Object[] oa = new Object[5];
+		oa[4] = new Object();
+		Object o = oa[4];
 	}
 
-	void d2f(double d){
-		float result = (float) d;
-	}
-	
-	void d2i(double d){
-		int result = (int) d;
+	void multidimArray(){
+		int[][] mdia = new int[4][2];
+		int lngth = mdia.length;
 	}
 
-	void d2l(double d){
-		long result = (long) d;
+	void doubleArray(){
+		double[] da = new double[5];
+		da[4] = 1.0d;
+		double d = da[4];
 	}
-	
-	void f2d(float f){
-		double result = (double) f;
+
+	void floatArray(){
+		float[] fa = new float[5];
+		fa[4] = 2.0f;
+		float f = fa[4];
 	}
-	
-	void f2i(float f){
-		int result = (int) f;
+
+	void intArray(){
+		int[] ia = new int[5];
+		ia[4] = 2;
+		int i = ia[4];
 	}
-	
-	void f2l(float f){
-		long result = (long) f;
+
+	void longArray(){
+		long[] la = new long[5];
+		la[4] = 1L;
+		long l = la[4];
 	}
-	
-	void l2d(long l){
-		double result = (double) l;
+
+	void shortArray(){
+		short[] sa = new short[5];
+		sa[4] = 2;
+		short s = sa[4];
 	}
-	
-	void l2f(long l){
-		float result = (float) l;
+
+	void byteArray(){
+		byte[] ba = new byte[5];
+		ba[4] = 2;
+		byte b = ba[4];
 	}
-	
-	void l2i(long l){
-		int result = (int) l;
+
+	void charArray(){
+		char[] ca = new char[5];
+		ca[4] = 2;
+		char c = ca[4];
 	}
-	
-	void i2d(int i){
-		double result = (double) i;
-	}
-	
-	void i2f(int i){
-		float result = (float) i;
-	}
-	
-	void i2l(int i){
-		long result = (long) i;
-	}
-	
-	void i2c(int i){
-		char result = (char) i;
-	}
-	
-	void i2b(int i){
-		byte result = (byte) i;
-	}
-	
-	void i2s(int i){
-		short result = (short) i;
-	}
-	
-	
 }

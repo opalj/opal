@@ -1,23 +1,23 @@
 name := "Bytecode Infrastructure"
 
-scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure") 
+scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure")
 scalacOptions in (Compile, console) := Seq("-deprecation")
 
 libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
 
 /* The following task compiles those Java files to the class files (`.class`) that are used
- * by subsequent tests. To ensure that always the same class file is generated, we use the 
+ * by subsequent tests. To ensure that always the same class file is generated, we use the
  * Eclipse Java compiler (4.6.1); this version is fixed!
  */
 // FOR DETAILS SEE ALSO: bi/src/test/fixtures-java/Readme.md
 
-unmanagedResourceDirectories in Test += (sourceDirectory in Test).value / "fixtures-java" 
+unmanagedResourceDirectories in Test += (sourceDirectory in Test).value / "fixtures-java"
 resourceGenerators in Test += Def.task {
 	import org.eclipse.jdt.core.compiler.batch.BatchCompiler
-	import java.io.File 
+	import java.io.File
 	import java.io.Writer
 	import java.io.PrintWriter
-	import java.nio.file.SimpleFileVisitor	
+	import java.nio.file.SimpleFileVisitor
 	import java.nio.file.Path
 	import java.nio.file.Files
 	import java.nio.file.FileVisitResult
@@ -34,11 +34,11 @@ resourceGenerators in Test += Def.task {
 			println(new String(chars,offset,length))
 	    }
 	}
-	
+
 	class WasUpdatedFileVisitor(val archiveDate : FileTime) extends SimpleFileVisitor[Path] {
-		
+
 		var wasUpdated : Boolean = false // will be initialized as a sideeffect
-		
+
 		private def checkDate(nextFileAttributes : BasicFileAttributes) : FileVisitResult = {
 			if(archiveDate.compareTo(nextFileAttributes.lastModifiedTime) < 0) {
 				wasUpdated = true
@@ -48,29 +48,29 @@ resourceGenerators in Test += Def.task {
 				FileVisitResult.CONTINUE
 		   	}
 		}
-	    
+
 		override def visitFile(
-			path : Path, 
+			path : Path,
 			fileAttributes : BasicFileAttributes
 		) : FileVisitResult = {
 			checkDate(fileAttributes)
 		}
 		override def preVisitDirectory(
-			path : Path, 
+			path : Path,
 			fileAttributes : BasicFileAttributes
 		) : FileVisitResult = {
 			checkDate(fileAttributes)
 	    }
 	}
-	
+
 	// IMPLEMENTATION OF THE TASK
-	
+
 	val s: TaskStreams = streams.value
 	val log = s.log
 	val std = new PrintWriter(new LogWriter((s : String) => log.info(s)))
 	val err = new PrintWriter(new LogWriter((s : String) => log.error(s)))
 
-	val resourceManagedFolder = (resourceManaged in Test).value 
+	val resourceManagedFolder = (resourceManaged in Test).value
 	val projectsFolder = (sourceDirectory in Test).value / "fixtures-java" / "projects"
 	val supportFolder = (sourceDirectory in Test).value / "fixtures-java" / "support"
 	val createdJARs = for {
@@ -79,7 +79,7 @@ resourceGenerators in Test += Def.task {
 			configFile = sourceFolder.getAbsoluteFile / "compiler.config"
 		} yield {
 			val hasConfigFile = configFile.exists
-			val (supportLibraries,defaultConfigurationOptions) = 
+			val (supportLibraries,defaultConfigurationOptions) =
 				if (hasConfigFile) {
 					val (requires,configurationOptions) = fromFile(configFile).getLines.
 						map(_.trim).
@@ -91,32 +91,32 @@ resourceGenerators in Test += Def.task {
 							map(libraryName => supportFolder / libraryName). /* support library folder */
 							mkString(" "),
 						configurationOptions
-					)	
+					)
 				} else {
 					("", Seq("-g -8 -parameters -genericsignature"))
 				}
-			
+
 			for {configurationOptions <- defaultConfigurationOptions} yield {
-				val selectedOptionsIdentification = 
-					if(hasConfigFile) 
+				val selectedOptionsIdentification =
+					if(hasConfigFile)
 						configurationOptions.replace(" ","").replace(':','=')
 					else
 						""
-				val targetFolder = 
+				val targetFolder =
 					resourceManagedFolder.getAbsoluteFile / (
 						sourceFolder.getName + selectedOptionsIdentification
 				 	)
 				IO.createDirectory(targetFolder)
 				val targetJAR = new File(targetFolder + ".jar")
-				
+
 				// Let's figure out if we actually have to run the compiler
-				val requiresCompilation = 
-					!targetJAR.exists || 
+				val requiresCompilation =
+					!targetJAR.exists ||
 					{
 						val targetJARAsPath = Files.getLastModifiedTime(targetJAR.toPath)
 						val wasUpdatedVisitor = new WasUpdatedFileVisitor(targetJARAsPath)
 						Files.walkFileTree(sourceFolder.toPath,wasUpdatedVisitor)
-						wasUpdatedVisitor.wasUpdated 
+						wasUpdatedVisitor.wasUpdated
 					}
 				if (requiresCompilation){
 					val standardConfiguration = s"$sourceFolder $supportLibraries -d $targetFolder -Xemacs -encoding utf8 "
@@ -125,13 +125,13 @@ resourceGenerators in Test += Def.task {
 					if(!BatchCompiler.compile(commandLine,std, err, null)) {
 						throw new IllegalStateException("Compiling the test fixtures failed")
 					}
-			
+
 					val targetFolderLength = targetFolder.toString.length + 1
-					val classFiles : Traversable[(File,String)] = 
-						(targetFolder ** "*.class").get map { classFile => 
+					val classFiles : Traversable[(File,String)] =
+						(targetFolder ** "*.class").get map { classFile =>
 							((classFile,classFile.toString.substring(targetFolderLength)))
 						}
-				
+
 					log.info(
 						classFiles.view.map(_._2).
 							mkString(
@@ -147,23 +147,23 @@ resourceGenerators in Test += Def.task {
 				}
 			}
 		}
-		
+
 	val createdFiles = createdJARs.flatten.flatten.toSeq // We only collect the created JARs
 	if(createdFiles.nonEmpty)
 		log.info(createdFiles.mkString("Created archives:\n\t","\n\t","\n"))
 	else
 		log.info("The test fixtures were already compiled.")
-		
+
 	createdFiles
 }.taskValue
 // Eclipse Compiler for Java(TM) v20160829-0950, 3.12.1
 // Copyright IBM Corp 2000, 2015. All rights reserved.
-// 
+//
 //	Usage: <options> <source files | directories>
 //	If directories are specified, then their source contents are compiled.
 //	Possible options are listed below. Options enabled by default are prefixed
 //	with '+'.
-// 
+//
 //	Classpath options:
 //		 -cp -classpath <directories and ZIP archives separated by :>
 //											specify location for application classes and sources.
@@ -199,10 +199,10 @@ resourceGenerators in Test += Def.task {
 //											'['<enc>']' (e.g. X.java[utf8]).
 //											If multiple default encodings are specified, the last
 //											one will be used.
-// 
+//
 //	Compliance options:
-//		 -1.3							 	use 1.3 compliance (-source 1.3 -target 1.1)
-//		 -1.4						 		+ use 1.4 compliance (-source 1.3 -target 1.2)
+//		 -1.3								use 1.3 compliance (-source 1.3 -target 1.1)
+//		 -1.4								+ use 1.4 compliance (-source 1.3 -target 1.2)
 //		 -1.5 -5 -5.0			 			use 1.5 compliance (-source 1.5 -target 1.5)
 //		 -1.6 -6 -6.0			 			use 1.6 compliance (-source 1.6 -target 1.6)
 //		 -1.7 -7 -7.0			 			use 1.7 compliance (-source 1.7 -target 1.7)
@@ -211,7 +211,7 @@ resourceGenerators in Test += Def.task {
 //		 -target <version>					set classfile target: 1.1 to 1.8 (or 5, 5.0, etc)
 //											cldc1.1 can also be used to generate the StackMap
 //											attribute
-// 
+//
 //	Warning options:
 //		 -deprecation		 				+ deprecation outside deprecated code (equivalent to
 //											-warn:+deprecation)
@@ -220,25 +220,25 @@ resourceGenerators in Test += Def.task {
 //											specify directories from which optional problems should
 //											be ignored
 //		 -?:warn -help:warn display advanced warning options
-// 
+//
 //	Error options:
 //		 -err:<warnings separated by ,> convert exactly the listed warnings to be reported as errors
 //		 -err:+<warnings separated by ,> enable additional warnings to be reported as errors
 //		 -err:-<warnings separated by ,> disable specific warnings to be reported as errors
-// 
+//
 //	Setting warning or error options using properties file:
 //		 -properties <file>	 set warnings/errors option based on the properties
 //											file contents. This option can be used with -nowarn,
 //											-err:.. or -warn:.. options, but the last one on the
 //											command line sets the options to be used.
-// 
+//
 //	Debug options:
 //		 -g[:lines,vars,source] custom debug info
 //		 -g:lines,source	+ both lines table and source debug info
 //		 -g								 all debug info
 //		 -g:none						no debug info
 //		 -preserveAllLocals preserve unused local vars for debug purpose
-// 
+//
 //	Annotation processing options:
 //		These options are meaningful only in a 1.6 environment.
 //		 -Akey[=value]				options that are passed to annotation processors
@@ -258,7 +258,7 @@ resourceGenerators in Test += Def.task {
 //		 -XprintRounds				print information about annotation processing rounds
 //		 -classNames <className1[,className2,...]>
 //													qualified names of binary classes to process
-// 
+//
 //	Advanced options:
 //		 @<file>							read command line arguments from file
 //		 -maxProblems <n>	 				max number of problems per compilation unit (100 by
@@ -288,8 +288,7 @@ resourceGenerators in Test += Def.task {
 //											to support annotation-based null analysis.
 //											The special name CLASSPATH will cause lookup of
 //											external annotations from the classpath and sourcepath.
-// 
+//
 //		 -? -help					 print this help message
 //		 -v -version				print compiler version
 //		 -showversion			 print compiler version and continue
-

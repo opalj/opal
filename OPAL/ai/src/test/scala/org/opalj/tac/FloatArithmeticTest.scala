@@ -36,8 +36,7 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -52,9 +51,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
 
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
+    val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
@@ -183,7 +180,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
             }
 
-            it("should correctly reflect comparison (using no AI results)") {
+            it("should correctly reflect comparison") {
                 val statements = AsQuadruples(method = FloatCmpMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
@@ -198,9 +195,9 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                     Assignment(2, SimpleVar(0, ComputationalTypeInt), Compare(2, SimpleVar(0, ComputationalTypeFloat), CMPG, SimpleVar(1, ComputationalTypeFloat))),
                     If(3, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-3, 0), 9),
                     Assignment(6, SimpleVar(0, ComputationalTypeInt), IntConst(6, 1)),
-                    Goto(7, 10),
-                    Assignment(10, SimpleVar(0, ComputationalTypeInt), IntConst(10, 0)),
-                    ReturnValue(11, SimpleVar(0, ComputationalTypeInt))
+                    ReturnValue(7, SimpleVar(0, ComputationalTypeInt)),
+                    Assignment(8, SimpleVar(0, ComputationalTypeInt), IntConst(8, 0)),
+                    ReturnValue(9, SimpleVar(0, ComputationalTypeInt))
                 ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
@@ -211,7 +208,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                     "5: op_0 = op_0 cmpg op_1;",
                     "6: if(op_0 >= 0) goto 9;",
                     "7: op_0 = 1;",
-                    "8: goto 10;",
+                    "8: return op_0;",
                     "9: op_0 = 0;",
                     "10: return op_0;"
                 ))
