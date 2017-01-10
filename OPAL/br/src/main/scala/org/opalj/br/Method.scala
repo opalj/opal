@@ -43,6 +43,9 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.VisibilityModifier
+import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.Instruction
 
 /**
@@ -436,6 +439,23 @@ object Method {
         Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
     }
 
-    def unapply(method: Method): Option[(Int, String, MethodDescriptor)] =
+    def unapply(method: Method): Option[(Int, String, MethodDescriptor)] = {
         Some((method.accessFlags, method.name, method.descriptor))
+    }
+
+    def defaultConstructor(superclassType: ObjectType = ObjectType.Object) = {
+        import MethodDescriptor.NoArgsAndReturnVoid
+        val theBody = Code(
+            maxStack = 1,
+            maxLocals = 1,
+            instructions = Array(
+                ALOAD_0,
+                INVOKESPECIAL(superclassType, false, "<init>", NoArgsAndReturnVoid),
+                null,
+                null,
+                RETURN
+            )
+        )
+        new Method(ACC_PUBLIC.mask, "<init>", NoArgsAndReturnVoid, Some(theBody), IndexedSeq.empty)
+    }
 }

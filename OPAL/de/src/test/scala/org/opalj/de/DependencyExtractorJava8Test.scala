@@ -51,11 +51,11 @@ class DependencyExtractorJava8Test extends FunSuite {
     test("Dependency extraction") {
 
         var dependencies: Map[(String, String, DependencyType), Int] =
-            DependencyExtractorFixture.extractDependencies(
-                "de",
-                "classfiles/Dependencies-1.8.jar",
+            DependencyExtractorsHelper.extractDependencies(
+                "bi", "dependencies-1.8-g-parameters-genericsignature-preserveAllLocals.jar",
                 (dp: DependencyProcessor) ⇒ new DependencyExtractor(dp)
             )
+        assert(dependencies.nonEmpty, "dependency extraction failed miserably")
 
         def assertDependency(src: String, trgt: String, dType: DependencyType): Unit = {
             val key = (src, trgt, dType)
@@ -67,8 +67,11 @@ class DependencyExtractorJava8Test extends FunSuite {
                     dependencies = dependencies.updated(key, x - 1)
                 case None ⇒
                     val remainigDependencies =
-                        dependencies.toList.sorted.
-                            mkString("Remaining dependencies:\n\t", "\n\t", "\n")
+                        dependencies.toList.sorted.mkString(
+                            s"Remaining dependencies (${dependencies.size}):\n\t",
+                            "\n\t",
+                            "\n"
+                        )
                     fail("The dependency "+key+" was not extracted.\n"+remainigDependencies)
             }
         }
@@ -727,34 +730,32 @@ class DependencyExtractorJava8Test extends FunSuite {
         //
         //        @SuppressWarnings("unchecked")
         //        public abstract Integer m3();
-        ////        assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass", INSTANCE_MEMBER)
         assertDependency("dependencies.SignatureTestSubClass.m3()", "java.lang.Integer", RETURN_TYPE)
+        assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass", INSTANCE_MEMBER)
         // // implicit method:
         // // public Object m3(){
         // //     return m3(); //Method m3:()Ljava/lang/Integer;
         // // }
         assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass", INSTANCE_MEMBER)
-        ////        assertDependency("dependencies.SignatureTestSubClass.m3()", "java.lang.Object", RETURN_TYPE)
-        ////        assertImplicitThisLocalVariable("dependencies.SignatureTestSubClass.m3()")
-        ////        assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass", DECLARING_CLASS_OF_CALLED_METHOD)
-        ////        assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass.m3()", CALLS_METHOD)
-        ////        assertDependency("dependencies.SignatureTestSubClass.m3()", "java.lang.Integer", RETURN_TYPE_OF_CALLED_METHOD)
+        assertDependency("dependencies.SignatureTestSubClass.m3()", "java.lang.Object", RETURN_TYPE)
+        assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass.m3()", CALLS_METHOD)
+        assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass", DECLARING_CLASS_OF_CALLED_METHOD)
+        assertDependency("dependencies.SignatureTestSubClass.m3()", "java.lang.Integer", RETURN_TYPE_OF_CALLED_METHOD)
         //
         //        @SuppressWarnings("unchecked")
         //        public abstract FileOutputStream m5();
         assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass", INSTANCE_MEMBER)
+        assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass", INSTANCE_MEMBER)
         assertDependency("dependencies.SignatureTestSubClass.m5()", "java.io.FileOutputStream", RETURN_TYPE)
+
         // // implicit method:
         // // public OutputStream m5(){
         // //     return m5(); //Method m5:()Ljava/io/FileOutputStream;
         // // }
-        ////        assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass", INSTANCE_MEMBER)
-        ////        assertDependency("dependencies.SignatureTestSubClass.m5()", "java.io.OutputStream", RETURN_TYPE)
-        ////        assertImplicitThisLocalVariable("dependencies.SignatureTestSubClass.m5()")
-        ////        assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass", DECLARING_CLASS_OF_CALLED_METHOD)
-        ////        assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass.m5()", CALLS_METHOD)
-        ////        assertDependency("dependencies.SignatureTestSubClass.m5()", "java.io.FileOutputStream", RETURN_TYPE_OF_CALLED_METHOD)
-        //    }
+        assertDependency("dependencies.SignatureTestSubClass.m5()", "java.io.OutputStream", RETURN_TYPE)
+        assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass.m5()", CALLS_METHOD)
+        assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass", DECLARING_CLASS_OF_CALLED_METHOD)
+        assertDependency("dependencies.SignatureTestSubClass.m5()", "java.io.FileOutputStream", RETURN_TYPE_OF_CALLED_METHOD)
 
         //    @TypeTestAnnotation
         assertDependency("dependencies.package-info", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
@@ -1243,11 +1244,9 @@ class DependencyExtractorJava8Test extends FunSuite {
         //
         //    }
 
-        val remainingDependencies = dependencies.view.filter(_._2 > 0)
+        val remainingDependencies = dependencies.view.filter(_._2 > 0).map(_.toString).toList.sorted
         assert(
-            remainingDependencies.isEmpty,
-            "Too many dependencies have been extracted for:\n"+
-                remainingDependencies.mkString("\n")
+            remainingDependencies.isEmpty
         )
     }
 }

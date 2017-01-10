@@ -30,15 +30,21 @@ package org.opalj
 package br
 package instructions
 
+/**
+ * An conditional branch instruction where the jump target is identified using a `Symbol`.
+ *
+ * @author Malte Limmeroth
+ * @author Michael Eichberg
+ */
 trait LabeledSimpleConditionalBranchInstruction
-        extends LabeledInstruction
+        extends LabeledSingleJumpTargetInstruction
         with SimpleConditionalBranchInstructionLike {
 
     def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): SimpleConditionalBranchInstruction
 
     def branchTarget: Symbol
 
-    override def toString(currentPC: PC): String = {
+    override def toString(currentPC: Int): String = {
         s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
     }
 

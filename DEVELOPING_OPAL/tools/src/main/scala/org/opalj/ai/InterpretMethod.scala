@@ -266,26 +266,35 @@ object InterpretMethod {
 
                 def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
                     val context =
-                        if (nested)
-                            ife.localsArray(0).toSeq.filter(_ != null).map(_.toString).mkString("Parameters:<i>", ", ", "</i><br>")
-                        else
+                        if (nested) {
+                            ife.localsArray(0).toSeq.
+                                filter(_ != null).map(_.toString).
+                                mkString("Parameters:<i>", ", ", "</i><br>")
+                        } else
                             ""
 
                     val d =
                         "<p><b>"+ife.domain.getClass.getName+"("+ife.domain.toString+")"+"</b></p>"+
                             context+
                             "Current instruction: "+ife.pc+"<br>"+
-                            XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
-                            ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                            XHTML.evaluatedInstructionsToXHTML(ife.evaluated) + {
+                                if (ife.worklist.nonEmpty)
+                                    ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                                else
+                                    "Remaining worklist: <i>EMPTY</i><br>"
+                            }
 
                     ife.cause match {
                         case ct: ControlThrowable ⇒ throw ct
                         case ife: InterpretationFailedException ⇒
-                            d + ife.cause.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
+                            d + ife.cause.
+                                getStackTrace.
+                                mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                                 "<div style='margin-left:5em'>"+causeToString(ife, true)+"</div>"
                         case e: Throwable ⇒
-                            d+"<br>"+"Underlying cause: "+e.getMessage() +
-                                e.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")
+                            d+"<br>"+
+                                "Underlying cause: "+util.XHTML.htmlify(e.getMessage()) //+
+                        // e.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")
                         case _ ⇒
                             d
                     }

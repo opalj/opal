@@ -1,0 +1,1 @@
+This package contains only classes which are immutable. The classes are not annotated.

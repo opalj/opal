@@ -43,6 +43,8 @@ case class INVOKESPECIAL(
         methodDescriptor: MethodDescriptor
 ) extends NonVirtualMethodInvocationInstruction {
 
+    final def isInterfaceCall: Boolean = isInterface
+
     final def opcode: Opcode = INVOKESPECIAL.opcode
 
     final def mnemonic: String = "invokespecial"

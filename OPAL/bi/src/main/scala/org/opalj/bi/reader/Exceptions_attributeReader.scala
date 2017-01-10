@@ -89,8 +89,3 @@ trait Exceptions_attributeReader extends AttributeReader {
     registerAttributeReader(ExceptionsAttribute.Name → parser)
 }
 
-object ExceptionsAttribute {
-
-    final val Name = "Exceptions"
-
-}

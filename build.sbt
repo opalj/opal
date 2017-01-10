@@ -32,18 +32,18 @@ parallelExecution in Global := false
 
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
-testOptions in ThisBuild <<=
-	baseDirectory map { bd =>
-    	Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
+testOptions in ThisBuild := {
+		baseDirectory.map(bd =>
+    		Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
+		).value
 	}
 
 testOptions in ThisBuild += Tests.Argument("-o")
 
 // Required to get relative links in the generated source code documentation.
-scalacOptions in (ScalaUnidoc, unidoc) <<=
-	baseDirectory map {
-    	bd => Seq ("-sourcepath", bd.getAbsolutePath)
-  	}
+scalacOptions in (ScalaUnidoc, unidoc) :=  {
+		baseDirectory.map(bd => Seq ("-sourcepath", bd.getAbsolutePath)).value
+	}
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=
 	Opts.doc.sourceUrl(
@@ -53,20 +53,17 @@ scalacOptions in (ScalaUnidoc, unidoc) ++=
 
 javaOptions in ThisBuild ++= Seq(
 	"-Xmx3G", "-Xms1024m", "-Xnoclassgc",
-		"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC","-XX:+AggressiveOpts")
+	"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC","-XX:+AggressiveOpts")
 
 addCommandAlias("compileAll","; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
 
-addCommandAlias("cleanAll","; clean ; cleanFiles ; cleanCache ; cleanLocal ")
+addCommandAlias("cleanAll","; clean ; test:clean ; it:clean ; cleanFiles ; cleanCache ; cleanLocal ")
 
 addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; compileAll ; unidoc ;  publishLocal ")
 
-EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource)
-//EclipseKeys.createSrc := EclipseCreateSrc.Default
-
 EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18)
-
 EclipseKeys.withSource := true
+EclipseKeys.withJavadoc := true
 
 //
 //

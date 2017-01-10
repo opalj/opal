@@ -88,7 +88,7 @@ class BytecodeRepresentationTest extends FlatSpec with Matchers {
                 )
             fail(message)
         } else {
-            info(s"sucessfully procesed ${entriesCount.get} entries")
+            info(s"sucessfully processed ${entriesCount.get} entries")
         }
     }
 }

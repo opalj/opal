@@ -26,6 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+/*
 package org.opalj
 package collection
 package immutable
@@ -35,7 +36,6 @@ package immutable
  * is optimized for memory efficiency.
  *
  */
-/*
 sealed trait TrieNode[+T] {
 
     def add[X >: T](value: X)(implicit key: Int): TrieNode[X]
@@ -47,6 +47,7 @@ sealed trait TrieNode[+T] {
     protected def right: TrieNode[T]
 
 }
+
 case object EmptyTrie extends TrieNode[Nothing] {
     def foreach[U](f: (Nothing) ⇒ U): Unit = {}
     def add[X >: Nothing](value: X)(implicit key: Int): TrieNode[X] = new LTrieNode(value)
@@ -77,4 +78,4 @@ object TrieDemo extends App {
     }
 
 }
-*/ 
+*/

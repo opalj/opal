@@ -29,10 +29,13 @@
 package org.opalj
 package bc
 
-import org.opalj.da._
+import scala.annotation.switch
+
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
+
 import org.opalj.bi.{ConstantPoolTags ⇒ CPTags}
+import org.opalj.da._
 import org.opalj.da.ClassFileReader.LineNumberTable_attribute
 
 /**
@@ -143,7 +146,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_NameAndType_info extends ClassFileElement[CONSTANT_NameAndType_info] {
+    implicit object RichCONSTANT_NameAndType_info
+            extends ClassFileElement[CONSTANT_NameAndType_info] {
         def write(
             ci: CONSTANT_NameAndType_info
         )(
@@ -159,7 +163,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_Utf8_info extends ClassFileElement[CONSTANT_Utf8_info] {
+    implicit object RichCONSTANT_Utf8_info
+            extends ClassFileElement[CONSTANT_Utf8_info] {
         def write(
             ci: CONSTANT_Utf8_info
         )(
@@ -173,7 +178,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_MethodHandle_info extends ClassFileElement[CONSTANT_MethodHandle_info] {
+    implicit object RichCONSTANT_MethodHandle_info
+            extends ClassFileElement[CONSTANT_MethodHandle_info] {
         def write(
             ci: CONSTANT_MethodHandle_info
         )(
@@ -188,7 +194,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_MethodType_info extends ClassFileElement[CONSTANT_MethodType_info] {
+    implicit object RichCONSTANT_MethodType_info
+            extends ClassFileElement[CONSTANT_MethodType_info] {
         def write(
             ci: CONSTANT_MethodType_info
         )(
@@ -202,7 +209,8 @@ object Assembler {
         }
     }
 
-    implicit object RichCONSTANT_InvokeDynamic_info extends ClassFileElement[CONSTANT_InvokeDynamic_info] {
+    implicit object RichCONSTANT_InvokeDynamic_info
+            extends ClassFileElement[CONSTANT_InvokeDynamic_info] {
         def write(
             ci: CONSTANT_InvokeDynamic_info
         )(
@@ -225,20 +233,24 @@ object Assembler {
             out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
         ): Unit = {
             cpe.Constant_Type_Value.id match {
-                case CPTags.CONSTANT_Class_ID ⇒ serializeAs[CONSTANT_Class_info](cpe)
+                case CPTags.CONSTANT_Utf8_ID        ⇒ serializeAs[CONSTANT_Utf8_info](cpe)
+                case CPTags.CONSTANT_Class_ID       ⇒ serializeAs[CONSTANT_Class_info](cpe)
+                case CPTags.CONSTANT_String_ID      ⇒ serializeAs[CONSTANT_String_info](cpe)
+                case CPTags.CONSTANT_Integer_ID     ⇒ serializeAs[CONSTANT_Integer_info](cpe)
+                case CPTags.CONSTANT_Float_ID       ⇒ serializeAs[CONSTANT_Float_info](cpe)
+                case CPTags.CONSTANT_Long_ID        ⇒ serializeAs[CONSTANT_Long_info](cpe)
+                case CPTags.CONSTANT_Double_ID      ⇒ serializeAs[CONSTANT_Double_info](cpe)
+                case CPTags.CONSTANT_NameAndType_ID ⇒ serializeAs[CONSTANT_NameAndType_info](cpe)
                 case CPTags.CONSTANT_Fieldref_ID |
                     CPTags.CONSTANT_Methodref_ID |
                     CPTags.CONSTANT_InterfaceMethodref_ID ⇒ serializeAs[CONSTANT_Ref](cpe)
-                case CPTags.CONSTANT_String_ID        ⇒ serializeAs[CONSTANT_String_info](cpe)
-                case CPTags.CONSTANT_Integer_ID       ⇒ serializeAs[CONSTANT_Integer_info](cpe)
-                case CPTags.CONSTANT_Float_ID         ⇒ serializeAs[CONSTANT_Float_info](cpe)
-                case CPTags.CONSTANT_Long_ID          ⇒ serializeAs[CONSTANT_Long_info](cpe)
-                case CPTags.CONSTANT_Double_ID        ⇒ serializeAs[CONSTANT_Double_info](cpe)
-                case CPTags.CONSTANT_NameAndType_ID   ⇒ serializeAs[CONSTANT_NameAndType_info](cpe)
-                case CPTags.CONSTANT_Utf8_ID          ⇒ serializeAs[CONSTANT_Utf8_info](cpe)
-                case CPTags.CONSTANT_MethodHandle_ID  ⇒ serializeAs[CONSTANT_MethodHandle_info](cpe)
-                case CPTags.CONSTANT_MethodType_ID    ⇒ serializeAs[CONSTANT_MethodType_info](cpe)
-                case CPTags.CONSTANT_InvokeDynamic_ID ⇒ serializeAs[CONSTANT_InvokeDynamic_info](cpe)
+
+                case CPTags.CONSTANT_MethodHandle_ID ⇒
+                    serializeAs[CONSTANT_MethodHandle_info](cpe)
+                case CPTags.CONSTANT_MethodType_ID ⇒
+                    serializeAs[CONSTANT_MethodType_info](cpe)
+                case CPTags.CONSTANT_InvokeDynamic_ID ⇒
+                    serializeAs[CONSTANT_InvokeDynamic_info](cpe)
             }
         }
     }
@@ -305,7 +317,7 @@ object Assembler {
             val target_type = ta.target_type
             val target_typeTag = target_type.tag
             writeByte(target_typeTag)
-            (target_typeTag: @scala.annotation.switch) match {
+            (target_typeTag: @switch) match {
                 case 0x00 | 0x01 ⇒
                     val tt = as[Type_Parameter_Target](target_type)
                     writeByte(tt.type_parameter_index)
@@ -563,12 +575,15 @@ object Assembler {
 
                 case a: SourceDebugExtension_attribute ⇒
                     out.write(a.debug_extension, 0, attribute_length)
+
                 case a: AnnotationDefault_attribute ⇒ serialize(a.element_value)
+
                 case a: SourceFile_attribute        ⇒ writeShort(a.sourceFile_index)
                 case a: Signature_attribute         ⇒ writeShort(a.signature_index)
+                case a: ConstantValue_attribute     ⇒ writeShort(a.constantValue_index)
+
                 case _: Deprecated_attribute        ⇒ // nothing more to do
                 case _: Synthetic_attribute         ⇒ // nothing more to do
-                case a: ConstantValue_attribute     ⇒ writeShort(a.constantValue_index)
 
                 case a: Unknown_attribute           ⇒ out.write(a.info, 0, a.info.length)
             }
@@ -588,7 +603,7 @@ object Assembler {
             writeShort(name_index)
             writeShort(descriptor_index)
             writeShort(attributes.size)
-            attributes.foreach(serialize(_))
+            attributes foreach (serializeAs[Attribute])
         }
     }
 
@@ -605,7 +620,7 @@ object Assembler {
             writeShort(name_index)
             writeShort(descriptor_index)
             writeShort(attributes.size)
-            attributes.foreach(serialize(_))
+            attributes foreach { serializeAs[Attribute] }
         }
     }
 
@@ -624,27 +639,33 @@ object Assembler {
             writeShort(minor_version)
             writeShort(major_version)
             segmentInformation("ClassFileMetaInformation", out.size)
+
             writeShort(cp.size)
             cp.tail.filter(_ ne null).foreach { serialize(_) }
             segmentInformation("ConstantPool", out.size)
+
             writeShort(access_flags)
             segmentInformation("ClassAccessFlags", out.size)
+
             writeShort(this_class)
             writeShort(super_class)
             writeShort(interfaces.size)
-            interfaces.foreach { writeShort(_) }
+            interfaces.foreach { writeShort }
             segmentInformation("TypeInformation", out.size)
+
             writeShort(fields.size)
-            fields.foreach { serialize(_) }
+            fields.foreach { serializeAs[Field_Info] }
             segmentInformation("Fields", out.size)
+
             writeShort(methods.size)
-            methods.foreach { m ⇒
+            methods foreach { m ⇒
                 serialize(m)
                 segmentInformation("Method: "+cp(m.name_index).toString, out.size)
             }
             segmentInformation("Methods", out.size)
+
             writeShort(attributes.size)
-            attributes.foreach { serialize(_) }
+            attributes foreach { serializeAs[Attribute] }
             segmentInformation("ClassFileAttributes", out.size)
         }
     }
@@ -658,14 +679,15 @@ object Assembler {
     )(
         implicit
         out:                DataOutputStream,
-        segmentInformation: (String, Int) ⇒ Unit, cfe: ClassFileElement[T]
+        segmentInformation: (String, Int) ⇒ Unit,
+        cfe:                ClassFileElement[T]
     ): Unit = {
         cfe.write(as[T](t))
     }
 
     /**
-     * @note  You should use serialize if the concrete/required type of the given parameter is
-     *      available/can be automatically inferred by the Scala compiler.
+     * @note    You should use serialize if the concrete/required type of the given parameter is
+     *          available/can be automatically inferred by the Scala compiler.
      */
     def serialize[T: ClassFileElement](
         t: T
@@ -678,10 +700,10 @@ object Assembler {
     }
 
     /**
-     * @param segmentInformation A function that will be called back to provide information about
-     *      the segment that was just written.
-     *      This is particularly useful when debugging the serializer to determine which segments
-     *      were successfully/completely written.
+     * @param   segmentInformation A function that will be called back to provide information about
+     *          the segment that was just written.
+     *          This is particularly useful when debugging the serializer to determine which
+     *          segments were successfully/completely written.
      */
     def apply(
         classFile:          ClassFile,
@@ -693,12 +715,6 @@ object Assembler {
         out.flush()
         data.toByteArray()
     }
-
-}
-
-trait ClassFileElement[T] {
-
-    def write(t: T)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit
 
 }
 

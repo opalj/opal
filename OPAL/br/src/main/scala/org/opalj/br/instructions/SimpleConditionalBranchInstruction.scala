@@ -77,3 +77,8 @@ trait SimpleConditionalBranchInstruction
     }
 
 }
+object SimpleConditionalBranchInstruction {
+
+    def unapply(i: SimpleConditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
+
+}

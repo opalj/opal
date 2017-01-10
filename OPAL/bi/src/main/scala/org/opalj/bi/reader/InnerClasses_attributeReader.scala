@@ -106,10 +106,6 @@ trait InnerClasses_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(InnerClasses_attributeReader.ATTRIBUTE_NAME → parser)
-}
-
-object InnerClasses_attributeReader {
-    val ATTRIBUTE_NAME = "InnerClasses"
+    registerAttributeReader(InnerClasses_attributeReader.Name → parser)
 }
 

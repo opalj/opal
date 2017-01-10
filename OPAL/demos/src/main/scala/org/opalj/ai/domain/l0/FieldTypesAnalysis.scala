@@ -47,7 +47,7 @@ import org.opalj.br.ClassFile
 object FieldTypesAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String =
-        "Tries to derive more precise information about the fields of a class."
+        "tries to derive more precise information about the fields of a class"
 
     override def description: String =
         "Identifies fields of a class where we can – statically – derive more precise type/value information."

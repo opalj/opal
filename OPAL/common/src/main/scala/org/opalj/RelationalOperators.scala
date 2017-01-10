@@ -36,6 +36,9 @@ package org.opalj
  */
 object RelationalOperators extends Enumeration {
 
+    //
+    // Operators to compare int values.
+    //
     final val LT = Value("<")
     final val < = LT
     final val GT = Value(">")
@@ -44,6 +47,10 @@ object RelationalOperators extends Enumeration {
     final val <= = LE
     final val GE = Value(">=")
     final val >= = GE
+
+    //
+    // Operators to compare int and reference values.
+    //
     final val EQ = Value("==")
     final val == = EQ
     final val NE = Value("!=")

@@ -135,9 +135,3 @@ trait Code_attributeReader extends AttributeReader {
 
 }
 
-object CodeAttribute {
-
-    final val Name = "Code"
-
-}
-

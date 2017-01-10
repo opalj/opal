@@ -41,6 +41,11 @@ import org.opalj.br.PC
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.ai.AIResult
 
+/**
+ * Describes an issue related to the value of a field.
+ *
+ * @author Michael Eichberg
+ */
 class FieldValues(
         val classFile: ClassFile,
         val method:    Method,

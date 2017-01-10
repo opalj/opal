@@ -39,12 +39,12 @@ import org.opalj.bi.TestSupport.locateTestResources
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class AttributesTest extends FunSuite {
 
-    val attributesJARFile = locateTestResources("classfiles/Attributes.jar", "bi")
+    val attributesJARFile = locateTestResources("deprecated.jar", "bi")
 
     import reader.Java8Framework.ClassFile
 
     test("test that the deprecated attribute is present") {
-        val cf1 = ClassFile(attributesJARFile, "attributes/DeprecatedByAnnotation.class").head
+        val cf1 = ClassFile(attributesJARFile, "deprecated/DeprecatedByAnnotation.class").head
         assert(cf1.isDeprecated)
         assert(
             cf1.runtimeVisibleAnnotations.exists {
@@ -53,12 +53,12 @@ class AttributesTest extends FunSuite {
             }
         )
 
-        val cf2 = ClassFile(attributesJARFile, "attributes/DeprecatedByJavaDoc.class").head
+        val cf2 = ClassFile(attributesJARFile, "deprecated/DeprecatedByJavaDoc.class").head
         assert(cf2.isDeprecated)
     }
 
     test("test that the source file attribute is present") {
-        val cf1 = ClassFile(attributesJARFile, "attributes/DeprecatedByAnnotation.class").head
+        val cf1 = ClassFile(attributesJARFile, "deprecated/DeprecatedByAnnotation.class").head
         assert(cf1.sourceFile != None)
     }
 

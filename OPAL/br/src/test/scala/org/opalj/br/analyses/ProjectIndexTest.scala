@@ -34,7 +34,8 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
+
+import org.opalj.br.TestSupport.biProject
 
 /**
  * Tests the `ProjectIndex`.
@@ -80,20 +81,20 @@ class ProjectIndexTest extends FlatSpec with Matchers {
 
     behavior of "A ProjectIndex w.r.t. finding fields"
 
-    it should ("find a unique field by its nane and type") in {
-        val name = "y"
-        val fieldType = IntegerType
-        val results = fieldsProjectIndex.findFields(name, fieldType)
-        results should have size (1)
-        results.forall(f ⇒ f.name == name && f.fieldType == fieldType) should be(true)
-    }
-
-    it should ("find multiple fields if the fields have the same name and type") in {
+    it should ("find all definitions of the field \"x : int\"") in {
         val name = "x"
         val fieldType = IntegerType
-        val matches = fieldsProjectIndex.findFields(name, fieldType)
-        matches should have size (2)
+        val matches = fieldsProjectIndex.findFields(name, fieldType).toSet
+        matches should have size (4)
         matches.forall(f ⇒ f.name == name && f.fieldType == fieldType) should be(true)
+    }
+
+    it should ("find all definitions of the field \"y : int\"") in {
+        val name = "y"
+        val fieldType = IntegerType
+        val results = fieldsProjectIndex.findFields(name, fieldType).toSet
+        results should have size (3)
+        results.forall(f ⇒ f.name == name && f.fieldType == fieldType) should be(true)
     }
 
     it should ("not find a field that does not exist") in {
@@ -113,17 +114,10 @@ class ProjectIndexTest extends FlatSpec with Matchers {
 
 private object ProjectIndexTest {
 
-    //
-    //
-    // Setup
-    //
-    //
-    val methodsProjectIndex =
-        Project(locateTestResources("classfiles/Methods.jar", "bi")).
-            get(ProjectIndexKey)
+    // Fixtures
 
-    val fieldsProjectIndex =
-        Project(locateTestResources("classfiles/Fields.jar", "bi")).
-            get(ProjectIndexKey)
+    val methodsProjectIndex = biProject("methods.jar").get(ProjectIndexKey)
+
+    val fieldsProjectIndex = biProject("fields-g=none-5.jar").get(ProjectIndexKey)
 
 }

@@ -30,6 +30,7 @@ package org.opalj
 package br
 
 import scala.language.implicitConversions
+
 import scala.collection.mutable
 
 /**
@@ -45,11 +46,12 @@ package object cp {
 
     type Constant_Pool_Index = Int
 
-    implicit def cpIndexTocpEntry(
+    implicit def cpIndexToCPEntry(
         index: Constant_Pool_Index
     )(
         implicit
         cp: Constant_Pool
-    ): Constant_Pool_Entry =
+    ): Constant_Pool_Entry = {
         cp(index)
+    }
 }

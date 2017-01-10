@@ -36,8 +36,7 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -52,9 +51,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
 
     val StackAndSynchronizeType = ObjectType("tactest/StackManipulationAndSynchronization")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
+    val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val StackAndSynchronizeClassFile = project.classFile(StackAndSynchronizeType).get
 
@@ -65,7 +62,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
     val InvokeStaticMethod = StackAndSynchronizeClassFile.findMethod("invokeStatic").head
     val InvokeInterfaceMethod = StackAndSynchronizeClassFile.findMethod("invokeInterface").head
 
-    describe("The quadruples representation of stack manipulation and synchronization instructions") {
+    describe("the quadruples representation of stack manipulation and synchronization instructions") {
 
         describe("using no AI results") {
             it("should correctly reflect pop") {
@@ -178,15 +175,14 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Nop(1),
                     Assignment(2, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     MonitorEnter(3, SimpleVar(0, ComputationalTypeReference)),
-                    Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                    MonitorExit(5, SimpleVar(0, ComputationalTypeReference)),
-                    Goto(6, 13),
-                    Assignment(9, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Assignment(10, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                    MonitorExit(11, SimpleVar(0, ComputationalTypeReference)),
-                    Assignment(12, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
-                    Throw(13, SimpleVar(0, ComputationalTypeReference)),
-                    Return(14)
+                    Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
+                    VirtualMethodCall(5, ObjectType("tactest/StackManipulationAndSynchronization"), "pop", MethodDescriptor("()V"), SimpleVar(0, ComputationalTypeReference), List()),
+                    Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                    MonitorExit(9, SimpleVar(0, ComputationalTypeReference)), Goto(10, 13),
+                    Assignment(13, SimpleVar(1, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                    MonitorExit(14, SimpleVar(1, ComputationalTypeReference)),
+                    Throw(15, SimpleVar(0, ComputationalTypeReference)),
+                    Return(16)
                 ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
@@ -194,13 +190,13 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "2: ;",
                     "3: r_1 = op_0;",
                     "4: monitorenter op_0;",
-                    "5: op_0 = r_1;",
-                    "6: monitorexit op_0;",
-                    "7: goto 13;",
-                    "8: r_2 = op_0;",
-                    "9: op_0 = r_1;",
-                    "10: monitorexit op_0;",
-                    "11: op_0 = r_2;",
+                    "5: op_0 = r_0;",
+                    "6: op_0/*tactest.StackManipulationAndSynchronization*/.pop();",
+                    "7: op_0 = r_1;",
+                    "8: monitorexit op_0;",
+                    "9: goto 13;",
+                    "10: op_1 = r_1;",
+                    "11: monitorexit op_1;",
                     "12: throw op_0;",
                     "13: return;"
                 ))
@@ -399,15 +395,14 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Nop(1),
                     Assignment(2, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     MonitorEnter(3, SimpleVar(0, ComputationalTypeReference)),
-                    Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                    MonitorExit(5, SimpleVar(0, ComputationalTypeReference)),
-                    Goto(6, 13),
-                    Assignment(9, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Assignment(10, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                    MonitorExit(11, SimpleVar(0, ComputationalTypeReference)),
-                    Assignment(12, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
-                    Throw(13, SimpleVar(0, ComputationalTypeReference)),
-                    Return(14)
+                    Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
+                    VirtualMethodCall(5, ObjectType("tactest/StackManipulationAndSynchronization"), "pop", MethodDescriptor("()V"), SimpleVar(0, ComputationalTypeReference), List()),
+                    Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                    MonitorExit(9, SimpleVar(0, ComputationalTypeReference)), Goto(10, 13),
+                    Assignment(13, SimpleVar(1, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                    MonitorExit(14, SimpleVar(1, ComputationalTypeReference)),
+                    Throw(15, SimpleVar(0, ComputationalTypeReference)),
+                    Return(16)
                 ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
@@ -415,13 +410,13 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "2: ;",
                     "3: r_1 = op_0;",
                     "4: monitorenter op_0;",
-                    "5: op_0 = r_1;",
-                    "6: monitorexit op_0;",
-                    "7: goto 13;",
-                    "8: r_2 = op_0;",
-                    "9: op_0 = r_1;",
-                    "10: monitorexit op_0;",
-                    "11: op_0 = r_2;",
+                    "5: op_0 = r_0;",
+                    "6: op_0/*tactest.StackManipulationAndSynchronization*/.pop();",
+                    "7: op_0 = r_1;",
+                    "8: monitorexit op_0;",
+                    "9: goto 13;",
+                    "10: op_1 = r_1;",
+                    "11: monitorexit op_1;",
                     "12: throw op_0;",
                     "13: return;"
                 ))

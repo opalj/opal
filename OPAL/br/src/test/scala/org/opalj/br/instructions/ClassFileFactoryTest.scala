@@ -39,6 +39,7 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
 import org.opalj.log.GlobalLogContext
 import com.typesafe.config.Config
@@ -57,9 +58,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
      * TEST FIXTURE
      * ********************************************************************************************
      */
-    val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
+    val testProject = biProject("proxy.jar")
+    assert(testProject.projectClassFilesCount > 0)
+
     val lambdasProject = {
-        val jarFile = locateTestResources("classfiles/Lambdas.jar", "br")
+        val jarFile = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
         val baseConfig: Config = ConfigFactory.load()
         val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
         val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey

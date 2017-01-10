@@ -30,16 +30,22 @@ package org.opalj
 
 import scala.collection.mutable
 
+import play.api.libs.json.Json
+
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
  * and trees.
  *
- * This package supports two types of mutable graphs: graphs based on connected nodes ([[Node]])
- * and graphs where the relationship between the nodes are encoded externally ([[Graph]]).
+ * This package supports three types ofgraphs:
+ *  1. graphs based on explicitly connected nodes ([[Node]]),
+ *  1. graphs based on implicitly connected nodes ([[VizNode]]), and
+ *  1. graphs where the relationship between the nodes are encoded externally ([[Graph]]).
  *
  * @author Michael Eichberg
  */
 package object graphs {
+
+    implicit final val VizNodeWrites = Json.writes[VizNode]
 
     /**
      * Generates a string that describes a (multi-)graph using the ".dot/.gv" file format

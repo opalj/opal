@@ -96,12 +96,3 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
 
 }
 
-/**
- * Common properties of the `RuntimeInvisibleParameterAnnotations` attribute.
- */
-object RuntimeInvisibleParameterAnnotationsAttribute {
-
-    final val Name = "RuntimeInvisibleParameterAnnotations"
-
-}
-

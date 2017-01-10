@@ -15,7 +15,7 @@
     2. Build OPAL Project and setup Plugin dependencies using SBT:  
     2.1 If OPAL has already been built, run this command in OPAL directory: `sbt copyToEclipsePlugin`  
     2.2 If OPAL has not been built, run:  
-    `sbt clean clean-files cleanCache cleanCacheFiles eclipse copyResources it:compile test:compile unidoc publishLocal           copyToEclipsePlugin`  
+    `sbt cleanBuild publishLocal copyToEclipsePlugin`  
 5. Import Plugin Project into Eclipse
     1. Right-click in package explorer -> Import
     2. Select "General -> Existing Projects into Workspace"

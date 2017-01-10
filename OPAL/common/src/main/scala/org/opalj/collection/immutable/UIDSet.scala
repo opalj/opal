@@ -529,7 +529,7 @@ private[collection] final class UIDSetNode[T <: UID] private[collection] (
         true
     }
 
-    override def isSingletonSet = size == 1
+    override def isSingletonSet: Boolean = size == 1
 
     override def head: T = {
         var currentNode: NonEmptyUIDSet[T] = this
@@ -545,7 +545,7 @@ private[collection] final class UIDSetNode[T <: UID] private[collection] (
 
     override def exists(p: T ⇒ Boolean): Boolean = !traverse(t ⇒ !p(t))
 
-    override def forall(p: T ⇒ Boolean) = traverse(p)
+    override def forall(p: T ⇒ Boolean): Boolean = traverse(p)
 
     override def contains[X <: UID](o: X): Boolean = {
         val oid = o.id

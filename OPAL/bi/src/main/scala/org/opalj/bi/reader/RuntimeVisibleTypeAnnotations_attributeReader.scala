@@ -84,11 +84,4 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
 
     registerAttributeReader(RuntimeVisibleTypeAnnotationsAttribute.Name → parser)
 }
-/**
- * Common properties of `RuntimeVisibleTypeAnnotations` attributes.
- */
-object RuntimeVisibleTypeAnnotationsAttribute {
 
-    final val Name = "RuntimeVisibleTypeAnnotations"
-
-}

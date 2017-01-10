@@ -76,9 +76,3 @@ trait ConstantValue_attributeReader extends AttributeReader {
 
     registerAttributeReader(ConstantValueAttribute.Name → parser)
 }
-
-object ConstantValueAttribute {
-
-    final val Name = "ConstantValue"
-
-}

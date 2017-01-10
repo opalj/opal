@@ -31,6 +31,10 @@ package ai
 package domain
 package l0
 
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
+
 import org.opalj.br.ArrayType
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
@@ -39,8 +43,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.UpperTypeBound
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet1
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -727,27 +729,33 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             ObjectValue(pc, upperTypeBound.asObjectType)
     }
 
-    override def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
+    override def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, objectType)
+    }
 
-    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue =
+    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, objectType)
+    }
 
-    override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
+    override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, objectType)
+    }
 
-    override def StringValue(pc: PC, value: String): DomainObjectValue =
+    override def StringValue(pc: PC, value: String): DomainObjectValue = {
         ObjectValue(pc, ObjectType.String)
+    }
 
-    override def ClassValue(pc: PC, t: Type): DomainObjectValue =
+    override def ClassValue(pc: PC, t: Type): DomainObjectValue = {
         ObjectValue(pc, ObjectType.Class)
+    }
 
     override def InitializedArrayValue(
         pc:        PC,
         arrayType: ArrayType,
-        counts:    List[Int]
-    ): DomainArrayValue =
+        counts:    Chain[Int]
+    ): DomainArrayValue = {
         ArrayValue(pc, arrayType)
+    }
 
     //
     // DECLARATION OF ADDITIONAL DOMAIN VALUE FACTORY METHODS

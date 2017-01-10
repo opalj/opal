@@ -97,9 +97,3 @@ trait StackMapTable_attributeReader extends AttributeReader {
     registerAttributeReader(StackMapTableAttribute.Name → parser)
 }
 
-object StackMapTableAttribute {
-
-    final val Name = "StackMapTable"
-
-}
-

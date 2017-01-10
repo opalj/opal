@@ -62,10 +62,9 @@ import org.opalj.ai.util.XHTML
  * the exception.
  *
  * ==General Usage==
- * This trait collects the def/use information after the abstract interpretation has
- * successfully completed and the control-flow graph is available. The information
+ * This trait collects the def/use information '''after the abstract interpretation has
+ * successfully completed''' and the control-flow graph is available. The information
  * is automatically made available, when this plug-in is mixed in.
- *
  *
  * ==Special Values==
  *
@@ -139,9 +138,7 @@ trait RecordDefUse extends RecordCFG {
 
         instructions = code.instructions
         val codeSize = instructions.size
-        // The following value for min is a conservative approx. which may lead to the
-        // use of a SmallValuesArray that can actually store larger values than
-        // necessary; however, this will occur only in a very small number of cases.
+        // The following value for min is a conservative approx.!
         val absoluteMin = -code.maxLocals
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
         defOps(0) = Naught // the operand stack is empty...
@@ -235,7 +232,7 @@ trait RecordDefUse extends RecordCFG {
      * Returns the instruction(s) which defined the value used by the instruction with the given `pc`
      * and which is stored at the stack position with the given stackIndex. The first/top value on
      * the stack has index 0 and the second value - if it exists - has index two; independent of
-     * the category of the value.
+     * the category of the values.
      */
     def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
 
@@ -459,7 +456,8 @@ trait RecordDefUse extends RecordCFG {
                     if (joinedDefOps ne oldDefOps) {
                         // assert(
                         //     joinedDefOps != oldDefOps,
-                        //     s"$joinedDefOps is (unexpectedly) equal to $newDefOps join $oldDefOps")
+                        //     s"$joinedDefOps is (unexpectedly) equal to $newDefOps join $oldDefOps"
+                        // )
                         forceScheduling =
                             // There is nothing to propagate beyond the next
                             // instruction if the next one is a "return" instruction.
@@ -476,21 +474,18 @@ trait RecordDefUse extends RecordCFG {
                     // 0: ALOAD_0
                     // 1: INVOKEVIRTUAL com.sun.media.sound.EventDispatcher dispatchEvents (): void
                     // 4: GOTO 0↑
-                    // 7: ASTORE_1
+                    // 7: ASTORE_1 // exception handler for the instruction with pc 1
                     // 8: GOTO 0↑
                     // The last goto leads to some new information regarding the values
                     // on the stack (e.g., Register 1 now contains an exception), but
-                    // propagating this information is useless - the value is never
-                    // used...
+                    // propagating this information is useless - the value is never used...
                     // (II)
                     // Furthermore, whenever we have a jump back to the first instruction
                     // (PC == 0) and the joined values are unrelated to the parameters
                     // - i.e., we do not assign a new value to a register used by a
-                    // parameter -
-                    // then we do not have to force a scheduling of the reevaluation of
-                    // the next instruction
-                    // since there has to be some assignment related to the respective
-                    // variables (there is no load without a previous store).
+                    // parameter - then we do not have to force a scheduling of the reevaluation of
+                    // the next instruction since there has to be some assignment related to the
+                    // respective variables (there is no load without a previous store).
                     var newUsage = false
                     val joinedDefLocals =
                         oldDefLocals.fuse(
@@ -505,16 +500,14 @@ trait RecordDefUse extends RecordCFG {
                                 // information.... unless we have a JSR/RET and we are in
                                 // a subroutine!
                                 if (o eq null) {
-                                    if ((n ne null) &&
-                                        isSubroutineInstruction(successorPC)) {
+                                    if ((n ne null) && isSubroutineInstruction(successorPC)) {
                                         newUsage = true
                                         n
                                     } else {
                                         null
                                     }
                                 } else if (n eq null) {
-                                    if ((o ne null) &&
-                                        isSubroutineInstruction(successorPC)) {
+                                    if ((o ne null) && isSubroutineInstruction(successorPC)) {
                                         newUsage = true
                                         o
                                     } else {
@@ -555,11 +548,11 @@ trait RecordDefUse extends RecordCFG {
         }
 
         /*
-         * Specifies that the given number of stack values is used and also popped from
+         * Specifies that the given number of stack values is used/popped from
          * the stack and that – optionally – a new value is pushed onto the stack (and
          * associated with a new variable).
          *
-         * Usage is independent of the question whether the usage resulted in an
+         * The usage is independent of the question whether the usage resulted in an
          * exceptional control flow.
          */
         def stackOp(usedValues: Int, pushesValue: Boolean): Boolean = {
@@ -613,7 +606,7 @@ trait RecordDefUse extends RecordCFG {
                 propagate(defOps(currentPC), defLocals(currentPC))
 
             case JSR.opcode | JSR_W.opcode ⇒
-                stackOp(0, true)
+                stackOp(0, pushesValue = true)
 
             case RET.opcode ⇒
                 val RET(lvIndex) = instruction
@@ -634,17 +627,14 @@ trait RecordDefUse extends RecordCFG {
                 | LOOKUPSWITCH.opcode | TABLESWITCH.opcode ⇒
                 stackOp(1, false)
 
-            case ATHROW.opcode ⇒
-                // we have an internally thrown exception...
-                stackOp(1, false)
+            case ATHROW.opcode                      ⇒ stackOp(1, false)
 
             //
             // ARRAYS
             //
-            case NEWARRAY.opcode | ANEWARRAY.opcode ⇒
-                stackOp(1 /*count*/ , pushesValue = true)
+            case NEWARRAY.opcode | ANEWARRAY.opcode ⇒ stackOp(1 /*count*/ , pushesValue = true)
 
-            case ARRAYLENGTH.opcode ⇒ stackOp(1, pushesValue = true)
+            case ARRAYLENGTH.opcode                 ⇒ stackOp(1, pushesValue = true)
 
             case MULTIANEWARRAY.opcode ⇒
                 val dimensions = instruction.asInstanceOf[MULTIANEWARRAY].dimensions
@@ -875,7 +865,7 @@ trait RecordDefUse extends RecordCFG {
                 if (isExceptionalControlFlow) {
                     stackOp(1, pushesValue = false)
                 } else {
-                    val message = s"return instructions ($instruction) do not have regular successors"
+                    val message = s"a(n) $instruction instruction does not have regular successors"
                     throw BytecodeProcessingFailedException(message)
                 }
 
@@ -908,15 +898,19 @@ trait RecordDefUse extends RecordCFG {
 
         val operandsArray = aiResult.operandsArray
         val joinInstructions = aiResult.joinInstructions
-        def isSubroutineInstruction(pc: PC): Boolean = {
-            aiResult.subroutineInstructions.contains(pc)
-        }
 
         var subroutinePCs: Set[PC] = Set.empty
+        var retPCs: Set[PC] = Set.empty
         val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0)
 
         def checkAndScheduleNextSubroutine(): Boolean = {
-            /* we want to evaluate the subroutines only once! */
+            /* We want to evaluate the subroutines only when strictly necessary;
+             * When we reach this point "nextPCs" is already empty!
+             *
+             * However, we have to ensure that all subroutines and all
+             * paths to a specific subroutine are actually evaluated before
+             * we return.
+             */
 
             // We have to make sure that – before we schedule the evaluation of an
             // instruction that is the return target of a subroutine - the call
@@ -924,23 +918,34 @@ trait RecordDefUse extends RecordCFG {
             // Otherwise, the context information may be missing.
 
             if (subroutinePCs.nonEmpty) {
-                nextPCs += subroutinePCs.head;
-                subroutinePCs = subroutinePCs.tail;
+                nextPCs ++= subroutinePCs
+                subroutinePCs = Set.empty
+                //nextPCs += subroutinePCs.head;
+                //subroutinePCs = subroutinePCs.tail;
                 true
-            } else
+            } else if (retPCs.nonEmpty) {
+                nextPCs += retPCs.head
+                retPCs = retPCs.tail
+                true
+            } else {
                 false
+            }
         }
 
         while (nextPCs.nonEmpty || checkAndScheduleNextSubroutine()) {
             val currPC = nextPCs.head
             nextPCs.remove(currPC)
+            // println(s"ANALYZING: $currPC; remaining: ${nextPCs.mkString(",")};"+
+            //            s"subroutines: ${subroutinePCs.mkString(",")}")
+            // println(defLocals(currPC).zipWithIndex.map(_.swap).
+            //            mkString("LOCALS:\n\t", "\n\t", "\n"))
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow,
                         joinInstructions,
-                        isSubroutineInstruction,
+                        aiResult.subroutineInstructions.contains,
                         operandsArray
                     )
                 } catch {
@@ -959,7 +964,11 @@ trait RecordDefUse extends RecordCFG {
                         }
                         message += ("\tCurrent PC: "+currPC+"; SuccessorPC: "+succPC)+"\n"
                         message += ("\tStack: "+defOps(currPC))+"\n"
-                        message += ("\tLocals: "+defLocals(currPC))+"\n"
+                        val localsDump =
+                            defLocals(currPC).
+                                zipWithIndex.
+                                map { e ⇒ val (local, index) = e; s"$index: $local" }
+                        message += (localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n"))
                         val bout = new ByteArrayOutputStream()
                         val pout = new PrintStream(bout)
                         e.printStackTrace(pout)
@@ -981,36 +990,20 @@ trait RecordDefUse extends RecordCFG {
                 // assert(defOps(succPC) ne null)
 
                 if (scheduleNextPC) {
-                    val opcode = instructions(currPC).opcode
-                    if (opcode == JSR.opcode || opcode == JSR_W.opcode) {
-                        // first let's collect all subroutinePCs to make sure that we evaluate
-                        // the subroutines only once
-                        subroutinePCs += succPC
-                    } else {
-                        nextPCs += succPC
+                    instructions(currPC).opcode match {
+                        case JSR.opcode | JSR_W.opcode ⇒
+                            // first let's collect all subroutinePCs to make sure that we evaluate
+                            // the subroutines only once
+                            subroutinePCs += succPC
+                        case RET.opcode ⇒
+                            retPCs += succPC
+                        case _ ⇒ nextPCs += succPC
                     }
                 }
             }
 
-            regularSuccessorsOf(currPC).foreach { succPC ⇒
-                if (instructions(currPC).opcode == RET.opcode) {
-                    // We have to check if we can "already return" to all given targets.
-                    // This is only possible for those targets that follow a JSR instruction
-                    // that was already evaluated, otherwise we may lack some important def/use
-                    // information!
-                    val pcOfJSR = // succPC is the pc of the instruction following the JSR(_W)
-                        if (instructions(succPC - 2) ne null)
-                            succPC - 2
-                        else
-                            succPC - 3 /*JSR_W*/
-                    if (defOps(pcOfJSR) != null)
-                        handleSuccessor(false)(succPC)
-                    /* else postponed the scheduling of succPC */
-                } else {
-                    handleSuccessor(false)(succPC)
-                }
-            }
-            exceptionHandlerSuccessorsOf(currPC).foreach { handleSuccessor(true) }
+            regularSuccessorsOf(currPC) foreach { handleSuccessor(false) }
+            exceptionHandlerSuccessorsOf(currPC) foreach { handleSuccessor(true) }
         }
     }
 

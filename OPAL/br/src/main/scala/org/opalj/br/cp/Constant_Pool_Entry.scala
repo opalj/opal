@@ -41,13 +41,17 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  */
 trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
-    def tag: Int = throw new UnknownError("the method \"def tag:Int\" needs to be implemented by subtypes")
+    def tag: Int = {
+        throw new UnknownError("the method \"def tag:Int\" needs to be implemented by subtypes")
+    }
 
-    def asString: String =
-        throw new BytecodeProcessingFailedException("conversion to string is not supported")
+    def asString: String = {
+        throw new BytecodeProcessingFailedException(s"$this cannot be converted to string")
+    }
 
-    def asFieldType: FieldType =
+    def asFieldType: FieldType = {
         throw new BytecodeProcessingFailedException("conversion to field type is not supported")
+    }
 
     def asMethodDescriptor: MethodDescriptor =
         throw new BytecodeProcessingFailedException(
@@ -77,7 +81,9 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
     def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) =
         throw new BytecodeProcessingFailedException("conversion to field ref is not supported")
 
-    def asMethodref(cp: Constant_Pool): (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) =
+    def asMethodref(
+        cp: Constant_Pool
+    ): (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) =
         throw new BytecodeProcessingFailedException("conversion to method ref is not supported")
 
     def asObjectType(cp: Constant_Pool): ObjectType =

@@ -31,6 +31,7 @@ package ai
 package analyses
 package cg
 
+import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -41,56 +42,50 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analysis.EntryPointsAnalysis
 import org.opalj.fpcf.properties.IsEntryPoint
-import org.opalj.log.OPALLogger
+import org.opalj.fpcf.properties.EntryPoint
+import org.opalj.fpcf.PropertyStore
 
 /**
- * The ''key'' object to get the entry point of a project. The entry points are computed w.r.t. to the analysis mode
- * of the project.
+ * The ''key'' object to get the entry point(s) of a project. The entry points are computed w.r.t.
+ * to the analysis mode of the project.
  *
- * Please note that the automatic entry point analysis is not sufficient when it comes for example to system
- * callbacks. Those calls are implicitly triggered by the JVM, a custom framework, a custom web
- * server or others. To overcome that limitation, the key provides a mechanism to specify individual entry points
- * via the configuration file. To use that mechanism, it's required to add the following config key
- * to the configuration file. More details are below:
+ * @note    The entry point analysis is not sufficient when it comes – for example – to
+ *          non-traceable callbacks; i.e., calls that are implicitly triggered by the JVM,
+ *          a custom framework, a custom web server or others.
+ *          To overcome that limitation, the key provides a mechanism to specify individual
+ *          entry points via the configuration file. To use that mechanism, it's required to add
+ *          the following config key to the configuration file.
+ *          The general format of the JSON key that can be added to the `application.conf` or
+ *          `reference.conf`.
+ *          {{{
+ *          org.opalj.callgraph.entryPoints = [
+ *              {   declaringClass = "<name of the declaring class in JVM notation>",
+ *                  methodName = "name",
+ *                  descriptor = "<desciptor in JVM notation>" } # OPTIONAL
+ *          ]
+ *          }}}
+ *          As the previous definition suggests, each entry point definition consists of the
+ *          `declaringClass` and `name`. The optional third parameter is the method descriptor.
  *
- * The general format of the key that can be added to the application.conf or reference.conf.
- *
- * {{{
- *   org.opalj.callgraph.entryPoints = [
- *     {declaringClass = "<declClass>",
- *      methodName = "name",
- *      descriptor = "<desc in JVM notation>"} # the descriptor is optional
- *   ]
- * }}}
- *
- * As the previous definition suggests each entry point definition consists of the obligatory parameters
- * `declaringClass` and `name`. The optional third parameter is the method descriptor.
- *
- * @example
- *     Specify a special-,system,- or framework-specific entry point within the application.conf.
- *     The example defines at least two methods as entry point:
- *       - all methods in "com.test.Main" with the name "main", i.e. if more than one method named
- *         "main" exists all are added.
- *       - the method in "com.test.Main" with the name "increase" that requires an integer parameter
- *         and also return an integer. If a method descriptor is given, duplicates can't exist.
- *
- * {{{
- *   org.opalj.callgraph.entryPoints = [
- *        { declaringClass = "com/test/Main",
- *          name = "main"},
- *        { declaringClass = "com/test/Main",
- *          name = "increase",
- *          descriptor = "(I)I" # optional
- *         }]
- * }}}
+ * @example The example defines at least two methods as entry points:
+ *           - all methods in "com.test.Main" with the name "main", i.e. if more than one method
+ *             named "main" exists all are added.
+ *           - the method in "com.test.Main" with the name "increase" that requires an integer
+ *             parameter and also return an integer. If a method descriptor is given, duplicates
+ *             can't exist.
+ *          {{{
+ *          org.opalj.callgraph.entryPoints = [
+ *              { declaringClass = "com/test/Main", name = "main" },
+ *              { declaringClass = "com/test/Main", name = "increase", descriptor = "(I)I" }
+ *          ]
+ *          }}}
  *
  *
- * @example
- *      To get the call graph object use the `Project`'s `get` method and pass in
- *      `this` object.
- *      {{{
- *      val EntryPointInformation = project.get(EntryPointKey)
- *      }}}
+ * @example To get the entry point information use the `Project`'s `get` use:
+ *          {{{
+ *          val EntryPointInformation = project.get(EntryPointKey)
+ *          }}}
+ *
  * @author Michael Reif
  */
 object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
@@ -102,15 +97,17 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
     )
 
     override protected def compute(project: SomeProject): EntryPointInformation = {
-
         val fpcfManager = project.get(FPCFAnalysesManagerKey)
         if (!fpcfManager.isDerived(EntryPointsAnalysis.derivedProperties))
             fpcfManager.runWithRecommended(EntryPointsAnalysis)(true)
         else
-            OPALLogger.warn("analysis", "Entry points were already computed; The already available entry points are used.")(project.logContext)
+            OPALLogger.warn(
+                "analysis",
+                "entry points were already computed; the already available entry points are used"
+            )(project.logContext)
 
         val configuredEntryPoints = getConfigEntryPoints(project)
-        new EntryPointInformation(project, configuredEntryPoints)
+        new EntryPointInformation(project.get(SourceElementsPropertyStoreKey), configuredEntryPoints)
     }
 
     def getConfigEntryPoints(project: SomeProject): Set[Method] = {
@@ -118,86 +115,105 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
         import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
         implicit val logContext = project.logContext
+        var entryPoints = Set.empty[Method]
 
         if (!project.config.hasPath("org.opalj.callgraph.entryPoints")) {
             OPALLogger.info(
-                "config file",
-                "None additional entry points configured - :"+"""key: "org.opalj.callgraph.entryPoints" is missing."""
+                "project configuration",
+                "configruation key org.opalj.callgraph.entryPoints is missing; "+
+                    "no additional entry points configured"
             )
-
-            return Set.empty;
+            return entryPoints;
         }
-
-        var configEntryPoints: Option[List[EntryPoint]] = None
-
-        try {
-            val eps = project.config.as[List[EntryPoint]]("org.opalj.callgraph.entryPoints")
-            configEntryPoints = Some(eps)
-        } catch {
-            case e: Throwable ⇒ OPALLogger.error(
-                "config",
-                "Malformed configuration at key: 'org.opalj.callgraph.entryPoints'."+
-                    "Please find examples at the EntryPointKey documentation. - Configuration ignored."
-            )
-        }
-
-        var entryPoints = Set.empty[Method]
-
-        if (configEntryPoints.nonEmpty) {
-            configEntryPoints.get map { ep ⇒
-                val EntryPoint(declClass, name, descriptor) = ep
-                val ot = ObjectType(declClass)
-
-                project.classFile(ot) match {
-                    case Some(cf) ⇒
-                        var methods = cf.findMethod(name)
-
-                        if (methods.size == 0)
-                            OPALLogger.warn("config", s"No entry point method with the name: $name has been found in: $declClass")
-
-                        if (descriptor.nonEmpty) {
-                            try {
-                                val methodDescriptor = MethodDescriptor(descriptor.get)
-                                methods = methods.filterNot(_.descriptor == methodDescriptor)
-
-                                if (methods.size > 1)
-                                    OPALLogger.warn("config", s"No entry point method with the name: $name and ${descriptor.get} has been found in: $declClass")
-                            } catch {
-                                case e: IllegalArgumentException ⇒
-                                    OPALLogger.warn("config", s"Illegal method descriptor at specified entry point method at: ($declClass, $name, ${descriptor.get})")
-                            }
-                        }
-
-                        entryPoints = entryPoints ++ methods
-
-                    case None ⇒
-                        OPALLogger.warn("config", s"Declaring class of the entry point has not been found: $declClass")
-                }
+        val configEntryPoints: List[EntryPointContainer] =
+            try {
+                project.config.as[List[EntryPointContainer]]("org.opalj.callgraph.entryPoints")
+            } catch {
+                case e: Throwable ⇒
+                    OPALLogger.error(
+                        "project configuration - recoverable",
+                        "configruation key org.opalj.callgraph.entryPoints is invalid; "+
+                            "see EntryPointKey documentation",
+                        e
+                    )
+                    return entryPoints;
             }
+
+        configEntryPoints map { ep ⇒
+            val EntryPointContainer(declClass, name, descriptor) = ep
+
+            project.classFile(ObjectType(declClass)) match {
+                case Some(cf) ⇒
+                    var methods = cf.findMethod(name)
+
+                    if (methods.size == 0)
+                        OPALLogger.warn(
+                            "project configuration",
+                            s"$declClass does not define a method $name; entry point ignored"
+                        )
+
+                    if (descriptor.nonEmpty) {
+                        val jvmDescriptor = descriptor.get
+                        try {
+                            val methodDescriptor = MethodDescriptor(jvmDescriptor)
+                            methods = methods.filter(_.descriptor == methodDescriptor)
+
+                            if (methods.isEmpty)
+                                OPALLogger.warn(
+                                    "project configuration",
+                                    s"$declClass does not define a method $name($jvmDescriptor); "+
+                                        "entry point ignored"
+                                )
+                        } catch {
+                            case e: IllegalArgumentException ⇒
+                                OPALLogger.warn(
+                                    "project configuration",
+                                    s"illegal: $declClass or $name or $jvmDescriptor"
+                                )
+                        }
+                    }
+
+                    entryPoints = entryPoints ++ methods
+
+                case None ⇒
+                    OPALLogger.warn(
+                        "project configuration",
+                        s"the declaring class $declClass of the entry point has not been found"
+                    )
+            }
+
         }
 
         entryPoints
     }
 }
 
-/* need by the ArbitraryTypeReader of ficus */
-private case class EntryPoint private (val declaringClass: String, name: String, descriptor: Option[String])
+/* Needed by the `ArbitraryTypeReader` of ficus. */
+private case class EntryPointContainer private (
+    declaringClass: String,
+    name:           String,
+    descriptor:     Option[String]
+)
 
-class EntryPointInformation(
-        project:               SomeProject,
-        configuredEntryPoints: Set[Method]
-) {
+class EntryPointInformation(propertyStore: PropertyStore, configuredEntryPoints: Set[Method]) {
+
+    def isEntryPoint(method: Method): Boolean = {
+        val ep = propertyStore(method, EntryPoint.Key)
+        if (ep.hasProperty) {
+            ep.p == IsEntryPoint
+        } else {
+            false
+        }
+    }
+
+    def foreach[U](f: Method ⇒ U): Unit = {
+        propertyStore.entities(IsEntryPoint).foreach(e ⇒ f(e.asInstanceOf[Method]))
+    }
+
+    // LEGACY INTERFACE
 
     def getEntryPoints(): Set[Method] = {
-        getEntryPointsFromPropertyStore(project) ++ configuredEntryPoints
-    }
-
-    /*
-     * Get all methods from the property store that are entry points.
-     */
-    private[this] def getEntryPointsFromPropertyStore(project: SomeProject): Set[Method] = {
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        propertyStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
+        configuredEntryPoints ++
+            propertyStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }
     }
 }
-

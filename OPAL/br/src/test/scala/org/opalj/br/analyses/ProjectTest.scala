@@ -67,7 +67,7 @@ class ProjectTest extends FlatSpec with Matchers {
         classFile(AbstractB) should be('Defined)
     }
 
-    it should "find the library class attributes.DeprecatedByAnnotation" in {
+    it should "find the library class deprecated.DeprecatedByAnnotation" in {
         classFile(DeprecatedByAnnotation) should be('Defined)
     }
 
@@ -85,7 +85,7 @@ class ProjectTest extends FlatSpec with Matchers {
         isLibraryType(classFile(SuperType).get) should be(false)
     }
 
-    it should "identify the class attributes.DeprecatedByAnnotation as belonging to the library code" in {
+    it should "identify the class deprecated.DeprecatedByAnnotation as belonging to the library code" in {
         isLibraryType(DeprecatedByAnnotation) should be(true)
 
         isLibraryType(classFile(DeprecatedByAnnotation).get) should be(true)
@@ -271,7 +271,7 @@ class ProjectTest extends FlatSpec with Matchers {
 
     {
         val fieldsProject = {
-            val classFiles = ClassFiles(locateTestResources("classfiles/Fields.jar", "bi"))
+            val classFiles = ClassFiles(locateTestResources("fields-g=none-5.jar", "bi"))
             Project(classFiles, Traversable.empty, true)
         }
         import fieldsProject.classFile
@@ -352,7 +352,7 @@ class ProjectTest extends FlatSpec with Matchers {
     {
 
         val methodsProject = {
-            val classFiles = ClassFiles(locateTestResources("classfiles/Methods.jar", "bi"))
+            val classFiles = ClassFiles(ProjectTest.methodsArchive)
             Project(classFiles, Traversable.empty, true)
         }
 
@@ -415,11 +415,11 @@ private object ProjectTest {
     // Setup
     //
     //
-    val resources = locateTestResources("classfiles/Methods.jar", "bi")
-    val libraryResources = locateTestResources("classfiles/Attributes.jar", "bi")
-    val project = Project(ClassFiles(resources), ClassFiles(libraryResources), false)
+    val methodsArchive = locateTestResources("methods.jar", "bi")
+    val deprecatedArchive = locateTestResources("deprecated.jar", "bi")
+    val project = Project(ClassFiles(methodsArchive), ClassFiles(deprecatedArchive), false)
 
-    val codeJAR = locateTestResources("classfiles/Code.jar", "bi")
+    val codeJAR = locateTestResources("code.jar", "bi")
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
     val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
@@ -434,6 +434,6 @@ private object ProjectTest {
     val SuperType = ObjectType("methods/a/Super")
     val DirectSub = ObjectType("methods/a/DirectSub")
     val AbstractB = ObjectType("methods/b/AbstractB")
-    val DeprecatedByAnnotation = ObjectType("attributes/DeprecatedByAnnotation")
+    val DeprecatedByAnnotation = ObjectType("deprecated/DeprecatedByAnnotation")
 
 }

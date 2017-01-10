@@ -45,7 +45,7 @@ class ProjectJDKTest extends FunSpec with Matchers {
 
     describe("Project") {
 
-        val project = org.opalj.br.TestSupport.createJREProject
+        val project = TestSupport.createJREProject
 
         it(s"should return only those methods that have a body when using the mehod methodsWithBody") {
 

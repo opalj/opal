@@ -53,28 +53,3 @@ case class BootstrapMethods_attribute(
     def methodsToXHTML(implicit cp: Constant_Pool): Seq[Node] = bootstrap_methods.map(_.toXHTML(cp))
 }
 
-case class BootstrapMethod(method_ref: Constant_Pool_Index, arguments: Seq[BootstrapArgument]) {
-
-    /**
-     * Number of bytes to store the bootstrap method.
-     */
-    def size: Int = {
-        2 /* bootstrap_method_ref */ + 2 + /* num_bootstrap_arguments */
-            arguments.length * 2 /* bootstrap_arguments */
-    }
-
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details class="nested_details">
-            <summary>{ cp(method_ref).asInlineNode }</summary>
-            { argumentsToXHTML(cp) }
-        </details>
-    }
-
-    def argumentsToXHTML(implicit cp: Constant_Pool): Seq[Node] = arguments.map(_.toXHTML(cp))
-}
-
-case class BootstrapArgument(cp_ref: Constant_Pool_Index) {
-
-    def toXHTML(implicit cp: Constant_Pool): Node = <div>{ cp(cp_ref).asInlineNode }</div>
-
-}

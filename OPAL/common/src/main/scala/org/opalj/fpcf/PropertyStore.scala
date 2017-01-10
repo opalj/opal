@@ -965,6 +965,8 @@ class PropertyStore private (
         }
     }
 
+    // TODO FOREACH
+
     /**
      * Directly associate the given property `p` with given entity `e` if `e` has no property
      * of the respective kind and no other lazy or direct computation is currently executed.
@@ -2341,7 +2343,7 @@ object PropertyStore {
         var entityId = 0
         entities foreach { e ⇒
             if (data.put(e, new EntityProperties(entityId)) ne null) {
-                OPALLogger.error("[internal - recoverable]", s"duplicate entity: $e")
+                OPALLogger.error("internal - recoverable", s"duplicate entity: $e")
             }
             entityId += 1
         }

@@ -103,7 +103,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     sealed trait PalindromeProperty extends Property {
         type Self = PalindromeProperty
         def key = PalindromeKey
-        def isRefineable = false
+        def isRefineable: Boolean = false
     }
     // Multiple properties can share the same property instance
     case object Palindrome extends PalindromeProperty
@@ -122,7 +122,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case class BitsProperty(bits: Int) extends Property {
         type Self = BitsProperty
         def key = BitsKey
-        def isRefineable = false
+        def isRefineable: Boolean = false
     }
 
     // HERE: we consider a palindrome to be a super palindrome if the lead is itself a
@@ -137,7 +137,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     sealed trait SuperPalindromeProperty extends Property {
         type Self = SuperPalindromeProperty
         def key = SuperPalindromeKey
-        def isRefineable = false
+        def isRefineable: Boolean = false
     }
     // Multiple properties can share the same property instance
     case object SuperPalindrome extends SuperPalindromeProperty
@@ -153,7 +153,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     sealed trait TaintedProperty extends Property {
         type Self = TaintedProperty
         def key = TaintedKey
-        def isRefineable = false
+        def isRefineable: Boolean = false
     }
     // Multiple properties can share the same property instance
     case object Tainted extends TaintedProperty
@@ -169,7 +169,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case class StringLength(length: Int) extends Property {
         final type Self = StringLength
         final def key = StringLengthKey
-        final def isRefineable = false
+        final def isRefineable: Boolean = false
     }
 
     final val CountKey: PropertyKey[Count] = {
@@ -182,7 +182,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case class Count(count: Int) extends Property {
         final type Self = Count
         final def key = CountKey
-        final def isRefineable = true
+        final def isRefineable: Boolean = true
     }
 
     final val PurityKey: PropertyKey[Purity] = {
@@ -195,11 +195,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     sealed trait Purity extends Property {
         final type Self = Purity
         final def key = PurityKey
-
     }
-    case object Pure extends Purity { final override def isRefineable = false }
-    case object Impure extends Purity { final override def isRefineable = false }
-    case object ConditionallyPure extends Purity { final override def isRefineable = true }
+    case object Pure extends Purity { final override def isRefineable: Boolean = false }
+    case object Impure extends Purity { final override def isRefineable: Boolean = false }
+    case object ConditionallyPure extends Purity { final override def isRefineable: Boolean = true }
 
     object EvenNumberOfChars extends SetProperty[String]
 

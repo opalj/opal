@@ -30,6 +30,7 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.mutable.UShortSet
 
 /**
@@ -37,38 +38,48 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-case class TABLESWITCH(
-        defaultOffset: Int,
-        low:           Int,
-        high:          Int,
-        jumpOffsets:   IndexedSeq[Int]
-) extends CompoundConditionalBranchInstruction {
+trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
+
+    /** The smallest '''case''' value. `high` &geq; `low` */
+    def low: Int
+
+    /** The largest '''case''' value. `high` &geq; `low` */
+    def high: Int
 
     final def opcode: Opcode = TABLESWITCH.opcode
 
     final def mnemonic: String = "tableswitch"
-
-    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
-        var caseValues = List.empty[Int]
-        var i = jumpOffsets.length - 1
-        while (i >= 0) {
-            if (jumpOffsets(i) == jumpOffset)
-                caseValues = high - i :: caseValues
-            i -= 1
-        }
-        (caseValues, jumpOffset == defaultOffset)
-    }
-
-    def caseValues: Iterable[Int] = {
-        (low to high).view.filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
-    }
 
     final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
         indexOfNextInstruction(currentPC, false)
     }
 
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
+        currentPC + 1 + (3 - (currentPC % 4)) + 12 + (high - low + 1) * 4
+    }
+
+}
+
+case class TABLESWITCH(
+        defaultOffset: Int,
+        low:           Int,
+        high:          Int,
+        jumpOffsets:   IndexedSeq[Int]
+) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
+
+    def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
+        var caseValues = Chain.empty[Int]
+        var i = jumpOffsets.length - 1
+        while (i >= 0) {
+            if (jumpOffsets(i) == jumpOffset)
+                caseValues = high - i :&: caseValues
+            i -= 1
+        }
+        (caseValues, jumpOffset == defaultOffset)
+    }
+
+    override def caseValues: Iterable[Int] = {
+        (low to high).view.filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
     }
 
     final def nextInstructions(
@@ -83,7 +94,7 @@ case class TABLESWITCH(
         pcs
     }
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val paddingOffset = (thisPC % 4) - (otherPC % 4)
 
         code.instructions(otherPC) match {
@@ -105,24 +116,101 @@ case class TABLESWITCH(
         }
     }
 
-    override def toString: String =
+    override def toString: String = {
         "TABLESWITCH("+
             (low to high).zip(jumpOffsets).map(e ⇒ e._1+"⤼"+e._2).mkString(",")+
             ";default⤼"+defaultOffset+
             ")"
+    }
 
-    override def toString(pc: Int): String =
+    override def toString(pc: PC): String = {
         "TABLESWITCH("+
             (low to high).zip(jumpOffsets).map { keyOffset ⇒
                 val (key, offset) = keyOffset
                 key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
             }.mkString(", ")+
             "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
+    }
 
 }
 
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object TABLESWITCH {
 
     final val opcode = 170
 
+    /**
+     * Creates [[LabeledTABLESWITCH]] instructions with `Symbols` as the branch targets.
+     *
+     * @param branchTargets The first target is chosen when the branch value has the value `low`.
+     *                      The second target is chosen if the value is `low+1` etc.
+     *
+     */
+    def apply(
+        defaultBranchTarget: Symbol,
+        low:                 Int,
+        high:                Int,
+        branchTargets:       IndexedSeq[Symbol]
+    ): LabeledTABLESWITCH = {
+        require(
+            branchTargets.size == high - low + 1,
+            s"there have to be high-low+1 (${high - low + 1}) targets"
+        )
+        LabeledTABLESWITCH(defaultBranchTarget, low, high, branchTargets)
+    }
+}
+
+/**
+ * Represents a [[TABLESWITCH]] instruction with unresolved jump targets represented as `Symbols`.
+ *
+ * @author Malte Limmeroth
+ */
+case class LabeledTABLESWITCH(
+        defaultBranchTarget: Symbol,
+        low:                 Int,
+        high:                Int,
+        jumpTargets:         IndexedSeq[Symbol]
+) extends LabeledInstruction with TABLESWITCHLike {
+
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): TABLESWITCH = {
+        TABLESWITCH(
+            pcs(defaultBranchTarget) - currentPC,
+            low,
+            high,
+            jumpTargets.map(pcs(_) - currentPC)
+        )
+    }
+
+    override def branchTargets: Seq[Symbol] = defaultBranchTarget +: jumpTargets
+
+    def caseValueOfJumpTarget(jumpTarget: Symbol): (Chain[Int], Boolean) = {
+        var caseValues = Chain.empty[Int]
+        var i = jumpTargets.length - 1
+        while (i >= 0) {
+            if (jumpTargets(i) == jumpTarget)
+                caseValues = high - i :&: caseValues
+            i -= 1
+        }
+        (caseValues, jumpTarget == defaultBranchTarget)
+    }
+
+    override def caseValues: Iterable[Int] = {
+        (low to high).view.filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
+    }
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (this == other)
+    }
+
+    override def toString(pc: Int): String = {
+        (low to high).zip(jumpTargets).map { keyOffset ⇒
+            val (key, target) = keyOffset
+            key+"="+target
+        }.mkString("TABLESWITCH(", ", ", "; ifNoMatch="+defaultBranchTarget+")")
+    }
 }

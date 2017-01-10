@@ -44,16 +44,3 @@ object BootstrapMethodTable {
     final val KindId = 42
 
 }
-
-/**
- * Java 7's 'BootstrapMethod'.
- *
- * @author Michael Eichberg
- */
-case class BootstrapMethod(
-        handle:    MethodHandle,
-        arguments: BootstrapArguments
-) {
-
-    def toJava: String = arguments.map(_.toJava).mkString(handle.toJava+"(", ",", ")")
-}

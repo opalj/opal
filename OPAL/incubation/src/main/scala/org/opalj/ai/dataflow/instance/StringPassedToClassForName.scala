@@ -122,9 +122,9 @@ object StringPassedToClassForName extends DataFlowProblemFactory with DataFlowPr
     // Handling for the specified "java.security" file.
     //
 
-    override def title = "StringPassedToClassForName"
+    override def title: String = "StringPassedToClassForName"
 
-    override def description = "Finds calls to Class.forName from non-privliged code"
+    override def description: String = "Finds calls to Class.forName from non-privliged code"
 
     final val javaSecurityParameter = "-java.security="
 

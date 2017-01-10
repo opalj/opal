@@ -68,8 +68,3 @@ trait Synthetic_attributeReader extends AttributeReader {
     registerAttributeReader(SyntheticAttribute.Name → parser)
 }
 
-object SyntheticAttribute {
-
-    final val Name = "Synthetic"
-
-}

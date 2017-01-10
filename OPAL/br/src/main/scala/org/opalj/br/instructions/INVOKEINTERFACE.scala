@@ -41,6 +41,8 @@ case class INVOKEINTERFACE(
         methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {
 
+    final def isInterfaceCall: Boolean = true
+
     final def opcode: Opcode = INVOKEINTERFACE.opcode
 
     final def mnemonic: String = "invokeinterface"

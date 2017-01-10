@@ -87,7 +87,7 @@ object NEWARRAY {
 
     final val opcode = 188
 
-    def unapply(newarray: NEWARRAY): Option[BaseType] = Some(newarray.elementType)
+    def unapply(newarray: NEWARRAY): Some[BaseType] = Some(newarray.elementType)
 
     def apply(atype: Int): NEWARRAY = {
         (atype: @annotation.switch) match {

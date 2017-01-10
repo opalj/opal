@@ -113,9 +113,3 @@ trait Signature_attributeReader extends AttributeReader {
 
     registerAttributeReader(SignatureAttribute.Name → parser)
 }
-
-object SignatureAttribute {
-
-    final val Name = "Signature"
-
-}

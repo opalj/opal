@@ -61,3 +61,9 @@ trait ExplicitLocalVariableIndex extends Instruction {
     }
 
 }
+
+object ExplicitLocalVariableIndex {
+
+    def unapply(i: ExplicitLocalVariableIndex): Some[Int] = Some(i.lvIndex)
+
+}

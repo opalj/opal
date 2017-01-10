@@ -113,5 +113,5 @@ trait UShortSet extends SmallValuesSet {
 
 object UShortSet {
 
-    final def empty = org.opalj.collection.mutable.UShortSet.empty
+    final def empty: mutable.UShortSet = mutable.UShortSet.empty
 }

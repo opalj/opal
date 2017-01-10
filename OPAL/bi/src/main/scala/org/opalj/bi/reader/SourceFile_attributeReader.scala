@@ -80,9 +80,3 @@ trait SourceFile_attributeReader extends AttributeReader {
 
     registerAttributeReader(SourceFileAttribute.Name → parser)
 }
-
-object SourceFileAttribute {
-
-    final val Name = "SourceFile"
-
-}

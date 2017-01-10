@@ -42,6 +42,8 @@ case class INVOKESTATIC(
         methodDescriptor: MethodDescriptor
 ) extends NonVirtualMethodInvocationInstruction {
 
+    final def isInterfaceCall: Boolean = isInterface
+
     final def opcode: Opcode = INVOKESTATIC.opcode
 
     final def mnemonic: String = "invokestatic"

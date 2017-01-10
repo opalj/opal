@@ -927,7 +927,7 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
         final val vs2: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size = 6
+    final def size: Int = 6
 
     override def apply(index: Int): T = {
         if (index < 3) vs1(index) else vs2(index - 3)
@@ -1023,7 +1023,7 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
         final val vs2: Locals4[T] = new Locals4[T]
 ) extends LocalsX[T] {
 
-    final def size = 7
+    final def size: Int = 7
 
     override def apply(index: Int): T = {
         if (index < 3) vs1(index) else vs2(index - 3)
@@ -1120,7 +1120,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
         final val vs3: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size = 8
+    final def size: Int = 8
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1256,7 +1256,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
         final val vs3: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size = 9
+    final def size: Int = 9
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1392,7 +1392,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
         final val vs3: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size = 10
+    final def size: Int = 10
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1525,7 +1525,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
         final val vs3: Locals4[T] = new Locals4[T]
 ) extends LocalsX[T] {
 
-    final def size = 11
+    final def size: Int = 11
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1667,7 +1667,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         )
     }
 
-    final def size = vs12_N.length + 11
+    final def size: Int = vs12_N.length + 11
 
     override def apply(index: Int): T =
         if (index < 11)

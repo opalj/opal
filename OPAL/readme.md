@@ -1,11 +1,7 @@
-OPAL consists of the following projects:
+#Dependencies between OPAL Projects:
 
-- common - Common
-- bi - Bytecode Infrastructure
-- br - Bytecode Representation
-- da - Bytecode Disassembler
-- ba - Bytecode Assembler
-- ai - Abstract Interpretation Framework
-- de - Dependency Extraction
-- av - Architecture Validation
-- demos - Demos
+---
+
+![OPAL Project Dependencies](./Project%20Dependencies.svg)
+
+---

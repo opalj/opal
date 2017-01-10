@@ -119,9 +119,3 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     registerAttributeReader(LocalVariableTableAttribute.Name → parser)
 }
 
-object LocalVariableTableAttribute {
-
-    final val Name = "LocalVariableTable"
-
-}
-

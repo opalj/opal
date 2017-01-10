@@ -43,7 +43,6 @@ import scala.collection.JavaConverters._
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 import org.opalj.br.analyses.SomeProject
@@ -111,7 +110,7 @@ class StackDepthComputationTest extends FunSpec with Matchers {
         import reader.AllClassFiles
 
         it(s"should be possible for all methods of the JDK ($JRELibraryFolder)") {
-            val project = createJREProject
+            val project = TestSupport.createJREProject
             analyzeProject("JDK", project)
         }
 

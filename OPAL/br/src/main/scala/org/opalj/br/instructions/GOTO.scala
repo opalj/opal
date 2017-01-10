@@ -64,10 +64,17 @@ object GOTO {
 
 }
 
-case class LabeledGOTO(branchTarget: Symbol) extends LabeledInstruction with GOTOLike {
+case class LabeledGOTO(
+        branchTarget: Symbol
+) extends LabeledUnconditionalBranchInstruction with GOTOLike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): GOTO = {
-        GOTO(pcs(branchTarget) - pc)
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): GotoInstruction = {
+        val branchoffset = pcs(branchTarget) - currentPC
+        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
+            GOTO_W(branchoffset)
+        } else {
+            GOTO(branchoffset)
+        }
     }
 
 }

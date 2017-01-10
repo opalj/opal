@@ -29,15 +29,21 @@
 package org.opalj
 package ai
 
-import org.opalj.br.{Type, ReferenceType, ArrayType, ObjectType}
-import org.opalj.br.{MethodDescriptor, MethodHandle}
+import org.opalj.collection.immutable.Chain
+import org.opalj.br.Type
+import org.opalj.br.ReferenceType
+import org.opalj.br.ArrayType
+import org.opalj.br.ObjectType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodHandle
 
 /**
  * Definition of factory methods to create `ReferenceValues`.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
+trait ReferenceValuesFactory extends ExceptionsFactory {
+    domain: org.opalj.ai.ReferenceValuesFactory ⇒
 
     /**
      * Factory method to create a `DomainValue` that represents value `null` and
@@ -91,15 +97,15 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      *  - Null: '''No'''
      *  - Content: '''Unknown'''
      *
-     * @param origin Information about the origin of the value.
-     * @param counts The size of each dimension if available. `counts` may not be empty but
-     *      may not contain information about all dimensions; the
-     *      following condition always has to hold: `counts.length <= arrayType.dimensions`.
+     * @param   origin Information about the origin of the value.
+     * @param   counts The size of each dimension if available. `counts` may not be empty but
+     *          may not contain information about all dimensions; the
+     *          following condition always has to hold: `counts.length <= arrayType.dimensions`.
      */
     def InitializedArrayValue(
         origin:    ValueOrigin,
         arrayType: ArrayType,
-        counts:    List[Int]
+        counts:    Chain[Int]
     ): DomainReferenceValue
 
     /**
@@ -250,4 +256,3 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
     }
 
 }
-

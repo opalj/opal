@@ -202,6 +202,5 @@ object Graph {
             }
         }
         g
-
     }
 }

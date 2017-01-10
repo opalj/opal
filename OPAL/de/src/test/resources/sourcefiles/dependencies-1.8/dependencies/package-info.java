@@ -1,2 +1,0 @@
-@TypeTestAnnotation
-package dependencies;

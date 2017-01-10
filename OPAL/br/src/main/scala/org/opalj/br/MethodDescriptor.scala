@@ -583,3 +583,12 @@ object MethodDescriptor {
         }
     }
 }
+
+/**
+ * Extractor for JVM method descriptors (for example, "(I[Ljava/lang/Object;])V").
+ */
+object JVMMethodDescriptor {
+
+    def unapply(md: MethodDescriptor): Some[String] = Some(md.toJVMDescriptor)
+
+}

@@ -37,8 +37,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.JavaConverters._
 
 /**
- * Executes the given function `process` for each submitted task; each task can add
- * new tasks.
+ * Executes the given function `process` for each submitted value of
+ * type `T`. The `process` function can, add further further values that should be processed.
+ *
  * @example
  * {{{
  * val tasks = new Tasks[T] { (tasks : Tasks[T], t : T) ⇒
@@ -47,6 +48,10 @@ import scala.collection.JavaConverters._
  *      }
  * val exceptions = tasks.join()
  * }}}
+ *
+ * @param     process A function that is given a value of type `T` and this instance of `Tasks`.
+ *             `Tasks` can be used to submit further values of type `T`.
+ *
  * @author Michael Eichberg
  */
 class Tasks[T](
@@ -89,7 +94,6 @@ class Tasks[T](
      * that are created while processing tasks have been processed.
      */
     def join(): List[Throwable] = {
-
         if (tasksCount.get != 0) {
             // if tasksCount is zero we may already be finished or there were never any tasks...
             latch.await()

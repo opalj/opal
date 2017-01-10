@@ -32,7 +32,7 @@ package br
 import org.scalatest.FunSuite
 
 /**
- * Tests that Array types are represented as specified.
+ * Tests that `ArrayType`s are represented as specified.
  *
  * @author Michael Eichberg
  */
@@ -52,10 +52,7 @@ class ArrayTypeTest extends FunSuite {
     }
 
     test("ArrayType (Array of Array of Primitives) Field Descriptor") {
-        val fieldType = FieldType("[[S")
-        fieldType match {
-            case ArrayType(ArrayType(ShortType)) ⇒ /*OK*/
-        }
+        FieldType("[[S") match { case ArrayType(ArrayType(ShortType)) ⇒ /*OK*/ }
     }
 
     test("toJavaClass") {

@@ -29,150 +29,181 @@
 import sbt._
 import Keys._
 
-import sbtassembly.AssemblyPlugin.autoImport._
-
-import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
+import sbtassembly.AssemblyPlugin.autoImport._
+
+import com.typesafe.sbteclipse.plugin.EclipsePlugin._
+
 object OPALBuild extends Build {
 
-	// Default settings without scoverage
-	lazy val buildSettings = Defaults.coreDefaultSettings ++
-		SbtScalariform.scalariformSettingsWithIt ++
-		Seq(ScalariformKeys.preferences <<= baseDirectory.apply(getScalariformPreferences)) ++
-		Seq(Defaults.itSettings : _*) ++
-		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
-		Seq(libraryDependencies  ++= Seq(
-			"junit" % "junit" % "4.12" % "test,it",
-			"org.scalatest" %% "scalatest" % "3.0.0" % "test,it",
-			"org.scalacheck" %% "scalacheck" % "1.13.3" % "test,it"))
+    lazy val IntegrationTest = config("it") extend(Test)
 
-	def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPreferences(
-		(file("Scalariform Formatter Preferences.properties").getPath))
+    // Default settings without scoverage
+    lazy val buildSettings = 
+        Defaults.coreDefaultSettings ++
+        SbtScalariform.scalariformSettingsWithIt ++
+        Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value) ++
+        Seq(libraryDependencies  ++= Seq(
+            "junit" % "junit" % "4.12" % "test,it",
+            "org.scalatest" %% "scalatest" % "3.0.1" % "test,it",
+            "org.scalacheck" %% "scalacheck" % "1.13.4" % "test,it")) ++
+        Seq(Defaults.itSettings : _*) ++
+        Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
+        Seq(unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil) ++
+        Seq(unmanagedSourceDirectories in IntegrationTest := (scalaSource in IntegrationTest).value :: Nil) ++
+        Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest))
+        
+    def getScalariformPreferences(dir: File) = {
+        val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
+        PreferencesImporterExporter.loadPreferences((file(formatterPreferencesFile).getPath))
+    }
 
-	lazy val opal = Project(
-		id = "OPAL",
-		base = file("."),
-		settings = Defaults.coreDefaultSettings ++
-			sbtunidoc.Plugin.unidocSettings ++ 
-			Seq(publishArtifact := false)
-	).aggregate(
-		common,
-		bi,
-		br,
-		ai,
-		da,
-		bc,
-		de,
-		av,
-		DeveloperTools,
-		Validate,
-		demos,
-		incubation)
+    lazy val opal = Project(
+        id = "OPAL",
+        base = file("."),
+        settings = Defaults.coreDefaultSettings ++
+            sbtunidoc.Plugin.unidocSettings ++ 
+            Seq(publishArtifact := false)
+    ).aggregate(
+        common,
+        bi,
+        br,
+        da,
+        bc,
+        ba,
+        ai,
+        bp,
+        de,
+        av,
+        DeveloperTools,
+        Validate,
+        demos,
+        incubation)
 
-	/*****************************************************************************
-	 *
-	 * THE CORE PROJECTS WHICH CONSTITUTE OPAL
-	 *
- 	 */
+    /*****************************************************************************
+     *
+     * THE CORE PROJECTS WHICH CONSTITUTE OPAL
+     *
+     */
 
-	lazy val common = Project(
-		id = "Common",
-		base = file("OPAL/common"),
-		settings = buildSettings
-	).configs(IntegrationTest)
+    lazy val common = Project(
+        id = "Common",
+        base = file("OPAL/common"),
+        settings = buildSettings
+    ).configs(IntegrationTest)
 
-	lazy val bi = Project(
-		id = "BytecodeInfrastructure",
-		base = file("OPAL/bi"),
-		settings = buildSettings
-	).dependsOn(common % "it->test;test->test;compile->compile")
-	 .configs(IntegrationTest)
+    lazy val bi = Project(
+        id = "BytecodeInfrastructure",
+        base = file("OPAL/bi"),
+        settings = buildSettings
+    ).dependsOn(common % "it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
 
-	lazy val br = Project(
-		id = "BytecodeRepresentation",
-		base = file("OPAL/br"),
-		settings = buildSettings
-	).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
-	 .configs(IntegrationTest)
+    lazy val br = Project(
+        id = "BytecodeRepresentation",
+        base = file("OPAL/br"),
+        settings = buildSettings
+    ).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
 
-	lazy val da = Project(
-		id = "BytecodeDisassembler",
-		base = file("OPAL/da"),
-		settings = buildSettings
-	).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
-	 .configs(IntegrationTest)
+    lazy val da = Project(
+        id = "BytecodeDisassembler",
+        base = file("OPAL/da"),
+        settings = buildSettings
+    ).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
 
- 	lazy val bc = Project(
- 		id = "BytecodeCreator",
- 		base = file("OPAL/bc"),
- 		settings = buildSettings
- 	).dependsOn(da % "it->it;it->test;test->test;compile->compile")
- 	 .configs(IntegrationTest)
+    lazy val bc = Project(
+        id = "BytecodeCreator",
+        base = file("OPAL/bc"),
+        settings = buildSettings
+    ).dependsOn(da % "it->it;it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
 
-	lazy val ai = Project(
-		id = "AbstractInterpretationFramework",
-		base = file("OPAL/ai"),
-		settings = buildSettings
-	).dependsOn(br % "it->it;it->test;test->test;compile->compile")
-	 .configs(IntegrationTest)
+    lazy val ba = Project(
+        id = "BytecodeAssembler",
+        base = file("OPAL/ba"),
+        settings = buildSettings
+    ).dependsOn(
+        bc % "it->it;it->test;test->test;compile->compile",
+        br % "it->it;it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
 
-	// The project "DependenciesExtractionLibrary" depends on
-	// the abstract interpretation framework to be able to
-	// resolve calls using MethodHandle/MethodType/"invokedynamic"/...
-	lazy val de = Project(
-		id = "DependenciesExtractionLibrary",
-		base = file("OPAL/de"),
-		settings = buildSettings
-	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
-	 .configs(IntegrationTest)
+    lazy val ai = Project(
+        id = "AbstractInterpretationFramework",
+        base = file("OPAL/ai"),
+        settings = buildSettings
+    ).dependsOn(br % "it->it;it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
 
-	lazy val av = Project(
-		id = "ArchitectureValidation",
-		base = file("OPAL/av"),
-		settings = buildSettings
-	).dependsOn(de % "it->it;it->test;test->test;compile->compile")
-	 .configs(IntegrationTest)
-	 
-	lazy val DeveloperTools = Project(
-		id = "OPAL-DeveloperTools",
-		base = file("DEVELOPING_OPAL/tools"),
-		settings = buildSettings 
-	).dependsOn(
-		av % "test->test;compile->compile",
-		bc % "test->test;compile->compile;it->it")
-	 .configs(IntegrationTest)
+    // The project "DependenciesExtractionLibrary" depends on
+    // the abstract interpretation framework to be able to
+    // resolve calls using MethodHandle/MethodType/"invokedynamic"/...
+    lazy val de = Project(
+        id = "DependenciesExtractionLibrary",
+        base = file("OPAL/de"),
+        settings = buildSettings
+    ).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
 
-	// This project validates OPAL's implemented architecture; hence
-	// it is not a "project" in the classical sense!
-	lazy val Validate = Project(
-		id = "OPAL-Validate",
-		base = file("DEVELOPING_OPAL/validate"),
-		settings = buildSettings ++ Seq(publishArtifact := false)
-	).dependsOn(
-		DeveloperTools % "compile->compile;test->test;it->it;it->test")
-	 .configs(IntegrationTest)
+    lazy val bp = Project(
+        id = "BugPicker",
+        base = file("OPAL/bp"),
+        settings = buildSettings 
+    ).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
 
-	lazy val demos = Project(
-		id = "Demos",
-		base = file("OPAL/demos"),
-		settings = buildSettings ++ Seq(publishArtifact := false)
-	).dependsOn(av,bc)
-	 .configs(IntegrationTest)
+    lazy val av = Project(
+        id = "ArchitectureValidation",
+        base = file("OPAL/av"),
+        settings = buildSettings
+    ).dependsOn(de % "it->it;it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
+     
+    lazy val DeveloperTools = Project(
+        id = "OPAL-DeveloperTools",
+        base = file("DEVELOPING_OPAL/tools"),
+        settings = buildSettings 
+    ).dependsOn(
+        av % "test->test;compile->compile",
+        bp % "test->test;compile->compile",
+        ba % "test->test;compile->compile;it->it")
+     .configs(IntegrationTest)
 
-	/*****************************************************************************
-	 *
-	 * PROJECTS BELONGING TO THE OPAL ECOSYSTEM
-	 *
- 	 */
+    // This project validates OPAL's implemented architecture and 
+    // contains overall integration tests; hence
+    // it is not a "project" in the classical sense!
+    lazy val Validate = Project(
+        id = "OPAL-Validate",
+        base = file("DEVELOPING_OPAL/validate"),
+        settings = buildSettings ++ Seq(publishArtifact := false)
+    ).dependsOn(
+        DeveloperTools % "compile->compile;test->test;it->it;it->test")
+     .configs(IntegrationTest)
 
-	lazy val incubation = Project(
-		id = "Incubation",
-		base = file("OPAL/incubation"),
-		settings = buildSettings ++ Seq(publishArtifact := false)
-	).dependsOn(av % "it->it;it->test;test->test;compile->compile")
-	 .configs(IntegrationTest)
+    lazy val demos = Project(
+        id = "Demos",
+        base = file("OPAL/demos"),
+        settings = buildSettings ++ Seq(publishArtifact := false)
+    ).dependsOn(av,ba)
+     .configs(IntegrationTest)
+
+    /*****************************************************************************
+     *
+     * PROJECTS BELONGING TO THE OPAL ECOSYSTEM
+     *
+     */
+
+    lazy val incubation = Project(
+        id = "Incubation",
+        base = file("OPAL/incubation"),
+        settings = buildSettings ++ Seq(publishArtifact := false)
+    ).dependsOn(
+        av % "it->it;it->test;test->test;compile->compile",
+        ba % "it->it;it->test;test->test;compile->compile")
+     .configs(IntegrationTest)
 
 }

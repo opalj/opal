@@ -35,17 +35,46 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class JSR(branchoffset: Int) extends JSRInstruction {
+trait JSRLike extends JSRInstructionLike {
 
     final def opcode: Opcode = JSR.opcode
 
     final def mnemonic: String = "jsr"
 
     final def length: Int = 3
-
 }
+
+case class JSR(branchoffset: Int) extends JSRInstruction with JSRLike
+
+/**
+ * Defines constants and factory methods.
+ *
+ * @author Malte Limmeroth
+ */
 object JSR {
 
     final val opcode = 168
 
+    /**
+     * Creates [[LabeledJSR]] instructions with a `Symbol` as the branch target.
+     */
+    def apply(branchTarget: Symbol): LabeledJSR = LabeledJSR(branchTarget)
+}
+
+case class LabeledJSR(
+        branchTarget: Symbol
+) extends LabeledUnconditionalBranchInstruction with JSRLike {
+
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): JSRInstruction = {
+        val branchoffset = pcs(branchTarget) - currentPC
+        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
+            JSR_W(branchoffset)
+        } else {
+            JSR(branchoffset)
+        }
+    }
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        this == code.instructions(otherPC)
+    }
 }

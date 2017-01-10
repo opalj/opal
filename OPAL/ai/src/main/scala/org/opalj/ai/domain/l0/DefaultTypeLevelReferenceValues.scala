@@ -229,8 +229,9 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
             target.ReferenceValue(origin, theUpperTypeBound)
+        }
     }
 
     /**
