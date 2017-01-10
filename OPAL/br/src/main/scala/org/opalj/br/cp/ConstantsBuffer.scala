@@ -132,7 +132,7 @@ class ConstantsBuffer private (
     }
 
     //
-    // OTHER CPEntries 
+    // OTHER CPEntries
     // (These entries are always referenced using an unsigned short value.)
     //
 
@@ -282,8 +282,8 @@ object ConstantsBuffer {
      *          Furthermore, a [[ConstantPoolException]] if the maximum size of the pool
      *          (65535 entries) is exceeded.
      *
-     * @param   ldcs the set of unique LDC instructions. For each constant referred to by an LDC
-     *          instruction we (need to) create the required ConstantPool entry right away to
+     * @param   ldcs The set of unique LDC instructions. For each constant referred to by an LDC
+     *          instruction we (need to) create the required `ConstantPool` entry right away to
      *          ensure the index is an unsigned byte value.
      *          To collect a [[org.opalj.br.ClassFile]]'s ldc instructions use [[collectLDCs]].
      */
@@ -295,17 +295,18 @@ object ConstantsBuffer {
 
         /*
         The basic idea is to first add the referenced constant pool entries (which always use two
-        byte references) and afterwards create the LDC related constant pool entries. 
+        byte references) and afterwards create the LDC related constant pool entries.
         For the first phase the pool's nextIndex is set to the first index that is required by the
-        referenced entries. After that nextIndex is set to 1 and all LDC relate entries are created.
-        
+        referenced entries. After that, nextIndex is set to 1 and all LDC relate entries
+        are created.
+
         The only exception are the CPClass entries they strictly need to be processed first
         to ensure that – indirect references (e.g., due to a method handle) - never lead to invalid
         indexes!
         */
         val (ldClasses, ldOtherConstants) = ldcs partition { ldc ⇒ ldc.isInstanceOf[LoadClass] }
 
-        // 1. let's add the referenced CONSTANT_UTF8 entries required by LoadClass instructions 
+        // 1. let's add the referenced CONSTANT_UTF8 entries required by LoadClass instructions
         var nextIndexAfterLDCRelatedEntries = 1 + ldcs.size
         implicit val constantsBuffer = new ConstantsBuffer(nextIndexAfterLDCRelatedEntries, buffer)
         import constantsBuffer._
@@ -322,14 +323,16 @@ object ConstantsBuffer {
         ldOtherConstants foreach {
             case LoadMethodType(value)   ⇒ CPEUtf8(value.toJVMDescriptor)
             case LoadMethodHandle(value) ⇒ CPERefOfCPEMethodHandle(value)
+            case LoadString(value)       ⇒ CPEUtf8(value)
             case _                       ⇒ // the other entries do not reference other entries
         }
+        nextIndexAfterLDCRelatedEntries = constantsBuffer.nextIndex
 
         // 4.   Add all other CONSTANT_(INTEGER|FLOAT|STRING|METHODHANDLE|METHODTYPE) entries
         constantsBuffer.nextIndex = nextLDCIndex
         ldOtherConstants foreach { getOrCreateCPEntry }
 
-        // 5.   Correct nextIndex to point to the first not used index; all previous indexes 
+        // 5.   Correct nextIndex to point to the first not used index; all previous indexes
         //      are now used!
         constantsBuffer.nextIndex = nextIndexAfterLDCRelatedEntries
 
