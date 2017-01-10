@@ -34,7 +34,7 @@ package util
  *
  * @author Michael Eichberg
  */
-class Nanoseconds(val timeSpan: Long) extends AnyVal {
+class Nanoseconds(val timeSpan: Long) extends AnyVal with Serializable {
 
     final def +(other: Nanoseconds): Nanoseconds = {
         new Nanoseconds(this.timeSpan + other.timeSpan)

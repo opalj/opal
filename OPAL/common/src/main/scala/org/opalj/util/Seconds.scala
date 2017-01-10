@@ -34,7 +34,7 @@ package util
  *
  * @author Michael Eichberg
  */
-class Seconds(val timeSpan: Double) extends AnyVal {
+class Seconds(val timeSpan: Double) extends AnyVal with Serializable {
 
     def toString(withUnit: Boolean): String = {
         val time = f"$timeSpan%.4f"
