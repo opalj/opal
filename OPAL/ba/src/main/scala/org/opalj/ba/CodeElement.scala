@@ -52,12 +52,12 @@ object CodeElement {
     /**
      * Converts [[InstructionLike]]s to [[InstructionElement]].
      */
-    implicit def instructionToMethodElement(instruction: InstructionLike): InstructionElement = {
+    implicit def instructionToInstructionElement(instruction: InstructionLike): InstructionElement = {
         InstructionElement(instruction)
     }
 
     /**
-     * Converts a tuple of [[InstructionLike]] and [[AnyRef]] (a annotated instruction) to
+     * Converts a tuple of [[InstructionLike]] and [[AnyRef]] (an annotated instruction) to
      * [[AnnotatedInstructionElement]].
      */
     implicit def annotatedInstToMethodElement(ai: (InstructionLike, AnyRef)): AnnotatedInstructionElement = new AnnotatedInstructionElement(ai)

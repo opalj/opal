@@ -31,7 +31,6 @@ package ba
 
 import org.opalj.bi.ACC_STATIC
 import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.InstructionLike
 import org.opalj.br.instructions.LabeledInstruction
 import org.opalj.br.instructions.WIDE
 
@@ -42,11 +41,14 @@ import org.opalj.br.instructions.WIDE
  *
  * @author Malte Limmeroth
  */
-case class CodeAttributeBuilder private (
-        private var codeElements:             IndexedSeq[CodeElement],
-        private var maxStack:                 Option[Int],
-        private var maxLocals:                Option[Int],
-        private var labeledExceptionHandlers: Option[br.ExceptionHandlers] //TODO: create a type and resolve
+class CodeAttributeBuilder private[ba] (
+        private val instructions:      Array[Instruction],
+        private val labels:            Map[Symbol, br.PC],
+        private val annotations:       Map[br.PC, AnyRef],
+        private var maxStack:          Option[Int],
+        private var maxLocals:         Option[Int],
+        private var exceptionHandlers: br.ExceptionHandlers,
+        private var attributes:        br.Attributes
 ) {
     /**
      * Defines the max_stack value.
@@ -66,65 +68,15 @@ case class CodeAttributeBuilder private (
         this
     }
 
-    private[ba] def buildCodeAndAnnotations(
+    def buildCodeAndAnnotations(
         accessFlags: Int,
         name:        String,
         descriptor:  br.MethodDescriptor
     ): (br.Code, Map[br.PC, AnyRef]) = {
-        val instructionsWithPlaceholders = scala.collection.mutable.ArrayBuffer.empty[CodeElement]
-
-        //fill the array with `null` for PCs representing instruction arguments
-        var nextPC = 0
-        var currentPC = 0
-        var modifiedByWide = false
-        codeElements foreach { i ⇒
-            instructionsWithPlaceholders.append(i)
-
-            i match {
-                case InstructionElement(inst) ⇒
-                    currentPC = nextPC
-                    nextPC = inst.indexOfNextInstruction(currentPC, modifiedByWide)
-                    for (j ← 1 until nextPC - currentPC) {
-                        instructionsWithPlaceholders.append(null)
-                    }
-                    modifiedByWide = false
-                    if (inst == WIDE) {
-                        modifiedByWide = true
-                    }
-                case LabelElement(l) ⇒ //nothing to do here, were just creating blanks for arguments
-            }
-        }
-
-        //calculate the PCs of all labels
-        var labels: Map[Symbol, br.PC] = Map()
-        for ((LabelElement(label), index) ← instructionsWithPlaceholders.zipWithIndex) {
-            labels += (label → (index - labels.size))
-        }
-
-        val annotations = instructionsWithPlaceholders.zipWithIndex.collect {
-            case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)
-        }.toMap
-
-        val instructionLikesOnly = instructionsWithPlaceholders.collect {
-            case InstructionElement(i) ⇒ i
-            case null                  ⇒ null
-        }
-
-        for ((instruction: LabeledInstruction, index: Int) ← instructionLikesOnly.zipWithIndex) {
-            instructionLikesOnly.update(index, instruction.resolveJumpTargets(index, labels))
-        }
-
-        val exceptionHandlers = this.labeledExceptionHandlers.getOrElse(IndexedSeq.empty)
-
-        val finalInstructions = instructionLikesOnly.collect {
-            case i: InstructionLike ⇒ i.asInstanceOf[Instruction]
-            case null               ⇒ null
-        }.toArray
-
         val _maxLocals = br.Code.computeMaxLocals(
             (ACC_STATIC.mask & accessFlags) == 0,
             descriptor,
-            finalInstructions
+            instructions
         )
 
         val warnMessage = s"you defined %s of method '${descriptor.toJava(name)}' too small;"+
@@ -137,7 +89,7 @@ case class CodeAttributeBuilder private (
         }
 
         val _maxStack = br.Code.computeMaxStack(
-            instructions = finalInstructions,
+            instructions = instructions,
             exceptionHandlers = exceptionHandlers
         )
 
@@ -150,31 +102,28 @@ case class CodeAttributeBuilder private (
         val code = br.Code(
             maxStack = maxStack.getOrElse(_maxStack),
             maxLocals = maxLocals.getOrElse(_maxLocals),
-            instructions = finalInstructions,
+            instructions = instructions,
             exceptionHandlers = exceptionHandlers,
-            attributes = buildCodeAttributes
+            attributes = attributes
         )
 
         (code, annotations)
     }
-
-    private def buildCodeAttributes: br.Attributes = {
-        //TODO: LineNumberTable, LocalVariableTable, LocalVariableTypeTable, StackMapTable
-        IndexedSeq.empty
-    }
 }
 
 /**
- * Defines the factory method to create a [[CodeAttributeBuilder]].
+ * Factory method for creating a [[CodeAttributeBuilder]].
  *
  * @author Malte Limmeroth
  */
 object CODE {
     /**
-     * Creates a new [[CodeAttributeBuilder]] with the given [[CodeElement]]s which will generate
-     * the [[org.opalj.br.Code]]s instructions.
+     * Creates a new [[CodeAttributeBuilder]] with the given [[CodeElement]]s converted to
+     * [[org.opalj.br.instructions.Instruction]]. In case of
+     * [[org.opalj.br.instructions.LabeledInstruction]]s the label is already resolved. The
+     * annotations are resolved to program counters aswell.
      *
-     * @see [[CodeElement]]
+     * @see [[CodeElement]] for possible arguments.
      */
     def apply(codeElements: CodeElement*): CodeAttributeBuilder = {
         require(
@@ -201,6 +150,69 @@ object CODE {
             }
         }
 
-        CodeAttributeBuilder(codeElements.toIndexedSeq, None, None, None)
+        val (instructions, labels, annotations) = buildInstructionArray(codeElements.toIndexedSeq)
+
+        new CodeAttributeBuilder(
+            instructions,
+            labels,
+            annotations,
+            None,
+            None,
+            IndexedSeq.empty,
+            IndexedSeq.empty
+        )
+    }
+
+    private def buildInstructionArray(codeElements: IndexedSeq[CodeElement]): (Array[Instruction], Map[Symbol, br.PC], Map[br.PC, AnyRef]) = {
+        val instructionsWithPlaceholders = scala.collection.mutable.ArrayBuffer.empty[CodeElement]
+
+        //fill the array with `null` for PCs representing instruction arguments
+        var nextPC = 0
+        var currentPC = 0
+        var modifiedByWide = false
+        codeElements foreach { e ⇒
+            instructionsWithPlaceholders.append(e)
+
+            e match {
+                case InstructionElement(inst) ⇒
+                    currentPC = nextPC
+                    nextPC = inst.indexOfNextInstruction(currentPC, modifiedByWide)
+                    for (j ← 1 until nextPC - currentPC) {
+                        instructionsWithPlaceholders.append(null)
+                    }
+                    modifiedByWide = false
+                    if (inst == WIDE) {
+                        modifiedByWide = true
+                    }
+                case LabelElement(l) ⇒
+            }
+        }
+
+        //calculate the PCs of all labels
+        var labels: Map[Symbol, br.PC] = Map()
+        for ((LabelElement(label), index) ← instructionsWithPlaceholders.zipWithIndex) {
+            instructionsWithPlaceholders.remove(index - labels.size)
+            labels += (label → (index - labels.size))
+        }
+
+        val annotations = instructionsWithPlaceholders.zipWithIndex.collect {
+            case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)
+        }.toMap
+
+        val instructionLikesOnly = instructionsWithPlaceholders.collect {
+            case InstructionElement(i) ⇒ i
+            case null                  ⇒ null
+        }
+
+        val instructions = instructionLikesOnly.zipWithIndex.map { tuple ⇒
+            val (instruction, index) = tuple
+            if (instruction != null) {
+                instruction.resolveJumpTargets(index, labels)
+            } else {
+                null
+            }
+        }
+
+        (instructions.toArray, labels, annotations)
     }
 }

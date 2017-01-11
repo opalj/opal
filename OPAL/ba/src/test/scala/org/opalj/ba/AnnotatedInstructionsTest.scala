@@ -50,7 +50,9 @@ class AnnotatedInstructionsTest extends FlatSpec {
     val testClass = (PUBLIC CLASS "Test" EXTENDS "java/lang/Object")(
         PUBLIC("<init>", "()", "V")(
             CODE(
+                'UnUsedLabel1,
                 ALOAD_0 → "MarkerAnnotation1",
+                'UnUsedLabel2,
                 INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
                 RETURN → "MarkerAnnotation2"
             )

@@ -92,7 +92,7 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
         parameters: String,
         returnType: String
     ): MethodBuilder = {
-        MethodBuilder(
+        new MethodBuilder(
             accessFlags = accessFlags,
             name = name,
             descriptor = br.MethodDescriptor(parameters + returnType)

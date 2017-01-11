@@ -35,12 +35,13 @@ package ba
  *
  * @author Malte Limmeroth
  */
-case class MethodBuilder(
+class MethodBuilder(
         private var accessFlags: Int,
         private var name:        String,
         private var descriptor:  br.MethodDescriptor,
-        private var attributes:  br.Attributes                = IndexedSeq.empty,
-        private var body:        Option[CodeAttributeBuilder] = None
+        private var attributes:  br.Attributes       = IndexedSeq.empty,
+        private var body:        Option[br.Code]     = None,
+        private var annotations: Map[br.PC, AnyRef]  = Map.empty
 ) extends ClassFileMemberBuilder {
     override private[ba] def addAccessFlags(accessFlags: Int): this.type = {
         this.accessFlags = this.accessFlags | accessFlags
@@ -55,8 +56,9 @@ case class MethodBuilder(
      * @see [[CodeAttributeBuilder]]
      */
     def apply(codeAttributeBuilder: CodeAttributeBuilder): this.type = {
-        body = Some(codeAttributeBuilder)
-
+        val (code, tempAnnotations) = codeAttributeBuilder.buildCodeAndAnnotations(accessFlags, name, descriptor)
+        body = Some(code)
+        annotations = tempAnnotations
         this
     }
 
@@ -65,11 +67,8 @@ case class MethodBuilder(
      */
     def buildMethod: (br.Method, Map[br.PC, AnyRef]) = {
         var tempAttributes = attributes
-        var annotations = Map.empty[br.PC, AnyRef]
         if (body.isDefined) {
-            val (code, tempAnnotations) = body.get.buildCodeAndAnnotations(accessFlags, name, descriptor)
-            tempAttributes = tempAttributes :+ code
-            annotations = tempAnnotations
+            tempAttributes = tempAttributes :+ body.get
         }
 
         val method = br.Method(
