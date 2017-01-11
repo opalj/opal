@@ -39,4 +39,8 @@ package reader
  */
 trait Java8Framework extends Java7Framework with Java8LibraryFramework
 
-object Java8Framework extends Java8Framework
+object Java8Framework extends Java8Framework {
+
+    final override def loadsInterfacesOnly: Boolean = false
+
+}
