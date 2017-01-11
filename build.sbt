@@ -30,6 +30,8 @@ resolvers in ThisBuild += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/
 parallelExecution in ThisBuild := false
 parallelExecution in Global := false
 
+logBuffered in ThisBuild := false
+
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
 testOptions in ThisBuild := {

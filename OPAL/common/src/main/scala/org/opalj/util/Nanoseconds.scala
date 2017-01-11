@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,7 +34,7 @@ package util
  *
  * @author Michael Eichberg
  */
-class Nanoseconds(val timeSpan: Long) extends AnyVal {
+class Nanoseconds(val timeSpan: Long) extends AnyVal with Serializable {
 
     final def +(other: Nanoseconds): Nanoseconds = {
         new Nanoseconds(this.timeSpan + other.timeSpan)

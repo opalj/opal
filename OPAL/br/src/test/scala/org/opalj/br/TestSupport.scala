@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,12 +31,16 @@ package br
 
 import java.net.URL
 
+import org.opalj.util.gc
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bytecode.RTJar
+import org.opalj.br.reader.{ClassFileBinding ⇒ ClassFileReader}
 import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestSupport.allBITestJARs
 
 /**
  * Common helper and factory methods required by tests.
@@ -53,7 +57,7 @@ object TestSupport {
     def readJREClassFiles(
         cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
     ): Seq[(ClassFile, URL)] = {
-        val reader = new Java8FrameworkWithCaching(cache)
+        val reader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
         val classFiles = reader.ClassFiles(JRELibraryFolder)
         if (classFiles.isEmpty) {
             sys.error(s"loading the JRE ($JRELibraryFolder) failed")
@@ -65,7 +69,7 @@ object TestSupport {
     def readRTJarClassFiles(
         cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
     ): Seq[(ClassFile, URL)] = {
-        val reader = new Java8FrameworkWithCaching(cache)
+        val reader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
         val classFiles = reader.ClassFiles(RTJar)
         if (classFiles.isEmpty) {
             sys.error(s"loading the JRE ($JRELibraryFolder) failed")
@@ -83,6 +87,44 @@ object TestSupport {
 
     def brProject(projectJARName: String): Project[URL] = {
         Project(locateTestResources(projectJARName, "br"))
+    }
+
+    def allBIProjects(
+        projectReader: ClassFileReader         = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache),
+        jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
+    ): Iterator[(String, Project[URL])] = {
+        if (jreReader.isDefined) {
+            val theJREReader = jreReader.get
+            val jreClassFiles = theJREReader.ClassFiles(RTJar)
+            allBITestJARs().toIterator.map { biProjectJAR ⇒
+                val projectClassFiles = projectReader.ClassFiles(biProjectJAR)
+                (
+                    biProjectJAR.getName,
+                    Project(projectClassFiles, jreClassFiles, theJREReader.loadsInterfacesOnly)
+                )
+            }
+        } else {
+            allBITestJARs().toIterator.map { biProjectJAR ⇒
+                (
+                    biProjectJAR.getName,
+                    Project(projectReader.ClassFiles(biProjectJAR), Traversable.empty, true)
+                )
+            }
+        }
+    }
+
+    def foreachBIProject(
+        projectReader: ClassFileReader         = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache),
+        jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
+    )(
+        f: (String, Project[URL]) ⇒ Unit
+    ): Unit = {
+        val it = allBIProjects(projectReader, jreReader)
+        while (it.hasNext) {
+            val (name, project) = it.next
+            f(name, project)
+            gc();
+        }
     }
 
 }

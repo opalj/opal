@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -39,4 +39,4 @@ package reader
  */
 class Java9FrameworkWithLambdaExpressionsSupportAndCaching(
     cache: BytecodeInstructionsCache
-) extends Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache) with Java9LibraryFramework
+) extends Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)

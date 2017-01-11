@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -124,6 +124,11 @@ object TestSupport {
         allJARs
     }
 
+    /**
+     * Returns all JARs created based on the set of test fixtures and the explicitly selected JARs.
+     *
+     * @note This set never includes the JRE.
+     */
     def allBITestJARs(): Traversable[File] = allManagedBITestJARs() ++ allUnmanagedBITestJARs
 
 }
@@ -133,4 +138,3 @@ object JARsFileFilter extends FileFilter {
         path.isFile && path.getName.endsWith(".jar") && path.canRead
     }
 }
-

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -655,7 +655,7 @@ final class ClassFile private (
         name:        String,
         descriptor:  MethodDescriptor
     ): Option[Method] = {
-        findMethod(name, descriptor).flatMap { candidateMethod ⇒
+        findMethod(name, descriptor).filter(m ⇒ !m.isStatic).flatMap { candidateMethod ⇒
             if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName))
                 Some(candidateMethod)
             else

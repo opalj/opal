@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -157,7 +157,7 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
         int j = pureCyclicRecursiveCall3(i);
         int k = impureRecursiveCallWithDependency1(j);
         int l = impureCallsSystemFunction(k);
-        return pureCyclicRecursiveCall1(k);
+        return pureCyclicRecursiveCall1(l);
     }
 
     static int impureComplex1(int i) {

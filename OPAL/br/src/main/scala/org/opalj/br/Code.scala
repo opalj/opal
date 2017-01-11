@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -1314,13 +1314,13 @@ object Code {
         do {
             val i: Instruction = instructions(pc)
             if (i == WIDE) {
-                modifiedByWide
+                modifiedByWide = true
                 pc += 1
             } else {
-                modifiedByWide = false
                 if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters)
                     maxRegisters = i.indexOfWrittenLocal
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
+                modifiedByWide = false
             }
 
         } while (pc < maxPC)
