@@ -195,10 +195,10 @@ object DominatorTree {
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
      * [0..maxNode], although not all ids need to be used.
      *
-     * @param   startNode The id of the unique root node of the graph. (E.g., (pc=)"0" for the CFG
+     * @param   startNode The id of the root node of the graph. (E.g., (pc=)"0" for the CFG
      *          computed for some method or the id of the artificial start node created when
      *          computing a reverse CFG.
-     * @param   hasStartNodePredecessors If `true` an artificial start node with the id `maxNode+1`
+     * @param   startNodeHasPredecessors If `true` an artificial start node with the id `maxNode+1`
      *          will be created and added to the graph.
      * @param   foreachSuccessorOf A function that given a node subsequently executes the given
      *          function for each direct successor of the given node.
