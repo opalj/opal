@@ -30,43 +30,36 @@ package org.opalj.br
 package cfg
 
 import org.junit.runner.RunWith
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
-import java.io.File
-import java.io.FilenameFilter
+
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 
-import org.opalj.util.PerformanceEvaluation._
+import org.opalj.util.PerformanceEvaluation.timed
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.TestSupport.foreachBIProject
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.MethodInfo
 
 /**
- * Just tests if we can compute the stack depth for a wide range of methods.
+ * Just tests if we can compute the stack depth and max locals for a wide range of methods.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class StackDepthComputationTest extends FunSpec with Matchers {
+class CodePropertiesTest extends FunSuite {
 
-    def analyzeProject(name: String, project: SomeProject): Unit = {
-        var analyzedMethodsCount: Int = 0
-        time {
-            analyzedMethodsCount = doAnalyzeProject(name, project)
-        } { t ⇒ info(s"the analysis of $analyzedMethodsCount methods took ${t.toSeconds}") }
+    def analyzeProject(name: String, project: SomeProject): String = {
+        val (t,analyzedMethodsCount) = timed {doAnalyzeProject(name, project)        }
+         s"$name: the analysis of $analyzedMethodsCount methods took ${t.toSeconds}"
     }
 
     def doAnalyzeProject(name: String, project: SomeProject): Int = {
 
-        val classHierarchy = project.classHierarchy
+        val ch = project.classHierarchy
 
         val analyzedMethodsCount = new AtomicInteger(0)
         val errors = new ConcurrentLinkedQueue[String]
@@ -78,15 +71,19 @@ class StackDepthComputationTest extends FunSpec with Matchers {
             val MethodInfo(_, classFile, method) = m
             val code = method.body.get
             val instructions = code.instructions
-            val exceptionHandlers = code.exceptionHandlers
+            val eh = code.exceptionHandlers
             val specifiedMaxStack = code.maxStack
+
+            //Code.computeMaxLocalsRequiredByCode(instructions)
+
             try {
-                val computedMaxStack = computeMaxStack(instructions, classHierarchy, exceptionHandlers)
+                val computedMaxStack = computeMaxStack(instructions, ch, eh)
                 analyzedMethodsCount.incrementAndGet()
                 if (specifiedMaxStack < computedMaxStack) {
                     errors.add(
-                        s"the computed max stack is (too?) large for ${method.toJava(classFile)}}: "+
-                            s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed):\n"+code.toString
+                        s"the computed max stack is too large for ${method.toJava(classFile)}}: "+
+                            s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed):\n"+
+                            code.toString
                     )
                 }
             } catch {
@@ -102,28 +99,19 @@ class StackDepthComputationTest extends FunSpec with Matchers {
     //
     // Configuration of the tested projects
     //
+    var results = List.empty[String]
+        foreachBIProject(/* we use the default reader */) { (name,project) ⇒
+            try {
+                results ::= analyzeProject(name, project)
+            } catch {
+                case e : Exception => fail(s"computation of maxStack/maxLocals failed",e)
+            }
+        }
+        info(results.mkString("computation of maxStack/maxLocals succeeded for:\n\t","\n\t","\n"))
 
-    describe("computing the stack depth (Code.max_stack)") {
-
-        val cache = new BytecodeInstructionsCache
-        val reader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
-        import reader.AllClassFiles
-
-        it(s"should be possible for all methods of the JDK ($JRELibraryFolder)") {
+        test(s"computation of maxStack/maxLocals for all methods of the JDK ($JRELibraryFolder)") {
             val project = TestSupport.createJREProject
             analyzeProject("JDK", project)
         }
 
-        val classFilesFolder = locateTestResources("classfiles", "bi")
-        val filter = new FilenameFilter() {
-            def accept(dir: File, name: String) = { name.endsWith(".jar") }
-        }
-        val jars = classFilesFolder.listFiles(filter)
-        jars.foreach { jar ⇒
-            it(s"should be possible for all methods of $jar") {
-                val project = Project(AllClassFiles(Seq(jar)), Traversable.empty, true)
-                analyzeProject(jar.getName, project)
-            }
-        }
-    }
 }
