@@ -157,7 +157,7 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
         int j = pureCyclicRecursiveCall3(i);
         int k = impureRecursiveCallWithDependency1(j);
         int l = impureCallsSystemFunction(k);
-        return pureCyclicRecursiveCall1(k);
+        return pureCyclicRecursiveCall1(l);
     }
 
     static int impureComplex1(int i) {
