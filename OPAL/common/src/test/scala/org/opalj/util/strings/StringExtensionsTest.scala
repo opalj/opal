@@ -1,6 +1,6 @@
 /*
  * BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -89,6 +89,23 @@ class StringExtensionsTest extends FunSpec with Matchers {
             c1.leftIncludes(c2) shouldBe (false)
             c1.leftIncludes(c3) shouldBe (false)
         }
+
+      it("should rightInclude a another ConcreteString with the same value") {
+        val c1: StringExtension = ConcreteString("OPAL rocks!")
+        val c2: StringExtension = ConcreteString("OPAL rocks!")
+
+        c1.rightIncludes(c2) shouldBe (true)
+        c2.rightIncludes(c1) shouldBe (true)
+      }
+
+      it("should not leftInclude other StringExtensions") {
+        val c1: StringExtension = ConcreteString("OPAL does")
+        val c2: StringExtension = ConcreteString("OPAL does rock!")
+        val c3 = ConcreteString("")
+
+        c1.rightIncludes(c2) shouldBe (false)
+        c1.rightIncludes(c3) shouldBe (false)
+      }
     }
 
     describe("a StringFragment") {
