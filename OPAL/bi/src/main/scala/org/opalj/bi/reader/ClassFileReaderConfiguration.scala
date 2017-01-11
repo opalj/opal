@@ -37,6 +37,18 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 
 /**
+ * Defines various settings related to reading/processing class files. To change
+ * the default confiration, override the respective `val` using '''early initializers'''!
+ *
+ * @example
+ * {{{
+ * class ConfiguredFramework extends {
+ *      override implicit val logContext: LogContext = theLogContext
+ *      override implicit val config: Config = theConfig
+ * } with Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+ * new ConfiguredFramework
+ * }}}
+ *
  * @author Michael Eichberg
  */
 trait ClassFileReaderConfiguration {
