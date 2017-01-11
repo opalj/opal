@@ -1320,7 +1320,7 @@ object Code {
                 if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters)
                     maxRegisters = i.indexOfWrittenLocal
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
-                modifiedByWide = false                
+                modifiedByWide = false
             }
 
         } while (pc < maxPC)

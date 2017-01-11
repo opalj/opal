@@ -53,8 +53,8 @@ import org.opalj.br.analyses.MethodInfo
 class CodePropertiesTest extends FunSuite {
 
     def analyzeProject(name: String, project: SomeProject): String = {
-        val (t,analyzedMethodsCount) = timed {doAnalyzeProject(name, project)        }
-         s"$name: the analysis of $analyzedMethodsCount methods took ${t.toSeconds}"
+        val (t, analyzedMethodsCount) = timed { doAnalyzeProject(name, project) }
+        s"$name: the analysis of $analyzedMethodsCount methods took ${t.toSeconds}"
     }
 
     def doAnalyzeProject(name: String, project: SomeProject): Int = {
@@ -100,18 +100,18 @@ class CodePropertiesTest extends FunSuite {
     // Configuration of the tested projects
     //
     var results = List.empty[String]
-        foreachBIProject(/* we use the default reader */) { (name,project) ⇒
-            try {
-                results ::= analyzeProject(name, project)
-            } catch {
-                case e : Exception => fail(s"computation of maxStack/maxLocals failed",e)
-            }
+    foreachBIProject( /* we use the default reader */ ) { (name, project) ⇒
+        try {
+            results ::= analyzeProject(name, project)
+        } catch {
+            case e: Exception ⇒ fail(s"computation of maxStack/maxLocals failed", e)
         }
-        info(results.mkString("computation of maxStack/maxLocals succeeded for:\n\t","\n\t","\n"))
+    }
+    info(results.mkString("computation of maxStack/maxLocals succeeded for:\n\t", "\n\t", "\n"))
 
-        test(s"computation of maxStack/maxLocals for all methods of the JDK ($JRELibraryFolder)") {
-            val project = TestSupport.createJREProject
-            analyzeProject("JDK", project)
-        }
+    test(s"computation of maxStack/maxLocals for all methods of the JDK ($JRELibraryFolder)") {
+        val project = TestSupport.createJREProject
+        analyzeProject("JDK", project)
+    }
 
 }
