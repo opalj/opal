@@ -151,7 +151,7 @@ object ControlDependenceGraph {
 
         val pdtf =
             PostDominatorTree(
-                isExitNode, foreachExitNode,foreachSuccessorOf,foreachPredecessorOf,maxNode
+                isExitNode, foreachExitNode, foreachSuccessorOf, foreachPredecessorOf, maxNode
             )
 
         this(pdtf, DominanceFrontiers(pdtf, isValidNode))

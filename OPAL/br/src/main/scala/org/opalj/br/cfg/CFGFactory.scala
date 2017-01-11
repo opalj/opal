@@ -261,8 +261,8 @@ object CFGFactory {
                 case JSR.opcode | JSR_W.opcode ⇒
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     val subroutinePC = pc + jsrInstr.branchoffset
-                    val thisSubroutineReturnPCs = 
-						subroutineReturnPCs.getOrElse(subroutinePC, UShortSet.empty)
+                    val thisSubroutineReturnPCs =
+                        subroutineReturnPCs.getOrElse(subroutinePC, UShortSet.empty)
                     subroutineReturnPCs += (
                         subroutinePC →
                         (jsrInstr.indexOfNextInstruction(pc) +≈: thisSubroutineReturnPCs)
