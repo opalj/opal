@@ -341,7 +341,8 @@ class Project[Source] private (
         // IDEA
         // 0.   We start with the leaf nodes of the class hierarchy and store for each method
         //      the set of overriding methods (recall that the overrides relation is reflexive).
-        //      Hence, initially the set contains the method it self.
+        //      Hence, initially the set of overrding methods for a method contains the method it
+        //      self.
         //
         // 1.   After that the direct superclass is scheduled to be analyzed if all subclasses
         //      are analyzed. The superclass then tests for each overridable method if it is
@@ -1499,18 +1500,5 @@ object Project {
         }
 
         exs
-    }
-}
-
-case class MethodInfo[Source](
-    source:    Source,
-    classFile: ClassFile,
-    method:    Method
-)
-
-object BasicMethodInfo {
-
-    def unapply(methodInfo: MethodInfo[_]): Some[(ClassFile, Method)] = {
-        Some((methodInfo.classFile, methodInfo.method))
     }
 }
