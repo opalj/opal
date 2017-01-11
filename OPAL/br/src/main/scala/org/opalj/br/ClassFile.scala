@@ -655,7 +655,7 @@ final class ClassFile private (
         name:        String,
         descriptor:  MethodDescriptor
     ): Option[Method] = {
-        findMethod(name, descriptor).flatMap { candidateMethod ⇒
+        findMethod(name, descriptor).filter(m ⇒ !m.isStatic).flatMap { candidateMethod ⇒
             if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName))
                 Some(candidateMethod)
             else

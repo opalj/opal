@@ -270,7 +270,8 @@ final class Method private (
 
     def toJava(): String = {
         val visibility = VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("")
-        visibility + descriptor.toJava(name)
+        val static = if (isStatic) "static " else ""
+        visibility + static + descriptor.toJava(name)
     }
 
     def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)

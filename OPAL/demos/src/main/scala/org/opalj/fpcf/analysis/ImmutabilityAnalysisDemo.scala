@@ -39,7 +39,7 @@ import org.opalj.br.ClassFile
 import org.opalj.fpcf.properties.ObjectImmutability
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.IsExtensible
-import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.gc
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Nanoseconds
 
@@ -78,7 +78,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
         List(1, 2, 4, 8, 16, 32, 64).foreach { parallelismLevel ⇒
             performanceData = Map.empty
-            PerformanceEvaluation.gc()
+            gc()
 
             println(s"\nRunning analysis with $parallelismLevel thread(s):")
             r = time[() ⇒ String](10, 50, 15, analyze(project, parallelismLevel))(handleResults)
@@ -90,7 +90,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
                     mkString("\n")
             )
 
-            PerformanceEvaluation.gc()
+            gc()
         }
         BasicReport(r())
     }

@@ -53,4 +53,7 @@ class Java8FrameworkWithCaching(
         with LocalVariableTypeTable_attributeBinding
         with Exceptions_attributeBinding
         with CachedBytecodeReaderAndBinding
-        with CodeReader
+        with CodeReader {
+
+    final override def loadsInterfacesOnly: Boolean = false
+}
