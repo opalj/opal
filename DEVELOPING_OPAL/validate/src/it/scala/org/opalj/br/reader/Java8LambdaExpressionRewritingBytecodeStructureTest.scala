@@ -53,7 +53,6 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 
-
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
  *

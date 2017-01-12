@@ -89,10 +89,25 @@ object TestSupport {
         Project(locateTestResources(projectJARName, "br"))
     }
 
+    /**
+     * @note     The projects are not immediately created to facilitate the integration with
+     *           ScalaTest.
+     * @example
+     * {{{
+     * allBIProjects() foreach { biProject =>
+     *    // DO NOT CREATE THE PROJECT EAGERLY; DELAY IT UNTIL THE TEST'S BODY IS EXECUTED!
+     *    val (name, createProject) = biProject
+     *    test(s"computation of ... for all methods of $name") {
+     *       val count = analyzeProject("JDK", createProject)
+     *       info(s"computation of ... succeeded for $count ...")
+     *    }
+     * }
+     * }}}
+     */
     def allBIProjects(
         projectReader: ClassFileReader         = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache),
         jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
-    ): Iterator[(String, Project[URL])] = {
+    ): Iterator[(String, () ⇒ Project[URL])] = {
         if (jreReader.isDefined) {
             val theJREReader = jreReader.get
             val jreClassFiles = theJREReader.ClassFiles(RTJar)
@@ -100,19 +115,27 @@ object TestSupport {
                 val projectClassFiles = projectReader.ClassFiles(biProjectJAR)
                 (
                     biProjectJAR.getName,
-                    Project(projectClassFiles, jreClassFiles, theJREReader.loadsInterfacesOnly)
+                    () ⇒ {
+                        Project(projectClassFiles, jreClassFiles, theJREReader.loadsInterfacesOnly)
+                    }
                 )
             }
         } else {
             allBITestJARs().toIterator.map { biProjectJAR ⇒
                 (
                     biProjectJAR.getName,
-                    Project(projectReader.ClassFiles(biProjectJAR), Traversable.empty, true)
+                    () ⇒ {
+                        Project(projectReader.ClassFiles(biProjectJAR), Traversable.empty, true)
+                    }
                 )
             }
         }
     }
 
+    /**
+     * @note     Using this method in combination with Scalatest, where the test cases are generated
+     *             inside the loop, may lead to the situation that the project's are not gc'ed!
+     */
     def foreachBIProject(
         projectReader: ClassFileReader         = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache),
         jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
@@ -122,7 +145,7 @@ object TestSupport {
         val it = allBIProjects(projectReader, jreReader)
         while (it.hasNext) {
             val (name, project) = it.next
-            f(name, project)
+            f(name, project())
             gc();
         }
     }
