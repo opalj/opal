@@ -42,13 +42,9 @@ import org.opalj.collection.mutable.IntArrayStack
  * Let G be a control flow graph; Let X and Y be nodes in G; Y is control dependent on X iff
  * there exists a directed path P from X to Y with any Z in P \ X is not post-dominated by Y.
  *
- * Note that in the context of static analysis an invokation instruction that may throw an
+ * Note that in the context of static analysis an invocation instruction that may throw an
  * exception, which may result in a different control-flow, is also a `predicate` additionally to
  * all ifs and switches.
- *
- * @param   controlDependentOn Contains for each node of the graph (represented by its positive,
- *          unique int id) the information on which node it is directly dependent on or `-1` if
- *          the instruction is not control dependent on any other node.
  *
  * @author Michael Eichberg
  */
@@ -103,7 +99,8 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
  *
  * The control dependence graph is effectively directly based on the dominance frontiers computed
  * using the dominator tree for the reverse control-flow graph (aka post dominator tree).
- * The following example demonstrates this.
+ *
+ * @example The following example demonstrates this.
  * {{{
  * // A graph taken from the paper:
  * // Efficiently Computing Static Single Assignment Form and the Control Dependence Graph
@@ -111,9 +108,10 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
  *          (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) +=
  *          (6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) +=
  *          (11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
+ * import org.opalj.graphs.DominatorTreeFactory
  * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
  * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
- * val dtf = org.opalj.graphs.DominatorTreeFactory(0, false, foreachSuccessor, foreachPredecessor, 13)
+ * val dtf = DominatorTreeFactory(0, false, foreachSuccessor, foreachPredecessor, 13)
  * val isValidNode = (n : Int) => n>= 0 && n <= 13
  * org.opalj.io.writeAndOpen(dtf.dt.toDot(),"g",".dt.gv")
  * val df = org.opalj.graphs.DominanceFrontiers(dtf,isValidNode)
@@ -140,7 +138,7 @@ object ControlDependenceGraph {
      *      post-dominated by Y
      *  -   X is not post-dominated by Y
      *
-     * @return The triple `(`(Post)`[[DominatorTree]], [[DominanceFrontiers]], [[ControlDependencies]])`
+     * @return The tuple `(`(Post)`[[DominatorTree]], [[ControlDependencies]])`
      */
     def apply(
         isExitNode:           Int ⇒ Boolean,
@@ -153,10 +151,7 @@ object ControlDependenceGraph {
 
         val pdtf =
             PostDominatorTree(
-                isExitNode, foreachExitNode,
-                foreachSuccessorOf,
-                foreachPredecessorOf,
-                maxNode
+                isExitNode, foreachExitNode, foreachSuccessorOf, foreachPredecessorOf, maxNode
             )
 
         this(pdtf, DominanceFrontiers(pdtf, isValidNode))

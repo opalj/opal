@@ -65,26 +65,38 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
     val testResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
+        var successFull = false
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
             factoryCall ← body.collectInstructions { case i: INVOKESTATIC ⇒ i }
-            if factoryCall.declaringClass.fqn.matches("^Lambda\\$\\d+:\\d+$")
+            if factoryCall.declaringClass.fqn.matches("^Lambda\\$[A-Fa-f0-9]+:[A-Fa-f0-9]+$")
+            if { successFull = true; successFull }
             annotations = method.runtimeVisibleAnnotations
         } {
             val expectedTarget = getInvokedMethod(project, annotations)
-            expectedTarget should be('defined)
+            if (expectedTarget.isEmpty) {
+                val message =
+                    annotations.
+                        filter(_.annotationType == InvokedMethod).
+                        mkString("\n\t", "\n\t", "\n")
+                fail(
+                    s"the specified invoked method ${message} is not defined "+
+                        classFile.methods.map(_.name).mkString("; defined methods = {", ",", "}")
+                )
+            }
 
             val actualTarget = getCallTarget(project, factoryCall)
             withClue {
                 s"failed to resolve $factoryCall in ${method.toJava(classFile)}"
             }(actualTarget should be(expectedTarget))
         }
+        assert(successFull, s"couldn't find factory method call in $name")
     }
 
     private def getCallTarget(project: SomeProject, factoryCall: INVOKESTATIC): Option[Method] = {
         val proxy = project.classFile(factoryCall.declaringClass).get
         val forwardingMethod = proxy.methods.find { m ⇒
-            !m.isConstructor && m.name != factoryCall.name && !bi.ACC_BRIDGE.isSet(m.accessFlags)
+            !m.isConstructor && m.name != factoryCall.name && !m.isBridge
         }.get
         val invocationInstructions = forwardingMethod.body.get.instructions.collect {
             case i: MethodInvocationInstruction ⇒ i
@@ -96,10 +108,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         val targetMethodName = invocationInstruction.name
         val targetMethodDescriptor: MethodDescriptor =
             if (targetMethodName == "<init>") {
-                MethodDescriptor(
-                    invocationInstruction.methodDescriptor.parameterTypes,
-                    VoidType
-                )
+                MethodDescriptor(invocationInstruction.methodDescriptor.parameterTypes, VoidType)
             } else {
                 invocationInstruction.methodDescriptor
             }
@@ -121,17 +130,26 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
      * generated object's single method).
      */
     private def getInvokedMethod(project: SomeProject, annotations: Annotations): Option[Method] = {
-        (
-            for {
-                invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
-                pairs = invokedMethod.elementValuePairs
-                ElementValuePair("receiverType", StringValue(receiverType)) ← pairs
-                ElementValuePair("name", StringValue(methodName)) ← pairs
-                classFile ← project.classFile(ObjectType(receiverType))
-            } yield {
-                classFile.findMethod(methodName).headOption
+        val method = for {
+            invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
+            pairs = invokedMethod.elementValuePairs
+            ElementValuePair("receiverType", StringValue(receiverType)) ← pairs
+            ElementValuePair("name", StringValue(methodName)) ← pairs
+            classFileOpt = project.classFile(ObjectType(receiverType))
+        } yield {
+            if (classFileOpt.isEmpty) {
+                throw new IllegalStateException(s"the class file $receiverType cannot be found")
             }
-        ).head
+            val methodOpt = classFileOpt.get.findMethod(methodName)
+            if (methodOpt.isEmpty) {
+                throw new IllegalStateException(
+                    s"$receiverType does not define $methodName"
+                )
+            }
+            methodOpt.head
+        }
+
+        Some(method.head)
     }
 
     def testProject(project: SomeProject): Unit = {
@@ -174,17 +192,20 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         val baseConfig: Config = ConfigFactory.load()
         val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
         val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
-        implicit val config = baseConfig.
+        val testConfig = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
-        val framework = new Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+        class Framework extends {
+            override val config = testConfig
+        } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+        val framework = new Framework()
         val project = Project(
             framework.ClassFiles(testResources),
             Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JRELibraryFolder),
             true,
             Traversable.empty,
             Project.defaultHandlerForInconsistentProjects,
-            config,
+            testConfig,
             logContext
         )
         testProject(project)

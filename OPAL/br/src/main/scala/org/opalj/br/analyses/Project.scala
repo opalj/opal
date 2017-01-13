@@ -1004,7 +1004,7 @@ object Project {
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = GlobalConfig
     ) = {
-        // The following makes use of Early Initializers
+        // The following makes use of early initializers
         class ConfiguredFramework extends {
             override implicit val logContext: LogContext = theLogContext
             override implicit val config: Config = theConfig

@@ -30,24 +30,28 @@ package org.opalj
 package br
 package reader
 
+import org.junit.runner.RunWith
+
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.{Project, SomeProject}
-import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
-import org.opalj.bi.TestSupport
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.ai.BaseAI
-import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.opalj.ai.InterpretationFailedException
-import org.opalj.log.GlobalLogContext
+
 import java.util.concurrent.atomic.AtomicInteger
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+
 import com.typesafe.config.ConfigValueFactory
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.bi.TestSupport.locateTestResources
+
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.reader.Java8LambdaExpressionsRewriting.FactoryNamesRegEx
+import org.opalj.ai.BaseAI
+import org.opalj.ai.InterpretationFailedException
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
@@ -109,7 +113,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             method @ MethodWithBody(body) ← classFile.methods
             instructions = body.instructions
             if instructions.exists {
-                case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches("^Lambda\\$[0-9a-f]+:[0-9a-f]+$")
+                case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches(FactoryNamesRegEx)
                 case _               ⇒ false
             }
         } {
@@ -129,7 +133,8 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         val configValueFalse = ConfigValueFactory.fromAnyRef(false)
 
         describe("testing the rewritten methods of the lambdas test project") {
-            val lambdasJar = TestSupport.locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+            val lambdasJarName = "lambdas-1.8-g-parameters-genericsignature.jar"
+            val lambdasJar = locateTestResources(lambdasJarName, "bi")
             val config = Java8LambdaExpressionsRewriting.defaultConfig(
                 rewrite = true,
                 logRewrites = false

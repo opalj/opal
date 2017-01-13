@@ -261,7 +261,8 @@ object CFGFactory {
                 case JSR.opcode | JSR_W.opcode ⇒
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     val subroutinePC = pc + jsrInstr.branchoffset
-                    val thisSubroutineReturnPCs = subroutineReturnPCs.getOrElse(subroutinePC, UShortSet.empty)
+                    val thisSubroutineReturnPCs =
+                        subroutineReturnPCs.getOrElse(subroutinePC, UShortSet.empty)
                     subroutineReturnPCs += (
                         subroutinePC →
                         (jsrInstr.indexOfNextInstruction(pc) +≈: thisSubroutineReturnPCs)
@@ -338,7 +339,7 @@ object CFGFactory {
                     normalReturnNode.addPredecessor(currentBB)
                     runningBB = null
 
-                case _ /*ALL STANDARD INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ ⇒
+                case _ /* INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ ⇒
                     assert(instruction.nextInstructions(pc, regularSuccessorsOnly = true).size == 1)
 
                     val currentBB = useRunningBB()
