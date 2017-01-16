@@ -270,7 +270,8 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         }
         val changedLocals =
             locals.zip(newLocals).zipWithIndex.map(localsWithIdx ⇒
-                (localsWithIdx._1._1, localsWithIdx._1._2, localsWithIdx._2)).filter(ops ⇒ ops._1 ne ops._2)
+                (localsWithIdx._1._1, localsWithIdx._1._2, localsWithIdx._2)).
+                filter(ops ⇒ ops._1 ne ops._2)
         if (changedLocals.hasNext) {
             println(YELLOW_B + BLUE+"\tUpdated Locals:")
             changedLocals.foreach(locals ⇒

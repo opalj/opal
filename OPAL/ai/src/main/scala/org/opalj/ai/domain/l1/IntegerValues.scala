@@ -31,7 +31,8 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ComputationalType, ComputationalTypeInt}
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeInt
 
 /**
  * This domain enables the tracking of an integer value (a constant);
@@ -76,13 +77,10 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
      * Represents one, concrete integer value.
      */
     abstract class TheIntegerValue extends IntegerLikeValue { this: DomainValue ⇒
-
         val value: Int
     }
 
-    object TheIntegerValue {
-        def unapply(v: TheIntegerValue): Option[Int] = Some(v.value)
-    }
+    object TheIntegerValue { def unapply(v: TheIntegerValue): Option[Int] = Some(v.value) }
 
     // -----------------------------------------------------------------------------------
     //
@@ -345,4 +343,3 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
 
 }
-

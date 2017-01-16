@@ -211,8 +211,8 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                     failed.incrementAndGet()
                     info(
                         classFile.thisType.toJava+"{ "+
-                            method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
-                            Console.BLUE+"\t// the domain r1 is not deterministic (concurrency bug?)\n"+
+                            method.toJava+"(Instructions "+method.body.get.instructions.size+")}\n"+
+                            Console.BLUE+"\t// domain r1 is not deterministic (concurrency bug?)\n"+
                             Console.RESET
                     )
                 } else
