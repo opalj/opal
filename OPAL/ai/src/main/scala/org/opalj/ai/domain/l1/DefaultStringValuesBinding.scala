@@ -50,7 +50,7 @@ trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with Stri
         origin: ValueOrigin,
         value:  String,
         t:      Timestamp
-    ): DomainStringValue =
+    ): DomainStringValue = {
         new StringValue(origin, value, t)
+    }
 }
-

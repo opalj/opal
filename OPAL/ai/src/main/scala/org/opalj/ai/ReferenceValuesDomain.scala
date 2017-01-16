@@ -123,14 +123,13 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
 
     /**
      * Sets the `is null` property of the top-most stack value to `Yes`. This method is
-     * called by the framework when the top-most operand stack value has to be null, but
+     * called by the framework when the top-most operand stack value '''has to be null''', but
      * a previous `isNull` check returned [[Unknown]].
      * E.g., after a [[org.opalj.br.instructions.CHECKCAST]] that fails unless the
      * value is "null".
      *
      * This method can be ignored; i.e., the return value can be `(operands,locals)`.
-     * However, a domain that is able to identify
-     * aliases can use this information to propagate
+     * However, a domain that is able to identify aliases can use this information to propagate
      * the information to the other aliases.
      */
     def refTopOperandIsNull(

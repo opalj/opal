@@ -196,9 +196,9 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 "4: op_1 = r_2;",
                 strg,
                 "6: op_0 = r_1;",
-                "7: return op_0 /*{_ <: java.lang.Object, null}[@-2;t=102]*/;",
+                "7: return op_0 /*{_ <: java.lang.Object, null}[↦-2;t=103]*/;",
                 "8: op_0 = r_2;",
-                "9: return op_0 /*{_ <: java.lang.Object, null}[@-3;t=103]*/;"
+                "9: return op_0 /*{_ <: java.lang.Object, null}[↦-3;t=104]*/;"
             )
 
             def unaryJLC(cmp: String, ret1: String) = Array(
@@ -209,7 +209,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 "4: op_0 = r_1;",
                 ret1,
                 "6: op_0 = null;",
-                "7: return op_0 /*null[@6;t=103]*/;"
+                "7: return op_0 /*null[↦6]*/;"
             )
 
             it("should correctly reflect the equals case") {
@@ -259,7 +259,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 ))
                 javaLikeCode.shouldEqual(unaryJLC(
                     "3: if(op_0 != null) goto 6;",
-                    "5: return op_0 /*null[@-2;t=102]*/;"
+                    "5: return op_0 /*null[↦-2]*/;"
                 ))
             }
 
@@ -278,7 +278,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 ))
                 javaLikeCode.shouldEqual(unaryJLC(
                     "3: if(op_0 == null) goto 6;",
-                    "5: return op_0 /*_ <: java.lang.Object[@-2;t=102]*/;"
+                    "5: return op_0 /*_ <: java.lang.Object[↦-2;t=103]*/;"
                 ))
             }
         }

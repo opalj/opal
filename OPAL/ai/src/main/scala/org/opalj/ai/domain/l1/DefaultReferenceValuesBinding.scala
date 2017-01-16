@@ -43,9 +43,7 @@ import org.opalj.br.UpperTypeBound
 /**
  * @author Michael Eichberg
  */
-trait DefaultReferenceValuesBinding
-        extends l1.ReferenceValues
-        with DefaultExceptionsFactory {
+trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExceptionsFactory {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
@@ -74,9 +72,7 @@ trait DefaultReferenceValuesBinding
     // FACTORY METHODS
     //
 
-    override def NullValue(origin: ValueOrigin, t: Timestamp): DomainNullValue = {
-        new NullValue(origin, t)
-    }
+    override def NullValue(origin: ValueOrigin): DomainNullValue = new NullValue(origin)
 
     override protected[domain] def ObjectValue(
         origin:            ValueOrigin,
@@ -85,7 +81,6 @@ trait DefaultReferenceValuesBinding
         theUpperTypeBound: ObjectType,
         t:                 Timestamp
     ): SObjectValue = {
-
         new SObjectValue(
             origin,
             isNull,
@@ -100,7 +95,6 @@ trait DefaultReferenceValuesBinding
         upperTypeBound: UIDSet[ObjectType],
         t:              Timestamp
     ): DomainObjectValue = {
-
         if (upperTypeBound.isSingletonSet) {
             ObjectValue(origin, isNull, false, upperTypeBound.first, t)
         } else
