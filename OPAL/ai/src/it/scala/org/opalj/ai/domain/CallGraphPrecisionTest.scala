@@ -34,7 +34,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.opalj.br.ClassFile
+/*import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
@@ -49,7 +49,7 @@ import org.opalj.ai.analyses.cg.CallGraphConstructionException
 import org.opalj.ai.analyses.cg.CallGraphComparison
 import org.opalj.ai.analyses.cg.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.BasicVTAWithPreAnalysisCallGraphDomain
-
+*/
 /**
  * Compares the precision of different call graphs.
  *
@@ -57,7 +57,7 @@ import org.opalj.ai.analyses.cg.BasicVTAWithPreAnalysisCallGraphDomain
  */
 @RunWith(classOf[JUnitRunner])
 class CallGraphPrecisionTest extends FunSpec with Matchers {
-
+    /* TURNED OFF FOR THE TIME BEING
     describe("call graphs") {
         info("loading the JRE")
         val project = org.opalj.br.TestSupport.createRTJarProject
@@ -328,4 +328,5 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
             }
         }
     }
+    */
 }

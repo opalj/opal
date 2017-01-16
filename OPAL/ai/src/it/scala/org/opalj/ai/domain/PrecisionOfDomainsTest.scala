@@ -33,10 +33,12 @@ package domain
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
 import org.scalatest.FunSpec
+
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.TestSupport.createJREProject
 
 /**
  * This integration test(suite) just loads a very large number of class files and performs
@@ -53,7 +55,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
         type TheAIResult = AIResult { val domain: Domain with TheMethod }
 
         it("should return a more precise result") {
-            val project = org.opalj.br.TestSupport.createJREProject
+            val project = createJREProject
             // The following three domains are very basic domains that – given that the
             // same partial domains are used – should compute the same results.
 
@@ -178,29 +180,30 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
             project.parForeachMethodWithBody() { methodInfo ⇒
                 val MethodInfo(_, classFile, method) = methodInfo
-                val a1 = BaseAI
-                val r1 = a1(classFile, method, new TypeLevelDomain(method, project))
-                val a2 = BaseAI
-                val r2_ranges = a2(classFile, method, new L1RangesDomain(method, project))
-                val a3 = BaseAI
-                val r2_sets = a3(classFile, method, new L1SetsDomain(method, project))
+                val r1 = BaseAI(classFile, method, new TypeLevelDomain(method, project))
+                val r2_ranges = BaseAI(classFile, method, new L1RangesDomain(method, project))
+                val r2_sets = BaseAI(classFile, method, new L1SetsDomain(method, project))
 
-                def handleAbstractsOverFailure(lpDomain: String, mpDomain: String)(m: String): Unit = {
+                def handleAbstractsOverFailure(
+                    lpDomain: String,
+                    mpDomain: String
+                )(
+                    m: String
+                ): Unit = {
                     failed.set(true)
-                    info(
-                        classFile.thisType.toJava+" \""+
-                            method.toJava+"\" /*Instructions "+
+                    println(
+                        method.toJava(classFile, "\" /*Instructions "+
                             method.body.get.instructions.size+"*/\n"+
                             s"\tthe less precise domain ($lpDomain) did not abstract "+
                             s"over the state of the more precise domain ($mpDomain)\n"+
-                            "\t"+Console.BOLD + m + Console.RESET+"\n"
+                            "\t"+Console.BOLD + m + Console.RESET+"\n")
                     )
 
                 }
 
-                checkAbstractsOver(r1, r2_ranges).foreach(
+                val handleFailure: String ⇒ Unit =
                     handleAbstractsOverFailure("TypeLevelDomain", "L1RangesDomain")
-                )
+                checkAbstractsOver(r1, r2_ranges).foreach(handleFailure)
                 comparisonCount.incrementAndGet()
 
                 checkAbstractsOver(r1, r2_sets).foreach(
@@ -210,16 +213,15 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
             }
 
-            if (comparisonCount.get() < 2)
+            if (comparisonCount.get() < 2) {
                 fail("didn't find any class files/methods to analyze")
+            }
+
             if (failed.get()) {
                 fail("the less precise domain did not abstract over the more precise domain")
             }
-            info(
-                "successfully compared the results of "+
-                    comparisonCount.get+
-                    " abstract interpretations"
-            )
+
+            info(s"compared the results of ${comparisonCount.get} abstract interpretations")
         }
     }
 }

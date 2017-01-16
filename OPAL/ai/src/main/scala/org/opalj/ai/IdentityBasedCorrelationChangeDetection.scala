@@ -29,6 +29,8 @@
 package org.opalj
 package ai
 
+import java.util.IdentityHashMap
+
 /**
  * Identifies situations (based on a '''reference comparison of the domain values''')
  * in which the memory layout changes such that a correlation between two values, which
@@ -82,8 +84,8 @@ package ai
  *  - two local variables that are guaranteed to be identical in all cases, and, hence
  *    are subject to the same constraints are also correlated.
  *
- * @note Mixing in this trait is strictly necessary when aliases are traced using a
- *      a DomainValue's reference.
+ * @note   Mixing in this trait is strictly necessary when aliases are traced using a
+ *         DomainValue's reference.
  *
  * @author Michael Eichberg
  */
@@ -99,12 +101,10 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
         newLocals:   Locals
     ): Update[(Operands, Locals)] = {
 
-        def liftUpdateType(v1Index: Int, v2Index: Int) = {
-            StructuralUpdate((newOperands, newLocals))
-        }
+        def liftUpdateType(v1Index: Int, v2Index: Int) = StructuralUpdate((newOperands, newLocals))
 
         if (updateType.isMetaInformationUpdate) {
-            val aliasInformation = new java.util.IdentityHashMap[DomainValue, Integer]()
+            val aliasInformation = new IdentityHashMap[DomainValue, Integer]()
 
             var opi = -1;
             oldOperands.foreach { op ⇒
@@ -115,7 +115,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                     // let's check if we can no-longer find the same alias
                     // relation in the new operands
                     if (newOperands(-previousLocation - 1) ne newOperands(-opi - 1))
-                        return liftUpdateType(previousLocation, opi)
+                        return liftUpdateType(previousLocation, opi);
                 }
                 opi -= 1;
             }
@@ -132,14 +132,14 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                             val v2 = newLocals(li)
                             if ((newOperands(-previousLocation - 1) ne v2) &&
                                 (v2 ne TheIllegalValue))
-                                return liftUpdateType(previousLocation, li)
+                                return liftUpdateType(previousLocation, li);
                         } else /*previousLocation >= 0*/ {
                             val v1 = newLocals(previousLocation)
                             val v2 = newLocals(li)
                             if ((v1 ne v2) /* <=> the alias no longer exists */ &&
                                 // but, does it matter?
                                 (v1 ne TheIllegalValue) && (v2 ne TheIllegalValue))
-                                return liftUpdateType(previousLocation, li)
+                                return liftUpdateType(previousLocation, li);
                         }
                     }
                 }

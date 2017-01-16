@@ -70,25 +70,11 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             val theDomain = new DefaultIntegerRangesTestDomain(2L)
             import theDomain._
 
-            it("(join of two ranges with positive values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
-                val v1 = IntegerRange(lb = 2, ub = 3)
-                val v2 = IntegerRange(lb = 5, ub = 6)
-                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
-                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
-            }
-
             it("(join of two ranges with positive values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(2,4))\"") {
                 val v1 = IntegerRange(lb = 2, ub = 3)
                 val v2 = IntegerRange(lb = 3, ub = 4)
                 v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(2, 4)))
                 v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(2, 4)))
-            }
-
-            it("(join of two ranges with negative values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
-                val v1 = IntegerRange(lb = -2, ub = -1)
-                val v2 = IntegerRange(lb = -5, ub = -4)
-                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
-                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
             }
 
             it("(join of two ranges with negative values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(-3,-1))\"") {
@@ -98,11 +84,25 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
                 v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-3, -1)))
             }
 
+            it("(join of two ranges with positive values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+                val v1 = IntegerRange(lb = 2, ub = 3)
+                val v2 = IntegerRange(lb = 5, ub = 6)
+                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 127)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(0, 127)))
+            }
+
+            it("(join of two ranges with negative values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+                val v1 = IntegerRange(lb = -2, ub = -1)
+                val v2 = IntegerRange(lb = -5, ub = -4)
+                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-128, -1)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-128, -1)))
+            }
+
             it("(join of two ranges with Int.MaxValue); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
                 val v1 = IntegerRange(lb = 1, ub = Int.MaxValue)
                 val v2 = IntegerRange(lb = -10, ub = -1)
-                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
-                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-128, Int.MaxValue)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-128, Int.MaxValue)))
             }
 
             it("(join of two ranges one with [Int.MinValue+1 and Int.MaxValue]); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {

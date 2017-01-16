@@ -187,11 +187,11 @@ trait ValuesDomain {
          * should – whenever possible – use only one object'''. This has a significant
          * impact on functions such as `join`.
          *
-         * @param pc The program counter of the instruction where the paths converge.
-         * @param value The "new" domain value with which this domain value should be
-         *      joined.
-         *      '''The given `value` and this value are guaranteed to have
-         *      the same computational type, but are not reference equal.'''
+         * @param   pc The program counter of the instruction where the paths converge.
+         * @param   value The "new" domain value with which this domain value should be
+         *          joined.
+         *          '''The given `value` and this value are guaranteed to have
+         *          the same computational type, but are not reference equal.'''
          */
         protected[this] def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
 
@@ -203,12 +203,12 @@ trait ValuesDomain {
          *
          * @note It is in general not recommended/needed to override this method.
          *
-         * @param pc The program counter of the instruction where the paths converge.
-         * @param that The "new" domain value with which this domain value should be
-         *      joined. The caller has to ensure that the given value and `this` value
-         *      are guaranteed to be two different objects.
-         * @return [[MetaInformationUpdateIllegalValue]] or the result of calling
-         *      [[doJoin]].
+         * @param   pc The program counter of the instruction where the paths converge.
+         * @param   that The "new" domain value with which this domain value should be
+         *          joined. The caller has to ensure that the given value and `this` value
+         *          are guaranteed to be two different objects.
+         * @return  [[MetaInformationUpdateIllegalValue]] or the result of calling
+         *          [[doJoin]].
          */
         def join(pc: PC, that: DomainValue): Update[DomainValue] = {
             assert(that ne this, "join is only defined for objects that are different")
@@ -257,7 +257,7 @@ trait ValuesDomain {
 
         /**
          * Returns `true` iff the abstract state represented by this value
-         * is more precise than the state of the given value. In other
+         * is striclty more precise than the state of the given value. In other
          * words if every possible runtime value represented by this value
          * is also represented by the given value, but both '''are not equal''';
          * in other words, this method is '''irreflexive'''.
@@ -267,13 +267,13 @@ trait ValuesDomain {
          * value and the `other` value and that could lead to a
          * [[StructuralUpdate]].
          *
-         * @note It is recommended to overwrite this method for performance
-         *      reasons, as the default implementation relies on [[join]].
+         * @note    It is recommended to overwrite this method for performance
+         *          reasons, as the default implementation relies on [[join]].
          *
-         * @param other Another `DomainValue` with the same computational
-         *      type as this value.
-         *      (The `IllegalValue` has no computational type and, hence,
-         *      a comparison with an IllegalValue is not well defined.)
+         * @param   other Another `DomainValue` with the same computational
+         *          type as this value.
+         *          (The `IllegalValue` has no computational type and, hence,
+         *          a comparison with an IllegalValue is not well defined.)
          *
          * @see `abstractsOver`
          */
