@@ -257,14 +257,16 @@ final class ClassFile private (
      * classes.
      */
     def isAnonymousInnerClass: Boolean = {
-        isClassDeclaration &&
-            innerClasses.map { ics ⇒
-                ics.exists { i ⇒
+        /*
+        isClassDeclaration && innerClasses.isDefined &&  innerClasses.get.exists { i ⇒
                     i.innerClassType == thisType && {
                         if (i.innerName.isEmpty) true else return false;
                     }
-                }
-            }.getOrElse(false)
+            }
+        */
+        isClassDeclaration && innerClasses.isDefined && !innerClasses.get.forall { i ⇒
+            i.innerClassType != thisType || i.innerName.nonEmpty
+        }
     }
 
     /**

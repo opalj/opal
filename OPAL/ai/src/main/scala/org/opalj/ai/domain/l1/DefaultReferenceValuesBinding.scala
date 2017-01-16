@@ -74,8 +74,9 @@ trait DefaultReferenceValuesBinding
     // FACTORY METHODS
     //
 
-    override def NullValue(origin: ValueOrigin, t: Timestamp): DomainNullValue =
+    override def NullValue(origin: ValueOrigin, t: Timestamp): DomainNullValue = {
         new NullValue(origin, t)
+    }
 
     override protected[domain] def ObjectValue(
         origin:            ValueOrigin,
@@ -138,4 +139,3 @@ trait DefaultReferenceValuesBinding
         new MultipleReferenceValues(values, isNull, isPrecise, theUpperTypeBound, t)
     }
 }
-

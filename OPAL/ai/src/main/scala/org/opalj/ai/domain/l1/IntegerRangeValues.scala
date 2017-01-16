@@ -265,13 +265,8 @@ trait IntegerRangeValues
             Yes
         else
             value match {
-                case IntegerRange(lb, ub) ⇒
-                    if (ub >= lowerBound && lb <= upperBound)
-                        Yes
-                    else
-                        No
-                case _ ⇒
-                    Unknown
+                case IntegerRange(lb, ub) ⇒ Answer(ub >= lowerBound && lb <= upperBound)
+                case _                    ⇒ Unknown
             }
     }
 
@@ -285,12 +280,8 @@ trait IntegerRangeValues
             No
         else
             value match {
-                case IntegerRange(lb, ub) ⇒
-                    if (lb < lowerBound || ub > upperBound)
-                        Yes
-                    else
-                        No
-                case _ ⇒ Unknown
+                case IntegerRange(lb, ub) ⇒ Answer(lb < lowerBound || ub > upperBound)
+                case _                    ⇒ Unknown
             }
     }
 
@@ -1162,7 +1153,7 @@ trait IntegerRangeValues
 
     override def i2c(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case IntegerRange(lb, ub) if lb >= 0 && ub <= 65535 ⇒
+            case IntegerRange(lb, ub) if lb >= 0 && ub <= Char.MaxValue ⇒
                 value
             case _ ⇒
                 IntegerRange(0, 65535)

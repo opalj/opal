@@ -44,8 +44,7 @@ class DefaultSetValuesDomain[Source](
     val project:   Project[Source],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with TheProject
         with TheMethod
         with DefaultDomainValueBinding
@@ -61,4 +60,3 @@ class DefaultSetValuesDomain[Source](
         with l1.DefaultLongSetValues
         with l1.LongValuesShiftOperators
         with l1.ConcretePrimitiveValuesConversions
-

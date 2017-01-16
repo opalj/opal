@@ -126,9 +126,52 @@ trait DefaultIntegerRangeValues
                         // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
                         // runtime values (they were not created at the same time!
-                        MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
-                    } else if ((newUpperBound.toLong - newLowerBound.toLong) > maxCardinalityOfIntegerRanges) {
-                        StructuralUpdate(AnIntegerValue())
+
+                        // The "CorrelationalDomain" will make sure that this udpate is
+                        // handled.
+                        MetaInformationUpdate(IntegerRange(newLB, newUB))
+                    } else if (thisLB == thisUB && otherLB == otherUB) {
+                        // We are joining two concrete values... in this case we always first
+                        // create a "true" range.
+                        StructuralUpdate(IntegerRange(newLB, newUB))
+                    } else if (newUB.toLong - newLB.toLong > maxCardinalityOfIntegerRanges) {
+                        // let's just use one of the default ranges..
+                        var adjustedNewLB =
+                            if (newLB < Short.MinValue) {
+                                Int.MinValue
+                            } else if (newLB < Byte.MinValue) {
+                                Short.MinValue
+                            } else if (newLB < 0) {
+                                Byte.MinValue
+                            } else {
+                                0
+                            }
+
+                        val adjustedNewUB =
+                            if (newUB > Char.MaxValue) {
+                                Int.MaxValue
+                            } else if (newUB > Short.MaxValue) {
+                                Char.MaxValue
+                            } else if (newUB > Byte.MaxValue) {
+                                Short.MaxValue
+                            } else if (newUB < 0) {
+                                -1
+                            } else {
+                                Byte.MaxValue
+                            }
+
+                        if (adjustedNewLB > adjustedNewUB)
+                            // we adjusted it too much... let's correct that
+                            adjustedNewLB = adjustedNewUB
+
+                        if (adjustedNewLB == Int.MinValue && adjustedNewUB == Int.MaxValue) {
+                            StructuralUpdate(AnIntegerValue())
+                        } else if (adjustedNewLB == thisLB && adjustedNewUB == thisUB) {
+                            // We have no idea about the concrete values, but the range is the same
+                            MetaInformationUpdate(IntegerRange(adjustedNewLB, adjustedNewUB))
+                        } else {
+                            StructuralUpdate(IntegerRange(adjustedNewLB, adjustedNewUB))
+                        }
                     } else {
                         StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
                     }
