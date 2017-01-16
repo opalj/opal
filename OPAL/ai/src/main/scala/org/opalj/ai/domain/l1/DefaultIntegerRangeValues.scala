@@ -36,9 +36,7 @@ package l1
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerRangeValues
-        extends DefaultDomainValueBinding
-        with IntegerRangeValues {
+trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRangeValues {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     /**
@@ -115,14 +113,14 @@ trait DefaultIntegerRangeValues
                 case IntegerRange(otherLB, otherUB) ⇒
                     val thisLB = this.lowerBound
                     val thisUB = this.upperBound
-                    val newLowerBound = Math.min(thisLB, otherLB)
-                    val newUpperBound = Math.max(thisUB, otherUB)
+                    val newLB = Math.min(thisLB, otherLB)
+                    val newUB = Math.max(thisUB, otherUB)
 
-                    if (newLowerBound == newUpperBound) {
+                    if (newLB == newUB) {
                         // This is a "point-range" (a concrete value), hence there
                         // will be NO further constraints
                         NoUpdate
-                    } else if (newLowerBound == thisLB && newUpperBound == thisUB) {
+                    } else if (newLB == thisLB && newUB == thisUB) {
                         // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
                         // runtime values (they were not created at the same time!
@@ -173,7 +171,7 @@ trait DefaultIntegerRangeValues
                             StructuralUpdate(IntegerRange(adjustedNewLB, adjustedNewUB))
                         }
                     } else {
-                        StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
+                        StructuralUpdate(IntegerRange(newLB, newUB))
                     }
             }
         }
@@ -182,8 +180,7 @@ trait DefaultIntegerRangeValues
             (this eq other) || (
                 other match {
                     case that: IntegerRange ⇒
-                        this.lowerBound <= that.lowerBound &&
-                            this.upperBound >= that.upperBound
+                        this.lowerBound <= that.lowerBound && this.upperBound >= that.upperBound
                     case _ ⇒ false
                 }
             )
@@ -207,8 +204,7 @@ trait DefaultIntegerRangeValues
             other match {
                 case that: IntegerRange ⇒
                     (this eq that) || (
-                        that.lowerBound == this.lowerBound &&
-                        that.upperBound == this.upperBound
+                        that.lowerBound == this.lowerBound && that.upperBound == this.upperBound
                     )
                 case _ ⇒
                     false
@@ -227,10 +223,10 @@ trait DefaultIntegerRangeValues
     @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange =
         new IntegerRange(lb, ub)
 
-    override def BooleanValue(origin: ValueOrigin): DomainValue =
-        IntegerRange(0, 1)
-    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue =
+    override def BooleanValue(origin: ValueOrigin): DomainValue = IntegerRange(0, 1)
+    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue = {
         if (value) IntegerValue(origin, 1) else IntegerValue(origin, 0)
+    }
 
     override def ByteValue(origin: ValueOrigin): DomainValue =
         IntegerRange(Byte.MinValue, Byte.MaxValue)
@@ -254,8 +250,7 @@ trait DefaultIntegerRangeValues
     }
 
     override def IntegerValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
-    override def IntegerValue(origin: ValueOrigin, value: Int) =
-        new IntegerRange(value, value)
+    override def IntegerValue(origin: ValueOrigin, value: Int) = new IntegerRange(value, value)
 
 }
 
