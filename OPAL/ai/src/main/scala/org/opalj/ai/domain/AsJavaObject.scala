@@ -42,9 +42,8 @@ package domain
  * The latter, however, does not work for classes on the bootclasspath (e.g.,
  * `java.lang.String`). In that case it is necessary to check that the code of the
  * analyzed application is compatible with the one on the class path.
- * '''To avoid accidental
- * imprecision in the analysis you should use this features only for stable classes
- * belonging to the core JDK (`java.lang...`.)'''
+ * '''To avoid accidental imprecision in the analysis you should use this features
+ * only for stable classes belonging to the core JDK (`java.lang...`.)'''
  *
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
@@ -56,10 +55,10 @@ trait AsJavaObject { domain: ReferenceValuesDomain ⇒
      * appropriately initialized.
      *
      * ==Implementation==
-     * Every domain that supports the creation of a Java object based on a domain
+     * Every domain that supports the creation of a Java object's based on a domain
      * value is expected to implement this method and to test if it can create
-     * a representation of the given value. If not, the implementation has to delegate
-     * the responsibility to the super method.
+     * a precise representation of the given value. If not, the implementation has to delegate
+     * the responsibility to the super method to creat an abstract representation.
      * {{{
      * abstract override def toJavaObject(value : DomainValue): Option[Object] = {
      *  if(value...)
@@ -69,13 +68,13 @@ trait AsJavaObject { domain: ReferenceValuesDomain ⇒
      * }
      * }}}
      *
-     * @note This operation is generally only possible if the domain value maintains
-     *      "enough" state information to completely initialize the Java object.
+     * @note   This operation is generally only possible if the domain value maintains
+     *         ''enough'' state information to completely initialize the Java object.
      *
      * @return Some(Object) is returned if it was possible to create a compatible
-     *      corresponding Java object; otherwise `None` is returned.
-     *      Default: `None` unless the `value` is null. In the latter case `Some(null)`
-     *      is returned.
+     *         corresponding Java object; otherwise `None` is returned.
+     *         Default: `None` unless the `value` is null. In the latter case `Some(null)`
+     *         is returned.
      */
     def toJavaObject(pc: PC, value: DomainValue): Option[Object] = None
 

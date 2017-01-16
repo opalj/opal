@@ -272,8 +272,8 @@ object InterpretMethodsAnalysis {
             (
                 "No exceptions occured during the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (real time: "+getTime('OVERALL)+
-                "secs., ai (∑CPU Times): "+getTime('AI)+")",
+                project.classFilesCount+" classes (real time: "+getTime('OVERALL).toSeconds+
+                ", ai (∑CPU Times): "+getTime('AI).toSeconds+")",
                 None
             )
         }

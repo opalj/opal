@@ -45,15 +45,14 @@ import org.opalj.br.{ComputationalType, ComputationalTypeInt}
  * ==Constraint Propagation==
  * This domain facilitates and performs constraint propagation (e.g.,
  * [[intEstablishValue]], [[intEstablishIsLessThan]],...).
- * Two integer (range) values (`ir1`,`ir2`) are reference equal (`eq` in Scala)
- * iff both represent the same runtime value.
+ * '''Two integer (range) values (`ir1`,`ir2`) are reference equal (`eq` in Scala)
+ * iff both represent the same runtime value.'''
  *
- * In other words, the implementation ensures
- * that two int values that are known to have the same value – even though the precise
- * value may not be known – are represented using the same object.
- * Furthermore, two int values that are '''not''' known
- * to represent the same value at runtime are always represented using different
- * objects.
+ * In other words, the implementation ensures that two int values that are known to
+ * have the same value – even though the precise value may not be known – are
+ * represented using the same object.
+ * Furthermore, two int values that are '''not''' known to represent the same value at
+ * runtime are always represented using different objects.
  * For example, consider the following sequence:
  *  - pcA+0/t1: `iadd` (Stack: 1 :: AnIntegerValue :: ...; Registers: &lt;ignored&gt;)
  *  - pcA+1/t2: `dup` (Stack: v(pcA/t1) :: ...; Registers: &lt;ignored&gt;)
@@ -98,7 +97,6 @@ import org.opalj.br.{ComputationalType, ComputationalTypeInt}
  * Subclasses are required to create new instances of `IntegerRangeValue`s and
  * `AnIntegerValue` '''whenever''' a computation is performed that may affect the
  * runtime value.
- *
  * If this property is not satisfied the implemented constraint propagation mechanism
  * will produce unpredictable results as it may constrain unrelated values!
  * This is true for concrete ranges as well as `AnIntegerValue`s.
