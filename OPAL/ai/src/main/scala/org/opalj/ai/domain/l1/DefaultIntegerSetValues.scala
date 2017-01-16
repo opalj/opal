@@ -44,11 +44,6 @@ import scala.reflect.ClassTag
 trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetValues {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
-    assert(
-        maxCardinalityOfIntegerSets < 255,
-        "larger sets are not supported" // we want to avoid overlaps with ByteSet
-    )
-
     class AnIntegerValue extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
@@ -192,9 +187,12 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         override def abstractsOver(other: DomainValue): Boolean = {
             (this eq other) || (
                 other match {
-                    case pvbs: BaseTypesBasedSet ⇒ lb <= pvbs.lb && ub >= pvbs.ub
-                    case that: IntegerSet        ⇒ lb <= that.values.firstKey && ub >= that.values.lastKey
-                    case _                       ⇒ false
+                    case other: BaseTypesBasedSet ⇒
+                        lb <= other.lb && ub >= other.ub
+                    case that: IntegerSet ⇒
+                        lb <= that.values.firstKey && ub >= that.values.lastKey
+
+                    case _ ⇒ false
                 }
             )
         }
@@ -205,7 +203,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: BaseTypesBasedSet ⇒ this.ub == that.ub
+                case that: BaseTypesBasedSet ⇒ this.lb == that.lb && this.ub == that.ub
                 case _                       ⇒ false
             }
         }
@@ -216,31 +214,56 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     type DomainBaseTypesBasedSet = BaseTypesBasedSet
     val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet] = implicitly
 
+    def U7BitSet(): DomainValue = new U7BitSet
+
+    class U7BitSet extends super.U7BitSet with BaseTypesBasedSet { this: DomainValue ⇒
+        def name = "Unsigned7BitValue"
+        def newInstance = new U7BitSet
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+            val result = target match {
+                case isv: IntegerSetValues   ⇒ isv.U7BitSet()
+                case irv: IntegerRangeValues ⇒ irv.IntegerRange(lb, ub)
+                case _                       ⇒ target.ByteValue(pc)
+            }
+            result.asInstanceOf[target.DomainValue]
+        }
+    }
+
+    def U15BitSet(): DomainValue = new U15BitSet()
+
+    class U15BitSet extends super.U15BitSet with BaseTypesBasedSet { this: DomainValue ⇒
+        def name = "Unsigned15BitValue"
+        def newInstance = new U15BitSet
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+            val result = target match {
+                case isv: IntegerSetValues   ⇒ isv.U15BitSet()
+                case irv: IntegerRangeValues ⇒ irv.IntegerRange(lb, ub)
+                case _                       ⇒ target.ByteValue(pc)
+            }
+            result.asInstanceOf[target.DomainValue]
+
+        }
+    }
+
     class ByteSet extends super.ByteSet with BaseTypesBasedSet {
-        def name = "ByteSet"
+        def name = "ByteValue"
         def newInstance = new ByteSet
-        final def lb = Byte.MinValue
-        final def ub = Byte.MaxValue
         override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
             target.ByteValue(pc)
         }
     }
 
     class ShortSet extends super.ShortSet with BaseTypesBasedSet {
-        def name = "ShortSet"
+        def name = "ShortValue"
         def newInstance = new ShortSet
-        final def lb = Short.MinValue
-        final def ub = Short.MaxValue
         override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
             target.ShortValue(pc)
         }
     }
 
     class CharSet extends super.CharSet with BaseTypesBasedSet {
-        def name = "CharSet"
+        def name = "CharCalue"
         def newInstance = new CharSet
-        final def lb = Char.MinValue
-        final def ub = Char.MaxValue
         override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
             target.CharValue(pc)
         }

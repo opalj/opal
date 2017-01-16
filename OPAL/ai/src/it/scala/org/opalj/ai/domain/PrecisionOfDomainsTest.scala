@@ -192,21 +192,19 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 ): Unit = {
                     failed.set(true)
                     println(
-                            method.toJava(classFile,"\" /*Instructions "+
+                        method.toJava(classFile, "\" /*Instructions "+
                             method.body.get.instructions.size+"*/\n"+
                             s"\tthe less precise domain ($lpDomain) did not abstract "+
                             s"over the state of the more precise domain ($mpDomain)\n"+
-                            "\t"+Console.BOLD + m + Console.RESET+"\n"
-                        )
+                            "\t"+Console.BOLD + m + Console.RESET+"\n")
                     )
 
                 }
 
-                val handleFailure : String => Unit =
+                val handleFailure: String ⇒ Unit =
                     handleAbstractsOverFailure("TypeLevelDomain", "L1RangesDomain")
                 checkAbstractsOver(r1, r2_ranges).foreach(handleFailure)
                 comparisonCount.incrementAndGet()
-
 
                 checkAbstractsOver(r1, r2_sets).foreach(
                     handleAbstractsOverFailure("TypeLevelDomain", "L1SetsDomain")
@@ -215,7 +213,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
             }
 
-            if (comparisonCount.get() < 2){
+            if (comparisonCount.get() < 2) {
                 fail("didn't find any class files/methods to analyze")
             }
 

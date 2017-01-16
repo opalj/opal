@@ -69,6 +69,11 @@ trait IntegerSetValues
      */
     def maxCardinalityOfIntegerSets: Int = 8
 
+    assert(
+        maxCardinalityOfIntegerSets < 127,
+        "larger sets are not supported" // we want to avoid overlaps with U7BitSet
+    )
+
     /**
      * Abstracts over all values with computational type `integer`.
      */
@@ -109,47 +114,97 @@ trait IntegerSetValues
     val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet]
 
     trait BaseTypesBasedSet extends IntegerLikeValue { this: DomainValue ⇒
-        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue
         def lb: Int
         def ub: Int
+        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue
 
         def newInstance: DomainBaseTypesBasedSet
     }
 
-// TODO suport 7 and 31 bit unsigned value!
+    def U7BitSet(): DomainValue
 
-    abstract class ByteSet extends BaseTypesBasedSet { this: DomainValue ⇒
+    abstract class U7BitSet extends BaseTypesBasedSet { this: DomainValue ⇒
+        final def lb = 0
+        final def ub = Byte.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+            assert(this ne other)
             other match {
-                case ByteSet()  ⇒ ByteValue(pc)
-                case ShortSet() ⇒ ShortValue(pc)
-                case _          ⇒ IntegerValue(pc)
+                case _: U7BitSet  ⇒ U7BitSet()
+                case _: U15BitSet ⇒ U15BitSet()
+                case _: CharSet   ⇒ CharValue(pc)
+                case _: ByteSet   ⇒ ByteValue(pc)
+                case _: ShortSet  ⇒ ShortValue(pc)
+                case _            ⇒ IntegerValue(pc)
             }
         }
     }
 
-    abstract class ShortSet extends BaseTypesBasedSet { this: DomainValue ⇒
+    def U15BitSet(): DomainValue
+
+    abstract class U15BitSet extends BaseTypesBasedSet { this: DomainValue ⇒
+        final def lb = 0
+        final def ub = Short.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+            assert(this ne other)
             other match {
-                case ByteSet()  ⇒ ShortValue(pc)
-                case ShortSet() ⇒ ShortValue(pc)
-                case _          ⇒ IntegerValue(pc)
+                case _: U7BitSet | _: U15BitSet ⇒ U15BitSet()
+                case _: CharSet                 ⇒ CharValue(pc)
+                case _: ByteSet                 ⇒ ShortValue(pc)
+                case _: ShortSet                ⇒ ShortValue(pc)
+                case _                          ⇒ IntegerValue(pc)
             }
         }
     }
 
     abstract class CharSet extends BaseTypesBasedSet { this: DomainValue ⇒
+        final def lb = 0 // Char.MinValue
+        final def ub = Char.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+            assert(this ne other)
             other match {
-                case CharSet() ⇒ CharValue(pc)
-                case _         ⇒ IntegerValue(pc)
+                case _: U7BitSet | _: U15BitSet | _: CharSet ⇒ CharValue(pc)
+                case _                                       ⇒ IntegerValue(pc)
+            }
+        }
+    }
+
+    abstract class ByteSet extends BaseTypesBasedSet { this: DomainValue ⇒
+        final def lb = Byte.MinValue
+        final def ub = Byte.MaxValue
+        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+            assert(this ne other)
+            other match {
+                case _: U7BitSet  ⇒ ByteValue(pc)
+                case _: U15BitSet ⇒ ShortValue(pc)
+                case _: ByteSet   ⇒ ByteValue(pc)
+                case _: ShortSet  ⇒ ShortValue(pc)
+                case _            ⇒ IntegerValue(pc)
+            }
+        }
+    }
+
+    abstract class ShortSet extends BaseTypesBasedSet { this: DomainValue ⇒
+        final def lb = Short.MinValue
+        final def ub = Short.MaxValue
+        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+            assert(this ne other)
+            other match {
+                case _: U7BitSet  ⇒ ShortValue(pc)
+                case _: U15BitSet ⇒ ShortValue(pc)
+                case _: ByteSet   ⇒ ShortValue(pc)
+                case _: ShortSet  ⇒ ShortValue(pc)
+                case _            ⇒ IntegerValue(pc)
             }
         }
     }
 
     protected[this] def approximateSet(origin: ValueOrigin, lb: Int, ub: Int): DomainValue = {
-        if (lb >= 0 && ub <= Char.MaxValue) CharValue(origin)
-        else if (lb >= Byte.MinValue && ub <= Byte.MaxValue) ByteValue(origin)
+        if (lb >= 0) {
+            if (ub <= Byte.MaxValue) U7BitSet()
+            else if (ub <= Short.MaxValue) U15BitSet()
+            else if (ub <= Char.MaxValue) CharValue(origin)
+            else IntegerValue(origin = origin)
+        } else if (lb >= Byte.MinValue && ub <= Byte.MaxValue) ByteValue(origin)
         else if (lb >= Short.MinValue && ub <= Short.MaxValue) ShortValue(origin)
         else IntegerValue(origin = origin)
     }
@@ -258,8 +313,9 @@ trait IntegerSetValues
         upperBound: Int
     ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
-            Yes
-        else value match {
+            return Yes;
+
+        value match {
             case IntegerSet(values) ⇒
                 Answer(
                     values.lastKey >= lowerBound && values.firstKey <= upperBound &&
@@ -280,15 +336,16 @@ trait IntegerSetValues
         upperBound: Int
     ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
-            No
-        else value match {
+            return No;
+
+        value match {
             case IntegerSet(values) ⇒
                 Answer(values.firstKey < lowerBound || values.lastKey > upperBound)
 
-            case ByteSet()  ⇒ Answer(Byte.MinValue < lowerBound || Byte.MaxValue > upperBound)
-            case ShortSet() ⇒ Answer(Short.MinValue < lowerBound || Short.MaxValue > upperBound)
-            case CharSet()  ⇒ Answer(Char.MinValue < lowerBound || Char.MaxValue > upperBound)
-            case _          ⇒ Unknown
+            case DomainBaseTypesBasedSet(value) ⇒
+                Answer(value.lb < lowerBound || value.ub > upperBound)
+
+            case _ ⇒ Unknown
         }
     }
 
@@ -315,11 +372,33 @@ trait IntegerSetValues
                             No
                         else
                             Unknown
+                    case DomainBaseTypesBasedSet(left) ⇒
+                        if (left.ub < rightValues.firstKey)
+                            Yes
+                        else if (rightValues.lastKey <= left.lb)
+                            No
+
+                        else
+                            Unknown
+
                     case _ ⇒
                         Unknown
                 }
-            case _ ⇒
-                Unknown
+
+            case DomainBaseTypesBasedSet(right) ⇒
+                left match {
+                    case IntegerSet(leftValues) ⇒
+                        if (leftValues.lastKey < right.lb)
+                            Yes
+                        else if (leftValues.firstKey >= right.ub)
+                            No
+                        else
+                            Unknown
+
+                    case _ ⇒ Unknown
+                }
+
+            case _ ⇒ Unknown
         }
     }
 
@@ -345,9 +424,31 @@ trait IntegerSetValues
                             No
                         else
                             Unknown
-                    case _ ⇒
-                        Unknown
+
+                    case DomainBaseTypesBasedSet(left) ⇒
+                        if (left.ub <= rightValues.firstKey)
+                            Yes
+                        else if (left.lb > rightValues.lastKey)
+                            No
+                        else
+                            Unknown
+
+                    case _ ⇒ Unknown
                 }
+
+            case DomainBaseTypesBasedSet(right) ⇒
+                left match {
+                    case IntegerSet(leftValues) ⇒
+                        if (leftValues.lastKey <= right.lb)
+                            Yes
+                        else if (leftValues.firstKey > right.ub)
+                            No
+                        else
+                            Unknown
+
+                    case _ ⇒ Unknown
+                }
+
             case _ ⇒
                 left match {
                     case IntegerSet(leftValues) ⇒
@@ -355,6 +456,7 @@ trait IntegerSetValues
                             Yes
                         else
                             Unknown
+
                     case _ ⇒
                         Unknown
                 }
