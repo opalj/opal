@@ -1770,7 +1770,7 @@ case No ⇒
                     if (isNull.isUnknown) ss = s"{$ss, null}"
                     ss
                 }
-            s = s+values.mkString(s"[t=$t; values=«", ", ", "»]")
+            s = s + values.mkString(s"[t=$t; values=«", ", ", "»]")
             s
         }
     }
