@@ -31,7 +31,10 @@ package ai
 package domain
 package l1
 
+import java.lang.Math.min
+import java.lang.Math.max
 import scala.collection.immutable.SortedSet
+import scala.reflect.ClassTag
 
 /**
  * This domain implements the tracking of integer values using sets.
@@ -41,21 +44,26 @@ import scala.collection.immutable.SortedSet
 trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetValues {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
+    assert(
+        maxCardinalityOfIntegerSets < 255,
+        "larger sets are not supported" // we want to avoid overlaps with ByteSet
+    )
+
     class AnIntegerValue extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            // we are not joining the "same" value; the join stabilization trait
-            // takes care of handling potential aliases
+            // - we are not joining the "same" value
+            // - the join stabilization trait takes care of handling potential aliases
             MetaInformationUpdate(AnIntegerValue())
         }
 
-        override def abstractsOver(other: DomainValue): Boolean =
-            other.isInstanceOf[IsIntegerValue]
+        override def abstractsOver(other: DomainValue): Boolean = other.isInstanceOf[IsIntegerValue]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
             target.IntegerValue(pc)
+        }
 
         override def hashCode: Int = 107
 
@@ -73,10 +81,20 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
                 case that: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
+
+                case that: BaseTypesBasedSet ⇒
+                    // every base types based set is necessarily larger, because the
+                    // absolute maximum cardinality is 254 (ByteSet.cardinality-1)
+                    val thisLB = this.values.firstKey
+                    val thisUB = this.values.lastKey
+                    val newLB = min(thisLB, that.lb)
+                    val newUB = max(thisUB, that.ub)
+                    StructuralUpdate(approximateSet(pc, newLB, newUB))
+
                 case IntegerSet(thatValues) ⇒
                     val newValues = this.values ++ thatValues
 
-                    if (newValues.size == 1)
+                    if (newValues.size == 1) {
                         // This set represents a single, concrete value, hence there
                         // will be NO further constraints that affect this set.
                         // Furthermore, since we have "value semantics" for int
@@ -84,32 +102,33 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
                         // relations
                         NoUpdate
 
-                    else if (newValues.size > maxCardinalityOfIntegerSets)
-                        StructuralUpdate(AnIntegerValue())
+                    } else if (newValues.size > maxCardinalityOfIntegerSets) {
+                        StructuralUpdate(approximateSet(pc, newValues.firstKey, newValues.lastKey))
 
-                    else if (newValues.size == this.values.size)
+                    } else if (newValues.size == this.values.size) {
                         // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
                         // runtime values (they were not created at the same time!
                         MetaInformationUpdate(IntegerSet(this.values))
-                    else
+                    } else {
                         StructuralUpdate(IntegerSet(newValues))
+                    }
             }
             result
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
-            (this eq other) ||
-                (other match {
-                    case that: IntegerSet ⇒
-                        that.values.subsetOf(this.values)
-                    case _ ⇒ false
-                })
+            (this eq other) || (
+                other match {
+                    case that: IntegerSet ⇒ that.values.subsetOf(this.values)
+                    case _                ⇒ false
+                }
+            )
         }
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
             if (target.isInstanceOf[IntegerSetValues]) {
                 val thatDomain = target.asInstanceOf[IntegerSetValues]
                 thatDomain.IntegerSet(this.values).asInstanceOf[target.DomainValue]
@@ -120,19 +139,111 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
             } else {
                 target.IntegerValue(pc)
             }
+        }
 
         override def hashCode = this.values.hashCode * 13
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: IntegerSet ⇒
-                    (this eq that) || (this.values == that.values)
-                case _ ⇒
-                    false
+                case that: IntegerSet ⇒ (this eq that) || (this.values == that.values)
+                case _                ⇒ false
             }
         }
 
         override def toString: String = "IntegerSet("+values.mkString(",")+")"
+    }
+
+    // NOTE: IF WE HAVE TWO VALUES THAT ARE REFERENCE EQUAL, THEN THE
+    // (UNKNOWN) UNDERLYING VALUE IS THE SAME!
+    trait BaseTypesBasedSet extends super.BaseTypesBasedSet { this: DomainValue ⇒
+
+        def name: String
+
+        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+            other match {
+                case that: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
+
+                case that: BaseTypesBasedSet ⇒
+                    val thisLB = this.lb
+                    val thisUB = this.ub
+                    val newLB = min(thisLB, that.lb)
+                    val newUB = max(thisUB, that.ub)
+                    if (thisLB == newLB && thisUB == newUB)
+                        MetaInformationUpdate(newInstance)
+                    else
+                        StructuralUpdate(approximateSet(pc, newLB, newUB))
+
+                case IntegerSet(thatValues) ⇒
+                    val thisLB = this.lb
+                    val thisUB = this.ub
+                    val thatLB = thatValues.firstKey
+                    val thatUB = thatValues.lastKey
+                    if (thisLB <= thatLB && thisUB >= thatUB)
+                        MetaInformationUpdate(newInstance)
+                    else {
+                        val newLB = min(thisLB, thatLB)
+                        val newUB = max(thisUB, thatUB)
+                        StructuralUpdate(approximateSet(pc, newLB, newUB))
+                    }
+
+            }
+        }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            (this eq other) || (
+                other match {
+                    case pvbs: BaseTypesBasedSet ⇒ lb <= pvbs.lb && ub >= pvbs.ub
+                    case that: IntegerSet        ⇒ lb <= that.values.firstKey && ub >= that.values.lastKey
+                    case _                       ⇒ false
+                }
+            )
+        }
+
+        override def summarize(pc: PC): DomainValue = this
+
+        override def hashCode = ub
+
+        override def equals(other: Any): Boolean = {
+            other match {
+                case that: BaseTypesBasedSet ⇒ this.ub == that.ub
+                case _                       ⇒ false
+            }
+        }
+
+        override def toString: String = s"$name=[$lb,$ub]"
+    }
+
+    type DomainBaseTypesBasedSet = BaseTypesBasedSet
+    val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet] = implicitly
+
+    class ByteSet extends super.ByteSet with BaseTypesBasedSet {
+        def name = "ByteSet"
+        def newInstance = new ByteSet
+        final def lb = Byte.MinValue
+        final def ub = Byte.MaxValue
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+            target.ByteValue(pc)
+        }
+    }
+
+    class ShortSet extends super.ShortSet with BaseTypesBasedSet {
+        def name = "ShortSet"
+        def newInstance = new ShortSet
+        final def lb = Short.MinValue
+        final def ub = Short.MaxValue
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+            target.ShortValue(pc)
+        }
+    }
+
+    class CharSet extends super.CharSet with BaseTypesBasedSet {
+        def name = "CharSet"
+        def newInstance = new CharSet
+        final def lb = Char.MinValue
+        final def ub = Char.MaxValue
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+            target.CharValue(pc)
+        }
     }
 
     override def IntegerSet(values: SortedSet[Int]): IntegerSet = new IntegerSet(values)
@@ -141,30 +252,23 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         if (maxCardinalityOfIntegerSets > 1)
             IntegerSet(SortedSet(0, 1))
         else
-            AnIntegerValue()
+            new ByteSet()
     }
 
     override def BooleanValue(pc: PC, value: Boolean): DomainValue = {
         if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
     }
 
-    override def ByteValue(pc: PC): DomainValue = {
-        if (maxCardinalityOfIntegerSets > 255)
-            IntegerSet(SortedSet(Range.inclusive(Byte.MinValue, Byte.MaxValue): _*))
-        else
-            AnIntegerValue()
-    }
-
+    override def ByteValue(pc: PC): DomainValue = new ByteSet()
     override def ByteValue(pc: PC, value: Byte): DomainValue = IntegerSet(value.toInt)
 
-    override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
+    override def ShortValue(pc: PC): DomainValue = new ShortSet()
     override def ShortValue(pc: PC, value: Short): DomainValue = IntegerSet(value.toInt)
 
-    override def CharValue(pc: PC): DomainValue = AnIntegerValue()
+    override def CharValue(pc: PC): DomainValue = new CharSet()
     override def CharValue(pc: PC, value: Char): DomainValue = IntegerSet(value.toInt)
 
     override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
     override def IntegerValue(pc: PC, value: Int): DomainValue = IntegerSet(value)
 
 }
-

@@ -31,6 +31,7 @@ package ai
 package domain
 package l1
 
+import scala.reflect.ClassTag
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br._
@@ -63,13 +64,15 @@ trait IntegerSetValues
      *
      * In many cases a rather (4-16) small number is completely sufficient to
      * capture typical variability.
+     *
+     * The minimum value is 1; however 2 is the meaningful minimum value.
      */
     def maxCardinalityOfIntegerSets: Int = 8
 
     /**
      * Abstracts over all values with computational type `integer`.
      */
-    sealed trait IntegerLikeValue extends Value with IsIntegerValue { this: DomainValue ⇒
+    abstract class IntegerLikeValue extends Value with IsIntegerValue { this: DomainValue ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -80,7 +83,7 @@ trait IntegerSetValues
      *
      * Models the top value of this domain's lattice.
      */
-    trait AnIntegerValue extends IntegerLikeValue { this: DomainValue ⇒ }
+    abstract class AnIntegerValue extends IntegerLikeValue { this: DomainValue ⇒ }
 
     /**
      * Represents a set of integer values.
@@ -92,38 +95,97 @@ trait IntegerSetValues
     }
 
     /**
-     * Creates a new IntegerSet value containing the given value.
+     * Creates a new [[IntegerSet]] value containing the given value.
      */
     def IntegerSet(value: Int): DomainValue = IntegerSet(SortedSet(value))
 
     /**
-     * Creates a new IntegerSet value using the given set.
+     * Creates a new [[IntegerSet]] value using the given set unless the set exceeds the
+     * maximum cardinality.
      */
     def IntegerSet(values: SortedSet[Int]): DomainValue
 
+    type DomainBaseTypesBasedSet <: BaseTypesBasedSet with DomainValue
+    val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet]
+
+    trait BaseTypesBasedSet extends IntegerLikeValue { this: DomainValue ⇒
+        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue
+        def lb: Int
+        def ub: Int
+
+        def newInstance: DomainBaseTypesBasedSet
+    }
+
+// TODO suport 7 and 31 bit unsigned value!
+
+    abstract class ByteSet extends BaseTypesBasedSet { this: DomainValue ⇒
+        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+            other match {
+                case ByteSet()  ⇒ ByteValue(pc)
+                case ShortSet() ⇒ ShortValue(pc)
+                case _          ⇒ IntegerValue(pc)
+            }
+        }
+    }
+
+    abstract class ShortSet extends BaseTypesBasedSet { this: DomainValue ⇒
+        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+            other match {
+                case ByteSet()  ⇒ ShortValue(pc)
+                case ShortSet() ⇒ ShortValue(pc)
+                case _          ⇒ IntegerValue(pc)
+            }
+        }
+    }
+
+    abstract class CharSet extends BaseTypesBasedSet { this: DomainValue ⇒
+        def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
+            other match {
+                case CharSet() ⇒ CharValue(pc)
+                case _         ⇒ IntegerValue(pc)
+            }
+        }
+    }
+
+    protected[this] def approximateSet(origin: ValueOrigin, lb: Int, ub: Int): DomainValue = {
+        if (lb >= 0 && ub <= Char.MaxValue) CharValue(origin)
+        else if (lb >= Byte.MinValue && ub <= Byte.MaxValue) ByteValue(origin)
+        else if (lb >= Short.MinValue && ub <= Short.MaxValue) ShortValue(origin)
+        else IntegerValue(origin = origin)
+    }
+
     /**
-     * Implicitly creates a new IntegerSet value containing all values
-     * with the given bounds of the IntegerRange, as long as they don't
-     * exceed maxCardinalityOfIntegerSets.
+     * Creates a new IntegerSet value using the given set unless the set exceeds the
+     * maximum cardinality.
      */
-    def IntegerRange(
-        origin:     ValueOrigin,
-        lowerBound: Int, upperBound: Int
-    ): DomainValue = {
+    def IntegerSet(origin: ValueOrigin, values: SortedSet[Int]): DomainValue = {
+        if (values.size <= maxCardinalityOfIntegerSets)
+            IntegerSet(values)
+        else {
+            val lb = values.firstKey
+            val ub = values.lastKey
+            approximateSet(origin, lb, ub)
+        }
+    }
+
+    /**
+     * Creates a new IntegerSet value containing all values
+     * within the given bounds of the IntegerRange, as long as they don't
+     * exceed `maxCardinalityOfIntegerSets`.
+     */
+    def IntegerRange(origin: ValueOrigin, lowerBound: Int, upperBound: Int): DomainValue = {
         assert(lowerBound <= upperBound)
 
         if (upperBound.toLong - lowerBound.toLong <= maxCardinalityOfIntegerSets)
             IntegerSet(SortedSet[Int](lowerBound to upperBound: _*))
         else
-            IntegerValue(origin)
+            approximateSet(origin, lowerBound, upperBound)
     }
 
     /**
      * Extractor for `IntegerSet` values.
      */
-    object IntegerSet {
-        def unapply(v: IntegerSet): Option[SortedSet[Int]] = Some(v.values)
-    }
+    object IntegerSet { def unapply(v: IntegerSet): Some[SortedSet[Int]] = Some(v.values) }
 
     // -----------------------------------------------------------------------------------
     //
@@ -141,17 +203,19 @@ trait IntegerSetValues
         f: Int ⇒ T
     )(
         orElse: ⇒ T
-    ): T =
+    ): T = {
         value match {
             case IntegerSet(values) if values.size == 1 ⇒ f(values.head)
             case _                                      ⇒ orElse
         }
+    }
 
-    @inline final override def intValueOption(value: DomainValue): Option[Int] =
+    @inline final override def intValueOption(value: DomainValue): Option[Int] = {
         value match {
             case IntegerSet(values) if values.size == 1 ⇒ Some(values.head)
             case _                                      ⇒ None
         }
+    }
 
     @inline protected final def intValues[T](
         value1: DomainValue, value2: DomainValue
@@ -171,18 +235,17 @@ trait IntegerSetValues
         if (value1 eq value2)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
-            return Yes
+            return Yes;
 
         (value1, value2) match {
             case (IntegerSet(v1s), IntegerSet(v2s)) ⇒
                 if (v1s.size == 1 && v2s.size == 1)
                     Answer(v1s.head == v2s.head)
-                else {
-                    if (v1s.intersect(v2s).isEmpty)
-                        No
-                    else
-                        Unknown
-                }
+                else if (v1s.intersect(v2s).isEmpty)
+                    No
+                else
+                    Unknown
+
             case _ ⇒
                 Unknown
         }
@@ -198,9 +261,15 @@ trait IntegerSetValues
             Yes
         else value match {
             case IntegerSet(values) ⇒
-                Answer(values.lastKey >= lowerBound && values.firstKey <= upperBound)
-            case _ ⇒
-                Unknown
+                Answer(
+                    values.lastKey >= lowerBound && values.firstKey <= upperBound &&
+                        values.exists(value ⇒ value >= lowerBound && value <= upperBound)
+                )
+
+            case DomainBaseTypesBasedSet(value) ⇒
+                Answer(lowerBound <= value.ub && upperBound >= value.lb)
+
+            case _ ⇒ Unknown
         }
     }
 
@@ -215,8 +284,11 @@ trait IntegerSetValues
         else value match {
             case IntegerSet(values) ⇒
                 Answer(values.firstKey < lowerBound || values.lastKey > upperBound)
-            case _ ⇒
-                Unknown
+
+            case ByteSet()  ⇒ Answer(Byte.MinValue < lowerBound || Byte.MaxValue > upperBound)
+            case ShortSet() ⇒ Answer(Short.MinValue < lowerBound || Short.MaxValue > upperBound)
+            case CharSet()  ⇒ Answer(Char.MinValue < lowerBound || Char.MaxValue > upperBound)
+            case _          ⇒ Unknown
         }
     }
 
@@ -224,7 +296,7 @@ trait IntegerSetValues
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
-            return No
+            return No;
 
         right match {
             case IntegerSet(rightValues) ⇒
@@ -259,7 +331,7 @@ trait IntegerSetValues
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
-            return Yes
+            return Yes;
 
         right match {
             case IntegerSet(rightValues) ⇒
@@ -319,24 +391,42 @@ trait IntegerSetValues
     ): (Operands, Locals) = {
         if (value1 eq value2)
             // this basically handles the case that both are "AnIntegerValue"
-            (operands, locals)
-        else
-            value1 match {
-                case IntegerSet(leftValues) ⇒
-                    value2 match {
-                        case IntegerSet(rightValues) ⇒
-                            val newValue = IntegerSet(leftValues.intersect(rightValues))
-                            val (operands1, locals1) =
-                                updateMemoryLayout(value1, newValue, operands, locals)
-                            updateMemoryLayout(value2, newValue, operands1, locals1)
-                        case _ ⇒
-                            // value1 is unchanged
-                            updateMemoryLayout(value2, value1, operands, locals)
-                    }
-                case _ ⇒
-                    // value2 is unchanged
-                    updateMemoryLayout(value1, value2, operands, locals)
-            }
+            return (operands, locals);
+
+        value1 match {
+            case IntegerSet(leftValues) ⇒
+                value2 match {
+
+                    case IntegerSet(rightValues) ⇒
+                        val newValue = IntegerSet(pc, leftValues.intersect(rightValues))
+                        val (operands1, locals1) =
+                            updateMemoryLayout(value1, newValue, operands, locals)
+                        updateMemoryLayout(value2, newValue, operands1, locals1)
+
+                    case _ ⇒
+                        // value1 is unchanged (an IntegerSet value is always more precise)
+                        updateMemoryLayout(oldValue = value2, value1, operands, locals)
+                }
+            case DomainBaseTypesBasedSet(value1) ⇒
+                value2 match {
+                    case DomainBaseTypesBasedSet(value2) ⇒
+                        val newValue = value1.fuse(pc, value2)
+                        val (os1, ls1) = updateMemoryLayout(value1, newValue, operands, locals)
+                        updateMemoryLayout(value2, newValue, os1, ls1)
+
+                    case is: IntegerSet ⇒
+                        // value2 is unchanged
+                        updateMemoryLayout(oldValue = value1, value2, operands, locals)
+
+                    case _ /*AnIntegerValue*/ ⇒
+                        // value1 is unchanged (an IntegerSet value is always more precise)
+                        updateMemoryLayout(oldValue = value2, value1, operands, locals)
+                }
+
+            case _ /*AnIntegerValue*/ ⇒
+                // value2 is unchanged
+                updateMemoryLayout(oldValue = value1, value2, operands, locals)
+        }
     }
 
     override def intEstablishAreNotEqual(
@@ -346,13 +436,12 @@ trait IntegerSetValues
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {
+        assert(value1 ne value2, "the values are definitively equal; impossible refinement \"!=\"")
+
         intValue(value1) { v1 ⇒
             value2 match {
                 case IntegerSet(values) ⇒
-                    updateMemoryLayout(
-                        value2, IntegerSet(values - v1),
-                        operands, locals
-                    )
+                    updateMemoryLayout(value2, IntegerSet(pc, values - v1), operands, locals)
                 case _ ⇒
                     (operands, locals)
             }
@@ -360,11 +449,9 @@ trait IntegerSetValues
             intValue(value2) { v2 ⇒
                 value1 match {
                     case IntegerSet(values) ⇒
-                        updateMemoryLayout(
-                            value1, IntegerSet(values - v2),
-                            operands, locals
-                        )
-                    case _ ⇒ (operands, locals)
+                        updateMemoryLayout(value1, IntegerSet(pc, values - v2), operands, locals)
+                    case _ ⇒
+                        (operands, locals)
                 }
             } {
                 (operands, locals)
@@ -379,39 +466,57 @@ trait IntegerSetValues
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {
+        //        println("intEstablishIsLessThan"+System.identityHashCode(left).toHexString + left+" .... "+System.identityHashCode(right).toHexString + right)
+        //        println(locals.map(v ⇒ System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
 
-        (left, right) match {
+        assert(left ne right, "the values are definitively equal; impossible refinement \"<\"")
+
+        val result = (left, right) match {
             case (IntegerSet(ls), IntegerSet(rs)) ⇒
                 val rsMax = rs.lastKey
                 val newLs = ls.filter(_ < rsMax)
                 val (operands1, locals1) =
                     if (newLs.size != ls.size) {
-                        if (newLs.size == 0)
-                            println(left+"  .... "+right)
-                        updateMemoryLayout(
-                            left, IntegerSet(newLs),
-                            operands, locals
-                        )
+                        if (newLs.size == 0) {
+                            val message = s"constraint: $left < $right led to impossible value"
+                            throw new IllegalStateException(message)
+                        }
+                        updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
                     } else {
                         (operands, locals)
                     }
 
                 val lsMin = ls.firstKey
                 val newRs = rs.filter(_ > lsMin)
-                val newMemoryLayout =
-                    if (newRs.size != rs.size) {
-                        updateMemoryLayout(
-                            right, IntegerSet(newRs),
-                            operands1, locals1
-                        )
-                    } else {
-                        (operands1, locals1)
-                    }
+                if (newRs.size != rs.size) {
+                    updateMemoryLayout(right, IntegerSet(pc, newRs), operands1, locals1)
+                } else {
+                    (operands1, locals1)
+                }
 
-                newMemoryLayout
+            case (IntegerSet(ls), DomainBaseTypesBasedSet(right)) ⇒
+                val newLs = ls.filter(_ < right.ub)
+                updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
+
+            case (DomainBaseTypesBasedSet(left), IntegerSet(rs)) ⇒
+                val newIntValue = approximateSet(pc, left.lb, rs.lastKey - 1)
+                updateMemoryLayout(left, newIntValue, operands, locals)
+
+            case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) ⇒
+                updateMemoryLayout(left, approximateSet(pc, left.lb, right.ub), operands, locals)
+
+            case (_, DomainBaseTypesBasedSet(right)) ⇒
+                updateMemoryLayout(left, right.newInstance, operands, locals)
+
+            case (_, IntegerSet(rs)) ⇒
+                val newIntValue = approximateSet(pc, rs.firstKey - 1, rs.lastKey - 1)
+                updateMemoryLayout(left, newIntValue, operands, locals)
+
             case _ ⇒
                 (operands, locals)
         }
+        //        println(locals.map(v ⇒ System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
+        result
     }
 
     override def intEstablishIsLessThanOrEqualTo(
@@ -421,37 +526,55 @@ trait IntegerSetValues
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {
+        //        println("intEstablishIsLessThanOrEqualTo"+System.identityHashCode(left).toHexString + left+" .... "+System.identityHashCode(right).toHexString + right)
+        //        println(locals.map(v ⇒ System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
 
-        (left, right) match {
-            case (IntegerSet(ls), IntegerSet(rs)) ⇒
-                val rsMax = rs.lastKey
-                val newLs = ls.filter(_ <= rsMax)
-                val (operands1, locals1) =
-                    if (newLs.size != ls.size) {
-                        updateMemoryLayout(
-                            left, IntegerSet(newLs),
-                            operands, locals
-                        )
-                    } else {
-                        (operands, locals)
-                    }
+        val result =
+            (left, right) match {
+                case (IntegerSet(ls), IntegerSet(rs)) ⇒
+                    val rsMax = rs.lastKey
+                    val newLs = ls.filter(_ <= rsMax)
+                    val (operands1, locals1) =
+                        if (newLs.size != ls.size) {
+                            updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
+                        } else {
+                            (operands, locals)
+                        }
 
-                val lsMin = ls.firstKey
-                val newRs = rs.filter(_ >= lsMin)
-                val newMemoryLayout =
-                    if (newRs.size != rs.size) {
-                        updateMemoryLayout(
-                            right, IntegerSet(newRs),
-                            operands1, locals1
-                        )
-                    } else {
-                        (operands1, locals1)
-                    }
+                    val lsMin = ls.firstKey
+                    val newRs = rs.filter(_ >= lsMin)
+                    val newMemoryLayout =
+                        if (newRs.size != rs.size) {
+                            updateMemoryLayout(right, IntegerSet(pc, newRs), operands1, locals1)
+                        } else {
+                            (operands1, locals1)
+                        }
+                    newMemoryLayout
 
-                newMemoryLayout
-            case _ ⇒
-                (operands, locals)
-        }
+                case (IntegerSet(ls), DomainBaseTypesBasedSet(right)) ⇒
+                    val newLs = ls.filter(_ <= right.ub)
+                    updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
+
+                case (DomainBaseTypesBasedSet(left), IntegerSet(rs)) ⇒
+                    val newDomainValue = approximateSet(pc, left.lb, rs.lastKey)
+                    updateMemoryLayout(left, newDomainValue, operands, locals)
+
+                case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) ⇒
+                    val newIntValue = approximateSet(pc, left.lb, right.ub)
+                    updateMemoryLayout(left, newIntValue, operands, locals)
+
+                case (_, DomainBaseTypesBasedSet(right)) ⇒
+                    updateMemoryLayout(left, right.newInstance, operands, locals)
+
+                case (_, IntegerSet(rs)) ⇒
+                    val newIntValue = approximateSet(pc, rs.firstKey, rs.lastKey)
+                    updateMemoryLayout(left, newIntValue, operands, locals)
+
+                case _ ⇒
+                    (operands, locals)
+            }
+        //        println(locals.map(v ⇒ System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
+        result
     }
 
     // -----------------------------------------------------------------------------------
@@ -463,12 +586,13 @@ trait IntegerSetValues
     //
     // UNARY EXPRESSIONS
     //
-    /*override*/ def ineg(pc: PC, value: DomainValue) =
+    /*override*/ def ineg(pc: PC, value: DomainValue) = {
         value match {
             case IntegerSet(SingletonSet(Int.MinValue)) ⇒ value
-            case IntegerSet(values)                     ⇒ IntegerSet(values.map(-_))
+            case IntegerSet(values)                     ⇒ IntegerSet(pc, values.map(-_))
             case _                                      ⇒ IntegerValue(origin = pc)
         }
+    }
 
     //
     // BINARY EXPRESSIONS
@@ -477,14 +601,12 @@ trait IntegerSetValues
     /*override*/ def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+                // {1,2,3}+{0,1} => {1,2,3,4}
                 val results =
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue + rightValue
                     }
-                if (results.size <= maxCardinalityOfIntegerSets)
-                    IntegerSet(results)
-                else
-                    IntegerValue(origin = pc)
+                IntegerSet(pc, results)
             case _ ⇒
                 IntegerValue(origin = pc)
         }
@@ -504,10 +626,7 @@ trait IntegerSetValues
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue - rightValue
                     }
-                if (results.size <= maxCardinalityOfIntegerSets)
-                    IntegerSet(results)
-                else
-                    IntegerValue(origin = pc)
+                IntegerSet(pc, results)
             case _ ⇒
                 IntegerValue(origin = pc)
         }
@@ -526,10 +645,8 @@ trait IntegerSetValues
                             for (leftValue ← leftValues; rightValue ← rightValues) yield {
                                 leftValue * rightValue
                             }
-                        if (results.size <= maxCardinalityOfIntegerSets)
-                            IntegerSet(results)
-                        else
-                            IntegerValue(origin = pc)
+                        IntegerSet(pc, results)
+
                     case _ ⇒
                         IntegerValue(origin = pc)
 
@@ -558,23 +675,11 @@ trait IntegerSetValues
         assert(exception || results.nonEmpty)
 
         if (results.nonEmpty) {
-            if (results.size <= maxCardinalityOfIntegerSets) {
-                if (exception)
-                    ComputedValueOrException(
-                        IntegerSet(results),
-                        VMArithmeticException(pc)
-                    )
-                else
-                    ComputedValue(IntegerSet(results))
-            } else {
-                if (exception)
-                    ComputedValueOrException(
-                        IntegerValue(origin = pc),
-                        VMArithmeticException(pc)
-                    )
-                else
-                    ComputedValue(IntegerValue(origin = pc))
-            }
+            val newValue = IntegerSet(pc, results)
+            if (exception)
+                ComputedValueOrException(newValue, VMArithmeticException(pc))
+            else
+                ComputedValue(newValue)
         } else {
             ThrowsException(VMArithmeticException(pc))
         }
@@ -602,19 +707,13 @@ trait IntegerSetValues
                     if (rightValues.size == 1)
                         ThrowsException(VMArithmeticException(pc))
                     else
-                        ComputedValueOrException(
-                            IntegerValue(origin = pc),
-                            VMArithmeticException(pc)
-                        )
+                        ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
                 } else
                     ComputedValue(IntegerValue(origin = pc))
 
             case _ ⇒
                 if (throwArithmeticExceptions)
-                    ComputedValueOrException(
-                        IntegerValue(origin = pc),
-                        VMArithmeticException(pc)
-                    )
+                    ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
                 else
                     ComputedValue(IntegerValue(origin = pc))
         }
@@ -643,19 +742,13 @@ trait IntegerSetValues
                     if (rightValues.size == 1)
                         ThrowsException(VMArithmeticException(pc))
                     else
-                        ComputedValueOrException(
-                            IntegerValue(origin = pc),
-                            VMArithmeticException(pc)
-                        )
+                        ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
                 } else
                     ComputedValue(IntegerValue(origin = pc))
 
             case _ ⇒
                 if (throwArithmeticExceptions)
-                    ComputedValueOrException(
-                        IntegerValue(origin = pc),
-                        VMArithmeticException(pc)
-                    )
+                    ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
                 else
                     ComputedValue(IntegerValue(origin = pc))
         }
@@ -674,10 +767,8 @@ trait IntegerSetValues
                             for (leftValue ← leftValues; rightValue ← rightValues) yield {
                                 leftValue & rightValue
                             }
-                        if (results.size <= maxCardinalityOfIntegerSets)
-                            IntegerSet(results)
-                        else
-                            IntegerValue(origin = pc)
+                        IntegerSet(pc, results)
+
                     case _ ⇒
                         IntegerValue(origin = pc)
 
@@ -710,10 +801,8 @@ trait IntegerSetValues
                             for (leftValue ← leftValues; rightValue ← rightValues) yield {
                                 leftValue | rightValue
                             }
-                        if (results.size <= maxCardinalityOfIntegerSets)
-                            IntegerSet(results)
-                        else
-                            IntegerValue(origin = pc)
+                        IntegerSet(pc, results)
+
                     case _ ⇒
                         IntegerValue(origin = pc)
                 }
@@ -726,7 +815,9 @@ trait IntegerSetValues
                             value1
                         else
                             IntegerValue(origin = pc)
-                    case _ ⇒ IntegerValue(origin = pc)
+
+                    case _ ⇒
+                        IntegerValue(origin = pc)
                 }
         }
     }
@@ -737,10 +828,7 @@ trait IntegerSetValues
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue << rightValue
                 }
-                if (results.size <= maxCardinalityOfIntegerSets)
-                    IntegerSet(results)
-                else
-                    IntegerValue(origin = pc)
+                IntegerSet(pc, results)
 
             case _ ⇒
                 IntegerValue(origin = pc)
@@ -753,10 +841,7 @@ trait IntegerSetValues
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue >> rightValue
                 }
-                if (results.size <= maxCardinalityOfIntegerSets)
-                    IntegerSet(results)
-                else
-                    IntegerValue(origin = pc)
+                IntegerSet(pc, results)
 
             case _ ⇒
                 IntegerValue(origin = pc)
@@ -770,10 +855,7 @@ trait IntegerSetValues
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue >>> rightValue
                     }
-                if (results.size <= maxCardinalityOfIntegerSets)
-                    IntegerSet(results)
-                else
-                    IntegerValue(origin = pc)
+                IntegerSet(pc, results)
 
             case _ ⇒
                 IntegerValue(origin = pc)
@@ -787,10 +869,7 @@ trait IntegerSetValues
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue ^ rightValue
                     }
-                if (results.size <= maxCardinalityOfIntegerSets)
-                    IntegerSet(results)
-                else
-                    IntegerValue(origin = pc)
+                IntegerSet(pc, results)
 
             case _ ⇒
                 IntegerValue(origin = pc)
@@ -803,20 +882,20 @@ trait IntegerSetValues
 
     /*override*/ def i2b(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case IntegerSet(values) ⇒ IntegerSet(values.map(_.toByte.toInt))
-            case _                  ⇒ IntegerValue(origin = pc)
+            case IntegerSet(values) ⇒ IntegerSet(pc, values.map(_.toByte.toInt))
+            case _                  ⇒ ByteValue(origin = pc)
         }
 
     /*override*/ def i2c(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case IntegerSet(values) ⇒ IntegerSet(values.map(_.toChar.toInt))
-            case _                  ⇒ IntegerValue(origin = pc)
+            case IntegerSet(values) ⇒ IntegerSet(pc, values.map(_.toChar.toInt))
+            case _                  ⇒ CharValue(origin = pc)
         }
 
     /*override*/ def i2s(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case IntegerSet(values) ⇒ IntegerSet(values.map(_.toShort.toInt))
-            case _                  ⇒ IntegerValue(origin = pc)
+            case IntegerSet(values) ⇒ IntegerSet(pc, values.map(_.toShort.toInt))
+            case _                  ⇒ ShortValue(origin = pc)
         }
 
 }

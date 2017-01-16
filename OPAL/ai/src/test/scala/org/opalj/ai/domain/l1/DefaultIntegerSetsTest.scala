@@ -64,7 +64,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
     final val SomePC = 100000
 
     class IntegerSetsTestDomain(
-        override val maxCardinalityOfIntegerSets: Int = Int.MaxValue
+        override val maxCardinalityOfIntegerSets: Int = 254 // <= MAX SUPPORTED VALUE
     ) extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -1018,17 +1018,17 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
 
             it("(short)AnIntegerValue => AnIntegerValue") {
                 val v1 = AnIntegerValue
-                i2s(-1, v1) should be(AnIntegerValue)
+                i2s(-1, v1) should be(ShortValue(IrrelevantPC))
             }
 
-            it("(short){0,...,129} => {0,...,129}") {
-                val v1 = IntegerSet(SortedSet[Int](0 to 129: _*))
-                i2s(-1, v1) should be(IntegerSet(SortedSet[Int](0 to 129: _*)))
+            it("(short){-10,...,129} => {-10,...,129}") {
+                val v1 = IntegerSet(SortedSet[Int](-10 to 129: _*))
+                i2s(-1, v1) should be(IntegerSet(SortedSet[Int](-10 to 129: _*)))
             }
 
             it("(short){-128,...,+129000} => {-Short.MinValue,...,Short.MaxValue}") {
                 val v1 = IntegerSet(SortedSet[Int](-128 to 129000: _*))
-                i2s(-1, v1) should be(IntegerSet(SortedSet[Int](Short.MinValue to Short.MaxValue: _*)))
+                i2s(-1, v1) should be(ShortValue(IrrelevantPC))
             }
 
         }
@@ -1273,6 +1273,12 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                     val p = IntegerSet(SortedSet[Int](-10, 10))
                     intIsSomeValueInRange(IrrelevantPC, p, -100, -2) should be(Yes)
                 }
+
+                it("if the small values are too small and the large values are too large") {
+                    val p = IntegerSet(SortedSet[Int](-10, 10))
+                    intIsSomeValueInRange(IrrelevantPC, p, 0, 1) should be(No)
+                }
+
             }
         }
 
