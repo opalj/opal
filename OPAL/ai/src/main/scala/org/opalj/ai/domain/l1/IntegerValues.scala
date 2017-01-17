@@ -63,7 +63,6 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
-        def newInstance: DomainValue
     }
 
     /**

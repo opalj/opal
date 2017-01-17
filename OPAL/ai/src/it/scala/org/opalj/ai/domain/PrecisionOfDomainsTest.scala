@@ -30,6 +30,8 @@ package org.opalj
 package ai
 package domain
 
+import java.net.URL
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
@@ -55,14 +57,14 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
         type TheAIResult = AIResult { val domain: Domain with TheMethod }
 
         it("should return a more precise result") {
-            val project = createJREProject
+            val theProject = createJREProject
             // The following three domains are very basic domains that – given that the
             // same partial domains are used – should compute the same results.
 
-            // We use this domain for the comparison of the values; it has the same
+            // We use this domain for the comparison of the values; it has a comparable
             // expressive power as the other domains.
-            class TheValuesDomain(val project: Project[java.net.URL])
-                extends ValuesCoordinatingDomain
+            object ValuesDomain      extends {val project: Project[URL] = theProject }
+            with ValuesCoordinatingDomain
                 with l1.DefaultLongValues
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
@@ -70,7 +72,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l1.DefaultIntegerRangeValues
                 with TheProject
 
-            class TypeLevelDomain(val method: Method, val project: Project[java.net.URL])
+            class TypeLevelDomain(val method: Method, val project: Project[URL])
                 extends Domain
                 with TheProject
                 with TheMethod
@@ -88,7 +90,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelLongValuesShiftOperators
 
-            class L1RangesDomain[I](val method: Method, val project: Project[java.net.URL])
+            class L1RangesDomain[I](val method: Method, val project: Project[URL])
                 extends CorrelationalDomain
                 with TheProject
                 with TheMethod
@@ -107,7 +109,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
 
-            class L1SetsDomain[I](val method: Method, val project: Project[java.net.URL])
+            class L1SetsDomain[I](val method: Method, val project: Project[URL])
                 extends CorrelationalDomain
                 with TheProject
                 with TheMethod
@@ -124,8 +126,6 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
-
-            val ValuesDomain = new TheValuesDomain(project)
 
             def checkAbstractsOver(r1: TheAIResult, r2: TheAIResult): Option[String] = {
                 var pc = -1
@@ -178,11 +178,11 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
             val failed = new java.util.concurrent.atomic.AtomicBoolean(false)
             val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
-            project.parForeachMethodWithBody() { methodInfo ⇒
+            theProject.parForeachMethodWithBody() { methodInfo ⇒
                 val MethodInfo(_, classFile, method) = methodInfo
-                val r1 = BaseAI(classFile, method, new TypeLevelDomain(method, project))
-                val r2_ranges = BaseAI(classFile, method, new L1RangesDomain(method, project))
-                val r2_sets = BaseAI(classFile, method, new L1SetsDomain(method, project))
+                val r1 = BaseAI(classFile, method, new TypeLevelDomain(method, theProject))
+                val r2_ranges = BaseAI(classFile, method, new L1RangesDomain(method, theProject))
+                val r2_sets = BaseAI(classFile, method, new L1SetsDomain(method, theProject))
 
                 def handleAbstractsOverFailure(
                     lpDomain: String,
@@ -198,12 +198,11 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                             s"over the state of the more precise domain ($mpDomain)\n"+
                             "\t"+Console.BOLD + m + Console.RESET+"\n")
                     )
-
                 }
 
-                val handleFailure: String ⇒ Unit =
+                checkAbstractsOver(r1, r2_ranges).foreach(
                     handleAbstractsOverFailure("TypeLevelDomain", "L1RangesDomain")
-                checkAbstractsOver(r1, r2_ranges).foreach(handleFailure)
+                )
                 comparisonCount.incrementAndGet()
 
                 checkAbstractsOver(r1, r2_sets).foreach(

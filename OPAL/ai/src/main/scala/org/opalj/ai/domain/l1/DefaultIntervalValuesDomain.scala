@@ -35,7 +35,8 @@ import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.Project
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
+ * This domain uses the l1 level ''stable'' domains which handle primitive values using
+ * intervals/ranges.
  *
  * @author Michael Eichberg
  */
@@ -44,8 +45,7 @@ class DefaultConfigurableIntervalValuesDomain[I, Source](
     val project:   Project[Source],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with TheProject
         with TheMethod
         with DefaultDomainValueBinding
@@ -71,10 +71,9 @@ class DefaultIntervalValuesDomain[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
+) extends DefaultConfigurableIntervalValuesDomain[String, Source](
+    classFile.thisType.toJava+"{ "+method.toJava+"}",
+    project,
+    classFile,
+    method
 )
-        extends DefaultConfigurableIntervalValuesDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method
-        )

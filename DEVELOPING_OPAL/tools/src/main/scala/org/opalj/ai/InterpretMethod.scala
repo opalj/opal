@@ -292,9 +292,12 @@ object InterpretMethod {
                                 mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                                 "<div style='margin-left:5em'>"+causeToString(ife, true)+"</div>"
                         case e: Throwable ⇒
-                            d+"<br>"+
-                                "Underlying cause: "+util.XHTML.htmlify(e.getMessage()) //+
-                        // e.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")
+                            val message = e.getMessage()
+                            if (message != null)
+                                d+"<br>Underlying cause: "+util.XHTML.htmlify(message)
+                            else
+                                d+"<br>Underlying cause: <NULL>"
+                        // + e.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")
                         case _ ⇒
                             d
                     }

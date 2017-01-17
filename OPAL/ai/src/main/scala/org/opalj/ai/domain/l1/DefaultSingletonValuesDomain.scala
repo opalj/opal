@@ -31,67 +31,34 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 /**
- * This domain uses the l1 level ''stable'', partial domains,
- * including LongSetValues.
+ * This domain uses the l1 level ''stable'' domains which can "only" represent single
+ * values.
  *
  * @author Michael Eichberg
- * @author David Becker
  */
-class DefaultConfigurableLongSetValuesDomain[I, Source](
-    val id:        I,
+class DefaultSingletonValuesDomain[Source](
     val project:   Project[Source],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends CorrelationalDomain
+) extends Domain
+        with TypedValuesFactory
         with TheProject
         with TheMethod
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        // [NOT YET NEEDED] with PerInstructionPostProcessing
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
-        // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding
-        with l1.DefaultClassValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with l1.MaxArrayLengthRefinement // OPTIONAL
-        with l1.NullPropertyRefinement // OPTIONAL
-        with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongSetValues
+        with l0.DefaultReferenceValuesBinding
+        with l1.DefaultIntegerValues
+        with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions {
-
-    type Id = I
-
-}
-
-class DefaultLongSetValuesDomain[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
-)
-        extends DefaultConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method
-        )
-
-class DefaultLongSetValuesDomainWithCFG[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
-)
-        extends DefaultDomain[Source](project, classFile, method)
-        with RecordCFG
-
+        with l1.ConcretePrimitiveValuesConversions
