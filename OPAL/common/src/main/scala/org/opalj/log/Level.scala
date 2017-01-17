@@ -54,11 +54,11 @@ sealed trait Level {
  */
 case object Info extends Level {
 
-    def apply(info: String): LogMessage =
-        BasicLogMessage(message = info)
+    def apply(info: String): LogMessage = BasicLogMessage(message = info)
 
-    def apply(category: String, info: String): LogMessage =
+    def apply(category: String, info: String): LogMessage = {
         StandardLogMessage(category = Some(category), message = info)
+    }
 
     def ansiColorEscape: String = ""
 
@@ -73,11 +73,11 @@ case object Info extends Level {
  */
 case object Warn extends Level {
 
-    def apply(info: String): LogMessage =
-        BasicLogMessage(level = Warn, message = info)
+    def apply(info: String): LogMessage = BasicLogMessage(level = Warn, message = info)
 
-    def apply(category: String, info: String): LogMessage =
+    def apply(category: String, info: String): LogMessage = {
         StandardLogMessage(level = Warn, category = Some(category), message = info)
+    }
 
     def ansiColorEscape: String = Console.BLUE
 
@@ -93,14 +93,15 @@ case object Warn extends Level {
  */
 case object Error extends Level {
 
-    def apply(info: String): LogMessage =
-        BasicLogMessage(level = Error, message = info)
+    def apply(info: String): LogMessage = BasicLogMessage(level = Error, message = info)
 
-    def apply(category: String, info: String): LogMessage =
+    def apply(category: String, info: String): LogMessage = {
         StandardLogMessage(level = Error, category = Some(category), message = info)
+    }
 
-    def apply(category: String, info: String, t: Throwable): LogMessage =
+    def apply(category: String, info: String, t: Throwable): LogMessage = {
         ExceptionLogMessage(level = Error, category = Some(category), info, t)
+    }
 
     def ansiColorEscape: String = Console.RED
 
