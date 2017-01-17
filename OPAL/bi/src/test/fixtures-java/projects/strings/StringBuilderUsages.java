@@ -47,6 +47,15 @@ package strings;
  */
 public class StringBuilderUsages {
 
+
+    // Requires
+    // - requires an understanding of ".toCharArray" - a precise modeling of (constant) arrays
+    // - we need to know that INIT_CHAR_ARRAY is effective not mutated/constant
+    // - (for some cases) we need to model simple alternatives/repetitions etc. =>
+    //   *lightweight matchers*: "adsfasdf(XYZ|ZDY)" where () models an alternative.
+    // - we need to be able to "unroll loops" => loop detection and loop variables detection required
+    //
+
     final public static String INIT_STR = "0123456789";
     final public static char[] INIT_CHAR_ARRAY = INIT_STR.toCharArray();
 
@@ -72,14 +81,14 @@ public class StringBuilderUsages {
     public static String sequentialAppend(){
         final StringBuilder sb = new StringBuilder();
 
-        sb.append("List(");s
+        sb.append("List(");
         sb.append("1,2,3");
         sb.append(")");
 
         return sb.toString();
     }
 
-    public static String conditionalAppend(){
+    public static String alternatingAppend(){
         final StringBuilder sb = new StringBuilder();
 
         if(Math.random() > 0.5)
@@ -117,7 +126,7 @@ public class StringBuilderUsages {
     }
 
     /*
-     * ############ DELETE / DELETECHARAT ############
+     * ############ DELETE / DELETE_CHAR_AT ############
      */
 
     public static String deleteAtIndex(){
