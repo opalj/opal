@@ -115,7 +115,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     )(
         orElse: ⇒ T
     ): T = {
-        intValue(value1) { v1 ⇒ intValue(value2) { v2 ⇒ f(v1, v2) } { orElse }        } {            orElse        }
+        intValue(value1) { v1 ⇒ intValue(value2) { v2 ⇒ f(v1, v2) } { orElse } } { orElse }
     }
 
     override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
@@ -129,12 +129,12 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         upperBound: Int
     ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
-          return  Yes;
+            return Yes;
 
-            value match {
-                case TheIntegerValue(v) ⇒ Answer(v >= lowerBound && v <= upperBound)
-                case _                  ⇒ Unknown
-            }
+        value match {
+            case TheIntegerValue(v) ⇒ Answer(v >= lowerBound && v <= upperBound)
+            case _                  ⇒ Unknown
+        }
     }
 
     override def intIsSomeValueNotInRange(
@@ -146,10 +146,10 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             return No;
 
-            value match {
-                case TheIntegerValue(v) ⇒ Answer(v < lowerBound || v > upperBound)
-                case _                  ⇒ Unknown
-            }
+        value match {
+            case TheIntegerValue(v) ⇒ Answer(v < lowerBound || v > upperBound)
+            case _                  ⇒ Unknown
+        }
     }
 
     override def intIsLessThan(pc: PC, left: DomainValue, right: DomainValue): Answer = {
@@ -223,12 +223,12 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     ): IntegerValueOrArithmeticException = {
 
         (numerator, denominator) match {
-            case (_, TheIntegerValue(0)) ⇒                ThrowsException(VMArithmeticException(pc))
-            case (TheIntegerValue(n), TheIntegerValue(d)) ⇒  ComputedValue(IntegerValue(pc, n / d))
-            case (_, TheIntegerValue(_ /*<=> not 0*/ )) ⇒  ComputedValue(IntegerValue(origin = pc))
+            case (_, TheIntegerValue(0))                  ⇒ ThrowsException(VMArithmeticException(pc))
+            case (TheIntegerValue(n), TheIntegerValue(d)) ⇒ ComputedValue(IntegerValue(pc, n / d))
+            case (_, TheIntegerValue(_ /*<=> not 0*/ ))   ⇒ ComputedValue(IntegerValue(origin = pc))
             case _ ⇒
                 if (throwArithmeticExceptions)
-                    ComputedValueOrException(IntegerValue(origin = pc),VMArithmeticException(pc) )
+                    ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
                 else
                     ComputedValue(IntegerValue(origin = pc))
         }
@@ -241,12 +241,12 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     ): IntegerValueOrArithmeticException = {
 
         (left, right) match {
-            case (_, TheIntegerValue(0)) ⇒                ThrowsException(VMArithmeticException(pc))
+            case (_, TheIntegerValue(0))                  ⇒ ThrowsException(VMArithmeticException(pc))
             case (TheIntegerValue(n), TheIntegerValue(d)) ⇒ ComputedValue(IntegerValue(pc, n % d))
-            case (_, TheIntegerValue(_ /*<=> not 0*/ )) ⇒ ComputedValue(IntegerValue(origin = pc))
+            case (_, TheIntegerValue(_ /*<=> not 0*/ ))   ⇒ ComputedValue(IntegerValue(origin = pc))
             case _ ⇒
                 if (throwArithmeticExceptions)
-                    ComputedValueOrException(                        IntegerValue(origin = pc),VMArithmeticException(pc)                    )
+                    ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
                 else
                     ComputedValue(IntegerValue(origin = pc))
         }

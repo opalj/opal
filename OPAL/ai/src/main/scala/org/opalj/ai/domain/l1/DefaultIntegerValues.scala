@@ -36,6 +36,9 @@ package l1
  *
  * @see [[IntegerValues]] for more details.
  *
+ * @note   This domain uses a single object to represent some integer. I.e., this
+ *         domain does not support the identification of values that may be equal.
+ *
  * @author Michael Eichberg
  */
 trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues {
@@ -48,12 +51,9 @@ trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues 
      */
     object AnIntegerValue extends super.AnIntegerValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            NoUpdate
-        }
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
-        override def abstractsOver(other: DomainValue): Boolean =
-            other.isInstanceOf[IsIntegerValue]
+        override def abstractsOver(other: DomainValue): Boolean = other.isInstanceOf[IsIntegerValue]
 
         override def summarize(pc: PC): DomainValue = this
 
