@@ -160,7 +160,7 @@ object XHTML {
                 <h1>{ title }</h1>,
                 annotationsAsXHTML(method),
                 scala.xml.Unparsed(resultHeader),
-                dumpTable(code, domain)(operandsArray, localsArray)
+                dumpAIState(code, domain)(operandsArray, localsArray)
             )
         )
     }
@@ -207,12 +207,12 @@ object XHTML {
                 title.map(t ⇒ <h1>{ t }</h1>).getOrElse(Text("")),
                 annotations,
                 scala.xml.Unparsed(resultHeader.getOrElse("")),
-                dumpTable(code, domain)(operandsArray, localsArray)
+                dumpAIState(code, domain)(operandsArray, localsArray)
             )
         )
     }
 
-    private def dumpTable(
+    def dumpAIState(
         code:   Code,
         domain: Domain
     )(
@@ -241,7 +241,7 @@ object XHTML {
             id.intValue()
         }
 
-        // We cannot create "reasonable output in case of VERY VERY large methods"
+        // We cannot create a "reasonable output in case of VERY VERY large methods"
         // E.g., a method with 30000 instructions and 1000 locals would create
         // a table with ~ 30.000.000 rows...
         val rowsCount = code.instructionsCount * code.maxLocals
@@ -277,13 +277,11 @@ object XHTML {
     }
 
     private def annotations(method: Method): Seq[String] = {
-        val annotations =
-            method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
+        val annotations = method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
         annotations.map(_.toJava)
     }
 
-    private def indexExceptionHandlers(code: Code) =
-        code.exceptionHandlers.zipWithIndex.toMap
+    private def indexExceptionHandlers(code: Code) = code.exceptionHandlers.zipWithIndex.toMap
 
     private def dumpInstructions(
         code:         Code,
