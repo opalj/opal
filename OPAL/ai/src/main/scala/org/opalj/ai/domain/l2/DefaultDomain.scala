@@ -75,8 +75,7 @@ class SharedDefaultDomain[Source](
     val project:   Project[Source],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends TheMethod
+) extends TheMethod
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -101,8 +100,7 @@ class DefaultDomain[Source](
     method:                             Method,
     val frequentEvaluationWarningLevel: Int,
     val maxCallChainLength:             Int
-)
-        extends SharedDefaultDomain[Source](project, classFile, method)
+) extends SharedDefaultDomain[Source](project, classFile, method)
         with PerformInvocationsWithRecursionDetection
         with RecordCFG
         with TheMemoryLayout {
@@ -155,8 +153,7 @@ class ChildDefaultDomain[Source](
     method:                 Method,
     val callerDomain:       PerformInvocationsWithRecursionDetection { type CalledMethodDomain = ChildDefaultDomain[Source] },
     val maxCallChainLength: Int
-)
-        extends SharedDefaultDomain[Source](project, classFile, method)
+) extends SharedDefaultDomain[Source](project, classFile, method)
         with ChildPerformInvocationsWithRecursionDetection
         with DefaultRecordMethodCallResults { callingDomain ⇒
 

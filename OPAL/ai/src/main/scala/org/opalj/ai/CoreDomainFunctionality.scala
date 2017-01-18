@@ -261,12 +261,10 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
     /**
      * Enables the customization of the behavior of the base [[join]] method.
      *
-     * This method in particular enables, in case of a
-     * [[MetaInformationUpdate]], to raise the update type to force the
-     * continuation of the abstract interpretation process.
+     * This method in particular enables, in case of a [[MetaInformationUpdate]],
+     * to raise the update type to force the continuation of the abstract interpretation process.
      *
-     * Methods should always `abstract override` this method and should call the super
-     * method.
+     * Methods should always `override` this method and should call the super method.
      *
      * @param   updateType The current update type. The level can be raised. It is
      *          an error to lower the update level.
@@ -318,108 +316,109 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * This enables the domain to precisely follow the evaluation
      * progress and in particular to perform control-flow dependent analyses.
      *
-     * @param currentPC The program counter of the instruction that is currently evaluated
-     *      by the abstract interpreter.
+     * @param  currentPC The program counter of the instruction that is currently evaluated
+     *         by the abstract interpreter.
      *
-     * @param currentOperands The current operands. I.e., the operand stack before the
-     *      instruction is evaluated.
+     * @param  currentOperands The current operands. I.e., the operand stack before the
+     *         instruction is evaluated.
      *
-     * @param currentLocals The current locals. I.e., the locals before the instruction is
-     *      evaluated.
+     * @param  currentLocals The current locals. I.e., the locals before the instruction is
+     *         evaluated.
      *
-     * @param successorPC The program counter of an instruction that is a potential
-     *      successor of the instruction with `currentPC`. In general the AI framework
-     *      adds the pc of the successor instruction to the beginning of the worklist
-     *      unless it is a join instruction. In this case the pc added to the end – in
-     *      the context of the current (sub)routine. Hence, the AI framework first evaluates
-     *      all paths leading to a join instruction before the join instruction will
-     *      be evaluated.
+     * @param  successorPC The program counter of an instruction that is a potential
+     *         successor of the instruction with `currentPC`. In general the AI framework
+     *         adds the pc of the successor instruction to the beginning of the worklist
+     *         unless it is a join instruction. In this case the pc is added to the end – in
+     *         the context of the current (sub)routine. Hence, the AI framework first evaluates
+     *         all paths leading to a join instruction before the join instruction will
+     *         be evaluated.
      *
-     * @param isSuccessorScheduled `Yes` if the successor instruction is or was scheduled.
-     *      I.e., `Yes` is returned if the worklist contains `successorPC`, `No` if the
-     *      worklist does not contain `successorPC`. `Unknown` is returned if the AI
-     *      framework did not process the worklist and doesn't know anything about
-     *      the scheduled successors. Note that this value is independent of the
-     *      subroutine in which the value may be scheduled.
+     * @param  isSuccessorScheduled `Yes` if the successor instruction is or was scheduled.
+     *         I.e., `Yes` is returned if the worklist contains `successorPC`, `No` if the
+     *         worklist does not contain `successorPC`. `Unknown` is returned if the AI
+     *         framework did not process the worklist and doesn't know anything about
+     *         the scheduled successors. Note that this value is independent of the
+     *         subroutine in which the value may be scheduled. If an implementation schedules
+     *         `successorPC` the the super call has to set `isSuccessorScheduled` to `Yes`.
      *
-     * @param isExceptionalControlFlow `true` if and only if the evaluation of
-     *      the instruction with the program counter `currentPC` threw an exception;
-     *      `false` otherwise. Hence, if `true` the instruction with `successorPC` is the
-     *      first instruction of the handler.
+     * @param  isExceptionalControlFlow `true` if and only if the evaluation of
+     *         the instruction with the program counter `currentPC` threw an exception;
+     *         `false` otherwise. Hence, if this parameter is `true` the instruction
+     *         with `successorPC` is the first instruction of the handler.
      *
-     * @param abruptSubroutineTerminationCount `> 0` if and only if we have an exceptional
-     *      control flow that terminates one or more subroutines.
-     *      In this case the successor instruction
-     *      is scheduled (if at all) after all subroutines that will be terminated by
-     *      the exception.
+     * @param  abruptSubroutineTerminationCount `> 0` if and only if we have an exceptional
+     *         control flow that terminates one or more subroutines.
+     *         In this case the successor instruction is scheduled (if at all) after all
+     *         subroutines that will be terminated by the exception.
      *
-     * @param wasJoinPerformed `True` if a join was performed. I.e., the successor
-     *      instruction is a join instruction (`Code.joinInstructions`) that was already
-     *      previously evaluated.
+     * @param  wasJoinPerformed `true` if a join was performed. I.e., the successor
+     *         instruction is a join instruction (`Code.joinInstructions`) that was already
+     *         previously evaluated.
      *
-     * @param operandsArray The array that associates '''every instruction''' with its
-     *      operand stack that is in effect.  Note, that only those elements of the
-     *      array contain values that are related to instructions that were
-     *      evaluated in the past; the other elements are `null`. Furthermore,
-     *      it identifies the `operandsArray` of the subroutine that will executed the
-     *      instruction with `successorPC`.
-     *      '''The operandsArray may be `null` for the ''current'' instruction (not the successor
-     *      instruction) if the execution of the current instruction leads to the termination
-     *      of the current subroutine. In this case the information about the operands
-     *      and locals associated with all instructions belonging to the subroutine is
-     *      reset.'''
+     * @param  operandsArray The array that associates '''every instruction''' with its
+     *         operand stack that is in effect.  Note, that only those elements of the
+     *         array contain values that are related to instructions that were
+     *         evaluated in the past; the other elements are `null`. Furthermore,
+     *         it identifies the `operandsArray` of the subroutine that will execute the
+     *         instruction with `successorPC`.
+     *         '''The operandsArray may be `null` for the ''current'' instruction (not the successor
+     *         instruction) if the execution of the current instruction leads to the termination
+     *         of the current subroutine. In this case the information about the operands
+     *         and locals associated with all instructions belonging to the subroutine is
+     *         reset.'''
      *
-     * @param localsArray The array that associates every instruction with its current
-     *      register values. Note, that only those elements of the
-     *      array contain values that are related to instructions that were evaluated in
-     *      the past. The other elements are `null`. Furthermore,
-     *      it identifies the `localsArray` of the subroutine that will executed the
-     *      instruction with `successorPC`.
-     *      '''The localsArray may be `null` for the ''current'' instruction (not the successor
-     *      instruction) if the execution of the current instruction leads to the termination
-     *      of the current subroutine. In this case the information about the operands
-     *      and locals associated with all instructions belonging to the subroutine is
-     *      reset.'''
+     * @param  localsArray The array that associates every instruction with its current
+     *         register values. Note, that only those elements of the
+     *         array contain values that are related to instructions that were evaluated in
+     *         the past. The other elements are `null`. Furthermore,
+     *         it identifies the `localsArray` of the subroutine that will execute the
+     *         instruction with `successorPC`.
+     *         '''The localsArray may be `null` for the ''current'' instruction (not the successor
+     *         instruction) if the execution of the current instruction leads to the termination
+     *         of the current subroutine. In this case the information about the operands
+     *         and locals associated with all instructions belonging to the subroutine is
+     *         reset.'''
      *
-     * @param worklist The current list of instructions that will be evaluated next.
-     *      ==If subroutines are not used (i.e., Java >= 6)==
-     *      If you want to force the evaluation of the instruction
-     *      with the program counter `successorPC` it is sufficient to test whether
-     *      the list already contains `successorPC` and – if not – to prepend it.
-     *      If the worklist already contains `successorPC` then the domain is allowed
-     *      to move the PC to the beginning of the worklist.
+     * @param  worklist The current list of instructions that will be evaluated next.
      *
-     *      ==If the code contains subroutines (JSR/RET)==
-     *      However, if the PC does not belong to the same (current)
-     *      (sub)routine, it is not allowed to be moved to the beginning
-     *      of the worklist. (Subroutines can only be found in code generated by old
-     *      Java compilers; before Java 6. Subroutines are identified by jsr/ret
-     *      instructions. A subroutine can be identified by going back in the worklist
-     *      and by looking for specific "program counters" (e.g., [[SUBROUTINE_START]],
-     *      [[SUBROUTINE_END]]).
-     *      These program counters mark the beginning of a subroutine. In other
-     *      words, an instruction can be freely moved around unless a special program
-     *      counter value is found. All special program counters use negative values.
-     *      Additionally, neither the negative values nor the positive values between
-     *      two negative values should be changed. Furthermore, no value (PC) should be put
-     *      between negative values that capture subroutine information.
-     *      If the domain updates the worklist, it is the responsibility of the domain
-     *      to call the tracer and to inform it about the changes.
-     *      Note that the worklist is not allowed to contain duplicates related to the
-     *      evaluation of the current (sub-)routine.
+     *         ==If subroutines are not used (i.e., Java >= 5)==
+     *         If you want to force the evaluation of the instruction
+     *         with the program counter `successorPC` it is sufficient to test whether
+     *         the list already contains `successorPC` and – if not – to prepend it.
+     *         If the worklist already contains `successorPC` then the domain is allowed
+     *         to move the PC to the beginning of the worklist.
+     *
+     *         ==If the code contains subroutines (JSR/RET)==
+     *         If the PC does not belong to the same (current) (sub)routine, it is not
+     *         allowed to be moved to the beginning of the worklist.
+     *         (Subroutines can only be found in code generated by old Java compilers;
+     *         before Java 6. Subroutines are identified by jsr/ret instructions.
+     *         A subroutine can be identified by going back in the worklist
+     *         and by looking for specific "program counters" (e.g., [[SUBROUTINE_START]],
+     *         [[SUBROUTINE_END]]).
+     *         These program counters mark the beginning of a subroutine. In other
+     *         words, an instruction can be freely moved around unless a special program
+     *         counter value is found. All special program counters use negative values.
+     *         Additionally, neither the negative values nor the positive values between
+     *         two negative values should be changed. Furthermore, no value (PC) should be put
+     *         between negative values that capture subroutine information.
+     *         If the domain updates the worklist, it is the responsibility of the domain
+     *         to call the tracer and to inform it about the changes.
+     *         Note that the worklist is not allowed to contain duplicates related to the
+     *         evaluation of the current (sub-)routine.
      *
      * @return The updated worklist. In most cases this is simply the given `worklist`.
-     *      The default case is also to return the given `worklist`.
+     *         The default case is also to return the given `worklist`.
      *
-     * @note The domain is allowed to modify the `worklist`, `operandsArray` and
-     *      `localsArray`. However, the AI will not perform any checks. '''In case of
-     *      updates of the `operandsArray` or `localsArray` it is necessary to first
-     *      create a shallow copy before updating it.
-     *      If this is not done, it may happen that the locals associated
-     *      with other instructions are also updated.
+     * @note   The domain is allowed to modify the `worklist`, `operandsArray` and
+     *         `localsArray`. However, the AI will not perform any checks. '''In case of
+     *         updates of the `operandsArray` or `localsArray` it is necessary to first
+     *         create a shallow copy before updating it.
+     *         If this is not done, it may happen that the locals associated
+     *         with other instructions are also updated.
      *
-     * @note '''A method that overrides this method must always call the super method
-     *      to ensure that every domain that uses this hook gets informed about a flow.'''
+     * @note   '''A method that overrides this method must always call the super method
+     *         to ensure that every domain that uses this hook gets informed about a flow.'''
      */
     def flow(
         currentPC:                        PC,
@@ -459,8 +458,8 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      *
      * By default this method does nothing.
      *
-     * Domains that override this method are expected to do so by means of an abstract override
-     * where they '''always''' also call `super.abstractInterpretationEnded(aiResult)`.
+     * Domains that override this method are expected to also call
+     * `super.abstractInterpretationEnded(aiResult)`.
      */
     def abstractInterpretationEnded(aiResult: AIResult { val domain: coreDomain.type }): Unit = {
         /* does nothing by default */

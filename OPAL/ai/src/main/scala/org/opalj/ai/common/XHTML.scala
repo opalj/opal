@@ -82,8 +82,7 @@ object XHTML {
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
         try {
-            if (result.wasAborted)
-                throw new RuntimeException("interpretation aborted")
+            if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f(result)
         } catch {
             case ct: ControlThrowable ⇒ throw ct
@@ -92,11 +91,10 @@ object XHTML {
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
+                    val code = method.body.get
                     val dump =
                         XHTML.dump(
-                            Some(classFile), Some(method), method.body.get,
-                            title,
-                            theDomain
+                            Some(classFile), Some(method), code, title, theDomain
                         )(operandsArray, localsArray)
                     writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
@@ -133,12 +131,9 @@ object XHTML {
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
+                    val message = "Dump generated due to exception: "+e.getMessage
                     writeAndOpen(
-                        dump(
-                            classFile.get, method.get,
-                            "Dump generated due to exception: "+e.getMessage,
-                            result
-                        ),
+                        dump(classFile.get, method.get, message, result),
                         "AIResult",
                         ".html"
                     )
@@ -174,9 +169,8 @@ object XHTML {
         <div class="annotations">
             {
                 this.annotations(method) map { annotation ⇒
-                    <div class="annotation">
-                        { Unparsed(annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")) }
-                    </div>
+                    val info = annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")
+                    <div class="annotation">{ Unparsed(info) }</div>
                 }
             }
         </div>
