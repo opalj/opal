@@ -39,7 +39,7 @@ import br._
  *
  * This greatly facilitates the implementation of methods that need to simulate
  * the logic of a specific object.
-  *
+ *
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
  */
