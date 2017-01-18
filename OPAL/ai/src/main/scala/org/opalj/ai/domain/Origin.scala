@@ -47,10 +47,7 @@ package domain
 trait Origin { domain: ValuesDomain ⇒
 
     implicit object SingleOriginValueOrdering extends Ordering[SingleOriginValue] {
-
-        def compare(x: SingleOriginValue, y: SingleOriginValue): Int = {
-            x.origin - y.origin
-        }
+        def compare(x: SingleOriginValue, y: SingleOriginValue): Int =    x.origin - y.origin
     }
 
     trait ValueWithOriginInformation {
@@ -98,15 +95,11 @@ trait Origin { domain: ValuesDomain ⇒
 }
 
 object Origin {
-
     def unapply(value: Origin#SingleOriginValue): Option[Int] = Some(value.origin)
-
 }
 
 object Origins {
-
     def unapply(value: Origin#ValueWithOriginInformation): Option[Iterable[ValueOrigin]] = {
         Some(value.origins)
     }
-
 }
