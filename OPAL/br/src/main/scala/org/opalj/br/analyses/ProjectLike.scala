@@ -169,14 +169,14 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
     /**
      * Stores for each non-private, non-initializer method the set of methods which override
-     * the specific method. If the given method is a concrete method, this method is also
+     * a specific method. If the given method is a concrete method, this method is also
      * included in the set of `overridingMethods`.
      */
     protected[this] val overridingMethods: SomeMap[Method, Set[Method]]
 
     /**
      * Returns the set of methods which directly override the given method. Note that
-     * `overriddenBy` is not context aware. I.e., if a given method `m` is an inteface
+     * `overriddenBy` is not context aware. I.e., if a given method `m` is an interface
      * method, then it may happen that we have an implementation of that method
      * in a class which is inherited from a superclass which is not a subtype of the
      * interface. That method - since it is not defined by a subtype of the interface -
@@ -258,7 +258,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * The `callingContextType` is only relevant in case the target method has default visibility;
      * in this case it is checked whether the caller belongs to the same context.
      *
-     * @note    This method uses the precomputed information about instance methods and,
+     * @note    This method uses the pre-computed information about instance methods and,
      *          therefore, does not require a type hierarchy based lookup.
      *
      * @note    It supports the lookup of polymorphic methods.
