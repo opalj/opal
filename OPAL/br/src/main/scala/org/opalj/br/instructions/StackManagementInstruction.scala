@@ -49,7 +49,8 @@ abstract class StackManagementInstruction extends Instruction with ConstantLengt
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         UShortSet(indexOfNextInstruction(currentPC))
     }
@@ -70,4 +71,3 @@ abstract class StackManagementInstruction extends Instruction with ConstantLengt
     final def expressionResult: NoExpression.type = NoExpression
 
 }
-

@@ -71,7 +71,8 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC))

@@ -54,7 +54,8 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         // the fallback is only used if we have multiple return instructions
         def fallback() = {

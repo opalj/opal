@@ -39,19 +39,22 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class CreateNewArrayInstruction extends Instruction with ConstantLengthInstruction {
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (this == other)
     }
 
-    final def jvmExceptions: List[ObjectType] = CreateNewArrayInstruction.jvmExceptionsAndErrors
+    override final def jvmExceptions: List[ObjectType] = {
+        CreateNewArrayInstruction.jvmExceptionsAndErrors
+    }
 
-    final def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC))
@@ -61,14 +64,14 @@ abstract class CreateNewArrayInstruction extends Instruction with ConstantLength
             )
     }
 
-    final def expressionResult: Stack.type = Stack
+    override final def expressionResult: Stack.type = Stack
 
 }
 
 object CreateNewArrayInstruction {
 
-    val jvmExceptions = List(ObjectType.NegativeArraySizeException)
+    val jvmExceptions: List[ObjectType] = List(ObjectType.NegativeArraySizeException)
 
-    val jvmExceptionsAndErrors = ObjectType.OutOfMemoryError :: jvmExceptions
+    val jvmExceptionsAndErrors: List[ObjectType] = ObjectType.OutOfMemoryError :: jvmExceptions
 
 }

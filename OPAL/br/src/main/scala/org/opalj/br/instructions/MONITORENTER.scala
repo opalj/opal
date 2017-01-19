@@ -52,7 +52,8 @@ case object MONITORENTER extends SynchronizationInstruction {
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC))

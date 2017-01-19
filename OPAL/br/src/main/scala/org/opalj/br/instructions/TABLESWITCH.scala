@@ -87,7 +87,8 @@ case class TABLESWITCH(
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         var pcs = UShortSet(currentPC + defaultOffset)
         jumpOffsets foreach (offset ⇒ { pcs = (currentPC + offset) +≈: pcs })

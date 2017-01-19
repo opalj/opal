@@ -39,14 +39,15 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class FloatingPointDivideInstruction extends DivideInstruction {
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ObjectType] = Nil
 
-    final def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         UShortSet(indexOfNextInstruction(currentPC))
     }

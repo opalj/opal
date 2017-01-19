@@ -66,14 +66,15 @@ trait SimpleConditionalBranchInstruction
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         UShortSet(indexOfNextInstruction(currentPC), currentPC + branchoffset)
     }
 
-    override def toString(currentPC: Int) = {
-        getClass.getSimpleName +
-            s"(true=${currentPC + branchoffset}${if (branchoffset >= 0) "↓" else "↑"}, false=↓)"
+    override def toString(currentPC: Int): String = {
+        val jumpDirection = if (branchoffset >= 0) "↓" else "↑"
+        s"${getClass.getSimpleName}(true=${currentPC + branchoffset}$jumpDirection, false=↓)"
     }
 
 }

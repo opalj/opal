@@ -65,6 +65,8 @@ class CFGFactoryTest extends FunSpec with Matchers {
         val errors = new java.util.concurrent.ConcurrentLinkedQueue[String]
         val executionTime = new java.util.concurrent.atomic.AtomicLong(0l)
 
+        implicit val classHierarchy = project.classHierarchy
+
         project.parForeachMethodWithBody(() ⇒ false) { m ⇒
             val MethodInfo(_, classFile, method) = m
             implicit val code = method.body.get

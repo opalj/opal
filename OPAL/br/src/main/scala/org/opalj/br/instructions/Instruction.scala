@@ -61,7 +61,8 @@ trait Instruction extends InstructionLike {
         regularSuccessorsOnly: Boolean = false
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs
 }
 
@@ -100,16 +101,16 @@ object Instruction {
         exceptions:  List[ObjectType]
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): UShortSet /* <= mutable by purpose! */ = {
-
+        import classHierarchy.isSubtypeOf
         var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC))
 
         def processException(exception: ObjectType): Unit = {
-            import Code.preDefinedClassHierarchy.isSubtypeOf
             code.handlersFor(currentPC) find { handler ⇒
                 val catchType = handler.catchType
-                catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYes
+                catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYesOrUnknown
             } match {
                 case Some(handler) ⇒ pcs = handler.handlerPC +≈: pcs
                 case _             ⇒ /* exception is not handled */
@@ -127,15 +128,15 @@ object Instruction {
         exception:   ObjectType
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): UShortSet /* <= mutable by purpose! */ = {
-
+        import classHierarchy.isSubtypeOf
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
 
         code.handlersFor(currentPC) find { handler ⇒
-            import Code.preDefinedClassHierarchy.isSubtypeOf
             val catchType = handler.catchType
-            catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYes
+            catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYesOrUnknown
         } match {
             case Some(handler) ⇒ UShortSet(nextInstruction, handler.handlerPC)
             case None          ⇒ UShortSet(nextInstruction)

@@ -46,7 +46,8 @@ abstract class PrimitiveArrayStoreInstruction extends ArrayStoreInstruction {
         currentPC: PC, regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC))

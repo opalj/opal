@@ -55,14 +55,13 @@ case object AASTORE extends ArrayStoreInstruction {
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC))
         else
-            Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, jvmExceptions
-            )
+            Instruction.nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
     }
 
 }

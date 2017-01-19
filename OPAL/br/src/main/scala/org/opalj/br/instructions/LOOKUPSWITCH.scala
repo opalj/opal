@@ -90,7 +90,8 @@ case class LOOKUPSWITCH(
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         var pcs = UShortSet(currentPC + defaultOffset)
         npairs foreach { npair ⇒

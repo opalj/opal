@@ -1104,6 +1104,23 @@ trait AI[D <: Domain] {
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
                 /*
+              TODO  def markAsDead(lvIndex : Int) : Unit = {
+                    if(joinPCs.contains(pc))
+                        // We cannot propagate dead value information beyond an instruction
+                        // at which multiple paths join.
+                        return;
+
+                    // the current instruction is the store instruction(!)
+                    evaluated.tail foreachWhile{pc =>
+                        pc != SUBROUTINE_END && {
+                            !joinPCs.contains(pc)
+                        }
+                        }
+                }
+                *
+                */
+
+                /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
                  * value.
                  */

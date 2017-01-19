@@ -57,7 +57,8 @@ abstract class LoadLocalVariableInstruction extends Instruction {
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): PCs = {
         UShortSet(indexOfNextInstruction(currentPC))
     }

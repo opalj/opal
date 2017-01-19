@@ -153,7 +153,8 @@ class Project[Source] private (
     private[this] final implicit val thisProject: this.type = this
 
     assert(
-        !libraryClassFilesAreInterfacesOnly || libraryClassFiles.forall(_.methods.forall(_.body.isEmpty)),
+        !libraryClassFilesAreInterfacesOnly || 
+        libraryClassFiles.forall(_.methods.forall(_.body.isEmpty)),
         "the library's methods contain bodies though libraryClassFilesAreInterfacesOnly is true"
     )
 
@@ -1264,7 +1265,7 @@ object Project {
                         ClassHierarchy.noDefaultTypeHierarchyDefinitions
                     } else {
                         val alternative = "(using the preconfigured type hierarchy (based on Java 7) for classes belonging java.lang)"
-                        info("project configuration", "JDK classes not found"+alternative)
+                        info("project configuration", "JDK classes not found "+alternative)
                         ClassHierarchy.defaultTypeHierarchyDefinitions
                     }
 
