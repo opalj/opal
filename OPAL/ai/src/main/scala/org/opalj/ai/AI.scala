@@ -990,8 +990,7 @@ trait AI[D <: Domain] {
                         trace.head match {
                             case SUBROUTINE_START ⇒ subroutineLevel -= 1
                             case SUBROUTINE_END   ⇒ subroutineLevel += 1
-                            case pc ⇒
-                                if (subroutineLevel == 0) subroutine :&:= pc
+                            case pc ⇒               if (subroutineLevel == 0) subroutine :&:= pc
                         }
                         trace = trace.tail
                     }
@@ -1104,6 +1103,25 @@ trait AI[D <: Domain] {
                 }
 
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
+
+                /*
+                 * Marks the specified local variable as dead - this prevents unnecessary
+                 * reevaluations of instructions in cases where a join with the (dead)
+                 * value would result in a seemingly meaningful value and hence would trigger
+                 * the continuation of the abstract interpretation.
+                 */
+                def markAsDead(lvIndex : Int): Unit = {
+                    // Algorithm:
+                    // We go back until we find an effective use (i.e., a load) or we
+                    // reach a join instruction or a subroutine (end); a subroutine start is
+                    // a join instruction if it has multiple call sites..
+                    // An iinc instruction - which may access the local variable - is not
+                    // consider an effective use, because without a subsequent load
+                    // instruction the operation has no lasting effect.
+                    // If the local variable is marked as dead for the predecessor insruction
+                    // of the current instruction, we no longer have to propagate the
+                    // liveness information.
+                }
 
                 /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
@@ -2070,85 +2088,64 @@ trait AI[D <: Domain] {
                         | 54 /*istore*/
                         | 55 /*lstore*/ ⇒
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
-                        fallThrough(
-                            operands.tail,
-                            locals.updated(lvIndex, operands.head)
-                        )
+                        markAsDead(lvIndex)
+                        fallThrough(                            operands.tail,                            locals.updated(lvIndex, operands.head)                        )
                     case 75 /*astore_0*/
                         | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
                         | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
-                        fallThrough(
-                            operands.tail, locals.updated(0, operands.head)
-                        )
+                        markAsDead(0)
+                        fallThrough(                            operands.tail, locals.updated(0, operands.head)                        )
                     case 76 /*astore_1*/
                         | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
                         | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
-                        fallThrough(
-                            operands.tail, locals.updated(1, operands.head)
-                        )
+                        markAsDead(1)
+                        fallThrough(                            operands.tail, locals.updated(1, operands.head)                        )
                     case 77 /*astore_2*/
                         | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
                         | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
-                        fallThrough(
-                            operands.tail, locals.updated(2, operands.head)
-                        )
+                        markAsDead(2)
+                        fallThrough(                            operands.tail, locals.updated(2, operands.head)                        )
                     case 78 /*astore_3*/
                         | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
                         | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
-                        fallThrough(
-                            operands.tail, locals.updated(3, operands.head)
-                        )
+                        markAsDead(3)
+                        fallThrough(                            operands.tail, locals.updated(3, operands.head)                        )
 
                     //
                     // PUSH CONSTANT VALUE
                     //
 
-                    case 1 /*aconst_null*/ ⇒
-                        fallThrough(theDomain.NullValue(pc) :&: operands)
+                    case 1 /*aconst_null*/ ⇒  fallThrough(theDomain.NullValue(pc) :&: operands)
 
                     case 16 /*bipush*/ ⇒
                         val value = instruction.asInstanceOf[BIPUSH].value.toByte
                         fallThrough(theDomain.ByteValue(pc, value) :&: operands)
 
-                    case 14 /*dconst_0*/ ⇒
-                        fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
-                    case 15 /*dconst_1*/ ⇒
-                        fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
+                    case 14 /*dconst_0*/ ⇒                        fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
+                    case 15 /*dconst_1*/ ⇒                        fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
 
-                    case 11 /*fconst_0*/ ⇒
-                        fallThrough(theDomain.FloatValue(pc, 0.0f) :&: operands)
-                    case 12 /*fconst_1*/ ⇒
-                        fallThrough(theDomain.FloatValue(pc, 1.0f) :&: operands)
-                    case 13 /*fconst_2*/ ⇒
-                        fallThrough(theDomain.FloatValue(pc, 2.0f) :&: operands)
+                    case 11 /*fconst_0*/ ⇒                        fallThrough(theDomain.FloatValue(pc, 0.0f) :&: operands)
+                    case 12 /*fconst_1*/ ⇒                        fallThrough(theDomain.FloatValue(pc, 1.0f) :&: operands)
+                    case 13 /*fconst_2*/ ⇒ fallThrough(theDomain.FloatValue(pc, 2.0f) :&: operands)
 
-                    case 2 /*iconst_m1*/ ⇒
-                        fallThrough(theDomain.IntegerValue(pc, -1) :&: operands)
-                    case 3 /*iconst_0*/ ⇒
-                        fallThrough(theDomain.IntegerValue(pc, 0) :&: operands)
-                    case 4 /*iconst_1*/ ⇒
-                        fallThrough(theDomain.IntegerValue(pc, 1) :&: operands)
-                    case 5 /*iconst_2*/ ⇒
-                        fallThrough(theDomain.IntegerValue(pc, 2) :&: operands)
-                    case 6 /*iconst_3*/ ⇒
-                        fallThrough(theDomain.IntegerValue(pc, 3) :&: operands)
-                    case 7 /*iconst_4*/ ⇒
-                        fallThrough(theDomain.IntegerValue(pc, 4) :&: operands)
-                    case 8 /*iconst_5*/ ⇒
-                        fallThrough(theDomain.IntegerValue(pc, 5) :&: operands)
+                    case 2 /*iconst_m1*/ ⇒ fallThrough(theDomain.IntegerValue(pc, -1) :&: operands)
+                    case 3 /*iconst_0*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 0) :&: operands)
+                    case 4 /*iconst_1*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 1) :&: operands)
+                    case 5 /*iconst_2*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 2) :&: operands)
+                    case 6 /*iconst_3*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 3) :&: operands)
+                    case 7 /*iconst_4*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 4) :&: operands)
+                    case 8 /*iconst_5*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 5) :&: operands)
 
-                    case 9 /*lconst_0*/ ⇒
-                        fallThrough(theDomain.LongValue(pc, 0L) :&: operands)
-                    case 10 /*lconst_1*/ ⇒
-                        fallThrough(theDomain.LongValue(pc, 1L) :&: operands)
+                    case 9 /*lconst_0*/ ⇒                        fallThrough(theDomain.LongValue(pc, 0L) :&: operands)
+                    case 10 /*lconst_1*/ ⇒                        fallThrough(theDomain.LongValue(pc, 1L) :&: operands)
 
                     case 18 /*ldc*/ ⇒ instruction match {
                         case LoadInt(v) ⇒
@@ -2530,13 +2527,13 @@ trait AI[D <: Domain] {
                     }
 
                     case 132 /*iinc*/ ⇒ {
-                        val iinc = instruction.asInstanceOf[IINC]
+                        val iinc = as[IINC](instruction)
                         val newValue = theDomain.iinc(pc, locals(iinc.lvIndex), iinc.constValue)
                         fallThrough(operandsArray(pc), locals.updated(iinc.lvIndex, newValue))
                     }
 
                     case 187 /*new*/ ⇒ {
-                        val newObject = instruction.asInstanceOf[NEW]
+                        val newObject = as[NEW](instruction)
                         fallThrough(theDomain.NewObject(pc, newObject.objectType) :&: operands)
                     }
 
