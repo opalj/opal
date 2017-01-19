@@ -29,9 +29,12 @@
 package org.opalj
 package br
 
-import org.opalj.br.analyses.Project
+import java.net.URL
+
 import org.opalj.io.writeAndOpen
 import org.opalj.graphs.toDot
+
+import org.opalj.br.analyses.Project
 
 /**
  * Prints the CFG of a method using a data-flow independent analysis.
@@ -60,14 +63,11 @@ object PrintBaseCFG {
             return ;
         }
 
-        val project =
-            try {
-                Project(file)
-            } catch {
-                case e: Exception ⇒
-                    println(RED+"[error] Cannot process file: "+e.getMessage()+"."+RESET)
-                    return ;
-            }
+        val project = try { Project(file) } catch {
+            case e: Exception ⇒
+                println(RED+"[error] Cannot process file: "+e.getMessage()+"."+RESET)
+                return ;
+        }
 
         val classFile = {
             val fqn =
@@ -81,35 +81,42 @@ object PrintBaseCFG {
             }
         }
 
-        val method =
-            (
-                if (methodName.contains("("))
-                    classFile.methods.find(m ⇒ m.descriptor.toJava(m.name).contains(methodName))
-                else
-                    classFile.methods.find(_.name == methodName)
-            ) match {
-                    case Some(method) ⇒
-                        if (method.body.isDefined)
-                            method
-                        else {
-                            println(RED+
-                                "[error] The method: "+methodName+" does not have a body"+RESET)
-                            return ;
-                        }
-                    case None ⇒
-                        println(RED+
-                            "[error] Cannot find the method: "+methodName+"."+RESET +
-                            classFile.methods.map(m ⇒ m.descriptor.toJava(m.name)).toSet.toSeq.sorted.mkString(" Candidates: ", ", ", "."))
-                        return ;
-                }
+        val methodOption =
+            if (methodName.contains("("))
+                classFile.methods.find(m ⇒ m.descriptor.toJava(m.name).contains(methodName))
+            else
+                classFile.methods.find(_.name == methodName)
 
-        analyzeMethod(classFile, method)
+        val method = methodOption match {
+            case Some(method) ⇒
+                if (method.body.isDefined)
+                    method
+                else {
+                    println(RED+"[error] The method: "+methodName+" does not have a body"+RESET)
+                    return ;
+                }
+            case None ⇒
+                val allMethods = classFile.methods.map(_.toJava).toSet
+                val altMethods = allMethods.toSeq.sorted.mkString(" Candidates: ", ", ", ".")
+                println(s"$RED[error] Cannot find the method: $methodName.$RESET $altMethods")
+                return ;
+        }
+
+        analyzeMethod(project, classFile, method)
     }
 
-    def analyzeMethod(classFile: ClassFile, method: Method): Unit = {
-        val controlFlowGraph = cfg.CFGFactory(method.body.get)
-        val rootNodes = Set(controlFlowGraph.startBlock) ++ controlFlowGraph.catchNodes
+    def analyzeMethod(project: Project[URL], classFile: ClassFile, method: Method): Unit = {
+        val code = method.body.get
+        val theCFG = cfg.CFGFactory(code)
+
+        val rootNodes = Set(theCFG.startBlock) ++ theCFG.catchNodes
         val graph = toDot(rootNodes)
+
         writeAndOpen(graph, classFile.thisType.toJava+"."+method.name, ".cfg.dot")
+
+        println(code.joinPCs.mkString("JoinPCs (conservative):", ", ", ""))
+        val (joinPCs, forkPCs) = code.boundaryPCs
+        println(joinPCs.mkString("JoinPCs               :", ", ", ""))
+        println(forkPCs.mkString("ForkPCs               :", ", ", ""))
     }
 }
