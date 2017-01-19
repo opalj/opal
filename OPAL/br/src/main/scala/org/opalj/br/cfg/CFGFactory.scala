@@ -384,6 +384,13 @@ object CFGFactory {
             previousPC = pc
         }
 
+        val effectiveExceptionHandlers = exceptionHandlers.values filter { catchNode ⇒
+            catchNode.predecessors.nonEmpty || {
+                catchNode.successors foreach { successor ⇒ successor.removePredecessor(catchNode) }
+                false
+            }
+        }
+
         // Analyze the control flow graphs of all subroutines to connect the ret
         // instructions with their correct target addresses.
         if (subroutineReturnPCs.nonEmpty) {
@@ -400,7 +407,7 @@ object CFGFactory {
 
         CFG(
             code,
-            normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList,
+            normalReturnNode, abnormalReturnNode, effectiveExceptionHandlers.toList,
             bbs
         )
     }
