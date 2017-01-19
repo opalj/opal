@@ -41,11 +41,11 @@ abstract class BitwiseInstruction
         extends StackBasedArithmeticInstruction
         with BinaryArithmeticInstruction {
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final override def jvmExceptions: List[ObjectType] = Nil
 
-    final def stackSlotsChange: Int = -computationalType.operandSize
+    final override def stackSlotsChange: Int = -computationalType.operandSize
 
-    final def nextInstructions(
+    final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
@@ -56,6 +56,6 @@ abstract class BitwiseInstruction
         UShortSet(indexOfNextInstruction(currentPC))
     }
 
-    final def isShiftInstruction: Boolean = false
+    final override def isShiftInstruction: Boolean = false
 
 }
