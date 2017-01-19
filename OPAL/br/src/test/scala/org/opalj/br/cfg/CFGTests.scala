@@ -52,13 +52,13 @@ trait CFGTests extends FunSpec with Matchers {
         joinPCs foreach { pc ⇒
             assert(
                 cfg.bb(pc).startPC == pc,
-                s"the join PC $pc is not at the beginning of a BasicBlock node"
+                s"; the join PC $pc is not at the beginning of a BasicBlock node"
             )
         }
         forkPCs foreach { pc ⇒
             assert(
                 cfg.bb(pc).endPC == pc,
-                s"the fork PC $pc is not at the end of a BasicBlock node"
+                s"; the fork PC $pc is not at the end of a BasicBlock node"
             )
         }
 
@@ -67,17 +67,18 @@ trait CFGTests extends FunSpec with Matchers {
                 if (bb.predecessors.size > 1) {
                     assert(
                         joinPCs.contains(bb.startPC),
-                        s"a basic block's start PC (${bb.startPC}) is not a join PC"
-                    )
-                }
-
-                if (bb.successors.filter(!_.isExitNode).size > 1) {
-                    assert(
-                        forkPCs.contains(bb.endPC),
-                        s"a basic block's end PC(${bb.endPC}}) is not a fork PC"
+                        s"; a basic block's start PC (${bb.startPC} predecessors ${bb.predecessors}) is not a join PC"
                     )
                 }
             }
+
+            if (bb.successors.filter(!_.isExitNode).size > 1) {
+                assert(
+                    forkPCs.contains(bb.endPC),
+                    s"; a basic block's end PC(${bb.endPC}}) is not a fork PC"
+                )
+            }
+
         }
 
         val overapproximatedJoinPCs = (code.joinPCs /*less precise!*/ -- joinPCs)
