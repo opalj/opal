@@ -294,20 +294,20 @@ final class Code private (
      *     5: goto 10
      *     6: ...
      *     9: iload_1
-     *  10:return // <= JOIN INSTRUCTION: the predecessors are the instructions 5 and 9.
+     *  10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
      * }}}
      *
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers may be reached on multiple paths.
      */
-    def joinInstructions: BitSet = {
+    def joinPCs: BitSet = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
-        val joinInstructions = new mutable.BitSet(instructionsLength)
+        val joinPCs = new mutable.BitSet(instructionsLength)
         exceptionHandlers.foreach { eh ⇒
             // [REFINE] For non-finally handlers, test if multiple paths
             // can lead to the respective exception
-            joinInstructions += eh.handlerPC
+            joinPCs += eh.handlerPC
         }
         // The algorithm determines for each instruction the successor instruction
         // that is reached and then marks it. If an instruction was already reached in the
@@ -320,7 +320,7 @@ final class Code private (
             val nextPC = pcOfNextInstruction(pc)
             @inline def runtimeSuccessor(pc: PC): Unit = {
                 if (isReached.contains(pc))
-                    joinInstructions += pc
+                    joinPCs += pc
                 else
                     isReached += pc
             }
@@ -359,7 +359,7 @@ final class Code private (
             }
             pc = nextPC
         }
-        joinInstructions
+        joinPCs
     }
 
     /**
@@ -1130,9 +1130,9 @@ final class Code private (
      *
      * @param pc The program counter of an instruction that strictly dominates all
      *      succeeding instructions up until the next join instruction (as determined
-     *      by [[#joinInstructions]]. This is naturally the case for the very first
+     *      by [[#joinPCs]]. This is naturally the case for the very first
      *      instruction of each method and each exception handler unless these
-     *      instructions are joinInstructions; in this case the `false` is returned.
+     *      instructions are joinPCs; in this case the `false` is returned.
      *
      * @param anInvocation When the analysis finds a method call, it calls this method
      *      to let the caller decide whether the called method is an (indirect) way
@@ -1151,14 +1151,14 @@ final class Code private (
      *         instruction or the control flow is more complex.)
      */
     @inline def alwaysResultsInException(
-        pc:               PC,
-        joinInstructions: BitSet,
-        anInvocation:     (PC) ⇒ Boolean,
-        aThrow:           (PC) ⇒ Boolean
+        pc:           PC,
+        joinPCs:      BitSet,
+        anInvocation: (PC) ⇒ Boolean,
+        aThrow:       (PC) ⇒ Boolean
     ): Boolean = {
 
         var currentPC = pc
-        while (!joinInstructions.contains(currentPC)) {
+        while (!joinPCs.contains(currentPC)) {
             val instruction = instructions(currentPC)
 
             (instruction.opcode: @scala.annotation.switch) match {

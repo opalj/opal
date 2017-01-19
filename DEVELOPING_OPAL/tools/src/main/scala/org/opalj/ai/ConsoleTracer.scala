@@ -154,7 +154,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         println(BLACK_B + WHITE+"Starting Code Analysis"+RESET)
         println("Number of registers:      "+code.maxLocals)
         println("Size of operand stack:    "+code.maxStack)
-        println("Join instructions:        "+code.joinInstructions.mkString(", "))
+        println("PCs where paths join:     "+code.joinPCs.mkString(", "))
         //println("Program counters:         "+code.programCounters.mkString(", "))
     }
 

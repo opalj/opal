@@ -65,5 +65,5 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
     }
 
     def instructions: Array[Instruction] = theInstructions
-    def joinInstructions: BitSet = theJoinInstructions
+    def joinPCs: BitSet = theJoinInstructions
 }

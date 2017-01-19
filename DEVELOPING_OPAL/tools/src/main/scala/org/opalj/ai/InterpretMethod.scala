@@ -241,7 +241,7 @@ object InterpretMethod {
                     Some(
                         "Created: "+(new java.util.Date).toString+"<br>"+
                             "Domain: "+domainClass.getName+"<br>"+
-                            XHTML.instructionsToXHTML("Join instructions", result.joinInstructions) +
+                            XHTML.instructionsToXHTML("PCs where paths join", result.joinPCs) +
                             (
                                 if (result.subroutineInstructions.nonEmpty)
                                     XHTML.instructionsToXHTML(

@@ -55,7 +55,7 @@ import org.opalj.br.instructions._
  *
  * This framework basically traverses all instructions of a method in depth-first order
  * until a join instruction is hit. This join instruction is then only analyzed if no
- * further non-join instruction can be evaluated ([[org.opalj.br.Code.joinInstructions]]).
+ * further non-join instruction can be evaluated ([[org.opalj.br.Code.joinPCs]]).
  * Each instruction is then evaluated using a given (abstract) [[org.opalj.ai.Domain]].
  * The evaluation of a subroutine (Java code < 1.5) - in case of an unhandled
  * exception – is always first completed before the evaluation of the parent (sub)routine
@@ -335,10 +335,10 @@ trait AI[D <: Domain] {
         theOperandsArray: theDomain.OperandsArray,
         theLocalsArray:   theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
-        val joinInstructions = code.joinInstructions
+        val joinPCs = code.joinPCs
 
         continueInterpretation(
-            strictfp, code, joinInstructions,
+            strictfp, code, joinPCs,
             theDomain
         )(
             initialWorkList, alreadyEvaluated,
@@ -360,7 +360,7 @@ trait AI[D <: Domain] {
         theDomain: D
     )(
         instructions:                        Array[Instruction],
-        joinInstructions:                    BitSet,
+        joinPCs:                             BitSet,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
@@ -375,7 +375,7 @@ trait AI[D <: Domain] {
             case _           ⇒ /*nothing to do*/
         }
         theDomain match {
-            case d: TheCodeStructure ⇒ d.setCodeStructure(instructions, joinInstructions)
+            case d: TheCodeStructure ⇒ d.setCodeStructure(instructions, joinPCs)
             case _                   ⇒ /*nothing to do*/
         }
         theDomain match {
@@ -392,7 +392,7 @@ trait AI[D <: Domain] {
         theDomain match {
             case d: CustomInitialization ⇒
                 d.initProperties(
-                    code, joinInstructions,
+                    code, joinPCs,
                     theLocalsArray.asInstanceOf[d.LocalsArray](0)
                 )
             case _ ⇒ /*nothing to do*/
@@ -408,7 +408,7 @@ trait AI[D <: Domain] {
      *
      * @param code The bytecode that will be interpreted using the given domain.
      *
-     * @param joinInstructions The set of instructions where two or more control flow
+     * @param joinPCs The set of instructions where two or more control flow
      *      paths join. The abstract interpretation framework will only perform a
      *      join operation for those instructions.
      *
@@ -459,7 +459,7 @@ trait AI[D <: Domain] {
      *      a subroutine was already analyzed.
      */
     def continueInterpretation(
-        strictfp: Boolean, code: Code, joinInstructions: BitSet,
+        strictfp: Boolean, code: Code, joinPCs: BitSet,
         theDomain: D
     )(
         initialWorkList:                     List[PC],
@@ -516,7 +516,7 @@ trait AI[D <: Domain] {
         preInterpretationInitialization(
             strictfp, code, theDomain
         )(
-            instructions, joinInstructions,
+            instructions, joinPCs,
             theOperandsArray, theLocalsArray,
             theMemoryLayoutBeforeSubroutineCall, theSubroutinesOperandsArray, theSubroutinesLocalsArray
         )
@@ -736,7 +736,7 @@ trait AI[D <: Domain] {
                     targetLocalsArray(targetPC) = locals
                     if (abruptSubroutineTerminationCount > 0) {
                         handleAbruptSubroutineTermination(forceSchedule = true)
-                    } else if (worklist.nonEmpty && joinInstructions.contains(targetPC)) {
+                    } else if (worklist.nonEmpty && joinPCs.contains(targetPC)) {
                         worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
                     } else {
                         worklist = targetPC :&: worklist
@@ -747,7 +747,7 @@ trait AI[D <: Domain] {
 
                     /* join: */ false
 
-                } else if (!joinInstructions.contains(targetPC)) {
+                } else if (!joinPCs.contains(targetPC)) {
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
                     // E.g., imagine the following code:
@@ -816,9 +816,7 @@ trait AI[D <: Domain] {
                                 // reschedule instructions that do not belong to the current
                                 // evaluation context/(sub-)routine.)
                                 val updatedWorklist =
-                                    insertBeforeIfNew(
-                                        worklist, targetPC, SUBROUTINE_START
-                                    )
+                                    insertBeforeIfNew(worklist, targetPC, SUBROUTINE_START)
                                 if (tracer.isDefined) {
                                     if (updatedWorklist ne worklist)
                                         // the instruction was not yet scheduled for
@@ -863,7 +861,7 @@ trait AI[D <: Domain] {
                                 // we want depth-first evaluation (, but we do not want to
                                 // reschedule instructions that do not belong to the current
                                 // evaluation context/(sub-)routine.), but not for
-                                // join instructions...
+                                // instructions where multiple paths join...
                                 if (containsInPrefix(worklist, targetPC, SUBROUTINE)) {
                                     isTargetScheduled = Yes
                                     if (tracer.isDefined) {
@@ -918,7 +916,7 @@ trait AI[D <: Domain] {
             if (isInterrupted) {
                 val result =
                     AIResultBuilder.aborted(
-                        strictfp, code, joinInstructions, theDomain
+                        strictfp, code, joinPCs, theDomain
                     )(
                         worklist, evaluated,
                         operandsArray, localsArray,
@@ -1077,7 +1075,7 @@ trait AI[D <: Domain] {
                         integrateSubroutineInformation()
                         val result =
                             AIResultBuilder.completed(
-                                strictfp, code, joinInstructions, theDomain
+                                strictfp, code, joinPCs, theDomain
                             )(
                                 evaluated, operandsArray, localsArray
                             )
@@ -2561,7 +2559,7 @@ trait AI[D <: Domain] {
         integrateSubroutineInformation()
         val result =
             AIResultBuilder.completed(
-                strictfp, code, joinInstructions, theDomain
+                strictfp, code, joinPCs, theDomain
             )(
                 evaluated, operandsArray, localsArray
             )

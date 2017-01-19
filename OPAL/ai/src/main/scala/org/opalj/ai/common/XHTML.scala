@@ -297,13 +297,13 @@ object XHTML {
 
         val belongsToSubroutine = code.belongsToSubroutine()
         val indexedExceptionHandlers = indexExceptionHandlers(code)
-        val joinInstructions = code.joinInstructions
+        val joinPCs = code.joinPCs
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(
-                pc, code.lineNumber(pc), instruction, joinInstructions.contains(pc),
+                pc, code.lineNumber(pc), instruction, joinPCs.contains(pc),
                 belongsToSubroutine(pc),
                 Some(exceptionHandlers),
                 domain,

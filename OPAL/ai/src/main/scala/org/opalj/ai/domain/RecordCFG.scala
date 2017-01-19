@@ -93,9 +93,9 @@ trait RecordCFG
     private[this] var theBBCFG: CFG = _
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        initialLocals:    Locals
+        code:          Code,
+        joinPCs:       BitSet,
+        initialLocals: Locals
     ): Unit = {
         val codeSize = code.instructions.size
         regularSuccessors = new Array[UShortSet](codeSize)
@@ -111,7 +111,7 @@ trait RecordCFG
         theControlDependencies = null
         theBBCFG = null
 
-        super.initProperties(code, joinInstructions, initialLocals)
+        super.initProperties(code, joinPCs, initialLocals)
     }
 
     /**

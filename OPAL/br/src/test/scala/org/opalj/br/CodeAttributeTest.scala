@@ -179,11 +179,11 @@ class CodeAttributeTest extends FlatSpec with Matchers {
         codeOfPut.firstLineNumber should be(Some(57))
     }
 
-    behavior of "the \"Code\" attribute's joinInstructions method"
+    behavior of "the \"Code\" attribute's joinPCs method"
 
-    it should "be able to correctly identify the join instructions" in {
-        codeOfPut.joinInstructions.size should be(1)
-        codeOfPut.joinInstructions should contain(15)
+    it should "be able to correctly identify the instructions where multiple paths join" in {
+        codeOfPut.joinPCs.size should be(1)
+        codeOfPut.joinPCs should contain(15)
     }
 
     behavior of "the \"Code\" attribute's localVariableTable method"

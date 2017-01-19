@@ -352,7 +352,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      *         subroutines that will be terminated by the exception.
      *
      * @param  wasJoinPerformed `true` if a join was performed. I.e., the successor
-     *         instruction is a join instruction (`Code.joinInstructions`) that was already
+     *         instruction is a join instruction (`Code.joinPCs`) that was already
      *         previously evaluated.
      *
      * @param  operandsArray The array that associates '''every instruction''' with its

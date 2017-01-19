@@ -63,12 +63,12 @@ sealed abstract class AIResult {
     /**
      * The instructions where two or more control flow paths join.
      *
-     * (See also [[org.opalj.br.Code.joinInstructions]].)
+     * (See also [[org.opalj.br.Code.joinPCs]].)
      *
      * @note This information could be recomputed on-demand but is stored for performance
      * reasons.
      */
-    val joinInstructions: BitSet
+    val joinPCs: BitSet
 
     /**
      * The domain object that was used to perform the abstract interpretation.
@@ -261,7 +261,7 @@ object AIResultBuilder {
         new AIAborted {
             val strictfp: Boolean = theStrictfp
             val code: Code = theCode
-            val joinInstructions: BitSet = theJoinInstructions
+            val joinPCs: BitSet = theJoinInstructions
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
@@ -273,7 +273,7 @@ object AIResultBuilder {
 
             def continueInterpretation(ai: AI[_ >: domain.type]): AIResult =
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain
+                    strictfp, code, joinPCs, domain
                 )(
                     worklist, evaluated,
                     operandsArray, localsArray,
@@ -302,7 +302,7 @@ object AIResultBuilder {
         new AICompleted {
             val strictfp: Boolean = theStrictfp
             val code: Code = theCode
-            val joinInstructions = theJoinInstructions
+            val joinPCs = theJoinInstructions
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
@@ -346,7 +346,7 @@ object AIResultBuilder {
                 }
 
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain
+                    strictfp, code, joinPCs, domain
                 )(
                     AI.initialWorkList, evaluated,
                     operandsArray, localsArray,
