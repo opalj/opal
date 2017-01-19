@@ -49,9 +49,11 @@ trait UShortSet extends SmallValuesSet {
         super[SmallValuesSet].++(values).asInstanceOf[mutable.UShortSet]
     }
 
-    def max: Int /* Redefined to avoid ambiguous references. */
+    def hasMultipleElements: Boolean
 
-    def min: Int /* Redefined to avoid ambiguous references. */
+    override def max: Int /* Redefined to avoid ambiguous references. */
+
+    override def min: Int /* Redefined to avoid ambiguous references. */
 
     final override def last: Int = max
 
@@ -62,7 +64,7 @@ trait UShortSet extends SmallValuesSet {
     /**
      * Returns a (new) set object that can safely be mutated.
      */
-    def mutableCopy: mutable.UShortSet
+    override def mutableCopy: mutable.UShortSet
 
     /**
      * Returns `true` if this set contains the given value.
@@ -70,7 +72,7 @@ trait UShortSet extends SmallValuesSet {
      * If the given value is not an unsigned short value ([0..65535]) the
      * result is undefined.
      */
-    def contains(value: UShort): Boolean
+    override def contains(value: UShort): Boolean
 
     override def map[T](f: UShort ⇒ T): scala.collection.mutable.Set[T] = {
         foldLeft(scala.collection.mutable.Set.empty[T])((s, v) ⇒ s += f(v))
@@ -86,7 +88,7 @@ trait UShortSet extends SmallValuesSet {
         foldLeft(mutable.UShortSet.empty)((s, v) ⇒ if (f(v)) v +≈: s else s)
     }
 
-    def foldLeft[T](i: T)(f: (T, UShort) ⇒ T): T
+    override def foldLeft[T](i: T)(f: (T, UShort) ⇒ T): T
 
     /**
      * Returns a new `Iterator`. The iterator is primarily defined to facilitate
