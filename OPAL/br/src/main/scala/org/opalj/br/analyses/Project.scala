@@ -153,8 +153,8 @@ class Project[Source] private (
     private[this] final implicit val thisProject: this.type = this
 
     assert(
-        !libraryClassFilesAreInterfacesOnly || 
-        libraryClassFiles.forall(_.methods.forall(_.body.isEmpty)),
+        !libraryClassFilesAreInterfacesOnly ||
+            libraryClassFiles.forall(_.methods.forall(_.body.isEmpty)),
         "the library's methods contain bodies though libraryClassFilesAreInterfacesOnly is true"
     )
 
@@ -281,7 +281,6 @@ class Project[Source] private (
                 if (!definedMethods.exists { definedMethod ⇒
                     definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                         definedMethod.name == inheritedInterfaceMethod.name
-
                 })
                     definedMethods :&:= inheritedInterfaceMethod
             }
@@ -342,7 +341,7 @@ class Project[Source] private (
         // IDEA
         // 0.   We start with the leaf nodes of the class hierarchy and store for each method
         //      the set of overriding methods (recall that the overrides relation is reflexive).
-        //      Hence, initially the set of overrding methods for a method contains the method it
+        //      Hence, initially the set of overriding methods for a method contains the method it
         //      self.
         //
         // 1.   After that the direct superclass is scheduled to be analyzed if all subclasses
