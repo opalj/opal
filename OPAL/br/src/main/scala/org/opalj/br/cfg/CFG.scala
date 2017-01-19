@@ -183,7 +183,7 @@ case class CFG(
      * Iterates over the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
      * not returned.)
      */
-    lazy val allBBs: Iterator[BasicBlock] = {
+    def allBBs: Iterator[BasicBlock] = {
         //basicBlocks.view.filter(_ ne null).toSet
         new Iterator[BasicBlock] {
 
