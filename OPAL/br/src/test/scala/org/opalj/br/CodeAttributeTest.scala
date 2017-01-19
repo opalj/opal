@@ -95,9 +95,7 @@ class CodeAttributeTest extends FlatSpec with Matchers {
     }
 
     it should "be able to handle the case where no instruction is found" in {
-        codeOfPut.collectWithIndex({
-            case (pc, IMUL) ⇒ (pc, IMUL)
-        }) should equal(Seq())
+        codeOfPut.collectWithIndex({ case (pc, IMUL) ⇒ (pc, IMUL) }) should equal(Seq())
     }
 
     behavior of "the \"Code\" attribute's collectFirstWithIndex method"
@@ -117,9 +115,7 @@ class CodeAttributeTest extends FlatSpec with Matchers {
     behavior of "the \"Code\" attribute's slidingCollect method"
 
     it should "be able to handle the case where the sliding window is too large compared to the number of instructions" in {
-        codeOfPut.slidingCollect(500)({
-            case (pc, instrs) ⇒ (pc, instrs)
-        }) should be(Seq())
+        codeOfPut.slidingCollect(500)({ case (pc, instrs) ⇒ (pc, instrs) }) should be(Seq())
     }
 
     it should "be able to find some consecutive instructions" in {
@@ -184,6 +180,14 @@ class CodeAttributeTest extends FlatSpec with Matchers {
     it should "be able to correctly identify the instructions where multiple paths join" in {
         codeOfPut.joinPCs.size should be(1)
         codeOfPut.joinPCs should contain(15)
+    }
+
+    it should "be able to correctly identify the instructions where multiple paths join or fork" in {
+        val (joinPCs, forkPCs) = codeOfPut.boundaryPCs()
+        joinPCs.size should be(1)
+        joinPCs should contain(15)
+        forkPCs.size should be(1)
+        forkPCs should contain(8)
     }
 
     behavior of "the \"Code\" attribute's localVariableTable method"

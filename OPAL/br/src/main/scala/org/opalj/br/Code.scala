@@ -363,6 +363,72 @@ final class Code private (
     }
 
     /**
+     * Returns the set of all program counters where two or more control flow
+     * paths join of fork.
+     *
+     * ==Example==
+     * {{{
+     *     0: iload_1
+     *     1: ifgt    6 // <= PATH FORK
+     *     2: iconst_1
+     *     5: goto 10
+     *     6: ...
+     *     9: iload_1
+     *  10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
+     * }}}
+     *
+     * In case of exception handlers the sound overapproximation is made that
+     * all exception handlers may be reached on multiple paths.
+     */
+    def boundaryPCs(
+        implicit
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): (BitSet /*joins*/ , BitSet /*forks*/ ) = {
+        val instructions = this.instructions
+        val instructionsLength = instructions.length
+
+        val joinPCs = new mutable.BitSet(instructionsLength)
+        val forkPCs = new mutable.BitSet(instructionsLength)
+
+        val isReached = new mutable.BitSet(instructionsLength)
+        isReached += 0 // the first instruction is always reached!
+
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            val nextPC = pcOfNextInstruction(pc)
+
+            @inline def runtimeSuccessor(pc: PC): Unit = {
+                if (isReached.contains(pc))
+                    joinPCs += pc
+                else
+                    isReached += pc
+            }
+
+            (instruction.opcode: @scala.annotation.switch) match {
+                case RET.opcode ⇒
+                    // the ret may return do different sites
+                    forkPCs += pc
+                // the potential "joinPCs" are determined when we process the JSR
+                case JSR.opcode | JSR_W.opcode ⇒
+                    val jsrInstr = instruction.asInstanceOf[JSRInstruction]
+                    runtimeSuccessor(pc + jsrInstr.branchoffset)
+                    runtimeSuccessor(nextPC)
+
+                case _ ⇒
+                    val nextInstructions = instruction.nextInstructions(pc)(this, classHierarchy)
+                    nextInstructions.foreach(runtimeSuccessor)
+                    if (nextInstructions.hasMultipleElements) {
+                        forkPCs += pc
+                    }
+            }
+
+            pc = nextPC
+        }
+        (joinPCs, forkPCs)
+    }
+
+    /**
      * Iterates over all instructions and calls the given function `f`
      * for every instruction.
      */

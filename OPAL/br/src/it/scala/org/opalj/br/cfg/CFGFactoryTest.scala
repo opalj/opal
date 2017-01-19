@@ -30,20 +30,23 @@ package org.opalj.br
 package cfg
 
 import org.junit.runner.RunWith
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
+
 import java.io.File
 import java.io.FilenameFilter
+
 import scala.collection.JavaConverters._
-import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
+
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
-import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.analyses.MethodInfo
+
+import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 
 /**
@@ -54,7 +57,7 @@ import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class CFGFactoryTest extends FunSpec with Matchers {
+class CFGFactoryTest extends CFGTests {
 
     def analyzeProject(name: String, project: SomeProject): Unit = {
         time { doAnalyzeProject(name, project) } { t ⇒ info("the analysis took "+t.toSeconds) }
@@ -67,7 +70,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
 
         implicit val classHierarchy = project.classHierarchy
 
-        project.parForeachMethodWithBody(() ⇒ false) { m ⇒
+        project.parForeachMethodWithBody() { m ⇒
             val MethodInfo(_, classFile, method) = m
             implicit val code = method.body.get
             try {
@@ -78,7 +81,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
                     fail("not all instructions are associated with a basic block")
                 }
 
-                // check that allBBs returns the same as a manual iterator
+                // check that allBBs returns the same bbs as a manual iterator
                 assert(cfg.allBBs.toSet == code.programCounters.map(cfg.bb(_)).filter(_ ne null).toSet)
 
                 // check the boundaries
@@ -97,6 +100,8 @@ class CFGFactoryTest extends FunSpec with Matchers {
                     else
                         allEndPCs += bb.endPC
                 }
+                cfgNodesCheck(method.toJava(classFile),code,cfg,classHierarchy)
+
                 // check the wiring
                 cfg.allBBs.foreach { bb ⇒
                     bb.successors.foreach { successorBB ⇒
@@ -162,13 +167,14 @@ class CFGFactoryTest extends FunSpec with Matchers {
             } catch {
                 case t: Throwable ⇒
                     val instructions = code.instructions.size
-                    errors.add(s"[$instructions]${method.toJava(classFile)}:${t.getMessage}")
+                    val message = s"instructions=$instructions; "+t.getMessage
+                    errors.add(method.toJava(classFile,message))
             }
         }
         if (!errors.isEmpty())
             fail(
                 s"analyzed ${methodsCount.get}/${project.methodsCount} methods; "+
-                    errors.asScala.toList.sorted.mkString(s"failed for ${errors.size} methods", "\n", "")
+                    errors.asScala.toList.sorted.mkString(s"failed for ${errors.size} methods\n", "\n", "")
             )
         else
             info(
