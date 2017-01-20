@@ -47,38 +47,14 @@ trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
     //
     // UNARY ARITHMETIC EXPRESSIONS
     //
-    def fneg(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue
+    def fneg(pc: PC, value: DomainValue): DomainValue
 
     //
     // BINARY ARITHMETIC EXPRESSIONS
     //
-    def fadd(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
-
-    def fdiv(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
-
-    def fmul(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
-
-    def frem(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
-
-    def fsub(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
+    def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def fmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def frem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def fsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 }

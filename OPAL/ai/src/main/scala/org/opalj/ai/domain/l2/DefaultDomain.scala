@@ -31,10 +31,11 @@ package ai
 package domain
 package l2
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.collection.immutable.Chain
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.DefaultRecordMethodCallResults
-import org.opalj.collection.immutable.Chain
 
 /**
  * A common that defines a common reference frame for all subsequent domains.

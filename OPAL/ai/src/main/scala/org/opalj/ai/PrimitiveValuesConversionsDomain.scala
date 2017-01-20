@@ -49,11 +49,11 @@ trait PrimitiveValuesConversionsDomain { domain: ValuesDomain ⇒
     /** Conversion of the given long value to an integer value. */
     def l2i(pc: PC, value: DomainValue): DomainValue
 
-    def f2d(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue
+    def f2d(pc: PC, value: DomainValue): DomainValue
     def f2i(pc: PC, value: DomainValue): DomainValue
     def f2l(pc: PC, value: DomainValue): DomainValue
 
-    def d2f(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue
+    def d2f(pc: PC, value: DomainValue): DomainValue
     def d2i(pc: PC, value: DomainValue): DomainValue
     def d2l(pc: PC, value: DomainValue): DomainValue
 

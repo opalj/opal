@@ -293,9 +293,9 @@ object DeadEdgesAnalysis {
                                     null
                             }
                         BaseAI.continueInterpretation(
-                            result.strictfp,
                             result.code,
                             result.joinPCs,
+                            result.forkPCs,
                             zDomain
                         )(
                             /*initialWorkList =*/ Chain(nextPC),

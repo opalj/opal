@@ -47,23 +47,26 @@ import org.opalj.br.instructions.Instruction
 trait TheCodeStructure { domain: ValuesDomain ⇒
 
     private[this] var theInstructions: Array[Instruction] = null
+    private[this] var theJoinPCs: BitSet = null
+    private[this] var theForkPCs: BitSet = null
 
-    private[this] var theJoinInstructions: BitSet = null
+    def instructions: Array[Instruction] = theInstructions
+    def joinPCs: BitSet = theJoinPCs
+    def forkPCs: BitSet = theForkPCs
 
     /**
      * Sets the code structure.
      *
-     * This method is called by the AI framework.
+     * This method is called by the AI framework immediately before the interpretation (continues).
      */
     private[ai] def setCodeStructure(
-        theInstructions:     Array[Instruction],
-        theJoinInstructions: BitSet
+        theInstructions: Array[Instruction],
+        theJoinPCs:      BitSet,
+        theForkPCs:      BitSet
     ): Unit = {
-
         this.theInstructions = theInstructions
-        this.theJoinInstructions = theJoinInstructions
+        this.theJoinPCs = theJoinPCs
+        this.theForkPCs = theForkPCs
     }
 
-    def instructions: Array[Instruction] = theInstructions
-    def joinPCs: BitSet = theJoinInstructions
 }

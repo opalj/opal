@@ -1191,7 +1191,8 @@ final class Code private (
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
         if (pc2 >= max_pc)
-            return List.empty
+            return List.empty;
+
         var pc3 = pcOfNextInstruction(pc2)
 
         var result: List[PC] = List.empty
@@ -1212,7 +1213,7 @@ final class Code private (
     }
 
     /**
-     * Returns the next instruction that will be returned at runtime that is not a
+     * Returns the next instruction that will be executed at runtime that is not a
      * [[org.opalj.br.instructions.GotoInstruction]].
      * If the given instruction is not a [[org.opalj.br.instructions.GotoInstruction]],
      * the given instruction is returned.
@@ -1225,8 +1226,8 @@ final class Code private (
     }
 
     /**
-     * Tests if the sequence of instructions that starts with the given `pc` always ends
-     * with an `ATHROW` instruction or a method call that always throws an
+     * Tests if the straight-line sequence of instructions that starts with the given `pc`
+     * always ends with an `ATHROW` instruction or a method call that always throws an
      * exception. The call sequence furthermore has to contain no complex logic.
      * Here, complex means that evaluating the instruction may result in multiple control flows.
      * If the sequence contains complex logic, `false` will be returned.
@@ -1244,25 +1245,25 @@ final class Code private (
      * This is a typical idiom used in Java programs and which may be relevant for
      * certain analyses to detect.
      *
-     * @note If complex control flows should also be considered it is possible to compute
+     * @note   If complex control flows should also be considered it is possible to compute
      *         a methods [[org.opalj.br.cfg.CFG]] and use that one.
      *
-     * @param pc The program counter of an instruction that strictly dominates all
-     *      succeeding instructions up until the next join instruction (as determined
-     *      by [[#joinPCs]]. This is naturally the case for the very first
-     *      instruction of each method and each exception handler unless these
-     *      instructions are joinPCs; in this case the `false` is returned.
+     * @param  pc The program counter of an instruction that strictly dominates all
+     *         succeeding instructions up until the next join instruction (as determined
+     *         by [[#joinPCs]]. This is naturally the case for the very first
+     *         instruction of each method and each exception handler unless these
+     *         instructions are joinPCs; in this case the `false` is returned.
      *
-     * @param anInvocation When the analysis finds a method call, it calls this method
-     *      to let the caller decide whether the called method is an (indirect) way
-     *      of always throwing an exception.
-     *      If `true` is returned the analysis terminates and returns `true`; otherwise
-     *      the analysis continues.
+     * @param  anInvocation When the analysis finds a method call, it calls this method
+     *         to let the caller decide whether the called method is an (indirect) way
+     *         of always throwing an exception.
+     *         If `true` is returned the analysis terminates and returns `true`; otherwise
+     *         the analysis continues.
      *
-     * @param aThrow If all (non-exception) paths will always end in one specific
-     *      `ATHROW` instruction then this function is called (callback) to let the
-     *      caller decide if the "expected" exception is thrown. This analysis will
-     *      return with the result of this call.
+     * @param  aThrow If all (non-exception) paths will always end in one specific
+     *         `ATHROW` instruction then this function is called (callback) to let the
+     *         caller decide if the "expected" exception is thrown. This analysis will
+     *         return with the result of this call.
      *
      * @return `true` if the bytecode sequence starting with the instruction with the
      *         given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction.
@@ -1289,9 +1290,7 @@ final class Code private (
                     return false;
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
-                    currentPC =
-                        currentPC +
-                            instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset
+                    currentPC += instruction.asInstanceOf[GotoInstruction].branchoffset
 
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
@@ -1374,8 +1373,7 @@ object Code {
                 if (localVariableTables.nonEmpty && localVariableTables.tail.nonEmpty) {
                     val allLVs =
                         localVariableTables.
-                            map(_.asInstanceOf[LocalVariableTable].localVariables).
-                            toIndexedSeq
+                            map(_.asInstanceOf[LocalVariableTable].localVariables).toIndexedSeq
                     val theLVT = allLVs.flatten
                     new LocalVariableTable(theLVT) +: otherAttributes1
                 } else {
@@ -1387,11 +1385,10 @@ object Code {
             val newAttributes2 =
                 if (lineNumberTables.nonEmpty && lineNumberTables.tail.nonEmpty) {
                     val mergedTables =
-                        lineNumberTables.map(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers).flatten
+                        lineNumberTables.flatMap(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers)
                     val sortedTable =
                         mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
                     new UnpackedLineNumberTable(sortedTable) +: otherAttributes2
-
                 } else {
                     newAttributes1
                 }
@@ -1400,7 +1397,9 @@ object Code {
         }
     }
 
-    def unapply(code: Code): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
+    def unapply(
+        code: Code
+    ): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
         import code._
         Some((maxStack, maxLocals, instructions, exceptionHandlers, attributes))
     }
@@ -1477,7 +1476,7 @@ object Code {
         // Basic ides: follow all paths
         var maxStackDepth: Int = 0;
 
-        var paths: Chain[(PC, Int /*stackdepth before executing the instruction wiht pc*/ )] = Naught
+        var paths: Chain[(PC, Int /*stackdepth before executing the instruction with pc*/ )] = Naught
         val visitedPCs = new mutable.BitSet(instructions.length)
 
         // We start with the first instruction and an empty stack.

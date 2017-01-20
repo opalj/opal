@@ -80,13 +80,14 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         }
     }
 
-    private def line(domain: Domain, pc: PC): String =
+    private def line(domain: Domain, pc: PC): String = {
         if (domain.isInstanceOf[TheCode]) {
             val code = domain.asInstanceOf[TheCode].code
             code.lineNumber(pc).map("[line="+_+"]").getOrElse("")
         } else {
             ""
         }
+    }
 
     override def instructionEvalution(
         domain: Domain
@@ -140,9 +141,8 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     }
 
     override def continuingInterpretation(
-        strictfp: Boolean,
-        code:     Code,
-        domain:   Domain
+        code:   Code,
+        domain: Domain
     )(
         initialWorkList:                  List[PC],
         alreadyEvaluated:                 List[PC],

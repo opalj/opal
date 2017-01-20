@@ -64,15 +64,18 @@ trait ConstraintsBetweenIntegerValues
     private[this] var constraints: Array[ConstraintsStore] = null
 
     abstract override def setCodeStructure(
-        theInstructions:     Array[Instruction],
-        theJoinInstructions: BitSet
+        theInstructions: Array[Instruction],
+        theJoinPCs:      BitSet,
+        theForkPCs:      BitSet
     ): Unit = {
-        super.setCodeStructure(theInstructions, theJoinInstructions)
+        super.setCodeStructure(theInstructions, theJoinPCs, theForkPCs)
 
         constraints = new Array[ConstraintsStore](theInstructions.size)
     }
 
-    private[this] var lastConstraint: Option[(IntegerLikeValue, IntegerLikeValue, Constraint)] = None
+    private[this] var lastConstraint: Option[(IntegerLikeValue, IntegerLikeValue, Constraint)] = {
+        None
+    }
 
     //
     //
