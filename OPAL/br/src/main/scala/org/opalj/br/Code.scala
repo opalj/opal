@@ -1502,7 +1502,7 @@ object Code {
             }
         }
 
-        return maxStackDepth
+        maxStackDepth
     }
 
 }
