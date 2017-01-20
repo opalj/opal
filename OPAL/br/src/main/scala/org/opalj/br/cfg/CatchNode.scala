@@ -43,6 +43,7 @@ import org.opalj.br.ExceptionHandler
  * @param  endPC The pc of the first instruction after the try-block (exclusive!).
  * @param  handlerPC The first pc of the handler block.
  * @param  catchType The type of the handled exception.
+ * @param  id A unique id that is not Long.MinValue (+1) and is not a value in the range[0..65535].
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
@@ -70,9 +71,8 @@ class CatchNode(
     //
 
     override def nodeId: Long = {
-        // ObjectTypes have positive ids; "Catch Any" can hence be associated with -1
-        val typeId: Long = if (catchType.isEmpty) -1L else catchType.get.hashCode.toLong
-        (startPC.toLong | (endPC.toLong << 16) | (handlerPC.toLong << 32)) ^ (typeId << 32)
+        val typeId = if (catchType.isDefined) catchType.get.hashCode.toLong else -1L
+        startPC.toLong | (endPC.toLong << 15) | (handlerPC.toLong << 30) | typeId << 46
     }
 
     override def toHRR: Option[String] = Some(
