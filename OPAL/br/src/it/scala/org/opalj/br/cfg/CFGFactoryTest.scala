@@ -100,7 +100,7 @@ class CFGFactoryTest extends CFGTests {
                     else
                         allEndPCs += bb.endPC
                 }
-                cfgNodesCheck(method.toJava(classFile),code,cfg,classHierarchy)
+                cfgNodesCheck(method.toJava(classFile), code, cfg, classHierarchy)
 
                 // check the wiring
                 cfg.allBBs.foreach { bb ⇒
@@ -129,9 +129,10 @@ class CFGFactoryTest extends CFGTests {
                         val cfgSuccessors = cfg.successors(pc)
                         if (nextInstructions != cfgSuccessors) {
                             fail(s"the instruction ($instruction) with pc $pc has the following "+
-                                s"instruction successors: $nextInstructions and "+
-                                s"the following cfg successors : $cfgSuccessors "+
-                                s"(${cfg.bb(pc)} => ${cfg.bb(pc).successors})")
+                                s"instruction successors:\n\t$nextInstructions and\n"+
+                                s"the following cfg successors:\n\t$cfgSuccessors\n"+
+                                s"the nodes are:\n\t${cfg.bb(pc)} =>\n\t\t"+
+                                cfg.bb(pc).successors.mkString("\n\t\t"))
                         }
                     }
                 }
@@ -168,7 +169,7 @@ class CFGFactoryTest extends CFGTests {
                 case t: Throwable ⇒
                     val instructions = code.instructions.size
                     val message = s"instructions=$instructions; "+t.getMessage
-                    errors.add(method.toJava(classFile,message))
+                    errors.add(method.toJava(classFile, message))
             }
         }
         if (!errors.isEmpty())
