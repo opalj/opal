@@ -59,6 +59,15 @@ class CatchNode(
         this(handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
     }
 
+    def copy(
+        startPC:   PC                 = this.startPC,
+        endPC:     PC                 = this.endPC,
+        handlerPC: PC                 = this.handlerPC,
+        catchType: Option[ObjectType] = this.catchType
+    ): CatchNode = {
+        new CatchNode(startPC, endPC, handlerPC, catchType)
+    }
+
     final override def isBasicBlock: Boolean = false
     final override def isExitNode: Boolean = false
     final override def isStartOfSubroutine: Boolean = false
