@@ -31,7 +31,6 @@ package br
 package instructions
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.:&:
 
 /**
  * Common superclass of all instructions which are in their final form.
@@ -43,7 +42,7 @@ trait Instruction extends InstructionLike {
     /**
      * @return  `this`.
      */
-    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): this.type = this
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): this.type = this
 
     /**
      * Returns the pcs of the instructions that may be executed next at runtime. This
@@ -75,7 +74,7 @@ trait Instruction extends InstructionLike {
  */
 object Instruction {
 
-    final val IllegalIndex = -1
+    final val IllegalIndex: Int = 1
 
     /**
      * Facilitates the matching of [[Instruction]] objects.
@@ -106,21 +105,10 @@ object Instruction {
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): Chain[PC] = {
-        import classHierarchy.isSubtypeOf
         var pcs = Chain.singleton(instruction.indexOfNextInstruction(currentPC))
-
-        def processException(exception: ObjectType): Unit = {
-            code.handlersFor(currentPC) find { handler ⇒
-                val catchType = handler.catchType
-                catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYesOrUnknown
-            } match {
-                case Some(handler) ⇒ pcs :&:= handler.handlerPC
-                case _             ⇒ /* exception is not handled */
-            }
+        exceptions foreach { exception ⇒
+            pcs = (code.handlersForException(currentPC, exception).map(_.handlerPC)) ++!: pcs
         }
-
-        exceptions foreach processException
-
         pcs
     }
 
@@ -133,17 +121,11 @@ object Instruction {
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): Chain[PC] = {
-        import classHierarchy.isSubtypeOf
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
-
-        code.handlersFor(currentPC) find { handler ⇒
-            val catchType = handler.catchType
-            catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYesOrUnknown
-        } match {
-            case Some(handler) ⇒ nextInstruction :&: (new :&:(handler.handlerPC))
-            case _             ⇒ Chain.singleton(nextInstruction)
-        }
+        nextInstruction :&: (code.handlersForException(currentPC, exception).map(_.handlerPC))
     }
 
-    final val justNullPointerException = List(ObjectType.NullPointerException)
+    final val justNullPointerException: List[org.opalj.br.ObjectType] = {
+        List(ObjectType.NullPointerException)
+    }
 }

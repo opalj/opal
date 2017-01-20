@@ -511,9 +511,9 @@ final class Code private (
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def handlersFor(pc: PC, justExceptions: Boolean = false): List[ExceptionHandler] = {
+    def handlersFor(pc: PC, justExceptions: Boolean = false): Chain[ExceptionHandler] = {
         var handledExceptions = Set.empty[ObjectType]
-        var ehs = List.empty[ExceptionHandler] // TODO Use Chain and append..
+        val ehs = Chain.newBuilder[ExceptionHandler]
         exceptionHandlers forall { eh ⇒
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -521,12 +521,12 @@ final class Code private (
                     val catchType = catchTypeOption.get
                     if (!handledExceptions.contains(catchType)) {
                         handledExceptions += catchType
-                        ehs = eh :: ehs
+                        ehs += eh
                     }
                     true
                 } else {
                     if (!justExceptions) {
-                        ehs = eh :: ehs
+                        ehs += eh
                     }
                     false
                 }
@@ -536,7 +536,7 @@ final class Code private (
                 true
             }
         }
-        ehs.reverse
+        ehs.result()
     }
 
     /**
@@ -549,7 +549,7 @@ final class Code private (
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def exceptionHandlersFor(pc: PC): List[ExceptionHandler] = {
+    def exceptionHandlersFor(pc: PC): Chain[ExceptionHandler] = {
         handlersFor(pc, justExceptions = true)
     }
 
@@ -614,7 +614,7 @@ final class Code private (
     def handlerInstructionsFor(pc: PC): Chain[PC] = {
         var handledExceptions = Set.empty[ObjectType]
 
-        var pcs: Chain[PC] = Naught
+        val pcs = Chain.newBuilder[PC]
         exceptionHandlers forall { eh ⇒
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -622,11 +622,11 @@ final class Code private (
                     val catchType = catchTypeOption.get
                     if (!handledExceptions.contains(catchType)) {
                         handledExceptions += catchType
-                        pcs :&:= eh.handlerPC
+                        pcs += eh.handlerPC
                     }
                     true
                 } else {
-                    pcs :&:= eh.handlerPC
+                    pcs += eh.handlerPC
                     false // we effectively abort after the first finally handler
                 }
             } else {
@@ -634,7 +634,7 @@ final class Code private (
                 true
             }
         }
-        pcs
+        pcs.result()
     }
 
     /**
