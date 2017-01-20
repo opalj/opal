@@ -341,14 +341,17 @@ final class Code private (
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 ⇒
                     val bInstr = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
-                    runtimeSuccessor(pc + bInstr.branchoffset)
+                    val jumpTargetPC = pc + bInstr.branchoffset
+                    if (jumpTargetPC != nextPC) {
+                        // we have an "if" that always immediately continues with the next
+                        // instruction; hence, this "if" is useless
+                        runtimeSuccessor(jumpTargetPC)
+                    }
                     runtimeSuccessor(nextPC)
 
                 case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
-                    val sInstr = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
-                    runtimeSuccessor(pc + sInstr.defaultOffset)
-                    sInstr.jumpOffsets foreach { jumpOffset ⇒
-                        runtimeSuccessor(pc + jumpOffset)
+                    instruction.nextInstructions(pc)(code, null /*not required!*/ ) foreach { pc ⇒
+                        runtimeSuccessor(pc)
                     }
 
                 case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
@@ -504,13 +507,13 @@ final class Code private (
      * in case of the finally handlers) only the first one is returned as that
      * one is the one that will be used by the JVM at runtime.
      * In case of identical caught exceptions only the
-     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
+     * first of them will be returned. No further checks (w.r.t. the type hierarchy) are done.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
     def handlersFor(pc: PC, justExceptions: Boolean = false): List[ExceptionHandler] = {
         var handledExceptions = Set.empty[ObjectType]
-        var ehs = List.empty[ExceptionHandler]
+        var ehs = List.empty[ExceptionHandler] // TODO Use Chain and append..
         exceptionHandlers forall { eh ⇒
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -556,12 +559,15 @@ final class Code private (
      *
      * In case of multiple finally handlers only the first one will be returned and no further
      * exception handlers will be returned. In case of identical caught exceptions only the
-     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
+     * first of them will be returned. No further checks (w.r.t. the type hierarchy) are done.
+     *
+     * If different exceptions are handled by the same handler, the corresponding pc is returned
+     * multiple times.
      */
-    def handlerInstructionsFor(pc: PC): PCs = {
+    def handlerInstructionsFor(pc: PC): Chain[PC] = {
         var handledExceptions = Set.empty[ObjectType]
 
-        var pcs = org.opalj.collection.mutable.UShortSet.empty
+        var pcs: Chain[PC] = Naught
         exceptionHandlers forall { eh ⇒
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -569,11 +575,11 @@ final class Code private (
                     val catchType = catchTypeOption.get
                     if (!handledExceptions.contains(catchType)) {
                         handledExceptions += catchType
-                        pcs = eh.handlerPC +≈: pcs
+                        pcs :&:= eh.handlerPC
                     }
                     true
                 } else {
-                    pcs = eh.handlerPC +≈: pcs
+                    pcs :&:= eh.handlerPC
                     false // we effectively abort after the first finally handler
                 }
             } else {

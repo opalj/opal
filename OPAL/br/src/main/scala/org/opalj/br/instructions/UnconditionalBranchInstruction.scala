@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Super class of all bytecode instructions that always jump to a specific
@@ -69,8 +69,8 @@ trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranc
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
-        UShortSet(currentPC + branchoffset)
+    ): Chain[PC] = {
+        Chain.singleton(currentPC + branchoffset)
     }
 
     override def toString(currentPC: Int) =

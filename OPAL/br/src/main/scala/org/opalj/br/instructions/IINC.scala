@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Increment local variable by constant.
@@ -85,8 +85,8 @@ case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstructio
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
     final def expressionResult: Register = Register(lvIndex)

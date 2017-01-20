@@ -118,7 +118,7 @@ class CFGFactoryTest extends CFGTests {
                 // check the correspondence of "instruction.nextInstruction" and the information
                 // contained in the cfg
                 code.iterate { (pc, instruction) ⇒
-                    val nextInstructions = instruction.nextInstructions(pc).iterable.toSet
+                    val nextInstructions = instruction.nextInstructions(pc).toSet
                     if (nextInstructions.isEmpty) {
                         if (!cfg.bb(pc).successors.forall { succBB ⇒ succBB.isCatchNode || succBB.isExitNode })
                             fail(

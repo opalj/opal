@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Enter monitor for object.
@@ -54,9 +54,9 @@ case object MONITORENTER extends SynchronizationInstruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
+    ): Chain[PC] = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC))
+            Chain.singleton(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
                 this, currentPC, ObjectType.NullPointerException

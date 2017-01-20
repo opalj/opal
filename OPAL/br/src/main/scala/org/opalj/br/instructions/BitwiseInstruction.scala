@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction that performs a manipulation of a value's bits.
@@ -52,8 +52,8 @@ abstract class BitwiseInstruction
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
     final override def isShiftInstruction: Boolean = false

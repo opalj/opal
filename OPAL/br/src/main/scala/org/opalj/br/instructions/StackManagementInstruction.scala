@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction that directly manipulates the operand stack by popping, swapping or
@@ -51,8 +51,8 @@ abstract class StackManagementInstruction extends Instruction with ConstantLengt
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {

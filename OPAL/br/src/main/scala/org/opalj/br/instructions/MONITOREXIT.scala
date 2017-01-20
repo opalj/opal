@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Exit monitor for object.
@@ -43,8 +43,9 @@ case object MONITOREXIT extends SynchronizationInstruction {
 
     final val mnemonic = "monitorexit"
 
-    final val jvmExceptions: List[ObjectType] =
+    final val jvmExceptions: List[ObjectType] = {
         List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
+    }
 
     final def stackSlotsChange: Int = -1
 
@@ -55,9 +56,10 @@ case object MONITOREXIT extends SynchronizationInstruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs =
+    ): Chain[PC] = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC))
+            Chain.singleton(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
+    }
 }

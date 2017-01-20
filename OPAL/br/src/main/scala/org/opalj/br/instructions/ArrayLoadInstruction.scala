@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction that loads a value stored in an array.
@@ -62,12 +62,11 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
+    ): Chain[PC] = {
         if (regularSuccessorsOnly) {
-            UShortSet(indexOfNextInstruction(currentPC))
+            Chain.singleton(indexOfNextInstruction(currentPC))
         } else {
-            import Instruction.nextInstructionOrExceptionHandlers
-            nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
+            Instruction.nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
         }
     }
 

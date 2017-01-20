@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Getstatic ﬁeld from class.
@@ -62,8 +62,8 @@ case class GETSTATIC(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
     override def toString =

@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Throw exception or error.
@@ -75,9 +75,9 @@ case object ATHROW extends Instruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
+    ): Chain[PC] = {
         if (regularSuccessorsOnly)
-            UShortSet.empty
+            Chain.empty
         else
             code.handlerInstructionsFor(currentPC)
     }

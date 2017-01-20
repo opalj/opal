@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction that converts between a numeric value of primitive type A and
@@ -55,8 +55,8 @@ abstract class NumericConversionInstruction extends Instruction with ConstantLen
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1

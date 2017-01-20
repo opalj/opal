@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Store into reference array.
@@ -57,9 +57,9 @@ case object AASTORE extends ArrayStoreInstruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
+    ): Chain[PC] = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC))
+            Chain.singleton(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
     }

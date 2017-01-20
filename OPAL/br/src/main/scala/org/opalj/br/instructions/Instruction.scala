@@ -30,7 +30,8 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.:&:
 
 /**
  * Common superclass of all instructions which are in their final form.
@@ -49,7 +50,8 @@ trait Instruction extends InstructionLike {
      * method takes potentially thrown exceptions into account. I.e., every instruction
      * that may throw an exception checks if it is handled locally and
      * – if so – checks if an appropriate handler exists and – if so – also returns
-     * the first instruction of the handler.
+     * the first instruction of the handler. The chain may contain duplicates, iff the state
+     * is potentially different when the target instruction is reached.
      *
      * @param   regularSuccessorsOnly If `true` only those instructions are returned
      *          which are not related to an exception thrown by this instruction.
@@ -63,7 +65,7 @@ trait Instruction extends InstructionLike {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs
+    ): Chain[PC]
 }
 
 /**
@@ -103,16 +105,16 @@ object Instruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): UShortSet /* <= mutable by purpose! */ = {
+    ): Chain[PC] = {
         import classHierarchy.isSubtypeOf
-        var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC))
+        var pcs = Chain.singleton(instruction.indexOfNextInstruction(currentPC))
 
         def processException(exception: ObjectType): Unit = {
             code.handlersFor(currentPC) find { handler ⇒
                 val catchType = handler.catchType
                 catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYesOrUnknown
             } match {
-                case Some(handler) ⇒ pcs = handler.handlerPC +≈: pcs
+                case Some(handler) ⇒ pcs :&:= handler.handlerPC
                 case _             ⇒ /* exception is not handled */
             }
         }
@@ -130,7 +132,7 @@ object Instruction {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): UShortSet /* <= mutable by purpose! */ = {
+    ): Chain[PC] = {
         import classHierarchy.isSubtypeOf
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
 
@@ -138,8 +140,8 @@ object Instruction {
             val catchType = handler.catchType
             catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYesOrUnknown
         } match {
-            case Some(handler) ⇒ UShortSet(nextInstruction, handler.handlerPC)
-            case None          ⇒ UShortSet(nextInstruction)
+            case Some(handler) ⇒ nextInstruction :&: (new :&:(handler.handlerPC))
+            case _             ⇒ Chain.singleton(nextInstruction)
         }
     }
 

@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Puts a constant value on the stack.
@@ -58,8 +58,8 @@ abstract class LoadConstantInstruction[T] extends Instruction with ConstantLengt
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
     def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
