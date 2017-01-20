@@ -554,7 +554,54 @@ final class Code private (
     }
 
     /**
-     * The set of pcs of those instructions that may handle an exception if the evaluation
+     * Returns the handlers that may handle the given exception.
+     *
+     * The (known/given) type hierarchy is taken into account as well as
+     * the order between the exception handlers.
+     */
+    def handlersForException(
+        pc:        PC,
+        exception: ObjectType
+    )(
+        implicit
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[ExceptionHandler] = {
+        import classHierarchy.isSubtypeOf
+
+        var handledExceptions = Set.empty[ObjectType]
+
+        val ehs = Chain.newBuilder[ExceptionHandler]
+        exceptionHandlers forall { eh ⇒
+            if (eh.startPC <= pc && eh.endPC > pc) {
+                val catchTypeOption = eh.catchType
+                if (catchTypeOption.isDefined) {
+                    val catchType = catchTypeOption.get
+                    val isSubtype = isSubtypeOf(exception, catchType)
+                    if (isSubtype.isYes) {
+                        ehs += eh
+                        /* we found a definitiv matching handler*/ false
+                    } else if (isSubtype.isUnknown) {
+                        if (!handledExceptions.contains(catchType)) {
+                            handledExceptions += catchType
+                            ehs += eh
+                        }
+                        /* we may have a better fit */ true
+                    } else {
+                        /* the exception type is not relevant*/ true
+                    }
+                } else {
+                    ehs += eh
+                    /* we are done; we found a finally handler... */ false
+                }
+            } else {
+                /* the handler is not relevant */ true
+            }
+        }
+        ehs.result()
+    }
+
+    /**
+     * The list of pcs of those instructions that may handle an exception if the evaluation
      * of the instruction with the given `pc` throws an exception.
      *
      * In case of multiple finally handlers only the first one will be returned and no further

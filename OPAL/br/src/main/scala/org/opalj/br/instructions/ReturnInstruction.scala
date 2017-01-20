@@ -71,7 +71,12 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): Chain[PC] = {
-        Naught
+        if (regularSuccessorsOnly)
+            Naught
+        else {
+            val ehs = code.handlersForException(currentPC, ReturnInstruction.jvmExceptions.head)
+            ehs.map(_.handlerPC)
+        }
     }
 
     final def expressionResult: NoExpression.type = NoExpression
