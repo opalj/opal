@@ -206,9 +206,7 @@ package object ai {
 
     /**
      * Special value that is added to the list of `evaluated instructions`
-     * to mark the end of the evaluation of a subroutine. (I.e., this value
-     * is not directly used by the AI during the interpretation, but to record the
-     * progress.)
+     * to mark the end of the evaluation of a subroutine. 
      */
     final val SUBROUTINE_END = -88888888
 

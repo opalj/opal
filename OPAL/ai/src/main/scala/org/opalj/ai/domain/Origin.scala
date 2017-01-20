@@ -47,7 +47,7 @@ package domain
 trait Origin { domain: ValuesDomain ⇒
 
     implicit object SingleOriginValueOrdering extends Ordering[SingleOriginValue] {
-        def compare(x: SingleOriginValue, y: SingleOriginValue): Int =    x.origin - y.origin
+        def compare(x: SingleOriginValue, y: SingleOriginValue): Int = x.origin - y.origin
     }
 
     trait ValueWithOriginInformation {

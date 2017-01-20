@@ -284,7 +284,7 @@ final class Code private (
 
     /**
      * Returns the set of all program counters where two or more control flow
-     * paths joins.
+     * paths may join.
      *
      * ==Example==
      * {{{
