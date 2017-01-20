@@ -54,9 +54,9 @@ class CodeAttributeTest extends FlatSpec with Matchers {
 
     it should "only report the most specific handler and not all handers" in {
 
-        nestedCatch.handlersFor(5) should be(Iterable(nestedCatch.exceptionHandlers(0)))
-        nestedCatch.handlersFor(14) should be(Iterable(nestedCatch.exceptionHandlers(1)))
-        nestedCatch.handlersFor(10) should be(Iterable(nestedCatch.exceptionHandlers(2)))
+        nestedCatch.handlersFor(5).toList should be(Iterable(nestedCatch.exceptionHandlers(0)))
+        nestedCatch.handlersFor(14).toList should be(Iterable(nestedCatch.exceptionHandlers(1)))
+        nestedCatch.handlersFor(10).toList should be(Iterable(nestedCatch.exceptionHandlers(2)))
 
         // the last instruction
         nestedCatch.handlersFor(37) should be(empty)
