@@ -586,10 +586,12 @@ object Chain extends ChainLowPriorityImplicits {
 
     /**
      * Builder for [[Chain]]s. The builder is specialized for the primitive
-     *         type `Int` to enable the creation of new instances of the correspondingly
-     *         specialized list.
+     * type `Int` to enable the creation of new instances of the correspondingly
+     * specialized list.
      *
-     * @tparam T    The type of the list's element.
+     * @note     The builder must not be used after a `result` call.
+     *
+     * @tparam T The type of the list's element.
      */
     class ChainBuilder[@specialized(Int) T] extends Builder[T, Chain[T]] {
         private var list: Chain[T] = Naught
@@ -605,6 +607,8 @@ object Chain extends ChainLowPriorityImplicits {
             this
         }
         def clear(): Unit = list = Naught
+
+        /** Returns the constructed list. The builder must not be used afterwards. */
         def result(): Chain[T] = list
     }
 
