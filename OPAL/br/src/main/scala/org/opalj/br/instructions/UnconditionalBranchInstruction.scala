@@ -73,8 +73,9 @@ trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranc
         Chain.singleton(currentPC + branchoffset)
     }
 
-    override def toString(currentPC: Int) =
-        getClass.getSimpleName+" "+
-            (currentPC + branchoffset) +
-            (if (branchoffset >= 0) "↓" else "↑")
+    override def toString(currentPC: Int) = {
+        val direction = (if (branchoffset >= 0) "↓" else "↑")
+        getClass.getSimpleName+" "+(currentPC + branchoffset) + direction
+    }
+
 }
