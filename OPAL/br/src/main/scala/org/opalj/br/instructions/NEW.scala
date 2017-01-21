@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 import org.opalj.br.ObjectType.OutOfMemoryError
 
 /**
@@ -71,10 +71,11 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC))
+            Chain.singleton(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(this, currentPC, OutOfMemoryError)
     }

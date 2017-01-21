@@ -54,9 +54,9 @@ trait CustomInitialization { domain: ValuesDomain ⇒
      * to complete the initialization of this domain before calling the super method.
      */
     def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        initialLocals:    Locals
+        code:          Code,
+        joinPCs:       BitSet,
+        initialLocals: Locals
     ): Unit = {
         // Empty by default.
     }

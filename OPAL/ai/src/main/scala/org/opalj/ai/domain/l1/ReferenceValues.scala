@@ -952,14 +952,13 @@ case No ⇒
 
         override def updateT(
             t:      Timestamp,
-            origin: ValueOrigin, isNull: Answer
+            origin: ValueOrigin,
+            isNull: Answer
         ): DomainObjectValue = {
             ObjectValue(origin, isNull, upperTypeBound, t)
         }
 
-        def doRefineUpperTypeBound(
-            supertype: ReferenceType
-        ): DomainSingleOriginReferenceValue = {
+        def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
             if (supertype.isObjectType) {
                 val theSupertype = supertype.asObjectType
                 var newUTB: UIDSet[ObjectType] = UIDSet.empty
@@ -1063,10 +1062,10 @@ case No ⇒
      * origins. I.e., per value origin one domain value is used
      * to abstract over the properties of that respective value.
      *
-     * @param  isPrecise `true` if the upper type bound of this value precisely
-     *      captures the runtime type of the value.
-     *      This basically requires that all '''non-null''' values
-     *      are precise and have the same upper type bound. Null values are ignored.
+     * @param   isPrecise `true` if the upper type bound of this value precisely
+     *          captures the runtime type of the value.
+     *          This basically requires that all '''non-null''' values
+     *          are precise and have the same upper type bound. Null values are ignored.
      */
     protected class MultipleReferenceValues(
             val values:             SortedSet[DomainSingleOriginReferenceValue],
@@ -1119,6 +1118,10 @@ case No ⇒
             s"the upper type bound (isNull == $isNull) of ${values.mkString(",")} "+
                 s"== ${domain.upperTypeBound(values)} which is a strict subtype of "+
                 s"the given bound $upperTypeBound"
+        )
+        assert(
+            upperTypeBound.size < 2 || upperTypeBound.forall(_.isObjectType),
+            s"invalid upper type bound: $upperTypeBound for: ${values.mkString("[", ";", "]")}"
         )
 
         def addValue(newValue: DomainSingleOriginReferenceValue): DomainMultipleReferenceValues = {
@@ -1496,10 +1499,29 @@ case No ⇒
                 // we have to choose the more "precise" utb
                 val filteredValuesUTB = domain.upperTypeBound(filteredValues)
 
-                // we have to support the case where we cast a value with an interface
-                // as an upper type bound to a second interface
+                // We have to support (1) the case where we cast a value for which we only have
+                // an interface as an upper type bound to a second interface. In this case
+                // the value has to be a subtype of both interfaces.
+                //
+                // We have to support (2) the case where we cast an array of reference values of
+                // type X to an array of reference values of type Y (which may succeed if at least
+                // one type is an interface type or if both types are in an effective
+                // inheritance relation! For example,
+                // scala> val ss = new Array[java.util.ArrayList[AnyRef]](1)
+                // ss: Array[java.util.ArrayList[AnyRef]] = Array(null)
+                //
+                // scala> ss(0) = new java.util.ArrayList[AnyRef]()
+                //
+                // scala> val os : Array[Object] = ss.asInstanceOf[Array[Object]]
+                // os: Array[Object] = Array([])
+                //
+                // scala> os.asInstanceOf[Array[java.io.Serializable]]
+                // Array[java.io.Serializable] = Array([])
+                // However, we currently have no support to model the case "Array of <X with Y>";
+                // therefore, we simply accept the target refinement type.
                 val supertypeUTB =
-                    if (classHierarchy.isSubtypeOf(supertype, this.upperTypeBound).isNoOrUnknown)
+                    if (supertype.isObjectType &&
+                        classHierarchy.isSubtypeOf(supertype, this.upperTypeBound).isNoOrUnknown)
                         this.upperTypeBound + supertype
                     else
                         UIDSet[ReferenceType](supertype)

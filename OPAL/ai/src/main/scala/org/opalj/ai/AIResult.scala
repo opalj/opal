@@ -47,15 +47,6 @@ import org.opalj.br.Code
 sealed abstract class AIResult {
 
     /**
-     * If `true` then the code was evaluated using `strict` semantics (in Java
-     * the `strictfp` modifier was used), otherwise
-     * it was evaluated using the standard JVM semantics.
-     *
-     * Note, that most standard JVMs nowadays always use strict semantics.
-     */
-    val strictfp: Boolean
-
-    /**
      * The code for which the abstract interpretation was performed.
      */
     val code: Code
@@ -63,12 +54,22 @@ sealed abstract class AIResult {
     /**
      * The instructions where two or more control flow paths join.
      *
-     * (See also [[org.opalj.br.Code.joinInstructions]].)
+     * (See also [[org.opalj.br.Code.joinPCs]].)
      *
-     * @note This information could be recomputed on-demand but is stored for performance
-     * reasons.
+     * @note   This information could be recomputed on-demand but is stored for performance
+     *         reasons.
      */
-    val joinInstructions: BitSet
+    val joinPCs: BitSet
+
+    /**
+     * The instructions where the control flow forks.
+     *
+     * (See also [[org.opalj.br.Code.boundaryPCs]].)
+     *
+     * @note   This information could be recomputed on-demand but is stored for performance
+     *         reasons.
+     */
+    val forkPCs: BitSet
 
     /**
      * The domain object that was used to perform the abstract interpretation.
@@ -244,10 +245,10 @@ object AIResultBuilder {
      * computation.
      */
     def aborted(
-        theStrictfp:         Boolean,
-        theCode:             Code,
-        theJoinInstructions: BitSet,
-        theDomain:           Domain
+        theCode:    Code,
+        theJoinPCs: BitSet,
+        theForkPCs: BitSet,
+        theDomain:  Domain
     )(
         theWorklist:                         List[PC],
         theEvaluated:                        List[PC],
@@ -259,9 +260,9 @@ object AIResultBuilder {
     ): AIAborted { val domain: theDomain.type } = {
 
         new AIAborted {
-            val strictfp: Boolean = theStrictfp
             val code: Code = theCode
-            val joinInstructions: BitSet = theJoinInstructions
+            val joinPCs: BitSet = theJoinPCs
+            val forkPCs: BitSet = theForkPCs
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
@@ -271,14 +272,15 @@ object AIResultBuilder {
             val subroutinesOperandsArray: theDomain.OperandsArray = theSubroutinesOperandsArray
             val subroutinesLocalsArray: theDomain.LocalsArray = theSubroutinesLocalsArray
 
-            def continueInterpretation(ai: AI[_ >: domain.type]): AIResult =
+            def continueInterpretation(ai: AI[_ >: domain.type]): AIResult = {
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain
+                    code, joinPCs, forkPCs, domain
                 )(
                     worklist, evaluated,
                     operandsArray, localsArray,
                     memoryLayoutBeforeSubroutineCall, subroutinesOperandsArray, subroutinesLocalsArray
                 )
+            }
 
         }
     }
@@ -289,10 +291,10 @@ object AIResultBuilder {
      * ''completed'' is depending on the used domain.
      */
     def completed(
-        theStrictfp:         Boolean,
-        theCode:             Code,
-        theJoinInstructions: BitSet,
-        theDomain:           Domain
+        theCode:    Code,
+        theJoinPCs: BitSet,
+        theForkPCs: BitSet,
+        theDomain:  Domain
     )(
         theEvaluated:     List[PC],
         theOperandsArray: theDomain.OperandsArray,
@@ -300,9 +302,9 @@ object AIResultBuilder {
     ): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
-            val strictfp: Boolean = theStrictfp
             val code: Code = theCode
-            val joinInstructions = theJoinInstructions
+            val joinPCs = theJoinPCs
+            val forkPCs = theForkPCs
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
@@ -346,13 +348,12 @@ object AIResultBuilder {
                 }
 
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain
+                    code, joinPCs, forkPCs, domain
                 )(
                     AI.initialWorkList, evaluated,
                     operandsArray, localsArray,
                     Nil, subroutinesOperandsArray, subroutinesLocalsArray
                 )
-
             }
         }
     }

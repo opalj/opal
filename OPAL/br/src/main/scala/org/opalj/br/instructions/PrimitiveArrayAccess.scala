@@ -43,7 +43,8 @@ object PrimitiveArrayAccess {
      * The exceptions that are potentially thrown by instructions that load or store
      * values in an array of primitive values.
      */
-    val jvmExceptions: List[ObjectType] =
+    val jvmExceptions: List[ObjectType] = {
         List(ObjectType.ArrayIndexOutOfBoundsException, ObjectType.NullPointerException)
+    }
 
 }

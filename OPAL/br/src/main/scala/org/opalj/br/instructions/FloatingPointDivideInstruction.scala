@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction that divides two primitive floating point values.
@@ -39,16 +39,17 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class FloatingPointDivideInstruction extends DivideInstruction {
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ObjectType] = Nil
 
-    final def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
 }

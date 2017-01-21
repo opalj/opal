@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction to create a new array.
@@ -39,36 +39,39 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class CreateNewArrayInstruction extends Instruction with ConstantLengthInstruction {
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (this == other)
     }
 
-    final def jvmExceptions: List[ObjectType] = CreateNewArrayInstruction.jvmExceptionsAndErrors
+    override final def jvmExceptions: List[ObjectType] = {
+        CreateNewArrayInstruction.jvmExceptionsAndErrors
+    }
 
-    final def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC))
+            Chain.singleton(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandlers(
                 this, currentPC, CreateNewArrayInstruction.jvmExceptionsAndErrors
             )
     }
 
-    final def expressionResult: Stack.type = Stack
+    override final def expressionResult: Stack.type = Stack
 
 }
 
 object CreateNewArrayInstruction {
 
-    val jvmExceptions = List(ObjectType.NegativeArraySizeException)
+    val jvmExceptions: List[ObjectType] = List(ObjectType.NegativeArraySizeException)
 
-    val jvmExceptionsAndErrors = ObjectType.OutOfMemoryError :: jvmExceptions
+    val jvmExceptionsAndErrors: List[ObjectType] = ObjectType.OutOfMemoryError :: jvmExceptions
 
 }

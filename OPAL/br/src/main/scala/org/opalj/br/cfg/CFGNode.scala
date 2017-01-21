@@ -63,6 +63,9 @@ trait CFGNode extends Node {
     private[cfg] def setPredecessors(predecessors: Set[CFGNode]): Unit = {
         _predecessors = predecessors
     }
+    def removePredecessor(predecessor: CFGNode): Unit = {
+        _predecessors -= predecessor
+    }
     private[cfg] def clearPredecessors(): Unit = {
         _predecessors = Set.empty
     }

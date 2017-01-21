@@ -31,6 +31,8 @@ package br
 package instructions
 
 import scala.annotation.switch
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 import org.opalj.collection.mutable.UShortSet
 
 /**
@@ -66,9 +68,15 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        UShortSet.empty
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
+        if (regularSuccessorsOnly)
+            Naught
+        else {
+            val ehs = code.handlersForException(currentPC, ReturnInstruction.jvmExceptions.head)
+            ehs.map(_.handlerPC)
+        }
     }
 
     final def expressionResult: NoExpression.type = NoExpression
@@ -127,7 +135,7 @@ object ReturnInstructions {
         val instructions = code.instructions
         val max = instructions.length
         var pc = 0
-        var returnPCs = org.opalj.collection.mutable.UShortSet.empty
+        var returnPCs = UShortSet.empty
         while (pc < max) {
             val instruction = instructions(pc)
             if (ReturnInstruction.isReturnInstruction(instruction))

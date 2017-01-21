@@ -83,12 +83,9 @@ object PCLineComprehension {
 
     final def line(pc: PC)(implicit code: Code): Option[Int] = code.lineNumber(pc)
 
-    final def pcLineToString(
-        pc: PC
-    )(
-        implicit
-        code: Code
-    ) = "pc="+pc + line(pc).map(" line="+_).getOrElse("")
+    final def pcLineToString(pc: PC)(implicit code: Code) = {
+        "pc="+pc + line(pc).map(" line="+_).getOrElse("")
+    }
 
     def pcNode(classFileFQN: String, methodJVMSignature: String, pc: PC): Node = {
         <span class="program_counter" data-class={ classFileFQN } data-method={ methodJVMSignature } data-pc={ pc.toString } data-show="bytecode">

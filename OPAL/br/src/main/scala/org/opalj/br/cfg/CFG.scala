@@ -55,7 +55,8 @@ import org.opalj.collection.mutable.UShortSet
  *          method returns abnormally (throws an exception). If the method is guaranteed
  *          to never throw an exception, this node will not have any predecessors.
  * @param   catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
- *          [[org.opalj.br.ExceptionHandler]].
+ *          [[org.opalj.br.ExceptionHandler]], but if an exception handler does not catch
+ *          anything, no [[CatchNode]] is created.)
  * @param   basicBlocks An implicit map between a program counter and its associated
  *          [[BasicBlock]]; it may be a sparse array!
  *
@@ -183,7 +184,7 @@ case class CFG(
      * Iterates over the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
      * not returned.)
      */
-    lazy val allBBs: Iterator[BasicBlock] = {
+    def allBBs: Iterator[BasicBlock] = {
         //basicBlocks.view.filter(_ ne null).toSet
         new Iterator[BasicBlock] {
 

@@ -294,20 +294,20 @@ final class Code private (
      *     5: goto 10
      *     6: ...
      *     9: iload_1
-     *  10:return // <= JOIN INSTRUCTION: the predecessors are the instructions 5 and 9.
+     *  10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
      * }}}
      *
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers may be reached on multiple paths.
      */
-    def joinInstructions: BitSet = {
+    def joinPCs: BitSet = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
-        val joinInstructions = new mutable.BitSet(instructionsLength)
+        val joinPCs = new mutable.BitSet(instructionsLength)
         exceptionHandlers.foreach { eh ⇒
             // [REFINE] For non-finally handlers, test if multiple paths
             // can lead to the respective exception
-            joinInstructions += eh.handlerPC
+            joinPCs += eh.handlerPC
         }
         // The algorithm determines for each instruction the successor instruction
         // that is reached and then marks it. If an instruction was already reached in the
@@ -320,7 +320,7 @@ final class Code private (
             val nextPC = pcOfNextInstruction(pc)
             @inline def runtimeSuccessor(pc: PC): Unit = {
                 if (isReached.contains(pc))
-                    joinInstructions += pc
+                    joinPCs += pc
                 else
                     isReached += pc
             }
@@ -341,14 +341,17 @@ final class Code private (
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 ⇒
                     val bInstr = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
-                    runtimeSuccessor(pc + bInstr.branchoffset)
+                    val jumpTargetPC = pc + bInstr.branchoffset
+                    if (jumpTargetPC != nextPC) {
+                        // we have an "if" that always immediately continues with the next
+                        // instruction; hence, this "if" is useless
+                        runtimeSuccessor(jumpTargetPC)
+                    }
                     runtimeSuccessor(nextPC)
 
                 case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
-                    val sInstr = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
-                    runtimeSuccessor(pc + sInstr.defaultOffset)
-                    sInstr.jumpOffsets foreach { jumpOffset ⇒
-                        runtimeSuccessor(pc + jumpOffset)
+                    instruction.nextInstructions(pc)(code, null /*not required!*/ ) foreach { pc ⇒
+                        runtimeSuccessor(pc)
                     }
 
                 case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
@@ -359,7 +362,73 @@ final class Code private (
             }
             pc = nextPC
         }
-        joinInstructions
+        joinPCs
+    }
+
+    /**
+     * Returns the set of all program counters where two or more control flow
+     * paths join of fork.
+     *
+     * ==Example==
+     * {{{
+     *     0: iload_1
+     *     1: ifgt    6 // <= PATH FORK
+     *     2: iconst_1
+     *     5: goto 10
+     *     6: ...
+     *     9: iload_1
+     *  10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
+     * }}}
+     *
+     * In case of exception handlers the sound overapproximation is made that
+     * all exception handlers may be reached on multiple paths.
+     */
+    def boundaryPCs(
+        implicit
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): (BitSet /*joins*/ , BitSet /*forks*/ ) = {
+        val instructions = this.instructions
+        val instructionsLength = instructions.length
+
+        val joinPCs = new mutable.BitSet(instructionsLength)
+        val forkPCs = new mutable.BitSet(instructionsLength)
+
+        val isReached = new mutable.BitSet(instructionsLength)
+        isReached += 0 // the first instruction is always reached!
+
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            val nextPC = pcOfNextInstruction(pc)
+
+            @inline def runtimeSuccessor(pc: PC): Unit = {
+                if (isReached.contains(pc))
+                    joinPCs += pc
+                else
+                    isReached += pc
+            }
+
+            (instruction.opcode: @scala.annotation.switch) match {
+                case RET.opcode ⇒
+                    // the ret may return do different sites
+                    forkPCs += pc
+                // the potential "joinPCs" are determined when we process the JSR
+                case JSR.opcode | JSR_W.opcode ⇒
+                    val jsrInstr = instruction.asInstanceOf[JSRInstruction]
+                    runtimeSuccessor(pc + jsrInstr.branchoffset)
+                    runtimeSuccessor(nextPC)
+
+                case _ ⇒
+                    val nextInstructions = instruction.nextInstructions(pc)(this, classHierarchy)
+                    nextInstructions.foreach(runtimeSuccessor)
+                    if (nextInstructions.hasMultipleElements) {
+                        forkPCs += pc
+                    }
+            }
+
+            pc = nextPC
+        }
+        (joinPCs, forkPCs)
     }
 
     /**
@@ -438,13 +507,13 @@ final class Code private (
      * in case of the finally handlers) only the first one is returned as that
      * one is the one that will be used by the JVM at runtime.
      * In case of identical caught exceptions only the
-     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
+     * first of them will be returned. No further checks (w.r.t. the type hierarchy) are done.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def handlersFor(pc: PC, justExceptions: Boolean = false): List[ExceptionHandler] = {
+    def handlersFor(pc: PC, justExceptions: Boolean = false): Chain[ExceptionHandler] = {
         var handledExceptions = Set.empty[ObjectType]
-        var ehs = List.empty[ExceptionHandler]
+        val ehs = Chain.newBuilder[ExceptionHandler]
         exceptionHandlers forall { eh ⇒
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -452,12 +521,12 @@ final class Code private (
                     val catchType = catchTypeOption.get
                     if (!handledExceptions.contains(catchType)) {
                         handledExceptions += catchType
-                        ehs = eh :: ehs
+                        ehs += eh
                     }
                     true
                 } else {
                     if (!justExceptions) {
-                        ehs = eh :: ehs
+                        ehs += eh
                     }
                     false
                 }
@@ -467,7 +536,7 @@ final class Code private (
                 true
             }
         }
-        ehs.reverse
+        ehs.result()
     }
 
     /**
@@ -480,22 +549,72 @@ final class Code private (
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def exceptionHandlersFor(pc: PC): List[ExceptionHandler] = {
+    def exceptionHandlersFor(pc: PC): Chain[ExceptionHandler] = {
         handlersFor(pc, justExceptions = true)
     }
 
     /**
-     * The set of pcs of those instructions that may handle an exception if the evaluation
+     * Returns the handlers that may handle the given exception.
+     *
+     * The (known/given) type hierarchy is taken into account as well as
+     * the order between the exception handlers.
+     */
+    def handlersForException(
+        pc:        PC,
+        exception: ObjectType
+    )(
+        implicit
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[ExceptionHandler] = {
+        import classHierarchy.isSubtypeOf
+
+        var handledExceptions = Set.empty[ObjectType]
+
+        val ehs = Chain.newBuilder[ExceptionHandler]
+        exceptionHandlers forall { eh ⇒
+            if (eh.startPC <= pc && eh.endPC > pc) {
+                val catchTypeOption = eh.catchType
+                if (catchTypeOption.isDefined) {
+                    val catchType = catchTypeOption.get
+                    val isSubtype = isSubtypeOf(exception, catchType)
+                    if (isSubtype.isYes) {
+                        ehs += eh
+                        /* we found a definitiv matching handler*/ false
+                    } else if (isSubtype.isUnknown) {
+                        if (!handledExceptions.contains(catchType)) {
+                            handledExceptions += catchType
+                            ehs += eh
+                        }
+                        /* we may have a better fit */ true
+                    } else {
+                        /* the exception type is not relevant*/ true
+                    }
+                } else {
+                    ehs += eh
+                    /* we are done; we found a finally handler... */ false
+                }
+            } else {
+                /* the handler is not relevant */ true
+            }
+        }
+        ehs.result()
+    }
+
+    /**
+     * The list of pcs of those instructions that may handle an exception if the evaluation
      * of the instruction with the given `pc` throws an exception.
      *
      * In case of multiple finally handlers only the first one will be returned and no further
      * exception handlers will be returned. In case of identical caught exceptions only the
-     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
+     * first of them will be returned. No further checks (w.r.t. the type hierarchy) are done.
+     *
+     * If different exceptions are handled by the same handler, the corresponding pc is returned
+     * multiple times.
      */
-    def handlerInstructionsFor(pc: PC): PCs = {
+    def handlerInstructionsFor(pc: PC): Chain[PC] = {
         var handledExceptions = Set.empty[ObjectType]
 
-        var pcs = org.opalj.collection.mutable.UShortSet.empty
+        val pcs = Chain.newBuilder[PC]
         exceptionHandlers forall { eh ⇒
             if (eh.startPC <= pc && eh.endPC > pc) {
                 val catchTypeOption = eh.catchType
@@ -503,11 +622,11 @@ final class Code private (
                     val catchType = catchTypeOption.get
                     if (!handledExceptions.contains(catchType)) {
                         handledExceptions += catchType
-                        pcs = eh.handlerPC +≈: pcs
+                        pcs += eh.handlerPC
                     }
                     true
                 } else {
-                    pcs = eh.handlerPC +≈: pcs
+                    pcs += eh.handlerPC
                     false // we effectively abort after the first finally handler
                 }
             } else {
@@ -515,7 +634,7 @@ final class Code private (
                 true
             }
         }
-        pcs
+        pcs.result()
     }
 
     /**
@@ -1072,7 +1191,8 @@ final class Code private (
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
         if (pc2 >= max_pc)
-            return List.empty
+            return List.empty;
+
         var pc3 = pcOfNextInstruction(pc2)
 
         var result: List[PC] = List.empty
@@ -1093,7 +1213,7 @@ final class Code private (
     }
 
     /**
-     * Returns the next instruction that will be returned at runtime that is not a
+     * Returns the next instruction that will be executed at runtime that is not a
      * [[org.opalj.br.instructions.GotoInstruction]].
      * If the given instruction is not a [[org.opalj.br.instructions.GotoInstruction]],
      * the given instruction is returned.
@@ -1106,8 +1226,8 @@ final class Code private (
     }
 
     /**
-     * Tests if the sequence of instructions that starts with the given `pc` always ends
-     * with an `ATHROW` instruction or a method call that always throws an
+     * Tests if the straight-line sequence of instructions that starts with the given `pc`
+     * always ends with an `ATHROW` instruction or a method call that always throws an
      * exception. The call sequence furthermore has to contain no complex logic.
      * Here, complex means that evaluating the instruction may result in multiple control flows.
      * If the sequence contains complex logic, `false` will be returned.
@@ -1125,25 +1245,25 @@ final class Code private (
      * This is a typical idiom used in Java programs and which may be relevant for
      * certain analyses to detect.
      *
-     * @note If complex control flows should also be considered it is possible to compute
+     * @note   If complex control flows should also be considered it is possible to compute
      *         a methods [[org.opalj.br.cfg.CFG]] and use that one.
      *
-     * @param pc The program counter of an instruction that strictly dominates all
-     *      succeeding instructions up until the next join instruction (as determined
-     *      by [[#joinInstructions]]. This is naturally the case for the very first
-     *      instruction of each method and each exception handler unless these
-     *      instructions are joinInstructions; in this case the `false` is returned.
+     * @param  pc The program counter of an instruction that strictly dominates all
+     *         succeeding instructions up until the next join instruction (as determined
+     *         by [[#joinPCs]]. This is naturally the case for the very first
+     *         instruction of each method and each exception handler unless these
+     *         instructions are joinPCs; in this case the `false` is returned.
      *
-     * @param anInvocation When the analysis finds a method call, it calls this method
-     *      to let the caller decide whether the called method is an (indirect) way
-     *      of always throwing an exception.
-     *      If `true` is returned the analysis terminates and returns `true`; otherwise
-     *      the analysis continues.
+     * @param  anInvocation When the analysis finds a method call, it calls this method
+     *         to let the caller decide whether the called method is an (indirect) way
+     *         of always throwing an exception.
+     *         If `true` is returned the analysis terminates and returns `true`; otherwise
+     *         the analysis continues.
      *
-     * @param aThrow If all (non-exception) paths will always end in one specific
-     *      `ATHROW` instruction then this function is called (callback) to let the
-     *      caller decide if the "expected" exception is thrown. This analysis will
-     *      return with the result of this call.
+     * @param  aThrow If all (non-exception) paths will always end in one specific
+     *         `ATHROW` instruction then this function is called (callback) to let the
+     *         caller decide if the "expected" exception is thrown. This analysis will
+     *         return with the result of this call.
      *
      * @return `true` if the bytecode sequence starting with the instruction with the
      *         given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction.
@@ -1151,14 +1271,14 @@ final class Code private (
      *         instruction or the control flow is more complex.)
      */
     @inline def alwaysResultsInException(
-        pc:               PC,
-        joinInstructions: BitSet,
-        anInvocation:     (PC) ⇒ Boolean,
-        aThrow:           (PC) ⇒ Boolean
+        pc:           PC,
+        joinPCs:      BitSet,
+        anInvocation: (PC) ⇒ Boolean,
+        aThrow:       (PC) ⇒ Boolean
     ): Boolean = {
 
         var currentPC = pc
-        while (!joinInstructions.contains(currentPC)) {
+        while (!joinPCs.contains(currentPC)) {
             val instruction = instructions(currentPC)
 
             (instruction.opcode: @scala.annotation.switch) match {
@@ -1170,9 +1290,7 @@ final class Code private (
                     return false;
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
-                    currentPC =
-                        currentPC +
-                            instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset
+                    currentPC += instruction.asInstanceOf[GotoInstruction].branchoffset
 
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
@@ -1255,8 +1373,7 @@ object Code {
                 if (localVariableTables.nonEmpty && localVariableTables.tail.nonEmpty) {
                     val allLVs =
                         localVariableTables.
-                            map(_.asInstanceOf[LocalVariableTable].localVariables).
-                            toIndexedSeq
+                            map(_.asInstanceOf[LocalVariableTable].localVariables).toIndexedSeq
                     val theLVT = allLVs.flatten
                     new LocalVariableTable(theLVT) +: otherAttributes1
                 } else {
@@ -1268,11 +1385,10 @@ object Code {
             val newAttributes2 =
                 if (lineNumberTables.nonEmpty && lineNumberTables.tail.nonEmpty) {
                     val mergedTables =
-                        lineNumberTables.map(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers).flatten
+                        lineNumberTables.flatMap(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers)
                     val sortedTable =
                         mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
                     new UnpackedLineNumberTable(sortedTable) +: otherAttributes2
-
                 } else {
                     newAttributes1
                 }
@@ -1281,7 +1397,9 @@ object Code {
         }
     }
 
-    def unapply(code: Code): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
+    def unapply(
+        code: Code
+    ): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
         import code._
         Some((maxStack, maxLocals, instructions, exceptionHandlers, attributes))
     }
@@ -1358,7 +1476,7 @@ object Code {
         // Basic ides: follow all paths
         var maxStackDepth: Int = 0;
 
-        var paths: Chain[(PC, Int /*stackdepth before executing the instruction wiht pc*/ )] = Naught
+        var paths: Chain[(PC, Int /*stackdepth before executing the instruction with pc*/ )] = Naught
         val visitedPCs = new mutable.BitSet(instructions.length)
 
         // We start with the first instruction and an empty stack.
@@ -1383,7 +1501,7 @@ object Code {
             }
         }
 
-        return maxStackDepth
+        maxStackDepth
     }
 
 }

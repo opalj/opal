@@ -29,13 +29,13 @@
 package org.opalj
 package ai
 
-import scala.util.control.ControlThrowable
-
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.ai.domain.TheCode
 import org.opalj.ai.util.XHTML
 import org.opalj.ai.common.XHTML.dump
+import org.opalj.ai.common.XHTML.dumpAIState
 import org.opalj.io.writeAndOpen
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
@@ -241,7 +241,7 @@ object InterpretMethod {
                     Some(
                         "Created: "+(new java.util.Date).toString+"<br>"+
                             "Domain: "+domainClass.getName+"<br>"+
-                            XHTML.instructionsToXHTML("Join instructions", result.joinInstructions) +
+                            XHTML.instructionsToXHTML("PCs where paths join", result.joinPCs) +
                             (
                                 if (result.subroutineInstructions.nonEmpty)
                                     XHTML.instructionsToXHTML(
@@ -254,10 +254,7 @@ object InterpretMethod {
                                 XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain
-                )(
-                        result.operandsArray,
-                        result.localsArray
-                    ),
+                )(result.operandsArray, result.localsArray),
                 "AIResult",
                 ".html"
             )
@@ -265,17 +262,17 @@ object InterpretMethod {
             case ife: InterpretationFailedException ⇒
 
                 def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
-                    val context =
+                    val parameters =
                         if (nested) {
-                            ife.localsArray(0).toSeq.
+                            ife.localsArray(0).toSeq.reverse.
                                 filter(_ != null).map(_.toString).
                                 mkString("Parameters:<i>", ", ", "</i><br>")
                         } else
                             ""
 
-                    val d =
-                        "<p><b>"+ife.domain.getClass.getName+"("+ife.domain.toString+")"+"</b></p>"+
-                            context+
+                    val aiState =
+                        "<p><i>"+ife.domain.getClass.getName+"</i><b>( "+ife.domain.toString+" )"+"</b></p>"+
+                            parameters+
                             "Current instruction: "+ife.pc+"<br>"+
                             XHTML.evaluatedInstructionsToXHTML(ife.evaluated) + {
                                 if (ife.worklist.nonEmpty)
@@ -284,23 +281,30 @@ object InterpretMethod {
                                     "Remaining worklist: <i>EMPTY</i><br>"
                             }
 
-                    ife.cause match {
-                        case ct: ControlThrowable ⇒ throw ct
+                    val metaInformation = ife.cause match {
                         case ife: InterpretationFailedException ⇒
-                            d + ife.cause.
+                            aiState + ife.cause.
                                 getStackTrace.
                                 mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                                 "<div style='margin-left:5em'>"+causeToString(ife, true)+"</div>"
                         case e: Throwable ⇒
                             val message = e.getMessage()
                             if (message != null)
-                                d+"<br>Underlying cause: "+util.XHTML.htmlify(message)
+                                aiState+"<br>Underlying cause: "+util.XHTML.htmlify(message)
                             else
-                                d+"<br>Underlying cause: <NULL>"
-                        // + e.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")
+                                aiState+"<br>Underlying cause: <NULL>"
                         case _ ⇒
-                            d
+                            aiState
                     }
+
+                    if (nested && ife.domain.isInstanceOf[TheCode])
+                        metaInformation +
+                            dumpAIState(
+                                ife.domain.asInstanceOf[TheCode].code,
+                                ife.domain
+                            )(ife.operandsArray, ife.localsArray)
+                    else
+                        metaInformation
                 }
 
                 val resultHeader = Some(causeToString(ife, false))

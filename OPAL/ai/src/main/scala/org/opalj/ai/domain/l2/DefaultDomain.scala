@@ -31,10 +31,11 @@ package ai
 package domain
 package l2
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.collection.immutable.Chain
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.DefaultRecordMethodCallResults
-import org.opalj.collection.immutable.Chain
 
 /**
  * A common that defines a common reference frame for all subsequent domains.
@@ -75,8 +76,7 @@ class SharedDefaultDomain[Source](
     val project:   Project[Source],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends TheMethod
+) extends TheMethod
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -101,8 +101,7 @@ class DefaultDomain[Source](
     method:                             Method,
     val frequentEvaluationWarningLevel: Int,
     val maxCallChainLength:             Int
-)
-        extends SharedDefaultDomain[Source](project, classFile, method)
+) extends SharedDefaultDomain[Source](project, classFile, method)
         with PerformInvocationsWithRecursionDetection
         with RecordCFG
         with TheMemoryLayout {
@@ -155,8 +154,7 @@ class ChildDefaultDomain[Source](
     method:                 Method,
     val callerDomain:       PerformInvocationsWithRecursionDetection { type CalledMethodDomain = ChildDefaultDomain[Source] },
     val maxCallChainLength: Int
-)
-        extends SharedDefaultDomain[Source](project, classFile, method)
+) extends SharedDefaultDomain[Source](project, classFile, method)
         with ChildPerformInvocationsWithRecursionDetection
         with DefaultRecordMethodCallResults { callingDomain ⇒
 

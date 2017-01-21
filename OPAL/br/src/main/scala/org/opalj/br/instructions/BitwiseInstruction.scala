@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction that performs a manipulation of a value's bits.
@@ -41,20 +41,21 @@ abstract class BitwiseInstruction
         extends StackBasedArithmeticInstruction
         with BinaryArithmeticInstruction {
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final override def jvmExceptions: List[ObjectType] = Nil
 
-    final def stackSlotsChange: Int = -computationalType.operandSize
+    final override def stackSlotsChange: Int = -computationalType.operandSize
 
-    final def nextInstructions(
+    final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
-    final def isShiftInstruction: Boolean = false
+    final override def isShiftInstruction: Boolean = false
 
 }

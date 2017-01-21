@@ -55,9 +55,10 @@ import scala.util.control.ControlThrowable
  * @author Michael Eichberg
  */
 trait CalledMethodsStore { rootStore ⇒
-    // domain MUST NOT BE USED at initialization time
+
     implicit val logContext: LogContext
 
+    // domain MUST NOT BE USED at initialization time
     val domain: CalledMethodsStore.BaseDomain
 
     val frequentEvaluationWarningLevel: Int
@@ -174,4 +175,3 @@ object CalledMethodsStore {
         }
     }
 }
-

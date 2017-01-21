@@ -87,10 +87,19 @@ case class TABLESWITCH(
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        var pcs = UShortSet(currentPC + defaultOffset)
-        jumpOffsets foreach (offset ⇒ { pcs = (currentPC + offset) +≈: pcs })
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
+        val defaultTarget = currentPC + defaultOffset
+        var pcs = Chain.singleton(defaultTarget)
+        var seen = UShortSet(defaultTarget)
+        jumpOffsets foreach { offset ⇒
+            val newPC = (currentPC + offset)
+            if (!pcs.contains(newPC)) {
+                seen = newPC +≈: seen
+                pcs :&:= newPC
+            }
+        }
         pcs
     }
 

@@ -28,12 +28,22 @@
  */
 package org.opalj.br.cfg
 
-import org.opalj.br.ExceptionHandler
 import org.opalj.br.PC
 import org.opalj.br.ObjectType
+import org.opalj.br.ExceptionHandler
 
 /**
  * This node represents an exception handler.
+ *
+ * @note   `CatchNode`s are made explicit to handle/identify situations where the same
+ *         exception handlers is responsible for handling multiple different exceptions.
+ *         This situation generally arises in case of Java`s multi-catch expressions.
+ *
+ * @param  startPC The start pc of the try-block.
+ * @param  endPC The pc of the first instruction after the try-block (exclusive!).
+ * @param  handlerPC The first pc of the handler block.
+ * @param  catchType The type of the handled exception.
+ * @param  id A unique id that is not Long.MinValue (+1) and is not a value in the range[0..65535].
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
@@ -49,6 +59,15 @@ class CatchNode(
         this(handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
     }
 
+    def copy(
+        startPC:   PC                 = this.startPC,
+        endPC:     PC                 = this.endPC,
+        handlerPC: PC                 = this.handlerPC,
+        catchType: Option[ObjectType] = this.catchType
+    ): CatchNode = {
+        new CatchNode(startPC, endPC, handlerPC, catchType)
+    }
+
     final override def isBasicBlock: Boolean = false
     final override def isExitNode: Boolean = false
     final override def isStartOfSubroutine: Boolean = false
@@ -61,11 +80,8 @@ class CatchNode(
     //
 
     override def nodeId: Long = {
-        startPC.toLong |
-            (endPC.toLong << 16) |
-            (handlerPC.toLong << 32) |
-            // ObjectTypes have positive ids; Any can hence be associated with -1
-            (catchType.map(_.hashCode()).getOrElse(-1).toLong << 48)
+        val typeId = if (catchType.isDefined) catchType.get.hashCode.toLong else -1L
+        startPC.toLong | (endPC.toLong << 15) | (handlerPC.toLong << 30) | typeId << 46
     }
 
     override def toHRR: Option[String] = Some(
@@ -81,8 +97,7 @@ class CatchNode(
     )
 
     override def toString: String = {
-        s"CatchNode([$startPC,$endPC)⇒$handlerPC,"+
-            s"${catchType.map(_.toJava).getOrElse("<none>")})"
+        s"CatchNode([$startPC,$endPC)⇒$handlerPC,${catchType.map(_.toJava).getOrElse("<none>")})"
     }
 
 }

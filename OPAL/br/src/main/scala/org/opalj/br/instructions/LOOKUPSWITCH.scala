@@ -90,12 +90,19 @@ case class LOOKUPSWITCH(
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        var pcs = UShortSet(currentPC + defaultOffset)
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
+        val defaultTarget = currentPC + defaultOffset
+        var pcs = Chain.singleton(defaultTarget)
+        var seen = UShortSet(defaultTarget)
         npairs foreach { npair ⇒
             val (_, offset) = npair
-            pcs = (currentPC + offset) +≈: pcs
+            val nextTarget = (currentPC + offset)
+            if (!seen.contains(nextTarget)) {
+                seen = nextTarget +≈: seen
+                pcs :&:= nextTarget
+            }
         }
         pcs
     }

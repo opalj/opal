@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction that subtracts two primitive values.
@@ -41,22 +41,23 @@ abstract class SubtractInstruction
         extends StackBasedArithmeticInstruction
         with BinaryArithmeticInstruction {
 
-    final def isShiftInstruction: Boolean = false
+    override final def isShiftInstruction: Boolean = false
 
-    final def operator: String = "-"
+    override final def operator: String = "-"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ObjectType] = Nil
 
-    final def stackSlotsChange: Int = -computationalType.operandSize
+    override final def stackSlotsChange: Int = -computationalType.operandSize
 
-    final def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
 }

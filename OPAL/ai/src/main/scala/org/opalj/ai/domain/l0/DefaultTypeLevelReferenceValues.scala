@@ -402,7 +402,7 @@ trait DefaultTypeLevelReferenceValues
             var isSubtypeOf: Answer = No
             upperTypeBound foreach { anUpperTypeBound ⇒
                 domain.isSubtypeOf(anUpperTypeBound, supertype) match {
-                    case Yes     ⇒ return Yes // <= Shortcut evaluation
+                    case Yes     ⇒ return Yes; // <= Shortcut evaluation
                     case Unknown ⇒ isSubtypeOf = Unknown
                     case No      ⇒ /*nothing to do*/
                 }

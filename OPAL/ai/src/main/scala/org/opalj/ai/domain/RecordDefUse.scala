@@ -131,9 +131,9 @@ trait RecordDefUse extends RecordCFG {
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        locals:           Locals
+        code:    Code,
+        joinPCs: BitSet,
+        locals:  Locals
     ): Unit = {
 
         instructions = code.instructions
@@ -165,7 +165,7 @@ trait RecordDefUse extends RecordCFG {
 
         this.used = new Array(codeSize + parametersOffset)
 
-        super.initProperties(code, joinInstructions, locals)
+        super.initProperties(code, joinPCs, locals)
     }
 
     /**
@@ -379,7 +379,7 @@ trait RecordDefUse extends RecordCFG {
         currentPC:                PC,
         successorPC:              PC,
         isExceptionalControlFlow: Boolean,
-        joinInstructions:         BitSet,
+        joinPCs:                  BitSet,
         isSubroutineInstruction:  (PC) ⇒ Boolean,
         operandsArray:            OperandsArray
     ): Boolean = {
@@ -410,7 +410,7 @@ trait RecordDefUse extends RecordCFG {
             newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
-            if (joinInstructions.contains(successorPC) && (defLocals(successorPC) ne null)) {
+            if (joinPCs.contains(successorPC) && (defLocals(successorPC) ne null)) {
 
                 // we now also have to perform a join...
                 @annotation.tailrec def joinDefOps(
@@ -897,7 +897,7 @@ trait RecordDefUse extends RecordCFG {
             return ;
 
         val operandsArray = aiResult.operandsArray
-        val joinInstructions = aiResult.joinInstructions
+        val joinPCs = aiResult.joinPCs
 
         var subroutinePCs: Set[PC] = Set.empty
         var retPCs: Set[PC] = Set.empty
@@ -944,7 +944,7 @@ trait RecordDefUse extends RecordCFG {
                 val scheduleNextPC = try {
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow,
-                        joinInstructions,
+                        joinPCs,
                         aiResult.subroutineInstructions.contains,
                         operandsArray
                     )

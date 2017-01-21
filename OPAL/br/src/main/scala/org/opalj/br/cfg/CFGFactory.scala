@@ -398,9 +398,16 @@ object CFGFactory {
             }
         }
 
+        val effectiveExceptionHandlers = exceptionHandlers.values filter { catchNode ⇒
+            catchNode.predecessors.nonEmpty || {
+                catchNode.successors foreach { successor ⇒ successor.removePredecessor(catchNode) }
+                false
+            }
+        }
+
         CFG(
             code,
-            normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList,
+            normalReturnNode, abnormalReturnNode, effectiveExceptionHandlers.toList,
             bbs
         )
     }

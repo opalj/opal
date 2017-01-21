@@ -55,7 +55,7 @@ import org.opalj.br.instructions._
  *
  * This framework basically traverses all instructions of a method in depth-first order
  * until a join instruction is hit. This join instruction is then only analyzed if no
- * further non-join instruction can be evaluated ([[org.opalj.br.Code.joinInstructions]]).
+ * further non-join instruction can be evaluated ([[org.opalj.br.Code.joinPCs]]).
  * Each instruction is then evaluated using a given (abstract) [[org.opalj.ai.Domain]].
  * The evaluation of a subroutine (Java code < 1.5) - in case of an unhandled
  * exception – is always first completed before the evaluation of the parent (sub)routine
@@ -319,14 +319,13 @@ trait AI[D <: Domain] {
         localsArray(0) = initialLocals
 
         continueInterpretation(
-            strictfp, code, theDomain
+            code, theDomain
         )(
             AI.initialWorkList, Nil /*List.empty[PC]*/ , operandsArray, localsArray
         )
     }
 
     def continueInterpretation(
-        strictfp:  Boolean,
         code:      Code,
         theDomain: D
     )(
@@ -335,11 +334,10 @@ trait AI[D <: Domain] {
         theOperandsArray: theDomain.OperandsArray,
         theLocalsArray:   theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
-        val joinInstructions = code.joinInstructions
+        val (joinPCs, forkPCs) = code.boundaryPCs
 
         continueInterpretation(
-            strictfp, code, joinInstructions,
-            theDomain
+            code, joinPCs, forkPCs, theDomain
         )(
             initialWorkList, alreadyEvaluated,
             theOperandsArray, theLocalsArray,
@@ -355,12 +353,12 @@ trait AI[D <: Domain] {
      * This method is called before the abstract interpretation is started/continued.
      */
     protected[this] def preInterpretationInitialization(
-        strictfp:  Boolean,
         code:      Code,
         theDomain: D
     )(
         instructions:                        Array[Instruction],
-        joinInstructions:                    BitSet,
+        joinPCs:                             BitSet,
+        forkPCs:                             BitSet,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
@@ -375,7 +373,7 @@ trait AI[D <: Domain] {
             case _           ⇒ /*nothing to do*/
         }
         theDomain match {
-            case d: TheCodeStructure ⇒ d.setCodeStructure(instructions, joinInstructions)
+            case d: TheCodeStructure ⇒ d.setCodeStructure(instructions, joinPCs, forkPCs)
             case _                   ⇒ /*nothing to do*/
         }
         theDomain match {
@@ -391,10 +389,7 @@ trait AI[D <: Domain] {
         }
         theDomain match {
             case d: CustomInitialization ⇒
-                d.initProperties(
-                    code, joinInstructions,
-                    theLocalsArray.asInstanceOf[d.LocalsArray](0)
-                )
+                d.initProperties(code, joinPCs, theLocalsArray.asInstanceOf[d.LocalsArray](0))
             case _ ⇒ /*nothing to do*/
         }
     }
@@ -403,17 +398,16 @@ trait AI[D <: Domain] {
      * Continues the interpretation of/performs an abstract interpretation of
      * the given method (code) using the given domain.
      *
-     * @param strictfp `true` if ''strict'' semantics for floating point operations should
-     *      be used; `false` otherwise.
+     * @param  code The bytecode that will be interpreted using the given domain.
      *
-     * @param code The bytecode that will be interpreted using the given domain.
+     * @param  joinPCs The set of instructions where two or more control flow
+     *         paths join. The abstract interpretation framework will only perform a
+     *         join operation for those instructions.
+     * @param  forkPCs The set of instructions where the control potentially forks (including
+     *         exceptions!)
      *
-     * @param joinInstructions The set of instructions where two or more control flow
-     *      paths join. The abstract interpretation framework will only perform a
-     *      join operation for those instructions.
-     *
-     * @param theDomain The domain that will be used to perform the domain
-     *      dependent computations.
+     * @param  theDomain The domain that will be used to perform the domain
+     *         dependent computations.
      *
      * @param initialWorkList The list of program counters with which the interpretation
      *      will continue. If the method was never analyzed before, the list should just
@@ -459,7 +453,7 @@ trait AI[D <: Domain] {
      *      a subroutine was already analyzed.
      */
     def continueInterpretation(
-        strictfp: Boolean, code: Code, joinInstructions: BitSet,
+        code: Code, joinPCs: BitSet, forkPCs: BitSet,
         theDomain: D
     )(
         initialWorkList:                     List[PC],
@@ -486,7 +480,7 @@ trait AI[D <: Domain] {
         )
 
         if (tracer.isDefined)
-            tracer.get.continuingInterpretation(strictfp, code, theDomain)(
+            tracer.get.continuingInterpretation(code, theDomain)(
                 initialWorkList, alreadyEvaluated,
                 theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall
             )
@@ -514,9 +508,9 @@ trait AI[D <: Domain] {
         val instructions: Array[Instruction] = code.instructions
 
         preInterpretationInitialization(
-            strictfp, code, theDomain
+            code, theDomain
         )(
-            instructions, joinInstructions,
+            instructions, joinPCs, forkPCs,
             theOperandsArray, theLocalsArray,
             theMemoryLayoutBeforeSubroutineCall, theSubroutinesOperandsArray, theSubroutinesLocalsArray
         )
@@ -736,7 +730,7 @@ trait AI[D <: Domain] {
                     targetLocalsArray(targetPC) = locals
                     if (abruptSubroutineTerminationCount > 0) {
                         handleAbruptSubroutineTermination(forceSchedule = true)
-                    } else if (worklist.nonEmpty && joinInstructions.contains(targetPC)) {
+                    } else if (worklist.nonEmpty && joinPCs.contains(targetPC)) {
                         worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
                     } else {
                         worklist = targetPC :&: worklist
@@ -747,7 +741,7 @@ trait AI[D <: Domain] {
 
                     /* join: */ false
 
-                } else if (!joinInstructions.contains(targetPC)) {
+                } else if (!joinPCs.contains(targetPC)) {
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
                     // E.g., imagine the following code:
@@ -816,9 +810,7 @@ trait AI[D <: Domain] {
                                 // reschedule instructions that do not belong to the current
                                 // evaluation context/(sub-)routine.)
                                 val updatedWorklist =
-                                    insertBeforeIfNew(
-                                        worklist, targetPC, SUBROUTINE_START
-                                    )
+                                    insertBeforeIfNew(worklist, targetPC, SUBROUTINE_START)
                                 if (tracer.isDefined) {
                                     if (updatedWorklist ne worklist)
                                         // the instruction was not yet scheduled for
@@ -863,7 +855,7 @@ trait AI[D <: Domain] {
                                 // we want depth-first evaluation (, but we do not want to
                                 // reschedule instructions that do not belong to the current
                                 // evaluation context/(sub-)routine.), but not for
-                                // join instructions...
+                                // instructions where multiple paths join...
                                 if (containsInPrefix(worklist, targetPC, SUBROUTINE)) {
                                     isTargetScheduled = Yes
                                     if (tracer.isDefined) {
@@ -918,7 +910,7 @@ trait AI[D <: Domain] {
             if (isInterrupted) {
                 val result =
                     AIResultBuilder.aborted(
-                        strictfp, code, joinInstructions, theDomain
+                        code, joinPCs, forkPCs, theDomain
                     )(
                         worklist, evaluated,
                         operandsArray, localsArray,
@@ -1076,7 +1068,7 @@ trait AI[D <: Domain] {
                         integrateSubroutineInformation()
                         val result =
                             AIResultBuilder.completed(
-                                strictfp, code, joinInstructions, theDomain
+                                code, joinPCs, forkPCs, theDomain
                             )(
                                 evaluated, operandsArray, localsArray
                             )
@@ -1113,15 +1105,30 @@ trait AI[D <: Domain] {
                 def markAsDead(lvIndex : Int): Unit = {
                     // Algorithm:
                     // We go back until we find an effective use (i.e., a load) or we
-                    // reach a join instruction or a subroutine (end); a subroutine start is
-                    // a join instruction if it has multiple call sites..
+                    // reach a join or fork instruction or a subroutine (end); a subroutine
+                    // start is a join instruction if it has multiple call sites.
+					//
                     // An iinc instruction - which may access the local variable - is not
                     // consider an effective use, because without a subsequent load
                     // instruction the operation has no lasting effect.
                     // If the local variable is marked as dead for the predecessor insruction
                     // of the current instruction, we no longer have to propagate the
                     // liveness information.
+
+                    if(joinPCs.contains(pc))
+                        // We cannot propagate dead value information beyond an instruction
+                        // at which multiple paths join.
+                        return;
+
+                    // the current instruction is the store instruction(!)
+                    evaluated.tail foreachWhile{pc =>
+                        pc != SUBROUTINE_END && {
+                            !joinPCs.contains(pc)
+                        }
+                        }
                 }
+                *
+                */
 
                 /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
@@ -2215,9 +2222,9 @@ trait AI[D <: Domain] {
                     // UNARY EXPRESSIONS
                     //
                     case 119 /*dneg*/ ⇒
-                        fallThrough(theDomain.dneg(pc, strictfp, operands.head) :&: operands.tail)
+                        fallThrough(theDomain.dneg(pc, operands.head) :&: operands.tail)
                     case 118 /*fneg*/ ⇒
-                        fallThrough(theDomain.fneg(pc, strictfp, operands.head) :&: operands.tail)
+                        fallThrough(theDomain.fneg(pc, operands.head) :&: operands.tail)
                     case 117 /*lneg*/ ⇒
                         fallThrough(theDomain.lneg(pc, operands.head) :&: operands.tail)
                     case 116 /*ineg*/ ⇒
@@ -2229,44 +2236,44 @@ trait AI[D <: Domain] {
 
                     case 99 /*dadd*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.dadd(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.dadd(pc, value1, value2) :&: rest)
                     }
                     case 111 /*ddiv*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.ddiv(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.ddiv(pc, value1, value2) :&: rest)
                     }
                     case 107 /*dmul*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.dmul(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.dmul(pc, value1, value2) :&: rest)
                     }
                     case 115 /*drem*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.drem(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.drem(pc, value1, value2) :&: rest)
                     }
                     case 103 /*dsub*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.dsub(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.dsub(pc, value1, value2) :&: rest)
                     }
 
                     case 98 /*fadd*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.fadd(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.fadd(pc, value1, value2) :&: rest)
                     }
                     case 110 /*fdiv*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.fdiv(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.fdiv(pc, value1, value2) :&: rest)
                     }
                     case 106 /*fmul*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.fmul(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.fmul(pc, value1, value2) :&: rest)
                     }
                     case 114 /*frem*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.frem(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.frem(pc, value1, value2) :&: rest)
                     }
                     case 102 /*fsub*/ ⇒ {
                         val value2 :&: value1 :&: rest = operands
-                        fallThrough(theDomain.fsub(pc, strictfp, value1, value2) :&: rest)
+                        fallThrough(theDomain.fsub(pc, value1, value2) :&: rest)
                     }
 
                     case 96 /*iadd*/ ⇒ {
@@ -2416,16 +2423,14 @@ trait AI[D <: Domain] {
                     // TYPE CONVERSION
                     //
                     case 144 /*d2f*/ ⇒
-                        fallThrough(
-                            theDomain.d2f(pc, strictfp, operands.head) :&: operands.tail
-                        )
+                        fallThrough(theDomain.d2f(pc, operands.head) :&: operands.tail)
                     case 142 /*d2i*/ ⇒
                         fallThrough(theDomain.d2i(pc, operands.head) :&: operands.tail)
                     case 143 /*d2l*/ ⇒
                         fallThrough(theDomain.d2l(pc, operands.head) :&: operands.tail)
 
                     case 141 /*f2d*/ ⇒
-                        fallThrough(theDomain.f2d(pc, strictfp, operands.head) :&: operands.tail)
+                        fallThrough(theDomain.f2d(pc, operands.head) :&: operands.tail)
                     case 139 /*f2i*/ ⇒
                         fallThrough(theDomain.f2i(pc, operands.head) :&: operands.tail)
                     case 140 /*f2l*/ ⇒
@@ -2558,7 +2563,7 @@ trait AI[D <: Domain] {
         integrateSubroutineInformation()
         val result =
             AIResultBuilder.completed(
-                strictfp, code, joinInstructions, theDomain
+                code, joinPCs, forkPCs, theDomain
             )(
                 evaluated, operandsArray, localsArray
             )

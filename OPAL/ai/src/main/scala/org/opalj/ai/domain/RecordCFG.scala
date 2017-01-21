@@ -93,9 +93,9 @@ trait RecordCFG
     private[this] var theBBCFG: CFG = _
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        initialLocals:    Locals
+        code:          Code,
+        joinPCs:       BitSet,
+        initialLocals: Locals
     ): Unit = {
         val codeSize = code.instructions.size
         regularSuccessors = new Array[UShortSet](codeSize)
@@ -111,7 +111,7 @@ trait RecordCFG
         theControlDependencies = null
         theBBCFG = null
 
-        super.initProperties(code, joinInstructions, initialLocals)
+        super.initProperties(code, joinPCs, initialLocals)
     }
 
     /**
@@ -338,7 +338,7 @@ trait RecordCFG
 
     /**
      * Returns true if the exception handler may handle at least one exception thrown
-     * by an instruction in the catch block.
+     * by an instruction in the try block.
      */
     final def handlesException(exceptionHandler: ExceptionHandler): Boolean = {
         val endPC = exceptionHandler.endPC
@@ -346,7 +346,7 @@ trait RecordCFG
         var currentPC = exceptionHandler.startPC
         while (currentPC <= endPC) {
             if (exceptionHandlerSuccessorsOf(currentPC).exists(_ == handlerPC))
-                return true
+                return true;
             currentPC = code.pcOfNextInstruction(currentPC)
         }
         false
@@ -408,13 +408,14 @@ trait RecordCFG
             exceptionHandler ← code.exceptionHandlers
             // 1.1.    Let's check if the handler was executed at all.
             if unsafeWasExecuted(exceptionHandler.handlerPC)
-            // 1.2.    The handler may be shared by multiple catch blocks, hence, we have
+            // 1.2.    The handler may be shared by multiple try blocks, hence, we have
             //         to ensure the we have at least one instruction in the try block
             //         that jumps to the handler.
             if handlesException(exceptionHandler)
         } {
             val handlerPC = exceptionHandler.handlerPC
-            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, new CatchNode(exceptionHandler))
+            val catchNodeCandiate = new CatchNode(exceptionHandler)
+            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
             var handlerBB = bbs(handlerPC)
             if (handlerBB eq null) {
                 handlerBB = new BasicBlock(handlerPC)

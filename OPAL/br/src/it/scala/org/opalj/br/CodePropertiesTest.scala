@@ -27,7 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj.br
-package cfg
 
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite

@@ -234,6 +234,8 @@ sealed trait Chain[@specialized(Int) +T]
 
     def isSingletonList: Boolean
 
+    def hasMultipleElements: Boolean
+
     override def nonEmpty: Boolean
 
     /**
@@ -584,10 +586,12 @@ object Chain extends ChainLowPriorityImplicits {
 
     /**
      * Builder for [[Chain]]s. The builder is specialized for the primitive
-     *         type `Int` to enable the creation of new instances of the correspondingly
-     *         specialized list.
+     * type `Int` to enable the creation of new instances of the correspondingly
+     * specialized list.
      *
-     * @tparam T    The type of the list's element.
+     * @note     The builder must not be used after a `result` call.
+     *
+     * @tparam T The type of the list's element.
      */
     class ChainBuilder[@specialized(Int) T] extends Builder[T, Chain[T]] {
         private var list: Chain[T] = Naught
@@ -603,6 +607,8 @@ object Chain extends ChainLowPriorityImplicits {
             this
         }
         def clear(): Unit = list = Naught
+
+        /** Returns the constructed list. The builder must not be used afterwards. */
         def result(): Chain[T] = list
     }
 
@@ -681,6 +687,7 @@ case object Naught extends Chain[Nothing] {
     def tail: Nothing = throw listIsEmpty
     def isEmpty: Boolean = true
     def isSingletonList: Boolean = false
+    def hasMultipleElements: Boolean = false
     override def nonEmpty: Boolean = false
     def :&::[X >: Nothing](x: Chain[X]): Chain[X] = x
     def take(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
@@ -715,6 +722,8 @@ final case class :&:[@specialized(Int) T](
     def tail: Chain[T] = rest
 
     def isSingletonList: Boolean = rest eq Naught
+
+    def hasMultipleElements: Boolean = rest ne Naught
 
     def isEmpty: Boolean = false
 

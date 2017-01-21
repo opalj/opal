@@ -82,8 +82,7 @@ object XHTML {
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
         try {
-            if (result.wasAborted)
-                throw new RuntimeException("interpretation aborted")
+            if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f(result)
         } catch {
             case ct: ControlThrowable ⇒ throw ct
@@ -92,11 +91,10 @@ object XHTML {
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
+                    val code = method.body.get
                     val dump =
                         XHTML.dump(
-                            Some(classFile), Some(method), method.body.get,
-                            title,
-                            theDomain
+                            Some(classFile), Some(method), code, title, theDomain
                         )(operandsArray, localsArray)
                     writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
@@ -133,12 +131,9 @@ object XHTML {
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
+                    val message = "Dump generated due to exception: "+e.getMessage
                     writeAndOpen(
-                        dump(
-                            classFile.get, method.get,
-                            "Dump generated due to exception: "+e.getMessage,
-                            result
-                        ),
+                        dump(classFile.get, method.get, message, result),
                         "AIResult",
                         ".html"
                     )
@@ -165,7 +160,7 @@ object XHTML {
                 <h1>{ title }</h1>,
                 annotationsAsXHTML(method),
                 scala.xml.Unparsed(resultHeader),
-                dumpTable(code, domain)(operandsArray, localsArray)
+                dumpAIState(code, domain)(operandsArray, localsArray)
             )
         )
     }
@@ -174,9 +169,8 @@ object XHTML {
         <div class="annotations">
             {
                 this.annotations(method) map { annotation ⇒
-                    <div class="annotation">
-                        { Unparsed(annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")) }
-                    </div>
+                    val info = annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")
+                    <div class="annotation">{ Unparsed(info) }</div>
                 }
             }
         </div>
@@ -213,12 +207,12 @@ object XHTML {
                 title.map(t ⇒ <h1>{ t }</h1>).getOrElse(Text("")),
                 annotations,
                 scala.xml.Unparsed(resultHeader.getOrElse("")),
-                dumpTable(code, domain)(operandsArray, localsArray)
+                dumpAIState(code, domain)(operandsArray, localsArray)
             )
         )
     }
 
-    private def dumpTable(
+    def dumpAIState(
         code:   Code,
         domain: Domain
     )(
@@ -247,7 +241,7 @@ object XHTML {
             id.intValue()
         }
 
-        // We cannot create "reasonable output in case of VERY VERY large methods"
+        // We cannot create a "reasonable output in case of VERY VERY large methods"
         // E.g., a method with 30000 instructions and 1000 locals would create
         // a table with ~ 30.000.000 rows...
         val rowsCount = code.instructionsCount * code.maxLocals
@@ -283,13 +277,11 @@ object XHTML {
     }
 
     private def annotations(method: Method): Seq[String] = {
-        val annotations =
-            method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
+        val annotations = method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
         annotations.map(_.toJava)
     }
 
-    private def indexExceptionHandlers(code: Code) =
-        code.exceptionHandlers.zipWithIndex.toMap
+    private def indexExceptionHandlers(code: Code) = code.exceptionHandlers.zipWithIndex.toMap
 
     private def dumpInstructions(
         code:         Code,
@@ -305,13 +297,13 @@ object XHTML {
 
         val belongsToSubroutine = code.belongsToSubroutine()
         val indexedExceptionHandlers = indexExceptionHandlers(code)
-        val joinInstructions = code.joinInstructions
+        val joinPCs = code.joinPCs
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(
-                pc, code.lineNumber(pc), instruction, joinInstructions.contains(pc),
+                pc, code.lineNumber(pc), instruction, joinPCs.contains(pc),
                 belongsToSubroutine(pc),
                 Some(exceptionHandlers),
                 domain,

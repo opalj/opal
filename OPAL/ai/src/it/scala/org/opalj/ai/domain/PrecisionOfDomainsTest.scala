@@ -63,8 +63,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
             // We use this domain for the comparison of the values; it has a comparable
             // expressive power as the other domains.
-            object ValuesDomain      extends {val project: Project[URL] = theProject }
-            with ValuesCoordinatingDomain
+            object ValuesDomain extends { val project: Project[URL] = theProject } with ValuesCoordinatingDomain
                 with l1.DefaultLongValues
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues

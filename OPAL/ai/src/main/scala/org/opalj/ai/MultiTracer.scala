@@ -41,9 +41,8 @@ import org.opalj.br.instructions.Instruction
 class MultiTracer(val tracers: AITracer*) extends AITracer {
 
     override def continuingInterpretation(
-        strictfp: Boolean,
-        code:     Code,
-        domain:   Domain
+        code:   Code,
+        domain: Domain
     )(
         initialWorkList:                  List[PC],
         alreadyEvaluated:                 List[PC],
@@ -52,7 +51,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
         tracers foreach { tracer ⇒
-            tracer.continuingInterpretation(strictfp, code, domain)(
+            tracer.continuingInterpretation(code, domain)(
                 initialWorkList, alreadyEvaluated,
                 operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
             )
