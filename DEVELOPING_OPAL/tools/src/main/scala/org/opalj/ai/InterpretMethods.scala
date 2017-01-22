@@ -263,8 +263,8 @@ object InterpretMethodsAnalysis {
             (
                 "During the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (real time: "+getTime('OVERALL)+
-                ", ai (∑CPU Times): "+getTime('AI)+
+                project.classFilesCount+" classes (real time: "+getTime('OVERALL).toSeconds+
+                ", ai (∑CPU Times): "+getTime('AI).toSeconds+
                 ")"+collectedExceptions.size+" exceptions occured.",
                 Some(file)
             )
