@@ -41,19 +41,6 @@ abstract class NegateInstruction
         extends StackBasedArithmeticInstruction
         with UnaryArithmeticInstruction {
 
-    final def jvmExceptions: List[ObjectType] = Nil
-
-    final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
-    }
-
     final def operator: String = "-"
 
     final def isPrefixOperator: Boolean = true
@@ -66,11 +53,16 @@ abstract class NegateInstruction
 
     final def stackSlotsChange: Int = 0
 
-    final def readsLocal: Boolean = false
+    final def jvmExceptions: List[ObjectType] = Nil
 
-    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
-
-    final def writesLocal: Boolean = false
-
-    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    final def nextInstructions(
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
+    }
 }

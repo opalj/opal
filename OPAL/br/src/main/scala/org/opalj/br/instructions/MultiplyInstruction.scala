@@ -30,32 +30,17 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that multiplies two primitive values.
  *
  * @author Michael Eichberg
  */
-abstract class MultiplyInstruction
-        extends StackBasedArithmeticInstruction
-        with BinaryArithmeticInstruction {
+abstract class MultiplyInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def operator: String = "*"
 
     final def isShiftInstruction: Boolean = false
-
-    final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
-    }
 
 }

@@ -30,19 +30,20 @@ package org.opalj
 package br
 package instructions
 
-/**
- * An instruction that adds two primitive values.
- *
- * @author Michael Eichberg
- */
-abstract class AddInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
+import org.opalj.collection.immutable.Chain
 
-    final def isShiftInstruction: Boolean = false
+trait AlwaysSucceedingStackBasedBinaryArithmeticInstruction
+        extends StackBasedBinaryArithmeticInstruction {
 
-    final def operator: String = "+"
-
-    final def jvmExceptions: List[ObjectType] = Nil
-
-    final def stackSlotsChange: Int = -computationalType.operandSize
+    final def nextInstructions(
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
+    }
 
 }

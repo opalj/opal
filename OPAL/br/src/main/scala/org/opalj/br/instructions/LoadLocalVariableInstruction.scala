@@ -90,10 +90,7 @@ object LoadLocalVariableInstruction {
      * Returns the `xLoad` instruction that puts value stored at the given index with
      * the specified type on top of the stack.
      */
-    def apply(
-        fieldType: FieldType,
-        lvIndex:   Int
-    ): LoadLocalVariableInstruction =
+    def apply(fieldType: FieldType, lvIndex: Int): LoadLocalVariableInstruction = {
         (fieldType.id: @scala.annotation.switch) match {
             case IntegerType.id ⇒ ILOAD.canonicalRepresentation(lvIndex)
             case ByteType.id    ⇒ ILOAD.canonicalRepresentation(lvIndex)
@@ -105,11 +102,13 @@ object LoadLocalVariableInstruction {
             case DoubleType.id  ⇒ DLOAD.canonicalRepresentation(lvIndex)
             case _              ⇒ ALOAD.canonicalRepresentation(lvIndex)
         }
+    }
 
     /**
-     * Extracts the index of the accessed local variable.
+     * Extracts the computational type and index of the accessed local variable.
      */
-    def unapply(li: LoadLocalVariableInstruction): Option[(ComputationalType, Int)] =
+    def unapply(li: LoadLocalVariableInstruction): Option[(ComputationalType, Int)] = {
         Some((li.computationalType, li.lvIndex))
+    }
 
 }

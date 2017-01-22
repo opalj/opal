@@ -30,16 +30,12 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that adds two primitive values.
  *
  * @author Michael Eichberg
  */
-abstract class ShiftInstruction
-        extends StackBasedArithmeticInstruction
-        with BinaryArithmeticInstruction {
+abstract class ShiftInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
@@ -47,21 +43,11 @@ abstract class ShiftInstruction
 
     final def stackSlotsChange: Int = -1
 
-    final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
-    }
-
 }
 
 object ShiftInstruction {
 
-    def unapply(instruction: ShiftInstruction): Option[ComputationalType] =
+    def unapply(instruction: ShiftInstruction): Option[ComputationalType] = {
         Some(instruction.computationalType)
+    }
 }

@@ -37,7 +37,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstruction {
+case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def opcode: Opcode = IINC.opcode
 

@@ -32,28 +32,21 @@ package instructions
 
 /**
  * Implemented by all arithmetic instructions that have two (runtime-dependent) operands.
+ *
+ * @note   [[IINC]] is considered a special binary instruction since it does not operate on
+ *         operand stack values!
  */
-trait BinaryArithmeticInstruction extends ArithmeticInstruction {
+trait StackBasedBinaryArithmeticInstruction extends StackBasedArithmeticInstruction {
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    /**
-     * Returns `true` if this instruction reads/uses a local variable.
-     */
-    final def readsLocal: Boolean = true
-
-    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
-
-    final def writesLocal: Boolean = false
-
-    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
-
 }
 
-object BinaryArithmeticInstruction {
+object StackBasedBinaryArithmeticInstruction {
 
-    def unapply(instruction: BinaryArithmeticInstruction): Option[ComputationalType] =
+    def unapply(instruction: StackBasedBinaryArithmeticInstruction): Some[ComputationalType] = {
         Some(instruction.computationalType)
+    }
 }

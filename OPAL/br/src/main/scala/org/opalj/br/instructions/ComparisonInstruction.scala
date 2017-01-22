@@ -30,33 +30,18 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.Chain
-
 /**
  * An instruction that compares two primitive values.
  *
  * @author Michael Eichberg
  */
-abstract class ComparisonInstruction
-        extends StackBasedArithmeticInstruction
-        with BinaryArithmeticInstruction {
+abstract class ComparisonInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def stackSlotsChange: Int = {
         // take two 2 values and push one int value
         -2 * computationalType.operandSize + 1
-    }
-
-    final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): Chain[PC] = {
-        Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
     final def isShiftInstruction: Boolean = false
