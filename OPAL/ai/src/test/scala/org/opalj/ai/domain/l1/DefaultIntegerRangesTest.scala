@@ -3275,10 +3275,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
 
     describe("using IntegerRangeValues") {
 
-        val testJAR = "classfiles/ai.jar"
-        val testFolder = org.opalj.bi.TestSupport.locateTestResources(testJAR, "ai")
-        val testProject = org.opalj.br.analyses.Project(testFolder)
-        val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
+        val aiProject = org.opalj.br.TestSupport.biProject("ai.jar")
+        val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
         describe("when we have multiple loops that reuse the same local variable") {
 

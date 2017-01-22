@@ -36,15 +36,16 @@ import scala.collection.SortedSet
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8Framework.ClassFiles
+
 import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.Chain
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.TestSupport.biProject
+import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
-import org.opalj.collection.immutable.Chain
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Tests the `ReferenceValues` domain.
@@ -530,7 +531,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 println(mv1_join_v3)
                 mv1_join_v3 should be(MetaInformationUpdate(expected_mv1_join_v3))
 
-                // StructuralUpdate        ({_ <: java.lang.Object, null}[t=-1;values=«{_ <: java.lang.Object, null}[↦111;t=1], {_ <: java.lang.Object, null}[↦222;t=2]»]) 
+                // StructuralUpdate        ({_ <: java.lang.Object, null}[t=-1;values=«{_ <: java.lang.Object, null}[↦111;t=1], {_ <: java.lang.Object, null}[↦222;t=2]»])
                 //MetaInformationUpdate   ({_ <: java.lang.Object, null}[t=-1;values=«{_ <: java.lang.Object, null}[↦111;t=1], {_ <: java.lang.Object, null}[↦222;t=2]»])
             }
             */
@@ -617,7 +618,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 theDomain.refIsNull(-1, exception.head) should be(No)
             }
 
-            val theProject = Project(locateTestResources("classfiles/ai.jar", "ai"))
+            val theProject = biProject("ai.jar")
             val targetType = ObjectType("ai/domain/ReferenceValuesFrenzy")
             val ReferenceValuesFrenzy = theProject.classFile(targetType).get
 

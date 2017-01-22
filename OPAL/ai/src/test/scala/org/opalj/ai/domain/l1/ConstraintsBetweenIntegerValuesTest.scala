@@ -49,8 +49,7 @@ class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers {
 
     class IntegerRangesWithInterIntegerConstraintsTestDomain(
         override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
-    )
-            extends CorrelationalDomain
+    ) extends CorrelationalDomain
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
@@ -69,9 +68,7 @@ class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers {
 
     describe("with constraint tracking between integer values") {
 
-        val testJAR = "classfiles/ai.jar"
-        val testFolder = org.opalj.bi.TestSupport.locateTestResources(testJAR, "ai")
-        val testProject = org.opalj.br.analyses.Project(testFolder)
+        val testProject = org.opalj.br.TestSupport.biProject("ai.jar")
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
         it("it should handle cases where we constrain and compare unknown values (without join)") {

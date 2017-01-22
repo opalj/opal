@@ -611,8 +611,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
 class DefaultArraysTestDomain(
     override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with GlobalLogContextProvider
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -642,7 +641,7 @@ class DefaultArraysTestDomain(
 }
 
 private object DefaultArraysTest {
-    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("ai.jar", "bi"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
 }
