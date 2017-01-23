@@ -297,20 +297,18 @@ object XHTML {
 
         val belongsToSubroutine = code.belongsToSubroutine()
         val indexedExceptionHandlers = indexExceptionHandlers(code)
-        val joinPCs = code.joinPCs
+        val (joinPCs, forkPCs) = code.boundaryPCs
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(
-                pc, code.lineNumber(pc), instruction, joinPCs.contains(pc),
+                pc, code.lineNumber(pc), instruction, joinPCs.contains(pc), forkPCs.contains(pc),
                 belongsToSubroutine(pc),
                 Some(exceptionHandlers),
                 domain,
                 operandsOnly
-            )(
-                    operands, locals
-                )
+            )(operands, locals)
         }
     }
 
@@ -318,7 +316,8 @@ object XHTML {
         pc:                Int,
         lineNumber:        Option[Int],
         instruction:       Instruction,
-        isJoinInstruction: Boolean,
+        pathsJoin:         Boolean,
+        pathsFork:         Boolean,
         subroutineId:      Int,
         exceptionHandlers: Option[String],
         domain:            Domain,
@@ -333,8 +332,7 @@ object XHTML {
 
         val pcAsXHTML =
             Unparsed(
-                (if (isJoinInstruction) "⇶ " else "") +
-                    pc.toString +
+                (if (pathsJoin) "⇉ " else "") + pc.toString + (if (pathsFork) " ⇊" else "") +
                     exceptionHandlers.map("<br>"+_).getOrElse("") +
                     lineNumber.map("<br><i>l="+_+"</i>").getOrElse("") +
                     (if (subroutineId != 0) "<br><b>⥂="+subroutineId+"</b>" else "")
