@@ -101,6 +101,25 @@ public class DeadVariables {
         }
         o = "kill it";
         return o;
+    }
 
+    public Object nestedIrrelevantControlFlow() {
+        Object o = new Object();
+        for (int i = 0; true; i++) {
+            processIt(o);
+            o = this.someFieldB;
+            if (i % 3 == 0) {
+                processIt("irrelevant");
+            } else {
+                processIt("also irrelevant");
+            }
+            if (someInt < i) {
+                o = "useless"; // never used
+                break;
+            }
+            o = "relevant";
+        }
+        o = "kill it";
+        return o;
     }
 }

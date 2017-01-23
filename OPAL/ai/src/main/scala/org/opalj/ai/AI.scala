@@ -1133,21 +1133,24 @@ abstract class AI[D <: Domain] {
                     var nextPC = pcs.head
                     var i: Instruction = null
                     while (nextPC != SUBROUTINE_END /*THIS IS AN OVERAPPROXIMATION*/ &&
+                        //
                         // We cannot propagate dead value information to an instruction
                         // at which multiple paths fork, because some of the other paths
                         // may use it - in particular in case of subroutines. However,
                         // if all subsequent paths were evaluated, it is then possible
                         // to propagate the dead path information backward.
                         !forkPCs.contains(nextPC) &&
+                        //
+                        // When we see a load, we know that the variable is live until
+                        // this point.
+                        // We have special handling for IINC because it is the only
+                        // instruction which directly operates on a local variable,
+                        // however, without a load afterwards the iinc is useless!
                         !{
-                            // When we see a load, we know that the variable is live until
-                            // this point.
-                            // We have special handling for IINC because it is the only
-                            // instruction which directly operates on a local variable,
-                            // however, without a load afterwards the iinc is useless!
                             i = instructions(nextPC)
                             i.readsLocal && i.indexOfReadLocal == lvIndex && i.opcode != IINC.opcode
                         } &&
+                        //
                         // We need to avoid to kill local variables which are not on the current
                         // path!
                         // E.g., if we have a single if and both paths end in a return, it
