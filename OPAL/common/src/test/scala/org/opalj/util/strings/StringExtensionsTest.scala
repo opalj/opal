@@ -51,6 +51,7 @@ class StringExtensionsTest extends FunSpec with Matchers {
 
             c1 should equal(c2)
             c2 should equal(c1)
+
         }
 
         it("should not be equal to another ConcreteString holding a different value") {
@@ -64,12 +65,12 @@ class StringExtensionsTest extends FunSpec with Matchers {
         it("should not be equal to other subtypes of StringExtensions") {
 
             val concStr: StringExtension = ConcreteString("OPAL rocks!")
-            val fragStrSame: StringExtension = StringFragment("OPAL rocks!")
-            val fragStrDiff: StringExtension = StringFragment("Soot")
+            //val fragStrSame: StringExtension = StringFragment("OPAL rocks!")
+            //val fragStrDiff: StringExtension = StringFragment("Soot")
             val anyStr: StringExtension = AnyString
 
-            concStr should not equal (fragStrSame)
-            concStr should not equal (fragStrDiff)
+            //concStr should not equal (fragStrSame)
+           // concStr should not equal (fragStrDiff)
             concStr should not equal (anyStr)
         }
 
@@ -77,8 +78,8 @@ class StringExtensionsTest extends FunSpec with Matchers {
             val c1: StringExtension = ConcreteString("OPAL rocks!")
             val c2: StringExtension = ConcreteString("OPAL rocks!")
 
-            c1.leftIncludes(c2) shouldBe (true)
-            c2.leftIncludes(c1) shouldBe (true)
+            c1.leftIncludes(c2) shouldBe (Yes)
+            c2.leftIncludes(c1) shouldBe (Yes)
         }
 
         it("should not leftInclude other StringExtensions") {
@@ -86,29 +87,29 @@ class StringExtensionsTest extends FunSpec with Matchers {
             val c2: StringExtension = ConcreteString("OPAL does rock!")
             val c3 = ConcreteString("")
 
-            c1.leftIncludes(c2) shouldBe (false)
-            c1.leftIncludes(c3) shouldBe (false)
+            c1.leftIncludes(c2) shouldBe (No)
+            c1.leftIncludes(c3) shouldBe (No)
         }
 
         it("should rightInclude a another ConcreteString with the same value") {
             val c1: StringExtension = ConcreteString("OPAL rocks!")
             val c2: StringExtension = ConcreteString("OPAL rocks!")
 
-            c1.rightIncludes(c2) shouldBe (true)
-            c2.rightIncludes(c1) shouldBe (true)
+            c1.rightIncludes(c2) shouldBe (Yes)
+            c2.rightIncludes(c1) shouldBe (Yes)
         }
 
-        it("should not leftInclude other StringExtensions") {
+        it("should not rightInclude other StringExtensions") {
             val c1: StringExtension = ConcreteString("OPAL does")
             val c2: StringExtension = ConcreteString("OPAL does rock!")
             val c3 = ConcreteString("")
 
-            c1.rightIncludes(c2) shouldBe (false)
-            c1.rightIncludes(c3) shouldBe (false)
+            c1.rightIncludes(c2) shouldBe (No)
+            c1.rightIncludes(c3) shouldBe (No)
         }
     }
 
-    describe("a StringFragment") {
+    /* describe("a StringFragment") {
 
         it("should be equal to another StringFragment holding the same value") {
             val f1: StringExtension = StringFragment("OPAL++")
@@ -145,10 +146,10 @@ class StringExtensionsTest extends FunSpec with Matchers {
             val exact = ConcreteString("OPAL")
             val substring = ConcreteString("the OPAL framework")
 
-            fragStr.leftIncludes(prefix) shouldBe (true)
-            fragStr.leftIncludes(suffix) shouldBe (true)
-            fragStr.leftIncludes(exact) shouldBe (true)
-            fragStr.leftIncludes(substring) shouldBe (true)
+            fragStr.leftIncludes(prefix) shouldBe (Yes)
+            fragStr.leftIncludes(suffix) shouldBe (Yes)
+            fragStr.leftIncludes(exact) shouldBe (Yes)
+            fragStr.leftIncludes(substring) shouldBe (Yes)
         }
 
         it("should not leftInclude a ConcreteString that can't be build from the fragment") {
@@ -158,31 +159,31 @@ class StringExtensionsTest extends FunSpec with Matchers {
             val cs2 = ConcreteString("OP AL")
             val cs3 = ConcreteString("PAL")
 
-            fragStr.leftIncludes(cs1) shouldBe (false)
-            fragStr.leftIncludes(cs2) shouldBe (false)
-            fragStr.leftIncludes(cs3) shouldBe (false)
+            fragStr.leftIncludes(cs1) shouldBe (No)
+            fragStr.leftIncludes(cs2) shouldBe (No)
+            fragStr.leftIncludes(cs3) shouldBe (No)
         }
-    }
+    } */
 
     describe("the AnyString object ") {
 
         it("should not be equal to other subtypes of StringExtensions") {
-            val fragStr: StringExtension = StringFragment("++OPAL")
+            //val fragStr: StringExtension = StringFragment("++OPAL")
             val concStr: StringExtension = ConcreteString("++OPAL")
             val anyStr: StringExtension = AnyString
 
-            anyStr should not equal (fragStr)
+//            anyStr should not equal (fragStr)
             anyStr should not equal (concStr)
         }
 
         it("should leftInclude every other possible StringExtension") {
             val concStr: StringExtension = ConcreteString("OPAL rocks!")
-            val fragStrSame: StringExtension = StringFragment("OPAL rocks!")
+  //          val fragStrSame: StringExtension = StringFragment("OPAL rocks!")
             val anyStr: StringExtension = AnyString
 
-            anyStr.leftIncludes(concStr) should be(true)
-            anyStr.leftIncludes(fragStrSame) should be(true)
-            anyStr.leftIncludes(anyStr) should be(true)
+            anyStr.leftIncludes(concStr) should be(Yes)
+    //        anyStr.leftIncludes(fragStrSame) should be(Yes)
+            anyStr.leftIncludes(anyStr) should be(Yes)
         }
     }
 }
