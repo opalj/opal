@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,7 +31,7 @@ package ai.domain;
 /**
  * This class's methods contain do computations related to Class objects to test
  * the ClassValues resolution.
- * 
+ *
  * @author Arne Lottmann
  */
 public class PlainClassesJava {
@@ -44,13 +44,11 @@ public class PlainClassesJava {
 		return int.class;
 	}
 
-	public Class<?> noLiteralStringInClassForName(String s)
-			throws ClassNotFoundException {
+	public Class<?> noLiteralStringInClassForName(String s) throws ClassNotFoundException {
 		return Class.forName(s, false, this.getClass().getClassLoader());
 	}
 
-	public Class<?> literalStringInLongClassForName()
-			throws ClassNotFoundException {
+	public Class<?> literalStringInLongClassForName() throws ClassNotFoundException {
 		return Class.forName("java.lang.Integer", false, this.getClass()
 				.getClassLoader());
 	}
@@ -59,14 +57,12 @@ public class PlainClassesJava {
 		return Class.forName("java.lang.Integer");
 	}
 
-	public Class<?> stringVariableInClassForName()
-			throws ClassNotFoundException {
+	public Class<?> stringVariableInClassForName() throws ClassNotFoundException {
 		String className = "java.lang.Integer";
 		return Class.forName(className);
 	}
 
-	public Class<?> literalStringAsParameterInClassForName()
-			throws ClassNotFoundException {
+	public Class<?> literalStringAsParameterInClassForName() throws ClassNotFoundException {
 		return getClass("java.lang.Integer");
 	}
 
@@ -74,8 +70,7 @@ public class PlainClassesJava {
 		return Class.forName(className);
 	}
 
-	public Class<?> getClassOrElseObject(String className)
-			throws ClassNotFoundException {
+	public Class<?> getClassOrElseObject(String className) throws ClassNotFoundException {
 		if (className != null) {
 			return Class.forName(className);
 		}
@@ -114,8 +109,7 @@ public class PlainClassesJava {
 		return c.newInstance();
 	}
 
-	public Class<?> stringVariableAsParameterInClassForName()
-			throws ClassNotFoundException {
+	public Class<?> stringVariableAsParameterInClassForName() throws ClassNotFoundException {
 		String className = "java.lang.Integer";
 		return getClass(className);
 	}

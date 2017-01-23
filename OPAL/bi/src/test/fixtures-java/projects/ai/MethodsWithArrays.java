@@ -31,10 +31,6 @@ package ai;
 /**
  * Methods that create, initialize and update arrays.
  *
- * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes. The compiled class that is used by the tests is found in the
- * test-classfiles directory.
- *
  * @author Michael Eichberg
  * @author Christos Votskos
  */

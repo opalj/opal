@@ -28,8 +28,6 @@
  */
 package ai.domain;
 
-
-
 /**
  * A class that does perform a large number of operations related to int values.
  *
