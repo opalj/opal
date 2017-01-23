@@ -97,7 +97,7 @@ public class Sanitization {
             System.gc();
         }
     }
-    
+
     void sanitized6(String s) {
         if (s == null) {
             System.gc();
@@ -108,7 +108,6 @@ public class Sanitization {
             return;
         }
     }
-    
 
     void sanitized7(String s) {
         if (s == null) {

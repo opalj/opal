@@ -31,10 +31,6 @@ package ai;
 /**
  * Methods that contain constructors and inter-constructor calls. framework.
  * 
- * <b>This class is not meant to be (automatically) recompiled; it just serves documentation
- * purposes. The compiled class that is used by the tests is found in the test-classfiles
- * directory</b>
- * 
  * @author Michael Eichberg
  */
 public class MethodsWithConstructors {
@@ -57,6 +53,7 @@ public class MethodsWithConstructors {
     }
 
     public static class MWCSub extends MWCSuper {
+
         private Object object;
 
         public MWCSub(Object o) {

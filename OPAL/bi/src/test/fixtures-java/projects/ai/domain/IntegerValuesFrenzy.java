@@ -57,7 +57,6 @@ public class IntegerValuesFrenzy {
             return i;
         else
             return 5;
-
     }
 
     // the return value is at most equal to 5; however, to get this result
@@ -258,7 +257,7 @@ public class IntegerValuesFrenzy {
                     return a; // [Int.MinValue,100]
             }
             return c;
-        } else /* if (b == 1) */{
+        } else /* if (b == 1) */ {
             int c = a * b; // => c === a
             if (a < 101) {
                 if (c > 99) // c === [100,100]
@@ -279,7 +278,7 @@ public class IntegerValuesFrenzy {
             return b;
         else if (b < 1) {
             return b;
-        } else /* if (b == 1) */{
+        } else /* if (b == 1) */ {
             int c = a / b; // => c === a
             if (a < 101) {
                 if (c > 99) // c === [100,100]
@@ -298,7 +297,7 @@ public class IntegerValuesFrenzy {
             return b;
         else if (b < -1) {
             return b;
-        } else /* if (b == -1) */{
+        } else /* if (b == -1) */ {
             int c = a & b; // => c === a
             if (a < 101) {
                 if (c > 99) // c === [100,100]
@@ -317,7 +316,7 @@ public class IntegerValuesFrenzy {
             return b;
         else if (b < 0) {
             return b;
-        } else /* if (b == 0) */{
+        } else /* if (b == 0) */ {
             int c = a | 0; // => c === a
             if (a < 101) {
                 if (c > 99) // c === [100,100]

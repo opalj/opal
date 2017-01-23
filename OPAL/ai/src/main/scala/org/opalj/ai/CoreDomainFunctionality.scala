@@ -94,28 +94,26 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         newLocals:                Locals
     ): (Operands, Locals) = (newOperands, newLocals)
 
-
-/**
-* In case of a mutable value, we need to distinguish several cases:
-*  1.   the current instruction has (at most) one successor (including
-*       potential exception handlers!). In this case, the current domain
-*       value which represents the mutable reference value can just be
-*       used as is; operations that mutate it can directly performed.
-*  1.   the current instruction has multiple successors, none of the
-*       successors is already evaluated. In this case, it is sufficient
-*       to clone the domain value to ensure that the value can be
-*       independently mutated on each branch.
-*  1.   the current instruction has multiple successors, some of the
-*       successors were already evaluated and some were not; all
-*       values refer to the same instance.
-*  1.   the current instruction has multiple successors; some of the
-*       successors were already evaluated and are related to a
-*       different instance. In this case - to ensure termination -
-*       we create an abstract representation of the values that
-*       abstract over the common properties.
-* .... TODO describe
-*/
-
+    /**
+     * In case of a mutable value, we need to distinguish several cases:
+     *  1.   the current instruction has (at most) one successor (including
+     *       potential exception handlers!). In this case, the current domain
+     *       value which represents the mutable reference value can just be
+     *       used as is; operations that mutate it can directly performed.
+     *  1.   the current instruction has multiple successors, none of the
+     *       successors is already evaluated. In this case, it is sufficient
+     *       to clone the domain value to ensure that the value can be
+     *       independently mutated on each branch.
+     *  1.   the current instruction has multiple successors, some of the
+     *       successors were already evaluated and some were not; all
+     *       values refer to the same instance.
+     *  1.   the current instruction has multiple successors; some of the
+     *       successors were already evaluated and are related to a
+     *       different instance. In this case - to ensure termination -
+     *       we create an abstract representation of the values that
+     *       abstract over the common properties.
+     * .... TODO describe
+     */
 
     /**
      * Joins the given operand stacks and local variables.

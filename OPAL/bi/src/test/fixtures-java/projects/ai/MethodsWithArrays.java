@@ -435,15 +435,16 @@ public class MethodsWithArrays {
         processIt(is); // we "just" know that is's first dimension is "2"
     }
 
-	public static Object[] arrayStoreException(boolean v) {
-		Object[] array = new Cloneable[1];// arrays are covariant, but this is not relevant here...
+    public static Object[] arrayStoreException(boolean v) {
+        Object[] array = new Cloneable[1]; 
 
-		if (v) {
-			array[0] = new java.io.Serializable() {
-				private static final long serialVersionUID = 1L;
-			};
-		}
+        if (v) {
+            array[0] = new java.io.Serializable() {
 
-		return array;
-	}
+                private static final long serialVersionUID = 1L;
+            };
+        }
+
+        return array;
+    }
 }

@@ -31,6 +31,7 @@ package br
 package instructions
 
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
  * Throw exception or error.
@@ -69,15 +70,13 @@ case object ATHROW extends Instruction {
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = currentPC + 1
 
     final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
+        currentPC: PC, regularSuccessorsOnly: Boolean
     )(
         implicit
-        code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        code: Code, classHierarchy: ClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
-            Chain.empty
+            Naught
         else
             code.handlerInstructionsFor(currentPC)
     }

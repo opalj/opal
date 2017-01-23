@@ -29,7 +29,7 @@
 package ai.domain;
 
 /**
- * This class's methods do computations related to `String` values to test the handling of
+ * Methods which perform computations related to `String` values to test the handling of
  * them by the respective domain.
  * 
  * @author Michael Eichberg
@@ -49,7 +49,6 @@ public class StringValues {
             return "a";
         else
             return "b";
-
     }
 
     public String aOrBAlt(int i) {

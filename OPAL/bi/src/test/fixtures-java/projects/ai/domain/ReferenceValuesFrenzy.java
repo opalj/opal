@@ -62,7 +62,7 @@ public class ReferenceValuesFrenzy {
             prev = lastChild;
             lastChild = maybeNull();
         }
-        //... here, lastChild is always null, but prev can be both
+        // ... here, lastChild is always null, but prev can be both
         lastChild = prev; // pc:19 load und pc:20 store
 
         if (lastChild != null) {
@@ -246,7 +246,7 @@ public class ReferenceValuesFrenzy {
         do {
             if (a != null) {
                 doIt(a); // pc:5 "a" may refer to: the parameter (which is then not null)
-                         //                        the return value of maybeNull
+                         // the return value of maybeNull
             } else
                 a = maybeNull();
         } while (IntegerValuesFrenzy.anInt() % 2 == 1);

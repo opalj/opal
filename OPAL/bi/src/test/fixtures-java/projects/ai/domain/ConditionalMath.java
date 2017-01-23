@@ -29,7 +29,7 @@
 package ai.domain;
 
 /**
- * A class that does perform conditional math operations.
+ * Methods which perform various math operations.
  * 
  * @author Michael Eichberg
  */

@@ -34,10 +34,6 @@ import java.io.IOException;
 /**
  * Methods that throw and catch <code>Exception</code>s.
  *
- * <b> This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes. The compiled class that is used by the tests is found in the
- * test-classfiles directory.</b>
- *
  * @author Michael Eichberg
  */
 public class MethodsWithExceptions {
@@ -105,7 +101,8 @@ public class MethodsWithExceptions {
     public static void conditionInFinally(String name) throws SecurityException {
         boolean checked = false;
         try {
-            java.io.File f = new java.io.File(name); // will throw an exception if name == null
+            java.io.File f = new java.io.File(name); // will throw an exception if name ==
+                                                     // null
             f.canExecute();
             checked = true;
         } finally {
@@ -114,8 +111,7 @@ public class MethodsWithExceptions {
         }
     }
 
-    public static void throwsThisOrThatException(String message)
-            throws IllegalArgumentException {
+    public static void throwsThisOrThatException(String message) throws IllegalArgumentException {
         if (message == null)
             throw new NullPointerException();
         else

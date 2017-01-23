@@ -242,6 +242,7 @@ object InterpretMethod {
                         "Created: "+(new java.util.Date).toString+"<br>"+
                             "Domain: "+domainClass.getName+"<br>"+
                             XHTML.instructionsToXHTML("PCs where paths join", result.joinPCs) +
+                            XHTML.instructionsToXHTML("PCs where paths fork", result.forkPCs) +
                             (
                                 if (result.subroutineInstructions.nonEmpty)
                                     XHTML.instructionsToXHTML(
