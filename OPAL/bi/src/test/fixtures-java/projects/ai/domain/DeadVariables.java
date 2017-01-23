@@ -44,8 +44,8 @@ public class DeadVariables {
     public void processIt(Object o) {
         /* EMPTY */}
 
-    private Object someFieldA = null;
-    private Object someFieldB = null;
+    Object someFieldA = null;
+    Object someFieldB = null;
 
     private int someInt = (int) (Math.random() * 100.0d);
 

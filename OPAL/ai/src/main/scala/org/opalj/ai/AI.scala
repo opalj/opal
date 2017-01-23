@@ -1120,7 +1120,6 @@ abstract class AI[D <: Domain] {
                         // there is no need to propagate anything; the value is either dead
                         // or unused
                         return ;
-                    // TODO Add tracer call that the local variable is marked as dead
                     if (tracer.isDefined) tracer.get.deadLocalVariable(theDomain)(pc, lvIndex)
                     localsArray(pc) = locals.updated(lvIndex, TheIllegalValue)
 
@@ -1130,30 +1129,50 @@ abstract class AI[D <: Domain] {
                     }
 
                     var pcs = evaluated.tail // evaluate.head already contains the store instruction
-                    var prePC = pcs.head
-                    while (prePC != SUBROUTINE_END /*THIS IS AN OVERAPPROXIMATION*/ &&
-                        !forkPCs.contains(prePC) &&
-                        !{
-                            val i = instructions(prePC)
-                            i.readsLocal && i.indexOfReadLocal == lvIndex && i.opcode != IINC.opcode
-                        }) {
+                    var lastPC = pc
+                    var nextPC = pcs.head
+                    var i: Instruction = null
+                    while (nextPC != SUBROUTINE_END /*THIS IS AN OVERAPPROXIMATION*/ &&
                         // We cannot propagate dead value information to an instruction
                         // at which multiple paths fork, because some of the other paths
                         // may use it - in particular in case of subroutines. However,
                         // if all subsequent paths were evaluated, it is then possible
-                        // to propagate the dead path information backward, if there are
-                        // no more
-                        // TODO Add tracer call that the local variable is marked as dead
-                        localsArray(prePC) = localsArray(prePC).updated(lvIndex, TheIllegalValue)
-                        if (tracer.isDefined) tracer.get.deadLocalVariable(theDomain)(prePC, lvIndex)
+                        // to propagate the dead path information backward.
+                        !forkPCs.contains(nextPC) &&
+                        !{
+                            // When we see a load, we know that the variable is live until
+                            // this point.
+                            // We have special handling for IINC because it is the only
+                            // instruction which directly operates on a local variable,
+                            // however, without a load afterwards the iinc is useless!
+                            i = instructions(nextPC)
+                            i.readsLocal && i.indexOfReadLocal == lvIndex && i.opcode != IINC.opcode
+                        } &&
+                        // We need to avoid to kill local variables which are not on the current
+                        // path!
+                        // E.g., if we have a single if and both paths end in a return, it
+                        // may happen - when there is a kill on the second path - that the
+                        // return instruction on the "first path" is reached when we go
+                        // back the list of evaluated instructions!
+                        {
+                            // NOTE: "i" is not a fork instruction and therefore has at most
+                            // one successor (which is necessarily a regular succesor unless
+                            // the instruction is an athrow instruction.)
+                            val regularSuccessorsOnly = (i != ATHROW)
+                            val nextIs = i.nextInstructions(nextPC, regularSuccessorsOnly)(code)
+                            nextIs.nonEmpty && nextIs.head == lastPC
+                        }) {
+
+                        localsArray(nextPC) = localsArray(nextPC).updated(lvIndex, TheIllegalValue)
+                        if (tracer.isDefined) tracer.get.deadLocalVariable(theDomain)(nextPC, lvIndex)
 
                         pcs = pcs.tail
                         if (pcs.isEmpty) // || joinPCs.contains(currentPC))
                             return ;
 
-                        prePC = pcs.head;
+                        lastPC = nextPC
+                        nextPC = pcs.head
                     }
-
                 }
 
                 /*
