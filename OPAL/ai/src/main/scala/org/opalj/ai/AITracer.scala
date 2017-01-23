@@ -118,6 +118,13 @@ trait AITracer {
     ): Unit
 
     /**
+     * Called by the interpret when a local variable with the given index (`lvIndex`)
+     * was set to a new value and, therefore, the reference stored in the local variable
+     * previously was useless/dead.
+     */
+    def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit
+
+    /**
      * Called by the interpreter if a successor instruction is NOT scheduled, because
      * the abstract state didn't change.
      */
@@ -144,7 +151,8 @@ trait AITracer {
     )(
         sourcePC:                 PC,
         targetPC:                 PC,
-        isExceptionalControlFlow: Boolean
+        isExceptionalControlFlow: Boolean,
+        worklist:                 List[PC]
     ): Unit
 
     /**
@@ -259,11 +267,11 @@ trait AITracer {
     /**
      * Called by the domain if something noteworthy was determined.
      *
-     * @param domain The domain.
-     * @param source The class (typically the (partial) domain) that generated the message.
-     * @param typeID A `String` that identifies the message. This value must not be `null`,
-     *      but it can be the empty string.
-     * @param message The message; a non-null `String` that is formatted for the console.
+     * @param  domain The domain.
+     * @param  source The class (typically the (partial) domain) that generated the message.
+     * @param  typeID A `String` that identifies the message. This value must not be `null`,
+     *         but it can be the empty string.
+     * @param  message The message; a non-null `String` that is formatted for the console.
      */
     def domainMessage(
         domain: Domain,

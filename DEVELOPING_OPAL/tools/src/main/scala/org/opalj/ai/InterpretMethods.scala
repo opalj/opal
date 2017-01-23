@@ -33,11 +33,15 @@ package debug
 import java.io.File
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+
 import scala.util.control.ControlThrowable
+
+import org.opalj.log.LogContext
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.ai.util.XHTML
-import org.opalj.log.LogContext
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
@@ -123,8 +127,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
             }
         BasicReport(
-            message +
-                detailedErrorInformationFile.map(" (See "+_+" for details.)").getOrElse("")
+            message + detailedErrorInformationFile.map(" (See "+_+" for details.)").getOrElse("")
         )
     }
 }
@@ -153,12 +156,11 @@ object InterpretMethodsAnalysis {
 
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
         import performanceEvaluationContext.{time, getTime}
-        val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
+        val methodsCount = new AtomicInteger(0)
+        val instructionEvaluationsCount = new AtomicLong(0)
 
         val domainConstructor =
-            domainClass.getConstructor(
-                classOf[Project[java.net.URL]], classOf[ClassFile], classOf[Method]
-            )
+            domainClass.getConstructor(classOf[Project[URL]], classOf[ClassFile], classOf[Method])
 
         def analyzeMethod(
             source:    String,
@@ -168,8 +170,8 @@ object InterpretMethodsAnalysis {
 
             val body = method.body.get
             try {
-                if (beVerbose)
-                    println(classFile.thisType.toJava+"{ "+method.toJava + YELLOW+"[started]"+RESET+" }")
+                if (beVerbose) println(method.toJava(classFile, YELLOW+"[started]"+RESET))
+
                 time('AI) {
                     val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor)
                     val result =
@@ -190,17 +192,12 @@ object InterpretMethodsAnalysis {
                                     RESET+" }"
                             )
 
-                        throw new InterruptedException(
-                            "evaluation bound (max="+ai.maxEvaluationCount+
-                                ") exceeded"
-                        )
+                        val message = s"evaluation bound (max=${ai.maxEvaluationCount}) exceeded"
+                        throw new InterruptedException(message)
                     }
+                    instructionEvaluationsCount.addAndGet(ai.currentEvaluationCount.toLong)
                 }
-                if (beVerbose)
-                    println(
-                        classFile.thisType.toJava+
-                            "{ "+method.toJava + GREEN+"[finished]"+RESET+" }"
-                    )
+                if (beVerbose) println(method.toJava(classFile, GREEN+"[finished]"+RESET))
                 methodsCount.incrementAndGet()
                 None
             } catch {
@@ -273,7 +270,8 @@ object InterpretMethodsAnalysis {
                 "No exceptions occured during the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
                 project.classFilesCount+" classes (real time: "+getTime('OVERALL).toSeconds+
-                ", ai (∑CPU Times): "+getTime('AI).toSeconds+")",
+                ", ai (∑CPU Times): "+getTime('AI).toSeconds+")"+
+                s", evaluated ${instructionEvaluationsCount.get} instructions",
                 None
             )
         }

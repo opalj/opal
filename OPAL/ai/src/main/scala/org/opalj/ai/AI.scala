@@ -96,7 +96,7 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-trait AI[D <: Domain] {
+abstract class AI[D <: Domain] {
 
     type SomeLocals[V <: d.DomainValue forSome { val d: D }] = Option[IndexedSeq[V]]
 
@@ -751,7 +751,7 @@ trait AI[D <: Domain] {
                     // 2:     if (UNDECIED) "A" else "B"
                     // 3: } while (i<5)
                     //
-                    // In this case it may happen that (we are primarily doing
+                    // In this case, it may happen that (we are primarily doing
                     // depth-first evaluation)
                     // we are reanalyzing the loop (1-3) before we analyze the second
                     // branch of the if (e.g., case "B"). However, the "pc" of the
@@ -795,7 +795,7 @@ trait AI[D <: Domain] {
                                     // the instruction was just moved to the beginning
                                     if (tracer.isDefined) {
                                         tracer.get.rescheduled(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow
+                                            sourcePC, targetPC, isExceptionalControlFlow, worklist
                                         )
                                     }
                                 } else {
@@ -821,7 +821,8 @@ trait AI[D <: Domain] {
                                     else {
                                         // the instruction was just moved to the beginning
                                         tracer.get.rescheduled(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow
+                                            sourcePC, targetPC, isExceptionalControlFlow,
+                                            updatedWorklist
                                         )
                                     }
                                 }
@@ -860,7 +861,7 @@ trait AI[D <: Domain] {
                                     isTargetScheduled = Yes
                                     if (tracer.isDefined) {
                                         tracer.get.rescheduled(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow
+                                            sourcePC, targetPC, isExceptionalControlFlow, worklist
                                         )
                                     }
                                 } else {
@@ -982,7 +983,7 @@ trait AI[D <: Domain] {
                         trace.head match {
                             case SUBROUTINE_START ⇒ subroutineLevel -= 1
                             case SUBROUTINE_END   ⇒ subroutineLevel += 1
-                            case pc ⇒               if (subroutineLevel == 0) subroutine :&:= pc
+                            case pc               ⇒ if (subroutineLevel == 0) subroutine :&:= pc
                         }
                         trace = trace.tail
                     }
@@ -1089,9 +1090,7 @@ trait AI[D <: Domain] {
                 val locals = localsArray(pc)
 
                 if (tracer.isDefined) {
-                    tracer.get.instructionEvalution(theDomain)(
-                        pc, instruction, operands, locals
-                    )
+                    tracer.get.instructionEvalution(theDomain)(pc, instruction, operands, locals)
                 }
 
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
@@ -1102,33 +1101,60 @@ trait AI[D <: Domain] {
                  * value would result in a seemingly meaningful value and hence would trigger
                  * the continuation of the abstract interpretation.
                  */
-                def markAsDead(lvIndex : Int): Unit = {
+                def markAsDead(lvIndex: Int): Unit = {
                     // Algorithm:
                     // We go back until we find an effective use (i.e., a load) or we
                     // reach a join or fork instruction or a subroutine (end); a subroutine
                     // start is a join instruction if it has multiple call sites.
-					//
+                    //
                     // An iinc instruction - which may access the local variable - is not
                     // consider an effective use, because without a subsequent load
                     // instruction the operation has no lasting effect.
                     // If the local variable is marked as dead for the predecessor insruction
                     // of the current instruction, we no longer have to propagate the
                     // liveness information.
+                    import theDomain.{TheIllegalValue}
+                    val locals = localsArray(pc)
+                    val currentValue = locals(lvIndex)
+                    if ((currentValue eq null) || (currentValue eq TheIllegalValue))
+                        // there is no need to propagate anything; the value is either dead
+                        // or unused
+                        return ;
+                    // TODO Add tracer call that the local variable is marked as dead
+                    if (tracer.isDefined) tracer.get.deadLocalVariable(theDomain)(pc, lvIndex)
+                    localsArray(pc) = locals.updated(lvIndex, TheIllegalValue)
 
-                    if(joinPCs.contains(pc))
-                        // We cannot propagate dead value information beyond an instruction
-                        // at which multiple paths join.
-                        return;
+                    if (joinPCs.contains(pc)) {
+                        // we don't know if we have already evaluated all predecessors
+                        return ;
+                    }
 
-                    // the current instruction is the store instruction(!)
-                    evaluated.tail foreachWhile{pc =>
-                        pc != SUBROUTINE_END && {
-                            !joinPCs.contains(pc)
-                        }
-                        }
+                    var pcs = evaluated.tail // evaluate.head already contains the store instruction
+                    var prePC = pcs.head
+                    while (prePC != SUBROUTINE_END /*THIS IS AN OVERAPPROXIMATION*/ &&
+                        !forkPCs.contains(prePC) &&
+                        !{
+                            val i = instructions(prePC)
+                            i.readsLocal && i.indexOfReadLocal == lvIndex && i.opcode != IINC.opcode
+                        }) {
+                        // We cannot propagate dead value information to an instruction
+                        // at which multiple paths fork, because some of the other paths
+                        // may use it - in particular in case of subroutines. However,
+                        // if all subsequent paths were evaluated, it is then possible
+                        // to propagate the dead path information backward, if there are
+                        // no more
+                        // TODO Add tracer call that the local variable is marked as dead
+                        localsArray(prePC) = localsArray(prePC).updated(lvIndex, TheIllegalValue)
+                        if (tracer.isDefined) tracer.get.deadLocalVariable(theDomain)(prePC, lvIndex)
+
+                        pcs = pcs.tail
+                        if (pcs.isEmpty) // || joinPCs.contains(currentPC))
+                            return ;
+
+                        prePC = pcs.head;
+                    }
+
                 }
-                *
-                */
 
                 /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
@@ -2096,63 +2122,63 @@ trait AI[D <: Domain] {
                         | 55 /*lstore*/ ⇒
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         markAsDead(lvIndex)
-                        fallThrough(                            operands.tail,                            locals.updated(lvIndex, operands.head)                        )
+                        fallThrough(operands.tail, locals.updated(lvIndex, operands.head))
                     case 75 /*astore_0*/
                         | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
                         | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
                         markAsDead(0)
-                        fallThrough(                            operands.tail, locals.updated(0, operands.head)                        )
+                        fallThrough(operands.tail, locals.updated(0, operands.head))
                     case 76 /*astore_1*/
                         | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
                         | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
                         markAsDead(1)
-                        fallThrough(                            operands.tail, locals.updated(1, operands.head)                        )
+                        fallThrough(operands.tail, locals.updated(1, operands.head))
                     case 77 /*astore_2*/
                         | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
                         | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
                         markAsDead(2)
-                        fallThrough(                            operands.tail, locals.updated(2, operands.head)                        )
+                        fallThrough(operands.tail, locals.updated(2, operands.head))
                     case 78 /*astore_3*/
                         | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
                         | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
                         markAsDead(3)
-                        fallThrough(                            operands.tail, locals.updated(3, operands.head)                        )
+                        fallThrough(operands.tail, locals.updated(3, operands.head))
 
                     //
                     // PUSH CONSTANT VALUE
                     //
 
-                    case 1 /*aconst_null*/ ⇒  fallThrough(theDomain.NullValue(pc) :&: operands)
+                    case 1 /*aconst_null*/ ⇒ fallThrough(theDomain.NullValue(pc) :&: operands)
 
                     case 16 /*bipush*/ ⇒
                         val value = instruction.asInstanceOf[BIPUSH].value.toByte
                         fallThrough(theDomain.ByteValue(pc, value) :&: operands)
 
-                    case 14 /*dconst_0*/ ⇒                        fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
-                    case 15 /*dconst_1*/ ⇒                        fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
+                    case 14 /*dconst_0*/ ⇒ fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
+                    case 15 /*dconst_1*/ ⇒ fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
 
-                    case 11 /*fconst_0*/ ⇒                        fallThrough(theDomain.FloatValue(pc, 0.0f) :&: operands)
-                    case 12 /*fconst_1*/ ⇒                        fallThrough(theDomain.FloatValue(pc, 1.0f) :&: operands)
+                    case 11 /*fconst_0*/ ⇒ fallThrough(theDomain.FloatValue(pc, 0.0f) :&: operands)
+                    case 12 /*fconst_1*/ ⇒ fallThrough(theDomain.FloatValue(pc, 1.0f) :&: operands)
                     case 13 /*fconst_2*/ ⇒ fallThrough(theDomain.FloatValue(pc, 2.0f) :&: operands)
 
                     case 2 /*iconst_m1*/ ⇒ fallThrough(theDomain.IntegerValue(pc, -1) :&: operands)
-                    case 3 /*iconst_0*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 0) :&: operands)
-                    case 4 /*iconst_1*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 1) :&: operands)
-                    case 5 /*iconst_2*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 2) :&: operands)
-                    case 6 /*iconst_3*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 3) :&: operands)
-                    case 7 /*iconst_4*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 4) :&: operands)
-                    case 8 /*iconst_5*/ ⇒                        fallThrough(theDomain.IntegerValue(pc, 5) :&: operands)
+                    case 3 /*iconst_0*/  ⇒ fallThrough(theDomain.IntegerValue(pc, 0) :&: operands)
+                    case 4 /*iconst_1*/  ⇒ fallThrough(theDomain.IntegerValue(pc, 1) :&: operands)
+                    case 5 /*iconst_2*/  ⇒ fallThrough(theDomain.IntegerValue(pc, 2) :&: operands)
+                    case 6 /*iconst_3*/  ⇒ fallThrough(theDomain.IntegerValue(pc, 3) :&: operands)
+                    case 7 /*iconst_4*/  ⇒ fallThrough(theDomain.IntegerValue(pc, 4) :&: operands)
+                    case 8 /*iconst_5*/  ⇒ fallThrough(theDomain.IntegerValue(pc, 5) :&: operands)
 
-                    case 9 /*lconst_0*/ ⇒                        fallThrough(theDomain.LongValue(pc, 0L) :&: operands)
-                    case 10 /*lconst_1*/ ⇒                        fallThrough(theDomain.LongValue(pc, 1L) :&: operands)
+                    case 9 /*lconst_0*/  ⇒ fallThrough(theDomain.LongValue(pc, 0L) :&: operands)
+                    case 10 /*lconst_1*/ ⇒ fallThrough(theDomain.LongValue(pc, 1L) :&: operands)
 
                     case 18 /*ldc*/ ⇒ instruction match {
                         case LoadInt(v) ⇒

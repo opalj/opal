@@ -81,6 +81,10 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         tracers foreach { _.flow(domain)(currentPC, targetPC, isExceptionalControlFlow) }
     }
 
+    override def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit = {
+        tracers foreach { _.deadLocalVariable(domain)(pc, lvIndex) }
+    }
+
     override def noFlow(
         domain: Domain
     )(
@@ -92,10 +96,10 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     override def rescheduled(
         domain: Domain
     )(
-        sourcePC: PC, targetPC: PC, isExceptionalControlFlow: Boolean
+        sourcePC: PC, targetPC: PC, isExceptionalControlFlow: Boolean, worklist: List[PC]
     ): Unit = {
         tracers foreach { tracer ⇒
-            tracer.rescheduled(domain)(sourcePC, targetPC, isExceptionalControlFlow)
+            tracer.rescheduled(domain)(sourcePC, targetPC, isExceptionalControlFlow, worklist)
         }
     }
 

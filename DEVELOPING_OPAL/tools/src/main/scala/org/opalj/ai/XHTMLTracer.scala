@@ -304,6 +304,8 @@ trait XHTMLTracer extends AITracer {
         continuingWithBranch = currentPC < successorPC
     }
 
+    override def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit = { /*EMPTY*/ }
+
     override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
 
     override def rescheduled(
@@ -311,7 +313,8 @@ trait XHTMLTracer extends AITracer {
     )(
         sourcePC:                 PC,
         targetPC:                 PC,
-        isExceptionalControlFlow: Boolean
+        isExceptionalControlFlow: Boolean,
+        worklist:                 List[PC]
     ): Unit = {
         /*ignored for now*/
     }

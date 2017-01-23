@@ -86,7 +86,8 @@ trait ConsoleEvaluationTracer extends AITracer {
     )(
         sourcePC:                 PC,
         targetPC:                 PC,
-        isExceptionalControlFlow: Boolean
+        isExceptionalControlFlow: Boolean,
+        worklist:                 List[PC]
     ): Unit = { /*EMPTY*/ }
 
     override def flow(

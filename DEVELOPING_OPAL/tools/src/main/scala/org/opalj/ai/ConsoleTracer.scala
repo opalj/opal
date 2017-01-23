@@ -163,11 +163,14 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     )(
         sourcePC:                 PC,
         targetPC:                 PC,
-        isExceptionalControlFlow: Boolean
+        isExceptionalControlFlow: Boolean,
+        worklist:                 List[PC]
     ): Unit = {
-        println(CYAN_B + RED+
-            "rescheduled the evaluation of the instruction with the program counter: "+
-            targetPC + line(domain, targetPC) + RESET)
+        println(
+            CYAN_B + RED+"rescheduled the evaluation of instruction: "+
+                targetPC + line(domain, targetPC) + RESET+
+                "; new worklist: "+worklist.mkString(", ")
+        )
     }
 
     override def flow(
@@ -177,6 +180,13 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         targetPC:                 PC,
         isExceptionalControlFlow: Boolean
     ): Unit = { /* ignored */ }
+
+    override def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit = {
+        println(
+            pc.toString + line(domain, pc).toString+":"+
+                Console.BLACK_B + Console.WHITE + s"local variable $lvIndex is dead"
+        )
+    }
 
     override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = {
         println(Console.RED_B + Console.YELLOW+
