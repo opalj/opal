@@ -29,6 +29,7 @@
 package ai;
 
 /**
+ * Various constant field definitions. 
  * 
  * @author Michael Eichberg
  */

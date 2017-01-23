@@ -32,11 +32,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Just a very large number of methods that does something related to type checking.
- * 
- * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes. The compiled class that is used by the tests is found in the
- * test-classfiles directory.
+ * Methods that perform various kinds of type checking and casting.
  * 
  * @author Michael Eichberg
  */
