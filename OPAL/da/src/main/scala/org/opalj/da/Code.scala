@@ -375,11 +375,11 @@ case class Code(instructions: Array[Byte]) {
                     </span>
                 case 185 ⇒
                     val c = in.readUnsignedShort()
-                    in.readByte // ignored; fixed value
+                    val count = in.readByte
                     in.readByte // ignored; fixed value
                     val signature = cp(c).asInlineNode
                     <span>
-                        <span class="instruction invokeinterface">invokeinterface </span>
+                        <span class="instruction invokeinterface">invokeinterface (nargs={ count })</span>
                         { signature }
                     </span>
                 case 183 ⇒
