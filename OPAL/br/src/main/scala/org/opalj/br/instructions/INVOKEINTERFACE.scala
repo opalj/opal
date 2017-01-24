@@ -36,33 +36,25 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEINTERFACE(
-        declaringClass:   ObjectType, // an interface type
-        name:             String,
-        methodDescriptor: MethodDescriptor
+        override val declaringClass:   ObjectType, // an interface type
+        override val name:             String,
+        override val methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {
 
-    final def isInterfaceCall: Boolean = true
+    override final def isInterfaceCall: Boolean = true
 
-    final def opcode: Opcode = INVOKEINTERFACE.opcode
+    override final def opcode: Opcode = INVOKEINTERFACE.opcode
 
-    final def mnemonic: String = "invokeinterface"
+    override final def mnemonic: String = "invokeinterface"
 
-    final def jvmExceptions: List[ObjectType] = MethodInvocationInstruction.jvmExceptions
+    override final def jvmExceptions: List[ObjectType] = MethodInvocationInstruction.jvmExceptions
 
-    final def length: Int = 5
+    override final def length: Int = 5
 
-    final def isInstanceMethod: Boolean = true
+    override final def isInstanceMethod: Boolean = true
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
-
-    // as in JVM 8 Spec. Section 6.5.invokeinterface
-    final def count: Int = methodDescriptor.parameterTypes.foldLeft(1){(sum, t) =>
-        t match {
-            case DoubleType | LongType => sum + 2
-            case _ => sum + 1
-        }
-    }
 
 }
 
