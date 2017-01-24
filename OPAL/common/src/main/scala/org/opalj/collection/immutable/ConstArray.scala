@@ -40,9 +40,10 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayBuffer
 import org.opalj.control.{find ⇒ findInArray}
+
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
- * therefore also no longer mutable if ConstArray is the soler owner.
+ * therefore also no longer mutable if `ConstArray` is the sole owner.
  *
  * @author Michael Eichberg
  */
