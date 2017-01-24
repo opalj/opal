@@ -770,4 +770,12 @@ object UShortSet {
             case values     ⇒ (apply(values.head) /: values.tail)((s, v) ⇒ v +≈: s)
         }
     }
+
+    /**
+     * Creates a new sorted set of unsigned short values.
+     */
+    def create(values: TraversableOnce[UShort]): UShortSet = {
+        if (values.isEmpty) EmptyUShortSet
+        else (((EmptyUShortSet: UShortSet) /: values)((s, v) ⇒ v +≈: s))
+    }
 }
