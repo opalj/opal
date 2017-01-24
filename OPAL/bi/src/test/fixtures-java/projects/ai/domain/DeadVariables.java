@@ -107,14 +107,14 @@ public class DeadVariables {
         Object o = new Object();
         for (int i = 0; true; i++) {
             processIt(o);
-            o = this.someFieldB;
+            o = this.someFieldB; // never used (DEAD)
             if (i % 3 == 0) {
                 processIt("irrelevant");
             } else {
                 processIt("also irrelevant");
             }
             if (someInt < i) {
-                o = "useless"; // never used
+                o = "useless"; // never used (DEAD)
                 break;
             }
             o = "relevant";
