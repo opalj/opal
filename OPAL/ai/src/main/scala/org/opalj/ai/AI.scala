@@ -1097,15 +1097,14 @@ abstract class AI[D <: Domain] {
 
                 /*
                  * Marks the specified local variable as dead - this prevents unnecessary
-                 * reevaluations of instructions in cases where a join with the (dead)
+                 * re-evaluations of instructions in cases where a join with the (dead)
                  * value would result in a seemingly meaningful value and hence would trigger
                  * the continuation of the abstract interpretation.
                  */
                 def markAsDead(lvIndex: Int): Unit = {
                     // Algorithm:
                     // We go back until we find an effective use (i.e., a load) or we
-                    // reach a join or fork instruction or a subroutine (end); a subroutine
-                    // start is a join instruction if it has multiple call sites.
+                    // reach a fork instruction or a subroutine (end).
                     //
                     // An iinc instruction - which may access the local variable - is not
                     // consider an effective use, because without a subsequent load
@@ -1117,16 +1116,11 @@ abstract class AI[D <: Domain] {
                     val locals = localsArray(pc)
                     val currentValue = locals(lvIndex)
                     if ((currentValue eq null) || (currentValue eq TheIllegalValue))
-                        // there is no need to propagate anything; the value is either dead
-                        // or unused
+                        // There is no need to propagate anything; the value is either dead
+                        // or unused.
                         return ;
                     if (tracer.isDefined) tracer.get.deadLocalVariable(theDomain)(pc, lvIndex)
                     localsArray(pc) = locals.updated(lvIndex, TheIllegalValue)
-
-                    if (joinPCs.contains(pc)) {
-                        // we don't know if we have already evaluated all predecessors
-                        return ;
-                    }
 
                     var pcs = evaluated.tail // evaluate.head already contains the store instruction
                     var lastPC = pc
@@ -1143,9 +1137,7 @@ abstract class AI[D <: Domain] {
                         //
                         // When we see a load, we know that the variable is live until
                         // this point.
-                        // We have special handling for IINC because it is the only
-                        // instruction which directly operates on a local variable,
-                        // however, without a load afterwards the iinc is useless!
+                        // We have special handling for IINC as discussed at the beginning.
                         !{
                             i = instructions(nextPC)
                             i.readsLocal && i.indexOfReadLocal == lvIndex && i.opcode != IINC.opcode
