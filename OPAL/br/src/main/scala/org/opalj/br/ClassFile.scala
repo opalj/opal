@@ -30,6 +30,12 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
+
+import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
+import org.opalj.log.StandardLogMessage
+import org.opalj.log.Warn
+
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_ANNOTATION
 import org.opalj.bi.ACC_INTERFACE
@@ -41,7 +47,7 @@ import org.opalj.bi.VisibilityModifier
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.ACC_MODULE
-import org.opalj.log.OPALLogger
+
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -656,16 +662,29 @@ final class ClassFile private (
         visibility:  Option[VisibilityModifier],
         name:        String,
         descriptor:  MethodDescriptor
-    ): Option[Method] = {
+    )(implicit logContext: LogContext): Option[Method] = {
         findMethod(name, descriptor).filter(m ⇒ !m.isStatic).flatMap { candidateMethod ⇒
-            if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName))
+            if (candidateMethod.isPrivate) {
+                val message =
+                    s"the private method ${candidateMethod.toJava(this)} "+
+                        "\"overrides\" a non-private one defined by a superclass"
+                val logMessage = StandardLogMessage(Warn, Some("project configuration"), message)
+                OPALLogger.logOnce(logMessage)
+                None
+            } else if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName))
                 Some(candidateMethod)
             else
                 None
         }
     }
 
-    final def findDirectlyOverridingMethod(packageName: String, method: Method): Option[Method] = {
+    final def findDirectlyOverridingMethod(
+        packageName: String,
+        method:      Method
+    )(
+        implicit
+        logContext: LogContext
+    ): Option[Method] = {
         findDirectlyOverridingMethod(
             packageName,
             method.visibilityModifier,
