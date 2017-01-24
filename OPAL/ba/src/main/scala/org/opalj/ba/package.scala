@@ -366,6 +366,10 @@ package object ba { ba ⇒
                         else
                             CPEMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
                     instructions.writeShort(cpeRef)
+                    if(i.opcode == INVOKEINTERFACE.opcode){
+                        instructions.writeByte(i.asInstanceOf[INVOKEINTERFACE].count)
+                        instructions.writeByte(0)
+                    }
 
                 case NEWARRAY.opcode ⇒
                     instructions.writeByte(i.asInstanceOf[NEWARRAY].atype)

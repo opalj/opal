@@ -56,6 +56,14 @@ case class INVOKEINTERFACE(
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
 
+    // as in JVM 8 Spec. Section 6.5.invokeinterface
+    final def count: Int = methodDescriptor.parameterTypes.foldLeft(1){(sum, t) =>
+        t match {
+            case DoubleType | LongType => sum + 2
+            case _ => sum + 1
+        }
+    }
+
 }
 
 /**
