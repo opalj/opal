@@ -385,10 +385,11 @@ class Project[Source] private (
                             ) match {
                                 case None ⇒ true
                                 case Some(overridingMethod) ⇒
-                                    if (overridingMethods.isEmpty) {
-                                        overridingMethods = methods.get(overridingMethod)
+                                    val nextOverridingMethods = methods.get(overridingMethod)
+                                    if (nextOverridingMethods.isEmpty) {
+                                        overridingMethods = nextOverridingMethods
                                     } else {
-                                        overridingMethods ++= methods.get(overridingMethod)
+                                        overridingMethods ++= nextOverridingMethods
                                     }
                                     false // we don't have to analyze subsequent subtypes.
                             }
@@ -1066,9 +1067,24 @@ object Project {
         projectFile: File,
         libraryFile: File
     ): Project[URL] = {
+
+        val libraries: Traversable[(ClassFile, URL)] =
+            if (!libraryFile.exists) {
+                OPALLogger.error(
+                    "project configuration", s"$libraryFile does not exist"
+                )(GlobalLogContext)
+                Traversable.empty
+            } else {
+                val libraries = JavaLibraryClassFileReader.ClassFiles(libraryFile)
+                if (libraries.isEmpty)
+                    OPALLogger.warn(
+                        "project configuration", s"$libraryFile is empty"
+                    )(GlobalLogContext)
+                libraries
+            }
         apply(
             JavaClassFileReader().ClassFiles(projectFile),
-            JavaLibraryClassFileReader.ClassFiles(libraryFile),
+            libraries,
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
         )
@@ -1195,7 +1211,7 @@ object Project {
      *      [Thread Safety] The underlying data structure has to support concurrent access.
      *
      * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
-     *      and no private methods or method implementations are available. Otherwise,
+     *      and no private METHODS or method implementations are available. Otherwise,
      *      the libraries are completely loaded.
      *
      * @param virtualClassFiles A list of virtual class files that have no direct
