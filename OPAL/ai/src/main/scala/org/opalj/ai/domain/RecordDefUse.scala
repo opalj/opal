@@ -132,7 +132,7 @@ trait RecordDefUse extends RecordCFG {
 
     abstract override def initProperties(
         code:    Code,
-        joinPCs: BitSet,
+        cfJoins: BitSet,
         locals:  Locals
     ): Unit = {
 
@@ -165,7 +165,7 @@ trait RecordDefUse extends RecordCFG {
 
         this.used = new Array(codeSize + parametersOffset)
 
-        super.initProperties(code, joinPCs, locals)
+        super.initProperties(code, cfJoins, locals)
     }
 
     /**
@@ -379,7 +379,7 @@ trait RecordDefUse extends RecordCFG {
         currentPC:                PC,
         successorPC:              PC,
         isExceptionalControlFlow: Boolean,
-        joinPCs:                  BitSet,
+        cfJoins:                  BitSet,
         isSubroutineInstruction:  (PC) ⇒ Boolean,
         operandsArray:            OperandsArray
     ): Boolean = {
@@ -410,7 +410,7 @@ trait RecordDefUse extends RecordCFG {
             newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
-            if (joinPCs.contains(successorPC) && (defLocals(successorPC) ne null)) {
+            if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null)) {
 
                 // we now also have to perform a join...
                 @annotation.tailrec def joinDefOps(
@@ -897,7 +897,7 @@ trait RecordDefUse extends RecordCFG {
             return ;
 
         val operandsArray = aiResult.operandsArray
-        val joinPCs = aiResult.joinPCs
+        val cfJoins = aiResult.cfJoins
 
         var subroutinePCs: Set[PC] = Set.empty
         var retPCs: Set[PC] = Set.empty
@@ -944,7 +944,7 @@ trait RecordDefUse extends RecordCFG {
                 val scheduleNextPC = try {
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow,
-                        joinPCs,
+                        cfJoins,
                         aiResult.subroutineInstructions.contains,
                         operandsArray
                     )

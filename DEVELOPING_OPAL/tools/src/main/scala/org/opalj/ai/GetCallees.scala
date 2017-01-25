@@ -171,12 +171,8 @@ object GetCallees {
                         ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>"))
                 val evaluationDump =
                     dump(
-                        Some(classFile), Some(method), method.body.get,
-                        header,
-                        ife.domain
-                    )(
-                            ife.operandsArray, ife.localsArray
-                        )
+                        Some(classFile), Some(method), method.body.get, header, ife.domain
+                    )(ife.cfJoins, ife.cfForks, ife.operandsArray, ife.localsArray)
                 org.opalj.io.writeAndOpen(
                     evaluationDump,
                     "StateOfFailedAbstractInterpretation",

@@ -50,10 +50,10 @@ trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomIn
 
     abstract override def initProperties(
         code:          Code,
-        joinPCs:       BitSet,
+        cfJoins:       BitSet,
         initialLocals: Locals
     ): Unit = {
-        super.initProperties(code, joinPCs, initialLocals)
+        super.initProperties(code, cfJoins, initialLocals)
 
         this.usesMonitorInstruction = false
     }

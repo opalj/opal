@@ -31,9 +31,10 @@ package ai
 
 import scala.collection.mutable
 import scala.collection.BitSet
+import scala.collection.immutable.IntMap
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
-import org.opalj.collection.UShortSet
+import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.Code
 
 /**
@@ -54,22 +55,22 @@ sealed abstract class AIResult {
     /**
      * The instructions where two or more control flow paths join.
      *
-     * (See also [[org.opalj.br.Code.joinPCs]].)
+     * @see    [[org.opalj.br.Code.cfPCs]] / [[org.opalj.br.Code.cfJoins]]
      *
      * @note   This information could be recomputed on-demand but is stored for performance
      *         reasons.
      */
-    val joinPCs: BitSet
+    val cfJoins: BitSet
 
     /**
      * The instructions where the control flow forks.
      *
-     * (See also [[org.opalj.br.Code.boundaryPCs]].)
+     * @see    [[org.opalj.br.Code.cfPCs]]
      *
      * @note   This information could be recomputed on-demand but is stored for performance
      *         reasons.
      */
-    val forkPCs: BitSet
+    val cfForks: BitSet
 
     /**
      * The domain object that was used to perform the abstract interpretation.
@@ -88,6 +89,12 @@ sealed abstract class AIResult {
     val evaluated: List[PC]
 
     /**
+     * Lists for each instruction that may result in a fork of the control flow all
+     * instructions that may be executed next.
+     */
+    val remainingCFForks: IntMap[UShortSet]
+
+    /**
      * Returns the information whether an instruction with a specific PC was evaluated
      * at least once.
      */
@@ -100,8 +107,8 @@ sealed abstract class AIResult {
     /**
      * Returns all instructions that belong to a subroutine.
      */
-    lazy val subroutineInstructions: UShortSet = {
-        var instructions = org.opalj.collection.mutable.UShortSet.empty
+    lazy val subroutineInstructions: org.opalj.collection.UShortSet = {
+        var instructions = UShortSet.empty
         var subroutineLevel = 0
         // It is possible to have a method with just JSRs and no RETs...
         // Hence, we have to iterate from the beginning.
@@ -246,12 +253,13 @@ object AIResultBuilder {
      */
     def aborted(
         theCode:    Code,
-        theJoinPCs: BitSet,
-        theForkPCs: BitSet,
+        theCFJoins: BitSet,
+        theCFForks: BitSet,
         theDomain:  Domain
     )(
         theWorklist:                         List[PC],
         theEvaluated:                        List[PC],
+        theRemainingCFForks:                 IntMap[UShortSet],
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
@@ -261,11 +269,12 @@ object AIResultBuilder {
 
         new AIAborted {
             val code: Code = theCode
-            val joinPCs: BitSet = theJoinPCs
-            val forkPCs: BitSet = theForkPCs
+            val cfJoins: BitSet = theCFJoins
+            val cfForks: BitSet = theCFForks
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
+            val remainingCFForks: IntMap[UShortSet] = theRemainingCFForks
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
             val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
@@ -274,9 +283,9 @@ object AIResultBuilder {
 
             def continueInterpretation(ai: AI[_ >: domain.type]): AIResult = {
                 ai.continueInterpretation(
-                    code, joinPCs, forkPCs, domain
+                    code, cfJoins, cfForks, domain
                 )(
-                    worklist, evaluated,
+                    worklist, evaluated, remainingCFForks,
                     operandsArray, localsArray,
                     memoryLayoutBeforeSubroutineCall, subroutinesOperandsArray, subroutinesLocalsArray
                 )
@@ -292,21 +301,23 @@ object AIResultBuilder {
      */
     def completed(
         theCode:    Code,
-        theJoinPCs: BitSet,
-        theForkPCs: BitSet,
+        theCFJoins: BitSet,
+        theCFForks: BitSet,
         theDomain:  Domain
     )(
-        theEvaluated:     List[PC],
-        theOperandsArray: theDomain.OperandsArray,
-        theLocalsArray:   theDomain.LocalsArray
+        theEvaluated:        List[PC],
+        theRemainingCFForks: IntMap[UShortSet],
+        theOperandsArray:    theDomain.OperandsArray,
+        theLocalsArray:      theDomain.LocalsArray
     ): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
             val code: Code = theCode
-            val joinPCs = theJoinPCs
-            val forkPCs = theForkPCs
+            val cfJoins = theCFJoins
+            val cfForks = theCFForks
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
+            val remainingCFForks: IntMap[UShortSet] = theRemainingCFForks
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
             val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
@@ -348,9 +359,9 @@ object AIResultBuilder {
                 }
 
                 ai.continueInterpretation(
-                    code, joinPCs, forkPCs, domain
+                    code, cfJoins, cfForks, domain
                 )(
-                    AI.initialWorkList, evaluated,
+                    AI.initialWorkList, evaluated, remainingCFForks,
                     operandsArray, localsArray,
                     Nil, subroutinesOperandsArray, subroutinesLocalsArray
                 )

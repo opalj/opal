@@ -47,12 +47,12 @@ import org.opalj.br.instructions.Instruction
 trait TheCodeStructure { domain: ValuesDomain ⇒
 
     private[this] var theInstructions: Array[Instruction] = null
-    private[this] var theJoinPCs: BitSet = null
-    private[this] var theForkPCs: BitSet = null
+    private[this] var theCFJoins: BitSet = null
+    private[this] var theCFForks: BitSet = null
 
     def instructions: Array[Instruction] = theInstructions
-    def joinPCs: BitSet = theJoinPCs
-    def forkPCs: BitSet = theForkPCs
+    def cfJoins: BitSet = theCFJoins
+    def cfForks: BitSet = theCFForks
 
     /**
      * Sets the code structure.
@@ -61,12 +61,12 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
      */
     private[ai] def setCodeStructure(
         theInstructions: Array[Instruction],
-        theJoinPCs:      BitSet,
-        theForkPCs:      BitSet
+        theCFJoins:      BitSet,
+        theCFForks:      BitSet
     ): Unit = {
         this.theInstructions = theInstructions
-        this.theJoinPCs = theJoinPCs
-        this.theForkPCs = theForkPCs
+        this.theCFJoins = theCFJoins
+        this.theCFForks = theCFForks
     }
 
 }

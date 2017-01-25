@@ -94,7 +94,7 @@ trait RecordCFG
 
     abstract override def initProperties(
         code:          Code,
-        joinPCs:       BitSet,
+        cfJoins:       BitSet,
         initialLocals: Locals
     ): Unit = {
         val codeSize = code.instructions.size
@@ -111,7 +111,7 @@ trait RecordCFG
         theControlDependencies = null
         theBBCFG = null
 
-        super.initProperties(code, joinPCs, initialLocals)
+        super.initProperties(code, cfJoins, initialLocals)
     }
 
     /**

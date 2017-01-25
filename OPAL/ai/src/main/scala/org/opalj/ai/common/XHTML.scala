@@ -37,6 +37,8 @@ import scala.xml.Unparsed
 import scala.xml.Text
 import scala.xml.Unparsed
 
+import scala.collection.BitSet
+
 import org.opalj.io.writeAndOpen
 import org.opalj.br._
 import org.opalj.br.instructions._
@@ -95,7 +97,7 @@ object XHTML {
                     val dump =
                         XHTML.dump(
                             Some(classFile), Some(method), code, title, theDomain
-                        )(operandsArray, localsArray)
+                        )(result.cfJoins, result.cfForks, operandsArray, localsArray)
                     writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
                     Console.err.println("[info] dump suppressed: "+e.getMessage())
@@ -160,7 +162,7 @@ object XHTML {
                 <h1>{ title }</h1>,
                 annotationsAsXHTML(method),
                 scala.xml.Unparsed(resultHeader),
-                dumpAIState(code, domain)(operandsArray, localsArray)
+                dumpAIState(code, domain)(cfJoins, cfForks, operandsArray, localsArray)
             )
         )
     }
@@ -182,6 +184,8 @@ object XHTML {
         resultHeader: Option[String],
         domain:       Domain
     )(
+        cfJoins:       BitSet,
+        cfForks:       BitSet,
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     ): Node = {
@@ -207,7 +211,7 @@ object XHTML {
                 title.map(t ⇒ <h1>{ t }</h1>).getOrElse(Text("")),
                 annotations,
                 scala.xml.Unparsed(resultHeader.getOrElse("")),
-                dumpAIState(code, domain)(operandsArray, localsArray)
+                dumpAIState(code, domain)(cfJoins, cfForks, operandsArray, localsArray)
             )
         )
     }
@@ -216,6 +220,8 @@ object XHTML {
         code:   Code,
         domain: Domain
     )(
+        cfJoins:       BitSet,
+        cfForks:       BitSet,
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     ): Node = {
@@ -269,7 +275,14 @@ object XHTML {
                     </tr>
                 </thead>
                 <tbody>
-                    { dumpInstructions(code, domain, operandsOnly)(operandsArray, localsArray)(Some(idsLookup)) }
+                    {
+                        dumpInstructions(
+                            code, domain, operandsOnly
+                        )(
+                            cfJoins,
+                            cfForks, operandsArray, localsArray
+                        )(Some(idsLookup))
+                    }
                 </tbody>
             </table>
             { exceptionHandlers }
@@ -288,6 +301,8 @@ object XHTML {
         domain:       Domain,
         operandsOnly: Boolean
     )(
+        cfJoins:       BitSet,
+        cfForks:       BitSet,
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     )(
@@ -297,13 +312,12 @@ object XHTML {
 
         val belongsToSubroutine = code.belongsToSubroutine()
         val indexedExceptionHandlers = indexExceptionHandlers(code)
-        val (joinPCs, forkPCs) = code.boundaryPCs
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(
-                pc, code.lineNumber(pc), instruction, joinPCs.contains(pc), forkPCs.contains(pc),
+                pc, code.lineNumber(pc), instruction, cfJoins.contains(pc), cfForks.contains(pc),
                 belongsToSubroutine(pc),
                 Some(exceptionHandlers),
                 domain,

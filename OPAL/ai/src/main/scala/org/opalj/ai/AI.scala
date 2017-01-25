@@ -33,7 +33,9 @@ import scala.language.existentials
 
 import scala.util.control.ControlThrowable
 import scala.collection.BitSet
+import scala.collection.immutable.IntMap
 
+import org.opalj.collection.mutable.UShortSet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -54,8 +56,9 @@ import org.opalj.br.instructions._
  * that relies on OPAL's resolved representation ([[org.opalj.br]]) of Java bytecode.
  *
  * This framework basically traverses all instructions of a method in depth-first order
- * until a join instruction is hit. This join instruction is then only analyzed if no
- * further non-join instruction can be evaluated ([[org.opalj.br.Code.joinPCs]]).
+ * until an instruction is hit where multiple
+ * control flows potentially join. This instruction is then only analyzed if no
+ * further instruction can be evaluated where no paths join ([[org.opalj.br.Code.cfPCs]]).
  * Each instruction is then evaluated using a given (abstract) [[org.opalj.ai.Domain]].
  * The evaluation of a subroutine (Java code < 1.5) - in case of an unhandled
  * exception – is always first completed before the evaluation of the parent (sub)routine
@@ -334,13 +337,13 @@ abstract class AI[D <: Domain] {
         theOperandsArray: theDomain.OperandsArray,
         theLocalsArray:   theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
-        val (joinPCs, forkPCs) = code.boundaryPCs
+        val (cfJoins, cfForks, remainingCFForkTargets) = code.cfPCs
 
         continueInterpretation(
-            code, joinPCs, forkPCs, theDomain
+            code, cfJoins, cfForks, theDomain
         )(
             initialWorkList, alreadyEvaluated,
-            theOperandsArray, theLocalsArray,
+            remainingCFForkTargets, theOperandsArray, theLocalsArray,
             Nil, null, null
         )
     }
@@ -357,8 +360,9 @@ abstract class AI[D <: Domain] {
         theDomain: D
     )(
         instructions:                        Array[Instruction],
-        joinPCs:                             BitSet,
-        forkPCs:                             BitSet,
+        cfJoins:                             BitSet,
+        cfForks:                             BitSet,
+        forkTargetPCs:                       IntMap[UShortSet],
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
@@ -373,7 +377,7 @@ abstract class AI[D <: Domain] {
             case _           ⇒ /*nothing to do*/
         }
         theDomain match {
-            case d: TheCodeStructure ⇒ d.setCodeStructure(instructions, joinPCs, forkPCs)
+            case d: TheCodeStructure ⇒ d.setCodeStructure(instructions, cfJoins, cfForks)
             case _                   ⇒ /*nothing to do*/
         }
         theDomain match {
@@ -389,7 +393,7 @@ abstract class AI[D <: Domain] {
         }
         theDomain match {
             case d: CustomInitialization ⇒
-                d.initProperties(code, joinPCs, theLocalsArray.asInstanceOf[d.LocalsArray](0))
+                d.initProperties(code, cfJoins, theLocalsArray.asInstanceOf[d.LocalsArray](0))
             case _ ⇒ /*nothing to do*/
         }
     }
@@ -400,10 +404,10 @@ abstract class AI[D <: Domain] {
      *
      * @param  code The bytecode that will be interpreted using the given domain.
      *
-     * @param  joinPCs The set of instructions where two or more control flow
+     * @param  cfJoins The set of instructions where two or more control flow
      *         paths join. The abstract interpretation framework will only perform a
      *         join operation for those instructions.
-     * @param  forkPCs The set of instructions where the control potentially forks (including
+     * @param  cfForks The set of instructions where the control potentially forks (including
      *         exceptions!)
      *
      * @param  theDomain The domain that will be used to perform the domain
@@ -419,6 +423,10 @@ abstract class AI[D <: Domain] {
      *      values `SUBROUTINE` and `SUBROUTINE_START` to the list to encode when the
      *      evaluation started. This is needed to completely process the subroutine
      *      (to explore all paths) before we finally return to the main method.'''
+     *
+     * @param theRemainingCFForks The pcs of those instruction that may lead to a fork
+     *         of the control-flow. The fork may be due to a regular conditional jump or
+     *         due to an exception.
      *
      * @param alreadyEvaluated The list of the program counters (PC) of the instructions
      *      that were already evaluated. Initially (i.e., if the given code is analyzed
@@ -453,11 +461,12 @@ abstract class AI[D <: Domain] {
      *      a subroutine was already analyzed.
      */
     def continueInterpretation(
-        code: Code, joinPCs: BitSet, forkPCs: BitSet,
+        code: Code, cfJoins: BitSet, cfForks: BitSet,
         theDomain: D
     )(
         initialWorkList:                     List[PC],
         alreadyEvaluated:                    List[PC],
+        theRemainingCFForks:                 IntMap[UShortSet],
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
@@ -510,8 +519,8 @@ abstract class AI[D <: Domain] {
         preInterpretationInitialization(
             code, theDomain
         )(
-            instructions, joinPCs, forkPCs,
-            theOperandsArray, theLocalsArray,
+            instructions, cfJoins, cfForks,
+            theRemainingCFForks, theOperandsArray, theLocalsArray,
             theMemoryLayoutBeforeSubroutineCall, theSubroutinesOperandsArray, theSubroutinesLocalsArray
         )
 
@@ -529,13 +538,15 @@ abstract class AI[D <: Domain] {
         /* 5 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts = theMemoryLayoutBeforeSubroutineCall
         /* 6 */ var subroutinesOperandsArray = theSubroutinesOperandsArray
         /* 7 */ var subroutinesLocalsArray = theSubroutinesLocalsArray
+        // there is no need to reset anything after the evaluation of a subroutine
+        /* 8 */ val remainingCFForks = theRemainingCFForks
 
         def throwInterpretationFailedException(cause: Throwable, pc: PC): Nothing = {
             throw InterpretationFailedException(
                 cause, theDomain
             )(
                 this,
-                pc, worklist, evaluated,
+                pc, cfJoins, cfForks, worklist, evaluated, remainingCFForks,
                 operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
             )
         }
@@ -730,7 +741,7 @@ abstract class AI[D <: Domain] {
                     targetLocalsArray(targetPC) = locals
                     if (abruptSubroutineTerminationCount > 0) {
                         handleAbruptSubroutineTermination(forceSchedule = true)
-                    } else if (worklist.nonEmpty && joinPCs.contains(targetPC)) {
+                    } else if (worklist.nonEmpty && cfJoins.contains(targetPC)) {
                         worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
                     } else {
                         worklist = targetPC :&: worklist
@@ -741,7 +752,7 @@ abstract class AI[D <: Domain] {
 
                     /* join: */ false
 
-                } else if (!joinPCs.contains(targetPC)) {
+                } else if (!cfJoins.contains(targetPC)) {
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
                     // E.g., imagine the following code:
@@ -911,9 +922,9 @@ abstract class AI[D <: Domain] {
             if (isInterrupted) {
                 val result =
                     AIResultBuilder.aborted(
-                        code, joinPCs, forkPCs, theDomain
+                        code, cfJoins, cfForks, theDomain
                     )(
-                        worklist, evaluated,
+                        worklist, evaluated, remainingCFForks,
                         operandsArray, localsArray,
                         memoryLayoutBeforeSubroutineCall,
                         subroutinesOperandsArray, subroutinesLocalsArray
@@ -1069,9 +1080,9 @@ abstract class AI[D <: Domain] {
                         integrateSubroutineInformation()
                         val result =
                             AIResultBuilder.completed(
-                                code, joinPCs, forkPCs, theDomain
+                                code, cfJoins, cfForks, theDomain
                             )(
-                                evaluated, operandsArray, localsArray
+                                evaluated, remainingCFForks, operandsArray, localsArray
                             )
                         if (tracer.isDefined) tracer.get.result(result)
                         return result;
@@ -1133,7 +1144,7 @@ abstract class AI[D <: Domain] {
                         // may use it - in particular in case of subroutines. However,
                         // if all subsequent paths were evaluated, it is then possible
                         // to propagate the dead path information backward.
-                        !forkPCs.contains(nextPC) &&
+                        !cfForks.contains(nextPC) &&
                         //
                         // When we see a load, we know that the variable is live until
                         // this point.
@@ -1162,7 +1173,7 @@ abstract class AI[D <: Domain] {
                         if (tracer.isDefined) tracer.get.deadLocalVariable(theDomain)(nextPC, lvIndex)
 
                         pcs = pcs.tail
-                        if (pcs.isEmpty) // || joinPCs.contains(currentPC))
+                        if (pcs.isEmpty) // || cfJoins.contains(currentPC))
                             return ;
 
                         lastPC = nextPC
@@ -2603,9 +2614,9 @@ abstract class AI[D <: Domain] {
         integrateSubroutineInformation()
         val result =
             AIResultBuilder.completed(
-                code, joinPCs, forkPCs, theDomain
+                code, cfJoins, cfForks, theDomain
             )(
-                evaluated, operandsArray, localsArray
+                evaluated, remainingCFForks, operandsArray, localsArray
             )
         try {
             theDomain.abstractInterpretationEnded(result)

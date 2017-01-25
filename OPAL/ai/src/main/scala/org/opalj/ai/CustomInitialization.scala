@@ -55,7 +55,7 @@ trait CustomInitialization { domain: ValuesDomain ⇒
      */
     def initProperties(
         code:          Code,
-        joinPCs:       BitSet,
+        cfJoins:       BitSet,
         initialLocals: Locals
     ): Unit = {
         // Empty by default.

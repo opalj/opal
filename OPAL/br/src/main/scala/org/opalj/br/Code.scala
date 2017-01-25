@@ -29,16 +29,21 @@
 package org.opalj
 package br
 
-import java.util.Arrays.fill
 import scala.annotation.tailrec
+
+import java.util.Arrays.fill
+
 import scala.collection.BitSet
+import scala.collection.immutable.IntMap
 import scala.collection.mutable
-import org.opalj.br.instructions._
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
-import org.opalj.br.cfg.CFGFactory
+
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import org.opalj.collection.mutable.UShortSet
+import org.opalj.br.instructions._
+import org.opalj.br.cfg.CFGFactory
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -300,14 +305,14 @@ final class Code private (
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers may be reached on multiple paths.
      */
-    def joinPCs: BitSet = {
+    def cfJoins: BitSet = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
-        val joinPCs = new mutable.BitSet(instructionsLength)
+        val cfJoins = new mutable.BitSet(instructionsLength)
         exceptionHandlers.foreach { eh ⇒
             // [REFINE] For non-finally handlers, test if multiple paths
             // can lead to the respective exception
-            joinPCs += eh.handlerPC
+            cfJoins += eh.handlerPC
         }
         // The algorithm determines for each instruction the successor instruction
         // that is reached and then marks it. If an instruction was already reached in the
@@ -320,7 +325,7 @@ final class Code private (
             val nextPC = pcOfNextInstruction(pc)
             @inline def runtimeSuccessor(pc: PC): Unit = {
                 if (isReached.contains(pc))
-                    joinPCs += pc
+                    cfJoins += pc
                 else
                     isReached += pc
             }
@@ -362,7 +367,7 @@ final class Code private (
             }
             pc = nextPC
         }
-        joinPCs
+        cfJoins
     }
 
     /**
@@ -382,19 +387,27 @@ final class Code private (
      *
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers may be reached on multiple paths.
+     *
+     * @return A triple which contains (1) the set of pcs of those instruction where multiple
+     *         control-flow paths join; (2) the pcs of the instructions which may result in
+     *         multiple different control-flow paths and (3) for each of the later instructions
+     *         the set of all potential targets.
      */
-    def boundaryPCs(
+    def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): (BitSet /*joins*/ , BitSet /*forks*/ ) = {
+    ): (BitSet /*joins*/ , BitSet /*forks*/ , IntMap[UShortSet] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
-        val joinPCs = new mutable.BitSet(instructionsLength)
-        val forkPCs = new mutable.BitSet(instructionsLength)
+        val cfJoins = new mutable.BitSet(instructionsLength)
+        val cfForks = new mutable.BitSet(instructionsLength)
+        var cfForkTargets = IntMap.empty[UShortSet]
 
         val isReached = new mutable.BitSet(instructionsLength)
         isReached += 0 // the first instruction is always reached!
+
+        lazy val cfg = CFGFactory(this, classHierarchy)
 
         var pc = 0
         while (pc < instructionsLength) {
@@ -403,16 +416,18 @@ final class Code private (
 
             @inline def runtimeSuccessor(pc: PC): Unit = {
                 if (isReached.contains(pc))
-                    joinPCs += pc
+                    cfJoins += pc
                 else
                     isReached += pc
             }
 
             (instruction.opcode: @scala.annotation.switch) match {
                 case RET.opcode ⇒
-                    // the ret may return do different sites
-                    forkPCs += pc
-                // the potential "joinPCs" are determined when we process the JSR
+                    // The ret may return to different sites;
+                    // the potential path joins are determined when we process the JSR.
+                    cfForks += pc
+                    cfForkTargets += ((pc, UShortSet.create(cfg.successors(pc))))
+
                 case JSR.opcode | JSR_W.opcode ⇒
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     runtimeSuccessor(pc + jsrInstr.branchoffset)
@@ -422,13 +437,14 @@ final class Code private (
                     val nextInstructions = instruction.nextInstructions(pc)(this, classHierarchy)
                     nextInstructions.foreach(runtimeSuccessor)
                     if (nextInstructions.hasMultipleElements) {
-                        forkPCs += pc
+                        cfForks += pc
+                        cfForkTargets += ((pc, UShortSet.create(nextInstructions)))
                     }
             }
 
             pc = nextPC
         }
-        (joinPCs, forkPCs)
+        (cfJoins, cfForks, cfForkTargets)
     }
 
     /**
@@ -1249,10 +1265,9 @@ final class Code private (
      *         a methods [[org.opalj.br.cfg.CFG]] and use that one.
      *
      * @param  pc The program counter of an instruction that strictly dominates all
-     *         succeeding instructions up until the next join instruction (as determined
-     *         by [[#joinPCs]]. This is naturally the case for the very first
-     *         instruction of each method and each exception handler unless these
-     *         instructions are joinPCs; in this case the `false` is returned.
+     *         succeeding instructions up until the next instruction (as determined
+     *         by [[#cfJoins]] where two or more paths join. If the pc belongs to an instruction
+     *         where multiple paths join, `false` will be returned.
      *
      * @param  anInvocation When the analysis finds a method call, it calls this method
      *         to let the caller decide whether the called method is an (indirect) way
@@ -1272,13 +1287,13 @@ final class Code private (
      */
     @inline def alwaysResultsInException(
         pc:           PC,
-        joinPCs:      BitSet,
+        cfJoins:      BitSet,
         anInvocation: (PC) ⇒ Boolean,
         aThrow:       (PC) ⇒ Boolean
     ): Boolean = {
 
         var currentPC = pc
-        while (!joinPCs.contains(currentPC)) {
+        while (!cfJoins.contains(currentPC)) {
             val instruction = instructions(currentPC)
 
             (instruction.opcode: @scala.annotation.switch) match {
