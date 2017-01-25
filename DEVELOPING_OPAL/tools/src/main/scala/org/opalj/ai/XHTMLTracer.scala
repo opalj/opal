@@ -165,11 +165,11 @@ trait XHTMLTracer extends AITracer {
                     }
                 </td>
             }).toIterable
-        val joinPCs = code.joinPCs
+        val cfJoins = code.cfJoins
         val flowTable =
             for ((pc, rowIndex) ← pcsToRowIndex) yield {
                 <tr>
-                    <td>{ if (joinPCs.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
+                    <td>{ if (cfJoins.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
                     { row(pc) }
                 </tr>
             }

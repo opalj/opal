@@ -85,11 +85,11 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
 
     abstract override def initProperties(
         code:          Code,
-        joinPCs:       BitSet,
+        cfJoins:       BitSet,
         initialLocals: Locals
     ): Unit = {
         returnedValues = Map.empty
-        super.initProperties(code, joinPCs, initialLocals)
+        super.initProperties(code, cfJoins, initialLocals)
     }
 
     /**

@@ -47,18 +47,21 @@ trait CFGTests extends FunSpec with Matchers {
         cfg:            CFG,
         classHierarchy: ClassHierarchy
     ): Unit = {
-        // validate that boundaryPCs returns the same information as the CFG
-        val (joinPCs, forkPCs) = code.boundaryPCs(classHierarchy)
-        joinPCs foreach { pc ⇒
+        // validate that cfPCs returns the same information as the CFG
+        val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs(classHierarchy)
+        cfJoins foreach { pc ⇒
             assert(
                 cfg.bb(pc).startPC == pc,
                 s"; the join PC $pc is not at the beginning of a BasicBlock node"
             )
         }
-        forkPCs foreach { pc ⇒
+        cfForks foreach { pc ⇒
             assert(
                 cfg.bb(pc).endPC == pc,
                 s"; the fork PC $pc is not at the end of a BasicBlock node"
+            )
+            assert(
+                forkTargetPCs(pc).nonEmpty
             )
         }
 
@@ -66,7 +69,7 @@ trait CFGTests extends FunSpec with Matchers {
             if (bb.startPC != 0 || bb.predecessors.nonEmpty) {
                 if (bb.predecessors.size > 1) {
                     assert(
-                        joinPCs.contains(bb.startPC),
+                        cfJoins.contains(bb.startPC),
                         s"; a basic block's start PC (${bb.startPC} predecessors ${bb.predecessors}) is not a join PC"
                     )
                 }
@@ -74,20 +77,20 @@ trait CFGTests extends FunSpec with Matchers {
 
             if (bb.successors.filter(!_.isExitNode).size > 1) {
                 assert(
-                    forkPCs.contains(bb.endPC),
+                    cfForks.contains(bb.endPC),
                     s"; a basic block's end PC(${bb.endPC}}) is not a fork PC"
                 )
             }
 
         }
 
-        val overapproximatedJoinPCs = (code.joinPCs /*less precise!*/ -- joinPCs)
+        val overapproximatedJoinPCs = (code.cfJoins /*less precise!*/ -- cfJoins)
         val missingJoinPCs = overapproximatedJoinPCs.filter(joinPC ⇒
             !code.exceptionHandlers.exists(_.handlerPC == joinPC))
         if (missingJoinPCs.nonEmpty) {
-            fail(s"code's join pcs ${code.joinPCs.mkString("{", ",", "}")} "+
+            fail(s"code's join pcs ${code.cfJoins.mkString("{", ",", "}")} "+
                 s"contains pc ${missingJoinPCs.mkString("{", ",", "}")} which are not "+
-                s"join pcs (expected:${joinPCs.mkString("{", ",", "}")}")
+                s"join pcs (expected:${cfJoins.mkString("{", ",", "}")}")
         }
     }
 

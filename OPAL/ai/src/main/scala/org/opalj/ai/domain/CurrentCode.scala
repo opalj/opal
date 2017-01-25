@@ -53,13 +53,13 @@ trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDoma
 
     abstract override def initProperties(
         code:          Code,
-        joinPCs:       BitSet,
+        cfJoins:       BitSet,
         initialLocals: Locals
     ): Unit = {
 
         this.theCode = code
 
-        super.initProperties(code, joinPCs, initialLocals)
+        super.initProperties(code, cfJoins, initialLocals)
     }
 
 }

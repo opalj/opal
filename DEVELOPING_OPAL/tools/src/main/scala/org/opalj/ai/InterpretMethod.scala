@@ -241,8 +241,8 @@ object InterpretMethod {
                     Some(
                         "Created: "+(new java.util.Date).toString+"<br>"+
                             "Domain: "+domainClass.getName+"<br>"+
-                            XHTML.instructionsToXHTML("PCs where paths join", result.joinPCs) +
-                            XHTML.instructionsToXHTML("PCs where paths fork", result.forkPCs) +
+                            XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
+                            XHTML.instructionsToXHTML("PCs where paths fork", result.cfForks) +
                             (
                                 if (result.subroutineInstructions.nonEmpty)
                                     XHTML.instructionsToXHTML(
@@ -251,11 +251,10 @@ object InterpretMethod {
                                 )
                                 else
                                     ""
-                            ) +
-                                XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                            ) + XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain
-                )(result.operandsArray, result.localsArray),
+                )(result.cfJoins, result.cfForks, result.operandsArray, result.localsArray),
                 "AIResult",
                 ".html"
             )
@@ -303,7 +302,7 @@ object InterpretMethod {
                             dumpAIState(
                                 ife.domain.asInstanceOf[TheCode].code,
                                 ife.domain
-                            )(ife.operandsArray, ife.localsArray)
+                            )(ife.cfJoins, ife.cfForks, ife.operandsArray, ife.localsArray)
                     else
                         metaInformation
                 }
@@ -313,7 +312,7 @@ object InterpretMethod {
                     dump(
                         Some(classFile), Some(method), method.body.get,
                         resultHeader, ife.domain
-                    )(ife.operandsArray, ife.localsArray)
+                    )(ife.cfJoins, ife.cfForks, ife.operandsArray, ife.localsArray)
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife
         }

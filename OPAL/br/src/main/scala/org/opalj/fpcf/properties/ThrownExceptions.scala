@@ -186,7 +186,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
         //... when we reach this point the method is non-empty
         //
         val code = body.get
-        val joinPCs = code.joinPCs
+        val cfJoins = code.cfJoins
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
@@ -234,7 +234,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        joinPCs.contains(pc) || // <= we cannot locally decide who is the receiver 
+                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver 
                         instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null.. 
                     true
 
@@ -243,7 +243,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        joinPCs.contains(pc) || // <= we cannot locally decide who is the receiver 
+                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver 
                         {
                             val predecessorPC = code.pcOfPreviousInstruction(pc)
                             val predecessorOfPredecessorPC = code.pcOfPreviousInstruction(predecessorPC)
@@ -270,7 +270,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     true
 
                 case IREM.opcode | IDIV.opcode ⇒
-                    if (!joinPCs.contains(pc)) {
+                    if (!cfJoins.contains(pc)) {
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
@@ -287,7 +287,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     }
 
                 case LREM.opcode | LDIV.opcode ⇒
-                    if (!joinPCs.contains(pc)) {
+                    if (!cfJoins.contains(pc)) {
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {

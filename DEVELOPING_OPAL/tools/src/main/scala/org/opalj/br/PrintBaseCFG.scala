@@ -114,9 +114,10 @@ object PrintBaseCFG {
 
         writeAndOpen(graph, classFile.thisType.toJava+"."+method.name, ".cfg.dot")
 
-        println(code.joinPCs.mkString("JoinPCs (conservative):", ", ", ""))
-        val (joinPCs, forkPCs) = code.boundaryPCs
-        println(joinPCs.mkString("JoinPCs               :", ", ", ""))
-        println(forkPCs.mkString("ForkPCs               :", ", ", ""))
+        println(code.cfJoins.mkString("JoinPCs (conservative):", ", ", ""))
+        val (cfJoins, _, cfForks) = code.cfPCs
+        val cfForksInfo = cfForks.map { e ⇒ val (k, v) = e; k+" ⇒ "+v.mkString("{", ",", "}") }
+        println(cfJoins.mkString("CFJoins               :", ", ", ""))
+        println(cfForksInfo.mkString("CFForks               :", ", ", ""))
     }
 }

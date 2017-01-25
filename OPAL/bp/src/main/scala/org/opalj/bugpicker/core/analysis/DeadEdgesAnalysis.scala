@@ -88,7 +88,7 @@ object DeadEdgesAnalysis {
         val evaluatedInstructions = result.evaluatedInstructions
         implicit val body = result.code
         val instructions = body.instructions
-        import result.joinPCs
+        import result.cfJoins
         import result.domain.regularSuccessorsOf
         import result.domain.hasMultiplePredecessors
         import result.domain.isRegularPredecessorOf
@@ -263,7 +263,7 @@ object DeadEdgesAnalysis {
                 // this is the default branch of a switch instruction that is dead
                 body.alwaysResultsInException(
                     nextPC,
-                    joinPCs,
+                    cfJoins,
                     (invocationPC) ⇒ {
                         isAlwaysExceptionThrowingMethodCall(invocationPC)
                     },
@@ -294,12 +294,13 @@ object DeadEdgesAnalysis {
                             }
                         BaseAI.continueInterpretation(
                             result.code,
-                            result.joinPCs,
-                            result.forkPCs,
+                            result.cfJoins,
+                            result.cfForks,
                             zDomain
                         )(
                             /*initialWorkList =*/ Chain(nextPC),
                             /*alreadyEvaluated =*/ Naught,
+                            result.remainingCFForks,
                             zOperandsArray,
                             zLocalsArray,
                             Naught, null, null // we don't care about the state of subroutines
