@@ -42,27 +42,27 @@ trait UnconditionalBranchInstructionLike
         extends ControlTransferInstructionLike
         with ConstantLengthInstruction {
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    final def readsLocal: Boolean = false
+    override final def readsLocal: Boolean = false
 
-    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final def writesLocal: Boolean = false
+    override final def writesLocal: Boolean = false
 
-    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }
 object UnconditionalBranch {
 
-    def unapply(i: UnconditionalBranchInstruction): Option[Int] = Some(i.branchoffset)
+    def unapply(i: UnconditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
 
 }
 
 trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranchInstructionLike {
     def branchoffset: Int
 
-    final def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
