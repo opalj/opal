@@ -72,13 +72,13 @@ case class LOOKUPSWITCH(
         npairs:        IndexedSeq[(Int, Int)]
 ) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
 
-    override def tableSize = npairs.size
+    override def tableSize :Int = npairs.size
 
-    def jumpOffsets = npairs.map(_._2)
+    def jumpOffsets : Iterable[Int] = npairs.view.map(_._2)
 
     def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
         (
-            npairs.filter(_._2 == jumpOffset).map(_._1)(Chain.GenericSpecializedCBF),
+            npairs.view.filter(_._2 == jumpOffset).map(_._1)(Chain.GenericSpecializedCBF),
             jumpOffset == defaultOffset
         )
     }
