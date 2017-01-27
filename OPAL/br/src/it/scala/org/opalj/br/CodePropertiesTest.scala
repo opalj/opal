@@ -42,6 +42,7 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.instructions.LocalVariableAccess
 
 /**
  * Just tests if we can compute various information for a wide range of methods;
@@ -76,7 +77,25 @@ class CodePropertiesTest extends FunSuite {
 
             try {
                 val liveVariables = code.liveVariables(ch)
-                assert(code.programCounters.forall(pc ⇒ liveVariables(pc) ne null))
+                assert(
+                    code.programCounters.forall(pc ⇒ liveVariables(pc) ne null),
+                    s"computation of liveVariables fail for ${method.toJava(classFile)}"
+                )
+
+                for {
+                    (pc, LocalVariableAccess(i, isRead)) ← code
+                } {
+                    if (isRead)
+                        assert(
+                            liveVariables(pc).contains(i),
+                            s"$i is not live at $pc in ${method.toJava(classFile)}"
+                        )
+                    else
+                        assert(
+                            !liveVariables(pc).contains(i),
+                            s"$i is live at $pc in ${method.toJava(classFile)}"
+                        )
+                }
 
                 val computedMaxLocals = Code.computeMaxLocalsRequiredByCode(instructions)
                 if (computedMaxLocals > specifiedMaxLocals) {

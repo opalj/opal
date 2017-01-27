@@ -30,6 +30,7 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
+import scala.annotation.switch
 
 import java.util.Arrays.fill
 import java.util.LinkedList
@@ -220,7 +221,7 @@ final class Code private (
                     subroutineIds(pc) = subroutineId
                     val instruction = instructions(pc)
 
-                    (instruction.opcode: @scala.annotation.switch) match {
+                    (instruction.opcode: @switch) match {
                         case ATHROW.opcode                                    ⇒
                         /*Nothing do to. (Will be handled when we deal with exceptions)*/
 
@@ -403,7 +404,7 @@ final class Code private (
                     isReached += pc
             }
 
-            (instruction.opcode: @scala.annotation.switch) match {
+            (instruction.opcode: @switch) match {
                 case RET.opcode ⇒
                 // The potential path joins are determined when we process the JSR.
 
@@ -424,22 +425,43 @@ final class Code private (
 
     /**
      * @return  An array which contains for each instruction the set of all predecessors as well
-     *          as the set of all instructions which have only predecessors/no successors.
+     *          as the set of all instructions which have only predecessors; i.e., no successors
+     *          and also the set of all instructions where multiple paths join.
+     *          `(Array[PCs]/*PREDECESSOR_PCs*/, PCs/*FINAL_PCs*/, BitSet/*CF_JOINS*/)`
      */
-    def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs) = {
+    def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, BitSet) = {
         val instructions = this.instructions
-        val max = instructions.length
-        val allPredecessorPCs = new Array[PCs](max)
+        val instructionsLength = instructions.length
+
+        val allPredecessorPCs = new Array[PCs](instructionsLength)
+        allPredecessorPCs(0) = UShortSet.empty // initialization for the start node
         var exitPCs = UShortSet.empty
-        allPredecessorPCs(0) = UShortSet.empty
+
+        val cfJoins = new mutable.BitSet(instructionsLength)
+        val isReached = new mutable.BitSet(instructionsLength)
+        isReached += 0 // the first instruction is always reached!
+        @inline def runtimeSuccessor(successorPC: PC): Unit = {
+            if (isReached.contains(successorPC))
+                cfJoins += successorPC
+            else
+                isReached += successorPC
+        }
+        lazy val cfg = CFGFactory(code, classHierarchy)
         var pc = 0
-        while (pc < max) {
+        while (pc < instructionsLength) {
             val i = instructions(pc)
-            val nextPCs = i.nextInstructions(pc, false)(this, classHierarchy)
+            val nextPCs =
+                if (i.opcode == RET.opcode)
+                    i.asInstanceOf[RET].nextInstructions(pc, () ⇒ cfg)(this)
+                else
+                    i.nextInstructions(pc, false)(this, classHierarchy)
             if (nextPCs.isEmpty) {
                 exitPCs += pc
             } else {
                 nextPCs foreach { nextPC ⇒
+                    // compute cfJoins
+                    runtimeSuccessor(nextPC)
+                    // compute predecessors
                     val predecessorPCs = allPredecessorPCs(nextPC)
                     if (predecessorPCs eq null) {
                         allPredecessorPCs(nextPC) = UShortSet(pc)
@@ -450,7 +472,8 @@ final class Code private (
             }
             pc = i.indexOfNextInstruction(pc)(this)
         }
-        (allPredecessorPCs, exitPCs)
+
+        (allPredecessorPCs, exitPCs, cfJoins)
     }
 
     def liveVariables(implicit classHierarchy: ClassHierarchy): Array[BitSet] = {
