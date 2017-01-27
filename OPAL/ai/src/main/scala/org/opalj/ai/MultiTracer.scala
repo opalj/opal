@@ -40,6 +40,10 @@ import org.opalj.br.instructions.Instruction
  */
 class MultiTracer(val tracers: AITracer*) extends AITracer {
 
+    override def initialLocals(domain: Domain)(locals: domain.Locals): Unit = {
+        tracers foreach { tracer ⇒ tracer.initialLocals(domain)(locals) }
+    }
+
     override def continuingInterpretation(
         code:   Code,
         domain: Domain

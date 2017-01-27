@@ -53,6 +53,11 @@ import org.opalj.br.instructions.Instruction
 trait AITracer {
 
     /**
+     * The set of initial locals computed when the method is interpreted for the first time.
+     */
+    def initialLocals(domain: Domain)(locals: domain.Locals): Unit
+
+    /**
      * Called immediately before the abstract interpretation of the
      * specified code is performed.
      *

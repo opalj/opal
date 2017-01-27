@@ -206,7 +206,7 @@ abstract class AI[D <: Domain] {
 
         import domain.DomainValue
 
-        someLocals.map { l ⇒
+        val locals = someLocals.map { l ⇒
             val maxLocals = method.body.get.maxLocals
 
             assert(
@@ -253,6 +253,11 @@ abstract class AI[D <: Domain] {
             }
             locals
         }
+
+        if (tracer.isDefined)
+            tracer.get.initialLocals(domain)(locals)
+
+        locals
     }
 
     /**
