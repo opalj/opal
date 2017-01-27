@@ -29,7 +29,10 @@
 package org.opalj
 package util
 
-import play.api.libs.json.{JsNumber, JsPath, Reads, Writes}
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsPath
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
 
 /**
  * Represents a time span of `n` nanoseconds.
@@ -76,8 +79,7 @@ object Nanoseconds {
         def writes(nanosecond: Nanoseconds) = JsNumber(nanosecond.timeSpan)
     }
 
-    implicit val nanosecondsReads: Reads[Nanoseconds] =
-        JsPath.read[Long].map(Nanoseconds.apply)
+    implicit val nanosecondsReads: Reads[Nanoseconds] = JsPath.read[Long].map(Nanoseconds.apply)
 
     final val None: Nanoseconds = new Nanoseconds(0L)
 

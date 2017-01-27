@@ -3,7 +3,8 @@ import sbtunidoc.Plugin.UnidocKeys.unidoc
 name := "OPAL Library"
 
 
-version 		in ThisBuild := "0.8.10-SNAPSHOT"
+//version 		in ThisBuild := "0.8.10-SNAPSHOT"
+version 		in ThisBuild := "0.8.10"
 // RELEASED version 		in ThisBuild := "0.8.9"
 organization 	in ThisBuild := "de.opal-project"
 homepage 		in ThisBuild := Some(url("http://www.opal-project.de"))
