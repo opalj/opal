@@ -454,8 +454,8 @@ final class Code private (
     }
 
     def liveVariables(implicit classHierarchy: ClassHierarchy): Array[BitSet] = {
-        val (predecessorPCs, finalPCs) = this.predecessorPCs(classHierarchy)
-        liveVariables(predecessorPCs, finalPCs)
+        val (predecessorPCs, finalPCs, cfJoins) = this.predecessorPCs(classHierarchy)
+        liveVariables(predecessorPCs, finalPCs, cfJoins)
     }
 
     /**
@@ -465,12 +465,26 @@ final class Code private (
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.
      */
-    def liveVariables(predecessorPCs: Array[PCs], finalPCs: PCs): Array[BitSet] = {
+    def liveVariables(
+        predecessorPCs: Array[PCs],
+        finalPCs:       PCs,
+        cfJoins:        BitSet
+    ): Array[BitSet] = {
         val instructions = this.instructions
         val max = instructions.length
         val liveVariables = new Array[BitSet](max)
         val workqueue = new LinkedList[PC]
         finalPCs foreach { pc ⇒ liveVariables(pc) = immutable.BitSet.empty; workqueue.add(pc) }
+        // required to handle endless loops!
+        cfJoins foreach { pc ⇒
+            val instruction = instructions(pc)
+            var liveVariableInfo = immutable.BitSet.empty
+            if (instruction.readsLocal && instruction.opcode != IINC.opcode) {
+                liveVariableInfo += instruction.indexOfReadLocal
+            }
+            liveVariables(pc) = liveVariableInfo
+            workqueue.add(pc)
+        }
         while (!workqueue.isEmpty) {
             val pc = workqueue.removeFirst()
             val instruction = instructions(pc)
