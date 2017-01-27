@@ -809,8 +809,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Size: '''Count'''
      *  - Content: '''Empty''' (i.e., default values w.r.t. to the array's component type)
      */
-    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue =
+    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)
+    }
 
     /**
      * Factory method to create a new domain value that represents a newly created

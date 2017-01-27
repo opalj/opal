@@ -32,10 +32,12 @@ package br
 import scala.annotation.tailrec
 
 import java.util.Arrays.fill
+import java.util.LinkedList
 
 import scala.collection.BitSet
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
+import scala.collection.immutable
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
@@ -75,6 +77,10 @@ final class Code private (
         with InstructionsContainer
         with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
+    /**
+     * Represents some filtered code. Primarily implicitly used when a for-comprehension
+     * is used to process the code.
+     */
     class FilteredCode( final val p: ((PC, Instruction)) ⇒ Boolean)
             extends FilterMonadic[(PC, Instruction), Nothing] {
 
@@ -110,13 +116,19 @@ final class Code private (
             }
         }
 
-        def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilterMonadic[(PC, Instruction), Nothing] =
+        def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilteredCode = {
             new FilteredCode(
                 (pcInstruction: (PC, Instruction)) ⇒ this.p(pcInstruction) && p((pcInstruction))
             )
+        }
     }
 
-    def map[B, That](f: ((PC, Instruction)) ⇒ B)(implicit bf: CanBuildFrom[Nothing, B, That]): That = {
+    def map[B, That](
+        f: ((PC, Instruction)) ⇒ B
+    )(
+        implicit
+        bf: CanBuildFrom[Nothing, B, That]
+    ): That = {
         val that = bf()
         code.foreach(that += f(_))
         that.result
@@ -140,7 +152,7 @@ final class Code private (
     override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 
     /**
-     * Returns an iterator to iterate over the program counters of the instructions
+     * Returns an iterator to iterate over the program counters (`pcs`) of the instructions
      * of this `Code` block.
      *
      * @see See the method [[foreach]] for an alternative.
@@ -182,16 +194,16 @@ final class Code private (
      * belongs to – if any. This information is required to, e.g., identify the subroutine
      * contexts that need to be reset in case of an exception in a subroutine.
      *
-     * @note Calling this method only makes sense for Java bytecode that actually contains
+     * @note   Calling this method only makes sense for Java bytecode that actually contains
      *         [[org.opalj.br.instructions.JSR]] and [[org.opalj.br.instructions.RET]]
      *         instructions.
      *
      * @return Basically a map that maps the `pc` of each instruction to the id of the
-     *      subroutine.
-     *      For each instruction (with a specific `pc`) the `pc` of the first instruction
-     *      of the subroutine it belongs to is returned. The pc 0 identifies the instruction
-     *      as belonging to the core method. The pc -1 identifies the instruction as
-     *      dead by compilation.
+     *         subroutine.
+     *         For each instruction (with a specific `pc`) the `pc` of the first instruction
+     *         of the subroutine it belongs to is returned. The pc `0` identifies the instruction
+     *         as belonging to the core method. The pc `-1` identifies the instruction as
+     *         dead by compilation.
      */
     def belongsToSubroutine(): Array[Int] = {
         val subroutineIds = new Array[Int](instructions.length)
@@ -234,11 +246,9 @@ final class Code private (
                             nextPCs.enqueue(pcOfNextInstruction(pc))
 
                         case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
-                            val sInstr = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
-                            nextPCs.enqueue(pc + sInstr.defaultOffset)
-                            sInstr.jumpOffsets foreach { jumpOffset ⇒
-                                nextPCs.enqueue(pc + jumpOffset)
-                            }
+                            val SwitchInstruction(defaultOffset, jumpOffsets) = instruction
+                            nextPCs.enqueue(pc + defaultOffset)
+                            jumpOffsets foreach { jumpOffset ⇒ nextPCs.enqueue(pc + jumpOffset) }
 
                         case _ ⇒
                             nextPCs.enqueue(pcOfNextInstruction(pc))
@@ -303,9 +313,13 @@ final class Code private (
      * }}}
      *
      * In case of exception handlers the sound overapproximation is made that
-     * all exception handlers may be reached on multiple paths.
+     * all exception handlers with a fitting type may be reached on multiple paths.
      */
-    def cfJoins: BitSet = {
+    def cfJoins(
+        implicit
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): BitSet = {
+        /* OLD - DOESN'T USE THE CLASS HIERARCHY!
         val instructions = this.instructions
         val instructionsLength = instructions.length
         val cfJoins = new mutable.BitSet(instructionsLength)
@@ -368,6 +382,46 @@ final class Code private (
             pc = nextPC
         }
         cfJoins
+        */
+        val instructions = this.instructions
+        val instructionsLength = instructions.length
+
+        val cfJoins = new mutable.BitSet(instructionsLength)
+
+        val isReached = new mutable.BitSet(instructionsLength)
+        isReached += 0 // the first instruction is always reached!
+
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            val nextPC = pcOfNextInstruction(pc)
+
+            @inline def runtimeSuccessor(pc: PC): Unit = {
+                if (isReached.contains(pc))
+                    cfJoins += pc
+                else
+                    isReached += pc
+            }
+
+            (instruction.opcode: @scala.annotation.switch) match {
+                case RET.opcode ⇒
+                // The potential path joins are determined when we process the JSR.
+
+                case JSR.opcode | JSR_W.opcode ⇒
+                    val UnconditionalBranch(branchoffset) = instruction
+                    runtimeSuccessor(pc + branchoffset)
+                    runtimeSuccessor(nextPC)
+
+                case _ ⇒
+                    val nextPCs = instruction.nextInstructions(pc)(this, classHierarchy)
+                    nextPCs.foreach(runtimeSuccessor)
+            }
+
+            pc = nextPC
+        }
+        cfJoins
+    }
+
     /**
      * @return  An array which contains for each instruction the set of all predecessors as well
      *          as the set of all instructions which have only predecessors/no successors.
@@ -399,6 +453,11 @@ final class Code private (
         (allPredecessorPCs, exitPCs)
     }
 
+    def liveVariables(implicit classHierarchy: ClassHierarchy): Array[BitSet] = {
+        val (predecessorPCs, finalPCs) = this.predecessorPCs(classHierarchy)
+        liveVariables(predecessorPCs, finalPCs)
+    }
+
     /**
      * @return  For each instruction (identified by its pc) the set of variables
      *             (register values) live (identified
@@ -406,11 +465,10 @@ final class Code private (
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.
      */
-    def liveVariables(implicit classHierarchy: ClassHierarchy): Array[BitSet] = {
+    def liveVariables(predecessorPCs: Array[PCs], finalPCs: PCs): Array[BitSet] = {
         val instructions = this.instructions
         val max = instructions.length
         val liveVariables = new Array[BitSet](max)
-        val (predecessorPCs, finalPCs) = this.predecessorPCs(classHierarchy)
         val workqueue = new LinkedList[PC]
         finalPCs foreach { pc ⇒ liveVariables(pc) = immutable.BitSet.empty; workqueue.add(pc) }
         while (!workqueue.isEmpty) {
@@ -440,7 +498,6 @@ final class Code private (
                 } else {
                     val newLiveVariableInfo = (predecessorLiveVariableInfo | liveVariableInfo)
                     if (newLiveVariableInfo != predecessorLiveVariableInfo) {
-                        println(s"Livevariableinfo at $predecessorPC: $newLiveVariableInfo")
                         liveVariables(predecessorPC) = newLiveVariableInfo
                         workqueue.add(predecessorPC)
                     }
@@ -597,7 +654,8 @@ final class Code private (
 
     /**
      * Returns a view of all handlers (exception and finally handlers) for the
-     * instruction with the given program counter (`pc`) that may catch an exception.
+     * instruction with the given program counter (`pc`) that may catch an exception; as soon
+     * as a finally handler is found no further handlers will be returned!
      *
      * In case of multiple exception handlers that are identical (in particular
      * in case of the finally handlers) only the first one is returned as that

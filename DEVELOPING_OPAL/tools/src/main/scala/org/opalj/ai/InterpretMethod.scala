@@ -30,6 +30,7 @@ package org.opalj
 package ai
 
 import java.util.Date
+import java.net.URL
 
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.{Project, SomeProject}
@@ -124,15 +125,11 @@ object InterpretMethod {
 
             scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
                 val constructor = domainClass.getConstructor(classOf[Object])
-                return constructor.newInstance(classFile)
+                return constructor.newInstance(classFile);
             }
 
             val constructor =
-                domainClass.getConstructor(
-                    classOf[Project[java.net.URL]],
-                    classOf[ClassFile],
-                    classOf[Method]
-                )
+                domainClass.getConstructor(classOf[Project[URL]], classOf[ClassFile], classOf[Method])
 
             constructor.newInstance(project, classFile, method)
         }
@@ -153,11 +150,7 @@ object InterpretMethod {
             }
 
         val classFile = {
-            val fqn =
-                if (className.contains('.'))
-                    className.replace('.', '/')
-                else
-                    className
+            val fqn = className.replace('.', '/')
             project.allClassFiles.find(_.fqn == fqn).getOrElse {
                 println(RED+"[error] Cannot find the class: "+className+"."+RESET)
                 return ;

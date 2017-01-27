@@ -1539,7 +1539,6 @@ abstract class AI[D <: Domain] {
                                         SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :&: lvIndex :&:
                                         tail)
                         } else {
-                            println("THIS PATH SHOULD NEVER BE TAKEN....IF SO - REPLACE THIS TEXT BY SOMETHING MEANINGFUL")
                             // just let's store this ret instruction
                             worklist =
                                 subroutineWorklist :&::
