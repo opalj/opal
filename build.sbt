@@ -2,8 +2,9 @@ import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 name := "OPAL Library"
 
-version 		in ThisBuild := "0.8.9"
-//version 		in ThisBuild := "0.9.0-SNAPSHOT"
+
+version 		in ThisBuild := "0.8.10-SNAPSHOT"
+// RELEASED version 		in ThisBuild := "0.8.9"
 organization 	in ThisBuild := "de.opal-project"
 homepage 		in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
