@@ -29,6 +29,8 @@
 package org.opalj
 package util
 
+import play.api.libs.json.{JsNumber, JsPath, Reads, Writes}
+
 /**
  * Represents a time span of `n` seconds.
  *
@@ -56,6 +58,14 @@ class Seconds(val timeSpan: Double) extends AnyVal with Serializable {
  * @author Michael Eichberg
  */
 object Seconds {
+    implicit val secondsWrites = new Writes[Seconds] {
+        def writes(second: Seconds) = JsNumber(second.timeSpan)
+    }
+
+    implicit val secondsReads: Reads[Seconds] =
+        JsPath.read[Double].map(Seconds.apply)
+
+    def apply(timeSpan: Double): Seconds = new Seconds(timeSpan)
 
     final val None: Seconds = new Seconds(0d)
 
