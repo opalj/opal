@@ -33,12 +33,12 @@ package l1
 
 import scala.reflect.ClassTag
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
 
 /**
  * Enables the tracking of various properties related to arrays.
@@ -68,7 +68,7 @@ trait ArrayValues
         extends l1.ReferenceValues
         with PerInstructionPostProcessing
         with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy with LogContextProvider ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with TheClassHierarchy with LogContextProvider ⇒
 
     /**
      * Determines the maximum size of those arrays for which we track the content.

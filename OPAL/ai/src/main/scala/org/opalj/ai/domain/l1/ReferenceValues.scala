@@ -58,7 +58,7 @@ import org.opalj.br.UpperTypeBound
  * @author Michael Eichberg
  */
 trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type AReferenceValue <: ReferenceValue with DomainReferenceValue
     val AReferenceValue: ClassTag[AReferenceValue]

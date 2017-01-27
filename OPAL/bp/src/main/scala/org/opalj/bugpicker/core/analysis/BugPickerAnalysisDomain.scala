@@ -145,7 +145,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
                             XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain
-                )(cfJoins, cfForks, result.operandsArray, result.localsArray),
+                )(cfJoins, result.operandsArray, result.localsArray),
                 "AIResult",
                 ".html"
             )

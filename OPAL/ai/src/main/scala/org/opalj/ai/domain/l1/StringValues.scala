@@ -47,7 +47,7 @@ trait StringValues
         with DefaultJavaObjectToDomainValueConversion
         with MethodCallsDomain
         with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
     val DomainStringValue: ClassTag[DomainStringValue]

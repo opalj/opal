@@ -295,12 +295,10 @@ object DeadEdgesAnalysis {
                         BaseAI.continueInterpretation(
                             result.code,
                             result.cfJoins,
-                            result.cfForks,
                             zDomain
                         )(
                             /*initialWorkList =*/ Chain(nextPC),
                             /*alreadyEvaluated =*/ Naught,
-                            result.remainingCFForks,
                             zOperandsArray,
                             zLocalsArray,
                             Naught, null, null // we don't care about the state of subroutines

@@ -31,6 +31,8 @@ package ai
 package domain
 package l1
 
+import scala.reflect.ClassTag
+
 import org.opalj.br.Type
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
@@ -44,7 +46,6 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
-import scala.reflect.ClassTag
 
 /**
  * Enables the tracking of concrete `Class` values.
@@ -64,7 +65,7 @@ import scala.reflect.ClassTag
  * @author Arne Lottmann
  */
 trait ClassValues extends StringValues with FieldAccessesDomain with MethodCallsDomain {
-    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
     val DomainClassValue: ClassTag[DomainClassValue]

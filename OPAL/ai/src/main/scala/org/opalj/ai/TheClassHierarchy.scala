@@ -28,10 +28,9 @@
  */
 package org.opalj
 package ai
-package domain
 
 import org.opalj.br.ReferenceType
-import org.opalj.br.{ClassHierarchy ⇒ DefaultClassHierarchy}
+import org.opalj.br.ClassHierarchy
 
 /**
  * Makes a project's class hierarchy available to a `Domain`.
@@ -41,7 +40,7 @@ import org.opalj.br.{ClassHierarchy ⇒ DefaultClassHierarchy}
  *
  * @author Michael Eichberg
  */
-trait ClassHierarchy {
+trait TheClassHierarchy {
 
     /**
      * This project's class hierarchy.
@@ -49,7 +48,7 @@ trait ClassHierarchy {
      * Usually, just a redirect to the `Project`'s class hierarchy or the
      * default class hierarchy.
      */
-    implicit def classHierarchy: DefaultClassHierarchy
+    implicit def classHierarchy: ClassHierarchy
 
     /**
      * @see [[Domain.isSubtypeOf]]

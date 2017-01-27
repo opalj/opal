@@ -49,6 +49,12 @@ trait CFGTests extends FunSpec with Matchers {
     ): Unit = {
         // validate that cfPCs returns the same information as the CFG
         val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs(classHierarchy)
+        val (allPredecessorPCs, exitPCs) = code.predecessorPCs(classHierarchy)
+
+        exitPCs foreach { pc ⇒
+            assert(cfg.bb(pc).successors.filterNot(_.isExitNode).isEmpty)
+        }
+
         cfJoins foreach { pc ⇒
             assert(
                 cfg.bb(pc).startPC == pc,
@@ -72,6 +78,7 @@ trait CFGTests extends FunSpec with Matchers {
                         cfJoins.contains(bb.startPC),
                         s"; a basic block's start PC (${bb.startPC} predecessors ${bb.predecessors}) is not a join PC"
                     )
+                    allPredecessorPCs(bb.startPC).hasMultipleElements
                 }
             }
 
@@ -84,14 +91,7 @@ trait CFGTests extends FunSpec with Matchers {
 
         }
 
-        val overapproximatedJoinPCs = (code.cfJoins /*less precise!*/ -- cfJoins)
-        val missingJoinPCs = overapproximatedJoinPCs.filter(joinPC ⇒
-            !code.exceptionHandlers.exists(_.handlerPC == joinPC))
-        if (missingJoinPCs.nonEmpty) {
-            fail(s"code's join pcs ${code.cfJoins.mkString("{", ",", "}")} "+
-                s"contains pc ${missingJoinPCs.mkString("{", ",", "}")} which are not "+
-                s"join pcs (expected:${cfJoins.mkString("{", ",", "}")}")
-        }
+        assert((code.cfJoins -- cfJoins).isEmpty)
     }
 
     def testCFGProperties(

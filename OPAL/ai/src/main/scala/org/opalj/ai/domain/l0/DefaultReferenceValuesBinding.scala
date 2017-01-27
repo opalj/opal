@@ -46,7 +46,7 @@ import org.opalj.br.ObjectType
 trait DefaultReferenceValuesBinding
         extends DefaultTypeLevelReferenceValues
         with DefaultExceptionsFactory {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type AReferenceValue = ReferenceValue
     type DomainReferenceValue = AReferenceValue

@@ -30,7 +30,6 @@ package org.opalj
 package ai
 
 import scala.collection.BitSet
-
 import org.opalj.br.instructions.Instruction
 
 /**
@@ -47,12 +46,12 @@ import org.opalj.br.instructions.Instruction
 trait TheCodeStructure { domain: ValuesDomain ⇒
 
     private[this] var theInstructions: Array[Instruction] = null
+
     private[this] var theCFJoins: BitSet = null
-    private[this] var theCFForks: BitSet = null
 
     def instructions: Array[Instruction] = theInstructions
+    /** @see [[org.opalj.br.Code.cfPCs]] */
     def cfJoins: BitSet = theCFJoins
-    def cfForks: BitSet = theCFForks
 
     /**
      * Sets the code structure.
@@ -61,12 +60,10 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
      */
     private[ai] def setCodeStructure(
         theInstructions: Array[Instruction],
-        theCFJoins:      BitSet,
-        theCFForks:      BitSet
+        theCFJoins:      BitSet
     ): Unit = {
         this.theInstructions = theInstructions
         this.theCFJoins = theCFJoins
-        this.theCFForks = theCFForks
     }
 
 }

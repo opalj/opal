@@ -31,7 +31,6 @@ package ai
 
 import scala.collection.mutable
 import scala.collection.BitSet
-import scala.collection.immutable.IntMap
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.mutable.UShortSet
@@ -63,16 +62,6 @@ sealed abstract class AIResult {
     val cfJoins: BitSet
 
     /**
-     * The instructions where the control flow forks.
-     *
-     * @see    [[org.opalj.br.Code.cfPCs]]
-     *
-     * @note   This information could be recomputed on-demand but is stored for performance
-     *         reasons.
-     */
-    val cfForks: BitSet
-
-    /**
      * The domain object that was used to perform the abstract interpretation.
      */
     val domain: Domain
@@ -87,12 +76,6 @@ sealed abstract class AIResult {
      * The list of evaluated instructions ordered by the evaluation time.
      */
     val evaluated: List[PC]
-
-    /**
-     * Lists for each instruction that may result in a fork of the control flow all
-     * instructions that may be executed next.
-     */
-    val remainingCFForks: IntMap[UShortSet]
 
     /**
      * Returns the information whether an instruction with a specific PC was evaluated
@@ -135,6 +118,9 @@ sealed abstract class AIResult {
 
     /**
      * Returns true if the instruction with the given pc was evaluated at least once.
+     *
+     * This operation is much more efficient than performing an exists check on the
+     * list of evaluated instructions!
      */
     @inline final def wasEvaluted(pc: PC): Boolean = operandsArray(pc) ne null
 
@@ -180,10 +166,10 @@ sealed abstract class AIResult {
     def stateToString: String = {
         var result = ""
         result += evaluated.mkString("Evaluated: ", ",", "\n")
-        result += (
+        result += {
             if (worklist.nonEmpty) worklist.mkString("Remaining Worklist: ", ",", "\n")
             else "Worklist: empty\n"
-        )
+        }
         if (memoryLayoutBeforeSubroutineCall.nonEmpty) {
             for ((subroutineId, operandsArray, localsArray) ← memoryLayoutBeforeSubroutineCall) {
                 result += s"Memory Layout Before Calling Subroutine $subroutineId:\n"
@@ -208,16 +194,18 @@ sealed abstract class AIAborted extends AIResult {
 
     def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
 
-    override def stateToString: String =
+    override def stateToString: String = {
         "The abstract interpretation was aborted:\n"+super.stateToString
+    }
 }
 
 object AICompleted {
 
     def unapply(
         result: AICompleted
-    ): Some[(result.domain.type, result.operandsArray.type, result.localsArray.type)] =
+    ): Some[(result.domain.type, result.operandsArray.type, result.localsArray.type)] = {
         Some((result.domain, result.operandsArray, result.localsArray))
+    }
 
 }
 
@@ -232,8 +220,9 @@ sealed abstract class AICompleted extends AIResult {
 
     def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
 
-    override def stateToString: String =
+    override def stateToString: String = {
         "The abstract interpretation succeeded:\n"+super.stateToString
+    }
 }
 
 /**
@@ -254,12 +243,10 @@ object AIResultBuilder {
     def aborted(
         theCode:    Code,
         theCFJoins: BitSet,
-        theCFForks: BitSet,
         theDomain:  Domain
     )(
         theWorklist:                         List[PC],
         theEvaluated:                        List[PC],
-        theRemainingCFForks:                 IntMap[UShortSet],
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
@@ -270,11 +257,9 @@ object AIResultBuilder {
         new AIAborted {
             val code: Code = theCode
             val cfJoins: BitSet = theCFJoins
-            val cfForks: BitSet = theCFForks
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
-            val remainingCFForks: IntMap[UShortSet] = theRemainingCFForks
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
             val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
@@ -283,14 +268,13 @@ object AIResultBuilder {
 
             def continueInterpretation(ai: AI[_ >: domain.type]): AIResult = {
                 ai.continueInterpretation(
-                    code, cfJoins, cfForks, domain
+                    code, cfJoins, domain
                 )(
-                    worklist, evaluated, remainingCFForks,
+                    worklist, evaluated,
                     operandsArray, localsArray,
                     memoryLayoutBeforeSubroutineCall, subroutinesOperandsArray, subroutinesLocalsArray
                 )
             }
-
         }
     }
 
@@ -302,22 +286,18 @@ object AIResultBuilder {
     def completed(
         theCode:    Code,
         theCFJoins: BitSet,
-        theCFForks: BitSet,
         theDomain:  Domain
     )(
-        theEvaluated:        List[PC],
-        theRemainingCFForks: IntMap[UShortSet],
-        theOperandsArray:    theDomain.OperandsArray,
-        theLocalsArray:      theDomain.LocalsArray
+        theEvaluated:     List[PC],
+        theOperandsArray: theDomain.OperandsArray,
+        theLocalsArray:   theDomain.LocalsArray
     ): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
             val code: Code = theCode
             val cfJoins = theCFJoins
-            val cfForks = theCFForks
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
-            val remainingCFForks: IntMap[UShortSet] = theRemainingCFForks
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
             val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
@@ -359,9 +339,9 @@ object AIResultBuilder {
                 }
 
                 ai.continueInterpretation(
-                    code, cfJoins, cfForks, domain
+                    code, cfJoins, domain
                 )(
-                    AI.initialWorkList, evaluated, remainingCFForks,
+                    AI.initialWorkList, evaluated,
                     operandsArray, localsArray,
                     Nil, subroutinesOperandsArray, subroutinesLocalsArray
                 )

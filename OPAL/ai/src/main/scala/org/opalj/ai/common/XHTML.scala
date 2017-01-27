@@ -97,7 +97,7 @@ object XHTML {
                     val dump =
                         XHTML.dump(
                             Some(classFile), Some(method), code, title, theDomain
-                        )(result.cfJoins, result.cfForks, operandsArray, localsArray)
+                        )(result.cfJoins, operandsArray, localsArray)
                     writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
                     Console.err.println("[info] dump suppressed: "+e.getMessage())
@@ -162,7 +162,7 @@ object XHTML {
                 <h1>{ title }</h1>,
                 annotationsAsXHTML(method),
                 scala.xml.Unparsed(resultHeader),
-                dumpAIState(code, domain)(cfJoins, cfForks, operandsArray, localsArray)
+                dumpAIState(code, domain)(cfJoins, operandsArray, localsArray)
             )
         )
     }
@@ -185,7 +185,6 @@ object XHTML {
         domain:       Domain
     )(
         cfJoins:       BitSet,
-        cfForks:       BitSet,
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     ): Node = {
@@ -211,7 +210,7 @@ object XHTML {
                 title.map(t ⇒ <h1>{ t }</h1>).getOrElse(Text("")),
                 annotations,
                 scala.xml.Unparsed(resultHeader.getOrElse("")),
-                dumpAIState(code, domain)(cfJoins, cfForks, operandsArray, localsArray)
+                dumpAIState(code, domain)(cfJoins, operandsArray, localsArray)
             )
         )
     }
@@ -221,7 +220,6 @@ object XHTML {
         domain: Domain
     )(
         cfJoins:       BitSet,
-        cfForks:       BitSet,
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     ): Node = {
@@ -280,7 +278,7 @@ object XHTML {
                             code, domain, operandsOnly
                         )(
                             cfJoins,
-                            cfForks, operandsArray, localsArray
+                            operandsArray, localsArray
                         )(Some(idsLookup))
                     }
                 </tbody>
@@ -302,7 +300,6 @@ object XHTML {
         operandsOnly: Boolean
     )(
         cfJoins:       BitSet,
-        cfForks:       BitSet,
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     )(
@@ -317,7 +314,7 @@ object XHTML {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(
-                pc, code.lineNumber(pc), instruction, cfJoins.contains(pc), cfForks.contains(pc),
+                pc, code.lineNumber(pc), instruction, cfJoins.contains(pc),
                 belongsToSubroutine(pc),
                 Some(exceptionHandlers),
                 domain,
@@ -331,7 +328,6 @@ object XHTML {
         lineNumber:        Option[Int],
         instruction:       Instruction,
         pathsJoin:         Boolean,
-        pathsFork:         Boolean,
         subroutineId:      Int,
         exceptionHandlers: Option[String],
         domain:            Domain,
@@ -346,14 +342,13 @@ object XHTML {
 
         val pcAsXHTML =
             Unparsed(
-                (if (pathsJoin) "⇉ " else "") + pc.toString + (if (pathsFork) " ⇊" else "") +
+                (if (pathsJoin) "⇉ " else "") + pc.toString +
                     exceptionHandlers.map("<br>"+_).getOrElse("") +
                     lineNumber.map("<br><i>l="+_+"</i>").getOrElse("") +
                     (if (subroutineId != 0) "<br><b>⥂="+subroutineId+"</b>" else "")
             )
 
-        val properties =
-            htmlify(domain.properties(pc, valueToString).getOrElse("<None>"))
+        val properties = htmlify(domain.properties(pc, valueToString).getOrElse("<None>"))
 
         val instructionAsXHTML =
             // to handle cases where the string contains "executable" (JavaScript) code
@@ -372,12 +367,7 @@ object XHTML {
         </tr>
     }
 
-    def dumpStack(
-        operands: Operands[_ <: AnyRef]
-    )(
-        implicit
-        ids: Option[AnyRef ⇒ Int]
-    ): Node =
+    def dumpStack(operands: Operands[_ <: AnyRef])(implicit ids: Option[AnyRef ⇒ Int]): Node = {
         if (operands eq null)
             <em>Information about operands is not available.</em>
         else {
@@ -385,13 +375,9 @@ object XHTML {
                 { operands.map(op ⇒ <li>{ valueToString(op) }</li>).toIterable }
             </ul>
         }
+    }
 
-    def dumpLocals(
-        locals: Locals[_ <: AnyRef /**/ ]
-    )(
-        implicit
-        ids: Option[AnyRef ⇒ Int]
-    ): Node = {
+    def dumpLocals(locals: Locals[_ <: AnyRef])(implicit ids: Option[AnyRef ⇒ Int]): Node = {
 
         def mapLocal(local: AnyRef): Node = {
             if (local eq null)

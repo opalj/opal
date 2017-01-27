@@ -35,13 +35,13 @@ package instructions
  *
  * @author Michael Eichberg
  */
-object SwitchInstruction{
+object SwitchInstruction {
 
     /**
      * Extracts the default offset and the jump offsets (RELATIVE - NOT ABSOLUTE!).
      */
-    def unapply(i : CompoundConditionalBranchInstruction): Some[(Int,Iterable[Int])] = {
-        Some((i.defaultOffset,i.jumpOffsets))
+    def unapply(i: CompoundConditionalBranchInstruction): Some[(Int, Iterable[Int])] = {
+        Some((i.defaultOffset, i.jumpOffsets))
     }
 
 }

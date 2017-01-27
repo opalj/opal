@@ -67,7 +67,7 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
         // successor instructions of all JSR instructions.
         var jumpTargets = Chain.empty[PC]
         code.iterate { (pc, instruction) ⇒
-            if (pc != currentPC) {
+            if (pc != currentPC) { // filter this ret!
                 instruction.opcode match {
 
                     case JSR.opcode | JSR_W.opcode ⇒

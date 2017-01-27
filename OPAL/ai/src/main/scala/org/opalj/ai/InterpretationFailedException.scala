@@ -30,8 +30,6 @@ package org.opalj
 package ai
 
 import scala.collection.BitSet
-import scala.collection.immutable.IntMap
-import org.opalj.collection.mutable.UShortSet
 import org.opalj.collection.immutable.{Chain ⇒ List}
 
 /**
@@ -54,8 +52,6 @@ sealed trait InterpretationFailedException {
     val worklist: List[PC]
     val evaluated: List[PC]
     val cfJoins: BitSet
-    val cfForks: BitSet
-    val remainingCFForkTargets: IntMap[UShortSet]
     val operandsArray: domain.OperandsArray
     val localsArray: domain.LocalsArray
     val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
@@ -75,10 +71,8 @@ object InterpretationFailedException {
         theAI:                               AI[_ >: theDomain.type],
         thePc:                               PC,
         theCFJoins:                          BitSet,
-        theCFForks:                          BitSet,
         theWorklist:                         List[PC],
         theEvaluated:                        List[PC],
-        theRemainingCFForkTargets:           IntMap[UShortSet],
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
@@ -90,11 +84,9 @@ object InterpretationFailedException {
             val domain: theDomain.type = theDomain
             val pc: PC = thePc
             val cfJoins: BitSet = theCFJoins
-            val cfForks: BitSet = theCFForks
 
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
-            val remainingCFForkTargets: IntMap[UShortSet] = theRemainingCFForkTargets
 
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray

@@ -119,5 +119,15 @@ object PrintBaseCFG {
         val cfForksInfo = cfForks.map { e ⇒ val (k, v) = e; k+" ⇒ "+v.mkString("{", ",", "}") }
         println(cfJoins.mkString("CFJoins               :", ", ", ""))
         println(cfForksInfo.mkString("CFForks               :", ", ", ""))
+
+        val (predecessorPCs, exitPCs) = code.predecessorPCs(project.classHierarchy)
+        println(predecessorPCs.zipWithIndex.map(_.swap).mkString("Predecessors:\n\t", "\n\t", "\n"))
+        println(exitPCs.mkString("ExitPCs:", ",", "\n"))
+        val liveVariables = code.liveVariables(project.classHierarchy)
+        val liveVariableInfo = liveVariables.
+            zipWithIndex.map(_.swap).filter(_._2 ne null).
+            map { e ⇒ val (pc, liveVariableInfo) = e; liveVariableInfo.mkString(pc+":{", ",", "}\n") }.
+            mkString("LiveVariables:\n\t", "\t", "")
+        println(liveVariableInfo)
     }
 }
