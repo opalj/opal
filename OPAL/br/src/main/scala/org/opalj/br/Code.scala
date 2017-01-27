@@ -368,6 +368,36 @@ final class Code private (
             pc = nextPC
         }
         cfJoins
+    /**
+     * @return  An array which contains for each instruction the set of all predecessors as well
+     *          as the set of all instructions which have only predecessors/no successors.
+     */
+    def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs) = {
+        val instructions = this.instructions
+        val max = instructions.length
+        val allPredecessorPCs = new Array[PCs](max)
+        var exitPCs = UShortSet.empty
+        allPredecessorPCs(0) = UShortSet.empty
+        var pc = 0
+        while (pc < max) {
+            val i = instructions(pc)
+            val nextPCs = i.nextInstructions(pc, false)(this, classHierarchy)
+            if (nextPCs.isEmpty) {
+                exitPCs += pc
+            } else {
+                nextPCs foreach { nextPC ⇒
+                    val predecessorPCs = allPredecessorPCs(nextPC)
+                    if (predecessorPCs eq null) {
+                        allPredecessorPCs(nextPC) = UShortSet(pc)
+                    } else {
+                        allPredecessorPCs(nextPC) = predecessorPCs + pc
+                    }
+                }
+            }
+            pc = i.indexOfNextInstruction(pc)(this)
+        }
+        (allPredecessorPCs, exitPCs)
+    }
     }
 
     /**
