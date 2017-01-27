@@ -49,6 +49,29 @@ trait ConsoleTracer extends AITracer { tracer ⇒
 
     def toStringWithOID(value: Object): String = s"$value ${oidString(value)}"
 
+    private def localsToString(domain: Domain)(locals: domain.Locals): String = {
+        if (locals eq null)
+            "\tlocals: not available (null);\n"
+        else
+            locals.zipWithIndex.map { vi ⇒
+                val (v, i) = vi
+                i+":"+(
+                    if (v == null)
+                        correctIndent("-", false)
+                    else
+                        correctIndent(v, printOIDs)
+                )
+            }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")
+    }
+
+    def initialLocals(
+        domain: Domain
+    )(
+        locals: domain.Locals
+    ): Unit = {
+        println(localsToString(domain)(locals))
+    }
+
     private def correctIndent(value: Object, printOIDs: Boolean): String = {
         if (value eq null)
             "<EMPTY>"
@@ -111,19 +134,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                     os.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n")
             }
 
-        val ls =
-            if (locals eq null)
-                "\tlocals: not available (null);\n"
-            else
-                locals.zipWithIndex.map { vi ⇒
-                    val (v, i) = vi
-                    i+":"+(
-                        if (v == null)
-                            correctIndent("-", false)
-                        else
-                            correctIndent(v, printOIDs)
-                    )
-                }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")
+        val ls = localsToString(domain)(locals)
 
         val ps = {
             val ps = domain.properties(pc)

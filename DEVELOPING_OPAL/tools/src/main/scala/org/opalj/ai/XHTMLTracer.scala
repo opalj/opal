@@ -275,6 +275,8 @@ trait XHTMLTracer extends AITracer {
 
     private var code: Code = null
 
+    override def initialLocals(domain: Domain)(locals: domain.Locals): Unit = { /*EMPTY*/ }
+
     override def continuingInterpretation(
         code:   Code,
         domain: Domain
