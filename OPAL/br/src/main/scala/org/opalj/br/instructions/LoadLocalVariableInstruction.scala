@@ -52,7 +52,7 @@ abstract class LoadLocalVariableInstruction extends Instruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
-    final def nextInstructions(
+    final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
