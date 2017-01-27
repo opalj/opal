@@ -81,4 +81,27 @@ public class MethodsWithLoops {
             System.out.println(System.nanoTime());
         }
     }
+
+    public static void eventuallyEndless() {
+        singleStepLoop();
+        for (int i = 0; i > -10; i--) {
+            System.out.println(i);
+        }
+        // the loop...
+        while (true) {
+            long t = System.nanoTime();
+            if (t % 333 == 0)
+                System.out.println(System.nanoTime());
+        }
+    }
+
+    public static void conditionallyEndless() {
+        // the method may return normally or run forever ...
+        if (System.nanoTime() > 10000333222l)
+            while (true) {
+                long t = System.nanoTime();
+                if (t % 333 == 0)
+                    System.out.println(System.nanoTime());
+            }
+    }
 }
