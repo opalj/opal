@@ -31,6 +31,7 @@ package br
 package instructions
 
 import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.Chain
 
 /**
@@ -57,11 +58,10 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): Chain[PC] = {
-        // the fallback is only used if we have multiple return instructions
-        def fallback() = {
-            val cfg = CFGFactory(code, classHierarchy)
-            Chain(cfg.successors(currentPC).toSeq: _*)
-        }
+        nextInstructions(currentPC, () ⇒ CFGFactory(code, classHierarchy))
+    }
+
+    final def nextInstructions(currentPC: PC, cfg: () ⇒ CFG)(implicit code: Code): Chain[PC] = {
 
         // If we have just one subroutine it is sufficient to collect the
         // successor instructions of all JSR instructions.
@@ -75,7 +75,7 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
 
                     case RET.opcode ⇒
                         // we have found another RET ... hence, we have at least two subroutines
-                        return fallback();
+                        return Chain(cfg().successors(currentPC).toSeq: _*);
 
                     case _ ⇒
                     // we don't care
