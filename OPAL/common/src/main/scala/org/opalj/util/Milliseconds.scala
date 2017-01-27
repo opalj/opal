@@ -29,6 +29,8 @@
 package org.opalj
 package util
 
+import play.api.libs.json.{JsNumber, JsPath, Reads, Writes}
+
 /**
  * Represents a time span of `n` milliseconds.
  *
@@ -68,8 +70,16 @@ class Milliseconds(val timeSpan: Long) extends AnyVal with Serializable {
  * @author Michael Eichberg
  */
 object Milliseconds {
+    implicit val millisecondsWrites = new Writes[Milliseconds] {
+        def writes(millisecond: Milliseconds) = JsNumber(millisecond.timeSpan)
+    }
+
+    implicit val nanosecondsReads: Reads[Milliseconds] =
+        JsPath.read[Long].map(Milliseconds.apply)
 
     final val None: Milliseconds = new Milliseconds(0L)
+
+    def apply(timeSpan: Long): Milliseconds = new Milliseconds(timeSpan)
 
     /**
      * Converts the specified time span and converts it into milliseconds.
