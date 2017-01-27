@@ -44,7 +44,7 @@ import org.opalj.br.UpperTypeBound
  * @author Michael Eichberg
  */
 trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExceptionsFactory {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     // Let's fix the type hierarchy
 

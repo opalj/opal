@@ -32,11 +32,11 @@ package domain
 package l0
 
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet0
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.collection.immutable.UIDSet0
 
 /**
  * Default implementation for handling reference values.
@@ -46,7 +46,7 @@ import org.opalj.collection.immutable.UIDSet0
 trait DefaultTypeLevelReferenceValues
         extends DefaultDomainValueBinding
         with TypeLevelReferenceValues {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     // -----------------------------------------------------------------------------------
     //

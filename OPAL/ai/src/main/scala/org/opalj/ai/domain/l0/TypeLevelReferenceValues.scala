@@ -66,7 +66,7 @@ import org.opalj.br.UpperTypeBound
  * @author Michael Eichberg
  */
 trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObject {
-    domain: IntegerValuesDomain with Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with Configuration with TheClassHierarchy ⇒
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures

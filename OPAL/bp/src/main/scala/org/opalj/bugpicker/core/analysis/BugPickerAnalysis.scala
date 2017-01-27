@@ -340,7 +340,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                     XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                             ),
                             domain
-                        )(cfJoins, cfForks, result.operandsArray, result.localsArray),
+                        )(cfJoins, result.operandsArray, result.localsArray),
                         "AIResult",
                         ".html"
                     )

@@ -64,7 +64,7 @@ import java.lang.{StringBuilder ⇒ JStringBuilder}
  * @author Michael Eichberg
  */
 trait StringBuilderValues extends StringValues {
-    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory with ClassHierarchy ⇒
+    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory with TheClassHierarchy ⇒
 
     import StringBuilderValues._
 
@@ -146,7 +146,7 @@ trait StringBuilderValues extends StringValues {
         override def hashCode: Int = super.hashCode * 71 + value.hashCode()
 
         override def toString(): String = {
-            s"""${this.builderType.toString()}(origin=$origin;builder="$builder";t=$t)"""
+            s"""${this.builderType.toJava}(origin=$origin;builder="$builder";t=$t)"""
         }
 
     }

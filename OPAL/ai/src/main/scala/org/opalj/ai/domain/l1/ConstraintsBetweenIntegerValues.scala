@@ -65,10 +65,9 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],
-        theCFJoins:      BitSet,
-        theCFForks:      BitSet
+        theCFJoins:      BitSet
     ): Unit = {
-        super.setCodeStructure(theInstructions, theCFJoins, theCFForks)
+        super.setCodeStructure(theInstructions, theCFJoins)
 
         constraints = new Array[ConstraintsStore](theInstructions.size)
     }
