@@ -75,8 +75,8 @@ class CodePropertiesTest extends FunSuite {
             val specifiedMaxLocals = code.maxLocals
 
             try {
-                val liveVariables =                 code.liveVariables(ch)
-                assert(code.programCounters.forall(pc => liveVariables(pc) ne null))
+                val liveVariables = code.liveVariables(ch)
+                assert(code.programCounters.forall(pc ⇒ liveVariables(pc) ne null))
 
                 val computedMaxLocals = Code.computeMaxLocalsRequiredByCode(instructions)
                 if (computedMaxLocals > specifiedMaxLocals) {
