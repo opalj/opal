@@ -49,7 +49,9 @@ trait CFGTests extends FunSpec with Matchers {
     ): Unit = {
         // validate that cfPCs returns the same information as the CFG
         val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs(classHierarchy)
-        val (allPredecessorPCs, exitPCs) = code.predecessorPCs(classHierarchy)
+        val (allPredecessorPCs, exitPCs, cfJoinsAlt) = code.predecessorPCs(classHierarchy)
+
+        assert(cfJoins == cfJoinsAlt)
 
         exitPCs foreach { pc ⇒
             assert(cfg.bb(pc).successors.filterNot(_.isExitNode).isEmpty)
