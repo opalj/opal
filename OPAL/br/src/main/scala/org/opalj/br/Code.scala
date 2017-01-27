@@ -398,6 +398,56 @@ final class Code private (
         }
         (allPredecessorPCs, exitPCs)
     }
+
+    /**
+     * @return  For each instruction (identified by its pc) the set of variables
+     *             (register values) live (identified
+     *          by their index.) I.e., if you need to know if the variable with the index 5 is
+     *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
+     *          set stored at index 37 contains the value 5.
+     */
+    def liveVariables(implicit classHierarchy: ClassHierarchy): Array[BitSet] = {
+        val instructions = this.instructions
+        val max = instructions.length
+        val liveVariables = new Array[BitSet](max)
+        val (predecessorPCs, finalPCs) = this.predecessorPCs(classHierarchy)
+        val workqueue = new LinkedList[PC]
+        finalPCs foreach { pc ⇒ liveVariables(pc) = immutable.BitSet.empty; workqueue.add(pc) }
+        while (!workqueue.isEmpty) {
+            val pc = workqueue.removeFirst()
+            val instruction = instructions(pc)
+            var liveVariableInfo = liveVariables(pc)
+            if (instruction.opcode != IINC.opcode) {
+                if (instruction.readsLocal) {
+                    val lvIndex = instruction.indexOfReadLocal
+                    if (!liveVariableInfo.contains(lvIndex)) {
+                        liveVariableInfo += lvIndex
+                        liveVariables(pc) = liveVariableInfo
+                    }
+                } else if (instruction.writesLocal) {
+                    val lvIndex = instruction.indexOfWrittenLocal
+                    if (liveVariableInfo.contains(lvIndex)) {
+                        liveVariableInfo -= lvIndex
+                        liveVariables(pc) = liveVariableInfo
+                    }
+                }
+            }
+            predecessorPCs(pc) foreach { predecessorPC ⇒
+                val predecessorLiveVariableInfo = liveVariables(predecessorPC)
+                if (predecessorLiveVariableInfo eq null) {
+                    liveVariables(predecessorPC) = liveVariableInfo
+                    workqueue.add(predecessorPC)
+                } else {
+                    val newLiveVariableInfo = (predecessorLiveVariableInfo | liveVariableInfo)
+                    if (newLiveVariableInfo != predecessorLiveVariableInfo) {
+                        println(s"Livevariableinfo at $predecessorPC: $newLiveVariableInfo")
+                        liveVariables(predecessorPC) = newLiveVariableInfo
+                        workqueue.add(predecessorPC)
+                    }
+                }
+            }
+        }
+        liveVariables
     }
 
     /**
