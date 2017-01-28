@@ -30,6 +30,7 @@ package org.opalj
 
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
+import scala.collection.BitSet
 
 import scala.xml.Node
 import scala.xml.Text
@@ -84,6 +85,8 @@ package object br {
         if (checkAssert && !assertion)
             throw new java.lang.AssertionError("assertion failed: "+message)
     }
+
+    type LiveVariables = Array[BitSet]
 
     type Attributes = Seq[Attribute]
 
