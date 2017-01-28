@@ -476,15 +476,17 @@ final class Code private (
         (allPredecessorPCs, exitPCs, cfJoins)
     }
 
-    def liveVariables(implicit classHierarchy: ClassHierarchy): Array[BitSet] = {
+    def liveVariables(implicit classHierarchy: ClassHierarchy): LiveVariables = {
         val (predecessorPCs, finalPCs, cfJoins) = this.predecessorPCs(classHierarchy)
         liveVariables(predecessorPCs, finalPCs, cfJoins)
     }
 
     /**
-     * @return  For each instruction (identified by its pc) the set of variables
-     *             (register values) live (identified
-     *          by their index.) I.e., if you need to know if the variable with the index 5 is
+     * Performs a live variable analysis restricted to a method's locals©.
+     *
+     * @return  For each instruction (identified by its pc) the set of variables (register values)
+     *          which are live (identified by their index.) is determined.
+     *          I.e., if you need to know if the variable with the index 5 is
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.
      */
@@ -492,7 +494,7 @@ final class Code private (
         predecessorPCs: Array[PCs],
         finalPCs:       PCs,
         cfJoins:        BitSet
-    ): Array[BitSet] = {
+    ): LiveVariables = {
         val instructions = this.instructions
         val max = instructions.length
         val liveVariables = new Array[BitSet](max)
