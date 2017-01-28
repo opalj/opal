@@ -529,16 +529,29 @@ final class Code private (
                     }
                 }
             }
-            predecessorPCs(pc) foreach { predecessorPC ⇒
-                val predecessorLiveVariableInfo = liveVariables(predecessorPC)
-                if (predecessorLiveVariableInfo eq null) {
-                    liveVariables(predecessorPC) = liveVariableInfo
-                    workqueue.add(predecessorPC)
-                } else {
-                    val newLiveVariableInfo = (predecessorLiveVariableInfo | liveVariableInfo)
-                    if (newLiveVariableInfo != predecessorLiveVariableInfo) {
-                        liveVariables(predecessorPC) = newLiveVariableInfo
+            val thePCPredecessorPCs = predecessorPCs(pc)
+            // if the code contains some "trivially" dead code as, e.g., shown next:
+            // com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary (JDK8u92)
+            // PC	Line  Instruction
+            // 0	1363  aload_0
+            // 1	|	  checkcast com.sun.org.apache.xalan.internal.xsltc.DOM
+            // 4	|	  areturn
+            // 5	1365  astore_1	// ... exception handler for irrelevant exception...
+            // ...
+            // 23	|	areturn
+            // predecessorPCs(pc) will be null!
+            if (thePCPredecessorPCs ne null) {
+                thePCPredecessorPCs foreach { predecessorPC ⇒
+                    val predecessorLiveVariableInfo = liveVariables(predecessorPC)
+                    if (predecessorLiveVariableInfo eq null) {
+                        liveVariables(predecessorPC) = liveVariableInfo
                         workqueue.add(predecessorPC)
+                    } else {
+                        val newLiveVariableInfo = (predecessorLiveVariableInfo | liveVariableInfo)
+                        if (newLiveVariableInfo != predecessorLiveVariableInfo) {
+                            liveVariables(predecessorPC) = newLiveVariableInfo
+                            workqueue.add(predecessorPC)
+                        }
                     }
                 }
             }
