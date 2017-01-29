@@ -35,6 +35,7 @@ import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.Code
+import org.opalj.br.LiveVariables
 
 /**
  * Encapsulates the ''result'' of the abstract interpretation of a method. If
@@ -60,6 +61,11 @@ sealed abstract class AIResult {
      *         reasons.
      */
     val cfJoins: BitSet
+
+    /**
+     * The set of statically known live Variables.
+     */
+    val liveVariables: LiveVariables
 
     /**
      * The domain object that was used to perform the abstract interpretation.
@@ -241,9 +247,10 @@ object AIResultBuilder {
      * computation.
      */
     def aborted(
-        theCode:    Code,
-        theCFJoins: BitSet,
-        theDomain:  Domain
+        theCode:          Code,
+        theCFJoins:       BitSet,
+        theLiveVariables: LiveVariables,
+        theDomain:        Domain
     )(
         theWorklist:                         List[PC],
         theEvaluated:                        List[PC],
@@ -257,6 +264,7 @@ object AIResultBuilder {
         new AIAborted {
             val code: Code = theCode
             val cfJoins: BitSet = theCFJoins
+            val liveVariables: LiveVariables = theLiveVariables
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
@@ -268,7 +276,7 @@ object AIResultBuilder {
 
             def continueInterpretation(ai: AI[_ >: domain.type]): AIResult = {
                 ai.continueInterpretation(
-                    code, cfJoins, domain
+                    code, cfJoins, liveVariables, domain
                 )(
                     worklist, evaluated,
                     operandsArray, localsArray,
@@ -284,9 +292,10 @@ object AIResultBuilder {
      * ''completed'' is depending on the used domain.
      */
     def completed(
-        theCode:    Code,
-        theCFJoins: BitSet,
-        theDomain:  Domain
+        theCode:          Code,
+        theCFJoins:       BitSet,
+        theLiveVariables: LiveVariables,
+        theDomain:        Domain
     )(
         theEvaluated:     List[PC],
         theOperandsArray: theDomain.OperandsArray,
@@ -295,7 +304,8 @@ object AIResultBuilder {
 
         new AICompleted {
             val code: Code = theCode
-            val cfJoins = theCFJoins
+            val cfJoins: BitSet = theCFJoins
+            val liveVariables: LiveVariables = theLiveVariables
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
@@ -339,7 +349,7 @@ object AIResultBuilder {
                 }
 
                 ai.continueInterpretation(
-                    code, cfJoins, domain
+                    code, cfJoins, liveVariables, domain
                 )(
                     AI.initialWorkList, evaluated,
                     operandsArray, localsArray,
