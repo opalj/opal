@@ -37,6 +37,7 @@ import scala.collection.BitSet
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.LiveVariables
 import org.opalj.constraints.NumericConstraints
 
 /**
@@ -65,9 +66,10 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],
-        theCFJoins:      BitSet
+        theCFJoins:      BitSet,
+        liveVariables:   LiveVariables
     ): Unit = {
-        super.setCodeStructure(theInstructions, theCFJoins)
+        super.setCodeStructure(theInstructions, theCFJoins, liveVariables)
 
         constraints = new Array[ConstraintsStore](theInstructions.size)
     }
