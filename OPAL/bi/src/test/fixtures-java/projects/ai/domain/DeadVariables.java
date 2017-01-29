@@ -42,12 +42,107 @@ public class DeadVariables {
     };
 
     public void processIt(Object o) {
-        /* EMPTY */}
+        /* EMPTY */
+    }
+
+    public Object transformIt(Object o) {
+        return o;
+    }
 
     Object someFieldA = null;
     Object someFieldB = null;
 
     private int someInt = (int) (Math.random() * 100.0d);
+
+    // The following example required live variable analysis to determine that the
+    // (swallowed) exception is dead.
+    public Object java_lang_System_newPrintStream_inspired(Object enc) {
+        /*
+        1142    private static PrintStream More ...newPrintStream(FileOutputStream fos, String enc) {
+        1143       if (enc != null) {
+        1144            try {
+        1145                return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
+        1146            } catch (UnsupportedEncodingException uee) {}
+        1147        }
+        1148        return new PrintStream(new BufferedOutputStream(fos, 128), true);
+        1149    }
+        */
+       if (enc != null) {
+            try {
+                return transformIt(transformIt(enc));
+            } catch (RuntimeException re) {}
+        }
+        return "";
+    }
+
+    public Object initialValusIsAlwaysDead(int i) {
+        if (i < 1 || i > 10) return null;
+        // ... i is now positive
+        Object o = null;
+        do {
+            if(i % 2 == 0)
+                o = "a";
+            else
+                o = "b";
+            i += 1;
+        } while(i < 100 );
+
+        return o;
+    }
+
+    public Object simplyDead(Object o) {
+        Object v = o;
+        if(System.nanoTime() == 2424124234l) {
+            v = "also updated";
+        } else {
+            if (v.hashCode() == 101212) {
+                System.out.println(v);
+            } else {
+                v = "updated";
+                System.out.println(v);
+            }
+        }
+        return null;
+    }
+
+    public StringBuilder lastStringBuilder(Object o) {
+        StringBuilder s = null;
+        for(int i = 1; i< 2 ; i++){
+            s = new StringBuilder();
+            s.append(i);
+            System.out.println(s.toString());
+        }
+        return s;
+    }
+
+
+    public int lastPrimitiveValue(Object o) {
+        int s = o.hashCode();
+        for(int i = 1; i< 2 ; i++){
+            s = 100;
+        }
+        return s;
+    }
+
+
+    public Object deadAtEnd() {
+        Object o = "";
+        Object z = null;
+        for(int i = 0; i < 2 ; i++) {
+            z = null;
+            try {
+                System.out.println(i);
+            } catch (NullPointerException  e) {
+                z = e;
+            } catch (IllegalStateException  e) {
+                z = e;
+            }
+            System.out.println(z);
+        }
+
+        return o;
+    }
+
 
     public Object deadOnTrueBranch(Object o) {
         Object v = o;
