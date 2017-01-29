@@ -113,6 +113,27 @@ import org.opalj.br.instructions._
  *         about 4,5%. Additionally, it also reduces the effort spent on "expensive" joins which
  *         leads to an overall(!) improvement for the l1.DefaultDomain of ~8,5%.
  *
+ *         ==Dead Variables Elimination based on Definitive Paths==
+ *         (STILL IN DESIGN!!!!)
+ *         ===Idea===
+ *         Given an instruction i which may result in a fork of the control-flow (e.g.,
+ *         a conditional branch or an invoke instruction that may throw a catched exception).
+ *         If the (frist) evaluation of i definitively rules out several possible paths and - on
+ *         all paths that are taken - some values are dead, but live on some of the other paths,
+ *         then the respectively current values will never be propagated to the remaining paths,
+ *         even if the remaining paths are eventually taken!
+ *         This helps in variety of cases such as, e.g.,
+ *         {{{
+ *         var s : Object = null
+ *         for{/* it can statically be determined that this path is taken at least once!*/} {
+ *             s = "something else"
+ *         }
+ *         doIt(s); // here, "s" is guaranteed not to reference the orignal value "null"!
+ *         }}}
+ *         ===Implementation===
+ *         When we have a fork, check if all paths...
+ *
+ *
  * ==Customizing the Abstract Interpretation Framework==
  * Customization of the abstract interpreter is done by creating new subclasses that
  * override the relevant methods (in particular: [[AI#isInterrupted]] and [[AI#tracer]]).
@@ -1164,12 +1185,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                     domainTest(pc, operand) match {
                         case Yes ⇒
+                            // [DEFINITIVE PATH] if (worklist.isEmpty && liveVariables(branchTargetPC) != liveVariables(nextPC)) println("definitive path if...")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 branchTargetPC, isExceptionalControlFlow = false,
                                 rest, locals
                             )
                         case No ⇒
+                            // [DEFINITIVE PATH] if (worklist.isEmpty && liveVariables(branchTargetPC) != liveVariables(nextPC)) println("definitive path if...")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 nextPC, isExceptionalControlFlow = false,
@@ -1230,12 +1253,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val testResult = domainTest(pc, left, right)
                     testResult match {
                         case Yes ⇒
+                            // [DEFINITIVE PATH] if (worklist.isEmpty && liveVariables(branchTargetPC) != liveVariables(nextPC)) println("definitive path ifcmp...")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 branchTargetPC, isExceptionalControlFlow = false,
                                 rest, locals
                             )
                         case No ⇒
+                            // [DEFINITIVE PATH] if (worklist.isEmpty && liveVariables(branchTargetPC) != liveVariables(nextPC)) println("definitive path ifcmp...")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 nextPC, isExceptionalControlFlow = false,
