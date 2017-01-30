@@ -505,6 +505,9 @@ final class Code private (
             val instruction = instructions(pc)
             var liveVariableInfo = immutable.BitSet.empty
             if (instruction.readsLocal && instruction.opcode != IINC.opcode) {
+                // This instruction is by construction "not a final instruction" 
+                // because these instruction never throw any(!) exceptions and
+                // are also never "return" instructions.
                 liveVariableInfo += instruction.indexOfReadLocal
             }
             liveVariables(pc) = liveVariableInfo
