@@ -3,7 +3,7 @@ import sbtunidoc.Plugin.UnidocKeys.unidoc
 name := "OPAL Library"
 
 version 		in ThisBuild := "0.9.0-SNAPSHOT"
-//version 		in ThisBuild := "0.8.10-SNAPSHOT"
+// NEXT version 		in ThisBuild := "0.8.11"
 // RELEASED version 		in ThisBuild := "0.8.10"
 // RELEASED version 		in ThisBuild := "0.8.9"
 organization 	in ThisBuild := "de.opal-project"
