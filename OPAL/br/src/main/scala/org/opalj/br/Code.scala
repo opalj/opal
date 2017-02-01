@@ -174,12 +174,9 @@ final class Code private (
         }
 
     /**
-     * Counts the number of instructions. This operation has complexity O(n).
-     *
-     * The number of instructions is always smaller or equal to the size of the code
-     * array.
-     *
-     * @note The result is not cached and recalculated on-demand.
+     * Computes the number of instructions.
+     * @note The number of instructions is always smaller or equal to the size of the code array.
+     * @note This operation has complexity O(n).
      */
     def instructionsCount: Int = {
         var c = 0
@@ -404,11 +401,10 @@ final class Code private (
             }
 
             (instruction.opcode: @switch) match {
-                case RET.opcode ⇒
-                // The potential path joins are determined when we process the JSR.
+                case RET.opcode ⇒ // potential path joins are determined when we process jsrs
 
                 case JSR.opcode | JSR_W.opcode ⇒
-                    val UnconditionalBranch(branchoffset) = instruction
+                    val UnconditionalBranchInstruction(branchoffset) = instruction
                     runtimeSuccessor(pc + branchoffset)
                     runtimeSuccessor(nextPC)
 
