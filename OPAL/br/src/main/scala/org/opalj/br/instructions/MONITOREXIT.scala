@@ -55,7 +55,7 @@ case object MONITOREXIT extends SynchronizationInstruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

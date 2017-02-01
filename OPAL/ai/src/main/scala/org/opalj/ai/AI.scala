@@ -387,7 +387,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 case domainWithClassHierarchy: TheClassHierarchy ⇒
                     domainWithClassHierarchy.classHierarchy
                 case _ ⇒
-                    Code.preDefinedClassHierarchy
+                    Code.BasicClassHierarchy
             }
         val (predecessorPCs, finalPCs, cfJoins) = code.predecessorPCs(classHierarchy)
         val liveVariables = code.liveVariables(predecessorPCs, finalPCs, cfJoins)

@@ -61,7 +61,7 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly) {
             Chain.singleton(indexOfNextInstruction(currentPC))

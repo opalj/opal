@@ -78,6 +78,8 @@ final class Code private (
         with InstructionsContainer
         with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
+    import Code.BasicClassHierarchy
+
     /**
      * Represents some filtered code. Primarily implicitly used when a for-comprehension
      * is used to process the code.
@@ -316,10 +318,7 @@ final class Code private (
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers with a fitting type may be reached on multiple paths.
      */
-    def cfJoins(
-        implicit
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): BitSet = {
+    def cfJoins(implicit classHierarchy: ClassHierarchy = BasicClassHierarchy): BitSet = {
         /* OLD - DOESN'T USE THE CLASS HIERARCHY!
         val instructions = this.instructions
         val instructionsLength = instructions.length
@@ -587,7 +586,7 @@ final class Code private (
      */
     def cfPCs(
         implicit
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = BasicClassHierarchy
     ): (BitSet /*joins*/ , BitSet /*forks*/ , IntMap[UShortSet] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
@@ -640,8 +639,7 @@ final class Code private (
     }
 
     /**
-     * Iterates over all instructions and calls the given function `f`
-     * for every instruction.
+     * Iterates over all instructions and calls the given function `f` for every instruction.
      */
     @inline final def iterate[U](f: (PC, Instruction) ⇒ U): Unit = {
         val instructionsLength = instructions.length
@@ -715,8 +713,7 @@ final class Code private (
      * In case of multiple exception handlers that are identical (in particular
      * in case of the finally handlers) only the first one is returned as that
      * one is the one that will be used by the JVM at runtime.
-     * In case of identical caught exceptions only the
-     * first of them will be returned. No further checks (w.r.t. the type hierarchy) are done.
+     * No further checks (w.r.t. the type hierarchy) are done.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
@@ -773,7 +770,7 @@ final class Code private (
         exception: ObjectType
     )(
         implicit
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[ExceptionHandler] = {
         import classHierarchy.isSubtypeOf
 
@@ -850,10 +847,10 @@ final class Code private (
      * Returns the program counter of the next instruction after the instruction with
      * the given counter (`currentPC`).
      *
-     * @param currentPC The program counter of an instruction. If `currentPC` is the
-     *      program counter of the last instruction of the code block then the returned
-     *      program counter will be equivalent to the length of the Code/Instructions
-     *      array.
+     * @param  currentPC The program counter of an instruction. If `currentPC` is the
+     *         program counter of the last instruction of the code block then the returned
+     *         program counter will be equivalent to the length of the Code/Instructions
+     *         array.
      */
     @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         instructions(currentPC).indexOfNextInstruction(currentPC)(this)
@@ -935,10 +932,10 @@ final class Code private (
     /**
      * Collects all local variable tables.
      *
-     * @note A code attribute is allowed to have multiple local variable tables. However, all
-     *      tables are merged into one by OPAL at class loading time.
+     * @note   A code attribute is allowed to have multiple local variable tables. However, all
+     *         tables are merged into one by OPAL at class loading time.
      *
-     * @note Depending on the configuration of the reader for `ClassFile`s this
+     * @note   Depending on the configuration of the reader for `ClassFile`s this
      *         attribute may not be reified.
      */
     def localVariableTable: Option[LocalVariables] = {
@@ -946,10 +943,10 @@ final class Code private (
     }
 
     /**
-     * Returns the set of local variables defined at the given pc.
+     * Returns the set of local variables defined at the given pc base on debug information.
      *
      * @return A mapping of the index to the name of the local variable. The map is
-     *      empty if no debug information is available.
+     *         empty if no debug information is available.
      */
     def localVariablesAt(pc: PC): Map[Int, LocalVariable] = {
         localVariableTable match {
@@ -1623,7 +1620,7 @@ object Code {
      * Used to determine the potential handlers in case that an exception is
      * thrown by an instruction.
      */
-    val preDefinedClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
+    val BasicClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
 
     /**
      * The maximum number of registers required to execute the code - independent
@@ -1667,8 +1664,7 @@ object Code {
     }
 
     /**
-     * Calculates the maximum stack size required during execution of this code
-     * block.
+     * Computes the maximum stack size required during execution of this code block.
      *
      * @throws java.lang.ClassFormatError If the stack size differs between execution paths.
      */
@@ -1681,7 +1677,7 @@ object Code {
         val tempCode = Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers)
         val cfg = CFGFactory(tempCode, classHierarchy)
 
-        // Basic ides: follow all paths
+        // Basic idea: follow all paths
         var maxStackDepth: Int = 0;
 
         var paths: Chain[(PC, Int /*stackdepth before executing the instruction with pc*/ )] = Naught
@@ -1692,7 +1688,7 @@ object Code {
         visitedPCs += 0
 
         // We have to make sure, that all exception handlers are evaluated for
-        // max_stack, if an exception is catched, the stack size is always 1 -
+        // max_stack, if an exception is caught, the stack size is always 1 -
         // containing the exception itself.
         for (exceptionHandler ← exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC

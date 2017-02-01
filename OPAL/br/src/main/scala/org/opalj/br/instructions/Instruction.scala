@@ -63,7 +63,7 @@ trait Instruction extends InstructionLike {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC]
 }
 
@@ -103,7 +103,7 @@ object Instruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         var pcs = Chain.singleton(instruction.indexOfNextInstruction(currentPC))
         exceptions foreach { exception ⇒
@@ -119,7 +119,7 @@ object Instruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
         nextInstruction :&: (code.handlersForException(currentPC, exception).map(_.handlerPC))
