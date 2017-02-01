@@ -80,6 +80,9 @@ final class IntQueue private (
     def dequeue: Int = {
         val value = first.value
         first = first.next
+        if (first eq null) {
+            last = null
+        }
         value
     }
 
