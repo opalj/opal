@@ -2,7 +2,7 @@
 
 ##Upcomming
  - the AI now prevents simple, unnecessary joins if a variable is known to be dead when multiple control flow paths join
- - added a simple live variables analysis (`br.Code.liveVariables`) which computes the information for a code's locals (operand stack values are not considered because standard compiler generally don't create "dead operands" and the intended usage are performance and precision improvements)
+ - `br.Code.liveVariables`: added a simple live variables analysis which computes liveness information for a code's locals (operand stack values are not considered because standard compiler generally don't create "dead operands" and the intended usage are performance and precision improvements)
  
 ##0.8.10
  - added support for the JSON Serialization of Milliseconds, Nanoseconds and Seconds
