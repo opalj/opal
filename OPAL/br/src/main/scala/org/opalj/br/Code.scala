@@ -33,15 +33,16 @@ import scala.annotation.tailrec
 import scala.annotation.switch
 
 import java.util.Arrays.fill
-import java.util.LinkedList
 
 import scala.collection.BitSet
-import scala.collection.immutable.IntMap
+
 import scala.collection.mutable
 import scala.collection.immutable
+import scala.collection.immutable.IntMap
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
+import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.mutable.UShortSet
@@ -209,11 +210,11 @@ final class Code private (
         val subroutineIds = new Array[Int](instructions.length)
         fill(subroutineIds, -1) // <= initially all instructions belong to "no routine"
 
-        val nextSubroutines = mutable.Queue[PC](0)
+        val nextSubroutines = new IntQueue(0)
 
         def propagate(subroutineId: Int, subroutinePC: PC): Unit = {
 
-            val nextPCs = mutable.Queue[PC](subroutinePC)
+            val nextPCs = new IntQueue(subroutinePC)
             while (nextPCs.nonEmpty) {
                 val pc = nextPCs.dequeue
                 if (subroutineIds(pc) == -1) {
@@ -222,27 +223,27 @@ final class Code private (
 
                     (instruction.opcode: @switch) match {
                         case ATHROW.opcode                                    ⇒
-                        /*Nothing do to. (Will be handled when we deal with exceptions)*/
+                        /* Nothing do to; will be handled when we deal with exceptions. */
 
                         case /* xReturn: */ 176 | 175 | 174 | 172 | 173 | 177 ⇒
-                        /*Nothing to do. (no successor!)*/
+                        /* Nothing to do; there are no successor! */
 
                         case RET.opcode                                       ⇒
                         /*Nothing to do; handled by JSR*/
                         case JSR.opcode | JSR_W.opcode ⇒
-                            val jsrInstr = instruction.asInstanceOf[JSRInstruction]
-                            nextSubroutines.enqueue(pc + jsrInstr.branchoffset)
+                            val UnconditionalBranchInstruction(branchoffset) = instruction
+                            nextSubroutines.enqueue(pc + branchoffset)
                             nextPCs.enqueue(pcOfNextInstruction(pc))
 
                         case GOTO.opcode | GOTO_W.opcode ⇒
-                            val bInstr = instruction.asInstanceOf[UnconditionalBranchInstruction]
-                            nextPCs.enqueue(pc + bInstr.branchoffset)
+                            val UnconditionalBranchInstruction(branchoffset) = instruction
+                            nextPCs.enqueue(pc + branchoffset)
 
                         case /*IFs:*/ 165 | 166 | 198 | 199 |
                             159 | 160 | 161 | 162 | 163 | 164 |
                             153 | 154 | 155 | 156 | 157 | 158 ⇒
-                            val bInstr = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
-                            nextPCs.enqueue(pc + bInstr.branchoffset)
+                            val SimpleConditionalBranchInstruction(branchoffset) = instruction
+                            nextPCs.enqueue(pc + branchoffset)
                             nextPCs.enqueue(pcOfNextInstruction(pc))
 
                         case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
@@ -482,7 +483,9 @@ final class Code private (
     }
 
     /**
-     * Performs a live variable analysis restricted to a method's locals©.
+     * Performs a live variable analysis restricted to a method's locals.
+     *
+     * @note    An IINC instruction does not change live variable information.
      *
      * @return  For each instruction (identified by its pc) the set of variables (register values)
      *          which are live (identified by their index.) is determined.
@@ -490,31 +493,28 @@ final class Code private (
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.
      */
-    def liveVariables(
-        predecessorPCs: Array[PCs],
-        finalPCs:       PCs,
-        cfJoins:        BitSet
-    ): LiveVariables = {
+    def liveVariables(predecessorPCs: Array[PCs], finalPCs: PCs, cfJoins: BitSet): LiveVariables = {
         val instructions = this.instructions
-        val max = instructions.length
-        val liveVariables = new Array[BitSet](max)
-        val workqueue = new LinkedList[PC]
-        finalPCs foreach { pc ⇒ liveVariables(pc) = immutable.BitSet.empty; workqueue.add(pc) }
+        val instructionsLength = instructions.length
+        val liveVariables = new Array[BitSet](instructionsLength)
+        val workqueue = IntQueue.empty
+        val AllDead = immutable.BitSet.empty
+        finalPCs foreach { pc ⇒ liveVariables(pc) = AllDead; workqueue.enqueue(pc) }
         // required to handle endless loops!
         cfJoins foreach { pc ⇒
             val instruction = instructions(pc)
-            var liveVariableInfo = immutable.BitSet.empty
+            var liveVariableInfo = AllDead
             if (instruction.readsLocal && instruction.opcode != IINC.opcode) {
-                // This instruction is by construction "not a final instruction" 
-                // because these instruction never throw any(!) exceptions and
+                // This instruction is by construction "not a final instruction"
+                // because these instructions never throw any(!) exceptions and
                 // are also never "return" instructions.
                 liveVariableInfo += instruction.indexOfReadLocal
             }
             liveVariables(pc) = liveVariableInfo
-            workqueue.add(pc)
+            workqueue.enqueue(pc)
         }
         while (!workqueue.isEmpty) {
-            val pc = workqueue.removeFirst()
+            val pc = workqueue.dequeue
             val instruction = instructions(pc)
             var liveVariableInfo = liveVariables(pc)
             if (instruction.opcode != IINC.opcode) {
@@ -548,12 +548,12 @@ final class Code private (
                     val predecessorLiveVariableInfo = liveVariables(predecessorPC)
                     if (predecessorLiveVariableInfo eq null) {
                         liveVariables(predecessorPC) = liveVariableInfo
-                        workqueue.add(predecessorPC)
+                        workqueue.enqueue(predecessorPC)
                     } else {
                         val newLiveVariableInfo = (predecessorLiveVariableInfo | liveVariableInfo)
                         if (newLiveVariableInfo != predecessorLiveVariableInfo) {
                             liveVariables(predecessorPC) = newLiveVariableInfo
-                            workqueue.add(predecessorPC)
+                            workqueue.enqueue(predecessorPC)
                         }
                     }
                 }
