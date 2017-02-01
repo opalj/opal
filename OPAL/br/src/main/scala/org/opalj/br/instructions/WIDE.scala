@@ -71,7 +71,7 @@ case object WIDE extends Instruction with ConstantLengthInstruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         Chain.singleton(indexOfNextInstruction(currentPC))
     }

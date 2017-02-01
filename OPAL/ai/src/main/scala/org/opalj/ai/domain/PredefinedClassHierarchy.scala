@@ -58,6 +58,6 @@ trait PredefinedClassHierarchy extends TheClassHierarchy {
 
 object PredefinedClassHierarchy {
 
-    final val classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    final val classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
 
 }

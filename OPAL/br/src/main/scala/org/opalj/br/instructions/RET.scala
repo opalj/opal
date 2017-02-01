@@ -56,7 +56,7 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         nextInstructions(currentPC, () ⇒ CFGFactory(code, classHierarchy))
     }

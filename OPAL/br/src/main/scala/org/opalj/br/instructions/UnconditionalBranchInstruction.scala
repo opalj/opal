@@ -68,7 +68,7 @@ trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranc
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         Chain.singleton(currentPC + branchoffset)
     }

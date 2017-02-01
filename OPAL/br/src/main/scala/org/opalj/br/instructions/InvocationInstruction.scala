@@ -105,7 +105,7 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))
