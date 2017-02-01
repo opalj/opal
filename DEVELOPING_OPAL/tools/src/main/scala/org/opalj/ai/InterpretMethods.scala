@@ -42,6 +42,7 @@ import org.opalj.log.LogContext
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.ai.util.XHTML
+import org.opalj.io.writeAndOpen
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
@@ -259,14 +260,9 @@ object InterpretMethodsAnalysis {
 
             val node =
                 XHTML.createXHTML(
-                    Some("Exceptions Thrown During Interpretation"),
-                    scala.xml.NodeSeq.fromSeq(body)
+                    Some("Exceptions Thrown During Interpretation"), scala.xml.NodeSeq.fromSeq(body)
                 )
-            val file =
-                org.opalj.io.writeAndOpen(
-                    node,
-                    "ExceptionsOfCrashedAbstractInterpretations", ".html"
-                )
+            val file = writeAndOpen(node, "ExceptionsOfCrashedAbstractInterpretations", ".html")
 
             (
                 "During the interpretation of "+
