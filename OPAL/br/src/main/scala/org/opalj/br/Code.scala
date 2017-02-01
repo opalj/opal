@@ -260,17 +260,13 @@ final class Code private (
         var remainingExceptionHandlers = exceptionHandlers
 
         while (nextSubroutines.nonEmpty) {
-            val subroutineId = nextSubroutines.dequeue()
+            val subroutineId = nextSubroutines.dequeue
             propagate(subroutineId, subroutineId)
 
             // all handlers that handle exceptions related to one of the instructions
             // belonging to this subroutine belong to this subroutine (unless the handler
             // is already associated with a previous subroutine!)
-            @inline def belongsToCurrentSubroutine(
-                startPC:   PC,
-                endPC:     PC,
-                handlerPC: PC
-            ): Boolean = {
+            def belongsToCurrentSubroutine(startPC: PC, endPC: PC, handlerPC: PC): Boolean = {
                 var currentPC = startPC
                 while (currentPC < endPC) {
                     if (subroutineIds(currentPC) != -1) {
@@ -419,6 +415,10 @@ final class Code private (
     }
 
     /**
+     * Computes for each instruction the set of predecessor instructions as well as all
+     * instructions without predecessors. Those instructions with multiple predecessors
+     * are also returned.
+     *
      * @return  An array which contains for each instruction the set of all predecessors as well
      *          as the set of all instructions which have only predecessors; i.e., no successors
      *          and also the set of all instructions where multiple paths join.
@@ -441,7 +441,7 @@ final class Code private (
             else
                 isReached += successorPC
         }
-        lazy val cfg = CFGFactory(code, classHierarchy)
+        lazy val cfg = CFGFactory(code, classHierarchy) // fallback if we analyze pre Java 5 code...
         var pc = 0
         while (pc < instructionsLength) {
             val i = instructions(pc)
@@ -471,6 +471,11 @@ final class Code private (
         (allPredecessorPCs, exitPCs, cfJoins)
     }
 
+    /**
+     * Computes for each instruction which variables are live; see
+     * `liveVariables(predecessorPCs: Array[PCs], finalPCs: PCs, cfJoins: BitSet)` for further
+     * details.
+     */
     def liveVariables(implicit classHierarchy: ClassHierarchy): LiveVariables = {
         val (predecessorPCs, finalPCs, cfJoins) = this.predecessorPCs(classHierarchy)
         liveVariables(predecessorPCs, finalPCs, cfJoins)
@@ -558,18 +563,17 @@ final class Code private (
     }
 
     /**
-     * Returns the set of all program counters where two or more control flow
-     * paths join of fork.
+     * Returns the set of all program counters where two or more control flow paths join or fork.
      *
      * ==Example==
      * {{{
-     *     0: iload_1
-     *     1: ifgt    6 // <= PATH FORK
-     *     2: iconst_1
-     *     5: goto 10
-     *     6: ...
-     *     9: iload_1
-     *  10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
+     *  0: iload_1
+     *  1: ifgt    6 // <= PATH FORK
+     *  2: iconst_1
+     *  5: goto 10
+     *  6: ...
+     *  9: iload_1
+     * 10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
      * }}}
      *
      * In case of exception handlers the sound overapproximation is made that
@@ -898,9 +902,7 @@ final class Code private (
      * @param pc Index of the instruction for which we want to get the line number.
      * @return `Some` line number or `None` if no line-number information is available.
      */
-    def lineNumber(pc: PC): Option[Int] = {
-        lineNumberTable.flatMap(_.lookupLineNumber(pc))
-    }
+    def lineNumber(pc: PC): Option[Int] = lineNumberTable.flatMap(_.lookupLineNumber(pc))
 
     /**
      * Returns `Some(true)` if both pcs have the same line number. If line number information
@@ -913,15 +915,15 @@ final class Code private (
     /**
      * Returns the smallest line number (if any).
      *
-     * @note The line number associated with the first instruction (pc === 0) is
-     *      not necessarily the smallest one.
-     *      {{{
-     *      public void foo(int i) {
-     *          super.foo( // The call has the smallest line number.
-     *              i+=1; // THIS IS THE FIRST OPERATION...
-     *          )
-     *      }
-     *      }}}
+     * @note   The line number associated with the first instruction (pc === 0) is
+     *         not necessarily the smallest one.
+     *         {{{
+     *         public void foo(int i) {
+     *           super.foo( // The call has the smallest line number.
+     *             i+=1; // THIS IS THE FIRST OPERATION...
+     *           )
+     *         }
+     *         }}}
      */
     def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber)
 
@@ -1625,8 +1627,7 @@ object Code {
      * @note    The method's descriptor may actually require
      */
     def computeMaxLocalsRequiredByCode(instructions: Array[Instruction]): Int = {
-
-        val maxPC = instructions.length
+        val instructionsLength = instructions.length
         var pc = 0
         var maxRegisters = 0
         var modifiedByWide = false
@@ -1636,13 +1637,13 @@ object Code {
                 modifiedByWide = true
                 pc += 1
             } else {
-                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters)
+                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters) {
                     maxRegisters = i.indexOfWrittenLocal
+                }
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
                 modifiedByWide = false
             }
-
-        } while (pc < maxPC)
+        } while (pc < instructionsLength)
         maxRegisters
     }
 
