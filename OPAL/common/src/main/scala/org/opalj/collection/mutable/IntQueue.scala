@@ -34,6 +34,7 @@ package mutable
  * An efficient, lightweight linked-list based implementation of a mutable queue of int values.
  *
  * @note   This data-structure is only intended to be used by OPAL.
+ * @note   This data structure is not thread safe.
  *
  * @author Michael Eichberg
  */
@@ -43,7 +44,7 @@ protected[opalj] final class IntQueue private (
 ) extends Serializable { queue ⇒
 
     def this(value: Int) = {
-        this(new QueueNode(value,null))
+        this(new QueueNode(value, null))
     }
 
     def isEmpty: Boolean = first eq null
@@ -60,7 +61,7 @@ protected[opalj] final class IntQueue private (
         size
     }
 
-        def head: Int = first.value
+    def head: Int = first.value
 
     def tail: this.type = { first = first.next; this }
 
