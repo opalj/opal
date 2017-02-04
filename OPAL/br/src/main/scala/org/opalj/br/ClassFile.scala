@@ -140,9 +140,11 @@ final class ClassFile private (
 
     import ClassFile._
 
-    final def minorVersion = version.minor
+    final def minorVersion: UShort = version.minor
 
-    final def majorVersion = version.major
+    final def majorVersion: UShort = version.major
+
+    final def jdkVersion: String = org.opalj.bi.jdkVersion(majorVersion)
 
     final override def isClass: Boolean = true
 
