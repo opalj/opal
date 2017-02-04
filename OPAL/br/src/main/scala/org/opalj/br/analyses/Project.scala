@@ -995,16 +995,16 @@ object Project {
     // find the config files; the libraries (e.g., Typesafe Config) may have
     // been loaded using the parent class loader and, hence, may not be able to
     // find the config files at all.
-    lazy val GlobalConfig = ConfigFactory.load(this.getClass.getClassLoader())
+    lazy val GlobalConfig: Config = ConfigFactory.load(this.getClass.getClassLoader())
 
-    lazy val JavaLibraryClassFileReader = Java9LibraryFramework
+    lazy val JavaLibraryClassFileReader: Java9LibraryFramework.type = Java9LibraryFramework
 
-    private[this] def cache = new BytecodeInstructionsCache
+    private[this] def cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
 
     def JavaClassFileReader(
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = GlobalConfig
-    ) = {
+    ): Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
             override implicit val logContext: LogContext = theLogContext
