@@ -211,7 +211,7 @@ case class StaticFunctionCall(
 trait Var extends ValueExpr {
 
     /**
-     * A human readable name of the local variable.
+     * A ''human readable'' name of the local variable.
      */
     def name: String
 
