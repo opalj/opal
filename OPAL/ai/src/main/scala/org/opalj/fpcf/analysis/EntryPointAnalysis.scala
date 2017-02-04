@@ -46,7 +46,7 @@ class EntryPointsAnalysis private (
         val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private[this] val mainMethodDescriptor = MethodDescriptor(ObjectType.String, VoidType)
+    private[this] val mainMethodDescriptor = MethodDescriptor(ArayType(ObjectType.String), VoidType)
 
     /*
    * This method is only called in the corresponding analysis runner. Therefore it it guaranteed that
