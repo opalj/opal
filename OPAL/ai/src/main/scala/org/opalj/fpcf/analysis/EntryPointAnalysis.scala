@@ -53,9 +53,7 @@ class EntryPointsAnalysis private (
    * the analysisMode during the execution is always a desktop application.
    */
     def determineEntrypoints(method: Method): PropertyComputationResult = {
-        if (method.isStatic &&
-            method.isPublic &&
-            (method.descriptor eq MainMethodDescriptor) &&
+        if (method.isStatic && method.isPublic && method.descriptor == MainMethodDescriptor &&
             method.name == "main")
             ImmediateResult(method, IsEntryPoint)
         else
