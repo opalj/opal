@@ -1,0 +1,47 @@
+{
+    "org": {
+        "opalj": {
+            "hermes": {
+                "projects": [
+                    {
+                        "id": "Apache ANT 1.7.1 - Javac 6",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/Apache ANT 1.7.1 - javac 6 default target.jar"
+                    },
+                    {
+                        "id": "Apache ANT 1.7.1 - Target 1.2",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/Apache ANT 1.7.1 - target 1.2.jar"
+                    },
+                    {
+                        "id": "BAT2XML - Target 1.7",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/BAT2XML - target 1.7.jar"
+                    },
+                    {
+                        "id": "Groovy 2.1.5.jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/groovy-2.1.5-indy.jar"
+                    },
+                    {
+                        "id": "Groovy 2.2.1.jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/groovy-2.2.1-indy.jar"
+                    },
+                    {
+                        "id": "argouml-excerpt",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/argouml-excerpt.jar"
+                    },
+                    {
+                        "id": "lecturedoc_2.10-0.0.0-one-jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/lecturedoc_2.10-0.0.0-one-jar.jar"
+                    },
+                    {
+                        "id": "OPAL-SNAPSHOT-0.3",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-SNAPSHOT-0.3.jar"
+                    },
+                    {
+                        "id": "OPAL-bytecode-infrastructure_2.11-SNAPSHOT-08-14-2014",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-bytecode-infrastructure_2.11-SNAPSHOT-08-14-2014.jar",
+                        "libcp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-common_2.11-SNAPSHOT-08-14-2014.jar"
+                    }
+                ]
+            }
+        }
+    }
+}
