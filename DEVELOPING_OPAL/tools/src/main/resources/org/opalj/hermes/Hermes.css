@@ -1,0 +1,14 @@
+.table-view .table-column {
+	-fx-min-width: 4em;
+}
+/*
+.table-view .column-header .label {
+	   -fx-rotate: -90;
+	-fx-pref-height: 12em;
+	 	-fx-pref-width: 50em; 
+	-fx-min-width: 4em;
+	-fx-min-height: 8em;
+	-fx-text-alignment: left;
+	-fx-text-origin: top;
+}
+*/
