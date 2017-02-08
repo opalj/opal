@@ -31,27 +31,19 @@ package hermes
 package queries
 
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.collection.immutable.Chain
-import org.opalj.da.ClassFile
 import org.opalj.hermes.queries.util.APIFeature
+import org.opalj.hermes.queries.util.APIFeatureExtractor
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIMethod
-
-import scalafx.application.Platform
 
 /**
  * Counts the number of certain calls to the Java Reflection API.
  *
  * @author Michael Reif
  */
-object ReflectionAPIUsage extends FeatureExtractor {
+object ReflectionAPIUsage extends APIFeatureExtractor {
 
     val ClassOt = ObjectType("java/lang/Class")
     val FieldOt = ObjectType("java/lang/Field")
@@ -59,7 +51,7 @@ object ReflectionAPIUsage extends FeatureExtractor {
     val ConstructorOt = ObjectType("java/lang/reflect/Constructor")
     val MethodOt = ObjectType("java/lang/reflect/Method")
 
-    val apiFeatures = List[APIFeature](
+    def apiFeatures: Chain[APIFeature] = Chain[APIFeature](
         APIMethod(ClassOt, "forName", MethodDescriptor(ObjectType.String, ClassOt), isStatic = true),
         APIMethod(
             ClassOt,
@@ -159,61 +151,4 @@ object ReflectionAPIUsage extends FeatureExtractor {
             MethodDescriptor(s"(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")
         )
     )
-
-    /**
-     * The unique ids of the extracted features.
-     */
-    override def featureIDs: Seq[String] = apiFeatures.map(_.toFeatureID)
-
-    /**
-     * The major function which analyzes the project and extracts the feature information.
-     *
-     * @note '''Every query should regularly check that its thread is not interrupted!''' E.g.,
-     *       using `Thread.currentThread().isInterrupted()`.
-     */
-    override def apply[S](
-        projectConfiguration: ProjectConfiguration,
-        project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)],
-        features:             Map[String, Feature[S]]
-    ): Unit = {
-
-        var invocationCounts = apiFeatures.foldLeft(Map.empty[String, Int])(
-            (result, feature) ⇒ result + ((feature.toFeatureID, 0))
-        )
-
-        //        println(invocationCounts.keySet.mkString("keyset:[", "\n,\n", "]"))
-
-        for {
-            cf ← project.allClassFiles
-            MethodWithBody(code) ← cf.methods
-            apiFeature ← apiFeatures
-            featureID = apiFeature.toFeatureID
-            APIMethod(declClass, name, descriptor, isStatic) ← apiFeature.getAPIMethods
-            inst ← code.instructions if inst.isInstanceOf[MethodInvocationInstruction]
-            if !isInterrupted()
-        } yield {
-
-            val foundCall = inst match {
-                case INVOKESTATIC(`declClass`, _, `name`, `descriptor`) if isStatic ⇒ true
-                case INVOKEVIRTUAL(`declClass`, `name`, `descriptor`) if !isStatic ⇒ true
-                case INVOKESPECIAL(`declClass`, _, `name`, `descriptor`) if !isStatic ⇒ true
-                case _ ⇒ false
-            }
-
-            if (foundCall) {
-                val count = invocationCounts.get(featureID).get + 1
-                invocationCounts = invocationCounts + ((featureID, count))
-            }
-        }
-
-        if (!isInterrupted) { // we want to avoid that we return partial results
-            Platform.runLater {
-                apiFeatures.foreach { apiMethod ⇒
-                    val featureID = apiMethod.toFeatureID
-                    features(featureID).count.value = invocationCounts.get(featureID).get
-                }
-            }
-        }
-    }
 }
