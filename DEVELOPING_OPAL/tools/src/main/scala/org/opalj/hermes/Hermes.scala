@@ -57,6 +57,8 @@ import scalafx.collections.ObservableBuffer
 import scalafx.scene.control.Label
 import scalafx.scene.layout.VBox
 import scalafx.scene.Group
+import scalafx.scene.image.Image
+import scalafx.geometry.Insets
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
@@ -171,8 +173,10 @@ object Hermes extends JFXApp {
                             }
                         }
                     )
+                    //featureColumn.a handle{println("dfdf")}
                     val vbox = new VBox(new Label(name))
                     vbox.setRotate(-90)
+                    vbox.setPadding(Insets(5, 5, 5, 5));
                     featureColumn.setGraphic(new Group(vbox))
                     featureColumn
                 }
@@ -189,6 +193,7 @@ object Hermes extends JFXApp {
 
             analyzeCorpus()
         }
+        icons += new Image(getClass.getResource("OPAL-Logo.png").toExternalForm)
     }
 
 }
