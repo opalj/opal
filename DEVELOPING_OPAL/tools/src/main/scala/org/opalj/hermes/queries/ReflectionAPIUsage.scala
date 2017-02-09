@@ -48,9 +48,9 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
 
     val Class = ObjectType("java/lang/Class")
     val Field = ObjectType("java/lang/Field")
-    val AccessibleObjectOt = ObjectType("java/lang/reflect/AccessibleObject")
+    val AccessibleObject = ObjectType("java/lang/reflect/AccessibleObject")
     val Constructor = ObjectType("java/lang/reflect/Constructor")
-    val MethodOt = ObjectType("java/lang/reflect/Method")
+    val Method = ObjectType("java/lang/reflect/Method")
 
     def apiFeatures: Chain[APIFeature] = Chain[APIFeature](
         StaticAPIMethod(Class, "forName"),
@@ -99,7 +99,7 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
                 InstanceAPIMethod(
                     Field,
                     "setAccessible",
-                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V")
+                    MethodDescriptor(s"([${AccessibleObject.toJVMTypeName}Z)V")
                 ),
                 InstanceAPIMethod(Field, "setAccessible", MethodDescriptor("(Z)V"))
             ), "set fields accessible"
@@ -109,15 +109,15 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
         APIFeatureGroup(
             Chain(
                 InstanceAPIMethod(
-                    MethodOt,
+                    Method,
                     "setAccessible",
-                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V")
+                    MethodDescriptor(s"([${AccessibleObject.toJVMTypeName}Z)V")
                 ),
-                InstanceAPIMethod(MethodOt, "setAccessible", MethodDescriptor("(Z)V")),
+                InstanceAPIMethod(Method, "setAccessible", MethodDescriptor("(Z)V")),
                 InstanceAPIMethod(
                     Constructor,
                     "setAccessible",
-                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V")
+                    MethodDescriptor(s"([${AccessibleObject.toJVMTypeName}Z)V")
                 ),
                 InstanceAPIMethod(Constructor, "setAccessible", MethodDescriptor("(Z)V"))
             ), "set methods or constructors accessible"
@@ -127,17 +127,17 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
         APIFeatureGroup(
             Chain(
                 InstanceAPIMethod(
-                    AccessibleObjectOt,
+                    AccessibleObject,
                     "setAccessible",
-                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V")
+                    MethodDescriptor(s"([${AccessibleObject.toJVMTypeName}Z)V")
                 ),
-                InstanceAPIMethod(AccessibleObjectOt, "setAccessible", MethodDescriptor("(Z)V"))
+                InstanceAPIMethod(AccessibleObject, "setAccessible", MethodDescriptor("(Z)V"))
             ), "set an AccessibleObject accessible (exact type unknown)"
         ),
 
         // reflective method invocation
         InstanceAPIMethod(
-            MethodOt,
+            Method,
             "invoke",
             MethodDescriptor(s"(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")
         )
