@@ -52,12 +52,7 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
     val MethodOt = ObjectType("java/lang/reflect/Method")
 
     def apiFeatures: Chain[APIFeature] = Chain[APIFeature](
-        InstanceAPIMethod(ClassOt, "forName", MethodDescriptor(ObjectType.String, ClassOt)),
-        InstanceAPIMethod(
-            ClassOt,
-            "forName",
-            MethodDescriptor(s"(Ljava/lang/String;ZLjava/lang/ClassLoader;)[Ljava/lang/Class;")
-        ),
+        InstanceAPIMethod(ClassOt, "forName"),
 
         // reflective instance creation
         APIFeatureGroup(

@@ -40,9 +40,9 @@ import org.opalj.hermes.queries.util.InstanceAPIMethod
 import org.opalj.hermes.queries.util.StaticAPIMethod
 
 /**
- * Groups features that relie on the Unsafe API. (sun.misc.Unsafe)
+ * Groups features that rely on the Unsafe API. (sun.misc.Unsafe)
  *
- * @note Feature groups are further discussed in the paper:
+ * @note Feature groups are taken from and are further discussed in the following paper:
  *       "Use at Your Own Risk: The Java Unsafe API in the Wild"
  *       by Luis Mastrangelo et al.
  *

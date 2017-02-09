@@ -44,6 +44,33 @@ import org.opalj.da.ClassFile
 import scalafx.application.Platform
 
 /**
+  * A common feature extractor for simple API features. It supports in particular features that check
+  * for certain API calls. More complex operations are not supported yet.
+  *
+  * Subclasses are only required to define a Chain of `APIFeatures`.
+  *
+  * Example of apiFeature declaration in a subclass:
+  * {{{
+      val Unsafe = ObjectType("sun/misc/Unsafe")
+
+      override def apiFeatures: Chain[APIFeatures] = Chain[APIFeature](
+        StaticAPIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;")),
+
+        APIFeatureGroup(
+            Chain(
+                InstanceAPIMethod(Unsafe, "allocateInstance")
+            ), "Unsafe - Alloc"
+        ),
+
+        APIFeatureGroup(
+            Chain(
+                InstanceAPIMethod(Unsafe, "arrayIndexScale"),
+                InstanceAPIMethod(Unsafe, "arrayBaseOffset")
+            ), "Unsafe - Array"
+        )
+      )
+  * }}}
+  *
  * @author Michael Reif
  */
 trait APIFeatureExtractor extends FeatureExtractor {
