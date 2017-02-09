@@ -84,10 +84,10 @@ case class InstanceAPIMethod(
     override def toFeatureID: String = {
         val methodName = descriptor match {
             case Some(md) ⇒ md.toJava(name)
-            case None     ⇒ ""
+            case None     ⇒ name
         }
 
-        s"${declClass.fqn}\n$methodName}"
+        s"${declClass.fqn}\n$methodName"
     }
     override def getAPIMethods = Chain(this)
 }
