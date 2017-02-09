@@ -1,5 +1,4 @@
-/*
- * BSD 2-Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
@@ -34,6 +33,7 @@ package util
 
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -72,21 +72,45 @@ trait APIFeatureExtractor extends FeatureExtractor {
             (result, feature) ⇒ result + ((feature.toFeatureID, 0))
         )
 
+        println("breaking change")
+
         for {
             cf ← project.allClassFiles
             MethodWithBody(code) ← cf.methods
             apiFeature ← apiFeatures
             featureID = apiFeature.toFeatureID
-            APIMethod(declClass, name, descriptor, isStatic) ← apiFeature.getAPIMethods
+            apiMethod ← apiFeature.getAPIMethods
             inst ← code.instructions if inst.isInstanceOf[MethodInvocationInstruction]
             if !isInterrupted()
         } yield {
+            var foundCall = false
 
-            val foundCall = inst match {
-                case INVOKESTATIC(`declClass`, _, `name`, `descriptor`) if isStatic ⇒ true
-                case INVOKEVIRTUAL(`declClass`, `name`, `descriptor`) if !isStatic ⇒ true
-                case INVOKESPECIAL(`declClass`, _, `name`, `descriptor`) if !isStatic ⇒ true
-                case _ ⇒ false
+            apiMethod match {
+                case InstanceAPIMethod(declClass, name, None) ⇒
+                    foundCall = inst match {
+                        case INVOKEINTERFACE(`declClass`, `name`, _)  ⇒ true
+                        case INVOKEVIRTUAL(`declClass`, `name`, _)    ⇒ true
+                        case INVOKESPECIAL(`declClass`, _, `name`, _) ⇒ true
+                        case _                                        ⇒ false
+                    }
+                case InstanceAPIMethod(declClass, name, Some(md)) ⇒
+                    foundCall = inst match {
+                        case INVOKEINTERFACE(`declClass`, `name`, `md`)  ⇒ true
+                        case INVOKEVIRTUAL(`declClass`, `name`, `md`)    ⇒ true
+                        case INVOKESPECIAL(`declClass`, _, `name`, `md`) ⇒ true
+                        case _                                           ⇒ false
+                    }
+                case StaticAPIMethod(declClass, name, None) ⇒
+                    foundCall = inst match {
+                        case INVOKESTATIC(`declClass`, _, `name`, _) ⇒ true
+                        case _                                       ⇒ false
+                    }
+                case StaticAPIMethod(declClass, name, Some(md)) ⇒
+                    foundCall = inst match {
+                        case INVOKESTATIC(`declClass`, _, `name`, `md`) ⇒ true
+                        case _                                          ⇒ false
+                    }
+                case x ⇒ throw new UnknownError("Unsupported APIMethod type found: "+x.getClass)
             }
 
             if (foundCall) {
