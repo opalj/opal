@@ -50,7 +50,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 object UnsafeAPIUsage extends APIFeatureExtractor {
 
-    val Unsafe = ObjectType("sun.misc.Unsafe")
+    val Unsafe = ObjectType("sun/misc/Unsafe")
 
     def apiFeatures: Chain[APIFeature] = Chain[APIFeature](
         StaticAPIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;")),
