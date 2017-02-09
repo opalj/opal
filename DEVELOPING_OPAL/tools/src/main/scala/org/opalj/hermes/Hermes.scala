@@ -107,7 +107,7 @@ object Hermes extends JFXApp {
         data
     }
     val perFeatureCounts: Array[IntegerProperty] = {
-        val perFeatureCounts: Array[IntegerProperty] = Array.fill(featureIDs.length)(IntegerProperty(0))
+        val perFeatureCounts = Array.fill(featureIDs.length)(IntegerProperty(0))
         data.foreach { projectFeatures ⇒
             projectFeatures.features.view.zipWithIndex.foreach { fi ⇒
                 val (feature, index) = fi
@@ -127,7 +127,7 @@ object Hermes extends JFXApp {
                 val totalSteps = (featureExtractors.size * projectConfigurations.size).toDouble
                 val stepsDone = new AtomicInteger(0)
                 for {
-                    // the iterator is required to avoid eager initialization of all projects!
+                    // Using an iterator is required to avoid eager initialization of all projects!
                     projectFeatures ← data.toIterator
                     if !Thread.currentThread.isInterrupted()
                     projectConfiguration = projectFeatures.projectConfiguration
@@ -177,13 +177,7 @@ object Hermes extends JFXApp {
         val ((name, extractor), featureIndex) = fid
         val featureColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]("")
         featureColumn.setPrefWidth(60.0d)
-        featureColumn.setCellValueFactory(
-            new Callback[CellDataFeatures[ProjectFeatures[URL], Feature[URL]], ObservableValue[Feature[URL]]]() {
-                def call(p: CellDataFeatures[ProjectFeatures[URL], Feature[URL]]): ObservableValue[Feature[URL]] = {
-                    p.getValue.features(featureIndex)
-                }
-            }
-        )
+        featureColumn.cellValueFactory = { p ⇒ p.getValue.features(featureIndex) }
         featureColumn.cellFactory = { (_) ⇒
             new TableCell[ProjectFeatures[URL], Feature[URL]] {
                 var currentValue = 0
@@ -220,9 +214,7 @@ object Hermes extends JFXApp {
         val label = new Label(name)
         label.setRotate(-90)
         label.setPadding(Insets(5, 5, 5, 5))
-        val button = new Button("Doc.")
-        button.hgrow = Priority.ALWAYS
-        button.maxWidth = Double.MaxValue
+        val button = new Button("Doc.") { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
         val group = new Group(label)
         val box = new VBox(group, button)
         box.setAlignment(Pos.BottomCenter)
