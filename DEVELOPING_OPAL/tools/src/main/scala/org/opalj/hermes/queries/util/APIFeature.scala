@@ -57,7 +57,7 @@ sealed trait APIFeature {
 }
 
 /**
- * Common trait that abstracts over instance and static api methods
+ * Common trait that abstracts over instance and static api methods.
  */
 sealed trait APIMethod extends APIFeature
 
@@ -71,9 +71,9 @@ sealed trait APIMethod extends APIFeature
  *                   with the same name, declared in the same class.
  */
 case class InstanceAPIMethod(
-        val declClass:  ObjectType,
-        val name:       String,
-        val descriptor: Option[MethodDescriptor]
+        declClass:  ObjectType,
+        name:       String,
+        descriptor: Option[MethodDescriptor]
 ) extends APIMethod {
 
     /**
@@ -83,11 +83,11 @@ case class InstanceAPIMethod(
      */
     override def toFeatureID: String = {
         val methodName = descriptor match {
-            case Some(md) ⇒ md.toJava(name)
+            case Some(md) ⇒ md.toJava(name).replaceAll("java.lang.Object", "Object")
             case None     ⇒ name
         }
 
-        s"${declClass.fqn}\n$methodName"
+        s"${declClass.toJava}\n$methodName"
     }
     override def getAPIMethods = Chain(this)
 }
@@ -101,7 +101,15 @@ object InstanceAPIMethod {
         InstanceAPIMethod(declClass, name, None)
     }
 
-    def apply(declClass: ObjectType, name: String, descriptor: MethodDescriptor): InstanceAPIMethod = {
+    def apply(declClass: ObjectType, name: String, descriptor: String): InstanceAPIMethod = {
+        InstanceAPIMethod(declClass, name, Some(MethodDescriptor(descriptor)))
+    }
+
+    def apply(
+        declClass:  ObjectType,
+        name:       String,
+        descriptor: MethodDescriptor
+    ): InstanceAPIMethod = {
         InstanceAPIMethod(declClass, name, Some(descriptor))
     }
 }
@@ -116,9 +124,9 @@ object InstanceAPIMethod {
  *                   with the same name, declared in the same class.
  */
 case class StaticAPIMethod(
-        val declClass:  ObjectType,
-        val name:       String,
-        val descriptor: Option[MethodDescriptor]
+        declClass:  ObjectType,
+        name:       String,
+        descriptor: Option[MethodDescriptor]
 ) extends APIMethod {
 
     /**
@@ -147,7 +155,15 @@ object StaticAPIMethod {
         StaticAPIMethod(declClass, name, None)
     }
 
-    def apply(declClass: ObjectType, name: String, descriptor: MethodDescriptor): StaticAPIMethod = {
+    def apply(declClass: ObjectType, name: String, descriptor: String): StaticAPIMethod = {
+        StaticAPIMethod(declClass, name, Some(MethodDescriptor(descriptor)))
+    }
+
+    def apply(
+        declClass:  ObjectType,
+        name:       String,
+        descriptor: MethodDescriptor
+    ): StaticAPIMethod = {
         StaticAPIMethod(declClass, name, Some(descriptor))
     }
 }
@@ -160,8 +176,8 @@ object StaticAPIMethod {
  * @note It is assumed that the passed featureID is unique throughout all feature extractors.
  */
 case class APIFeatureGroup(
-        val apiMethods: Chain[APIMethod],
-        val featureID:  String
+        apiMethods: Chain[APIMethod],
+        featureID:  String
 ) extends APIFeature {
 
     override def toFeatureID: String = this.featureID

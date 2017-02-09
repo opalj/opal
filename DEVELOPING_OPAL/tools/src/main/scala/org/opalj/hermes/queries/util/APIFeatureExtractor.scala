@@ -31,6 +31,10 @@ package hermes
 package queries
 package util
 
+import scala.collection.mutable
+
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEINTERFACE
@@ -38,15 +42,11 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.collection.immutable.Chain
 import org.opalj.da.ClassFile
 
-import scalafx.application.Platform
-import scalafx.collections.ObservableBuffer
-
 /**
- * A common feature extractor for simple API features. It supports in particular features that check
- * for certain API calls. More complex operations are not supported yet.
+ * A common feature extractor for simple API features. It supports - in particular -
+ * features that check for certain API calls.
  *
  * Subclasses are only required to define a Chain of `APIFeatures`.
  *
@@ -92,18 +92,17 @@ trait APIFeatureExtractor extends FeatureExtractor {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)],
-        features:             Map[String, Feature[S]]
-    ): Unit = {
+        rawClassFiles:        Traversable[(ClassFile, S)]
+    ): TraversableOnce[Feature[S]] = {
 
         var invocationCounts = apiFeatures.foldLeft(Map.empty[String, Int])(
             (result, feature) ⇒ result + ((feature.toFeatureID, 0))
         )
 
-        var locations = Map.empty[String, ObservableBuffer[Location[S]]]
+        val locations = mutable.Map.empty[String, Chain[Location[S]]]
 
         for {
-            cf ← project.allClassFiles
+            cf ← project.allProjectClassFiles
             m @ MethodWithBody(code) ← cf.methods
             apiFeature ← apiFeatures
             featureID = apiFeature.toFeatureID
@@ -121,16 +120,8 @@ trait APIFeatureExtractor extends FeatureExtractor {
                 val cfLoc = ClassFileLocation(source.get, cf.fqn)
                 val mSig = m.descriptor.toJava(m.name)
                 val mLoc = MethodLocation(cfLoc, mSig)
-
                 val instLoc = InstructionLocation(mLoc, pc)
-
-                locations.get(featureID) match {
-                    case None ⇒
-                        val buf = ObservableBuffer[Location[S]](instLoc)
-                        locations = locations + ((featureID, buf))
-                    case Some(extensions) ⇒
-                        locations = locations + ((featureID, extensions += instLoc))
-                }
+                locations += ((featureID, instLoc :&: locations.getOrElse(featureID, Naught)))
             }
 
             apiMethod match {
@@ -179,16 +170,13 @@ trait APIFeatureExtractor extends FeatureExtractor {
             }
         }
 
-        if (!isInterrupted) { // we want to avoid that we return partial results
-            Platform.runLater {
-                apiFeatures.foreach { apiMethod ⇒
-                    val featureID = apiMethod.toFeatureID
-                    features(featureID).count.value = invocationCounts.get(featureID).get
-                    val exts = locations.get(featureID)
-                    if (exts.nonEmpty)
-                        features(featureID).extensions ++= exts.get
-                }
-            }
+        apiFeatures.map { apiMethod ⇒
+            val featureID = apiMethod.toFeatureID
+            Feature(
+                featureID,
+                invocationCounts.get(featureID).get,
+                locations.getOrElse(featureID, Naught)
+            )
         }
     }
 }
