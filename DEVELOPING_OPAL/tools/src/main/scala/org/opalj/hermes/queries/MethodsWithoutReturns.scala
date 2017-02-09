@@ -31,11 +31,10 @@ package hermes
 package queries
 
 import org.opalj.br.analyses.Project
-import scalafx.application.Platform
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.cfg.CFGFactory
-
-//import org.opalj.br.analyses.ProgressManagement
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
  * Counts the number of class files per class file version.
@@ -44,43 +43,43 @@ import org.opalj.br.cfg.CFGFactory
  */
 object MethodsWithoutReturns extends FeatureExtractor {
 
-    final val AlwaysThrowsExceptionFeatureID = "Never Returns Normally"
-    final val InfiniteLoopFeatureID = "Method with Infinite Loops"
-    override def featureIDs: Seq[String] = List(AlwaysThrowsExceptionFeatureID, InfiniteLoopFeatureID)
+    final val AlwaysThrowsExceptionMethodsFeatureId = "Never Returns Normally"
+    final val InfiniteLoopMethodsFeatureId = "Method with Infinite Loops"
+    override def featureIDs: Seq[String] = List(
+        AlwaysThrowsExceptionMethodsFeatureId,
+        InfiniteLoopMethodsFeatureId
+    )
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)],
-        features:             Map[String, Feature[S]]
-    ): Unit = {
-        val classHierarchy = project.classHierarchy
-
-        var infiniteLoopCount = 0
-        var alwaysThrowsExceptionCount = 0
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): TraversableOnce[Feature[S]] = {
+        var infiniteLoopMethods: Chain[MethodLocation[S]] = Naught
+        var alwaysThrowsExceptionMethods: Chain[MethodLocation[S]] = Naught
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
+            classFileLocation = ClassFileLocation(source, classFile)
             method ← classFile.methods
             body ← method.body
             if !isInterrupted
+            hasReturn = body.exists { (pc, i) ⇒ i.isInstanceOf[ReturnInstruction] }
+            if !hasReturn
         } {
-            val hasReturn = body.exists { (pc, i) ⇒ i.isInstanceOf[ReturnInstruction] }
-
-            if (!hasReturn) {
-                val cfg = CFGFactory(body, classHierarchy)
-                if (cfg.abnormalReturnNode.predecessors.isEmpty)
-                    infiniteLoopCount += 1
-                else
-                    alwaysThrowsExceptionCount += 1
-            }
+            val cfg = CFGFactory(body, project.classHierarchy)
+            if (cfg.abnormalReturnNode.predecessors.isEmpty)
+                infiniteLoopMethods :&:= MethodLocation(classFileLocation, method)
+            else
+                alwaysThrowsExceptionMethods :&:= MethodLocation(classFileLocation, method)
         }
 
-        if (!isInterrupted) { // we want to avoid that we return partial results
-            Platform.runLater {
-                features(AlwaysThrowsExceptionFeatureID).count.value = alwaysThrowsExceptionCount
-                features(InfiniteLoopFeatureID).count.value = infiniteLoopCount
-            }
-        }
+        List(
+            Feature[S](
+                AlwaysThrowsExceptionMethodsFeatureId,
+                alwaysThrowsExceptionMethods.size, alwaysThrowsExceptionMethods
+            ),
+            Feature[S](InfiniteLoopMethodsFeatureId, infiniteLoopMethods.size, infiniteLoopMethods)
+        )
     }
 }

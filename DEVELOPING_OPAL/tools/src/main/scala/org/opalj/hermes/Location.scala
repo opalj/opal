@@ -30,6 +30,8 @@ package org.opalj
 package hermes
 
 import org.opalj.br.PC
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
 
 sealed trait Location[S] {
 
@@ -41,9 +43,16 @@ sealed trait Location[S] {
 }
 
 case class ClassFileLocation[S](
-    override val source: S,
-    classFileFQN:        String
-) extends Location[S]
+        override val source: S,
+        classFileFQN:        String
+) extends Location[S] {
+
+}
+object ClassFileLocation {
+    def apply[S](source: S, classFile: ClassFile): ClassFileLocation[S] = {
+        new ClassFileLocation[S](source, classFile.thisType.toJava)
+    }
+}
 
 case class FieldLocation[S](
         classFileLocation: ClassFileLocation[S],
@@ -62,6 +71,15 @@ case class MethodLocation[S](
 
     override def source = classFileLocation.source
     def classFileFQN = classFileLocation.classFileFQN
+}
+object MethodLocation {
+    def apply[S](source: S, classFile: ClassFile, method: Method): MethodLocation[S] = {
+        new MethodLocation(ClassFileLocation(source, classFile), method.name + method.descriptor)
+    }
+
+    def apply[S](classFileLocation: ClassFileLocation[S], method: Method): MethodLocation[S] = {
+        new MethodLocation(classFileLocation, method.name + method.descriptor)
+    }
 
 }
 

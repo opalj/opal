@@ -30,6 +30,7 @@ package org.opalj
 package hermes
 
 import scalafx.beans.property.StringProperty
+import scalafx.beans.property.ObjectProperty
 
 /**
  * The instantiated project.
@@ -38,11 +39,13 @@ import scalafx.beans.property.StringProperty
  */
 case class ProjectFeatures[S](
         projectConfiguration: ProjectConfiguration,
-        featureGroups:        Seq[(FeatureExtractor, Seq[Feature[S]])]
+        featureGroups:        Seq[(FeatureExtractor, Seq[ObjectProperty[Feature[S]]])]
 ) {
 
-    final val id = new StringProperty(projectConfiguration, "project", projectConfiguration.id)
+    final val id: StringProperty = {
+        new StringProperty(projectConfiguration, "project", projectConfiguration.id)
+    }
 
-    final val features = featureGroups.flatMap(_._2)
+    final val features: Seq[ObjectProperty[Feature[S]]] = featureGroups.flatMap(_._2)
 
 }

@@ -40,8 +40,8 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 import javafx.scene.control.TableColumn
-import javafx.util.Callback
 import javafx.scene.control.TableColumn.CellDataFeatures
+import javafx.util.Callback
 import javafx.beans.value.ObservableValue
 import javafx.scene.layout.Priority
 
@@ -49,16 +49,24 @@ import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.application.Platform
 import scalafx.application.JFXApp.PrimaryStage
+import scalafx.collections.ObservableBuffer
+import scalafx.geometry.Insets
+import scalafx.geometry.Pos
 import scalafx.scene.Scene
+import scalafx.scene.Group
 import scalafx.scene.layout.BorderPane
 import scalafx.scene.control.TableView
 import scalafx.scene.control.ProgressBar
-import scalafx.collections.ObservableBuffer
 import scalafx.scene.control.Label
-import scalafx.scene.layout.VBox
-import scalafx.scene.Group
+import scalafx.scene.control.ListView
+import scalafx.scene.control.TextArea
+import scalafx.scene.control.TableCell
+import scalafx.scene.control.Button
 import scalafx.scene.image.Image
-import scalafx.geometry.Insets
+import scalafx.scene.web.WebView
+import scalafx.scene.layout.VBox
+
+import org.controlsfx.control.PopOver
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
@@ -86,103 +94,138 @@ object Hermes extends JFXApp {
 
     val queries = config.as[List[Query]]("org.opalj.hermes.queries")
     val featureExtractors = queries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
-    val featureIDs = featureExtractors.flatMap(fe ⇒ fe.featureIDs)
+    val featureIDs = featureExtractors.flatMap(fe ⇒ fe.featureIDs.map((_, fe)))
     val projectConfigurations = config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
 
     val data = {
         val data = ObservableBuffer.empty[ProjectFeatures[URL]]
         for { projectConfiguration ← projectConfigurations } {
-            val features = featureExtractors map { fe ⇒ (fe, fe.createFeatures[URL]) }
+            val features = featureExtractors map { fe ⇒ (fe, fe.createInitialFeatures[URL]) }
             data += ProjectFeatures(projectConfiguration, features)
         }
         data
     }
 
     def analyzeCorpus(): Thread = {
-        val t = new Thread(
-            new Runnable {
-                def run(): Unit = {
-                    Console.out.println("Starting analysis of corpus.")
+        val task = new Runnable {
+            def run(): Unit = {
+                val totalSteps = (featureExtractors.size * projectConfigurations.size).toDouble
+                val stepsDone = new AtomicInteger(0)
+                for {
+                    // the iterator is required to avoid eager initialization of all projects!
+                    projectFeatures ← data.toIterator
+                    if !Thread.currentThread.isInterrupted()
+                    projectConfiguration = projectFeatures.projectConfiguration
+                    projectInstantiation = projectConfiguration.instantiate
+                    project = projectInstantiation.project
+                    rawClassFiles = projectInstantiation.rawClassFiles
+                    (featureExtractor, features) ← projectFeatures.featureGroups.par
+                    featuresMap = features.map(f ⇒ (f.value.id, f)).toMap
+                    if !Thread.currentThread.isInterrupted()
+                } {
+                    val features = featureExtractor(
+                        projectConfiguration,
+                        project,
+                        rawClassFiles
+                    )
 
-                    val totalSteps = (featureExtractors.size * projectConfigurations.size).toDouble
-                    val stepsDone = new AtomicInteger(0)
-                    for {
-                        // the iterator is required to avoid eager initialization of all projects!
-                        projectFeatures ← data.toIterator
-                        if !Thread.currentThread.isInterrupted()
-                        projectConfiguration = projectFeatures.projectConfiguration
-                        projectInstantiation = projectConfiguration.instantiate
-                        project = projectInstantiation.project
-                        rawClassFiles = projectInstantiation.rawClassFiles
-                        (featureExtractor, features) ← projectFeatures.featureGroups.par
-                        featuresMap = features.map(f ⇒ (f.id, f)).toMap
-                        if !Thread.currentThread.isInterrupted()
-                    } {
-                        Console.out.println(s"Running query: ${featureExtractor.id}")
-                        featureExtractor(
-                            projectConfiguration,
-                            project,
-                            rawClassFiles,
-                            featuresMap
-                        )
-
-                        Platform.runLater {
-                            val progress = stepsDone.incrementAndGet() / totalSteps
-                            Console.out.println("Progress: "+progress)
-                            if (progressBar.getProgress < progress) {
-                                progressBar.setProgress(progress)
-                            }
+                    Platform.runLater {
+                        features.foreach { f ⇒ featuresMap(f.id).value = f }
+                        val progress = stepsDone.incrementAndGet() / totalSteps
+                        if (progressBar.getProgress < progress) {
+                            progressBar.setProgress(progress)
                         }
                     }
-
-                    Platform.runLater { rootPane.getChildren().remove(progressBar) }
-                    Console.out.println("Analysis of corpus has finished.")
                 }
+
+                Platform.runLater { rootPane.getChildren().remove(progressBar) }
             }
-        )
+        }
+        val t = new Thread(task)
         t.setDaemon(true)
         t.start()
         t
     }
 
-    val progressBar =
-        new ProgressBar {
-            hgrow = Priority.ALWAYS
-            maxWidth = Double.MaxValue
+    val progressBar = new ProgressBar { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
+
+    val projectColumn = new TableColumn[ProjectFeatures[URL], String]("Project")
+    projectColumn.setCellValueFactory(
+        new Callback[CellDataFeatures[ProjectFeatures[URL], String], ObservableValue[String]] {
+            def call(p: CellDataFeatures[ProjectFeatures[URL], String]): ObservableValue[String] = {
+                p.getValue.id
+            }
         }
+    )
+
+    val featureColumns = featureIDs.zipWithIndex.map { fid ⇒
+        val ((name, extractor), index) = fid
+        val featureColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]("")
+        featureColumn.setPrefWidth(60.0d)
+        featureColumn.setCellValueFactory(
+            new Callback[CellDataFeatures[ProjectFeatures[URL], Feature[URL]], ObservableValue[Feature[URL]]]() {
+                def call(p: CellDataFeatures[ProjectFeatures[URL], Feature[URL]]): ObservableValue[Feature[URL]] = {
+                    p.getValue.features(index)
+                }
+            }
+        )
+        featureColumn.cellFactory = { (_) ⇒
+            new TableCell[ProjectFeatures[URL], Feature[URL]] {
+                item.onChange { (_, _, newFeature) ⇒
+                    text = if (newFeature != null) newFeature.count.toString else ""
+                }
+            }
+        }
+        val label = new Label(name)
+        label.setRotate(-90)
+        label.setPadding(Insets(5, 5, 5, 5))
+        val button = new Button("Doc.")
+        button.hgrow = Priority.ALWAYS
+        button.maxWidth = Double.MaxValue
+        val group = new Group(label)
+        val box = new VBox(group, button)
+        box.setAlignment(Pos.BottomCenter)
+        box.hgrow = Priority.ALWAYS
+        box.vgrow = Priority.ALWAYS
+        box.maxWidth = Double.MaxValue
+        featureColumn.setGraphic(box)
+        val webView = new WebView
+        webView.setPrefSize(300.0d, 400.0d)
+        val webEngine = webView.engine
+        webEngine.setUserStyleSheetLocation(Queries.CSS)
+        webEngine.loadContent(extractor.htmlDescription)
+        val popOver = new PopOver(webView)
+        popOver.setTitle(extractor.id.replaceAll("\n", " – "))
+        popOver.setDetachable(true)
+        popOver.setHideOnEscape(false)
+        button.onAction = handle { if (!popOver.isShowing()) popOver.show(group) }
+        featureColumn
+    }
+
+    val tableView =
+        new TableView[ProjectFeatures[URL]](data) { columns ++= (projectColumn +: featureColumns) }
+
+    tableView.getSelectionModel.setCellSelectionEnabled(true)
+    tableView.getSelectionModel.getSelectedCells.onChange { (positions, _) ⇒
+        if (positions.nonEmpty) {
+            val position = positions.get(0)
+            println(position.getTableColumn().getCellData(position.getRow))
+            if (position.getColumn == 0) {
+                rootPane.right = new TextArea(projectConfigurations(position.getRow).statistics.mkString("\n"))
+            }
+        }
+    }
+
+    val locationsView = new ListView {
+        prefWidth = 200
+        minWidth = 150
+        maxWidth = 500
+    }
 
     val rootPane = new BorderPane {
-        center =
-            new TableView[ProjectFeatures[URL]](data) {
-                val projectColumn = new TableColumn[ProjectFeatures[URL], String]("Project")
-                projectColumn.setCellValueFactory(
-                    new Callback[CellDataFeatures[ProjectFeatures[URL], String], ObservableValue[String]]() {
-                        def call(p: CellDataFeatures[ProjectFeatures[URL], String]): ObservableValue[String] = {
-                            p.getValue.id
-                        }
-                    }
-                )
-                val featureColumns = featureIDs.zipWithIndex.map { fid ⇒
-                    val (name, index) = fid
-                    val featureColumn = new TableColumn[ProjectFeatures[URL], Int]("")
-                    featureColumn.setPrefWidth(60.0d)
-                    featureColumn.setCellValueFactory(
-                        new Callback[CellDataFeatures[ProjectFeatures[URL], Int], ObservableValue[Int]]() {
-                            def call(p: CellDataFeatures[ProjectFeatures[URL], Int]): ObservableValue[Int] = {
-                                p.getValue.features(index).count
-                            }
-                        }
-                    )
-                    //featureColumn.a handle{println("dfdf")}
-                    val vbox = new VBox(new Label(name))
-                    vbox.setRotate(-90)
-                    vbox.setPadding(Insets(5, 5, 5, 5));
-                    featureColumn.setGraphic(new Group(vbox))
-                    featureColumn
-                }
-                columns ++= (projectColumn +: featureColumns)
-            }
+        center = tableView
         bottom = progressBar
+        right = locationsView
     }
 
     stage = new PrimaryStage {
@@ -195,5 +238,4 @@ object Hermes extends JFXApp {
         }
         icons += new Image(getClass.getResource("OPAL-Logo.png").toExternalForm)
     }
-
 }

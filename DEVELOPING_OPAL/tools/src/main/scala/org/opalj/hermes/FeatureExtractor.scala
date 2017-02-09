@@ -31,13 +31,26 @@ package hermes
 
 import scala.io.Source
 import scala.io.Codec
+
+import com.github.rjeschke.txtmark.Processor
+
 import org.opalj.io.processSource
 import org.opalj.br.analyses.Project
+import scalafx.beans.property.ObjectProperty
 
 /**
- * Extracts the features of a given project.
+ * Extracts a feature/a set of closely related features of a given project.
  */
 trait FeatureExtractor {
+
+    /**
+     * The unique ids of the extracted features.
+     */
+    def featureIDs: Seq[String]
+
+    private[hermes] def createInitialFeatures[S]: Seq[ObjectProperty[Feature[S]]] = {
+        featureIDs.map(fid ⇒ ObjectProperty(new Feature[S](fid)))
+    }
 
     /**
      * A short descriptive name; by default the simple name of the class implementing the feature
@@ -58,7 +71,7 @@ trait FeatureExtractor {
      * By default the name of the class is used to lookup the resource "className.markdown"
      * which is expected to be found along the extractor.
      */
-    lazy val description: String = {
+    private[this] def mdDescription: String = {
         val descriptionResource = id+".markdown"
         val descriptionResourceURL = this.getClass.getResource(descriptionResource)
         try {
@@ -68,25 +81,25 @@ trait FeatureExtractor {
         }
     }
 
+    lazy val htmlDescription: String = Processor.process(mdDescription)
+
     def isInterrupted(): Boolean = Thread.currentThread().isInterrupted()
-
-    /**
-     * The unique ids of the extracted features.
-     */
-    def featureIDs: Seq[String]
-
-    def createFeatures[S]: Seq[Feature[S]] = featureIDs.map(fid ⇒ new Feature[S](fid))
 
     /**
      * The major function which analyzes the project and extracts the feature information.
      *
-     * @note   '''Every query should regularly check that its thread is not interrupted!''' E.g.,
-     *         using `Thread.currentThread().isInterrupted()`.
+     * @note   '''Every query should regularly check that its thread is not interrupted
+     *         using `isInterrupted`'''.
      */
     def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)],
-        features:             Map[String, Feature[S]] // the keys are the featureIDs
-    ): Unit
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): TraversableOnce[Feature[S]]
+}
+
+object Queries {
+
+    final val CSS = getClass().getResource("Queries.css").toExternalForm
+
 }
