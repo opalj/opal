@@ -44,13 +44,13 @@ trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, Analysis
         isInterrupted: () ⇒ Boolean
     ): AnalysisResult
 
-    final def analyze(
+    override final def analyze(
         project:                Project[Source],
         parameters:             Seq[String]                = List.empty,
         initProgressManagement: (Int) ⇒ ProgressManagement = ProgressManagement.None
     ): AnalysisResult = {
 
-        val pm = initProgressManagement(1)
+        val pm = initProgressManagement(1 /* number of steps */ )
         pm.progress(1, ProgressEvents.Start, Some(title))
         var wasKilled = false
         def isInterrupted(): Boolean = {
@@ -69,4 +69,3 @@ trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, Analysis
     }
 
 }
-
