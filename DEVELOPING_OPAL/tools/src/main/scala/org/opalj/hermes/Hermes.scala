@@ -67,6 +67,7 @@ import scalafx.scene.web.WebView
 import scalafx.scene.layout.VBox
 
 import org.controlsfx.control.PopOver
+import scalafx.beans.property.IntegerProperty
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
@@ -104,6 +105,20 @@ object Hermes extends JFXApp {
             data += ProjectFeatures(projectConfiguration, features)
         }
         data
+    }
+    val perFeatureCounts: Array[IntegerProperty] = {
+        val perFeatureCounts: Array[IntegerProperty] = Array.fill(featureIDs.length)(IntegerProperty(0))
+        data.foreach { projectFeatures ⇒
+            projectFeatures.features.view.zipWithIndex.foreach { fi ⇒
+                val (feature, index) = fi
+                feature.onChange { (_, oldValue, newValue) ⇒
+                    val change = newValue.count - oldValue.count
+                    if (change != 0)
+                        perFeatureCounts(index).value = perFeatureCounts(index).value + change
+                }
+            }
+        }
+        perFeatureCounts
     }
 
     def analyzeCorpus(): Thread = {
@@ -159,20 +174,46 @@ object Hermes extends JFXApp {
     )
 
     val featureColumns = featureIDs.zipWithIndex.map { fid ⇒
-        val ((name, extractor), index) = fid
+        val ((name, extractor), featureIndex) = fid
         val featureColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]("")
         featureColumn.setPrefWidth(60.0d)
         featureColumn.setCellValueFactory(
             new Callback[CellDataFeatures[ProjectFeatures[URL], Feature[URL]], ObservableValue[Feature[URL]]]() {
                 def call(p: CellDataFeatures[ProjectFeatures[URL], Feature[URL]]): ObservableValue[Feature[URL]] = {
-                    p.getValue.features(index)
+                    p.getValue.features(featureIndex)
                 }
             }
         )
         featureColumn.cellFactory = { (_) ⇒
             new TableCell[ProjectFeatures[URL], Feature[URL]] {
+                var currentValue = 0
                 item.onChange { (_, _, newFeature) ⇒
                     text = if (newFeature != null) newFeature.count.toString else ""
+                    style =
+                        if (newFeature == null)
+                            "-fx-background-color: gray"
+                        else {
+                            currentValue = newFeature.count
+                            if (newFeature.count == 0) {
+                                if (perFeatureCounts(featureIndex).value == 0)
+                                    "-fx-background-color: #ffd0db"
+                                else
+                                    "-fx-background-color: #ffffe0"
+                            } else {
+                                "-fx-background-color: #aaffaa"
+                            }
+                        }
+                }
+                perFeatureCounts(featureIndex).onChange { (_, oldValue, newValue) ⇒
+                    if (oldValue.intValue() != newValue.intValue) {
+                        style =
+                            if (newValue == 0)
+                                "-fx-background-color: #ffd0db"
+                            else if (currentValue == 0)
+                                "-fx-background-color: #ffffe0"
+                            else
+                                "-fx-background-color: #aaffaa"
+                    }
                 }
             }
         }
@@ -209,7 +250,6 @@ object Hermes extends JFXApp {
     tableView.getSelectionModel.getSelectedCells.onChange { (positions, _) ⇒
         if (positions.nonEmpty) {
             val position = positions.get(0)
-            println(position.getTableColumn().getCellData(position.getRow))
             if (position.getColumn == 0) {
                 rootPane.right = new TextArea(projectConfigurations(position.getRow).statistics.mkString("\n"))
             }
