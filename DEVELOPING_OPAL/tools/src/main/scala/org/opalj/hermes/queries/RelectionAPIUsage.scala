@@ -36,7 +36,7 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureExtractor
 import org.opalj.hermes.queries.util.APIFeatureGroup
-import org.opalj.hermes.queries.util.APIMethod
+import org.opalj.hermes.queries.util.InstanceAPIMethod
 
 /**
  * Counts the number of certain calls to the Java Reflection API.
@@ -52,100 +52,95 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
     val MethodOt = ObjectType("java/lang/reflect/Method")
 
     def apiFeatures: Chain[APIFeature] = Chain[APIFeature](
-        APIMethod(ClassOt, "forName", MethodDescriptor(ObjectType.String, ClassOt), isStatic = true),
-        APIMethod(
+        InstanceAPIMethod(ClassOt, "forName", MethodDescriptor(ObjectType.String, ClassOt)),
+        InstanceAPIMethod(
             ClassOt,
             "forName",
-            MethodDescriptor(s"(Ljava/lang/String;ZLjava/lang/ClassLoader;)[Ljava/lang/Class;"),
-            isStatic = true
+            MethodDescriptor(s"(Ljava/lang/String;ZLjava/lang/ClassLoader;)[Ljava/lang/Class;")
         ),
 
         // reflective instance creation
         APIFeatureGroup(
             Chain(
-                APIMethod(ClassOt, "newInstance", MethodDescriptor.JustReturnsObject),
-                APIMethod(ConstructorOt, "newInstance", MethodDescriptor("([Ljava/lang/Object;)Ljava/lang/Object;"))
+                InstanceAPIMethod(ClassOt, "newInstance", MethodDescriptor.JustReturnsObject),
+                InstanceAPIMethod(ConstructorOt, "newInstance", MethodDescriptor("([Ljava/lang/Object;)Ljava/lang/Object;"))
             ), "reflective instance creation"
         ),
 
         // reflective field write api
         APIFeatureGroup(
             Chain(
-                APIMethod(FieldOt, "set", MethodDescriptor("(Ljava/lang/Object;Ljava/lang/Object;)V")),
-                APIMethod(FieldOt, "setBoolean", MethodDescriptor("(Ljava/lang/Object;Z)V")),
-                APIMethod(FieldOt, "setByte", MethodDescriptor("(Ljava/lang/Object;B)V")),
-                APIMethod(FieldOt, "setChar", MethodDescriptor("(Ljava/lang/Object;C)V")),
-                APIMethod(FieldOt, "setDouble", MethodDescriptor("(Ljava/lang/Object;D)V")),
-                APIMethod(FieldOt, "setFloat", MethodDescriptor("(Ljava/lang/Object;F)V")),
-                APIMethod(FieldOt, "setInt", MethodDescriptor("(Ljava/lang/Object;I)V")),
-                APIMethod(FieldOt, "setLong", MethodDescriptor("(Ljava/lang/Object;J)V")),
-                APIMethod(FieldOt, "setShort", MethodDescriptor("(Ljava/lang/Object;S)V"))
+                InstanceAPIMethod(FieldOt, "set", MethodDescriptor("(Ljava/lang/Object;Ljava/lang/Object;)V")),
+                InstanceAPIMethod(FieldOt, "setBoolean", MethodDescriptor("(Ljava/lang/Object;Z)V")),
+                InstanceAPIMethod(FieldOt, "setByte", MethodDescriptor("(Ljava/lang/Object;B)V")),
+                InstanceAPIMethod(FieldOt, "setChar", MethodDescriptor("(Ljava/lang/Object;C)V")),
+                InstanceAPIMethod(FieldOt, "setDouble", MethodDescriptor("(Ljava/lang/Object;D)V")),
+                InstanceAPIMethod(FieldOt, "setFloat", MethodDescriptor("(Ljava/lang/Object;F)V")),
+                InstanceAPIMethod(FieldOt, "setInt", MethodDescriptor("(Ljava/lang/Object;I)V")),
+                InstanceAPIMethod(FieldOt, "setLong", MethodDescriptor("(Ljava/lang/Object;J)V")),
+                InstanceAPIMethod(FieldOt, "setShort", MethodDescriptor("(Ljava/lang/Object;S)V"))
             ), "reflective field write"
         ),
 
         // reflective field read api
         APIFeatureGroup(
             Chain(
-                APIMethod(FieldOt, "get", MethodDescriptor("(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;")),
-                APIMethod(FieldOt, "getBoolean", MethodDescriptor("(Ljava/lang/Object;)Z")),
-                APIMethod(FieldOt, "getByte", MethodDescriptor("(Ljava/lang/Object;)B")),
-                APIMethod(FieldOt, "getChar", MethodDescriptor("(Ljava/lang/Object;)C")),
-                APIMethod(FieldOt, "getDouble", MethodDescriptor("(Ljava/lang/Object;)D")),
-                APIMethod(FieldOt, "getFloat", MethodDescriptor("(Ljava/lang/Object;)F")),
-                APIMethod(FieldOt, "getInt", MethodDescriptor("(Ljava/lang/Object;)I")),
-                APIMethod(FieldOt, "getLong", MethodDescriptor("(Ljava/lang/Object;)J")),
-                APIMethod(FieldOt, "getShort", MethodDescriptor("(Ljava/lang/Object;)S"))
+                InstanceAPIMethod(FieldOt, "get", MethodDescriptor("(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;")),
+                InstanceAPIMethod(FieldOt, "getBoolean", MethodDescriptor("(Ljava/lang/Object;)Z")),
+                InstanceAPIMethod(FieldOt, "getByte", MethodDescriptor("(Ljava/lang/Object;)B")),
+                InstanceAPIMethod(FieldOt, "getChar", MethodDescriptor("(Ljava/lang/Object;)C")),
+                InstanceAPIMethod(FieldOt, "getDouble", MethodDescriptor("(Ljava/lang/Object;)D")),
+                InstanceAPIMethod(FieldOt, "getFloat", MethodDescriptor("(Ljava/lang/Object;)F")),
+                InstanceAPIMethod(FieldOt, "getInt", MethodDescriptor("(Ljava/lang/Object;)I")),
+                InstanceAPIMethod(FieldOt, "getLong", MethodDescriptor("(Ljava/lang/Object;)J")),
+                InstanceAPIMethod(FieldOt, "getShort", MethodDescriptor("(Ljava/lang/Object;)S"))
             ), "reflective field read"
         ),
 
         // setting fields accessible
         APIFeatureGroup(
             Chain(
-                APIMethod(
+                InstanceAPIMethod(
                     FieldOt,
                     "setAccessible",
-                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V"),
-                    isStatic = true
+                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V")
                 ),
-                APIMethod(FieldOt, "setAccessible", MethodDescriptor("(Z)V"))
+                InstanceAPIMethod(FieldOt, "setAccessible", MethodDescriptor("(Z)V"))
             ), "set fields accessible"
         ),
 
         // setting methods or constructors accessible
         APIFeatureGroup(
             Chain(
-                APIMethod(
+                InstanceAPIMethod(
                     MethodOt,
                     "setAccessible",
-                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V"),
-                    isStatic = true
+                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V")
                 ),
-                APIMethod(MethodOt, "setAccessible", MethodDescriptor("(Z)V")),
-                APIMethod(
+                InstanceAPIMethod(MethodOt, "setAccessible", MethodDescriptor("(Z)V")),
+                InstanceAPIMethod(
                     ConstructorOt,
                     "setAccessible",
-                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V"),
-                    isStatic = true
+                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V")
                 ),
-                APIMethod(ConstructorOt, "setAccessible", MethodDescriptor("(Z)V"))
+                InstanceAPIMethod(ConstructorOt, "setAccessible", MethodDescriptor("(Z)V"))
             ), "set methods or constructors accessible"
         ),
 
         // set an AccessibleObject accessible
         APIFeatureGroup(
             Chain(
-                APIMethod(
+                InstanceAPIMethod(
                     AccessibleObjectOt,
                     "setAccessible",
-                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V"),
-                    isStatic = true
+                    MethodDescriptor(s"([${AccessibleObjectOt.toJVMTypeName}Z)V")
                 ),
-                APIMethod(AccessibleObjectOt, "setAccessible", MethodDescriptor("(Z)V"))
+                InstanceAPIMethod(AccessibleObjectOt, "setAccessible", MethodDescriptor("(Z)V"))
             ), "set an AccessibleObject accessible (exact type unknown)"
         ),
 
         // reflective method invocation
-        APIMethod(
+        InstanceAPIMethod(
             MethodOt,
             "invoke",
             MethodDescriptor(s"(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")

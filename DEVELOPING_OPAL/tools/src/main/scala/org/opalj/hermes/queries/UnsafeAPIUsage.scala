@@ -35,9 +35,16 @@ import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.Chain
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureExtractor
-import org.opalj.hermes.queries.util.APIMethod
+import org.opalj.hermes.queries.util.APIFeatureGroup
+import org.opalj.hermes.queries.util.InstanceAPIMethod
+import org.opalj.hermes.queries.util.StaticAPIMethod
 
 /**
+ * Groups features that relie on the Unsafe API. (sun.misc.Unsafe)
+ *
+ * @note Feature groups are further discussed in the paper:
+ *       "Use at Your Own Risk: The Java Unsafe API in the Wild"
+ *       by Luis Mastrangelo et al.
  *
  * @author Michael Reif
  */
@@ -46,6 +53,11 @@ object UnsafeAPIUsage extends APIFeatureExtractor {
     val Unsafe = ObjectType("sun.misc.Unsafe")
 
     def apiFeatures: Chain[APIFeature] = Chain[APIFeature](
-        APIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;"), isStatic = true)
+        StaticAPIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;")),
+        APIFeatureGroup(
+            Chain(
+                InstanceAPIMethod(Unsafe, "allocateInstance")
+            ), "Unsafe Alloc"
+        )
     )
 }
