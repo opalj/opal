@@ -29,11 +29,11 @@
 package org.opalj
 package hermes
 
-import scalafx.beans.property.ObjectProperty
-import scalafx.collections.ObservableBuffer
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain
 
 /**
- * Represents the results of a query.
+ * Represents the immutable results of a query.
  *
  * @param  id A very short identifier of the this feature. E.g., `Java8ClassFile` or
  *         `ProtectedMethod` or `DeadMethod`. The name must not contain spaces or other
@@ -43,9 +43,11 @@ import scalafx.collections.ObservableBuffer
  *         I.e., `extensions.size` can be  smaller than `count`
  */
 case class Feature[S](
-        id: String
+        id:         String,
+        count:      Int                = 0,
+        extensions: Chain[Location[S]] = Naught
 ) {
-    val count = new ObjectProperty[Int](this, "count", 0)
-    val extensions: ObservableBuffer[Location[S]] = ObservableBuffer.empty[Location[S]]
+
+    assert(count >= extensions.size)
 
 }

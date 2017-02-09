@@ -32,6 +32,8 @@ package hermes
 import java.io.File
 import java.net.URL
 
+import scala.collection.Map
+
 import org.opalj.br
 import org.opalj.da
 import org.opalj.br.analyses.Project
@@ -45,8 +47,18 @@ import org.opalj.br.analyses.Project
  */
 case class ProjectConfiguration(id: String, cp: String, libcp: Option[String]) {
 
+    private[this] var theProjectStatistics: Map[String, Int] = Map.empty
+
     /**
-     * Instantiates the project.
+     * General statistics about a project. See
+     * [[org.opalj.br.analyses.Project.statistics]] for further information.
+     */
+    def statistics: Map[String, Int] = {
+        theProjectStatistics
+    }
+
+    /**
+     * Instantiates the project and initializes the meta-information.
      *
      * For the classes belonging to the project the naive bytecode representation is
      * also returned to facilitate analyses w.r.t. the representativeness of the bytecode.
@@ -81,6 +93,7 @@ case class ProjectConfiguration(id: String, cp: String, libcp: Option[String]) {
             }
         }
         val brProject = Project(brProjectClassFiles, libraryClassFiles, true)
+        theProjectStatistics = brProject.statistics
 
         ProjectInstantiation(brProject, daProjectClassFiles)
     }

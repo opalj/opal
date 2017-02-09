@@ -37,9 +37,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.collection.mutable.ArrayMap
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
-import scalafx.application.Platform
-
-//import org.opalj.br.analyses.ProgressManagement
 
 /**
  * Counts the number of class files per class file version.
@@ -57,9 +54,8 @@ object ClassFileVersion extends FeatureExtractor {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)],
-        features:             Map[String, Feature[S]]
-    ): Unit = {
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): TraversableOnce[Feature[S]] = {
 
         val data = ArrayMap[Chain[ClassFileLocation[S]]](Java9MajorVersion)
 
@@ -77,17 +73,14 @@ object ClassFileVersion extends FeatureExtractor {
                     location :&: locations
         }
 
-        if (!isInterrupted) { // we want to avoid that we return partial results
-            for (majorVersion ← (Java1MajorVersion to Java9MajorVersion)) yield {
-                val feature = features(featureId(majorVersion))
-                val extensions = data(majorVersion)
-                if (extensions ne null) {
-                    Platform.runLater {
-                        feature.count.value = extensions.size
-                        feature.extensions ++= extensions
-                    }
-                }
-            }
+        for (majorVersion ← (Java1MajorVersion to Java9MajorVersion)) yield {
+            val featureId = this.featureId(majorVersion)
+            val extensions = data(majorVersion)
+            if (extensions ne null) {
+                Feature[S](featureId, extensions.size, extensions)
+            } else
+                Feature[S](featureId, 0, Naught)
         }
+
     }
 }
