@@ -133,7 +133,6 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
 
         // reflective method invocation
         InstanceAPIMethod(
-
             Method,
             "invoke",
             MethodDescriptor(s"(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")
@@ -147,8 +146,11 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
         StaticAPIMethod(MethodHandles, "publicLookup"),
 
         APIFeatureGroup(
-            Chain(), ""
+            Chain(
+                InstanceAPIMethod(MethodHandle, "invokeExact"),
+                InstanceAPIMethod(MethodHandle, "invoke"),
+                InstanceAPIMethod(MethodHandle, "invokeWithArguments")
+            ), "method handle invocation"
         )
-
     )
 }
