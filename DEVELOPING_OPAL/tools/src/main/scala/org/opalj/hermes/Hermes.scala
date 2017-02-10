@@ -67,6 +67,7 @@ import scalafx.scene.web.WebView
 import scalafx.scene.layout.VBox
 
 import org.controlsfx.control.PopOver
+import org.controlsfx.control.HiddenSidesPane
 import scalafx.beans.property.IntegerProperty
 
 /**
@@ -243,7 +244,7 @@ object Hermes extends JFXApp {
         if (positions.nonEmpty) {
             val position = positions.get(0)
             if (position.getColumn == 0) {
-                rootPane.right = new TextArea(projectConfigurations(position.getRow).statistics.mkString("\n"))
+                projectDetails.setText(projectConfigurations(position.getRow).statistics.mkString("\n"))
             }
         }
     }
@@ -254,10 +255,15 @@ object Hermes extends JFXApp {
         maxWidth = 500
     }
 
+    val projectPane = new HiddenSidesPane();
+    val projectDetails = new TextArea()
+    projectPane.setContent(tableView);
+    projectPane.setLeft(projectDetails);
+    projectPane.setRight(locationsView);
+
     val rootPane = new BorderPane {
-        center = tableView
+        center = projectPane
         bottom = progressBar
-        right = locationsView
     }
 
     stage = new PrimaryStage {
