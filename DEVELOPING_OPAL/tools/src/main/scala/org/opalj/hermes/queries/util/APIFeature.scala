@@ -132,7 +132,7 @@ case class StaticAPIMethod(
             case None     ⇒ name
         }
 
-        s"${declClass.fqn}\n$methodName}"
+        s"${declClass.fqn}\n$methodName"
     }
 
     override def getAPIMethods = Chain(this)
