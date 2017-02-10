@@ -48,7 +48,7 @@ case class LocalVariableTableEntry(
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val name = cp(name_index).toString(cp)
-        val descriptor = parseFieldType(cp(descriptor_index).asString).javaTypeName
+        val descriptor = parseFieldType(cp(descriptor_index).asString).asJavaType
         <div class="local_variable">
             <span class="pc">pc=[{ start_pc } &rarr; { start_pc + length })</span>
             /
