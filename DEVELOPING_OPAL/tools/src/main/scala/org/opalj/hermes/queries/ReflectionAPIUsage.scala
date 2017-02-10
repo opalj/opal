@@ -51,6 +51,9 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
     val AccessibleObject = ObjectType("java/lang/reflect/AccessibleObject")
     val Constructor = ObjectType("java/lang/reflect/Constructor")
     val Method = ObjectType("java/lang/reflect/Method")
+    val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
+    val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
+    val MethodHandles_Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
 
     def apiFeatures: Chain[APIFeature] = Chain[APIFeature](
         StaticAPIMethod(Class, "forName"),
@@ -140,6 +143,18 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
             Method,
             "invoke",
             MethodDescriptor(s"(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")
+        ),
+
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////// new Reflection primitives ///////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////
+
+        StaticAPIMethod(MethodHandles, "lookup"),
+        StaticAPIMethod(MethodHandles, "publicLookup"),
+
+        APIFeatureGroup(
+            Chain(), ""
         )
+
     )
 }
