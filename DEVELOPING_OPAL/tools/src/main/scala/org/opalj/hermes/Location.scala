@@ -43,11 +43,10 @@ sealed trait Location[S] {
 }
 
 case class ClassFileLocation[S](
-        override val source: S,
-        classFileFQN:        String
-) extends Location[S] {
+    override val source: S,
+    classFileFQN:        String
+) extends Location[S]
 
-}
 object ClassFileLocation {
     def apply[S](source: S, classFile: ClassFile): ClassFileLocation[S] = {
         new ClassFileLocation[S](source, classFile.thisType.toJava)
