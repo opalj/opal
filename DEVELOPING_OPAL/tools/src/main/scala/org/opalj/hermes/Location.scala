@@ -47,6 +47,9 @@ case class ClassFileLocation[S](
         classFileFQN:        String
 ) extends Location[S] {
 
+    override def toString = {
+        s"$classFileFQN\n$source"
+    }
 }
 object ClassFileLocation {
     def apply[S](source: S, classFile: ClassFile): ClassFileLocation[S] = {
@@ -62,6 +65,10 @@ case class FieldLocation[S](
     override def source = classFileLocation.source
     def classFileFQN = classFileLocation.classFileFQN
 
+    override def toString = {
+        s"${classFileLocation.classFileFQN}{ /*field*/ $fieldName }\n"+
+            classFileLocation.source
+    }
 }
 
 case class MethodLocation[S](
@@ -71,14 +78,20 @@ case class MethodLocation[S](
 
     override def source = classFileLocation.source
     def classFileFQN = classFileLocation.classFileFQN
+
+    override def toString = {
+        s"${classFileLocation.classFileFQN}{ /*method*/ $methodSignature }\n"+
+            classFileLocation.source
+    }
+
 }
 object MethodLocation {
     def apply[S](source: S, classFile: ClassFile, method: Method): MethodLocation[S] = {
-        new MethodLocation(ClassFileLocation(source, classFile), method.name + method.descriptor)
+        new MethodLocation(ClassFileLocation(source, classFile), method.descriptor.toJava(method.name))
     }
 
     def apply[S](classFileLocation: ClassFileLocation[S], method: Method): MethodLocation[S] = {
-        new MethodLocation(classFileLocation, method.name + method.descriptor)
+        new MethodLocation(classFileLocation, method.descriptor.toJava(method.name))
     }
 
 }
@@ -92,4 +105,10 @@ case class InstructionLocation[S](
     def classFileFQN = methodLocation.classFileFQN
     def methodSignature = methodLocation.methodSignature
 
+    override def toString = {
+        val classFileLocation = methodLocation.classFileLocation
+        val methodSignature = methodLocation.methodSignature
+        s"${classFileLocation.classFileFQN}{ /*method*/ $methodSignature { $pc } }\n"+
+            classFileLocation.source
+    }
 }
