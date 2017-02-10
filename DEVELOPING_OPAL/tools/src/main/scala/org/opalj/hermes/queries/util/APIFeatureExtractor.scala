@@ -157,10 +157,6 @@ trait APIFeatureExtractor extends FeatureExtractor {
                 case x ⇒ throw new UnknownError("Unsupported APIMethod type found: "+x.getClass)
             }
 
-            if (foundCall && apiMethod.toFeatureID.contains("Unsafe")) {
-                println(apiMethod.toFeatureID+" in "+m.toJava(cf))
-            }
-
             if (foundCall) {
                 val count = invocationCounts.get(featureID).get + 1
                 invocationCounts = invocationCounts + ((featureID, count))
