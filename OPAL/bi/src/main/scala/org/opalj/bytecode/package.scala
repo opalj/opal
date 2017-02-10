@@ -91,13 +91,13 @@ package object bytecode {
      *
      * @example
      * {{{
-     * scala> org.opalj.abbreviateFQN("a.b.T","a.T") // <= no abbrev.
+     * scala> org.opalj.abbreviateType("a.b.T","a.T") // <= no abbrev.
      * res: String = a.T
      *
-     * scala> org.opalj.abbreviateFQN("a.b.T","a.b.T")
+     * scala> org.opalj.abbreviateType("a.b.T","a.b.T")
      * res: String = …b.T
      *
-     * scala> org.opalj.abbreviateFQN("a.b.c.T","a.b.c.T.X")
+     * scala> org.opalj.abbreviateType("a.b.c.T","a.b.c.T.X")
      * res: String = …c.T.X
      * }}}
      *
@@ -106,7 +106,7 @@ package object bytecode {
      *      parameter should be `'.'`, which is the default, otherwise the parameter
      *      should be `'/'`.
      */
-    def abbreviateFQN(
+    def abbreviateType(
         definingTypeFQN:  String,
         memberTypeFQN:    String,
         pkgSeparatorChar: Int    = '.'

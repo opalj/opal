@@ -30,21 +30,22 @@ package org.opalj
 package da
 
 /**
+ * Encapsulates basic type information.
+ *
  * @author Michael Eichberg
  */
-sealed trait TypeInfo {
-    def javaTypeName: String
+sealed abstract class TypeInfo {
+    def asJavaType: String
     def elementTypeIsBaseType: Boolean
-
 }
 
 object TypeInfo {
     def unapply(ti: TypeInfo): Some[(String, Boolean)] = {
-        Some((ti.javaTypeName, ti.elementTypeIsBaseType))
+        Some((ti.asJavaType, ti.elementTypeIsBaseType))
     }
 }
 
-abstract class PrimitiveTypeInfo protected (val javaTypeName: String) extends TypeInfo {
+sealed abstract class PrimitiveTypeInfo protected (val asJavaType: String) extends TypeInfo {
     final def elementTypeIsBaseType: Boolean = true
 }
 
@@ -57,8 +58,8 @@ case object LongTypeInfo extends PrimitiveTypeInfo("long")
 case object FloatTypeInfo extends PrimitiveTypeInfo("float")
 case object DoubleTypeInfo extends PrimitiveTypeInfo("double")
 
-case class ObjectTypeInfo(javaTypeName: String) extends TypeInfo {
+case class ObjectTypeInfo(asJavaType: String) extends TypeInfo {
     def elementTypeIsBaseType: Boolean = false
 }
 
-case class ArrayTypeInfo(javaTypeName: String, elementTypeIsBaseType: Boolean) extends TypeInfo
+case class ArrayTypeInfo(asJavaType: String, elementTypeIsBaseType: Boolean) extends TypeInfo

@@ -1167,6 +1167,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
+                def checkDefinitivePath(nextPC: PC, altPC: PC, qualifier: String): Unit = {
+                    if (worklist.isEmpty &&
+                        liveVariables(nextPC) != liveVariables(altPC) &&
+                        evaluated.exists(cfJoins.contains) // if it works out we should use something more efficient than the evaluated set (e.g. evaluatedCFJoins)
+                        )
+                        println(s"$pc > $nextPC(alt: $altPC):definitive path -$qualifier")
+                }
+
                 /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
                  * value.
@@ -1185,14 +1193,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                     domainTest(pc, operand) match {
                         case Yes ⇒
-                            // [DEFINITIVE PATH] if (worklist.isEmpty && liveVariables(branchTargetPC) != liveVariables(nextPC)) println("definitive path if...")
+                            checkDefinitivePath(branchTargetPC, nextPC, "ifXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 branchTargetPC, isExceptionalControlFlow = false,
                                 rest, locals
                             )
                         case No ⇒
-                            // [DEFINITIVE PATH] if (worklist.isEmpty && liveVariables(branchTargetPC) != liveVariables(nextPC)) println("definitive path if...")
+                            checkDefinitivePath(nextPC, branchTargetPC, "ifXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 nextPC, isExceptionalControlFlow = false,
@@ -1253,14 +1261,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val testResult = domainTest(pc, left, right)
                     testResult match {
                         case Yes ⇒
-                            // [DEFINITIVE PATH] if (worklist.isEmpty && liveVariables(branchTargetPC) != liveVariables(nextPC)) println("definitive path ifcmp...")
+                            checkDefinitivePath(branchTargetPC, nextPC, "ifTcmpXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 branchTargetPC, isExceptionalControlFlow = false,
                                 rest, locals
                             )
                         case No ⇒
-                            // [DEFINITIVE PATH] if (worklist.isEmpty && liveVariables(branchTargetPC) != liveVariables(nextPC)) println("definitive path ifcmp...")
+                            checkDefinitivePath(nextPC, branchTargetPC, "ifTcmpXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 nextPC, isExceptionalControlFlow = false,
@@ -1429,12 +1437,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 def fallThrough(
                     newOperands: Operands = operands,
                     newLocals:   Locals   = locals
-                ): Unit = {
+                ): PC = {
+                    val nextPC = pcOfNextInstruction
                     gotoTarget(
                         pc, instruction, operands, locals,
-                        pcOfNextInstruction, isExceptionalControlFlow = false,
+                        nextPC, isExceptionalControlFlow = false,
                         newOperands, newLocals
                     )
+                    nextPC
                 }
 
                 def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit = {
@@ -1446,10 +1456,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.returnsNormally)
-                        fallThrough(rest)
-                    if (computation.throwsException)
-                        handleException(computation.exceptions)
+                    val regPC = if (computation.returnsNormally) fallThrough(rest) else -1
+                    val exPCs = if (computation.throwsException) handleException(computation.exceptions) else UShortSet.empty
+
+                    if (computation.returnsNormally != computation.throwsException)
+                        println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs.head} - $instruction")
                 }
 
                 def computationWithExceptions(
@@ -1457,10 +1468,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.returnsNormally)
-                        fallThrough(rest)
-                    if (computation.throwsException)
-                        handleExceptions(computation.exceptions)
+                    if (computation.returnsNormally) fallThrough(rest)
+                    if (computation.throwsException) handleExceptions(computation.exceptions)
                 }
 
                 def computationWithReturnValueAndException(
@@ -1468,10 +1477,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.hasResult)
-                        fallThrough(computation.result :&: rest)
-                    if (computation.throwsException)
-                        handleException(computation.exceptions)
+                    val regPC = if (computation.hasResult) fallThrough(computation.result :&: rest) else -1
+                    val exPCs = if (computation.throwsException) handleException(computation.exceptions) else UShortSet.empty
+
+                    if (computation.returnsNormally != computation.throwsException)
+                        println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs.head} in {$exPCs} - $instruction")
                 }
 
                 def computationWithReturnValueAndExceptions(
@@ -1479,10 +1489,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.hasResult)
-                        fallThrough(computation.result :&: rest)
-                    if (computation.throwsException)
-                        handleExceptions(computation.exceptions)
+                    if (computation.hasResult) fallThrough(computation.result :&: rest)
+                    if (computation.throwsException) handleExceptions(computation.exceptions)
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
@@ -1496,8 +1504,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         else
                             fallThrough(rest)
                     }
-                    if (computation.throwsException)
-                        handleExceptions(computation.exceptions)
+                    if (computation.throwsException) handleExceptions(computation.exceptions)
+
+                    //if (computation.hasResult != computation.throwsException)
+                    //    println(s"$pc: DEFINITIVE PATH - $instruction")
                 }
 
                 // Small helper method to make type casts shorter.

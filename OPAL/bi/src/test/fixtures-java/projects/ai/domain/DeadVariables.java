@@ -125,6 +125,24 @@ public class DeadVariables {
     }
 
 
+    public Object notDeadRestored(Object o) {
+        int s = o.hashCode();
+        int t = s;
+        for(int i = 1; i < 3 ; i++){
+            // this loop will be evaluated at least once AND
+            // will always kill s BUT
+            // at the end will also restore s HENCE
+            // when the loop ends, the original value
+            // is stored in S
+            s = 100;
+            s *= i;
+            this.someInt = s;
+            s = t;
+        }
+        return s;
+    }
+
+
     public Object deadAtEnd() {
         Object o = "";
         Object z = null;

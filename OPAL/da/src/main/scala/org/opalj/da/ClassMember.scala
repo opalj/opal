@@ -29,46 +29,9 @@
 package org.opalj
 package da
 
-import scala.xml.Node
-import org.opalj.bi.ConstantPoolTag
-
 /**
- *
  * @author Michael Eichberg
  */
-case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+trait ClassMember {
 
-    override def size: Int = 1 + 2
-
-    override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Class
-
-    override def asJavaType(implicit cp: Constant_Pool): String = {
-        val classInfo = cp(name_index).toString
-        if (classInfo.charAt(0) == '[')
-            parseFieldType(classInfo).asJavaType
-        else
-            classInfo
-    }
-
-    override def asCPNode(implicit cp: Constant_Pool): Node =
-        <span class="cp_entry">
-            CONSTANT_Class_info(name_index={ name_index }
-            &laquo;
-            <span class="cp_ref">{ cp(name_index).asCPNode }</span>
-            &raquo;)
-        </span>
-
-    // OLD CONVERSION METHODS
-
-    override def asInlineNode(implicit cp: Constant_Pool): Node = {
-        <span class="fqn">{ toString }</span>
-    }
-
-    override def toString(implicit cp: Constant_Pool): String = {
-        val classInfo = cp(name_index).toString
-        if (classInfo.charAt(0) == '[')
-            parseFieldType(classInfo).asJavaType
-        else
-            classInfo.replace('/', '.')
-    }
 }

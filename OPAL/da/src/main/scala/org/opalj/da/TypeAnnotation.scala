@@ -57,7 +57,7 @@ case class TypeAnnotation(
         <div class="annotation">
             TypeAnnotation [target:{ target_type.toXHTML(cp) }
             , path:{ target_path.toXHTML(cp) }
-            ,type{ parseFieldType(type_index).javaTypeName }
+            ,type{ parseFieldType(type_index).asJavaType }
             ]
             <span class="element_value_pairs">{ evps }</span>
         </div>
