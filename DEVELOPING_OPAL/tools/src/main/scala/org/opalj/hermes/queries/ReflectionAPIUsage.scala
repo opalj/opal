@@ -54,6 +54,7 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
     val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
     val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
     val MethodHandles_Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
+    val Proxy = ObjectType("java.lang.reflect.Proxy")
 
     def apiFeatures: Chain[APIFeature] = Chain[APIFeature](
         StaticAPIMethod(Class, "forName"),
@@ -158,6 +159,8 @@ object ReflectionAPIUsage extends APIFeatureExtractor {
                 InstanceAPIMethod(MethodHandle, "invoke"),
                 InstanceAPIMethod(MethodHandle, "invokeWithArguments")
             ), "method handle invocation"
-        )
+        ),
+
+        StaticAPIMethod(Proxy, "newProxyInstance")
     )
 }
