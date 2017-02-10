@@ -16,4 +16,6 @@ The following features are targeted by the analysis:
 ## Reflection features from Java 7 and later
 
 - usage of `MethodHandle.Lookup`
+- `MethodHandle` invocations over 
+    * `MethodHandle.invoke`, `MethodHandle.invokeExact`, and `MethodHandle.invokeWithArguments`
 - *TO BE IMPLEMENTED*
