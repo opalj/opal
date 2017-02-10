@@ -1,5 +1,4 @@
-/*
- * BSD 2-Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
@@ -140,7 +139,7 @@ case class StaticAPIMethod(
             case None     ⇒ name
         }
 
-        s"${declClass.fqn}\n$methodName}"
+        s"${declClass.fqn}\n$methodName"
     }
 
     override def getAPIMethods = Chain(this)

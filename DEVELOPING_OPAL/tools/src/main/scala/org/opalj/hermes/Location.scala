@@ -43,9 +43,9 @@ sealed trait Location[S] {
 }
 
 case class ClassFileLocation[S](
-        override val source: S,
-        classFileFQN:        String
-) extends Location[S] {
+    override val source: S,
+    classFileFQN:        String
+) extends Location[S]
 
     override def toString = {
         s"$classFileFQN\n$source"
@@ -104,11 +104,20 @@ case class InstructionLocation[S](
     override def source = methodLocation.source
     def classFileFQN = methodLocation.classFileFQN
     def methodSignature = methodLocation.methodSignature
-
     override def toString = {
         val classFileLocation = methodLocation.classFileLocation
         val methodSignature = methodLocation.methodSignature
         s"${classFileLocation.classFileFQN}{ /*method*/ $methodSignature { $pc } }\n"+
             classFileLocation.source
+        }
+    }
+object InstructionLocation {
+
+    def apply[S](source: S, classFile: ClassFile, method: Method, pc: PC): InstructionLocation[S] = {
+        new InstructionLocation(
+            MethodLocation(ClassFileLocation(source, classFile), method.name + method.descriptor),
+            pc
+        )
+
     }
 }
