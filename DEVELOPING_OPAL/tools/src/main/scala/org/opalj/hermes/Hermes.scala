@@ -40,9 +40,6 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 import javafx.scene.control.TableColumn
-import javafx.scene.control.TableColumn.CellDataFeatures
-import javafx.util.Callback
-import javafx.beans.value.ObservableValue
 import javafx.scene.layout.Priority
 
 import scalafx.Includes._
@@ -69,6 +66,11 @@ import scalafx.scene.layout.VBox
 import org.controlsfx.control.PopOver
 import org.controlsfx.control.HiddenSidesPane
 import scalafx.beans.property.IntegerProperty
+import org.controlsfx.control.PopOver.ArrowLocation
+import scalafx.scene.layout.HBox
+import javafx.scene.control.SelectionMode
+import scalafx.stage.Stage
+import org.opalj.da.ClassFileReader
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
@@ -78,38 +80,62 @@ import scalafx.beans.property.IntegerProperty
 object Hermes extends JFXApp {
 
     if (parameters.unnamed.size != 1) {
-        Console.err.println("OPAL - Hermes")
-        Console.err.println("Parameters invalid.")
-        Console.err.println("java org.opalj.hermes.Hermes <ConfigFile.json>")
+        import Console.err
+        err.println("OPAL - Hermes")
+        err.println("Invalid parameters. ")
+        err.println("The parameter has to be the configuarion which lists a corpus' projects.")
+        err.println("java org.opalj.hermes.Hermes <ConfigFile.json>")
         System.exit(1)
     }
 
-    def initConfig(configFile: File): Config = {
+    /** Creates the initial, overall configuration. */
+    private[this] def initConfig(configFile: File): Config = {
         ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
     }
+
+    /** The base configuration of OPAL and Hermes. */
     val config = initConfig(new File(parameters.unnamed(0)))
+
+    /**
+     * Rendering of the configuration related to OPAL/Hermes.
+     */
     def renderConfig: String = {
         config.
             getObject("org.opalj").
             render(ConfigRenderOptions.defaults().setOriginComments(false))
     }
 
-    val queries = config.as[List[Query]]("org.opalj.hermes.queries")
-    val featureExtractors = queries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
-    val featureIDs = featureExtractors.flatMap(fe ⇒ fe.featureIDs.map((_, fe)))
-    val projectConfigurations = config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
+    /** The list of all registered feature queries. */
+    val queries: List[Query] = config.as[List[Query]]("org.opalj.hermes.queries")
 
-    val data = {
-        val data = ObservableBuffer.empty[ProjectFeatures[URL]]
-        for { projectConfiguration ← projectConfigurations } {
-            val features = featureExtractors map { fe ⇒ (fe, fe.createInitialFeatures[URL]) }
-            data += ProjectFeatures(projectConfiguration, features)
-        }
-        data
+    /** The list of enabled feature queries. */
+    val featureQueries: List[FeatureExtractor] = {
+        queries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
     }
+
+    /** The list of unique features derive by enable feature queries. */
+    val featureIDs: List[(String, FeatureExtractor)] = {
+        featureQueries.flatMap(fe ⇒ fe.featureIDs.map((_, fe)))
+    }
+
+    /** The set of all project configurations. */
+    val projectConfigurations = config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
+    // TODO Validate that all project names are unique!
+
+    /** The matrix containing the results of executing the queries.  */
+    private[this] val featureMatrix: ObservableBuffer[ProjectFeatures[URL]] = {
+        val featureMatrix = ObservableBuffer.empty[ProjectFeatures[URL]]
+        for { projectConfiguration ← projectConfigurations } {
+            val features = featureQueries map { fe ⇒ (fe, fe.createInitialFeatures[URL]) }
+            featureMatrix += ProjectFeatures(projectConfiguration, features)
+        }
+        featureMatrix
+    }
+
+    /** Count of the number of occurrences of a feature across all projects. */
     val perFeatureCounts: Array[IntegerProperty] = {
         val perFeatureCounts = Array.fill(featureIDs.length)(IntegerProperty(0))
-        data.foreach { projectFeatures ⇒
+        featureMatrix.foreach { projectFeatures ⇒
             projectFeatures.features.view.zipWithIndex.foreach { fi ⇒
                 val (feature, index) = fi
                 feature.onChange { (_, oldValue, newValue) ⇒
@@ -122,14 +148,18 @@ object Hermes extends JFXApp {
         perFeatureCounts
     }
 
+    /**
+     * Executes the queries for all projects. Basically, the queries are executed in parallel
+     * for each project.
+     */
     def analyzeCorpus(): Thread = {
         val task = new Runnable {
             def run(): Unit = {
-                val totalSteps = (featureExtractors.size * projectConfigurations.size).toDouble
+                val totalSteps = (featureQueries.size * projectConfigurations.size).toDouble
                 val stepsDone = new AtomicInteger(0)
                 for {
                     // Using an iterator is required to avoid eager initialization of all projects!
-                    projectFeatures ← data.toIterator
+                    projectFeatures ← featureMatrix.toIterator
                     if !Thread.currentThread.isInterrupted()
                     projectConfiguration = projectFeatures.projectConfiguration
                     projectInstantiation = projectConfiguration.instantiate
@@ -146,6 +176,7 @@ object Hermes extends JFXApp {
                     )
 
                     Platform.runLater {
+                        // (implicitly) update the feature matrix
                         features.foreach { f ⇒ featuresMap(f.id).value = f }
                         val progress = stepsDone.incrementAndGet() / totalSteps
                         if (progressBar.getProgress < progress) {
@@ -154,6 +185,7 @@ object Hermes extends JFXApp {
                     }
                 }
 
+                // we are done
                 Platform.runLater { rootPane.getChildren().remove(progressBar) }
             }
         }
@@ -163,16 +195,57 @@ object Hermes extends JFXApp {
         t
     }
 
+    //
+    //
+    // UI SETUP CODE
+    //
+    //
+
     val progressBar = new ProgressBar { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
 
     val projectColumn = new TableColumn[ProjectFeatures[URL], String]("Project")
-    projectColumn.setCellValueFactory(
-        new Callback[CellDataFeatures[ProjectFeatures[URL], String], ObservableValue[String]] {
-            def call(p: CellDataFeatures[ProjectFeatures[URL], String]): ObservableValue[String] = {
-                p.getValue.id
+    // TODO Make the project configuration observable to fill the statistics table automatically.
+    projectColumn.cellValueFactory = { p ⇒ p.getValue.id }
+    projectColumn.cellFactory = { (column) ⇒
+        new TableCell[ProjectFeatures[URL], String] {
+            item.onChange { (_, _, newProject) ⇒
+                if (newProject != null) {
+                    val infoButton = new Button("Info")
+                    val popOver = new PopOver()
+                    popOver.arrowLocationProperty.value = ArrowLocation.LEFT_CENTER
+                    popOver.setTitle(newProject)
+                    val textArea = new TextArea("Project statistics are not (yet) available.") {
+                        editable = false
+                        prefWidth = 300d
+                        prefHeight = 300d
+                    }
+                    popOver.contentNodeProperty.value = textArea
+                    popOver.setDetachable(true)
+                    popOver.setHideOnEscape(false)
+                    infoButton.onAction = handle {
+                        if (!popOver.isShowing()) {
+                            val statistics =
+                                featureMatrix.
+                                    find(_.id.value == newProject).get.
+                                    projectConfiguration.
+                                    statistics
+                            textArea.text = statistics.map(e ⇒ e._1+": "+e._2).toList.sorted.mkString("\n")
+                            popOver.show(infoButton)
+                        }
+                    }
+                    graphic =
+                        new HBox(
+                            new Label(newProject) {
+                                hgrow = Priority.ALWAYS
+                                maxWidth = Double.MaxValue
+                                padding = Insets(5, 5, 5, 5)
+                            },
+                            infoButton
+                        )
+                }
             }
         }
-    )
+    }
 
     val featureColumns = featureIDs.zipWithIndex.map { fid ⇒
         val ((name, extractor), featureIndex) = fid
@@ -181,7 +254,7 @@ object Hermes extends JFXApp {
         featureColumn.cellValueFactory = { p ⇒ p.getValue.features(featureIndex) }
         featureColumn.cellFactory = { (_) ⇒
             new TableCell[ProjectFeatures[URL], Feature[URL]] {
-                var currentValue = 0
+                var currentValue = -1
                 item.onChange { (_, _, newFeature) ⇒
                     text = if (newFeature != null) newFeature.count.toString else ""
                     style =
@@ -200,7 +273,7 @@ object Hermes extends JFXApp {
                         }
                 }
                 perFeatureCounts(featureIndex).onChange { (_, oldValue, newValue) ⇒
-                    if (oldValue.intValue() != newValue.intValue) {
+                    if (oldValue.intValue() != newValue.intValue && currentValue != -1) {
                         style =
                             if (newValue == 0)
                                 "-fx-background-color: #ffd0db"
@@ -212,54 +285,100 @@ object Hermes extends JFXApp {
                 }
             }
         }
-        val label = new Label(name)
-        label.setRotate(-90)
-        label.setPadding(Insets(5, 5, 5, 5))
+        val label = new Label(name) { rotate = -90; padding = Insets(5, 5, 5, 5) }
         val button = new Button("Doc.") { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
         val group = new Group(label)
-        val box = new VBox(group, button)
+        val box = new VBox(group, button) { vgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
         box.setAlignment(Pos.BottomCenter)
-        box.hgrow = Priority.ALWAYS
-        box.vgrow = Priority.ALWAYS
-        box.maxWidth = Double.MaxValue
         featureColumn.setGraphic(box)
-        val webView = new WebView
-        webView.setPrefSize(300.0d, 400.0d)
+        val webView = new WebView { prefHeight = 400d; prefWidth = 300d }
         val webEngine = webView.engine
         webEngine.setUserStyleSheetLocation(Queries.CSS)
         webEngine.loadContent(extractor.htmlDescription)
         val popOver = new PopOver(webView)
+        popOver.arrowLocationProperty.value = ArrowLocation.TOP_CENTER
         popOver.setTitle(extractor.id.replaceAll("\n", " – "))
         popOver.setDetachable(true)
         popOver.setHideOnEscape(false)
-        button.onAction = handle { if (!popOver.isShowing()) popOver.show(group) }
+        button.onAction = handle { if (!popOver.isShowing()) popOver.show(button) }
         featureColumn
     }
 
-    val tableView =
-        new TableView[ProjectFeatures[URL]](data) { columns ++= (projectColumn +: featureColumns) }
+    val featuresTableView = new TableView[ProjectFeatures[URL]](featureMatrix) {
+        columns ++= (projectColumn +: featureColumns)
+    }
 
-    tableView.getSelectionModel.setCellSelectionEnabled(true)
-    tableView.getSelectionModel.getSelectedCells.onChange { (positions, _) ⇒
+    featuresTableView.getSelectionModel.setCellSelectionEnabled(true)
+    featuresTableView.getSelectionModel.getSelectedCells.onChange { (positions, _) ⇒
+        // TODO Bind the content to the selected observable feature as such
         if (positions.nonEmpty) {
             val position = positions.get(0)
-            if (position.getColumn == 0) {
-                projectDetails.setText(projectConfigurations(position.getRow).statistics.mkString("\n"))
+            val index = position.getColumn - 1
+            if (index >= 0) {
+                locationsView.items.value.clear()
+                featureMatrix(position.getRow).features(index).value.extensions.forall(
+                    locationsView.items.value.add
+                )
             }
         }
     }
 
-    val locationsView = new ListView {
-        prefWidth = 200
-        minWidth = 150
-        maxWidth = 500
+    val locationsView = new ListView[Location[URL]] {
+        prefWidth = 1280d
+        minWidth = 150d
+        maxWidth = 1280d
+        padding = Insets(5, 5, 5, 5)
+    }
+    locationsView.getSelectionModel.setSelectionMode(SelectionMode.SINGLE)
+    locationsView.getSelectionModel.selectedItem.onChange { (_, _, newLocation) ⇒
+        if (newLocation != null) {
+            val webView = new WebView
+            val stage = new Stage {
+                scene = new Scene {
+                    title = newLocation.source.toExternalForm()
+                    root = webView
+                }
+                width = 1024
+                height = 600
+            }
+            stage.show();
+            try {
+                val classFile = ClassFileReader.ClassFile(
+                    () ⇒ newLocation.source.openConnection().getInputStream
+                )(0)
+                webView.engine.loadContent(classFile.toXHTML().toString())
+            } catch { case t: Throwable ⇒ t.printStackTrace() }
+        }
     }
 
     val projectPane = new HiddenSidesPane();
-    val projectDetails = new TextArea()
-    projectPane.setContent(tableView);
-    projectPane.setLeft(projectDetails);
-    projectPane.setRight(locationsView);
+    val configurationDetails = new TextArea(renderConfig) {
+        editable = false
+        prefHeight = 600d
+    }
+    projectPane.setContent(featuresTableView);
+    projectPane.setTop(
+        new VBox(
+        new Label("Configuration") {
+            padding = Insets(5, 5, 5, 5)
+            hgrow = Priority.ALWAYS
+            maxWidth = Double.MaxValue
+            alignment = Pos.Center
+        },
+        configurationDetails
+    ) { padding = Insets(5, 5, 5, 5) }.delegate
+    )
+    projectPane.setRight(
+        new VBox(
+        new Label("Locations") {
+            padding = Insets(5, 5, 5, 5)
+            hgrow = Priority.ALWAYS
+            maxWidth = Double.MaxValue
+            alignment = Pos.Center
+        },
+        locationsView
+    ) { padding = Insets(5, 5, 5, 5) }.delegate
+    )
 
     val rootPane = new BorderPane {
         center = projectPane
