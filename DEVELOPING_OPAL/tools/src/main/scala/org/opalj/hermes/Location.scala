@@ -90,5 +90,13 @@ case class InstructionLocation[S](
     override def source = methodLocation.source
     def classFileFQN = methodLocation.classFileFQN
     def methodSignature = methodLocation.methodSignature
+}
 
+object InstructionLocation {
+
+    def apply[S](source: S, classFile: ClassFile, method: Method, pc: PC): InstructionLocation[S] = {
+        new InstructionLocation(
+          MethodLocation(ClassFileLocation(source, classFile), method.name + method.descriptor),
+          pc)
+    }
 }

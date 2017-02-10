@@ -117,10 +117,7 @@ trait APIFeatureExtractor extends FeatureExtractor {
                 if (source.isEmpty)
                     return ;
 
-                val cfLoc = ClassFileLocation(source.get, cf.fqn)
-                val mSig = m.descriptor.toJava(m.name)
-                val mLoc = MethodLocation(cfLoc, mSig)
-                val instLoc = InstructionLocation(mLoc, pc)
+                val instLoc = InstructionLocation(source.get, cf, m, pc)
                 locations += ((featureID, instLoc :&: locations.getOrElse(featureID, Naught)))
             }
 
