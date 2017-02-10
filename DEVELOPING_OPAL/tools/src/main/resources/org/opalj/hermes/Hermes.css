@@ -1,0 +1,8 @@
+.table-view .table-column {
+	-fx-min-width: 4em;
+}
+
+.table-view .column-header .label {
+    -fx-text-alignment: left;
+    -fx-text-origin: top;
+}

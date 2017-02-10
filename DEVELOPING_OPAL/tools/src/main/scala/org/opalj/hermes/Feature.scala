@@ -27,45 +27,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package hermes
+
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain
 
 /**
- * An analysis that performs all computations in one step. Only very short-running
- * analyses should use this interface as reporting progress is not supported.
+ * Represents the immutable results of a query.
  *
- * @author Michael Eichberg
+ * @param  id A very short identifier of the this feature. E.g., `Java8ClassFile` or
+ *         `ProtectedMethod` or `DeadMethod`. The name must not contain spaces or other
+ *         special characters.
+ * @param  extensions The places where the feature was found. This information is
+ *         primarily useful when navigating the project and is optional.
+ *         I.e., `extensions.size` can be  smaller than `count`
  */
-trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, AnalysisResult] {
+case class Feature[S](
+        id:         String,
+        count:      Int                = 0,
+        extensions: Chain[Location[S]] = Naught
+) {
 
-    /*abstract*/ def doAnalyze(
-        project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
-    ): AnalysisResult
-
-    override final def analyze(
-        project:                Project[Source],
-        parameters:             Seq[String]                = List.empty,
-        initProgressManagement: (Int) ⇒ ProgressManagement = ProgressManagement.None
-    ): AnalysisResult = {
-
-        val pm = initProgressManagement(1 /* number of steps */ )
-        pm.progress(1, ProgressEvents.Start, Some(title))
-        var wasKilled = false
-        def isInterrupted(): Boolean = {
-            wasKilled = pm.isInterrupted()
-            wasKilled
-        }
-
-        val result = doAnalyze(project, parameters, isInterrupted)
-
-        if (wasKilled)
-            pm.progress(-1, ProgressEvents.Killed, None)
-        else
-            pm.progress(1, ProgressEvents.End, None)
-
-        result
-    }
+    assert(count >= extensions.size)
 
 }

@@ -27,45 +27,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package hermes
+
+import scala.reflect.runtime.universe
 
 /**
- * An analysis that performs all computations in one step. Only very short-running
- * analyses should use this interface as reporting progress is not supported.
+ * Properties of a feature extractor/query.
+ *
+ * @note Used to represent the corresponding information in the general configuration file.
  *
  * @author Michael Eichberg
  */
-trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, AnalysisResult] {
+case class Query(query: String, activate: Boolean = true) {
 
-    /*abstract*/ def doAnalyze(
-        project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
-    ): AnalysisResult
+    def isEnabled: Boolean = activate
 
-    override final def analyze(
-        project:                Project[Source],
-        parameters:             Seq[String]                = List.empty,
-        initProgressManagement: (Int) ⇒ ProgressManagement = ProgressManagement.None
-    ): AnalysisResult = {
-
-        val pm = initProgressManagement(1 /* number of steps */ )
-        pm.progress(1, ProgressEvents.Start, Some(title))
-        var wasKilled = false
-        def isInterrupted(): Boolean = {
-            wasKilled = pm.isInterrupted()
-            wasKilled
+    def reify: Option[FeatureExtractor] = {
+        try {
+            val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
+            val module = runtimeMirror.staticModule(query)
+            val companionObject = runtimeMirror.reflectModule(module)
+            Some(companionObject.instance.asInstanceOf[FeatureExtractor])
+        } catch {
+            case t: Throwable ⇒
+                Console.err.println(s"failed to load: $query")
+                None
         }
-
-        val result = doAnalyze(project, parameters, isInterrupted)
-
-        if (wasKilled)
-            pm.progress(-1, ProgressEvents.Killed, None)
-        else
-            pm.progress(1, ProgressEvents.End, None)
-
-        result
     }
 
 }
