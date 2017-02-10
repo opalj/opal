@@ -15,4 +15,5 @@ The following features are targeted by the analysis:
 
 ## Reflection features from Java 7 and later
 
-*TO BE IMPLEMENTED*
+- usage of `MethodHandle.Lookup`
+- *TO BE IMPLEMENTED*

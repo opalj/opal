@@ -2,10 +2,8 @@
 
 Extracts features regarding the usage of `sun.misc.Unsafe`.
 Several methods of the have been grouped to feature categories. The mapping is taken from the Paper: 
-*Use at Your Own Risk: The Java Unsafe API in the Wild* by Lues Mastrangelo et al.. According to the
+*Use at Your Own Risk: The Java Unsafe API in the Wild* by Lues Mastrangelo et al.[1]. According to the
 paper, the analysis supports the following categories:
-
-> (The following text is from the referenced paper.)
 
 <dl>
   <dt>Alloc</dt>
@@ -37,7 +35,6 @@ paper, the analysis supports the following categories:
   <dd>The methods of the Fence group provide memory fences
       to ensure loads and stores are visible to other threads.
       These methods are implemented using processor-specific instructions.</dd>
-  
   <dt>Fetch & Add</dt>
   <dd>The Fetch & Add group, like the CAS group, allows the
       programmer to atomically update a Java variable. This
@@ -94,3 +91,5 @@ paper, the analysis supports the following categories:
       the developer to store a value in a Java variable with
       volatile semantics.</dd>
 </dl>
+
+> [1] Use at Your Own Risk: The Java Unsafe API in the Wild - http://dl.acm.org/citation.cfm?doid=2814270.2814313
