@@ -345,6 +345,7 @@ object Hermes extends JFXApp {
             }
             stage.show();
             try {
+                // TODO Add support for jars in jars..
                 val classFile = ClassFileReader.ClassFile(
                     () ⇒ newLocation.source.openConnection().getInputStream
                 )(0)
