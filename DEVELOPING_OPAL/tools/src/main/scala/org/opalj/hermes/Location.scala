@@ -120,6 +120,5 @@ object InstructionLocation {
             MethodLocation(ClassFileLocation(source, classFile), method.name + method.descriptor),
             pc
         )
-
     }
 }

@@ -31,6 +31,8 @@ package hermes
 
 import java.io.File
 import java.net.URL
+import java.io.FileWriter
+import java.io.BufferedWriter
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.Config
@@ -39,7 +41,11 @@ import com.typesafe.config.ConfigRenderOptions
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
+import com.fasterxml.jackson.dataformat.csv.CsvSchema
+import com.fasterxml.jackson.dataformat.csv.CsvFactory
+
 import javafx.scene.control.TableColumn
+import javafx.scene.control.SelectionMode
 import javafx.scene.layout.Priority
 
 import scalafx.Includes._
@@ -49,6 +55,8 @@ import scalafx.application.JFXApp.PrimaryStage
 import scalafx.collections.ObservableBuffer
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
+import scalafx.stage.Stage
+import scalafx.stage.Modality
 import scalafx.scene.Scene
 import scalafx.scene.Group
 import scalafx.scene.layout.BorderPane
@@ -59,17 +67,22 @@ import scalafx.scene.control.ListView
 import scalafx.scene.control.TextArea
 import scalafx.scene.control.TableCell
 import scalafx.scene.control.Button
+import scalafx.scene.layout.HBox
 import scalafx.scene.image.Image
 import scalafx.scene.web.WebView
 import scalafx.scene.layout.VBox
+import scalafx.beans.property.BooleanProperty
+import scalafx.beans.property.IntegerProperty
+import scalafx.scene.control.MenuItem
+import scalafx.stage.FileChooser
+import scalafx.stage.FileChooser.ExtensionFilter
+import scalafx.scene.control.MenuBar
+import scalafx.scene.control.Menu
+import scalafx.scene.input.KeyCombination
 
 import org.controlsfx.control.PopOver
 import org.controlsfx.control.HiddenSidesPane
-import scalafx.beans.property.IntegerProperty
 import org.controlsfx.control.PopOver.ArrowLocation
-import scalafx.scene.layout.HBox
-import javafx.scene.control.SelectionMode
-import scalafx.stage.Stage
 import org.opalj.da.ClassFileReader
 
 /**
@@ -149,6 +162,8 @@ object Hermes extends JFXApp {
         perFeatureCounts
     }
 
+    /* stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
+
     /**
      * Executes the queries for all projects. Basically, the queries are executed in parallel
      * for each project.
@@ -187,7 +202,10 @@ object Hermes extends JFXApp {
                 }
 
                 // we are done
-                Platform.runLater { rootPane.getChildren().remove(progressBar) }
+                Platform.runLater {
+                    rootPane.getChildren().remove(progressBar)
+                    analysesFinished.value = true
+                }
             }
         }
         val t = new Thread(task)
@@ -333,7 +351,6 @@ object Hermes extends JFXApp {
             if (index >= 0) {
                 locationsView.items.value.clear()
                 val extensions = featureMatrix(position.getRow).features(index).value.extensions
-                println(s"column index: $index - $extensions")
                 extensions.forall(locationsView.items.value.add)
             }
         }
@@ -369,23 +386,7 @@ object Hermes extends JFXApp {
     }
 
     val mainPane = new HiddenSidesPane();
-    val configurationDetails = new TextArea(renderConfig) {
-        editable = false
-        prefHeight = 600d
-    }
     mainPane.setContent(featuresTableView);
-    mainPane.setTop(
-        new VBox(
-        new Label("Configuration") {
-            padding = Insets(5, 5, 5, 5)
-            hgrow = Priority.ALWAYS
-            maxWidth = Double.MaxValue
-            alignment = Pos.Center
-            style = "-fx-background-color: #ccc"
-        },
-        configurationDetails
-    ) { padding = Insets(0, 100, 5, 100) }.delegate
-    )
     mainPane.setRight(
         new VBox(
         new Label(s"Locations (at most ${Globals.MaxLocations} are shown)") {
@@ -403,7 +404,62 @@ object Hermes extends JFXApp {
     }.delegate
     )
 
+    def createFileMenuItems(): List[MenuItem] = {
+
+        val showConfig = new MenuItem("Show Config...") {
+            onAction = handle {
+                val configurationDetails = new TextArea(renderConfig) {
+                    editable = false
+                    prefHeight = 600d
+                }
+                val configurationStage = new Stage {
+                    scene = new Scene { title = "Configuration"; root = configurationDetails }
+                }
+                configurationStage.initOwner(stage)
+                configurationStage.initModality(Modality.ApplicationModal);
+                configurationStage.showAndWait()
+            }
+        }
+        val csvExport = new MenuItem("Export As CVS...") {
+            disable <== analysesFinished.not
+            accelerator = KeyCombination.keyCombination("Ctrl +Alt +S")
+            onAction = handle {
+                val fileChooser = new FileChooser {
+                    title = "Open Class File"
+                    extensionFilters ++= Seq(new ExtensionFilter("Comma Separated Values", "*.csv"))
+                }
+                val selectedFile = fileChooser.showSaveDialog(stage)
+                if (selectedFile != null) {
+                    val csvSchema =
+                        featureIDs.
+                            foldLeft(CsvSchema.builder().addColumn("Project")) { (schema, feature) ⇒
+                                schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
+                            }.
+                            setUseHeader(true).
+                            build()
+                    val writer = new BufferedWriter(new FileWriter(selectedFile))
+                    val csvGenerator = new CsvFactory().createGenerator(writer)
+                    csvGenerator.setSchema(csvSchema)
+                    featureMatrix.foreach { pf ⇒
+                        csvGenerator.writeStartArray()
+                        csvGenerator.writeString(pf.id.value)
+                        pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.value.count) }
+                        csvGenerator.flush()
+                        csvGenerator.writeEndArray()
+                    }
+                    csvGenerator.close()
+                }
+            }
+        }
+        List(showConfig, csvExport)
+    }
+
     val rootPane = new BorderPane {
+        top = new MenuBar {
+            useSystemMenuBar = true
+            minWidth = 100
+            menus = Seq(new Menu("File") { items = createFileMenuItems() })
+        }
         center = mainPane
         bottom = progressBar
     }
