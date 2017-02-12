@@ -228,7 +228,7 @@ object Hermes extends JFXApp {
         // CONSTRAINTS
         // -
         // - [per feature f] sum(p_i which has feature f) > 0
-        val pis: Array[IntVar] = projectConfigurations.map(pc ⇒ model.boolVar(pc.id)).toArray
+        val pis: Array[IntVar] = featureMatrix.map(pf ⇒ model.boolVar(pf.id.value)).toArray
         perFeatureCounts.iterator.zipWithIndex.foreach { fCount_fIndex ⇒
             val (fCount, fIndex) = fCount_fIndex
             if (fCount.value > 0) {
@@ -238,14 +238,14 @@ object Hermes extends JFXApp {
                 model.sum(projectsWithFeature, ">", 0).post()
             }
         }
-        val piSizes: Array[Int] = projectConfigurations.map(pc ⇒ pc.statistics("ProjectMethods").toInt).toArray
+        val piSizes: Array[Int] = featureMatrix.map(pf ⇒ pf.projectConfiguration.statistics("ProjectMethods").toInt).toArray
         val overallSize = model.intVar("objective", 0, IntVar.MAX_INT_BOUND /*=21474836*/ )
         model.scalar(pis, piSizes, "=", overallSize).post()
         model.setObjective(Model.MINIMIZE, overallSize)
         val solver = model.getSolver
-        //solver.setSearch(Search.)
+        //solver.setSearch(Search.???)
         while (solver.solve()) {
-            println(s"Found solution (Overall number of methods: ${overallSize.getValue}):")
+            println(s"\nFound (next) solution (Overall number of methods: ${overallSize.getValue}):")
             pis.filter(_.getValue == 1).foreach(pi ⇒ println(pi.getName))
         }
     }
