@@ -42,7 +42,8 @@
                     },
                     {
                         "id": "ai",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/ai.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/ai.jar",
+                        "libcp_defaults" : "JRE"
                     },
                     {
                         "id": "arrays",
@@ -50,7 +51,8 @@
                     },
                     {
                         "id": "bugs",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/bugs.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/bugs.jar",
+                        "libcp_defaults" : "RTJar"
                     },
                     {
                         "id": "classhierarchy",
