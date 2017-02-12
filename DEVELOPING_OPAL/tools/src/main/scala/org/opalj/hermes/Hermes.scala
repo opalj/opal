@@ -399,6 +399,8 @@ object Hermes extends JFXApp {
         prefWidth = 1280d
         minWidth = 150d
         maxWidth = 1280d
+        maxHeight = Double.MaxValue
+        vgrow = Priority.ALWAYS
         padding = Insets(5, 5, 5, 5)
     }
     locationsView.getSelectionModel.setSelectionMode(SelectionMode.SINGLE)
