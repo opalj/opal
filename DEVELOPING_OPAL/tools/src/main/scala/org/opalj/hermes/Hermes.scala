@@ -311,7 +311,7 @@ object Hermes extends JFXApp {
             val featureIndex = primitiveFeatureIndex
             primitiveFeatureIndex += 1
             val featureColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]("")
-            featureColumn.setPrefWidth(60.0d)
+            featureColumn.setPrefWidth(70.0d)
             featureColumn.cellValueFactory = { p ⇒ p.getValue.features(featureIndex) }
             featureColumn.cellFactory = { (_) ⇒
                 new TableCell[ProjectFeatures[URL], Feature[URL]] {
@@ -348,8 +348,11 @@ object Hermes extends JFXApp {
             }
             val label = new Label(name) { rotate = -90; padding = Insets(5, 5, 5, 5) }
             val group = new Group(label)
-            val box = new VBox(group) { vgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
-            box.setAlignment(Pos.BottomCenter)
+            val box = new VBox(group) {
+                vgrow = Priority.ALWAYS
+                maxWidth = Double.MaxValue
+            }
+            box.setAlignment(Pos.BottomLeft)
             featureColumn.setGraphic(box)
             featureColumn
         }
