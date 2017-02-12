@@ -249,65 +249,79 @@ object Hermes extends JFXApp {
         }
     }
 
-    val featureColumns = featureIDs.zipWithIndex.map { fid ⇒
-        val ((name, extractor), featureIndex) = fid
-        val featureColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]("")
-        featureColumn.setPrefWidth(60.0d)
-        featureColumn.cellValueFactory = { p ⇒ p.getValue.features(featureIndex) }
-        featureColumn.cellFactory = { (_) ⇒
-            new TableCell[ProjectFeatures[URL], Feature[URL]] {
-                var currentValue = -1
-                item.onChange { (_, _, newFeature) ⇒
-                    text = if (newFeature != null) newFeature.count.toString else ""
-                    style =
-                        if (newFeature == null)
-                            "-fx-background-color: gray"
-                        else {
-                            currentValue = newFeature.count
-                            if (newFeature.count == 0) {
-                                if (perFeatureCounts(featureIndex).value == 0)
-                                    "-fx-background-color: #ffd0db"
-                                else
-                                    "-fx-background-color: #ffffe0"
-                            } else {
-                                "-fx-background-color: #aaffaa"
-                            }
-                        }
-                }
-                perFeatureCounts(featureIndex).onChange { (_, oldValue, newValue) ⇒
-                    if (oldValue.intValue() != newValue.intValue && currentValue != -1) {
+    var primitiveFeatureIndex = 0
+    val featureQueryColumns = featureQueries map { fq ⇒
+        val featureQueryColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]()
+
+        val featureColumns = fq.featureIDs.map { name ⇒
+            val featureIndex = primitiveFeatureIndex
+            primitiveFeatureIndex += 1
+            val featureColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]("")
+            featureColumn.setPrefWidth(60.0d)
+            featureColumn.cellValueFactory = { p ⇒ p.getValue.features(featureIndex) }
+            featureColumn.cellFactory = { (_) ⇒
+                new TableCell[ProjectFeatures[URL], Feature[URL]] {
+                    var currentValue = -1
+                    item.onChange { (_, _, newFeature) ⇒
+                        text = if (newFeature != null) newFeature.count.toString else ""
                         style =
-                            if (newValue == 0)
-                                "-fx-background-color: #ffd0db"
-                            else if (currentValue == 0)
-                                "-fx-background-color: #ffffe0"
-                            else
-                                "-fx-background-color: #aaffaa"
+                            if (newFeature == null)
+                                "-fx-background-color: gray"
+                            else {
+                                currentValue = newFeature.count
+                                if (newFeature.count == 0) {
+                                    if (perFeatureCounts(featureIndex).value == 0)
+                                        "-fx-background-color: #ffd0db"
+                                    else
+                                        "-fx-background-color: #ffffe0"
+                                } else {
+                                    "-fx-background-color: #aaffaa"
+                                }
+                            }
+                    }
+                    perFeatureCounts(featureIndex).onChange { (_, oldValue, newValue) ⇒
+                        if (oldValue.intValue() != newValue.intValue && currentValue != -1) {
+                            style =
+                                if (newValue == 0)
+                                    "-fx-background-color: #ffd0db"
+                                else if (currentValue == 0)
+                                    "-fx-background-color: #ffffe0"
+                                else
+                                    "-fx-background-color: #aaffaa"
+                        }
                     }
                 }
             }
+            val label = new Label(name) { rotate = -90; padding = Insets(5, 5, 5, 5) }
+            val group = new Group(label)
+            val box = new VBox(group) { vgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
+            box.setAlignment(Pos.BottomCenter)
+            featureColumn.setGraphic(box)
+            featureColumn
         }
-        val label = new Label(name) { rotate = -90; padding = Insets(5, 5, 5, 5) }
-        val button = new Button("Doc.") { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
-        val group = new Group(label)
-        val box = new VBox(group, button) { vgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
-        box.setAlignment(Pos.BottomCenter)
-        featureColumn.setGraphic(box)
+        featureQueryColumn.columns ++= featureColumns
+        val fqButton = new Button(fq.id) {
+            padding = Insets(0, 0, 0, 0)
+            hgrow = Priority.ALWAYS
+            maxWidth = Double.MaxValue
+        }
         val webView = new WebView { prefHeight = 400d; prefWidth = 300d }
         val webEngine = webView.engine
         webEngine.setUserStyleSheetLocation(Queries.CSS)
-        webEngine.loadContent(extractor.htmlDescription)
+        webEngine.loadContent(fq.htmlDescription)
         val popOver = new PopOver(webView)
         popOver.arrowLocationProperty.value = ArrowLocation.TOP_CENTER
-        popOver.setTitle(extractor.id.replaceAll("\n", " – "))
+        popOver.setTitle(fq.id.replaceAll("\n", " – "))
         popOver.setDetachable(true)
+        popOver.setHeaderAlwaysVisible(true)
         popOver.setHideOnEscape(false)
-        button.onAction = handle { if (!popOver.isShowing()) popOver.show(button) }
-        featureColumn
+        fqButton.onAction = handle { if (!popOver.isShowing()) popOver.show(fqButton) }
+        featureQueryColumn.setGraphic(fqButton.delegate)
+        featureQueryColumn
     }
 
     val featuresTableView = new TableView[ProjectFeatures[URL]](featureMatrix) {
-        columns ++= (projectColumn +: featureColumns)
+        columns ++= (projectColumn +: featureQueryColumns)
     }
 
     featuresTableView.getSelectionModel.setCellSelectionEnabled(true)
@@ -318,9 +332,9 @@ object Hermes extends JFXApp {
             val index = position.getColumn - 1
             if (index >= 0) {
                 locationsView.items.value.clear()
-                featureMatrix(position.getRow).features(index).value.extensions.forall(
-                    locationsView.items.value.add
-                )
+                val extensions = featureMatrix(position.getRow).features(index).value.extensions
+                println(s"column index: $index - $extensions")
+                extensions.forall(locationsView.items.value.add)
             }
         }
     }
