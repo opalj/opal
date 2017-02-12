@@ -37,54 +37,47 @@ import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.da.ClassFile
 
 /**
- * A common feature extractor for simple API features. It supports - in particular -
- * features that check for certain API calls.
+ * A predefined query for finding simple API features. It supports - in particular -
+ * features that check for certain API calls. Subclasses are only required to define
+ * a `Chain` of `APIFeatures`.
  *
- * Subclasses are only required to define a Chain of `APIFeatures`.
- *
- * Example of apiFeature declaration in a subclass:
+ * Example of an `apiFeature` declaration in a subclass:
  * {{{
  * val Unsafe = ObjectType("sun/misc/Unsafe")
  *
  * override def apiFeatures: Chain[APIFeatures] = Chain[APIFeature](
- * StaticAPIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;")),
- *
- * APIFeatureGroup(
- * Chain(
- * InstanceAPIMethod(Unsafe, "allocateInstance")
- * ), "Unsafe - Alloc"
- * ),
- *
- * APIFeatureGroup(
- * Chain(
- * InstanceAPIMethod(Unsafe, "arrayIndexScale"),
- * InstanceAPIMethod(Unsafe, "arrayBaseOffset")
- * ), "Unsafe - Array"
- * )
+ *  StaticAPIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;")),
+ *  APIFeatureGroup(
+ *      Chain(
+ *          InstanceAPIMethod(Unsafe, "allocateInstance")
+ *      ), "Unsafe - Alloc"
+ *  ),
+ *  APIFeatureGroup(
+ *      Chain(
+ *          InstanceAPIMethod(Unsafe, "arrayIndexScale"),
+ *          InstanceAPIMethod(Unsafe, "arrayBaseOffset")
+ *      ), "Unsafe - Array"
+ *  )
  * )
  * }}}
  *
  * @author Michael Reif
  */
-trait APIFeatureExtractor extends FeatureExtractor {
+trait APIFeatureQuery extends FeatureQuery {
 
     def apiFeatures: Chain[APIFeature]
 
     /**
-     * The unique ids of the extracted features.
+     * The unique ids of the computed features.
      */
     override def featureIDs: Seq[String] = apiFeatures.map(_.toFeatureID).toSeq
 
     /**
-     * The major function which analyzes the project and extracts the feature information.
+     * The function which analyzes the project and extracts the feature information.
      *
      * @note '''Every query should regularly check that its thread is not interrupted!''' E.g.,
      *       using `Thread.currentThread().isInterrupted()`.
@@ -104,14 +97,12 @@ trait APIFeatureExtractor extends FeatureExtractor {
         for {
             cf ← project.allProjectClassFiles
             m @ MethodWithBody(code) ← cf.methods
+            if !isInterrupted()
+            (pc, mii @ MethodInvocationInstruction(declClass, _, name, methodDescriptor)) ← code
             apiFeature ← apiFeatures
             featureID = apiFeature.toFeatureID
             apiMethod ← apiFeature.getAPIMethods
-            (pc, inst) ← code if inst.isInstanceOf[MethodInvocationInstruction]
-            if !isInterrupted()
         } yield {
-            var foundCall = false
-
             def putInstructionLocation(): Unit = {
                 val source = project.source(cf)
                 if (source.isEmpty)
@@ -119,47 +110,25 @@ trait APIFeatureExtractor extends FeatureExtractor {
 
                 val instLoc = InstructionLocation(source.get, cf, m, pc)
                 locations += ((featureID, instLoc :&: locations.getOrElse(featureID, Naught)))
+
+                val count = invocationCounts.get(featureID).get + 1
+                invocationCounts = invocationCounts + ((featureID, count))
             }
 
             apiMethod match {
-                case InstanceAPIMethod(declClass, name, None) ⇒
-                    foundCall = inst match {
-                        case INVOKEINTERFACE(`declClass`, `name`, _) ⇒
-                            putInstructionLocation(); true
-                        case INVOKEVIRTUAL(`declClass`, `name`, _) ⇒
-                            putInstructionLocation(); true
-                        case INVOKESPECIAL(`declClass`, _, `name`, _) ⇒
-                            putInstructionLocation(); true
-                        case _ ⇒ false
-                    }
-                case InstanceAPIMethod(declClass, name, Some(md)) ⇒
-                    foundCall = inst match {
-                        case INVOKEINTERFACE(`declClass`, `name`, `md`) ⇒
-                            putInstructionLocation(); true
-                        case INVOKEVIRTUAL(`declClass`, `name`, `md`) ⇒
-                            putInstructionLocation(); true
-                        case INVOKESPECIAL(`declClass`, _, `name`, `md`) ⇒
-                            putInstructionLocation(); true
-                        case _ ⇒ false
-                    }
-                case StaticAPIMethod(declClass, name, None) ⇒
-                    foundCall = inst match {
-                        case INVOKESTATIC(`declClass`, _, `name`, _) ⇒
-                            putInstructionLocation(); true
-                        case _ ⇒ false
-                    }
-                case StaticAPIMethod(declClass, name, Some(md)) ⇒
-                    foundCall = inst match {
-                        case INVOKESTATIC(`declClass`, _, `name`, `md`) ⇒
-                            putInstructionLocation(); true
-                        case _ ⇒ false
-                    }
-                case x ⇒ throw new UnknownError("Unsupported APIMethod type found: "+x.getClass)
-            }
-
-            if (foundCall) {
-                val count = invocationCounts.get(featureID).get + 1
-                invocationCounts = invocationCounts + ((featureID, count))
+                case InstanceAPIMethod(
+                    `declClass`,
+                    `name`,
+                    None | Some(`methodDescriptor`)
+                    ) if mii.isInstanceMethod ⇒
+                    putInstructionLocation()
+                case StaticAPIMethod(
+                    `declClass`,
+                    `name`,
+                    None | Some(`methodDescriptor`)
+                    ) if !mii.isInstanceMethod ⇒
+                    putInstructionLocation()
+                case _ ⇒ /*empty*/
             }
         }
 

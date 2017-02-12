@@ -39,7 +39,7 @@ import scalafx.beans.property.ObjectProperty
  */
 case class ProjectFeatures[S](
         projectConfiguration: ProjectConfiguration,
-        featureGroups:        Seq[(FeatureExtractor, Seq[ObjectProperty[Feature[S]]])]
+        featureGroups:        Seq[(FeatureQuery, Seq[ObjectProperty[Feature[S]]])]
 ) {
 
     final val id: StringProperty = {

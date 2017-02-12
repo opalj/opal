@@ -32,6 +32,4 @@ package da
 /**
  * @author Michael Eichberg
  */
-trait ClassMember {
-
-}
+trait ClassMember

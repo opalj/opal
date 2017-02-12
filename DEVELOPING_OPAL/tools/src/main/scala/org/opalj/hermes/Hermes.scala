@@ -83,7 +83,7 @@ object Hermes extends JFXApp {
         import Console.err
         err.println("OPAL - Hermes")
         err.println("Invalid parameters. ")
-        err.println("The parameter has to be the configuarion which lists a corpus' projects.")
+        err.println("The parameter has to be the configuartion which lists a corpus' projects.")
         err.println("java org.opalj.hermes.Hermes <ConfigFile.json>")
         System.exit(1)
     }
@@ -95,6 +95,7 @@ object Hermes extends JFXApp {
 
     /** The base configuration of OPAL and Hermes. */
     val config = initConfig(new File(parameters.unnamed(0)))
+    Globals.MaxLocations = config.as[Int](Globals.MaxLocationsKey)
 
     /**
      * Rendering of the configuration related to OPAL/Hermes.
@@ -109,12 +110,12 @@ object Hermes extends JFXApp {
     val queries: List[Query] = config.as[List[Query]]("org.opalj.hermes.queries")
 
     /** The list of enabled feature queries. */
-    val featureQueries: List[FeatureExtractor] = {
+    val featureQueries: List[FeatureQuery] = {
         queries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
     }
 
     /** The list of unique features derive by enable feature queries. */
-    val featureIDs: List[(String, FeatureExtractor)] = {
+    val featureIDs: List[(String, FeatureQuery)] = {
         featureQueries.flatMap(fe ⇒ fe.featureIDs.map((_, fe)))
     }
 
@@ -165,11 +166,11 @@ object Hermes extends JFXApp {
                     projectInstantiation = projectConfiguration.instantiate
                     project = projectInstantiation.project
                     rawClassFiles = projectInstantiation.rawClassFiles
-                    (featureExtractor, features) ← projectFeatures.featureGroups.par
+                    (featureQuery, features) ← projectFeatures.featureGroups.par
                     featuresMap = features.map(f ⇒ (f.value.id, f)).toMap
                     if !Thread.currentThread.isInterrupted()
                 } {
-                    val features = featureExtractor(
+                    val features = featureQuery(
                         projectConfiguration,
                         project,
                         rawClassFiles
@@ -222,6 +223,7 @@ object Hermes extends JFXApp {
                     popOver.contentNodeProperty.value = textArea
                     popOver.setDetachable(true)
                     popOver.setHideOnEscape(false)
+                    popOver.headerAlwaysVisibleProperty().value = true
                     infoButton.onAction = handle {
                         if (!popOver.isShowing()) {
                             val statistics =
@@ -351,48 +353,54 @@ object Hermes extends JFXApp {
         }
     }
 
-    val projectPane = new HiddenSidesPane();
+    val mainPane = new HiddenSidesPane();
     val configurationDetails = new TextArea(renderConfig) {
         editable = false
         prefHeight = 600d
     }
-    projectPane.setContent(featuresTableView);
-    projectPane.setTop(
+    mainPane.setContent(featuresTableView);
+    mainPane.setTop(
         new VBox(
         new Label("Configuration") {
             padding = Insets(5, 5, 5, 5)
             hgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
             alignment = Pos.Center
+            style = "-fx-background-color: #ccc"
         },
         configurationDetails
-    ) { padding = Insets(5, 5, 5, 5) }.delegate
+    ) { padding = Insets(0, 100, 5, 100) }.delegate
     )
-    projectPane.setRight(
+    mainPane.setRight(
         new VBox(
-        new Label("Locations") {
+        new Label(s"Locations (at most ${Globals.MaxLocations} are shown)") {
             padding = Insets(5, 5, 5, 5)
             hgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
             alignment = Pos.Center
+            style = "-fx-background-color: #ccc"
         },
         locationsView
-    ) { padding = Insets(5, 5, 5, 5) }.delegate
+    ) {
+        padding = Insets(100, 0, 100, 5)
+        vgrow = Priority.ALWAYS
+        maxHeight = Double.MaxValue
+    }.delegate
     )
 
     val rootPane = new BorderPane {
-        center = projectPane
+        center = mainPane
         bottom = progressBar
     }
 
     stage = new PrimaryStage {
         scene = new Scene {
             stylesheets = List(getClass.getResource("Hermes.css").toExternalForm)
-            title = "Hermes"
+            title = "Hermes - "+parameters.unnamed(0)
             root = rootPane
 
             analyzeCorpus()
         }
-        icons += new Image(getClass.getResource("OPAL-Logo.png").toExternalForm)
+        icons += new Image(getClass.getResource("OPAL-Logo-Small.png").toExternalForm)
     }
 }

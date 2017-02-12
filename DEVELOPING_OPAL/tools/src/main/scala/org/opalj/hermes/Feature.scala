@@ -40,14 +40,26 @@ import org.opalj.collection.immutable.Chain
  *         special characters.
  * @param  extensions The places where the feature was found. This information is
  *         primarily useful when navigating the project and is optional.
- *         I.e., `extensions.size` can be  smaller than `count`
+ *         I.e., `extensions.size` can be  smaller than `count`. The maximum number
+ *         of stored locations is set using the global setting: "org."
  */
-case class Feature[S](
+abstract case class Feature[S] private (
         id:         String,
-        count:      Int                = 0,
-        extensions: Chain[Location[S]] = Naught
+        count:      Int,
+        extensions: Chain[Location[S]]
 ) {
 
     assert(count >= extensions.size)
 
+}
+
+object Feature {
+
+    def apply[S](
+        id:         String,
+        count:      Int                = 0,
+        extensions: Chain[Location[S]] = Naught
+    ): Feature[S] = {
+        new Feature(id, count, extensions.takeUpTo(Globals.MaxLocations)) {}
+    }
 }

@@ -41,7 +41,7 @@ import org.opalj.collection.immutable.Naught
  *
  * @author Michael Eichberg
  */
-object MethodsWithoutReturns extends FeatureExtractor {
+object MethodsWithoutReturns extends FeatureQuery {
 
     final val AlwaysThrowsExceptionMethodsFeatureId = "Never Returns Normally"
     final val InfiniteLoopMethodsFeatureId = "Method with Infinite Loops"

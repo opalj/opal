@@ -34,7 +34,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.Chain
 import org.opalj.hermes.queries.util.APIFeature
-import org.opalj.hermes.queries.util.APIFeatureExtractor
+import org.opalj.hermes.queries.util.APIFeatureQuery
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.InstanceAPIMethod
 import org.opalj.hermes.queries.util.StaticAPIMethod
@@ -44,7 +44,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  *
  * @author Michael Reif
  */
-object ReflectionAPIUsage extends APIFeatureExtractor {
+object ReflectionAPIUsage extends APIFeatureQuery {
 
     val Class = ObjectType("java/lang/Class")
     val Field = ObjectType("java/lang/Field")

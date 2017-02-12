@@ -43,7 +43,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-object ClassFileVersion extends FeatureExtractor {
+object ClassFileVersion extends FeatureQuery {
 
     def featureId(majorVersion: Int) = s"Class File\n${jdkVersion(majorVersion)}"
 

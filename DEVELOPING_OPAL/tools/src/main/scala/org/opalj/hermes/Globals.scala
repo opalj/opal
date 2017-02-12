@@ -29,30 +29,16 @@
 package org.opalj
 package hermes
 
-import scala.reflect.runtime.universe
-
 /**
- * Properties of a feature extractor/query.
- *
- * @note Used to represent the corresponding information in the general configuration file.
+ * Global configuration settings initialized when the given configuration file is
+ * read.
  *
  * @author Michael Eichberg
  */
-case class Query(query: String, activate: Boolean = true) {
+object Globals {
 
-    def isEnabled: Boolean = activate
-
-    def reify: Option[FeatureQuery] = {
-        try {
-            val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
-            val module = runtimeMirror.staticModule(query)
-            val companionObject = runtimeMirror.reflectModule(module)
-            Some(companionObject.instance.asInstanceOf[FeatureQuery])
-        } catch {
-            case t: Throwable ⇒
-                Console.err.println(s"failed to load: $query")
-                None
-        }
-    }
+    private[hermes] final val MaxLocationsKey = "org.opalj.hermes.maxLocations"
+    // MaxLocations is a stable value; i.e., only changed once!
+    private[hermes] var MaxLocations: Int = Int.MaxValue
 
 }
