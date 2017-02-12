@@ -83,6 +83,10 @@ import scalafx.scene.input.KeyCombination
 import org.controlsfx.control.PopOver
 import org.controlsfx.control.HiddenSidesPane
 import org.controlsfx.control.PopOver.ArrowLocation
+
+import org.chocosolver.solver.Model
+import org.chocosolver.solver.variables.IntVar
+
 import org.opalj.da.ClassFileReader
 
 /**
@@ -168,7 +172,7 @@ object Hermes extends JFXApp {
      * Executes the queries for all projects. Basically, the queries are executed in parallel
      * for each project.
      */
-    def analyzeCorpus(): Thread = {
+    private[this] def analyzeCorpus(): Thread = {
         val task = new Runnable {
             def run(): Unit = {
                 val totalSteps = (featureQueries.size * projectConfigurations.size).toDouble
@@ -212,6 +216,38 @@ object Hermes extends JFXApp {
         t.setDaemon(true)
         t.start()
         t
+    }
+
+    // Must only be called after all features were computed.
+    private[this] def computeCorpus(): Unit = {
+        // GOAL:  Select projects with an overall minimal number of methods such that every
+        //        possible feature occurs at least once.
+        //        min sum(p_i + methods of p_i )
+        val model = new Model("Project Selection")
+
+        // CONSTRAINTS
+        // -
+        // - [per feature f] sum(p_i which has feature f) > 0
+        val pis: Array[IntVar] = featureMatrix.map(pf ⇒ model.boolVar(pf.id.value)).toArray
+        perFeatureCounts.iterator.zipWithIndex.foreach { fCount_fIndex ⇒
+            val (fCount, fIndex) = fCount_fIndex
+            if (fCount.value > 0) {
+                val projectsWithFeature = pis.toIterator.zipWithIndex.collect {
+                    case (pi, pIndex) if featureMatrix(pIndex).features(fIndex).value.count > 0 ⇒ pi
+                }.toArray
+                model.sum(projectsWithFeature, ">", 0).post()
+            }
+        }
+        val piSizes: Array[Int] = featureMatrix.map(pf ⇒ pf.projectConfiguration.statistics("ProjectMethods").toInt).toArray
+        val overallSize = model.intVar("objective", 0, IntVar.MAX_INT_BOUND /*=21474836*/ )
+        model.scalar(pis, piSizes, "=", overallSize).post()
+        model.setObjective(Model.MINIMIZE, overallSize)
+        val solver = model.getSolver
+        //solver.setSearch(Search.???)
+        while (solver.solve()) {
+            println(s"\nFound (next) solution (Overall number of methods: ${overallSize.getValue}):")
+            pis.filter(_.getValue == 1).foreach(pi ⇒ println(pi.getName))
+        }
     }
 
     //
@@ -451,7 +487,12 @@ object Hermes extends JFXApp {
                 }
             }
         }
-        List(showConfig, csvExport)
+
+        val computeProjectsForCorpus = new MenuItem("Compute Projects for Corpus...") {
+            disable <== analysesFinished.not
+            onAction = handle { computeCorpus() }
+        }
+        List(showConfig, csvExport, computeProjectsForCorpus)
     }
 
     val rootPane = new BorderPane {
