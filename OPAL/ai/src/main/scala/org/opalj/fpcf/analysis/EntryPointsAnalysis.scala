@@ -34,7 +34,11 @@ import org.opalj.fpcf.properties.NoEntryPoint
 import org.opalj.fpcf.properties.IsEntryPoint
 import org.opalj.fpcf.properties.EntryPoint
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br._
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ArrayType
+import org.opalj.br.VoidType
 
 /**
  * Determines the methods that are Entry Points into a given Program.

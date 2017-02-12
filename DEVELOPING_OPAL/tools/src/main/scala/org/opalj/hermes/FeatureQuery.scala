@@ -41,7 +41,7 @@ import scalafx.beans.property.ObjectProperty
 /**
  * Extracts a feature/a set of closely related features of a given project.
  */
-trait FeatureExtractor {
+trait FeatureQuery {
 
     /**
      * The unique ids of the extracted features.
@@ -49,7 +49,7 @@ trait FeatureExtractor {
     def featureIDs: Seq[String]
 
     private[hermes] def createInitialFeatures[S]: Seq[ObjectProperty[Feature[S]]] = {
-        featureIDs.map(fid ⇒ ObjectProperty(new Feature[S](fid)))
+        featureIDs.map(fid ⇒ ObjectProperty(Feature[S](fid)))
     }
 
     /**

@@ -135,7 +135,7 @@ class AssemberTest extends FlatSpec with Matchers {
                     case e: Exception ⇒
                         Lock.synchronized {
                             val details = e.getMessage + e.getClass.getSimpleName
-                            val message = s"failed: $ze(${classFile.fqn}); message:"+details
+                            val message = s"failed: $ze(${classFile.thisType}); message:"+details
                             val newException = new RuntimeException(message, e)
                             exceptions = newException :: exceptions
                         }
