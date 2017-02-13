@@ -12,3 +12,6 @@ The configuration file which is used to specify the projects which belong to a t
       "libcp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-common_2.11-SNAPSHOT-08-14-2014.jar"
       "libcp_defaults" : ["JRE"]
     }
+
+## Note
+The split between both files was purely done to provide some structure and to facilitate reuse. All settings defined in application.conf can also be set in Hermes.json. It is in particular possible to turn of or add new queries by specifying them in hermes.json. 
