@@ -33,7 +33,7 @@ import scalafx.beans.property.StringProperty
 import scalafx.beans.property.ObjectProperty
 
 /**
- * The instantiated project.
+ * The feature objects associated with every project.
  *
  * @author Michael Eichberg
  */
@@ -42,6 +42,7 @@ case class ProjectFeatures[S](
         featureGroups:        Seq[(FeatureQuery, Seq[ObjectProperty[Feature[S]]])]
 ) {
 
+    /** The project's unique id. */
     final val id: StringProperty = {
         new StringProperty(projectConfiguration, "project", projectConfiguration.id)
     }

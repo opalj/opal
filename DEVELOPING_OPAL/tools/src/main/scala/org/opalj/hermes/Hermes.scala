@@ -35,6 +35,9 @@ import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
@@ -67,6 +70,8 @@ import scalafx.scene.control.ListView
 import scalafx.scene.control.TextArea
 import scalafx.scene.control.TableCell
 import scalafx.scene.control.Button
+import scalafx.scene.control.Dialog
+import scalafx.scene.control.ButtonType
 import scalafx.scene.layout.HBox
 import scalafx.scene.image.Image
 import scalafx.scene.web.WebView
@@ -114,9 +119,7 @@ object Hermes extends JFXApp {
     val config = initConfig(new File(parameters.unnamed(0)))
     Globals.MaxLocations = config.as[Int](Globals.MaxLocationsKey)
 
-    /**
-     * Rendering of the configuration related to OPAL/Hermes.
-     */
+    /** Textual representation of the configuration related to OPAL/Hermes.  */
     def renderConfig: String = {
         config.
             getObject("org.opalj").
@@ -131,7 +134,7 @@ object Hermes extends JFXApp {
         queries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
     }
 
-    /** The list of unique features derive by enable feature queries. */
+    /** The list of unique features derived by enabled feature queries. */
     val featureIDs: List[(String, FeatureQuery)] = {
         featureQueries.flatMap(fe ⇒ fe.featureIDs.map((_, fe)))
     }
@@ -140,7 +143,7 @@ object Hermes extends JFXApp {
     val projectConfigurations = config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
     // TODO Validate that all project names are unique!
 
-    /** The matrix containing the results of executing the queries.  */
+    /** The matrix containing for each project the extensions of all features. */
     private[this] val featureMatrix: ObservableBuffer[ProjectFeatures[URL]] = {
         val featureMatrix = ObservableBuffer.empty[ProjectFeatures[URL]]
         for { projectConfiguration ← projectConfigurations } {
@@ -150,7 +153,7 @@ object Hermes extends JFXApp {
         featureMatrix
     }
 
-    /** Count of the number of occurrences of a feature across all projects. */
+    /** Summary of the number of occurrences of a feature across all projects. */
     val perFeatureCounts: Array[IntegerProperty] = {
         val perFeatureCounts = Array.fill(featureIDs.length)(IntegerProperty(0))
         featureMatrix.foreach { projectFeatures ⇒
@@ -173,8 +176,8 @@ object Hermes extends JFXApp {
      * for each project.
      */
     private[this] def analyzeCorpus(): Thread = {
-        val task = new Runnable {
-            def run(): Unit = {
+        val t = new Thread {
+            override def run(): Unit = {
                 val totalSteps = (featureQueries.size * projectConfigurations.size).toDouble
                 val stepsDone = new AtomicInteger(0)
                 for {
@@ -189,15 +192,12 @@ object Hermes extends JFXApp {
                     featuresMap = features.map(f ⇒ (f.value.id, f)).toMap
                     if !Thread.currentThread.isInterrupted()
                 } {
-                    val features = featureQuery(
-                        projectConfiguration,
-                        project,
-                        rawClassFiles
-                    )
+                    val features = featureQuery(projectConfiguration, project, rawClassFiles)
 
                     Platform.runLater {
                         // (implicitly) update the feature matrix
                         features.foreach { f ⇒ featuresMap(f.id).value = f }
+
                         val progress = stepsDone.incrementAndGet() / totalSteps
                         if (progressBar.getProgress < progress) {
                             progressBar.setProgress(progress)
@@ -205,14 +205,13 @@ object Hermes extends JFXApp {
                     }
                 }
 
-                // we are done
+                // we are done with everything
                 Platform.runLater {
                     rootPane.getChildren().remove(progressBar)
                     analysesFinished.value = true
                 }
             }
         }
-        val t = new Thread(task)
         t.setDaemon(true)
         t.start()
         t
@@ -226,7 +225,6 @@ object Hermes extends JFXApp {
         val model = new Model("Project Selection")
 
         // CONSTRAINTS
-        // -
         // - [per feature f] sum(p_i which has feature f) > 0
         val pis: Array[IntVar] = featureMatrix.map(pf ⇒ model.boolVar(pf.id.value)).toArray
         perFeatureCounts.iterator.zipWithIndex.foreach { fCount_fIndex ⇒
@@ -238,16 +236,59 @@ object Hermes extends JFXApp {
                 model.sum(projectsWithFeature, ">", 0).post()
             }
         }
-        val piSizes: Array[Int] = featureMatrix.map(pf ⇒ pf.projectConfiguration.statistics("ProjectMethods").toInt).toArray
+        val piSizes: Array[Int] =
+            featureMatrix.map(pf ⇒ pf.projectConfiguration.statistics("ProjectMethods")).toArray
+        // OPTIMIZATION GOAL    
         val overallSize = model.intVar("objective", 0, IntVar.MAX_INT_BOUND /*=21474836*/ )
         model.scalar(pis, piSizes, "=", overallSize).post()
         model.setObjective(Model.MINIMIZE, overallSize)
         val solver = model.getSolver
-        //solver.setSearch(Search.???)
-        while (solver.solve()) {
-            println(s"\nFound (next) solution (Overall number of methods: ${overallSize.getValue}):")
-            pis.filter(_.getValue == 1).foreach(pi ⇒ println(pi.getName))
+
+        val solutionTextArea = new TextArea() {
+            editable = false
+            prefHeight = 300
+            prefWidth = 450
+            vgrow = Priority.ALWAYS
+            maxWidth = Double.MaxValue
         }
+        val solverProgressBar = new ProgressBar() {
+            hgrow = Priority.ALWAYS
+            maxWidth = Double.MaxValue
+        }
+        val contentNode = new VBox(solutionTextArea, solverProgressBar) {
+            padding = Insets(5, 5, 5, 5)
+        }
+        val dialog = new Dialog[String]() {
+            initOwner(stage)
+            title = "Computing Optimal Project Selection"
+            headerText = "Computes a minimal set of projects which has every possible feature."
+            dialogPane().buttonTypes = Seq(ButtonType.OK)
+            dialogPane().content = contentNode
+            resultConverter = { (_) ⇒ solutionTextArea.text.value }
+        }
+
+        @volatile var aborted: Boolean = false
+        def computeSolutions(): Unit = {
+            implicit val ec = ExecutionContext.global
+            val solution: Future[Option[String]] = Future {
+                if (solver.solve()) {
+                    Some(pis.filter(_.getValue == 1).map(pi ⇒ pi.getName).mkString("\n"))
+                } else {
+                    None
+                }
+            }
+            solution onSuccess {
+                case Some(result) ⇒
+                    Platform.runLater { solutionTextArea.text = result }
+                    if (!aborted) computeSolutions()
+                case None ⇒
+                    Platform.runLater { contentNode.getChildren.remove(solverProgressBar) }
+            }
+        }
+        computeSolutions()
+
+        dialog.showAndWait()
+        aborted = true // make sure that the computation process "finishes soon"
     }
 
     //

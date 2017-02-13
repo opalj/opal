@@ -52,9 +52,11 @@ case class ClassFileLocation[S](
     }
 }
 object ClassFileLocation {
+
     def apply[S](source: S, classFile: ClassFile): ClassFileLocation[S] = {
         new ClassFileLocation[S](source, classFile.thisType.toJava)
     }
+
 }
 
 case class FieldLocation[S](
@@ -66,8 +68,8 @@ case class FieldLocation[S](
     def classFileFQN = classFileLocation.classFileFQN
 
     override def toString: String = {
-        s"${classFileLocation.classFileFQN}{ /*field*/ $fieldName }\n"+
-            classFileLocation.source
+        val source = classFileLocation.source
+        s"${classFileLocation.classFileFQN}{ /*field*/ $fieldName }\n$source"
     }
 }
 
@@ -80,14 +82,16 @@ case class MethodLocation[S](
     def classFileFQN = classFileLocation.classFileFQN
 
     override def toString: String = {
-        s"${classFileLocation.classFileFQN}{ /*method*/ $methodSignature }\n"+
-            classFileLocation.source
+        val source = classFileLocation.source
+        s"${classFileLocation.classFileFQN}{ /*method*/ $methodSignature }\n$source"
     }
 
 }
 object MethodLocation {
+
     def apply[S](source: S, classFile: ClassFile, method: Method): MethodLocation[S] = {
-        new MethodLocation(ClassFileLocation(source, classFile), method.descriptor.toJava(method.name))
+        val md = method.descriptor.toJava(method.name)
+        new MethodLocation(ClassFileLocation(source, classFile), md)
     }
 
     def apply[S](classFileLocation: ClassFileLocation[S], method: Method): MethodLocation[S] = {
@@ -109,8 +113,8 @@ case class InstructionLocation[S](
 
     override def toString: String = {
         val classFileLocation = methodLocation.classFileLocation
-        s"${classFileLocation.classFileFQN}{ /*method*/ $methodSignature { $pc } }\n"+
-            classFileLocation.source
+        val source = classFileLocation.source
+        s"${classFileLocation.classFileFQN}{ $methodSignature { $pc } }\n$source"
     }
 }
 object InstructionLocation {
@@ -121,4 +125,5 @@ object InstructionLocation {
             pc
         )
     }
+
 }

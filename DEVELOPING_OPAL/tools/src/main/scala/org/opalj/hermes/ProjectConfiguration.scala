@@ -76,11 +76,13 @@ case class ProjectConfiguration(
     def instantiate: ProjectInstantiation = {
         // we will do our best to garbage collect previous projects
         org.opalj.util.gc()
+
         info(
             "project setup",
             s"creating new project: $id\n\t\t"+
                 s"cp=$cp\n\t\tlibcp=$libcp\n\t\tlibcp_defaults=$libcp_defaults"
         )(GlobalLogContext)
+
         val noBRClassFiles = Traversable.empty[(br.ClassFile, URL)]
         val noDAClassFiles = Traversable.empty[(da.ClassFile, URL)]
 
