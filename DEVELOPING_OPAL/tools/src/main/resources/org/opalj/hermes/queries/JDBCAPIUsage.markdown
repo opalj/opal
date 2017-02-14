@@ -1,4 +1,4 @@
-#JDBC API Usage
+# JDBC API Usage
 
 The analysis derives the following features:
 
