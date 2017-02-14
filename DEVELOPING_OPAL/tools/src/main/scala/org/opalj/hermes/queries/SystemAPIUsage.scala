@@ -43,6 +43,14 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 object SystemAPIUsage extends APIFeatureQuery {
 
+    object Sound {
+        val Clip = ObjectType("javax/sound/sampled/Clip")
+        val DataLine = ObjectType("javax/sound/sampled/DataLine")
+        val TargetDataLine = ObjectType("javax/sound/sampled/TargetDataLine")
+        val SourceDataLine = ObjectType("javax/sound/sampled/SourceDataLine")
+        val MediaPlayer = ObjectType("javafx/scene/media/MediaPlayer")
+    }
+
     val Runtime = ObjectType("java/lang/Runtime")
     val System = ObjectType("java/lang/System")
     val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
@@ -74,6 +82,22 @@ object SystemAPIUsage extends APIFeatureQuery {
         ),
 
         StaticAPIMethod(System, "getSecurityManager"),
-        StaticAPIMethod(System, "setSecurityManager")
+        StaticAPIMethod(System, "setSecurityManager"),
+
+        APIFeatureGroup(
+            Chain(
+                StaticAPIMethod(System, "getenv")
+            ), "Environment"
+        ),
+
+        APIFeatureGroup(
+            Chain(
+                InstanceAPIMethod(Sound.Clip, "start"),
+                InstanceAPIMethod(Sound.DataLine, "start"),
+                InstanceAPIMethod(Sound.TargetDataLine, "start"),
+                InstanceAPIMethod(Sound.SourceDataLine, "start"),
+                InstanceAPIMethod(Sound.MediaPlayer, "play")
+            ), "Sound"
+        )
     )
 }

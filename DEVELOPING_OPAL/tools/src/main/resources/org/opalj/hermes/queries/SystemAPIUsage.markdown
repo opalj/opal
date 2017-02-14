@@ -20,4 +20,11 @@ shows how many native libraries are loaded within the given project.</dd>
 <dd>The <i>SecurityManager</i> category keeps track of the usage of a <code>java.lang.SecurityManager</code>
 in a project. Those features include getting as well as setting an instance of <code>java.lang.SecurityManager</code>.
 </dd>
+
+<dt>Environment</dt>
+<dd>Any access or query to the system's environment variables is captured by the <code>Information</code> group.</dd>
+
+<dt>Sound</dt>
+<dd>The <i>Sound</i> group counts how often a sound is played. This group fully relies on the classes
+in the two packages <code>javax.sound.sampled</code> and <code>javax.scene.media</code>.</dd>
 </dl>
