@@ -7,12 +7,12 @@ paper, the analysis supports the following categories:
 
 <dl>
   <dt>Alloc</dt>
-  <dd>The Alloc group contains only the allocateInstance
+  <dd>The <i>Alloc</i> group contains only the allocateInstance
       method, which allows the developer to allocate a Java
       object without executing a constructor.</dd>
       
   <dt>Array</dt>
-  <dd>The Array group contains methods and fields for computing
+  <dd>The <i>Array</i> group contains methods and fields for computing
       relative addresses of array elements. The fields were
       added as a simpler and potentially faster alternative in a
       more recent version of Unsafe. The value of all fields in
@@ -21,41 +21,42 @@ paper, the analysis supports the following categories:
       group.</dd>
   
   <dt>CompareAndSwap</dt>
-  <dd>The CAS group contains methods to atomically compareand-swap
+  <dd>The <i>CAS</i> group contains methods to atomically compareand-swap
       a Java variable. These operations are implemented
       using processor-specific atomic instructions. For
       instance, on x86 architectures, compareAndSwapInt is
       implemented using the `CMPXCHG` machine instruction.</dd>
     
   <dt>Class</dt>
-  <dd>Methods of the Class group are used to dynamically
+  <dd>Methods of the <i>Class</i> group are used to dynamically
       load and check Java classes.</dd>
       
   <dt>Fence</dt>
-  <dd>The methods of the Fence group provide memory fences
+  <dd>The methods of the <i>Fence</i> group provide memory fences
       to ensure loads and stores are visible to other threads.
       These methods are implemented using processor-specific instructions.</dd>
+      
   <dt>Fetch & Add</dt>
-  <dd>The Fetch & Add group, like the CAS group, allows the
+  <dd>The <i>Fetch & Add</i> group, like the CAS group, allows the
       programmer to atomically update a Java variable. This
       group of methods was also added recently in Java 8.</dd>
   
   <dt>Heap, Heap Get and Heap Put</dt>
-  <dd>The Heap group methods are used to directly access
+  <dd>The <i>Heap</i> group methods are used to directly access
       memory in the Java heap. The Heap Get and Heap Put
       groups allow the developer to load and store a Java variable.</dd>
   
   <dt>Misc</dt>
-  <dd>The Misc group contains the method getLoadAverage, to
+  <dd>The <i>Misc</i> group contains the method getLoadAverage, to
       get the load average in the operating system run queue
       assigned to the available processors.</dd>
   
   <dt>Monitor</dt>
-  <dd>The Monitor group contains methods to explicitly manage
+  <dd>The <i>Monitor</i> group contains methods to explicitly manage
       Java monitors.</dd>
   
   <dt>Off-Heap</dt>
-  <dd>The Off-Heap group provides access to unmanaged
+  <dd>The <i>Off-Heap</i> group provides access to unmanaged
       memory, enabling explicit memory management. Similarly
       to the Heap Get and Heap Put groups, the OffHeap
       Get and Off-Heap Put groups allow the developer
@@ -65,29 +66,29 @@ paper, the analysis supports the following categories:
       <i>ADDRESS SIZE</i> field is the result of the method <i>addressSize()</i>.</dd>
   
   <dt>Offset</dt>
-  <dd>Methods of the Offset group are used to compute the location
+  <dd>Methods of the <i>Offset</i> group are used to compute the location
       of fields within Java objects. The offsets are used
       in calls to many other sun.misc.Unsafe methods, for instance
       those in the Heap Get, Heap Put, and the CAS
       groups.</dd>
   
   <dt>Ordered Put</dt>
-  <dd>The Ordered Put group has methods to store to a Java
+  <dd>The <i>Ordered Put</i> group has methods to store to a Java
       variable without emitting any memory barrier but guaranteeing
       no reordering across the store.</dd>
   
   <dt>Park</dt>
-  <dd>The park and unpark methods are contained in the Park
+  <dd>The park and unpark methods are contained in the <i>Park</i>
       group. With them, it is possible to block and unblock a
       thread’s execution.</dd>
   
   <dt>Throw</dt>
-  <dd>The throwException method is contained in the Throw
+  <dd>The throwException method is contained in the <i>Throw</i>
       group, and allows one to throw checked exceptions without
       declaring them in the throws clause.</dd>
   
   <dt>Volatile Get & Put</dt>
-  <dd>the Volatile Get and Volatile Put groups allow
+  <dd>the <i>Volatile Get and Volatile Put</i> groups allow
       the developer to store a value in a Java variable with
       volatile semantics.</dd>
 </dl>
