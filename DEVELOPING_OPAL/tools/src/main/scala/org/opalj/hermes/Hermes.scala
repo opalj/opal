@@ -94,6 +94,7 @@ import org.controlsfx.control.PopOver.ArrowLocation
 import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
 
+import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFileReader
 
 /**
@@ -180,6 +181,14 @@ object Hermes extends JFXApp {
      * for each project.
      */
     private[this] def analyzeCorpus(): Thread = {
+        def isValid(projectFeatures: ProjectFeatures[URL], project: Project[URL]): Boolean = {
+            if (project.projectClassFilesCount == 0) {
+                Platform.runLater { projectFeatures.id.value = "⚠︎"+projectFeatures.id.value }
+                false
+            } else {
+                true
+            }
+        }
         val t = new Thread {
             override def run(): Unit = {
                 val totalSteps = (featureQueries.size * projectConfigurations.size).toDouble
@@ -191,6 +200,7 @@ object Hermes extends JFXApp {
                     projectConfiguration = projectFeatures.projectConfiguration
                     projectInstantiation = projectConfiguration.instantiate
                     project = projectInstantiation.project
+                    if isValid(projectFeatures, project)
                     rawClassFiles = projectInstantiation.rawClassFiles
                     (featureQuery, features) ← projectFeatures.featureGroups.par
                     featuresMap = features.map(f ⇒ (f.value.id, f)).toMap
@@ -330,17 +340,20 @@ object Hermes extends JFXApp {
                                 featureMatrix.
                                     find(_.id.value == newProject).get.
                                     projectConfiguration.
-                                    statistics
-                            textArea.text = statistics.map(e ⇒ e._1+": "+e._2).toList.sorted.mkString("\n")
+                                    statistics.map(e ⇒ e._1+": "+e._2).toList.sorted.mkString("\n")
+                            textArea.text = statistics
                             popOver.show(infoButton)
                         }
                     }
+                    val isBrokenProject = newProject.startsWith("⚠︎")
                     graphic =
                         new HBox(
                             new Label(newProject) {
                                 hgrow = Priority.ALWAYS
                                 maxWidth = Double.MaxValue
                                 padding = Insets(5, 5, 5, 5)
+                                if (isBrokenProject)
+                                    style = "-fx-background-color: red; -fx-text-fill: white;"
                             },
                             infoButton
                         )
