@@ -34,6 +34,7 @@ import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.prefs.Preferences;
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
@@ -50,6 +51,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvFactory
 import javafx.scene.control.TableColumn
 import javafx.scene.control.SelectionMode
 import javafx.scene.layout.Priority
+import javafx.stage.Screen
 
 import scalafx.Includes._
 import scalafx.application.JFXApp
@@ -100,6 +102,8 @@ import org.opalj.da.ClassFileReader
  * @author Michael Eichberg
  */
 object Hermes extends JFXApp {
+
+    val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
 
     if (parameters.unnamed.size != 1) {
         import Console.err
@@ -404,7 +408,7 @@ object Hermes extends JFXApp {
             hgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
         }
-        val webView = new WebView { prefHeight = 400d; prefWidth = 300d }
+        val webView = new WebView { prefHeight = 600d; prefWidth = 450d }
         val webEngine = webView.engine
         webEngine.setUserStyleSheetLocation(Queries.CSS)
         webEngine.loadContent(fq.htmlDescription)
@@ -561,5 +565,20 @@ object Hermes extends JFXApp {
             analyzeCorpus()
         }
         icons += new Image(getClass.getResource("OPAL-Logo-Small.png").toExternalForm)
+
+        // let's restore the window at its last position
+        val primaryScreenBounds = Screen.getPrimary().getVisualBounds()
+        x = preferences.getDouble("WindowX", 100)
+        y = preferences.getDouble("WindowY", 100)
+        width = preferences.getDouble("WindowWidth", primaryScreenBounds.getWidth() - 200)
+        height = preferences.getDouble("WindowHeight", primaryScreenBounds.getHeight() - 200)
+
+        onCloseRequest = handle {
+            preferences.putDouble("WindowX", stage.getX())
+            preferences.putDouble("WindowY", stage.getY())
+            preferences.putDouble("WindowWidth", stage.getWidth())
+            preferences.putDouble("WindowHeight", stage.getHeight())
+        }
     }
+
 }
