@@ -35,7 +35,7 @@ import org.opalj.da
 import org.opalj.br.analyses.Project
 
 /**
- * The instantiated project.
+ * The resources of the instantiated project.
  *
  * @author Michael Eichberg
  */
