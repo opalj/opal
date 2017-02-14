@@ -237,8 +237,9 @@ object Hermes extends JFXApp {
             }
         }
         val piSizes: Array[Int] =
-            featureMatrix.map(pf ⇒ pf.projectConfiguration.statistics("ProjectMethods")).toArray
-        // OPTIMIZATION GOAL    
+            featureMatrix.map(pf ⇒
+                pf.projectConfiguration.statistics.getOrElse("ProjectMethods", 0)).toArray
+        // OPTIMIZATION GOAL
         val overallSize = model.intVar("objective", 0, IntVar.MAX_INT_BOUND /*=21474836*/ )
         model.scalar(pis, piSizes, "=", overallSize).post()
         model.setObjective(Model.MINIMIZE, overallSize)
