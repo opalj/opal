@@ -62,4 +62,11 @@ object Feature {
     ): Feature[S] = {
         new Feature(id, count, extensions.takeUpTo(Globals.MaxLocations)) {}
     }
+
+    def apply[S](
+        id:        String,
+        locations: LocationsContainer[S]
+    ): Feature[S] = {
+        new Feature(id, locations.size, locations.locations) {}
+    }
 }
