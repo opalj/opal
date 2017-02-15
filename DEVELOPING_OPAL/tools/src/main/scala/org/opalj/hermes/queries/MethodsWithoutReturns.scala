@@ -33,8 +33,6 @@ package queries
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.cfg.CFGFactory
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 
 /**
  * Counts the number of class files per class file version.
@@ -55,8 +53,8 @@ object MethodsWithoutReturns extends FeatureQuery {
         project:              Project[S],
         rawClassFiles:        Traversable[(da.ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
-        var infiniteLoopMethods: Chain[MethodLocation[S]] = Naught
-        var alwaysThrowsExceptionMethods: Chain[MethodLocation[S]] = Naught
+        val infiniteLoopMethods: LocationsContainer[S] = new LocationsContainer[S]
+        val alwaysThrowsExceptionMethods: LocationsContainer[S] = new LocationsContainer[S]
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
@@ -69,17 +67,14 @@ object MethodsWithoutReturns extends FeatureQuery {
         } {
             val cfg = CFGFactory(body, project.classHierarchy)
             if (cfg.abnormalReturnNode.predecessors.isEmpty)
-                infiniteLoopMethods :&:= MethodLocation(classFileLocation, method)
+                infiniteLoopMethods += MethodLocation(classFileLocation, method)
             else
-                alwaysThrowsExceptionMethods :&:= MethodLocation(classFileLocation, method)
+                alwaysThrowsExceptionMethods += MethodLocation(classFileLocation, method)
         }
 
         List(
-            Feature[S](
-                AlwaysThrowsExceptionMethodsFeatureId,
-                alwaysThrowsExceptionMethods.size, alwaysThrowsExceptionMethods
-            ),
-            Feature[S](InfiniteLoopMethodsFeatureId, infiniteLoopMethods.size, infiniteLoopMethods)
+            Feature[S](AlwaysThrowsExceptionMethodsFeatureId, alwaysThrowsExceptionMethods),
+            Feature[S](InfiniteLoopMethodsFeatureId, infiniteLoopMethods)
         )
     }
 }
