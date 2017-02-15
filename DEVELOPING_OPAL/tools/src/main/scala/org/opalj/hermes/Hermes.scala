@@ -421,10 +421,15 @@ object Hermes extends JFXApp {
             hgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
         }
-        val webView = new WebView { prefHeight = 600d; prefWidth = 450d }
+        val webView = new WebView { prefHeight = 600d; prefWidth = 600d }
         val webEngine = webView.engine
-        webEngine.setUserStyleSheetLocation(Queries.CSS)
-        webEngine.loadContent(fq.htmlDescription)
+        fq.htmlDescription match {
+            case Left(page) ⇒
+                webEngine.setUserStyleSheetLocation(Queries.CSS)
+                webEngine.loadContent(page)
+            case Right(url) ⇒
+                webEngine.load(url.toExternalForm)
+        }
         val popOver = new PopOver(webView)
         popOver.arrowLocationProperty.value = ArrowLocation.TOP_CENTER
         popOver.setTitle(fq.id.replaceAll("\n", " – "))
