@@ -66,6 +66,7 @@ import scalafx.scene.Scene
 import scalafx.scene.Group
 import scalafx.scene.layout.BorderPane
 import scalafx.scene.control.TableView
+import scalafx.scene.control.CheckBox
 import scalafx.scene.control.ProgressBar
 import scalafx.scene.control.Label
 import scalafx.scene.control.ListView
@@ -78,6 +79,7 @@ import scalafx.scene.layout.HBox
 import scalafx.scene.image.Image
 import scalafx.scene.web.WebView
 import scalafx.scene.layout.VBox
+import scalafx.scene.layout.GridPane
 import scalafx.beans.property.BooleanProperty
 import scalafx.beans.property.IntegerProperty
 import scalafx.scene.control.MenuItem
@@ -117,12 +119,25 @@ object Hermes extends JFXApp {
 
     /** Creates the initial, overall configuration. */
     private[this] def initConfig(configFile: File): Config = {
-        ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
+        if (!configFile.exists || !configFile.canRead()) {
+            import Console.err
+            err.println(s"The config file cannot be found or read: $configFile")
+            System.exit(2)
+        }
+        try {
+            ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
+        } catch {
+            case t: Throwable ⇒
+                import Console.err
+                err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
+                System.exit(3)
+                throw t; //... if System.exit doe not terminate the app.
+        }
     }
 
     /** The base configuration of OPAL and Hermes. */
     val config = initConfig(new File(parameters.unnamed(0)))
-    Globals.MaxLocations = config.as[Int](Globals.MaxLocationsKey)
+    Globals.MaxLocations = config.getInt(Globals.MaxLocationsKey)
 
     /** Textual representation of the configuration related to OPAL/Hermes.  */
     def renderConfig: String = {
@@ -162,19 +177,20 @@ object Hermes extends JFXApp {
     val perFeatureCounts: Array[IntegerProperty] = {
         val perFeatureCounts = Array.fill(featureIDs.length)(IntegerProperty(0))
         featureMatrix.foreach { projectFeatures ⇒
-            projectFeatures.features.view.zipWithIndex.foreach { fi ⇒
+            projectFeatures.features.view.zipWithIndex foreach { fi ⇒
                 val (feature, index) = fi
                 feature.onChange { (_, oldValue, newValue) ⇒
                     val change = newValue.count - oldValue.count
-                    if (change != 0)
+                    if (change != 0) {
                         perFeatureCounts(index).value = perFeatureCounts(index).value + change
+                    }
                 }
             }
         }
         perFeatureCounts
     }
 
-    /* stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
+    /* @stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
 
     /**
      * Executes the queries for all projects. Basically, the queries are executed in parallel
@@ -183,7 +199,7 @@ object Hermes extends JFXApp {
     private[this] def analyzeCorpus(): Thread = {
         def isValid(projectFeatures: ProjectFeatures[URL], project: Project[URL]): Boolean = {
             if (project.projectClassFilesCount == 0) {
-                Platform.runLater { projectFeatures.id.value = "⚠︎"+projectFeatures.id.value }
+                Platform.runLater { projectFeatures.id.value = "! "+projectFeatures.id.value }
                 false
             } else {
                 true
@@ -235,13 +251,13 @@ object Hermes extends JFXApp {
     private[this] def computeCorpus(): Unit = {
         // GOAL:  Select projects with an overall minimal number of methods such that every
         //        possible feature occurs at least once.
-        //        min sum(p_i + methods of p_i )
+        //        min sum(p_i * <methods of p_i> )
         val model = new Model("Project Selection")
 
         // CONSTRAINTS
         // - [per feature f] sum(p_i which has feature f) > 0
         val pis: Array[IntVar] = featureMatrix.map(pf ⇒ model.boolVar(pf.id.value)).toArray
-        perFeatureCounts.iterator.zipWithIndex.foreach { fCount_fIndex ⇒
+        perFeatureCounts.iterator.zipWithIndex foreach { fCount_fIndex ⇒
             val (fCount, fIndex) = fCount_fIndex
             if (fCount.value > 0) {
                 val projectsWithFeature = pis.toIterator.zipWithIndex.collect {
@@ -303,7 +319,9 @@ object Hermes extends JFXApp {
         computeSolutions()
 
         dialog.showAndWait()
-        aborted = true // make sure that the computation process "finishes soon"
+        // Make sure that – when the dialog has been close while we are still computing solutions -
+        // the computation process "finishes soon".
+        aborted = true
     }
 
     //
@@ -362,14 +380,66 @@ object Hermes extends JFXApp {
         }
     }
 
+    val onlyShowNotAvailableFeatures = new CheckBox("Only Show Not Available Features") {
+        padding = Insets(5, 5, 5, 5)
+        hgrow = Priority.ALWAYS
+        maxWidth = Double.MaxValue
+        alignment = Pos.Center
+        style = "-fx-background-color: #dddddd"
+    }
+
+    val showFeatureQueryResults = new GridPane {
+        padding = Insets(5, 5, 5, 5)
+        hgrow = Priority.ALWAYS
+        maxWidth = Double.MaxValue
+        alignment = Pos.Center
+        style = "-fx-background-color: #eeefdd"
+    }
+
     var primitiveFeatureIndex = 0
-    val featureQueryColumns = featureQueries map { fq ⇒
+    val featureQueryColumns = featureQueries.zipWithIndex map { fqi ⇒
+        val (fq, featureQueryIndex) = fqi
         val featureQueryColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]()
+        val showFeatureQuery = new CheckBox(fq.id) {
+            selected = true
+            disable <== onlyShowNotAvailableFeatures.selected
+            padding = Insets(15, 15, 15, 15)
+        }
+        onlyShowNotAvailableFeatures.selected.onChange { (_, _, isSelected) ⇒
+            if (!isSelected) showFeatureQuery.selected = true
+        }
+        showFeatureQueryResults.add(showFeatureQuery, featureQueryIndex % 5, featureQueryIndex / 5)
+        featureQueryColumn.visible <== showFeatureQuery.selected
 
         val featureColumns = fq.featureIDs.map { name ⇒
             val featureIndex = primitiveFeatureIndex
             primitiveFeatureIndex += 1
             val featureColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]("")
+            /* This creates a weird propagation problem due to a bidirectional binding..
+            featureColumn.visible <== scalafx.beans.binding.Bindings.createBooleanBinding(
+                () ⇒ {
+                    !onlyShowNotAvailableFeatures.selected.value ||
+                        perFeatureCounts(featureIndex).value == 0
+                },
+                onlyShowNotAvailableFeatures.selected,
+                perFeatureCounts(featureIndex)
+            )*/
+            perFeatureCounts(featureIndex) onChange { (_, oldCount, newCount) ⇒
+                if (newCount != null) {
+                    if (oldCount == 0 &&
+                        newCount.intValue > 0 &&
+                        onlyShowNotAvailableFeatures.selected.value) {
+                        featureColumn.visible = false
+                    }
+                }
+            }
+            onlyShowNotAvailableFeatures.selected onChange { (_, _, isSelected) ⇒
+                if (isSelected && perFeatureCounts(featureIndex).value > 0) {
+                    featureColumn.visible = false
+                } else {
+                    featureColumn.visible = true
+                }
+            }
             featureColumn.setPrefWidth(70.0d)
             featureColumn.cellValueFactory = { p ⇒ p.getValue.features(featureIndex) }
             featureColumn.cellFactory = { (_) ⇒
@@ -508,6 +578,23 @@ object Hermes extends JFXApp {
         maxHeight = Double.MaxValue
     }.delegate
     )
+    mainPane.setTop(
+        new VBox(
+        new Label(s"Table Configuration") {
+            padding = Insets(5, 5, 5, 5)
+            hgrow = Priority.ALWAYS
+            maxWidth = Double.MaxValue
+            alignment = Pos.Center
+            style = "-fx-background-color: #ccc"
+        },
+        onlyShowNotAvailableFeatures,
+        showFeatureQueryResults
+    ) {
+        padding = Insets(0, 250, 0, 250)
+        hgrow = Priority.ALWAYS
+        maxWidth = Double.MaxValue
+    }.delegate
+    )
 
     def createFileMenuItems(): List[MenuItem] = {
 
@@ -535,6 +622,7 @@ object Hermes extends JFXApp {
                 }
                 val selectedFile = fileChooser.showSaveDialog(stage)
                 if (selectedFile != null) {
+                    // Logic to create the csv file:
                     val csvSchema =
                         featureIDs.
                             foldLeft(CsvSchema.builder().addColumn("Project")) { (schema, feature) ⇒
@@ -584,7 +672,7 @@ object Hermes extends JFXApp {
         }
         icons += new Image(getClass.getResource("OPAL-Logo-Small.png").toExternalForm)
 
-        // let's restore the window at its last position
+        // let's restore the primary window at its last position
         val primaryScreenBounds = Screen.getPrimary().getVisualBounds()
         x = preferences.getDouble("WindowX", 100)
         y = preferences.getDouble("WindowY", 100)
