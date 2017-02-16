@@ -46,14 +46,19 @@ object BytecodeInstructions extends FeatureQuery {
 
     val jvmInstructions = JVMInstructions
     val jvmOpcodes = JVMOpcodes
+    val opcodesToOrdinalNumbers = new Array[Int](256)
 
     override def htmlDescription: Either[String, URL] = {
         Right(new URL("http://www.opal-project.de/bi/JVMInstructions.xml"))
     }
 
     override def featureIDs: IndexedSeq[String] = {
+        var ordinalNumber = 0
         jvmInstructions.map { i ⇒
-            val (opcode, mnemonic) = i; s"$mnemonic (opcode:$opcode)"
+            val (opcode, mnemonic) = i
+            opcodesToOrdinalNumbers(opcode) = ordinalNumber
+            ordinalNumber += 1
+            s"$mnemonic (opcode:$opcode)"
         }.toIndexedSeq
     }
 
@@ -62,7 +67,7 @@ object BytecodeInstructions extends FeatureQuery {
         project:              Project[S],
         rawClassFiles:        Traversable[(da.ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
-        val instructions = Array.fill[LocationsContainer[S]](256)(new LocationsContainer[S])
+        val instructionsLocations = Array.fill(256)(new LocationsContainer[S])
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
@@ -71,9 +76,11 @@ object BytecodeInstructions extends FeatureQuery {
             methodLocation = MethodLocation(classFileLocation, method)
             (pc, i) ← body
         } {
-            instructions(i.opcode) += InstructionLocation(methodLocation, pc)
+            instructionsLocations(i.opcode) += InstructionLocation(methodLocation, pc)
         }
 
-        for { (locations, opcode) ← instructions.view.zipWithIndex } yield Feature[S](featureIDs(opcode), locations)
+        for { (locations, opcode) ← instructionsLocations.view.zipWithIndex } yield {
+            Feature[S](featureIDs(opcodesToOrdinalNumbers(opcode)), locations)
+        }
     }
 }
