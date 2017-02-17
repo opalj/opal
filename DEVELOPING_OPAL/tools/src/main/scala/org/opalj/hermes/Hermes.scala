@@ -363,7 +363,7 @@ object Hermes extends JFXApp {
                             popOver.show(infoButton)
                         }
                     }
-                    val isBrokenProject = newProject.startsWith("⚠︎")
+                    val isBrokenProject = newProject.startsWith("! ︎")
                     graphic =
                         new HBox(
                             new Label(newProject) {
