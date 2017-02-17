@@ -32,10 +32,10 @@ package queries
 package util
 
 import scala.collection.mutable
-
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.MethodWithBody
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.da.ClassFile
@@ -92,6 +92,12 @@ trait APIFeatureQuery extends FeatureQuery {
             (result, feature) ⇒ result + ((feature.toFeatureID, 0))
         )
 
+        val relevantClasses = apiFeatures.foldLeft(Set.empty[ObjectType]) {
+            (result, feature) ⇒
+                val objectTypes = feature.getAPIMethods.map(_.declClass)
+                result ++ objectTypes
+        }
+
         val locations = mutable.Map.empty[String, Chain[Location[S]]]
 
         for {
@@ -99,6 +105,7 @@ trait APIFeatureQuery extends FeatureQuery {
             m @ MethodWithBody(code) ← cf.methods
             if !isInterrupted()
             (pc, mii @ MethodInvocationInstruction(declClass, _, name, methodDescriptor)) ← code
+            if declClass.isObjectType && relevantClasses.contains(declClass.asObjectType)
             apiFeature ← apiFeatures
             featureID = apiFeature.toFeatureID
             apiMethod ← apiFeature.getAPIMethods
