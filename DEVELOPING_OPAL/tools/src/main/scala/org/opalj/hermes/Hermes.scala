@@ -58,6 +58,7 @@ import scalafx.application.JFXApp
 import scalafx.application.Platform
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.collections.ObservableBuffer
+
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
 import scalafx.stage.Stage
@@ -88,6 +89,11 @@ import scalafx.stage.FileChooser.ExtensionFilter
 import scalafx.scene.control.MenuBar
 import scalafx.scene.control.Menu
 import scalafx.scene.input.KeyCombination
+import scalafx.beans.property.LongProperty
+import scalafx.scene.layout.StackPane
+import scalafx.scene.chart.CategoryAxis
+import scalafx.scene.chart.NumberAxis
+import scalafx.scene.chart.BarChart
 
 import org.controlsfx.control.PopOver
 import org.controlsfx.control.HiddenSidesPane
@@ -98,6 +104,8 @@ import org.chocosolver.solver.variables.IntVar
 
 import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFileReader
+import scalafx.scene.chart.XYChart
+import org.opalj.util.Nanoseconds
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
@@ -192,12 +200,19 @@ object Hermes extends JFXApp {
 
     /* @stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
 
+    // some statistics
+    val corpusAnalysisTime = new LongProperty
+
     /**
      * Executes the queries for all projects. Basically, the queries are executed in parallel
      * for each project.
      */
     private[this] def analyzeCorpus(): Thread = {
-        def isValid(projectFeatures: ProjectFeatures[URL], project: Project[URL]): Boolean = {
+        def isValid(
+            projectFeatures:          ProjectFeatures[URL],
+            project:                  Project[URL],
+            projectAnalysisStartTime: Long
+        ): Boolean = {
             if (project.projectClassFilesCount == 0) {
                 Platform.runLater { projectFeatures.id.value = "! "+projectFeatures.id.value }
                 false
@@ -205,6 +220,7 @@ object Hermes extends JFXApp {
                 true
             }
         }
+        val analysesStartTime = System.nanoTime()
         val t = new Thread {
             override def run(): Unit = {
                 val totalSteps = (featureQueries.size * projectConfigurations.size).toDouble
@@ -214,17 +230,24 @@ object Hermes extends JFXApp {
                     projectFeatures ← featureMatrix.toIterator
                     if !Thread.currentThread.isInterrupted()
                     projectConfiguration = projectFeatures.projectConfiguration
+                    projectAnalysisStartTime = System.nanoTime()
                     projectInstantiation = projectConfiguration.instantiate
                     project = projectInstantiation.project
-                    if isValid(projectFeatures, project)
                     rawClassFiles = projectInstantiation.rawClassFiles
+                    if isValid(projectFeatures, project, projectAnalysisStartTime)
                     (featureQuery, features) ← projectFeatures.featureGroups.par
                     featuresMap = features.map(f ⇒ (f.value.id, f)).toMap
                     if !Thread.currentThread.isInterrupted()
                 } {
+                    val featureAnalysisStartTime = System.nanoTime()
                     val features = featureQuery(projectConfiguration, project, rawClassFiles)
+                    val featureAnalysisEndTime = System.nanoTime()
+                    val featureAnalysisTime = featureAnalysisEndTime - featureAnalysisStartTime
 
                     Platform.runLater {
+                        featureQuery.accumulatedAnalysisTime.value =
+                            featureQuery.accumulatedAnalysisTime.value + featureAnalysisTime
+                        corpusAnalysisTime.value = featureAnalysisEndTime - analysesStartTime
                         // (implicitly) update the feature matrix
                         features.foreach { f ⇒ featuresMap(f.id).value = f }
 
@@ -239,6 +262,8 @@ object Hermes extends JFXApp {
                 Platform.runLater {
                     rootPane.getChildren().remove(progressBar)
                     analysesFinished.value = true
+                    val analysesEndTime = System.nanoTime()
+                    corpusAnalysisTime.value = analysesEndTime - analysesStartTime
                 }
             }
         }
@@ -256,7 +281,11 @@ object Hermes extends JFXApp {
 
         // CONSTRAINTS
         // - [per feature f] sum(p_i which has feature f) > 0
-        val pis: Array[IntVar] = featureMatrix.map(pf ⇒ model.boolVar(pf.id.value)).toArray
+        val releventProjectFeatures =
+            featureMatrix.filter { pf ⇒
+                pf.projectConfiguration.statistics.getOrElse("ProjectMethods", 0) > 0
+            }.toArray
+        val pis: Array[IntVar] = releventProjectFeatures.map(pf ⇒ model.boolVar(pf.id.value))
         perFeatureCounts.iterator.zipWithIndex foreach { fCount_fIndex ⇒
             val (fCount, fIndex) = fCount_fIndex
             if (fCount.value > 0) {
@@ -267,8 +296,7 @@ object Hermes extends JFXApp {
             }
         }
         val piSizes: Array[Int] =
-            featureMatrix.map(pf ⇒
-                pf.projectConfiguration.statistics.getOrElse("ProjectMethods", 0)).toArray
+            releventProjectFeatures.map(pf ⇒ pf.projectConfiguration.statistics("ProjectMethods"))
         // OPTIMIZATION GOAL
         val overallSize = model.intVar("objective", 0, IntVar.MAX_INT_BOUND /*=21474836*/ )
         model.scalar(pis, piSizes, "=", overallSize).post()
@@ -612,6 +640,11 @@ object Hermes extends JFXApp {
                 configurationStage.showAndWait()
             }
         }
+        val showAnalysisTimes = new MenuItem("Show Analysis Times...") {
+            onAction = handle {
+                analysisTimesStage.show()
+            }
+        }
         val csvExport = new MenuItem("Export As CVS...") {
             disable <== analysesFinished.not
             accelerator = KeyCombination.keyCombination("Ctrl +Alt +S")
@@ -649,7 +682,7 @@ object Hermes extends JFXApp {
             disable <== analysesFinished.not
             onAction = handle { computeCorpus() }
         }
-        List(showConfig, csvExport, computeProjectsForCorpus)
+        List(showConfig, showAnalysisTimes, csvExport, computeProjectsForCorpus)
     }
 
     val rootPane = new BorderPane {
@@ -685,6 +718,44 @@ object Hermes extends JFXApp {
             preferences.putDouble("WindowWidth", stage.getWidth())
             preferences.putDouble("WindowHeight", stage.getHeight())
         }
+    }
+
+    val analysisTimesStage = new Stage {
+        title = "AnalysisTimes"
+        scene = new Scene(800, 600) {
+            root = new StackPane {
+
+                val xAxis = new CategoryAxis() {
+                    label = "Feature Queries"
+                    tickLabelsVisible = false
+                }
+                corpusAnalysisTime.onChange { (_, _, newValue) ⇒
+                    xAxis.label = "Feature Queries ∑"+(new Nanoseconds(newValue.longValue).toSeconds)
+                }
+                val yAxis = new NumberAxis()
+
+                val data = new ObservableBuffer[javafx.scene.chart.XYChart.Series[String, Number]]()
+                for (featureQuery ← featureQueries) {
+                    val series = new XYChart.Series[String, Number] {
+                        name = featureQuery.id
+                    }
+                    data.add(series)
+                    featureQuery.accumulatedAnalysisTime.onChange { (_, _, newValue) ⇒
+                        if (newValue != 0)
+                            series.data = Seq(XYChart.Data[String, Number](featureQuery.id, newValue))
+                    }
+                }
+                val barChart = BarChart(xAxis, yAxis)
+                barChart.animated = false
+                barChart.legendVisible = true
+                barChart.title = "Feature Execution Times"
+                barChart.data = data
+                barChart.barGap = 1
+
+                children = barChart
+            }
+        }
+        initOwner(stage)
     }
 
 }
