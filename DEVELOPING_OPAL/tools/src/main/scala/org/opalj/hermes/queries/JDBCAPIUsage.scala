@@ -59,7 +59,7 @@ object JDBCAPIUsage extends APIFeatureQuery {
                 InstanceAPIMethod(Statement, "execute"),
                 InstanceAPIMethod(Statement, "executeQuery"),
                 InstanceAPIMethod(Statement, "executeUpdate")
-            ), "creation and execution of java.sql.Statement"
+            ), "creation and execution of\njava.sql.Statement"
         ),
 
         APIFeatureGroup(
@@ -68,7 +68,7 @@ object JDBCAPIUsage extends APIFeatureQuery {
                 InstanceAPIMethod(PreparedStatement, "execute"),
                 InstanceAPIMethod(PreparedStatement, "executeQuery"),
                 InstanceAPIMethod(PreparedStatement, "executeUpdate")
-            ), "creation and execution of java.sql.PreparedStatement"
+            ), "creation and execution of\njava.sql.PreparedStatement"
         ),
 
         APIFeatureGroup(
@@ -77,7 +77,7 @@ object JDBCAPIUsage extends APIFeatureQuery {
                 InstanceAPIMethod(CallableStatement, "execute"),
                 InstanceAPIMethod(CallableStatement, "executeQuery"),
                 InstanceAPIMethod(CallableStatement, "executeUpdate")
-            ), "creation and execution of java.sql.PreparedStatement"
+            ), "creation and execution of\njava.sql.CallableStatement"
         )
     )
 }
