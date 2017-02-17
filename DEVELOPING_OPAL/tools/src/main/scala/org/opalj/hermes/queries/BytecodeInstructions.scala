@@ -30,51 +30,57 @@ package org.opalj
 package hermes
 package queries
 
+import java.net.URL
+
+import org.opalj.bytecode.JVMInstructions
+import org.opalj.bytecode.JVMOpcodes
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.ReturnInstruction
-import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.MethodWithBody
 
 /**
- * Counts the number of class files per class file version.
+ * Counts the number of occurrences of each bytecode instruction.
  *
  * @author Michael Eichberg
  */
-object MethodsWithoutReturns extends FeatureQuery {
+object BytecodeInstructions extends FeatureQuery {
 
-    final val AlwaysThrowsExceptionMethodsFeatureId = "Never Returns Normally"
-    final val InfiniteLoopMethodsFeatureId = "Method with Infinite Loops"
-    override def featureIDs: Seq[String] = List(
-        AlwaysThrowsExceptionMethodsFeatureId,
-        InfiniteLoopMethodsFeatureId
-    )
+    val jvmInstructions = JVMInstructions
+    val jvmOpcodes = JVMOpcodes
+    val opcodesToOrdinalNumbers = new Array[Int](256)
+
+    override def htmlDescription: Either[String, URL] = {
+        Right(new URL("http://www.opal-project.de/bi/JVMInstructions.xml"))
+    }
+
+    override def featureIDs: IndexedSeq[String] = {
+        var ordinalNumber = 0
+        jvmInstructions.map { i ⇒
+            val (opcode, mnemonic) = i
+            opcodesToOrdinalNumbers(opcode) = ordinalNumber
+            ordinalNumber += 1
+            s"$mnemonic (opcode:$opcode)"
+        }.toIndexedSeq
+    }
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
         rawClassFiles:        Traversable[(da.ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
-        val infiniteLoopMethods: LocationsContainer[S] = new LocationsContainer[S]
-        val alwaysThrowsExceptionMethods: LocationsContainer[S] = new LocationsContainer[S]
+        val instructionsLocations = Array.fill(256)(new LocationsContainer[S])
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
             classFileLocation = ClassFileLocation(source, classFile)
-            method ← classFile.methods
-            body ← method.body
-            if !isInterrupted
-            hasReturn = body.exists { (pc, i) ⇒ i.isInstanceOf[ReturnInstruction] }
-            if !hasReturn
+            method @ MethodWithBody(body) ← classFile.methods
+            methodLocation = MethodLocation(classFileLocation, method)
+            (pc, i) ← body
         } {
-            val cfg = CFGFactory(body, project.classHierarchy)
-            if (cfg.abnormalReturnNode.predecessors.isEmpty)
-                infiniteLoopMethods += MethodLocation(classFileLocation, method)
-            else
-                alwaysThrowsExceptionMethods += MethodLocation(classFileLocation, method)
+            instructionsLocations(i.opcode) += InstructionLocation(methodLocation, pc)
         }
 
-        List(
-            Feature[S](AlwaysThrowsExceptionMethodsFeatureId, alwaysThrowsExceptionMethods),
-            Feature[S](InfiniteLoopMethodsFeatureId, infiniteLoopMethods)
-        )
+        for { (locations, opcode) ← instructionsLocations.view.zipWithIndex } yield {
+            Feature[S](featureIDs(opcodesToOrdinalNumbers(opcode)), locations)
+        }
     }
 }

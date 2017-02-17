@@ -29,44 +29,37 @@
 package org.opalj
 package hermes
 
+import scala.language.implicitConversions
+
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 
-/**
- * Represents the immutable results of a query.
- *
- * @param  id A very short identifier of the this feature. E.g., `Java8ClassFile` or
- *         `ProtectedMethod` or `DeadMethod`. The name must not contain spaces or other
- *         special characters.
- * @param  extensions The places where the feature was found. This information is
- *         primarily useful when navigating the project and is optional.
- *         I.e., `extensions.size` can be  smaller than `count`. The maximum number
- *         of stored locations is set using the global setting: "org."
- */
-abstract case class Feature[S] private (
-        id:         String,
-        count:      Int,
-        extensions: Chain[Location[S]]
-) {
+class LocationsContainer[S] {
 
-    assert(count >= extensions.size)
+    private var theLocationsCount = 0
+    private var theLocations: Chain[Location[S]] = Naught
 
+    def +=(location: ⇒ Location[S]): Unit = {
+        theLocationsCount += 1
+        if (theLocationsCount <= Globals.MaxLocations) {
+            theLocations :&:= location
+        }
+    }
+
+    /** The number of locations that were seen. */
+    def size: Int = theLocationsCount
+
+    /**
+     * The locations that were memorized; this depends on the global settings regarding the
+     * precision and amount of location information that is kept.
+     */
+    def locations: Chain[Location[S]] = theLocations
 }
 
-object Feature {
+object LocationsContainer {
 
-    def apply[S](
-        id:         String,
-        count:      Int                = 0,
-        extensions: Chain[Location[S]] = Naught
-    ): Feature[S] = {
-        new Feature(id, count, extensions.takeUpTo(Globals.MaxLocations)) {}
+    implicit def toLocationsChain[S](lc: LocationsContainer[S]): Chain[Location[S]] = {
+        lc.locations
     }
 
-    def apply[S](
-        id:        String,
-        locations: LocationsContainer[S]
-    ): Feature[S] = {
-        new Feature(id, locations.size, locations.locations) {}
-    }
 }

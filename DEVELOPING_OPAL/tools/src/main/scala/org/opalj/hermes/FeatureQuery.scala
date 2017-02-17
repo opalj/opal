@@ -29,19 +29,25 @@
 package org.opalj
 package hermes
 
+import java.net.URL
+
 import scala.io.Source
 import scala.io.Codec
 
 import com.github.rjeschke.txtmark.Processor
 
+import scalafx.beans.property.ObjectProperty
+import scalafx.beans.property.LongProperty
+
 import org.opalj.io.processSource
 import org.opalj.br.analyses.Project
-import scalafx.beans.property.ObjectProperty
 
 /**
  * Extracts a feature/a set of closely related features of a given project.
  */
 trait FeatureQuery {
+
+    private[hermes] val accumulatedAnalysisTime = new LongProperty()
 
     /**
      * The unique ids of the extracted features.
@@ -81,7 +87,7 @@ trait FeatureQuery {
         }
     }
 
-    lazy val htmlDescription: String = Processor.process(mdDescription)
+    def htmlDescription: Either[String, URL] = Left(Processor.process(mdDescription))
 
     def isInterrupted(): Boolean = Thread.currentThread().isInterrupted()
 

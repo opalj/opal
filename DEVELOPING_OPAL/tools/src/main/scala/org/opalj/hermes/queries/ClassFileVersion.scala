@@ -30,13 +30,13 @@ package org.opalj
 package hermes
 package queries
 
+import org.opalj.collection.mutable.ArrayMap
+import org.opalj.collection.immutable.Naught
 import org.opalj.bi.Java9MajorVersion
+import org.opalj.bi.Java5MajorVersion
 import org.opalj.bi.Java1MajorVersion
 import org.opalj.bi.jdkVersion
 import org.opalj.br.analyses.Project
-import org.opalj.collection.mutable.ArrayMap
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.Chain
 
 /**
  * Counts the number of class files per class file version.
@@ -48,7 +48,10 @@ object ClassFileVersion extends FeatureQuery {
     def featureId(majorVersion: Int) = s"Class File\n${jdkVersion(majorVersion)}"
 
     override def featureIDs: Seq[String] = {
-        for (majorVersion ← (Java1MajorVersion to Java9MajorVersion)) yield featureId(majorVersion)
+        featureId(Java1MajorVersion) +: (
+            for (majorVersion ← (Java5MajorVersion to Java9MajorVersion))
+                yield featureId(majorVersion)
+        )
     }
 
     override def apply[S](
@@ -57,30 +60,38 @@ object ClassFileVersion extends FeatureQuery {
         rawClassFiles:        Traversable[(da.ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
 
-        val data = ArrayMap[Chain[ClassFileLocation[S]]](Java9MajorVersion)
+        val data = ArrayMap[LocationsContainer[S]](Java9MajorVersion)
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
             if !isInterrupted()
         } {
             val version = classFile.majorVersion
-            val locations = data(version)
-            val location = ClassFileLocation(source, classFile.thisType.fqn)
-            data(version) =
-                if (locations eq null)
-                    location :&: Naught
-                else
-                    location :&: locations
+            val normalizedVersion = if (version < Java5MajorVersion) Java1MajorVersion else version
+            var locations = data(normalizedVersion)
+            if (locations eq null) {
+                locations = new LocationsContainer[S]
+                data(normalizedVersion) = locations
+            }
+            locations += ClassFileLocation(source, classFile.thisType.fqn)
         }
 
-        for (majorVersion ← (Java1MajorVersion to Java9MajorVersion)) yield {
-            val featureId = this.featureId(majorVersion)
-            val extensions = data(majorVersion)
-            if (extensions ne null) {
-                Feature[S](featureId, extensions.size, extensions)
-            } else
-                Feature[S](featureId, 0, Naught)
-        }
-
+        {
+            val java1MajorVersionFeatureId = this.featureId(Java1MajorVersion)
+            val extensions = data(Java1MajorVersion)
+            if (data(Java1MajorVersion) eq null)
+                Feature[S](java1MajorVersionFeatureId, 0, Naught)
+            else
+                Feature[S](java1MajorVersionFeatureId, extensions.size, extensions)
+        } +: (
+            for (majorVersion ← (Java5MajorVersion to Java9MajorVersion)) yield {
+                val featureId = this.featureId(majorVersion)
+                val extensions = data(majorVersion)
+                if (extensions ne null) {
+                    Feature[S](featureId, extensions.size, extensions)
+                } else
+                    Feature[S](featureId, 0, Naught)
+            }
+        )
     }
 }
