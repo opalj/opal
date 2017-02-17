@@ -51,11 +51,24 @@ object SystemAPIUsage extends APIFeatureQuery {
         val MediaPlayer = ObjectType("javafx/scene/media/MediaPlayer")
     }
 
+    object Network {
+        val Socket = ObjectType("java/net/Socket")
+        val SSLSocket = ObjectType("javax.net.ssl.SSLSocket")
+        val ServerSocket = ObjectType("java/net/ServerSocket")
+        val SSLServerSocket = ObjectType("javax.net.ssl.SSLServerSocket")
+        val DatagramSocket = ObjectType("javax.net.DatagramSocket")
+        val MulticastSocket = ObjectType("javax.net.MulticastSocket")
+
+        val DatagramPacket = ObjectType("java/net/DatagramPacket")
+    }
+
     val Runtime = ObjectType("java/lang/Runtime")
     val System = ObjectType("java/lang/System")
     val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
 
     override def apiFeatures: Chain[APIFeature] = Chain(
+
+        // PROCESS
 
         APIFeatureGroup(
             Chain(
@@ -64,6 +77,8 @@ object SystemAPIUsage extends APIFeatureQuery {
             ), "Process"
         ),
 
+        // JVM EXIT
+
         APIFeatureGroup(
             Chain(
                 InstanceAPIMethod(Runtime, "exit"),
@@ -71,6 +86,8 @@ object SystemAPIUsage extends APIFeatureQuery {
                 StaticAPIMethod(System, "exit")
             ), "JVM exit"
         ),
+
+        // NATIVE LIBRARIES
 
         APIFeatureGroup(
             Chain(
@@ -81,14 +98,20 @@ object SystemAPIUsage extends APIFeatureQuery {
             ), "Native Libraries"
         ),
 
+        // SECURITY_MANAGER
+
         StaticAPIMethod(System, "getSecurityManager"),
         StaticAPIMethod(System, "setSecurityManager"),
+
+        // ENV
 
         APIFeatureGroup(
             Chain(
                 StaticAPIMethod(System, "getenv")
             ), "Environment"
         ),
+
+        // SOUND
 
         APIFeatureGroup(
             Chain(
@@ -98,6 +121,12 @@ object SystemAPIUsage extends APIFeatureQuery {
                 InstanceAPIMethod(Sound.SourceDataLine, "start"),
                 InstanceAPIMethod(Sound.MediaPlayer, "play")
             ), "Sound"
+        ),
+
+        // NETWORK
+
+        APIFeatureGroup(
+            Chain(), "Socket"
         )
     )
 }
