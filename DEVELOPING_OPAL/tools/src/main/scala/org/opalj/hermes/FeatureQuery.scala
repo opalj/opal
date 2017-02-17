@@ -37,6 +37,7 @@ import scala.io.Codec
 import com.github.rjeschke.txtmark.Processor
 
 import scalafx.beans.property.ObjectProperty
+import scalafx.beans.property.LongProperty
 
 import org.opalj.io.processSource
 import org.opalj.br.analyses.Project
@@ -45,6 +46,8 @@ import org.opalj.br.analyses.Project
  * Extracts a feature/a set of closely related features of a given project.
  */
 trait FeatureQuery {
+
+    private[hermes] val accumulatedAnalysisTime = new LongProperty()
 
     /**
      * The unique ids of the extracted features.
