@@ -58,7 +58,14 @@ sealed trait APIFeature {
 /**
  * Common trait that abstracts over instance and static api methods.
  */
-sealed trait APIMethod extends APIFeature
+sealed trait APIMethod extends APIFeature {
+
+    def declClass: ObjectType
+
+    def name: String
+
+    def descriptor: Option[MethodDescriptor]
+}
 
 /**
  * Represents an instance API call.
@@ -70,9 +77,9 @@ sealed trait APIMethod extends APIFeature
  *                   with the same name, declared in the same class.
  */
 case class InstanceAPIMethod(
-        declClass:  ObjectType,
-        name:       String,
-        descriptor: Option[MethodDescriptor]
+        val declClass:  ObjectType,
+        val name:       String,
+        val descriptor: Option[MethodDescriptor]
 ) extends APIMethod {
 
     /**
@@ -123,9 +130,9 @@ object InstanceAPIMethod {
  *                   with the same name, declared in the same class.
  */
 case class StaticAPIMethod(
-        declClass:  ObjectType,
-        name:       String,
-        descriptor: Option[MethodDescriptor]
+        val declClass:  ObjectType,
+        val name:       String,
+        val descriptor: Option[MethodDescriptor]
 ) extends APIMethod {
 
     /**
