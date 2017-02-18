@@ -4,6 +4,10 @@
             "hermes": {
                 "projects": [
                     {
+                        "id" : "JVM Features",
+                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/jvm_features-1.8-g-parameters-genericsignature.jar"
+                    },
+                    {
                         "id": "Apache ANT 1.7.1 - Javac 6",
                         "cp": "../../OPAL/bi/src/test/resources/classfiles/Apache ANT 1.7.1 - javac 6 default target.jar"
                     },
