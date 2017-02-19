@@ -203,6 +203,9 @@ final class ClassFile private (
      * Returns true if this class file represents an interface.
      *
      * @note From the JVM point-of-view annotations are also interfaces!
+     *
+     * @see [[org.opalj.br.analyses.Project]] to determine if this interface declaration is a
+     *      functional interface.
      */
     def isInterfaceDeclaration: Boolean = (accessFlags & ACC_INTERFACE.mask) == ACC_INTERFACE.mask
 
