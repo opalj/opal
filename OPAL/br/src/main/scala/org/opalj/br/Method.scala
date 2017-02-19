@@ -156,6 +156,8 @@ final class Method private (
         this.hasSignature(name, descriptor, false)
     }
 
+    def signature: MethodSignature = new MethodSignature(name, descriptor)
+
     def runtimeVisibleParameterAnnotations: ParameterAnnotations = {
         attributes.collectFirst { case RuntimeVisibleParameterAnnotationTable(as) ⇒ as } match {
             case Some(annotations) ⇒ annotations
