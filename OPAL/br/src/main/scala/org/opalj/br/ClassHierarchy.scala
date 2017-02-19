@@ -266,6 +266,7 @@ class ClassHierarchy private (
         rootTypes.iterator filter { objectType ⇒ !interfaceTypesMap(objectType.id) }
     }
 
+    /**
      * Iterates over all interfaces which only inherit from java.lang.Object.
      */
     def rootInterfaceTypes: Iterator[ObjectType] = {
@@ -1089,6 +1090,26 @@ class ClassHierarchy private (
             return UIDSet0;
 
         this.subinterfaceTypesMap(objectType.id)
+    }
+
+    /**
+     * Iterates over all subinterfaces of the given interface type (or java.lang.Object) until
+     * the callback function returns "false".
+     */
+    def foreachSubinterfaceType(interfaceType: ObjectType)(f: ObjectType ⇒ Boolean): Unit = {
+        var processedTypes = UIDSet.empty[ObjectType]
+        var typesToProcess = directSubinterfacesOf(interfaceType)
+        while (typesToProcess.nonEmpty) {
+            val subInterfaceType = typesToProcess.head
+            typesToProcess = typesToProcess.tail
+            processedTypes += subInterfaceType
+            if (f(subInterfaceType)) {
+                directSubinterfacesOf(subInterfaceType) foreach { i ⇒
+                    if (!processedTypes.contains(i))
+                        typesToProcess += i
+                }
+            }
+        }
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2539,7 +2560,7 @@ object ClassHierarchy {
 
             if (isInterfaceType && isFinal) {
                 val message = s"the class file ${objectType.toJava} defines a final interface "+
-                    "which violates the JVM specifiction and is therefore ignored"
+                    "which violates the JVM specification and is therefore ignored"
                 OPALLogger.error("project configuration - class hierarchy", message)
 
                 return ;
