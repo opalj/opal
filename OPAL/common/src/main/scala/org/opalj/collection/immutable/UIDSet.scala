@@ -38,6 +38,7 @@ import scala.collection.mutable.Builder
 import org.opalj.collection.UID.areEqual
 import org.opalj.collection.immutable.Chain.ChainBuilder
 
+// TODO GREATLY IMPROVE PERFORMANCE for larger than 4 sets BY USING, E.G., TRIESETs!!!!
 /**
  * An immutable set of elements of type `UID`. Underlying the implementation
  * is a modified binary search tree. The primary use case of this structure is its
