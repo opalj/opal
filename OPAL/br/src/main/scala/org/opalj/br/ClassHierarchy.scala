@@ -266,6 +266,18 @@ class ClassHierarchy private (
         rootTypes.iterator filter { objectType ⇒ !interfaceTypesMap(objectType.id) }
     }
 
+     * Iterates over all interfaces which only inherit from java.lang.Object.
+     */
+    def rootInterfaceTypes: Iterator[ObjectType] = {
+        val ObjectId = ObjectType.Object.id
+        if (knownTypesMap(ObjectId) eq null)
+            return Iterator.empty;
+
+        subinterfaceTypesMap(ObjectId).toIterator filter { i ⇒
+            superinterfaceTypesMap(i.id).isEmpty
+        }
+    }
+
     def leafClassTypes: Iterator[ObjectType] = {
         leafTypes.iterator filter { objectType ⇒ !interfaceTypesMap(objectType.id) }
     }
