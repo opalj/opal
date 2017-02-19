@@ -30,14 +30,16 @@ package org.opalj
 package hermes
 
 /**
- * Global configuration settings initialized when the given configuration file is
+ * Global configuration settings initialized when the application configuration file is
  * read.
  *
  * @author Michael Eichberg
  */
 object Globals {
 
+    /** The number of locations per feature pre project that is stored. */
     private[hermes] final val MaxLocationsKey = "org.opalj.hermes.maxLocations"
+
     // MaxLocations is a stable value; i.e., only changed once!
     private[hermes] var MaxLocations: Int = Int.MaxValue
 
