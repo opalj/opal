@@ -5,7 +5,8 @@
                 "projects": [
                     {
                         "id" : "JVM Features",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/jvm_features-1.8-g-parameters-genericsignature.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/jvm_features-1.8-g-parameters-genericsignature.jar",
+                        "libcp_defaults" : "RTJar"
                     },
                     {
                         "id": "Apache ANT 1.7.1 - Javac 6",
