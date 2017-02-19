@@ -1460,7 +1460,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val exPCs = if (computation.throwsException) handleException(computation.exceptions) else UShortSet.empty
 
                     if (computation.returnsNormally != computation.throwsException)
-                        println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs.head} - $instruction")
+                        println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
                 }
 
                 def computationWithExceptions(
@@ -1481,7 +1481,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val exPCs = if (computation.throwsException) handleException(computation.exceptions) else UShortSet.empty
 
                     if (computation.returnsNormally != computation.throwsException)
-                        println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs.head} in {$exPCs} - $instruction")
+                        println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
                 }
 
                 def computationWithReturnValueAndExceptions(
