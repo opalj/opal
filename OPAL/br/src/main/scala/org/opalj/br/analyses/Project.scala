@@ -63,6 +63,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
@@ -424,6 +425,157 @@ class Project[Source] private (
         result
     } { t ⇒
         info("project setup", s"computing overriding information took ${t.toSeconds}")
+    }
+
+    /**
+     * Computes the set of all definitive functional interfaces in a top-down fashion.
+     *
+     * @see Java 8 language specification for details!
+     *
+     * @return The functional interfaces.
+     */
+    final lazy val functionalInterfaces: UIDSet[ObjectType] = time {
+
+        // Core idea: a subtype is only processed after processing all supertypes;
+        // in case of partial type hierarchies it may happen that all known
+        // supertypes are processed, but no all...
+
+        // the set of interfaces that are not functional interfaces themselve, but
+        // which can be extended.
+        var irrelevantInterfaces = UIDSet.empty[ObjectType]
+        var functionalInterfaces = Map.empty[ObjectType, MethodSignature]
+        var otherInterfaces = UIDSet.empty[ObjectType]
+
+        // our worklist/-set; it only contains those interface types for which
+        // we have complete supertype information
+        var typesToProcess = classHierarchy.rootInterfaceTypes.toSet
+
+        def nonFunctionalInterface(interfaceType: ObjectType): Unit = {
+            // println("non-functional interface: "+interfaceType.toJava)
+            assert(!irrelevantInterfaces.contains(interfaceType))
+            assert(!functionalInterfaces.contains(interfaceType))
+
+            otherInterfaces += interfaceType
+            classHierarchy.foreachSubinterfaceType(interfaceType) { i ⇒
+                if (otherInterfaces.contains(i))
+                    false
+                else {
+                    otherInterfaces += i
+                    true
+                }
+                // println("non-functional interface: "+interfaceType.toJava+"=>"+i.toJava)
+            }
+        }
+
+        def processSubinterfaces(interfaceType: ObjectType): Unit = {
+            classHierarchy.directSubinterfacesOf(interfaceType) foreach { subIType ⇒
+                // println("processing subtype: "+subIType.toJava)
+                // let's check if the type is potentially relevant
+                if (!otherInterfaces.contains(subIType)) {
+
+                    // only add those types for which we have already derived information for all
+                    // superinterface types and which are not already classified..
+                    if (classHierarchy.superinterfaceTypes(subIType) match {
+                        case Some(superinterfaceTypes) ⇒
+                            superinterfaceTypes.forall { superSubIType ⇒
+                                superSubIType == interfaceType || {
+                                    irrelevantInterfaces.contains(superSubIType) ||
+                                        functionalInterfaces.contains(superSubIType)
+                                }
+                            }
+                        case None ⇒ throw new UnknownError()
+                    }) {
+                        // we have all information about all supertypes...
+                        typesToProcess += subIType
+                    } /* else {
+                        println("supertype information incomplete: "+subIType.toJava)
+                    }*/
+                } /*else {
+                    System.out.println("Dropped: "+subIType.toJava)
+                }*/
+            }
+        }
+
+        def classifyPotentiallyFunctionalInterface(classFile: ClassFile): Unit = {
+            // println("Classification: "+classFile.thisType.toJava)
+            assert(classFile.isInterfaceDeclaration)
+            val interfaceType = classFile.thisType
+
+            val abstractMethods = classFile.methods.filter(_.isAbstract)
+            val abstractMethodsCount = abstractMethods.size
+            val isPotentiallyIrrelevant: Boolean = abstractMethodsCount == 0
+            val isPotentiallyFunctionalInterface: Boolean = abstractMethodsCount == 1
+
+            if (!isPotentiallyIrrelevant && !isPotentiallyFunctionalInterface) {
+                nonFunctionalInterface(interfaceType)
+            } else {
+                var sharedFunctionalMethod: MethodSignature = null
+                if (classFile.interfaceTypes.forall { i ⇒
+                    //... forall is "only" used to short-cut the evaluation; in case of
+                    // false all relevant state is already updated
+                    if (!irrelevantInterfaces.contains(i)) {
+                        val potentialFunctionalMethod = functionalInterfaces(i)
+                        if (sharedFunctionalMethod == null) {
+                            sharedFunctionalMethod = potentialFunctionalMethod
+                            true
+                        } else if (sharedFunctionalMethod == potentialFunctionalMethod) {
+                            true
+                        } else {
+                            // the super interface types define different abstract methods
+                            nonFunctionalInterface(interfaceType)
+                            false
+                        }
+                    } else {
+                        // the supertype is irrelevant...
+                        true
+                    }
+                }) {
+                    // all super interfaces are either irrelevant or least share the same
+                    // functionalMethod
+                    if (sharedFunctionalMethod == null) {
+                        if (isPotentiallyIrrelevant)
+                            irrelevantInterfaces += interfaceType
+                        else
+                            functionalInterfaces += ((
+                                interfaceType,
+                                abstractMethods.head.signature
+                            ))
+                        processSubinterfaces(interfaceType)
+                    } else if (isPotentiallyIrrelevant ||
+                        sharedFunctionalMethod == abstractMethods.head.signature) {
+                        functionalInterfaces += ((interfaceType, sharedFunctionalMethod))
+                        processSubinterfaces(interfaceType)
+                    } else {
+                        // different methods are defined...
+                        nonFunctionalInterface(interfaceType)
+                    }
+                } /*else {
+                    println("....killed: "+classFile.thisType.toJava)
+                }*/
+            }
+        }
+
+        while (typesToProcess.nonEmpty) {
+            val interfaceType = typesToProcess.head
+            typesToProcess = typesToProcess.tail
+
+            if (!otherInterfaces.contains(interfaceType) &&
+                !functionalInterfaces.contains(interfaceType) &&
+                !irrelevantInterfaces.contains(interfaceType)) {
+
+                classFile(interfaceType) match {
+                    case Some(classFile) ⇒ classifyPotentiallyFunctionalInterface(classFile)
+                    case None            ⇒ nonFunctionalInterface(interfaceType)
+                }
+            }
+        }
+
+        // println("Irrelevant interfaces: "+irrelevantInterfaces.mkString("\n\t", "\n\t", "\n"))
+        // println("Other interfaces: "+otherInterfaces.mkString("\n\t", "\n\t", "\n"))
+
+        UIDSet.empty[ObjectType] ++ functionalInterfaces.keys
+    } { t ⇒
+        info("project setup", s"computing functional interfaces took ${t.toSeconds}")
     }
 
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
