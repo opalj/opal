@@ -69,10 +69,7 @@ import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKEINTERFACE
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -488,14 +485,14 @@ class Project[Source] private (
                     }) {
                         // we have all information about all supertypes...
                         typesToProcess += subIType
-                    } 
+                    }
                 }
             }
         }
 
         def classifyPotentiallyFunctionalInterface(classFile: ClassFile): Unit = {
             if (!classFile.isInterfaceDeclaration) {
-                // This may happen for "broken" projects (which we finde,e.g., in case of 
+                // This may happen for "broken" projects (which we finde,e.g., in case of
                 // the JDK/Qualitas Corpus).
                 nonFunctionalInterface(classFile.thisType)
                 return ;
@@ -631,7 +628,7 @@ class Project[Source] private (
         classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean
     )(
         f: ClassFile ⇒ T
-    ): List[Throwable] = {
+    ): Iterable[Throwable] = {
         val classFilesCount = classFiles.length
         if (classFilesCount == 0)
             return Nil;
@@ -644,7 +641,7 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
-    ): List[Throwable] = {
+    ): Iterable[Throwable] = {
         doParForeachClassFile(this.projectClassFiles, isInterrupted)(f)
     }
 
@@ -652,7 +649,7 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
-    ): List[Throwable] = {
+    ): Iterable[Throwable] = {
         doParForeachClassFile(this.libraryClassFiles, isInterrupted)(f)
     }
 
@@ -660,9 +657,8 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
-    ): List[Throwable] = {
-        parForeachProjectClassFile(isInterrupted)(f) :::
-            parForeachLibraryClassFile(isInterrupted)(f)
+    ): Iterable[Throwable] = {
+        parForeachProjectClassFile(isInterrupted)(f) ++ parForeachLibraryClassFile(isInterrupted)(f)
     }
 
     /**
@@ -721,7 +717,7 @@ class Project[Source] private (
     def allMethodsWithContext: Iterable[(Method, ClassFile)] = this.methodToClassFile.toIterable
 
     /**
-     * Iterates over all methods with a body in parallel.
+     * Iterates over all methods with a body in parallel starting with the largest methods first.
      *
      * This method maximizes utilization by allowing each thread to pick the next
      * unanalyzed method as soon as the thread has finished analyzing the previous method.
@@ -733,12 +729,12 @@ class Project[Source] private (
         parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks
     )(
         f: MethodInfo[Source] ⇒ T
-    ): List[Throwable] = {
-        val concreteMethods = this.methodsWithBodyAndContext
-        if (concreteMethods.length == 0)
+    ): Iterable[Throwable] = {
+        val methods = methodsWithBodyAndContext
+        if (methods.length == 0)
             return Nil;
 
-        parForeachArrayElement(concreteMethods, parallelizationLevel, isInterrupted)(f)
+        parForeachArrayElement(methods, parallelizationLevel, isInterrupted)(f)
     }
 
     /**
@@ -1534,13 +1530,13 @@ object Project {
                         )
                     )
                 } else {
-                    libraryClassFiles = libClassFile :: libraryClassFiles
+                    libraryClassFiles ::= libClassFile
                     libraryTypes += libraryType
                     libraryClassFilesCount += 1
                     for (method ← libClassFile.methods) {
                         libraryMethodsCount += 1
                         methodToClassFile.put(method, libClassFile)
-                        method.body.foreach(codeSize += _.instructions.size)
+                        method.body.foreach(codeSize += _.instructions.length)
                     }
                     for (field ← libClassFile.fields) {
                         libraryFieldsCount += 1
@@ -1554,13 +1550,38 @@ object Project {
             fieldToClassFile.repack()
             methodToClassFile.repack()
 
+            // assert(methodToClassFile.size == libraryMethodsCount + projectMethodsCount)
+
             val methodsWithBodySortedBySizeWithContext =
-                methodToClassFile.view.filter(_._1.body.isDefined).toList.sortWith { (v1, v2) ⇒
-                    v1._1.body.get.instructions.length > v2._1.body.get.instructions.length
-                }.map(e ⇒ MethodInfo(sources(e._2.thisType), e._2, e._1)).toArray
+                methodToClassFile.view.
+                    filter(_._1.body.isDefined).
+                    toList.
+                    sortWith { (v1, v2) ⇒
+                        v1._1.body.get.instructions.length > v2._1.body.get.instructions.length
+                    }.
+                    map(e ⇒ MethodInfo(sources(e._2.thisType), e._2, e._1)).
+                    toArray
 
             val methodsWithBodySortedBySize: Array[Method] =
-                methodsWithBodySortedBySizeWithContext.view.map(mi ⇒ mi.method).toArray
+                methodsWithBodySortedBySizeWithContext.map(mi ⇒ mi.method)
+
+            // assert(
+            // methodsWithBodySortedBySize.length == methodsWithBodySortedBySizeWithContext.length
+            //)
+            assert(
+                projectClassFiles.forall { c ⇒
+                    c.methods.forall { m ⇒
+                        m.body.isEmpty || methodsWithBodySortedBySize.contains(m)
+                    }
+                }
+            )
+            assert(
+                libraryClassFiles.forall { c ⇒
+                    c.methods.forall { m ⇒
+                        m.body.isEmpty || methodsWithBodySortedBySize.contains(m)
+                    }
+                }
+            )
 
             val project = new Project(
                 projectClassFiles.toArray,
@@ -1626,7 +1647,7 @@ object Project {
             exsMutex.synchronized { exs = ex :: exs }
         }
 
-        project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
+        val exceptions = project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
             val BasicMethodInfo(c: ClassFile, m: Method) = e
             m.body.get.iterate { (pc, instruction) ⇒
                 (instruction.opcode: @scala.annotation.switch) match {
@@ -1644,34 +1665,41 @@ object Project {
 
                     case INVOKESTATIC.opcode ⇒
                         val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
-                        project.lookupMethodDefinition(invokestatic) foreach { m ⇒
-                            if (!m.isStatic) {
+                        project.staticCall(invokestatic) match {
+                            case Success(_) ⇒ /*OK*/
+                            case Failure    ⇒ /*OK - partial project*/
+                            case Empty ⇒
                                 val ex = InconsistentProjectException(
-                                    s"static method call $invokestatic of an instance method in "+
-                                        m.toJava(c) + s"pc=$pc $disclaimer",
+                                    s"target static method cannot be found "+
+                                        m.toJava(c, s"pc=$pc; $invokestatic - $disclaimer"),
                                     Error
                                 )
                                 addException(ex)
-                            }
                         }
 
-                    case INVOKEVIRTUAL.opcode | INVOKESPECIAL.opcode | INVOKEINTERFACE.opcode ⇒
-                        val invocation = instruction.asInstanceOf[MethodInvocationInstruction]
-                        project.lookupMethodDefinition(invocation) foreach { m ⇒
-                            if (m.isStatic) {
-                                val method = invocation.methodDescriptor.toJava(invocation.name)
+                    case INVOKESPECIAL.opcode ⇒
+                        val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
+                        project.specialCall(invokespecial) match {
+                            case Success(_) ⇒ /*OK*/
+                            case Failure    ⇒ /*OK - partial project*/
+                            case Empty ⇒
                                 val ex = InconsistentProjectException(
-                                    s"instance method call of the static method $method in "+
-                                        m.toJava(c) + s"pc=$pc $disclaimer",
+                                    s"target special method cannot be found "+
+                                        m.toJava(c, s"pc=$pc; $invokespecial - $disclaimer"),
                                     Error
                                 )
                                 addException(ex)
-                            }
                         }
 
                     case _ ⇒ // Nothing special is checked (so far)
                 }
             }
+        }
+        if (exceptions.nonEmpty) {
+            OPALLogger.error(
+                "internal - ignored",
+                "project validation failed miserably:\n"+exceptions.mkString("\n")
+            )(project.logContext)
         }
 
         exs
