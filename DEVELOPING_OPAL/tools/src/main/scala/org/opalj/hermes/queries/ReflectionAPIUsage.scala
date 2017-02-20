@@ -48,7 +48,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
 object ReflectionAPIUsage extends APIFeatureQuery {
 
     val Class = ObjectType.Class
-    val Field = ObjectType("java/lang/Field")
+    val Field = ObjectType("java/lang/reflect/Field")
     val AccessibleObject = ObjectType("java/lang/reflect/AccessibleObject")
     val Constructor = ObjectType("java/lang/reflect/Constructor")
     val Method = ObjectType("java/lang/reflect/Method")
@@ -86,15 +86,15 @@ object ReflectionAPIUsage extends APIFeatureQuery {
         // reflective field read api
         APIFeatureGroup(
             Chain(
-                InstanceAPIMethod(Field, "get", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"),
-                InstanceAPIMethod(Field, "getBoolean", "(Ljava/lang/Object;)Z"),
-                InstanceAPIMethod(Field, "getByte", "(Ljava/lang/Object;)B"),
-                InstanceAPIMethod(Field, "getChar", "(Ljava/lang/Object;)C"),
-                InstanceAPIMethod(Field, "getDouble", "(Ljava/lang/Object;)D"),
-                InstanceAPIMethod(Field, "getFloat", "(Ljava/lang/Object;)F"),
-                InstanceAPIMethod(Field, "getInt", "(Ljava/lang/Object;)I"),
-                InstanceAPIMethod(Field, "getLong", "(Ljava/lang/Object;)J"),
-                InstanceAPIMethod(Field, "getShort", "(Ljava/lang/Object;)S")
+                InstanceAPIMethod(Field, "get"),
+                InstanceAPIMethod(Field, "getBoolean"),
+                InstanceAPIMethod(Field, "getByte"),
+                InstanceAPIMethod(Field, "getChar"),
+                InstanceAPIMethod(Field, "getDouble"),
+                InstanceAPIMethod(Field, "getFloat"),
+                InstanceAPIMethod(Field, "getInt"),
+                InstanceAPIMethod(Field, "getLong"),
+                InstanceAPIMethod(Field, "getShort")
             ), "reflective field read"
         ),
 
