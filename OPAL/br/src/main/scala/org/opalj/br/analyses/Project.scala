@@ -448,8 +448,10 @@ class Project[Source] private (
 
         // our worklist/-set; it only contains those interface types for which
         // we have complete supertype information
-        var typesToProcess = classHierarchy.rootInterfaceTypes.toSet
+        var typesToProcess = classHierarchy.rootInterfaceTypes.toSet // TODO UIDSet (once it is correctly implemented...)
 
+        // the given interface type is either a non-functional interface or an interface
+        // for which we have not enough information
         def nonFunctionalInterface(interfaceType: ObjectType): Unit = {
             // println("non-functional interface: "+interfaceType.toJava)
             assert(!irrelevantInterfaces.contains(interfaceType))
@@ -463,7 +465,6 @@ class Project[Source] private (
                     otherInterfaces += i
                     true
                 }
-                // println("non-functional interface: "+interfaceType.toJava+"=>"+i.toJava)
             }
         }
 
@@ -487,17 +488,12 @@ class Project[Source] private (
                     }) {
                         // we have all information about all supertypes...
                         typesToProcess += subIType
-                    } /* else {
-                        println("supertype information incomplete: "+subIType.toJava)
-                    }*/
-                } /*else {
-                    System.out.println("Dropped: "+subIType.toJava)
-                }*/
+                    } /
+                }
             }
         }
 
         def classifyPotentiallyFunctionalInterface(classFile: ClassFile): Unit = {
-            // println("Classification: "+classFile.thisType.toJava)
             assert(classFile.isInterfaceDeclaration)
             val interfaceType = classFile.thisType
 
@@ -514,7 +510,8 @@ class Project[Source] private (
                     //... forall is "only" used to short-cut the evaluation; in case of
                     // false all relevant state is already updated
                     if (!irrelevantInterfaces.contains(i)) {
-                        val potentialFunctionalMethod = functionalInterfaces(i)
+                         functionalInterfaces.get(i) match {
+                        case Some(potentialFunctionalMethod) =>                    
                         if (sharedFunctionalMethod == null) {
                             sharedFunctionalMethod = potentialFunctionalMethod
                             true
@@ -525,6 +522,11 @@ class Project[Source] private (
                             nonFunctionalInterface(interfaceType)
                             false
                         }
+                        case None =>
+                        // we have a partial type hierarchy...
+                        nonFunctionalInterface(interfaceType)
+                        false                    
+                    }
                     } else {
                         // the supertype is irrelevant...
                         true
@@ -549,9 +551,7 @@ class Project[Source] private (
                         // different methods are defined...
                         nonFunctionalInterface(interfaceType)
                     }
-                } /*else {
-                    println("....killed: "+classFile.thisType.toJava)
-                }*/
+                }
             }
         }
 
@@ -569,9 +569,6 @@ class Project[Source] private (
                 }
             }
         }
-
-        // println("Irrelevant interfaces: "+irrelevantInterfaces.mkString("\n\t", "\n\t", "\n"))
-        // println("Other interfaces: "+otherInterfaces.mkString("\n\t", "\n\t", "\n"))
 
         UIDSet.empty[ObjectType] ++ functionalInterfaces.keys
     } { t ⇒
