@@ -494,7 +494,12 @@ class Project[Source] private (
         }
 
         def classifyPotentiallyFunctionalInterface(classFile: ClassFile): Unit = {
-            assert(classFile.isInterfaceDeclaration)
+            if (!classFile.isInterfaceDeclaration) {
+                // This may happen for "broken" projects (which we finde,e.g., in case of 
+                // the JDK/Qualitas Corpus).
+                nonFunctionalInterface(classFile.thisType)
+                return ;
+            }
             val interfaceType = classFile.thisType
 
             val abstractMethods = classFile.methods.filter(_.isAbstract)
@@ -510,23 +515,23 @@ class Project[Source] private (
                     //... forall is "only" used to short-cut the evaluation; in case of
                     // false all relevant state is already updated
                     if (!irrelevantInterfaces.contains(i)) {
-                         functionalInterfaces.get(i) match {
-                        case Some(potentialFunctionalMethod) =>                    
-                        if (sharedFunctionalMethod == null) {
-                            sharedFunctionalMethod = potentialFunctionalMethod
-                            true
-                        } else if (sharedFunctionalMethod == potentialFunctionalMethod) {
-                            true
-                        } else {
-                            // the super interface types define different abstract methods
-                            nonFunctionalInterface(interfaceType)
-                            false
+                        functionalInterfaces.get(i) match {
+                            case Some(potentialFunctionalMethod) ⇒
+                                if (sharedFunctionalMethod == null) {
+                                    sharedFunctionalMethod = potentialFunctionalMethod
+                                    true
+                                } else if (sharedFunctionalMethod == potentialFunctionalMethod) {
+                                    true
+                                } else {
+                                    // the super interface types define different abstract methods
+                                    nonFunctionalInterface(interfaceType)
+                                    false
+                                }
+                            case None ⇒
+                                // we have a partial type hierarchy...
+                                nonFunctionalInterface(interfaceType)
+                                false
                         }
-                        case None =>
-                        // we have a partial type hierarchy...
-                        nonFunctionalInterface(interfaceType)
-                        false                    
-                    }
                     } else {
                         // the supertype is irrelevant...
                         true
