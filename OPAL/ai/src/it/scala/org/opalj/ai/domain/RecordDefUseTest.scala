@@ -143,10 +143,10 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     val methodName = method.toJava(classFile)
                     failures.add((methodName, t))
             }
-            // DEBUG[If the analysis does not terminate] 
+            // DEBUG[If the analysis does not terminate]
             // println("analysis of : "+methodName+"- finished")
         }
-        failures.addAll(exceptions.map(ex ⇒ ("additional exception", ex)).asJava)
+        failures.addAll(exceptions.map(ex ⇒ ("additional exception", ex)).asJavaCollection)
 
         val baseMessage = s"compared origin information of ${comparisonCount.get} values"
         if (failures.size > 0) {
@@ -163,7 +163,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     } else {
                         "<location unavailable>"
                     }
-                failure+" ["+root.getClass.getSimpleName+": "+root.getMessage+"; location: "+location+"] "
+                s"$failure[${root.getClass.getSimpleName}: ${root.getMessage}; location: $location]"
             }
 
             fail(failures.size + s" exceptions occured ($baseMessage) in: "+
