@@ -854,6 +854,11 @@ class Project[Source] private (
     def isLibraryType(objectType: ObjectType): Boolean = !projectTypes.contains(objectType)
 
     /**
+     * Returns `true` iff the given type belongs to the project and not to a library.
+     */
+    def isProjectType(objectType: ObjectType): Boolean = projectTypes.contains(objectType)
+
+    /**
      * Returns the source (for example, a `File` object or `URL` object) from which
      * the class file was loaded that defines the given object type, if any.
      *
