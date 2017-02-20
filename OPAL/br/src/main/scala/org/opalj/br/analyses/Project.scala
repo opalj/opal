@@ -488,7 +488,7 @@ class Project[Source] private (
                     }) {
                         // we have all information about all supertypes...
                         typesToProcess += subIType
-                    } /
+                    } 
                 }
             }
         }
