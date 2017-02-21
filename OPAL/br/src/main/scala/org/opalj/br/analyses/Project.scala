@@ -1565,24 +1565,6 @@ object Project {
             val methodsWithBodySortedBySize: Array[Method] =
                 methodsWithBodySortedBySizeWithContext.map(mi ⇒ mi.method)
 
-            // assert(
-            // methodsWithBodySortedBySize.length == methodsWithBodySortedBySizeWithContext.length
-            //)
-            assert(
-                projectClassFiles.forall { c ⇒
-                    c.methods.forall { m ⇒
-                        m.body.isEmpty || methodsWithBodySortedBySize.contains(m)
-                    }
-                }
-            )
-            assert(
-                libraryClassFiles.forall { c ⇒
-                    c.methods.forall { m ⇒
-                        m.body.isEmpty || methodsWithBodySortedBySize.contains(m)
-                    }
-                }
-            )
-
             val project = new Project(
                 projectClassFiles.toArray,
                 libraryClassFiles.toArray,
