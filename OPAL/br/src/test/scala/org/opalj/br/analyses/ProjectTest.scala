@@ -265,11 +265,33 @@ class ProjectTest extends FlatSpec with Matchers {
 
     behavior of "a Project's parForeachMethodWithBody method"
 
+    def testAllMethodsWithBodyWithContext(project: SomeProject, name: String): Unit = {
+        it should s"allMethodsWithBodyWithContext should return ALL concrete methods for $name" in {
+            var allConcreteMethods = project.allMethodsWithBodyWithContext.map(_.method).toSet
+            val missedMethods: Iterable[Method] = (for {
+                c ← project.allClassFiles
+                m ← c.methods
+                if m.body.isDefined
+            } yield {
+                if (allConcreteMethods.contains(m)) {
+                    allConcreteMethods -= m
+                    None
+                } else {
+                    Some(m)
+                }
+            }).flatten
+            missedMethods should be('empty)
+        }
+    }
+    testAllMethodsWithBodyWithContext(project, "Methods.jar")
+    testAllMethodsWithBodyWithContext(overallProject, "Code.jar")
+    testAllMethodsWithBodyWithContext(opalProject, "OPAL")
+
     def testParForeachMethodWithBody(project: SomeProject, name: String): Unit = {
         it should s"return that same methods for $name as a manual search" in {
             val mutex = new Object
             var methods = List.empty[Method]
-            val exceptions = opalProject.parForeachMethodWithBody() { mi ⇒
+            val exceptions = project.parForeachMethodWithBody() { mi ⇒
                 mutex.synchronized { methods ::= mi.method }
             }
             assert(exceptions.isEmpty)
