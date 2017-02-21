@@ -71,6 +71,15 @@ trait APIFeatureQuery extends FeatureQuery {
 
     def apiFeatures: Chain[APIFeature]
 
+    /*
+     * Returns a set of all relevant receiver types.
+     */
+    private[this] def usedAPITypes: Set[ObjectType] = {
+        apiFeatures.foldLeft(Set.empty[ObjectType]) { (res, acc) ⇒
+            res ++ acc.getAPIMethods.map(_.declClass)
+        }
+    }
+
     /**
      * The unique ids of the computed features.
      */
@@ -88,15 +97,11 @@ trait APIFeatureQuery extends FeatureQuery {
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
 
+        val apiTypes = usedAPITypes
+
         var invocationCounts = apiFeatures.foldLeft(Map.empty[String, Int])(
             (result, feature) ⇒ result + ((feature.toFeatureID, 0))
         )
-
-        val relevantClasses = apiFeatures.foldLeft(Set.empty[ObjectType]) {
-            (result, feature) ⇒
-                val objectTypes = feature.getAPIMethods.map(_.declClass)
-                result ++ objectTypes
-        }
 
         val locations = mutable.Map.empty[String, Chain[Location[S]]]
 
@@ -105,7 +110,7 @@ trait APIFeatureQuery extends FeatureQuery {
             m @ MethodWithBody(code) ← cf.methods
             if !isInterrupted()
             (pc, mii @ MethodInvocationInstruction(declClass, _, name, methodDescriptor)) ← code
-            if declClass.isObjectType && relevantClasses.contains(declClass.asObjectType)
+            if declClass.isObjectType && apiTypes.contains(declClass.asObjectType)
             apiFeature ← apiFeatures
             featureID = apiFeature.toFeatureID
             apiMethod ← apiFeature.getAPIMethods
