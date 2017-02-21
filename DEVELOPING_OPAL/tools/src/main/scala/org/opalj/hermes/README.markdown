@@ -9,6 +9,7 @@ Currently, we implement anlayses across the following categories:
  - *Completeness - dynamic* - do we have a effective virtual method call, is field resolution is required,...
  - *Corner Cases* - (e.g., a method without a return statement, a switch with just a default case, ...)
  - *Landmark APIs* - Java Reflection; finalize, Serialization
+ - *Weird Code* - e.g., methods which will never return, switches with only default targets,...
 
 ## Extending Hermes
 See Hermes' built-in documentation. 
