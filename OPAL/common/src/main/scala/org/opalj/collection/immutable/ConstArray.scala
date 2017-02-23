@@ -81,7 +81,7 @@ class ConstArray[T <: AnyRef] private (
 }
 
 /**
- * Low leve implicits to; e.g., enable a mapping of an ''arbitrary'' data structure to
+ * Low level implicits to; e.g., enable a mapping of an ''arbitrary'' data structure to
  * a [[ConstArray]].
  *
  * @example {{{ val c : ConstArray[List[String]] = List("a","b").map(List(_))}}}
