@@ -78,7 +78,8 @@ object JavaCryptoArchitectureUsage extends APIFeatureQuery {
         APIFeatureGroup(
             Chain(
                 InstanceAPIMethod(SecureRandom, init),
-                StaticAPIMethod(SecureRandom, getInstance)
+                StaticAPIMethod(SecureRandom, getInstance),
+                StaticAPIMethod(SecureRandom, "getInstanceStrong")
             ), s"using SecureRandom"
         ),
 
@@ -100,7 +101,7 @@ object JavaCryptoArchitectureUsage extends APIFeatureQuery {
             Chain(
                 InstanceAPIMethod(Mac, init),
                 StaticAPIMethod(Mac, getInstance)
-            ), s"using Signature"
+            ), s"using Mac"
         ),
 
         APIFeatureGroup(

@@ -28,6 +28,8 @@ The _Key Handling_ group represents whether some of the following classes/interf
 - `KeyPairGenerator`
 - `KeyAgreement`
 
+> Note: Subclasses are not supported yet, however, to track this calls gives a first intuition about
+> the usage of cryptographic keys. Especially the factories are often used. 
 ## Key Store
 
 The _Key Store_ class checks whether a `KeyStore` is used.
