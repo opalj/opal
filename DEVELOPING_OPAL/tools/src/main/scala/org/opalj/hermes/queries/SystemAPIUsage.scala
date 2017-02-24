@@ -60,8 +60,7 @@ object SystemAPIUsage extends APIFeatureQuery {
         val MulticastSocket = ObjectType("javax.net.MulticastSocket")
 
         val DatagramPacket = ObjectType("java/net/DatagramPacket")
-        val InetAdress = ObjectType("java.net.InetAddress")
-        val NetworkInterface = ObjectType("java.net.NetworkInterface")
+        val InetAddress = ObjectType("java/net/InetAddress")
 
         val URL = ObjectType("java/net/URL")
         val URI = ObjectType("java/net/URI")
@@ -142,7 +141,7 @@ object SystemAPIUsage extends APIFeatureQuery {
                 InstanceAPIMethod(Network.MulticastSocket, constructor),
                 InstanceAPIMethod(Network.SSLSocket, constructor),
                 InstanceAPIMethod(Network.SSLServerSocket, constructor),
-                InstanceAPIMethod(Network.InetAdress, constructor)
+                InstanceAPIMethod(Network.InetAddress, constructor)
             ), "Network sockets"
         )
     )
