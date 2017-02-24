@@ -136,7 +136,7 @@ class BaseFieldValuesAnalysisDomain(
                 // type bound is empty), because some of them
                 // are actually not null; they are initialized using native code
                 if upperTypeBound.nonEmpty
-                if (upperTypeBound.size != 1) || (upperTypeBound.first ne field.fieldType)
+                if (upperTypeBound.size != 1) || (upperTypeBound.head ne field.fieldType)
             } yield {
                 (field, fieldValue)
             }

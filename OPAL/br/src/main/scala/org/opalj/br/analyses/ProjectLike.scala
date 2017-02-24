@@ -39,7 +39,6 @@ import scala.collection.{Set ⇒ SomeSet}
 import org.opalj.collection.immutable.ConstArray.find
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet0
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEINTERFACE
@@ -385,7 +384,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 val (_, methods) =
                     findMaximallySpecificSuperinterfaceMethods(
                         superinterfaceTypes, name, descriptor,
-                        analyzedSuperinterfaceTypes = UIDSet0
+                        analyzedSuperinterfaceTypes = UIDSet.empty[ObjectType]
                     )
                 methods.headOption // either it is THE max. specific method or some ...
         }
@@ -412,7 +411,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 lookupInObject() orElse {
                     classHierarchy.superinterfaceTypes(receiverType) flatMap { superinterfaceTypes ⇒
                         val (_, methods) = findMaximallySpecificSuperinterfaceMethods(
-                            superinterfaceTypes, name, descriptor, UIDSet0
+                            superinterfaceTypes, name, descriptor, UIDSet.empty[ObjectType]
                         )
                         methods.headOption
                     }
@@ -438,14 +437,14 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         superinterfaceType:          ObjectType,
         name:                        String,
         descriptor:                  MethodDescriptor,
-        analyzedSuperinterfaceTypes: UIDSet[ObjectType] = UIDSet0
+        analyzedSuperinterfaceTypes: UIDSet[ObjectType] = UIDSet.empty
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
 
         val newAnalyzedSuperinterfaceTypes = analyzedSuperinterfaceTypes + superinterfaceType
 
         // the superinterfaceTypes in which it is potentially relevant to search for methods
         val superinterfaceTypes: UIDSet[ObjectType] =
-            classHierarchy.superinterfaceTypes(superinterfaceType).getOrElse(UIDSet0) --
+            classHierarchy.superinterfaceTypes(superinterfaceType).getOrElse(UIDSet.empty) --
                 analyzedSuperinterfaceTypes
 
         project.classFile(superinterfaceType) match {

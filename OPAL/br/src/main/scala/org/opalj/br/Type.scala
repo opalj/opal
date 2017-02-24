@@ -40,6 +40,7 @@ import scala.collection.SortedSet
 
 import org.opalj.collection.UID
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet2
 
 /**
  * Represents a JVM type.
@@ -1198,7 +1199,7 @@ object ObjectType {
      * is always `Serializable` and `Cloneable`.
      */
     final val SerializableAndCloneable: UIDSet[ObjectType] = {
-        UIDSet(ObjectType.Serializable, ObjectType.Cloneable)
+        new UIDSet2(ObjectType.Serializable, ObjectType.Cloneable)
     }
 
     private final val javaLangBooleanId = Boolean.id

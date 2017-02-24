@@ -32,7 +32,6 @@ package domain
 package l0
 
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet0
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
@@ -117,7 +116,7 @@ trait DefaultTypeLevelReferenceValues
                             primitiveType.computationalType
                     )
 
-                case elementValue @ IsAReferenceValue(UIDSet0) ⇒
+                case elementValue @ IsAReferenceValue(EmptyUpperTypeBound) ⇒
                     // the elementValue is "null"
                     assert(elementValue.isNull.isYes)
                     // e.g., it is possible to store null in the n-1 dimensions of
@@ -247,8 +246,8 @@ trait DefaultTypeLevelReferenceValues
             pc:                PC,
             newUpperTypeBound: UIDSet[ObjectType]
         ): Update[DomainValue] = {
-            if (newUpperTypeBound.size == 1)
-                StructuralUpdate(ObjectValue(pc, newUpperTypeBound.first))
+            if (newUpperTypeBound.isSingletonSet)
+                StructuralUpdate(ObjectValue(pc, newUpperTypeBound.head))
             else
                 StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
         }
@@ -361,7 +360,10 @@ trait DefaultTypeLevelReferenceValues
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
                 case MObjectValue(thatUpperTypeBound) ⇒
-                    classHierarchy.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                    classHierarchy.isSubtypeOf(
+                        thatUpperTypeBound.asInstanceOf[UIDSet[ReferenceType]],
+                        this.theUpperTypeBound
+                    ).isYes
             }
         }
 

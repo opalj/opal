@@ -89,7 +89,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
             value match {
                 case i: IntegerValue ⇒
                     Some(new java.lang.Integer(i.value))
-                case r: ReferenceValue if (r.upperTypeBound.contains(ObjectType("java/lang/StringBuilder"))) ⇒
+                case r: ReferenceValue if (r.upperTypeBound.includes(ObjectType("java/lang/StringBuilder"))) ⇒
                     Some(new java.lang.StringBuilder())
                 case _ ⇒
                     super.toJavaObject(pc, value)
