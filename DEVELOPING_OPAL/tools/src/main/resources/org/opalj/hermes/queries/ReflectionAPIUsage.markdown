@@ -17,7 +17,7 @@ The following features are targeted by the analysis:
 ## Reflection with MethodHandles
 
 Factory methods provided by `java.lang.invoke.MethodHandles.Lookup Lookup` can be used to convert
-any class member represended by a Core Reflection API object to a behaviorally equivalent
+any class member represented by a Core Reflection API object to a behaviorally equivalent
 `MethodHandle`, therefore, `MethodHandle` objects are relevant when assessing reflection usage of
 a project.
 

@@ -71,6 +71,15 @@ trait APIFeatureQuery extends FeatureQuery {
 
     def apiFeatures: Chain[APIFeature]
 
+    /*
+     * Returns a set of all relevant receiver types.
+     */
+    private[this] def usedAPITypes: Set[ObjectType] = {
+        apiFeatures.foldLeft(Set.empty[ObjectType]) { (res, acc) ⇒
+            res ++ acc.getAPIMethods.map(_.declClass)
+        }
+    }
+
     /**
      * The unique ids of the computed features.
      */
@@ -88,24 +97,45 @@ trait APIFeatureQuery extends FeatureQuery {
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
 
-        var invocationCounts = apiFeatures.foldLeft(Map.empty[String, Int])(
+        val apiTypes = usedAPITypes
+
+        var occurrencesCount = apiFeatures.foldLeft(Map.empty[String, Int])(
             (result, feature) ⇒ result + ((feature.toFeatureID, 0))
         )
 
-        val relevantClasses = apiFeatures.foldLeft(Set.empty[ObjectType]) {
-            (result, feature) ⇒
-                val objectTypes = feature.getAPIMethods.map(_.declClass)
-                result ++ objectTypes
+        val locations = mutable.Map.empty[String, Chain[Location[S]]]
+
+        val classFeatures = apiFeatures.collect { case ce: ClassExtension ⇒ ce }
+
+        val classHierarchy = project.classHierarchy
+        for {
+            classFeature ← classFeatures
+            featureID = classFeature.toFeatureID
+        } yield {
+            val subtypes = classHierarchy.allSubtypes(classFeature.declClass, reflexive = false).
+                filter(project.isProjectType)
+            val size = subtypes.size
+
+            val count = occurrencesCount.get(featureID).get + size
+            occurrencesCount = occurrencesCount + ((featureID, count))
+
+            if (size > 0) {
+                subtypes.filter(project.isProjectType).foreach { ot ⇒
+                    val cfLoc = getClassFileLocation(project, ot)
+                    if (cfLoc.nonEmpty)
+                        locations += ((featureID, cfLoc.get :&: locations.getOrElse(featureID, Naught)))
+                }
+            }
         }
 
-        val locations = mutable.Map.empty[String, Chain[Location[S]]]
+        // Checking method API features
 
         for {
             cf ← project.allProjectClassFiles
             m @ MethodWithBody(code) ← cf.methods
             if !isInterrupted()
             (pc, mii @ MethodInvocationInstruction(declClass, _, name, methodDescriptor)) ← code
-            if declClass.isObjectType && relevantClasses.contains(declClass.asObjectType)
+            if declClass.isObjectType && apiTypes.contains(declClass.asObjectType)
             apiFeature ← apiFeatures
             featureID = apiFeature.toFeatureID
             apiMethod ← apiFeature.getAPIMethods
@@ -118,8 +148,8 @@ trait APIFeatureQuery extends FeatureQuery {
                 val instLoc = InstructionLocation(source.get, cf, m, pc)
                 locations += ((featureID, instLoc :&: locations.getOrElse(featureID, Naught)))
 
-                val count = invocationCounts.get(featureID).get + 1
-                invocationCounts = invocationCounts + ((featureID, count))
+                val count = occurrencesCount.get(featureID).get + 1
+                occurrencesCount = occurrencesCount + ((featureID, count))
             }
 
             apiMethod match {
@@ -139,13 +169,24 @@ trait APIFeatureQuery extends FeatureQuery {
             }
         }
 
-        apiFeatures.map { apiMethod ⇒
-            val featureID = apiMethod.toFeatureID
+        apiFeatures.map { apiFeature ⇒
+            val featureID = apiFeature.toFeatureID
             Feature(
                 featureID,
-                invocationCounts.get(featureID).get,
+                occurrencesCount.get(featureID).get,
                 locations.getOrElse(featureID, Naught)
             )
+        }
+    }
+
+    private[this] def getClassFileLocation[S](project: Project[S], objectType: ObjectType): Option[ClassFileLocation[S]] = {
+        val classFile = project.classFile(objectType)
+        classFile match {
+            case Some(classFile) ⇒ project.source(classFile) match {
+                case Some(source) ⇒ Some(ClassFileLocation(source, classFile))
+                case None         ⇒ None
+            }
+            case None ⇒ None
         }
     }
 }
