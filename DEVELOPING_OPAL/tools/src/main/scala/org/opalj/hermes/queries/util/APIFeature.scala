@@ -34,6 +34,7 @@ package util
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
  * A common super trait for API related feature such as the usage of common or interesting APIs.
@@ -53,6 +54,25 @@ sealed trait APIFeature {
      * Returns all methods of the API that belong to this feature.
      */
     def getAPIMethods: Chain[APIMethod]
+}
+
+/**
+ * Common trait that abstracts over all Class extension scenarios.
+ *
+ */
+sealed trait ClassExtension extends APIFeature {
+
+    def declClass: ObjectType
+
+    override def getAPIMethods: Chain[APIMethod] = Naught
+}
+
+/**
+ * Represents an extension of a specific class
+ */
+case class APIClassExtension(val featureId: String, val declClass: ObjectType) extends ClassExtension {
+
+    override def toFeatureID: String = featureId
 }
 
 /**
