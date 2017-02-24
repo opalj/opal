@@ -107,7 +107,7 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
         val lValue = ValuesDomain.ObjectValue(-1, l)
         val rValue = ValuesDomain.ObjectValue(-2, r)
         val value = ValuesDomain.MultipleReferenceValues(scala.collection.SortedSet(lValue, rValue))
-        if (value.upperTypeBound.first != l)
+        if (value.upperTypeBound.head != l)
             fail("unexpected upper type bound:"+value.upperTypeBound+" expected "+l.toJava)
     }
 

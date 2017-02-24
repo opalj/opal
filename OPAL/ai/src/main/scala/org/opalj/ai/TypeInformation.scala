@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 
-import org.opalj.br.UpperTypeBound
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.{BaseType, ReferenceType}
 import org.opalj.br.{BooleanType, ByteType, CharType, ShortType, IntegerType, LongType}
 import org.opalj.br.{FloatType, DoubleType}
@@ -167,7 +167,7 @@ trait IsAReferenceValue {
      *      inheritance relation – if we would analyze the complete project – are part
      *      of the upper type bound.
      */
-    def upperTypeBound: UpperTypeBound
+    def upperTypeBound: UIDSet[_ <: ReferenceType]
 
     /**
      * If `Yes` the value is known to always be `null` at runtime. In this
@@ -267,7 +267,9 @@ trait IsAReferenceValue {
  */
 object IsAReferenceValue {
 
-    def unapply(value: IsAReferenceValue): Option[UpperTypeBound] = Some(value.upperTypeBound)
+    def unapply(value: IsAReferenceValue): Option[UIDSet[_ <: ReferenceType]] = {
+        Some(value.upperTypeBound)
+    }
 }
 
 /**

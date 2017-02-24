@@ -3,7 +3,7 @@ Hermes is a small, extensible project that helps to assess the quality of a give
 
 
 ## Categories of Queries
-Currently, we implement anlayses across the following categories:
+Currently, we implement analyses across the following categories:
 
  - *Completeness - static* - Feature of Java Bytecode do we have a method with(out) debug information; do we find examples of all types of constants are used,...
  - *Completeness - dynamic* - do we have a effective virtual method call, is field resolution is required,...

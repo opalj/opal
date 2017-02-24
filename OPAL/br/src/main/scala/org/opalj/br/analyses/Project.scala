@@ -43,6 +43,7 @@ import scala.collection.SortedMap
 import scala.collection.immutable
 import scala.collection.mutable.{AnyRefMap, OpenHashMap}
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
@@ -445,14 +446,14 @@ class Project[Source] private (
 
         // our worklist/-set; it only contains those interface types for which
         // we have complete supertype information
-        var typesToProcess = classHierarchy.rootInterfaceTypes.toSet // TODO UIDSet (once it is correctly implemented...)
+        val typesToProcess = classHierarchy.rootInterfaceTypes(ArrayStack.empty[ObjectType])
 
         // the given interface type is either a non-functional interface or an interface
         // for which we have not enough information
         def nonFunctionalInterface(interfaceType: ObjectType): Unit = {
             // println("non-functional interface: "+interfaceType.toJava)
-            assert(!irrelevantInterfaces.contains(interfaceType))
-            assert(!functionalInterfaces.contains(interfaceType))
+            // assert(!irrelevantInterfaces.contains(interfaceType))
+            // assert(!functionalInterfaces.contains(interfaceType))
 
             otherInterfaces += interfaceType
             classHierarchy.foreachSubinterfaceType(interfaceType) { i ⇒
@@ -484,7 +485,7 @@ class Project[Source] private (
                         case None ⇒ throw new UnknownError()
                     }) {
                         // we have all information about all supertypes...
-                        typesToProcess += subIType
+                        typesToProcess.push(subIType)
                     }
                 }
             }
@@ -558,8 +559,7 @@ class Project[Source] private (
         }
 
         while (typesToProcess.nonEmpty) {
-            val interfaceType = typesToProcess.head
-            typesToProcess = typesToProcess.tail
+            val interfaceType = typesToProcess.pop
 
             if (!otherInterfaces.contains(interfaceType) &&
                 !functionalInterfaces.contains(interfaceType) &&

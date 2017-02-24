@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 
 import scala.language.existentials
+
 import java.util.{IdentityHashMap ⇒ JIDMap}
 import java.util.{Set ⇒ JSet}
 import java.util.concurrent.atomic.AtomicLong
@@ -40,6 +41,7 @@ import java.util.concurrent.{ConcurrentHashMap ⇒ JCHMap}
 
 import scala.reflect.ClassTag
 import scala.collection.mutable
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable.{HashSet ⇒ HSet}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
 import scala.collection.JavaConverters._
@@ -58,7 +60,7 @@ import org.opalj.log.OPALLogger.{warn ⇒ logWarn}
 import org.opalj.log.{LogContext, OPALLogger}
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.UID
-import org.opalj.collection.immutable.UIDSet
+//import org.opalj.collection.immutable.UIDSet
 
 /**
  * The property store manages the execution of computations of properties related to specific
@@ -250,7 +252,7 @@ class PropertyStore private (
     //            withWriteLocks(entityLocks)(f)
     //        }
     @inline final private[this] def withEntitiesWriteLocks[T](
-        sortedEntityProperties: UIDSet[EntityProperties]
+        sortedEntityProperties: SortedSet[EntityProperties]
     )(
         f: ⇒ T
     ): T = {
@@ -2091,9 +2093,13 @@ class PropertyStore private (
                     //val accessedEPs =
                     //    SortedSet(data.get(dependerE))(EntityPropertiesOrdering) ++
                     //        dependees.view.map(d ⇒ data.get(d.e))
-                    val dependerEP = UIDSet(data.get(dependerE))
-                    //val accessedEPs = accessedDepender ++ dependees.view.map(d ⇒ data.get(d.e))
-                    val accessedEPs = dependees.foldLeft(dependerEP)((c, d) ⇒ c + data.get(d.e))
+                    // val dependerEP = UIDSet(data.get(dependerE)) !!!!! UID SETS ARE NO LONGER SORTED !!!!
+                    //val accessedEPs = dependees.foldLeft(dependerEP)((c, d) ⇒ c + data.get(d.e))
+                    val accessedEPs =
+                        dependees.
+                            foldLeft(SortedSet(data.get(dependerE))(EntityPropertiesOrdering)) { (c, d) ⇒
+                                c + data.get(d.e)
+                            }
                     withEntitiesWriteLocks(accessedEPs) {
                         /*internal*/ /* assert(
                             { val os = observers.get(dependerEPK); (os eq null) || (os.isEmpty) },
