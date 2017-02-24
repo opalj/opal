@@ -106,18 +106,18 @@ import org.opalj.br.instructions.INVOKESPECIAL
  * project.methods.filter(_.parameterTypes.exists(_.isIntegerType)).size
  * }}}
  *
- * @tparam  Source The type of the source of the class file. E.g., a `URL`, a `File`,
- *          a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
- *          presenting users meaningful messages w.r.t. the location of issues.
- *          We abstract over the type of the resource to facilitate the embedding in existing
- *          tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
- *          location of a resource (e.g., a source or class file.)
+ * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File`,
+ *         a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
+ *         presenting users meaningful messages w.r.t. the location of issues.
+ *         We abstract over the type of the resource to facilitate the embedding in existing
+ *         tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
+ *         location of a resource (e.g., a source or class file.)
  *
- * @param   logContext The logging context associated with this project. Using the logging
- *          context after the project is no longer referenced (garbage collected) is not
- *          possible.
+ * @param  logContext The logging context associated with this project. Using the logging
+ *         context after the project is no longer referenced (garbage collected) is not
+ *         possible.
  *
- * @param   libraryClassFilesAreInterfacesOnly If `true` then only the public interface
+ * @param  libraryClassFilesAreInterfacesOnly If `true` then only the public interface
  *         of the methods of the library's classes is available.
  *
  * @author Michael Eichberg
@@ -150,12 +150,6 @@ class Project[Source] private (
 ) extends ProjectLike {
 
     private[this] final implicit val thisProject: this.type = this
-
-    assert(
-        !libraryClassFilesAreInterfacesOnly ||
-            libraryClassFiles.forall(_.methods.forall(_.body.isEmpty)),
-        "the library's methods contain bodies though libraryClassFilesAreInterfacesOnly is true"
-    )
 
     /* ------------------------------------------------------------------------------------------ *\
     |                                                                                              |
@@ -1555,12 +1549,11 @@ object Project {
             val methodsWithBodySortedBySizeWithContext =
                 methodToClassFile.view.
                     filter(_._1.body.isDefined).
-                    toList.
+                    toArray.
                     sortWith { (v1, v2) ⇒
                         v1._1.body.get.instructions.length > v2._1.body.get.instructions.length
                     }.
-                    map(e ⇒ MethodInfo(sources(e._2.thisType), e._2, e._1)).
-                    toArray
+                    map(e ⇒ MethodInfo(sources(e._2.thisType), e._2, e._1))
 
             val methodsWithBodySortedBySize: Array[Method] =
                 methodsWithBodySortedBySizeWithContext.map(mi ⇒ mi.method)
