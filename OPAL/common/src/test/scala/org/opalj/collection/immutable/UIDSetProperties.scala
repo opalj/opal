@@ -41,8 +41,6 @@ import org.scalacheck.Prop.BooleanOperators
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 
-import org.opalj.util.PerformanceEvaluation.time
-
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
  * the results of the respective functions modulo the different semantics.
@@ -305,23 +303,21 @@ object UIDSetProperties extends Properties("UIDSet") {
     property("can handle very large sets") = forAll(veryLargeListGen) { (v) ⇒
         val (orig: List[Int], i) = v
         val base = orig.map(SUID.apply)
-        val usTransformed =
-            time {
-                val us = UIDSet.empty[SUID] ++ base
-                (us.
-                    map[SUID, UIDSet[SUID]] { e ⇒ SUID(e.id % i) }.
-                    filter(_.id < i / 2).
-                    +(SUID(i)) + SUID(-i) + SUID(i + 100))
-            } { t ⇒ println("UIDSet computation took: "+t.toSeconds) }
+        val usTransformed = {
+            val us = UIDSet.empty[SUID] ++ base
+            (us.
+                map[SUID, UIDSet[SUID]] { e ⇒ SUID(e.id % i) }.
+                filter(_.id < i / 2).
+                +(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
+        }
 
-        val sTransformed =
-            time {
-                val s = Set.empty[SUID] ++ base
-                (s.
-                    map[SUID, Set[SUID]] { e ⇒ SUID(e.id % i) }.
-                    filter(_.id < i / 2).
-                    +(SUID(i)) + SUID(-i) + SUID(i + 100))
-            } { t ⇒ println("scala.Set computation took: "+t.toSeconds) }
+        val sTransformed = {
+            val s = Set.empty[SUID] ++ base
+            (s.
+                map[SUID, Set[SUID]] { e ⇒ SUID(e.id % i) }.
+                filter(_.id < i / 2).
+                +(SUID(i)) + SUID(-i) + SUID(i + 100)) - SUID(1002)
+        }
 
         classify(base.size > 25000, s"original set is very large (>25000)") {
             classify(sTransformed.size > 25000, "transformed set is still very large (>25000)") {
