@@ -81,6 +81,8 @@ final class Code private (
 
     import Code.BasicClassHierarchy
 
+    def codeSize: Int = instructions.length
+
     /**
      * Represents some filtered code. Primarily implicitly used when a for-comprehension
      * is used to process the code.
