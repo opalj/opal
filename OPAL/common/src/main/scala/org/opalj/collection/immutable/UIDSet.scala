@@ -42,7 +42,7 @@ import scala.collection.mutable.ArrayStack
  * It uses the least significant bit to decide whether the search is continued in the
  * right or left tree.
  *
- * Small sets are represented using a direct representation.
+ * Small sets are represented using a UIDSet0...2.
  */
 sealed abstract class UIDSet[T <: UID]
         //extends scala.collection.AbstractSet[T]
@@ -384,7 +384,7 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
         */
     }
 
-    def contains(value: T): Boolean = contains(value.id, 0)
+    def contains(e: T): Boolean = { val eId = e.id; contains(eId, eId) }
 
     override def foldLeft[B](z: B)(op: (B, T) ⇒ B): B = {
         val left = this.left
@@ -395,19 +395,20 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
         result
     }
 
-    final def +(value: T): UIDSet[T] = this.+(value, 0)
+    final def +(e: T): UIDSet[T] = { val eId = e.id; this + (e, eId, eId, 0) }
 
-    final def -(value: T): UIDSet[T] = this.-(value, 0)
+    final def -(value: T): UIDSet[T] = this.-(value.id, 0)
 
     override def filter(p: T ⇒ Boolean): UIDSet[T] = {
         val result = filter0(p)
         if (result == null)
             return empty;
 
-        val resultSize = result.size
-        if (resultSize == 1) new UIDSet1(result.head)
-        else if (resultSize == 2) new UIDSet2(result.head, result.last)
-        else result
+        result.size match {
+            case 1 ⇒ new UIDSet1(result.head)
+            case 2 ⇒ new UIDSet2(result.head, result.last)
+            case _ ⇒ result
+        }
     }
 
     private def filter0(p: T ⇒ Boolean): UIDTrieSetNodeLike[T] = {
@@ -486,8 +487,12 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
                     new UIDTrieSetLeaf(leftValue)
                 else
                     new UIDTrieSetInnerNode(size - 1, leftValue, null, right)
-            } else
-                new UIDTrieSetInnerNode(size - 1, leftValue, left.dropHead, right)
+            } else { //left.size >= 2... but maybe we can pull the right value...
+                if ((right ne null) && right.size == 1)
+                    new UIDTrieSetInnerNode(size - 1, right.head, left, null)
+                else
+                    new UIDTrieSetInnerNode(size - 1, leftValue, left.dropHead, right)
+            }
         } else if (right ne null) {
             val rightValue = right.head
             if (right.size == 1) {
@@ -495,43 +500,49 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
                     new UIDTrieSetLeaf(rightValue)
                 else
                     new UIDTrieSetInnerNode(size - 1, rightValue, left, null)
-            } else
-                new UIDTrieSetInnerNode(size - 1, rightValue, left, right.dropHead)
+            } else { //right.size >= 2... but maybe we can pull the left value...
+                if ((left ne null) && left.size == 1)
+                    new UIDTrieSetInnerNode(size - 1, left.head, null, right)
+                else
+                    new UIDTrieSetInnerNode(size - 1, rightValue, left, right.dropHead)
+            }
         } else {
             null
         }
     }
 
-    private def contains(eId: Int, level: Int): Boolean = {
-        value.id == eId || {
-            if ((eId >>> level & 1) == 1)
-                right != null && right.contains(eId, level + 1)
+    private def contains(eId: Int, shiftedEId: Int): Boolean = {
+        this.value.id == eId || {
+            if ((shiftedEId & 1) == 1)
+                right != null && right.contains(eId, shiftedEId >>> 1)
             else
-                left != null && left.contains(eId, level + 1)
+                left != null && left.contains(eId, shiftedEId >>> 1)
         }
     }
 
-    private def +(e: T, level: Int): UIDTrieSetNodeLike[T] = {
-
+    private def +(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T] = {
+        val valueId = this.value.id
         // In the following we try to minimize the high of the tree.
-
-        val thisId = value.id
-        val eId = e.id
-        if (thisId == eId)
+        if (valueId == eId)
             return this;
 
+        val right = this.right
+        val left = this.left
         var newRight = right
         var newLeft = left
-        if ((eId >>> level & 1) == 1) {
+        if ((shiftedEId & 1) == 1) {
+            // we have to add the value "here" or on the right branch
             if (newRight eq null)
                 newRight = new UIDTrieSetLeaf(e)
             else {
-                if ((newLeft eq null) && (thisId >>> level & 1) == 0 && !newRight.contains(e)) {
+                val newShiftedEId = shiftedEId >>> 1
+                if ((newLeft eq null) &&
+                    (valueId >>> level & 1) == 0 &&
+                    !newRight.contains(eId, newShiftedEId)) {
                     // we can move the current value to the empty left branch...
-                    // println("added in trie -> value to the left")
                     return new UIDTrieSetInnerNode(size + 1, e, new UIDTrieSetLeaf(value), newRight)
                 } else {
-                    newRight = newRight.+(e, level + 1)
+                    newRight += (e, eId, newShiftedEId, level + 1)
                     if (newRight eq right)
                         return this;
                 }
@@ -540,12 +551,14 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
             if (newLeft eq null)
                 newLeft = new UIDTrieSetLeaf(e)
             else {
-                if ((newRight eq null) && (thisId >>> level & 1) == 1 && !newLeft.contains(e)) {
+                val newShiftedEId = shiftedEId >>> 1
+                if ((newRight eq null) &&
+                    (valueId >>> level & 1) == 1 &&
+                    !newLeft.contains(eId, newShiftedEId)) {
                     // we can move the current value to the empty right branch...
-                    // println("added in trie -> value to the right")
                     return new UIDTrieSetInnerNode(size + 1, e, newLeft, new UIDTrieSetLeaf(value))
                 } else {
-                    newLeft = newLeft.+(e, level + 1)
+                    newLeft += (e, eId, newShiftedEId, level + 1)
                     if (newLeft eq left)
                         return this;
                 }
@@ -554,11 +567,12 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
         new UIDTrieSetInnerNode(size + 1, value, newLeft, newRight)
     }
 
-    private def -(e: T, level: Int): UIDSet[T] = {
+    private def -(eId: Int, level: Int): UIDSet[T] = {
         val value = this.value
-        val eId = e.id
         if (value.id == eId) {
             if (level == 0 && size <= 3 /*size == 3???*/ ) {
+                val left = this.left
+                val right = this.right
                 var newUIDSet = empty
                 if (left ne null) newUIDSet = left.foldLeft(newUIDSet)(_ + _)
                 if (right ne null) newUIDSet = right.foldLeft(newUIDSet)(_ + _)
@@ -567,28 +581,33 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
                 dropHead
             }
         } else { // we don't delete this value ...
+            val left = this.left
+            val right = this.right
             var newLeft = left
             var newRight = right
             if ((eId >>> level & 1) == 1) {
-                if (newRight eq null)
+                if (right eq null)
                     return this;
                 // we have to search for the value in the right tree
-                newRight = (newRight - (e, level + 1)).asInstanceOf[UIDTrieSetNodeLike[T]]
+                newRight = (right - (eId, level + 1)).asInstanceOf[UIDTrieSetNodeLike[T]]
                 if (newRight eq right)
                     return this;
             } else {
-                if (newLeft eq null)
+                if (left eq null)
                     return this;
-                newLeft = (newLeft - (e, level + 1)).asInstanceOf[UIDTrieSetNodeLike[T]]
+                newLeft = (left - (eId, level + 1)).asInstanceOf[UIDTrieSetNodeLike[T]]
                 if (newLeft eq left)
                     return this;
             }
             // the value was found in a branch and deleted...
             if (level == 0 && size <= 3 /*size == 3???*/ ) {
-                var newUIDSet: UIDSet[T] = new UIDSet1(value)
-                if (newLeft ne null) newUIDSet += newLeft.head
-                if (newRight ne null) newUIDSet += newRight.head
-                newUIDSet
+                /*current*/ size match {
+                    case 3 ⇒
+                        val value2 = if (newLeft ne null) newLeft.head else newRight.head
+                        new UIDSet2(value, value2)
+                    case 2 ⇒
+                        new UIDSet1(value)
+                }
             } else {
                 new UIDTrieSetInnerNode(size - 1, value, newLeft, newRight)
             }
@@ -596,7 +615,7 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
     }
 
     def showTree(level: Int = 0): String = {
-        val indent = "\t" * level
+        val indent = " " * level
         indent + value.id.toBinaryString+"("+
             (if (left ne null) indent+"\n\tleft ="+left.showTree(level + 1)+"\n" else "") +
             (if (right ne null) indent+"\n\tright="+right.showTree(level + 1)+"\n)" else ")")
