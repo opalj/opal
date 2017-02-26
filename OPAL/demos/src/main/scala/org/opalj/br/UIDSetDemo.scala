@@ -183,8 +183,9 @@ object UIDSetDemo extends App {
         eval(scala.collection.immutable.Set.empty)
         org.opalj.util.gc()
         eval(UIDSet.empty)
-        org.opalj.util.gc()
-        eval(scala.collection.immutable.SortedSet.empty[UID](UID.UIDBasedOrdering))
+        // SortedSets are performing reasonbly well, except of filter...
+        // org.opalj.util.gc()
+        // eval(scala.collection.immutable.SortedSet.empty[UID](UID.UIDBasedOrdering))
         println()
     }
 }
