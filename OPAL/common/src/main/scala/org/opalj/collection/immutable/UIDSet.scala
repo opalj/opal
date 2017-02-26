@@ -263,6 +263,7 @@ case class UIDTrieSetLeaf[T <: UID] private[immutable] (
     final def right: UIDTrieSetNodeLike[T] = null
     override def last: T = value
     override def filter(p: T ⇒ Boolean): UIDSet[T] = if (p(value)) this else null
+    override def contains(e: T): Boolean = e.id == value.id
 }
 
 // we wan't to be able to adapt the case class...
