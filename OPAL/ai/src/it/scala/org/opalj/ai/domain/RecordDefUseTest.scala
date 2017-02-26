@@ -30,16 +30,18 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.JavaConverters._
+
 import org.junit.runner.RunWith
-import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
 import org.scalatest.FunSpec
-import scala.collection.JavaConverters._
+
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.br.analyses.Project
+import org.opalj.br.Method
+import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.opalj.br.analyses.MethodInfo
 
 /**
