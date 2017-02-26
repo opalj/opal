@@ -977,7 +977,7 @@ class Project[Source] private (
 
     override def toString: String = {
         val classDescriptions =
-            sources map { (entry) ⇒
+            sources map { entry ⇒
                 val (ot, source) = entry
                 ot.toJava+" « "+source.toString
             }
@@ -1544,16 +1544,11 @@ object Project {
             fieldToClassFile.repack()
             methodToClassFile.repack()
 
-            // assert(methodToClassFile.size == libraryMethodsCount + projectMethodsCount)
-
             val methodsWithBodySortedBySizeWithContext =
                 methodToClassFile.view.
-                    filter(_._1.body.isDefined).
-                    toArray.
-                    sortWith { (v1, v2) ⇒
-                        v1._1.body.get.instructions.length > v2._1.body.get.instructions.length
-                    }.
-                    map(e ⇒ MethodInfo(sources(e._2.thisType), e._2, e._1))
+                    filter(_._1.body.isDefined).toArray.
+                    sortWith { (v1, v2) ⇒ v1._1.body.get.codeSize > v2._1.body.get.codeSize }.
+                    map { e ⇒ val (m, c) = e; MethodInfo(sources(c.thisType), c, m) }
 
             val methodsWithBodySortedBySize: Array[Method] =
                 methodsWithBodySortedBySizeWithContext.map(mi ⇒ mi.method)
@@ -1592,23 +1587,17 @@ object Project {
 
             project
         } catch {
-            case t: Throwable ⇒
-                OPALLogger.unregister(logContext)
-                throw t
+            case t: Throwable ⇒ OPALLogger.unregister(logContext); throw t
         }
     } { t ⇒
         // If an exception was thrown the logContext is no longer available!
-        val availableContext =
-            if (OPALLogger.isUnregistered(logContext)) GlobalLogContext else logContext
-        info(
-            "project setup",
-            s"creating the project took ${t.toSeconds}"
-        )(availableContext)
+        val lc = if (OPALLogger.isUnregistered(logContext)) GlobalLogContext else logContext
+        info("project setup", s"creating the project took ${t.toSeconds}")(lc)
     }
 
     /**
      * Performs some fundamental validations to make sure that subsequent analyses don't have
-     * to deal with completely broken projects!
+     * to deal with completely broken projects/that the user is aware of the issues!
      */
     private[this] def validate(project: SomeProject): Seq[InconsistentProjectException] = {
 
@@ -1673,7 +1662,7 @@ object Project {
         if (exceptions.nonEmpty) {
             OPALLogger.error(
                 "internal - ignored",
-                "project validation failed miserably:\n"+exceptions.mkString("\n")
+                "project validation failed (please, report):\n"+exceptions.mkString("\n")
             )(project.logContext)
         }
 
