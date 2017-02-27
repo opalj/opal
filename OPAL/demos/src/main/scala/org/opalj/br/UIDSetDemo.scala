@@ -30,7 +30,6 @@ package org.opalj
 package br
 
 import org.opalj.collection.immutable._
-import org.opalj.collection.UID
 import org.opalj.util.{Nanoseconds ⇒ NS}
 
 object UIDSetDemo extends App {
@@ -84,7 +83,7 @@ object UIDSetDemo extends App {
     s1234 + o7 + o5 + o6
 
     case class SUID(val id: Int) extends org.opalj.collection.UID
-    def eval(factory: Set[UID]): Unit = {
+    def eval(factory: Set[SUID]): Unit = {
         val r = new java.util.Random(10002323323l)
         var runs = 0
 
