@@ -527,7 +527,7 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
         }
     }
 
-    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): Option[UIDTrieSetNodeLike[T]]
+    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T]
 
     private def +(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T] = {
         val valueId = this.value.id
@@ -605,10 +605,10 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
     }
 
     def showTree(level: Int = 0): String = {
-        val indent = " " * level
-        indent + value.id.toBinaryString+"("+
-            (if (left ne null) indent+"\n\tleft ="+left.showTree(level + 1)+"\n" else "") +
-            (if (right ne null) indent+"\n\tright="+right.showTree(level + 1)+"\n)" else ")")
+        val indent = "  " * level
+        indent + value.id.toBinaryString + s" #$size("+
+            (if (left ne null) s"\n$indent left ="+left.showTree(level + 1)+"\n" else "") +
+            (if (right ne null) s"\n$indent right="+right.showTree(level + 1)+"\n)" else ")")
     }
 }
 
@@ -640,14 +640,14 @@ case class UIDTrieSetLeaf[T <: UID] private[immutable] (
 
     override private[opalj] def +!(e: T): UIDSet[T] = throw new UnknownError
 
-    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): Option[UIDTrieSetNodeLike[T]] = {
+    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T] = {
         if (value.id == eId)
-            return None;
+            return this;
 
         if ((shiftedEId & 1) == 1)
-            Some(new UIDTrieSetInnerNode(2, value, null, new UIDTrieSetLeaf(e)))
+            new UIDTrieSetInnerNode(2, value, null, new UIDTrieSetLeaf(e))
         else
-            Some(new UIDTrieSetInnerNode(2, value, new UIDTrieSetLeaf(e), null))
+            new UIDTrieSetInnerNode(2, value, new UIDTrieSetLeaf(e), null)
     }
 
 }
@@ -673,18 +673,19 @@ case class UIDTrieSetInnerNode[T <: UID] private[immutable] (
 
     override private[opalj] def +!(e: T): UIDSet[T] = {
         val eId = e.id
-        this +! (e, eId, eId, 0) match {
-            case Some(newNode) ⇒ newNode
-            case None          ⇒ this
-        }
+        this +! (e, eId, eId, 0)
+        this.theSize = 1 +
+            (if (left ne null) left.size else 0) +
+            (if (right ne null) right.size else 0)
+        this
     }
 
     /** @return `Some(Node)` if the value was added, None otherwise! */
-    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): Option[UIDTrieSetNodeLike[T]] = {
+    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T] = {
         val value = this.value
         val valueId = value.id
         if (eId == valueId)
-            return None;
+            return this;
 
         val left = this.left
         val right = this.right
@@ -693,52 +694,45 @@ case class UIDTrieSetInnerNode[T <: UID] private[immutable] (
             if (right eq null) {
                 this.right = new UIDTrieSetLeaf(e)
                 this.theSize += 1
-                Some(this)
             } else if ((left eq null) &&
                 (valueId >>> level & 1) == 0 &&
                 !right.contains(eId, shiftedEId >>> 1)) {
                 this.left = new UIDTrieSetLeaf(value)
                 this.value = e
                 this.theSize += 1
-                Some(this)
             } else {
-                (right +! (e, eId, shiftedEId >>> 1, level + 1)) match {
-                    case Some(newRight) ⇒
-                        this.right = newRight
-                        this.theSize += 1
-                        Some(this)
-                    case None ⇒
-                        None
-                }
+                val newRight = (right +! (e, eId, shiftedEId >>> 1, level + 1))
+                this.right = newRight
+                this.theSize = (if (left ne null) left.size else 0) + newRight.size + 1
             }
         } else {
             // we have to add the new value here or to the left branch
             if (left eq null) {
                 this.left = new UIDTrieSetLeaf(e)
                 this.theSize += 1
-                Some(this)
             } else if ((right eq null) &&
                 (valueId >>> level & 1) == 1 &&
                 !left.contains(eId, shiftedEId >>> 1)) {
                 this.right = new UIDTrieSetLeaf(value)
                 this.value = e
                 this.theSize += 1
-                Some(this)
             } else {
-                (left +! (e, eId, shiftedEId >>> 1, level + 1)) match {
-                    case Some(newLeft) ⇒
-                        this.left = newLeft
-                        this.theSize += 1
-                        Some(this)
-                    case None ⇒
-                        None
-                }
+                val newLeft = (left +! (e, eId, shiftedEId >>> 1, level + 1))
+                this.left = newLeft
+                this.theSize = newLeft.size + (if (right ne null) right.size else 0) + 1
             }
         }
+        this
     }
 
 }
 
+/*
+import scala.collection.generic.GenericCompanion
+import scala.language.higherKinds
+abstract class UIDSetGenericCompanion[+CC[X <: UID] <: Set[X]] extends GenericCompanion[CC]
+object UIDSet extends UIDSetGenericCompanion[UIDSet] {
+    */
 object UIDSet {
 
     class UIDSetBuilder[T <: UID] extends Builder[T, UIDSet[T]] {
