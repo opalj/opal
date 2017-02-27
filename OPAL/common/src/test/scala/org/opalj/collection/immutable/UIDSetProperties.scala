@@ -270,10 +270,13 @@ object UIDSetProperties extends Properties("UIDSet") {
     }
 
     property("map (check that the same type of collection is created)") = forAll { (orig: Set[Int]) ⇒
-        val s = orig.map(SUID(_))
+
         def f(s: SUID): SUID = SUID(s.id % 5)
+
+        val s = orig.map(SUID(_)).map(f)
         val us: SUIDSet = toSUIDSet(orig).map(f)
-        EmptyUIDSet ++ s.map(f) == us
+        (s.forall(us.contains) && us.forall(s.contains)) :| s"content $s vs. $us" &&
+            classOf[UIDSet[_]].isInstance(us) :| "unexpected type"
     }
 
     property("can handle large sets") = forAll(largeSetGen) { (v) ⇒
@@ -303,11 +306,16 @@ object UIDSetProperties extends Properties("UIDSet") {
     property("can efficiently create very large sets") = forAll(veryLargeListGen) { (v) ⇒
         val (orig: List[Int], _) = v
         val base = orig.map(SUID.apply)
-        val s1b = UIDSet.newBuilder[SUID]
-        base.foreach(s1b.+=)
-        val s1 = s1b.result
+        val s1 = org.opalj.util.PerformanceEvaluation.time {
+            val s1b = UIDSet.newBuilder[SUID]
+            base.foreach(s1b.+=)
+            s1b.result
+        } { t ⇒ println("Builder +!: "+t.toSeconds) }
+
         var s2 = UIDSet.empty[SUID]
-        base.foreach(e ⇒ s2 = s2 + e)
+        org.opalj.util.PerformanceEvaluation.time {
+            base.foreach(e ⇒ s2 = s2 + e)
+        } { t ⇒ println("Builder + : "+t.toSeconds) }
 
         s1 == s2
     }
