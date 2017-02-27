@@ -300,6 +300,18 @@ object UIDSetProperties extends Properties("UIDSet") {
         }
     }
 
+    property("can efficiently create very large sets") = forAll(veryLargeListGen) { (v) ⇒
+        val (orig: List[Int], _) = v
+        val base = orig.map(SUID.apply)
+        val s1b = UIDSet.newBuilder[SUID]
+        base.foreach(s1b.+=)
+        val s1 = s1b.result
+        var s2 = UIDSet.empty[SUID]
+        base.foreach(e ⇒ s2 = s2 + e)
+
+        s1 == s2
+    }
+
     property("can handle very large sets") = forAll(veryLargeListGen) { (v) ⇒
         val (orig: List[Int], i) = v
         val base = orig.map(SUID.apply)
