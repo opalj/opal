@@ -85,59 +85,59 @@ object UIDSetDemo extends App {
     case class SUID(val id: Int) extends org.opalj.collection.UID
 
     def evalAdd(): Unit = {
-    { // using standard + method
-        val r = new java.util.Random(10002323323l)
-        var runs = 0
-        val t = System.nanoTime
-        while (runs < 20) {
-            var s = UIDSet.empty[SUID]
-            val addCount = r.nextInt(100000)
-            var i = 0
-            while (i < addCount) {
-                s += SUID(r.nextInt(addCount * 2))
-                i += 1
+        { // using standard + method
+            val r = new java.util.Random(10002323323l)
+            var runs = 0
+            val t = System.nanoTime
+            while (runs < 20) {
+                var s = UIDSet.empty[SUID]
+                val addCount = r.nextInt(100000)
+                var i = 0
+                while (i < addCount) {
+                    s += SUID(r.nextInt(addCount * 2))
+                    i += 1
+                }
+                runs += 1
             }
-            runs += 1
+            println("Using +:   "+NS(System.nanoTime - t).toSeconds)
         }
-        println("Using +:   "+NS(System.nanoTime - t).toSeconds)
-    }
 
-    { // using +! method (by means of a builder)
-        val r = new java.util.Random(10002323323l)
-        var runs = 0
-        val t = System.nanoTime
-        while (runs < 20) {
-            val s = UIDSet.newBuilder[SUID]
-            val addCount = r.nextInt(100000)
-            var i = 0
-            while (i < addCount) {
-                s += SUID(r.nextInt(addCount * 2))
-                i += 1
+        { // using +! method (by means of a builder)
+            val r = new java.util.Random(10002323323l)
+            var runs = 0
+            val t = System.nanoTime
+            while (runs < 20) {
+                val s = UIDSet.newBuilder[SUID]
+                val addCount = r.nextInt(100000)
+                var i = 0
+                while (i < addCount) {
+                    s += SUID(r.nextInt(addCount * 2))
+                    i += 1
+                }
+                s.result
+                runs += 1
             }
-            s.result
-            runs += 1
+            println("Using +!:  "+NS(System.nanoTime - t).toSeconds)
         }
-        println("Using +!:  "+NS(System.nanoTime - t).toSeconds)
-    }
 
-    { // comparison with Scala set
-        val r = new java.util.Random(10002323323l)
-        var runs = 0
-        val t = System.nanoTime
-        while (runs < 20) {
-            var s = Set.empty[SUID]
-            val addCount = r.nextInt(100000)
-            var i = 0
-            while (i < addCount) {
-                s += SUID(r.nextInt(addCount * 2))
-                i += 1
+        { // comparison with Scala set
+            val r = new java.util.Random(10002323323l)
+            var runs = 0
+            val t = System.nanoTime
+            while (runs < 20) {
+                var s = Set.empty[SUID]
+                val addCount = r.nextInt(100000)
+                var i = 0
+                while (i < addCount) {
+                    s += SUID(r.nextInt(addCount * 2))
+                    i += 1
+                }
+                runs += 1
             }
-            runs += 1
+            println("Using Set: "+NS(System.nanoTime - t).toSeconds)
         }
-        println("Using Set: "+NS(System.nanoTime - t).toSeconds)
     }
-}
-(0 to 5).foreach(evalAdd)
+    (0 to 5).foreach(e ⇒ evalAdd)
 
     /////////////////////////////////// EXTENSIVE EVAL /////////////////////////////////// 
 
