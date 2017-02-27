@@ -85,6 +85,7 @@ object UIDSetDemo extends App {
     case class SUID(val id: Int) extends org.opalj.collection.UID
 
     def evalAdd(): Unit = {
+        /*
         { // using standard + method
             val r = new java.util.Random(10002323323l)
             var runs = 0
@@ -101,6 +102,7 @@ object UIDSetDemo extends App {
             }
             println("Using +:   "+NS(System.nanoTime - t).toSeconds)
         }
+        */
 
         { // using +! method (by means of a builder)
             val r = new java.util.Random(10002323323l)
@@ -139,7 +141,7 @@ object UIDSetDemo extends App {
     }
     (0 to 5).foreach(e ⇒ evalAdd)
 
-    /////////////////////////////////// EXTENSIVE EVAL /////////////////////////////////// 
+    /////////////////////////////////// EXTENSIVE EVAL ///////////////////////////////////
 
     def eval(factory: Set[SUID]): Unit = {
         val r = new java.util.Random(10002323323l)
@@ -174,6 +176,19 @@ object UIDSetDemo extends App {
             uniqueValues += s.size
             timeForAddingValues += (System.nanoTime - t)
 
+            // contains
+            t = System.nanoTime
+            i = 0
+            while (i < addCount / 2) {
+                val targetValue = SUID(r.nextInt(addCount * 2))
+                if (s.contains(targetValue))
+                    containsSucceeded += 1
+                else
+                    containsFailed += 1
+                i += 1
+            }
+            timeForContainsCheck += (System.nanoTime - t)
+
             // filtering
             t = System.nanoTime
             val sizeBeforeFiltering = s.size
@@ -185,19 +200,6 @@ object UIDSetDemo extends App {
             }
             filteredValues += sizeBeforeFiltering - s.size
             timeForFilteringValues += (System.nanoTime - t)
-
-            // contains
-            t = System.nanoTime
-            i = 0
-            while (i < addCount / 100) {
-                val targetValue = SUID(r.nextInt(addCount * 2))
-                if (s.contains(targetValue))
-                    containsSucceeded += 1
-                else
-                    containsFailed += 1
-                i += 1
-            }
-            timeForContainsCheck += (System.nanoTime - t)
 
             // removing
             t = System.nanoTime
@@ -235,7 +237,7 @@ object UIDSetDemo extends App {
         )
     }
 
-    for { i ← 0 to 5 } {
+    for { i ← 0 until 5 } {
         org.opalj.util.gc()
         eval(scala.collection.immutable.Set.empty)
         org.opalj.util.gc()

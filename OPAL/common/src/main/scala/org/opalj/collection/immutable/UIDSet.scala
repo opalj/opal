@@ -36,11 +36,11 @@ import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayStack
 
 /**
- * An '''unordered''' trie-set based on the unique ids of the stored [[UID]] objects..
+ * An '''unordered''' trie-set based on the unique ids of the stored [[UID]] objects.
  *
  * ==Implementation==
- * It uses the least significant bit to decide whether the search is continued in the
- * right or left tree.
+ * This trie set uses the least significant bit to decide whether the search is continued in the
+ * right or left branch.
  *
  * Small sets are represented using a UIDSet0...2.
  */
@@ -519,12 +519,30 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
     }
 
     private[immutable] def contains(eId: Int, shiftedEId: Int): Boolean = {
+        /* The recursive version is roughly 5% slower...
         this.value.id == eId || {
             if ((shiftedEId & 1) == 1)
                 right != null && right.contains(eId, shiftedEId >>> 1)
             else
                 left != null && left.contains(eId, shiftedEId >>> 1)
         }
+        */
+
+        var currentNode: UIDTrieSetNodeLike[T] = this
+        var currentShiftedEId = shiftedEId
+        do {
+            if (currentNode.value.id == eId)
+                return true;
+
+            if ((currentShiftedEId & 1) == 1)
+                currentNode = currentNode.right
+            else
+                currentNode = currentNode.left
+
+            currentShiftedEId = currentShiftedEId >>> 1
+
+        } while (currentNode ne null)
+        false
     }
 
     private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T]
