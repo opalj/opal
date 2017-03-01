@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -85,6 +85,7 @@ object UIDSetDemo extends App {
     case class SUID(val id: Int) extends org.opalj.collection.UID
 
     def evalAdd(): Unit = {
+        /*
         { // using standard + method
             val r = new java.util.Random(10002323323l)
             var runs = 0
@@ -101,9 +102,10 @@ object UIDSetDemo extends App {
             }
             println("Using +:   "+NS(System.nanoTime - t).toSeconds)
         }
+        */
 
         { // using +! method (by means of a builder)
-            val r = new java.util.Random(10002323323l)
+            val r = new java.util.Random(10002323323L)
             var runs = 0
             val t = System.nanoTime
             while (runs < 20) {
@@ -121,7 +123,7 @@ object UIDSetDemo extends App {
         }
 
         { // comparison with Scala set
-            val r = new java.util.Random(10002323323l)
+            val r = new java.util.Random(10002323323L)
             var runs = 0
             val t = System.nanoTime
             while (runs < 20) {
@@ -139,10 +141,10 @@ object UIDSetDemo extends App {
     }
     (0 to 5).foreach(e ⇒ evalAdd)
 
-    /////////////////////////////////// EXTENSIVE EVAL /////////////////////////////////// 
+    /////////////////////////////////// EXTENSIVE EVAL ///////////////////////////////////
 
     def eval(factory: Set[SUID]): Unit = {
-        val r = new java.util.Random(10002323323l)
+        val r = new java.util.Random(10002323323L)
         var runs = 0
 
         var addedValues = 0
@@ -152,11 +154,11 @@ object UIDSetDemo extends App {
         var containsFailed = 0
         var removedValues = 0
         // var removedValuesByTail = 0
-        var timeForAddingValues = 0l
-        var timeForFilteringValues = 0l
-        var timeForContainsCheck = 0l
-        var timeForRemovingValues = 0l
-        // var timeForXTailCalls = 0l
+        var timeForAddingValues = 0L
+        var timeForFilteringValues = 0L
+        var timeForContainsCheck = 0L
+        var timeForRemovingValues = 0L
+        // var timeForXTailCalls = 0L
 
         val startTime = System.nanoTime
         while (runs < 20) {
@@ -174,6 +176,19 @@ object UIDSetDemo extends App {
             uniqueValues += s.size
             timeForAddingValues += (System.nanoTime - t)
 
+            // contains
+            t = System.nanoTime
+            i = 0
+            while (i < addCount / 2) {
+                val targetValue = SUID(r.nextInt(addCount * 2))
+                if (s.contains(targetValue))
+                    containsSucceeded += 1
+                else
+                    containsFailed += 1
+                i += 1
+            }
+            timeForContainsCheck += (System.nanoTime - t)
+
             // filtering
             t = System.nanoTime
             val sizeBeforeFiltering = s.size
@@ -185,19 +200,6 @@ object UIDSetDemo extends App {
             }
             filteredValues += sizeBeforeFiltering - s.size
             timeForFilteringValues += (System.nanoTime - t)
-
-            // contains
-            t = System.nanoTime
-            i = 0
-            while (i < addCount / 100) {
-                val targetValue = SUID(r.nextInt(addCount * 2))
-                if (s.contains(targetValue))
-                    containsSucceeded += 1
-                else
-                    containsFailed += 1
-                i += 1
-            }
-            timeForContainsCheck += (System.nanoTime - t)
 
             // removing
             t = System.nanoTime
@@ -235,7 +237,7 @@ object UIDSetDemo extends App {
         )
     }
 
-    for { i ← 0 to 5 } {
+    for { i ← 0 until 5 } {
         org.opalj.util.gc()
         eval(scala.collection.immutable.Set.empty)
         org.opalj.util.gc()
