@@ -745,12 +745,6 @@ case class UIDTrieSetInnerNode[T <: UID] private[immutable] (
 
 }
 
-/*
-import scala.collection.generic.GenericCompanion
-import scala.language.higherKinds
-abstract class UIDSetGenericCompanion[+CC[X <: UID] <: Set[X]] extends GenericCompanion[CC]
-object UIDSet extends UIDSetGenericCompanion[UIDSet] {
-    */
 object UIDSet {
 
     class UIDSetBuilder[T <: UID] extends Builder[T, UIDSet[T]] {
