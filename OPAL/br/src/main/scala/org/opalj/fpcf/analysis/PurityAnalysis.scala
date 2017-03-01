@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package analysis
 
+import scala.util.control.ControlThrowable
+
 import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -82,7 +84,6 @@ import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.TypeImmutability
-import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 
 /**
