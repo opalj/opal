@@ -70,7 +70,10 @@ sealed trait ClassExtension extends APIFeature {
 /**
  * Represents an extension of a specific class
  */
-case class APIClassExtension(val featureId: String, val declClass: ObjectType) extends ClassExtension {
+case class APIClassExtension(
+        val featureId: String,
+        val declClass: ObjectType
+) extends ClassExtension {
 
     override def toFeatureID: String = featureId
 }
@@ -91,10 +94,10 @@ sealed trait APIMethod extends APIFeature {
  * Represents an instance API call.
  *
  *
- * @param declClass ObjectType of the receiver.
- * @param name Name of the API method.
- * @param descriptor Optional method descriptor, is no descriptor assigned, it represents all methods
- *                   with the same name, declared in the same class.
+ * @param  declClass ObjectType of the receiver.
+ * @param  name Name of the API method.
+ * @param  descriptor Optional method descriptor, is no descriptor assigned, it represents
+ *         all methods with the same name, declared in the same class.
  */
 case class InstanceAPIMethod(
         val declClass:  ObjectType,
@@ -103,7 +106,7 @@ case class InstanceAPIMethod(
 ) extends APIMethod {
 
     /**
-     * Return the feature id of the the feature.
+     * Return the feature id of the feature.
      *
      * @note Feature ids have to be unique.
      */
@@ -144,10 +147,10 @@ object InstanceAPIMethod {
  * Represents a static API call.
  *
  *
- * @param declClass ObjectType of the receiver.
- * @param name Name of the API method.
- * @param descriptor Optional method descriptor, is no descriptor assigned, it represents all methods
- *                   with the same name, declared in the same class.
+ * @param  declClass ObjectType of the receiver.
+ * @param  name Name of the API method.
+ * @param  descriptor Optional method descriptor, is no descriptor assigned, it represents
+ *         all methods with the same name, declared in the same class.
  */
 case class StaticAPIMethod(
         val declClass:  ObjectType,
@@ -156,7 +159,7 @@ case class StaticAPIMethod(
 ) extends APIMethod {
 
     /**
-     * Return the feature id of the the feature.
+     * Return the feature id of the feature.
      *
      * @note Feature ids have to be unique.
      */

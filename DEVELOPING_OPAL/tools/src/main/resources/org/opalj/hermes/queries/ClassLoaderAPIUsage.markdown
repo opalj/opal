@@ -1,6 +1,6 @@
-#ClassLoader API Usage
+# ClassLoader API Usage
 
-Extracts the usage of `java.lang.ClassLoader` methods within a given project and also checks for
+Extracts the usage of methods of `java.lang.ClassLoader` in a project and also checks for
 custom class loaders.
 
 - detects custom ClassLoaders that extend the `java.lang.ClassLoader`class.

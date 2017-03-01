@@ -64,6 +64,7 @@ object MethodTypes extends FeatureQuery {
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
+            if !isInterrupted()
             classLocation = ClassFileLocation(source, classFile)
             m ← classFile.methods
         } {
@@ -88,7 +89,7 @@ object MethodTypes extends FeatureQuery {
             }
         }
 
-        for { (featureID, featureIDIndex) ← featureIDs.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, methodLocations(featureIDIndex))
         }
     }

@@ -123,7 +123,10 @@ trait APIFeatureQuery extends FeatureQuery {
                 subtypes.filter(project.isProjectType).foreach { ot ⇒
                     val cfLoc = getClassFileLocation(project, ot)
                     if (cfLoc.nonEmpty)
-                        locations += ((featureID, cfLoc.get :&: locations.getOrElse(featureID, Naught)))
+                        locations += ((
+                            featureID,
+                            cfLoc.get :&: locations.getOrElse(featureID, Naught)
+                        ))
                 }
             }
         }
@@ -132,8 +135,8 @@ trait APIFeatureQuery extends FeatureQuery {
 
         for {
             cf ← project.allProjectClassFiles
-            m @ MethodWithBody(code) ← cf.methods
             if !isInterrupted()
+            m @ MethodWithBody(code) ← cf.methods
             (pc, mii @ MethodInvocationInstruction(declClass, _, name, methodDescriptor)) ← code
             if declClass.isObjectType && apiTypes.contains(declClass.asObjectType)
             apiFeature ← apiFeatures
@@ -179,7 +182,10 @@ trait APIFeatureQuery extends FeatureQuery {
         }
     }
 
-    private[this] def getClassFileLocation[S](project: Project[S], objectType: ObjectType): Option[ClassFileLocation[S]] = {
+    private[this] def getClassFileLocation[S](
+        project:    Project[S],
+        objectType: ObjectType
+    ): Option[ClassFileLocation[S]] = {
         val classFile = project.classFile(objectType)
         classFile match {
             case Some(classFile) ⇒ project.source(classFile) match {

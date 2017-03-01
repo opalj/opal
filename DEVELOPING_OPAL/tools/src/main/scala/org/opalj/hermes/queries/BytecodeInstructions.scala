@@ -32,8 +32,6 @@ package queries
 
 import java.net.URL
 
-import org.opalj.bytecode.JVMInstructions
-import org.opalj.bytecode.JVMOpcodes
 import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
 
@@ -44,9 +42,9 @@ import org.opalj.br.MethodWithBody
  */
 object BytecodeInstructions extends FeatureQuery {
 
-    val jvmInstructions = JVMInstructions
-    val jvmOpcodes = JVMOpcodes
-    val opcodesToOrdinalNumbers = new Array[Int](256)
+    // Let's do some caching...
+    final val JVMInstructions: List[(Int, String)] = bytecode.JVMInstructions
+    private[this] final val OpcodesToOrdinalNumbers = new Array[Int](256)
 
     override def htmlDescription: Either[String, URL] = {
         Right(new URL("http://www.opal-project.de/bi/JVMInstructions.xml"))
@@ -54,9 +52,9 @@ object BytecodeInstructions extends FeatureQuery {
 
     override def featureIDs: IndexedSeq[String] = {
         var ordinalNumber = 0
-        jvmInstructions.map { i ⇒
+        JVMInstructions.map { i ⇒
             val (opcode, mnemonic) = i
-            opcodesToOrdinalNumbers(opcode) = ordinalNumber
+            OpcodesToOrdinalNumbers(opcode) = ordinalNumber
             ordinalNumber += 1
             s"$mnemonic (opcode:$opcode)"
         }.toIndexedSeq
@@ -71,6 +69,7 @@ object BytecodeInstructions extends FeatureQuery {
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
+            if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
@@ -79,8 +78,8 @@ object BytecodeInstructions extends FeatureQuery {
             instructionsLocations(i.opcode) += InstructionLocation(methodLocation, pc)
         }
 
-        for { (locations, opcode) ← instructionsLocations.view.zipWithIndex } yield {
-            Feature[S](featureIDs(opcodesToOrdinalNumbers(opcode)), locations)
+        for { (locations, opcode) ← instructionsLocations.iterator.zipWithIndex } yield {
+            Feature[S](featureIDs(OpcodesToOrdinalNumbers(opcode)), locations)
         }
     }
 }

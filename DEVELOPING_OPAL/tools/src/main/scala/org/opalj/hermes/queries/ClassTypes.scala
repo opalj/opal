@@ -66,6 +66,7 @@ object ClassTypes extends FeatureQuery {
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
+            if !isInterrupted()
         } {
             val location = ClassFileLocation(source, classFile)
 
@@ -115,7 +116,7 @@ object ClassTypes extends FeatureQuery {
             }
         }
 
-        for { (featureID, featureIDIndex) ← featureIDs.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, classTypesLocations(featureIDIndex))
         }
     }

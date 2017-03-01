@@ -1,9 +1,9 @@
 # Usage of the Java Crypto Architecture (JCA)
 
 Extracts the information about the usage of the core classes and interfaces of the Java Crypto
-Architecture. Those classes have been selected according to the official JCA reference guide. [1]
+Architecture. The classes have been selected according to the official JCA reference guide. [JCA Reference Guide][1]
 
-The analysis checks in particular for calls to constructor or the `getInstance` method of a given
+The analysis checks in particular for constructor calls or the `getInstance` method of a given
 class/interface. 
 
 ## Algorithm kinds
@@ -28,8 +28,9 @@ The _Key Handling_ group represents whether some of the following classes/interf
 - `KeyPairGenerator`
 - `KeyAgreement`
 
-> Note: Subclasses are not supported yet, however, to track this calls gives a first intuition about
-> the usage of cryptographic keys. Especially the factories are often used. 
+> Note: Subclasses are not considered. However, querying theses types already gives a first intuition about
+> the usage of cryptographic keys. Especially the factories are often used.
+
 ## Key Store
 
 The _Key Store_ class checks whether a `KeyStore` is used.
@@ -44,4 +45,4 @@ appear within the codebase:
 - `CertPathValidator`
 - `CertStore`
  
-> [1] JCA Reference Guide - http://docs.oracle.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#CoreClasses
+[1]: http://docs.oracle.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#CoreClasses

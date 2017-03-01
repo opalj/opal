@@ -120,7 +120,7 @@ object Hermes extends JFXApp {
         import Console.err
         err.println("OPAL - Hermes")
         err.println("Invalid parameters. ")
-        err.println("The parameter has to be the configuartion which lists a corpus' projects.")
+        err.println("The parameter has to be the configuration which lists a corpus' projects.")
         err.println("java org.opalj.hermes.Hermes <ConfigFile.json>")
         System.exit(1)
     }
@@ -208,6 +208,7 @@ object Hermes extends JFXApp {
      * for each project.
      */
     private[this] def analyzeCorpus(): Thread = {
+
         def isValid(
             projectFeatures:          ProjectFeatures[URL],
             project:                  Project[URL],
@@ -220,6 +221,7 @@ object Hermes extends JFXApp {
                 true
             }
         }
+
         val analysesStartTime = System.nanoTime()
         val t = new Thread {
             override def run(): Unit = {
@@ -523,7 +525,7 @@ object Hermes extends JFXApp {
         val webEngine = webView.engine
         fq.htmlDescription match {
             case Left(page) ⇒
-                webEngine.setUserStyleSheetLocation(Queries.CSS)
+                webEngine.setUserStyleSheetLocation(FeatureQueries.MDCSS.toExternalForm)
                 webEngine.loadContent(page)
             case Right(url) ⇒
                 webEngine.load(url.toExternalForm)

@@ -33,10 +33,17 @@ import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
 
+/**
+ * The location where a specific feature was found.
+ *
+ * @tparam S The kind of the source. E.g., `java.net.URL`.
+ *
+ * @author Michael Eichberg
+ */
 sealed trait Location[S] {
 
     /**
-     * The source file.
+     * The source location.
      */
     def source: S
 
@@ -47,9 +54,8 @@ case class ClassFileLocation[S](
         classFileFQN:        String
 ) extends Location[S] {
 
-    override def toString: String = {
-        s"$classFileFQN\n$source"
-    }
+    override def toString: String = s"$classFileFQN\n$source"
+
 }
 object ClassFileLocation {
 
@@ -64,8 +70,9 @@ case class FieldLocation[S](
         fieldName:         String
 ) extends Location[S] {
 
-    override def source = classFileLocation.source
-    def classFileFQN = classFileLocation.classFileFQN
+    override def source: S = classFileLocation.source
+
+    def classFileFQN: String = classFileLocation.classFileFQN
 
     override def toString: String = {
         val source = classFileLocation.source
@@ -78,8 +85,9 @@ case class MethodLocation[S](
         methodSignature:   String
 ) extends Location[S] {
 
-    override def source = classFileLocation.source
-    def classFileFQN = classFileLocation.classFileFQN
+    override def source: S = classFileLocation.source
+
+    def classFileFQN: String = classFileLocation.classFileFQN
 
     override def toString: String = {
         val source = classFileLocation.source
@@ -100,16 +108,13 @@ object MethodLocation {
 
 }
 
-case class InstructionLocation[S](
-        methodLocation: MethodLocation[S],
-        pc:             PC
-) extends Location[S] {
+case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: PC) extends Location[S] {
 
-    override def source = methodLocation.source
+    override def source: S = methodLocation.source
 
-    def classFileFQN = methodLocation.classFileFQN
+    def classFileFQN: String = methodLocation.classFileFQN
 
-    def methodSignature = methodLocation.methodSignature
+    def methodSignature: String = methodLocation.methodSignature
 
     override def toString: String = {
         val classFileLocation = methodLocation.classFileLocation
@@ -119,11 +124,15 @@ case class InstructionLocation[S](
 }
 object InstructionLocation {
 
-    def apply[S](source: S, classFile: ClassFile, method: Method, pc: PC): InstructionLocation[S] = {
-        new InstructionLocation(
-            MethodLocation(ClassFileLocation(source, classFile), method.name + method.descriptor),
-            pc
-        )
+    def apply[S](
+        source:    S,
+        classFile: ClassFile,
+        method:    Method,
+        pc:        PC
+    ): InstructionLocation[S] = {
+        val classFileLocation = ClassFileLocation(source, classFile)
+        val methodLocation = MethodLocation(classFileLocation, method.name + method.descriptor)
+        new InstructionLocation(methodLocation, pc)
     }
 
 }
