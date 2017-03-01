@@ -34,6 +34,16 @@ import scala.language.implicitConversions
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 
+/**
+ * A collection of up to [[org.opalj.hermes.Globals.MaxLocations]] locations where a specific
+ * feature was found.
+ *
+ * Using a `LocationsContainer` has the advantage that we do not store unwanted locations.
+ *
+ * @tparam S The kind of the source. E.g., `java.net.URL`.
+ *
+ * @author Michael Eichberg
+ */
 class LocationsContainer[S] {
 
     private var theLocationsCount = 0
