@@ -612,7 +612,7 @@ case No ⇒
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
-            (this eq other) || (asReferenceValue(other).isNull.isYes)
+            (this eq other) || asReferenceValue(other).isNull.isYes
         }
 
         override def equals(other: Any): Boolean = {
@@ -626,7 +626,7 @@ case No ⇒
 
         override def hashCode: Int = origin
 
-        override def toString() = s"null[↦$origin]"
+        override def toString = s"null[↦$origin]"
     }
 
     trait NonNullSingleOriginReferenceValue extends SingleOriginReferenceValue {
@@ -655,7 +655,7 @@ case No ⇒
                     if (this.abstractsOver(that))
                         NoUpdate
                     else if (that.abstractsOver(this))
-                        StructuralUpdate(that);
+                        StructuralUpdate(that)
                     else
                         StructuralUpdate(doPeformJoinWithNonNullValueWithSameOrigin(that, this.t))
                 };
@@ -785,13 +785,13 @@ case No ⇒
         }
 
         override def hashCode: Int = {
-            (((origin) * 41 +
+            ((origin * 41 +
                 (if (isPrecise) 101 else 3)) * 13 +
                 isNull.hashCode()) * 79 +
                 upperTypeBound.hashCode()
         }
 
-        override def toString(): String = toString(theUpperTypeBound.toJava)
+        override def toString: String = toString(theUpperTypeBound.toJava)
 
     }
 
