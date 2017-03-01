@@ -101,9 +101,9 @@ import org.opalj.log.OPALLogger
  *      depend on any external input from I/O devices.
  *
  *      '''Hence, using true constants (e.g., Math.e) is not a problem as well as creating
- *      intermediate (mutable) data structures. 
+ *      intermediate (mutable) data structures.
  *      Furthermore, instance method based calls can also be pure if
- *      the receiving object is (effectively final) or was created as part of the evaluation 
+ *      the receiving object is (effectively final) or was created as part of the evaluation
  *      of the method.'''
  *
  *  -   Evaluation of the result does not cause any semantically observable side effect or output,
@@ -289,7 +289,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         if (!referenceTypeParameters.forall { p ⇒ propertyStore.isKnown(p) })
             return ImmediateResult(method, Impure);
 
-            // TODO Currently we are not able to interleave the purity analysis and the immutability analysis... which is, however, required!
+        // TODO Currently we are not able to interleave the purity analysis and the immutability analysis... which is, however, required!
         propertyStore.allHaveProperty(
             method, Purity.key, referenceTypeParameters, ImmutableType
         ) { areImmutable ⇒
