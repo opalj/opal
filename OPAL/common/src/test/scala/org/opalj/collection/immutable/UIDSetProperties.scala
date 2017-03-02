@@ -306,16 +306,16 @@ object UIDSetProperties extends Properties("UIDSet") {
     property("can efficiently create very large sets") = forAll(veryLargeListGen) { (v) ⇒
         val (orig: List[Int], _) = v
         val base = orig.map(SUID.apply)
-        val s1 = org.opalj.util.PerformanceEvaluation.time {
+        val s1 = /*org.opalj.util.PerformanceEvaluation.time*/ {
             val s1b = UIDSet.newBuilder[SUID]
             base.foreach(s1b.+=)
             s1b.result
-        } { t ⇒ println("Builder +!: "+t.toSeconds) }
+        } //{ t ⇒ println("Builder +!: "+t.toSeconds) }
 
         var s2 = UIDSet.empty[SUID]
-        org.opalj.util.PerformanceEvaluation.time {
-            base.foreach(e ⇒ s2 = s2 + e)
-        } { t ⇒ println("Builder + : "+t.toSeconds) }
+        //org.opalj.util.PerformanceEvaluation.time {
+        base.foreach(e ⇒ s2 = s2 + e)
+        //} { t ⇒ println("Builder + : "+t.toSeconds) }
 
         s1 == s2
     }
