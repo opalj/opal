@@ -77,4 +77,33 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
             superclassType = superclassType
         )
     }
+
+    /**
+     * Creates a new [[MethodBuilder]] with the previously defined [[AccessModifier]]s.
+     *
+     * @param name The method name
+     * @param parameters The method parameters in JVM notation, e.g. "()" for no parameters,
+     *                   "(IB)" for one integer and one boolean argument or
+     *                   "(Ljava/lang/String;)" for one String argument.
+     * @param returnType The returnType of this method in JVM notation, e.g. "I" for integer.
+     */
+    def apply(
+        name:       String,
+        parameters: String,
+        returnType: String
+    ): MethodBuilder = {
+        new MethodBuilder(
+            accessFlags = accessFlags,
+            name = name,
+            descriptor = br.MethodDescriptor(parameters + returnType)
+        )
+    }
+
+    /**
+     * Adds this [[AccessModifier]]s AccessFlag to the AccessFlags of the given
+     * [[ClassFileMemberBuilder]].
+     */
+    def +(cfmBuilder: ClassFileMemberBuilder): cfmBuilder.type = {
+        cfmBuilder.addAccessFlags(accessFlags)
+    }
 }

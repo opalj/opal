@@ -52,7 +52,7 @@ import org.opalj.bc.Assembler
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class ClassFiledBuilderTest extends FlatSpec {
+class ClassFileBuilderTest extends FlatSpec {
 
     behavior of "the ClassFileBuilder"
 

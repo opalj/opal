@@ -64,11 +64,27 @@ class ClassFileBuilder(
     /**
      * Defines the implemented interfaces.
      *
-     * @param fqn The interfaces class names in JVM notation as a fully qualified name, e.g.
+     * @param fqns The interfaces class names in JVM notation as a fully qualified name, e.g.
      *            "java/lang/Object".
      */
     def IMPLEMENTS(fqns: String*): this.type = {
         interfaceTypes = fqns.map(br.ObjectType.apply)
+
+        this
+    }
+
+    /**
+     * Defines the members of this [[ClassFileBuilder]].
+     *
+     * @see [[ClassFileMemberBuilder]]
+     */
+    def apply(classFileElements: ClassFileMemberBuilder*): this.type = {
+        val methodsAndAnnotations = classFileElements.collect {
+            case m: MethodBuilder ⇒ m.buildMethod
+        }.toMap
+
+        methods ++= methodsAndAnnotations.keys.toIndexedSeq
+        annotations ++= methodsAndAnnotations
 
         this
     }
