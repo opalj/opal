@@ -34,7 +34,7 @@ package log
  *
  * @author Michael Eichberg
  */
-sealed trait Level {
+sealed abstract class Level {
 
     def apply(info: String): LogMessage
 

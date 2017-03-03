@@ -52,7 +52,7 @@ import org.opalj.collection.mutable.{ArrayMap ⇒ OArrayMap}
  * associated with a specific entity; e.g., a field's ''real'' type, and those properties
  * that are shared by a set of entities; e.g., the set of all methods that are entry
  * points. In general, the latter properties can also be modeled using the first
- * mechanism, but this would be highly ineffective.
+ * mechanism, but this would not be as effective.
  *
  * @note The dependency relation is as follows:
  *      “A depends on B”

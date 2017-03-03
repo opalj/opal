@@ -65,7 +65,7 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-sealed trait ThrownExceptions extends Property {
+sealed abstract class ThrownExceptions extends Property {
 
     final type Self = ThrownExceptions
 
@@ -234,8 +234,8 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver 
-                        instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null.. 
+                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
+                        instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
                     true
 
                 case PUTFIELD.opcode ⇒
@@ -243,7 +243,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver 
+                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
                         {
                             val predecessorPC = code.pcOfPreviousInstruction(pc)
                             val predecessorOfPredecessorPC = code.pcOfPreviousInstruction(predecessorPC)
@@ -335,4 +335,3 @@ class ThrownExceptionsFallbackAnalysis(ps: PropertyStore) extends PropertyComput
         ImmediateResult(m, ThrownExceptionsFallbackAnalysis(ps, m))
     }
 }
-
