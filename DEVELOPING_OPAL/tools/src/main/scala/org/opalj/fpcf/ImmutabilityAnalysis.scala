@@ -37,12 +37,12 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
-import org.opalj.fpcf.analysis.ClassExtensibilityAnalysis
 import org.opalj.fpcf.analysis.FieldMutabilityAnalysis
+import org.opalj.fpcf.properties.ExtensibleType
+import org.opalj.fpcf.analysis.TypeExtensibilityAnalysis
 import org.opalj.fpcf.properties.ObjectImmutability
-import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.IsExtensible
 import org.opalj.fpcf.analysis.ObjectImmutabilityAnalysis
+import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.analysis.TypeImmutabilityAnalysis
 
 /**
@@ -72,7 +72,7 @@ object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
         //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)
-        manager.run(ClassExtensibilityAnalysis)
+        manager.run(TypeExtensibilityAnalysis)
         manager.run(FieldMutabilityAnalysis)
         time {
             manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
@@ -81,16 +81,9 @@ object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
         projectStore.validate(None)
 
         val extensibleClasses =
-            projectStore.entities(IsExtensible).
-                groupBy(_._2).
-                map { entry ⇒
-                    (
-                        entry._1,
-                        entry._2.
-                        map(_._1.thisType.toJava).toList.sorted.
-                        mkString("\n\t\t\t", "\n\t\t\t", "\n")
-                    )
-                }
+            projectStore.entities(ExtensibleType).
+                map(_.asInstanceOf[ClassFile].thisType.toJava).toList.sorted.
+                mkString("\n\t\t\t", "\n\t\t\t", "\n")
 
         val immutableClasses =
             projectStore.entities(ObjectImmutability.key).
