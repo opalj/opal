@@ -1168,11 +1168,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
                 def checkDefinitivePath(nextPC: PC, altPC: PC, qualifier: String): Unit = {
-                    if (worklist.isEmpty &&
+                    /*    if (worklist.isEmpty &&
                         liveVariables(nextPC) != liveVariables(altPC) &&
                         evaluated.exists(cfJoins.contains) // if it works out we should use something more efficient than the evaluated set (e.g. evaluatedCFJoins)
                         )
                         println(s"$pc > $nextPC(alt: $altPC):definitive path -$qualifier")
+                        */
                 }
 
                 /*
@@ -1456,11 +1457,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    val regPC = if (computation.returnsNormally) fallThrough(rest) else -1
-                    val exPCs = if (computation.throwsException) handleException(computation.exceptions) else UShortSet.empty
+                    //val regPC =
+                    if (computation.returnsNormally) fallThrough(rest) // else -1
+                    //val exPCs =
+                    if (computation.throwsException) handleException(computation.exceptions) // else UShortSet.empty
 
-                    if (computation.returnsNormally != computation.throwsException)
-                        println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
+                    //if (computation.returnsNormally != computation.throwsException)
+                    //    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
                 }
 
                 def computationWithExceptions(
@@ -1477,11 +1480,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    val regPC = if (computation.hasResult) fallThrough(computation.result :&: rest) else -1
-                    val exPCs = if (computation.throwsException) handleException(computation.exceptions) else UShortSet.empty
+                    //val regPC =
+                    if (computation.hasResult) fallThrough(computation.result :&: rest) // else -1
+                    // val exPCs =
+                    if (computation.throwsException) handleException(computation.exceptions) // else UShortSet.empty
 
-                    if (computation.returnsNormally != computation.throwsException)
-                        println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
+                    // if (computation.returnsNormally != computation.throwsException)
+                    //    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
                 }
 
                 def computationWithReturnValueAndExceptions(
