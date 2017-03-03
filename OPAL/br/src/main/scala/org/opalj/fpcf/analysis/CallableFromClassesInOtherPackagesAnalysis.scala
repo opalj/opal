@@ -187,7 +187,10 @@ object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
     ): FPCFAnalysis = {
 
         val analysis = new CallableFromClassesInOtherPackagesAnalysis(project)
-        propertyStore <<! (ClientCallable.Key, analysis.determineProperty)
+        propertyStore scheduleOnDemandComputation (
+            ClientCallable.Key,
+            analysis.determineProperty
+        )
         analysis
     }
 }
