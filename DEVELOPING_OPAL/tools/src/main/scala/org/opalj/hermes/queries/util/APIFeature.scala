@@ -41,7 +41,7 @@ import org.opalj.collection.immutable.Naught
  *
  * @author Michael Reif
  */
-sealed trait APIFeature {
+sealed abstract class APIFeature {
 
     /**
      * Return the feature id of the the feature.
@@ -60,7 +60,7 @@ sealed trait APIFeature {
  * Common trait that abstracts over all Class extension scenarios.
  *
  */
-sealed trait ClassExtension extends APIFeature {
+sealed abstract class ClassExtension extends APIFeature {
 
     def declClass: ObjectType
 
@@ -81,7 +81,7 @@ case class APIClassExtension(
 /**
  * Common trait that abstracts over instance and static api methods.
  */
-sealed trait APIMethod extends APIFeature {
+sealed abstract class APIMethod extends APIFeature {
 
     def declClass: ObjectType
 

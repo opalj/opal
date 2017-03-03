@@ -37,7 +37,7 @@ import org.opalj.br._
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
-sealed trait Stmt {
+sealed abstract class Stmt {
 
     /**
      * The program counter of the original underyling bytecode instruction.
@@ -153,7 +153,7 @@ case class Switch(
     def defaultStmt: Int = defaultTarget
 }
 
-sealed trait SimpleStmt extends Stmt {
+sealed abstract class SimpleStmt extends Stmt {
 
     /**
      * Nothing to do.
@@ -169,7 +169,7 @@ case class Return(pc: PC) extends SimpleStmt
 
 case class Nop(pc: PC) extends SimpleStmt
 
-sealed trait SynchronizationStmt extends SimpleStmt
+sealed abstract class SynchronizationStmt extends SimpleStmt
 
 case class MonitorEnter(pc: PC, objRef: Expr) extends SynchronizationStmt
 
@@ -184,7 +184,7 @@ case class ArrayStore(
 
 case class Throw(pc: PC, exception: Expr) extends SimpleStmt
 
-sealed trait FieldAccessStmt extends SimpleStmt
+sealed abstract class FieldAccessStmt extends SimpleStmt
 
 case class PutStatic(
     pc:             PC,
@@ -199,15 +199,17 @@ case class PutField(
     value:  Expr
 ) extends FieldAccessStmt
 
-sealed trait MethodCall extends Call with SimpleStmt
+sealed abstract class MethodCall extends SimpleStmt with Call
 
-sealed trait InstanceMethodCall extends MethodCall {
+sealed abstract class InstanceMethodCall extends MethodCall {
     def receiver: Expr
 }
 
 object InstanceMethodCall {
 
-    def unapply(call: InstanceMethodCall): Some[(PC, ReferenceType, String, MethodDescriptor, Expr, List[Expr])] = {
+    def unapply(
+        call: InstanceMethodCall
+    ): Some[(PC, ReferenceType, String, MethodDescriptor, Expr, List[Expr])] = {
         import call._
         Some((
             pc,
