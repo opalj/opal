@@ -575,14 +575,14 @@ sealed trait Chain[@specialized(Int) +T]
     def fuse[X >: T <: AnyRef](that: Chain[X], onDiff: (T, X) ⇒ X): Chain[X]
 }
 
-trait ChainLowPriorityImplicits
+//trait ChainLowPriorityImplicits
 
 /**
  * Factory for [[Chain]]s.
  *
  * @author Michael Eichberg
  */
-object Chain extends ChainLowPriorityImplicits {
+object Chain /* extends ChainLowPriorityImplicits */ {
 
     /**
      * Builder for [[Chain]]s. The builder is specialized for the primitive

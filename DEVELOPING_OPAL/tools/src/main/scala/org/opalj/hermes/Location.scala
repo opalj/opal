@@ -40,7 +40,7 @@ import org.opalj.br.ClassFile
  *
  * @author Michael Eichberg
  */
-sealed trait Location[S] {
+sealed abstract class Location[S] {
 
     /**
      * The source location.
