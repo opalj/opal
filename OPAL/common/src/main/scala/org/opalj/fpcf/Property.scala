@@ -36,7 +36,7 @@ import java.util.concurrent.CountDownLatch
  * is associated with at most one property per property kind.
  *
  * ==Implementation Requirements==
- * Each implementation of the property trait has to implement an equals method that
+ * Each implementation of the property trait has to implement an `equals` method that
  * determines if two properties are equal.
  *
  * @author Michael Eichberg
@@ -44,8 +44,8 @@ import java.util.concurrent.CountDownLatch
 trait Property extends PropertyMetaInformation {
 
     /**
-     * Returns `true` if the current property may be refined in the future and, hence,
-     * it is meaningful to register for update events.
+     * Returns `true` if the current property may be refined in the future and it is therefore
+     * necessary to wait for updates.
      */
     def isRefineable: Boolean
 
@@ -55,12 +55,12 @@ trait Property extends PropertyMetaInformation {
     final def isFinal: Boolean = !isRefineable
 
     /**
-     * Equality of Properties has to be based on structural equality.
+     * Equality of Properties has to be based on structural equality!
      */
     override def equals(other: Any): Boolean
 
     /**
-     * Returns true if the this property is currently computed or if a computation is already
+     * Returns true if this property is currently computed or if its computation is already
      * scheduled.
      */
     // only used in combination with direct property computations
@@ -88,6 +88,8 @@ trait Property extends PropertyMetaInformation {
  *
  * This information is used by the property store when debugging is turned on to test if an
  * analysis which derives a new property always derives a more precise property.
+ *
+ * @author Michael Eichberg
  */
 trait OrderedProperty extends Property {
 
@@ -102,11 +104,10 @@ trait OrderedProperty extends Property {
     final override def asOrderedProperty: this.type = this
 
     /**
-     * Tests if the this property is a potentially valid successor property of the other property
-     * if a computation was performed as the result of an update to a dependency.
+     * Tests if this property is a valid successor property of the other property.
      *
      * @return None if this property is a valid successor of the other property else
-     *      Some(description :String) is returned.
+     *         `Some(description:String)` which describes the problem is returned.
      */
     def isValidSuccessorOf(other: OrderedProperty): Option[String]
 
