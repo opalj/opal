@@ -55,7 +55,6 @@ abstract class ComputationSpecification(
 
     /**
      * Called by the scheduler to start execution of this analysis.
-     *
      */
     def schedule(ps: PropertyStore): Unit
 
@@ -120,10 +119,10 @@ class AnalysisScenario(
      * the specified analyses.
      *
      * The goal is to find a schedule that:
-     *   - schedules as many analyses in parallel as possible
-     *   - analyses that use a property which is incrementally computed and where the derived property
-     *     has no cyclic dependency on the used property are scheduled in a later batch to minimize
-     *     the number of derivations.
+     *   -  ... schedules as many analyses in parallel as possible
+     *   -  ... does not schedule two analyses A and B at the same time if B has a dependency on
+     *          the properties computed by A, but A has no dependency on B. Scheduling the
+     *          computation of B in a later batch potentially minimizes the number of derivations.
      *
      */
     def computeSchedule(
@@ -136,7 +135,8 @@ class AnalysisScenario(
         ccs.foreach { cs ⇒
             cs.derives.foreach { pk ⇒
                 if (derived.contains(pk)) {
-                    val message = s"the property ${PropertyKey.name(pk)} is derived by multiple analyses"
+                    val pkName = PropertyKey.name(pk)
+                    val message = s"the property $pkName is derived by multiple analyses"
                     throw SpecificationViolation(message)
                 } else {
                     derived += pk
@@ -179,6 +179,11 @@ class AnalysisScenario(
 
 }
 
+/**
+ * Encapsulates a computed schedule and enables the execution of it.
+ *
+ * @param batches The representation of the computed schedule.
+ */
 case class Schedule(
         batches: Chain[Chain[ComputationSpecification]]
 ) extends ((PropertyStore) ⇒ Unit) {
