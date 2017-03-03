@@ -35,7 +35,10 @@ import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.log.OPALLogger
 import scala.Traversable
-import org.opalj.fpcf.properties.IsExtensible
+import org.opalj.fpcf.properties.TypeExtensibility
+import org.opalj.fpcf.properties.ExtensibleType
+import org.opalj.fpcf.properties.NotExtensibleType
+import org.opalj.fpcf.properties.MaybeExtensibleType
 import org.opalj.fpcf.properties.MutableType
 import org.opalj.fpcf.properties.UnknownObjectImmutability
 import org.opalj.fpcf.properties.UnknownTypeImmutability
@@ -57,10 +60,30 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
     /**
      * @param cf A class file which is not the class file of `java.lang.Object`.
      */
-    def determineTypeImmutability(cf: ClassFile): PropertyComputationResult = {
+    def step1(cf: ClassFile): PropertyComputationResult = {
 
-        if (propertyStore(IsExtensible, cf).isYes)
-            return ImmediateResult(cf, MutableType);
+        propertyStore(cf, TypeExtensibility.key) match {
+            case EP(_, ExtensibleType)    ⇒ ImmediateResult(cf, MutableType)
+            case EP(_, NotExtensibleType) ⇒ step2(cf)
+            case epk /* either MaybeExtensibleType or not yet available at all... */ ⇒
+                val dependees = Traversable(epk)
+                def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+                    p match {
+                        case ExtensibleType    ⇒ ImmediateResult(cf, MutableType)
+                        case NotExtensibleType ⇒ step2(cf)
+                        case MaybeExtensibleType ⇒ IntermediateResult(
+                            cf,
+                            UnknownTypeImmutability,
+                            dependees, c
+
+                        )
+                    }
+                }
+                IntermediateResult(cf, UnknownTypeImmutability, dependees, c)
+        }
+    }
+
+    def step2(cf: ClassFile): PropertyComputationResult = {
 
         val directSubtypes = classHierarchy.directSubtypesOf(cf.thisType)
 
@@ -248,7 +271,6 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             }
         }
     }
-
 }
 
 /**
@@ -258,11 +280,9 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
  */
 object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
 
-    override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
-
     override def derivedProperties: Set[PropertyKind] = Set(TypeImmutability)
 
-    override def usedProperties: Set[PropertyKind] = Set(ObjectImmutability, IsExtensible)
+    override def usedProperties: Set[PropertyKind] = Set(ObjectImmutability, TypeExtensibility)
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new TypeImmutabilityAnalysis(project)
@@ -272,7 +292,7 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
 
         ps <||< (
             { case cf: ClassFile if (cf.thisType ne ObjectType.Object) ⇒ cf },
-            analysis.determineTypeImmutability
+            analysis.step1
         )
 
         analysis
