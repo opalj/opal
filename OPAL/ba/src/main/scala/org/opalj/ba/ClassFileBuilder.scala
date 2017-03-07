@@ -83,6 +83,7 @@ class ClassFileBuilder(
      * @see [[ClassFileMemberBuilder]]
      */
     def apply(classFileElements: ClassFileMemberBuilder*): this.type = {
+        fields ++= classFileElements.collect { case f: FieldBuilder ⇒ f }.map(_.buildField)
         val methodsAndAnnotations = classFileElements.collect {
             case m: MethodBuilder ⇒ m.buildMethod
         }.toMap
