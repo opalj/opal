@@ -68,7 +68,6 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
-import org.opalj.br.ExceptionHandler
 import org.opalj.br.cp._ // we need ALL of them...
 import org.opalj.br.instructions._ // we need ALL of them...
 
@@ -99,6 +98,7 @@ package object ba { ba ⇒
         }
     }
 
+    final val PACKAGEVISIBLE = new AccessModifier(0)
     final val PUBLIC = new AccessModifier(ACC_PUBLIC.mask)
     final val FINAL = new AccessModifier(ACC_FINAL.mask)
     final val SUPER = new AccessModifier(ACC_SUPER.mask)
@@ -463,7 +463,7 @@ package object ba { ba ⇒
     }
 
     def toDA(
-        exceptionHandler: ExceptionHandler
+        exceptionHandler: br.ExceptionHandler
     )(
         implicit
         constantsBuffer: ConstantsBuffer
@@ -538,6 +538,49 @@ package object ba { ba ⇒
                 val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
                 da.ConstantValue_attribute(attributeNameIndex, CPELong(value))
 
+            //code attribute conversions
+            case br.UnpackedLineNumberTable(lineNumbers) ⇒
+                da.LineNumberTable_attribute(
+                    CPEUtf8(bi.LineNumberTableAttribute.Name),
+                    lineNumbers.map { l ⇒
+                        da.LineNumberTableEntry(l.startPC, l.lineNumber)
+                    }
+                )
+            case c: br.CompactLineNumberTable ⇒
+                da.LineNumberTable_attribute(
+                    CPEUtf8(bi.LineNumberTableAttribute.Name),
+                    for (i ← 0 until c.lineNumbers.size / 4) yield da.LineNumberTableEntry(
+                        c.asUnsignedShort(c.lineNumbers(i), c.lineNumbers(i + 1)),
+                        c.asUnsignedShort(c.lineNumbers(i + 2), c.lineNumbers(i + 3))
+                    )
+                )
+            case br.LocalVariableTable(localVariables) ⇒
+                da.LocalVariableTable_attribute(
+                    CPEUtf8(bi.LocalVariableTableAttribute.Name),
+                    localVariables.map { l ⇒
+                        da.LocalVariableTableEntry(
+                            start_pc = l.startPC,
+                            length = l.length,
+                            name_index = CPEUtf8(l.name),
+                            descriptor_index = CPEUtf8(l.fieldType.toJVMTypeName),
+                            index = l.index
+                        )
+                    }
+                )
+            case br.MethodParameterTable(parameters) ⇒
+                da.MethodParameters_attribute(
+                    CPEUtf8(bi.MethodParametersAttribute.Name),
+                    parameters.map(p ⇒
+                        da.MethodParameter(
+                            if (p.name.isDefined) CPEUtf8(p.name.get) else 0,
+                            p.access_flags
+                        ))
+                )
+            case br.ExceptionTable(exceptions) ⇒
+                da.Exceptions_attribute(
+                    CPEUtf8(bi.ExceptionsAttribute.Name),
+                    exceptions.map(CPEClass(_, false)).toIndexedSeq
+                )
         }
     }
 
