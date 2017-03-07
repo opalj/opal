@@ -28,6 +28,7 @@
  */
 package org.opalj
 package ba
+import org.opalj.br.Attribute
 
 /**
  * Builder for a [[org.opalj.br.Method]]. A [[CodeAttributeBuilder]] can be added with the
@@ -36,13 +37,17 @@ package ba
  * @author Malte Limmeroth
  */
 class MethodBuilder(
-        private var accessFlags: Int,
-        private var name:        String,
-        private var descriptor:  br.MethodDescriptor,
-        private var attributes:  br.Attributes       = IndexedSeq.empty,
-        private var body:        Option[br.Code]     = None,
-        private var annotations: Map[br.PC, AnyRef]  = Map.empty
-) extends ClassFileMemberBuilder {
+    private var accessFlags: Int,
+    private var name:        String,
+    private var descriptor:  br.MethodDescriptor,
+    private var attributes:  br.Attributes       = IndexedSeq.empty,
+    private var body:        Option[br.Code]     = None,
+    private var annotations: Map[br.PC, AnyRef]  = Map.empty
+) extends ClassFileMemberBuilder
+        with DeprecatedAttributeBuilder
+        with ExceptionsAttributeBuilder
+        with SyntheticAttributeBuilder {
+
     override private[ba] def addAccessFlags(accessFlags: Int): this.type = {
         this.accessFlags = this.accessFlags | accessFlags
 
@@ -79,5 +84,11 @@ class MethodBuilder(
         )
 
         (method, annotations)
+    }
+
+    override def addAttribute(attribute: Attribute) = {
+        attributes :+= attribute
+
+        this
     }
 }

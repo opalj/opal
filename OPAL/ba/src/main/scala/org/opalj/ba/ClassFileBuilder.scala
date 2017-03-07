@@ -38,16 +38,20 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 class ClassFileBuilder(
-        private var version:        UShortPair                      = ClassFileBuilder.DefaultVersion,
-        private var accessFlags:    Int                             = 0,
-        private var thisType:       br.ObjectType                   = null, // REQUIRED
-        private var superclassType: Option[br.ObjectType]           = None,
-        private var interfaceTypes: Seq[br.ObjectType]              = Seq.empty,
-        private var fields:         br.Fields                       = IndexedSeq.empty,
-        private var methods:        br.Methods                      = IndexedSeq.empty,
-        private var attributes:     br.Attributes                   = IndexedSeq.empty,
-        private var annotations:    Map[br.Method, Map[br.PC, Any]] = Map.empty
-) {
+    private var version:        UShortPair                      = ClassFileBuilder.DefaultVersion,
+    private var accessFlags:    Int                             = 0,
+    private var thisType:       br.ObjectType                   = null, // REQUIRED
+    private var superclassType: Option[br.ObjectType]           = None,
+    private var interfaceTypes: Seq[br.ObjectType]              = Seq.empty,
+    private var fields:         br.Fields                       = IndexedSeq.empty,
+    private var methods:        br.Methods                      = IndexedSeq.empty,
+    private var attributes:     br.Attributes                   = IndexedSeq.empty,
+    private var annotations:    Map[br.Method, Map[br.PC, Any]] = Map.empty
+) extends AttributeBuilder
+        with DeprecatedAttributeBuilder
+        with EnclosingMethodAttributeBuilder
+        with SyntheticAttributeBuilder
+        with SourceFileAttributeBuilder {
 
     /**
      * Defines the extending class.
@@ -99,15 +103,6 @@ class ClassFileBuilder(
     }
 
     /**
-     * Defines the SourceFile attribute.
-     */
-    def SourceFile(sourceFile: String): this.type = {
-        attributes :+= br.SourceFile(sourceFile)
-
-        this
-    }
-
-    /**
      * Builds the [[org.opalj.br.ClassFile]] given the current information.
      *
      * The following conditional changes are done to ensure a correct class file is created:
@@ -150,6 +145,14 @@ class ClassFileBuilder(
         (toDA(brClassFile), annotations)
     }
 
+    /**
+     * Adds the given [[org.opalj.br.Attribute]].
+     */
+    override private[ba] def addAttribute(attribute: br.Attribute): this.type = {
+        attributes :+= attribute
+
+        this
+    }
 }
 
 object ClassFileBuilder {
