@@ -29,51 +29,32 @@
 package org.opalj
 package ba
 
-import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
-
-import org.opalj.bc.Assembler
-import org.opalj.br.instructions.ALOAD_0
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.RETURN
-import org.opalj.util.InMemoryClassLoader
-
 /**
- * Tests annotating instructions in the BytecodeAssembler DSL.
+ * Pseudo instruction that generates an entry in the [[org.opalj.br.LineNumberTable]] with the
+ * program counter of the following instruction.
  *
  * @author Malte Limmeroth
  */
-@RunWith(classOf[JUnitRunner])
-class AnnotatedInstructionsTest extends FlatSpec {
-    behavior of "Annotated Instructions"
-    val testClass = (PUBLIC CLASS "Test" EXTENDS "java/lang/Object")(
-        PUBLIC("<init>", "()", "V")(
-            CODE(
-                'UnUsedLabel1,
-                ALOAD_0 → "MarkerAnnotation1",
-                'UnUsedLabel2,
-                INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                RETURN → "MarkerAnnotation2"
-            )
-        )
-    )
+case class LINENUMBER(lineNumber: Int) extends PseudoInstruction
 
-    val (daClassFile, annotations) = testClass.buildDAClassFile
-    val loader = new InMemoryClassLoader(
-        Map("Test" → Assembler(daClassFile)),
-        this.getClass.getClassLoader
-    )
-    import loader.loadClass
+/**
+ * Incrementally builds a [[org.opalj.br.UnpackedLineNumberTable]].
+ *
+ * @author Malte Limmeroth
+ */
+class LineNumberTableGenerator {
+    private var lineNumbers: br.LineNumbers = Seq.empty
 
-    "the generated class" should "load correctly" in {
-        assert("Test" == loadClass("Test").getSimpleName)
+    def add(element: LINENUMBER, pc: br.PC) = {
+        lineNumbers :+= br.LineNumber(pc, element.lineNumber)
     }
 
-    "the method '<init>()V'" should "have the correct annotations" in {
-        val (_, methodAnnotations) = annotations.head
-        assert(methodAnnotations(0).asInstanceOf[String] == "MarkerAnnotation1")
-        assert(methodAnnotations(4).asInstanceOf[String] == "MarkerAnnotation2")
-    }
+    def finalizeLineNumberTable: Option[br.UnpackedLineNumberTable] = {
+        if (lineNumbers.size > 0) {
+            Some(br.UnpackedLineNumberTable(lineNumbers))
+        } else {
+            None
+        }
 
+    }
 }
