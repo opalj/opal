@@ -92,7 +92,7 @@ class ClassFileBuilder(
     /**
      * Defines the minorVersion and majorVersion. The default values are the current values.
      */
-    def Version(minorVersion: Int = version.minor, majorVersion: Int = version.major): this.type = {
+    def VERSION(majorVersion: Int = version.major, minorVersion: Int = version.minor): this.type = {
         version = UShortPair(minorVersion, majorVersion)
 
         this

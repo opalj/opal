@@ -65,7 +65,7 @@ class ClassFileBuilderTest extends FlatSpec {
         PUBLIC + SUPER + FINAL + SYNTHETIC CLASS "ConcreteClass"
         EXTENDS "org/opalj/bc/AbstractClass"
         IMPLEMENTS ("MarkerInterface1", "MarkerInterface2")
-    ) Version (minorVersion = 2, majorVersion = 49)
+    ) VERSION (minorVersion = 2, majorVersion = 49)
 
     val abstractAsm = Assembler(abstractClass.buildDAClassFile._1)
     val concreteAsm = Assembler(simpleConcreteClass.buildDAClassFile._1)
