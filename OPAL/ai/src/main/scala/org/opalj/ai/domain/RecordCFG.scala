@@ -405,7 +405,7 @@ trait RecordCFG
 
         val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
         for {
-            exceptionHandler ← code.exceptionHandlers
+            (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
             // 1.1.    Let's check if the handler was executed at all.
             if unsafeWasExecuted(exceptionHandler.handlerPC)
             // 1.2.    The handler may be shared by multiple try blocks, hence, we have
@@ -414,7 +414,7 @@ trait RecordCFG
             if handlesException(exceptionHandler)
         } {
             val handlerPC = exceptionHandler.handlerPC
-            val catchNodeCandiate = new CatchNode(exceptionHandler)
+            val catchNodeCandiate = new CatchNode(exceptionHandler, index)
             val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
             var handlerBB = bbs(handlerPC)
             if (handlerBB eq null) {

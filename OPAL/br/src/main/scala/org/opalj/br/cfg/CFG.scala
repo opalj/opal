@@ -384,11 +384,10 @@ case class CFG(
         catchNodes.foreach { cn ⇒
             bbMapping.put(
                 cn,
-                new CatchNode(
+                cn.copy(
                     startPC = pcToIndex(cn.startPC),
                     endPC = if (cn.endPC == codeSize) lastIndex + 1 else pcToIndex(cn.endPC),
-                    handlerPC = pcToIndex(cn.handlerPC),
-                    cn.catchType
+                    handlerPC = pcToIndex(cn.handlerPC)
                 )
             )
         }

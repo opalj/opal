@@ -108,8 +108,8 @@ object CFGFactory {
         // BBs is a sparse array; only those fields are used that are related to an instruction
 
         var exceptionHandlers = HashMap.empty[ExceptionHandler, CatchNode]
-        for (exceptionHandler ← code.exceptionHandlers) {
-            val catchNode = new CatchNode(exceptionHandler)
+        for ((exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex) {
+            val catchNode = new CatchNode(exceptionHandler, index)
             exceptionHandlers += (exceptionHandler → catchNode)
             val handlerPC = exceptionHandler.handlerPC
             var handlerBB = bbs(handlerPC)
