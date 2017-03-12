@@ -1916,7 +1916,7 @@ class ClassHierarchy private (
                     aType,
                     new Node {
                         private val directSubtypes = directSubtypesOf(aType)
-                        override def nodeId: Long = aType.id.toLong
+                        override def nodeId: Int = aType.id
                         override def toHRR: Option[String] = Some(aType.toJava)
                         override val visualProperties: Map[String, String] = {
                             Map("shape" → "box") ++ (
@@ -1938,7 +1938,7 @@ class ClassHierarchy private (
         }
 
         // a virtual root node
-        override def nodeId = -1L
+        override def nodeId = -1
         override def toHRR = None
         override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
             /*
