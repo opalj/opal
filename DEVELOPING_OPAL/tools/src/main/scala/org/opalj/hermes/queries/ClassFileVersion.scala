@@ -73,7 +73,7 @@ object ClassFileVersion extends FeatureQuery {
                 locations = new LocationsContainer[S]
                 data(normalizedVersion) = locations
             }
-            locations += ClassFileLocation(source, classFile.thisType.fqn)
+            locations += ClassFileLocation[S](source, classFile)
         }
 
         {

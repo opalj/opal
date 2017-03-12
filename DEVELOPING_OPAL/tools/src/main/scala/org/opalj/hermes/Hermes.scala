@@ -569,11 +569,11 @@ object Hermes extends JFXApp {
     }
     locationsView.getSelectionModel.setSelectionMode(SelectionMode.SINGLE)
     locationsView.getSelectionModel.selectedItem.onChange { (_, _, newLocation) ⇒
-        if (newLocation != null) {
+        if (newLocation != null && newLocation.source.isDefined) {
             val webView = new WebView
             val stage = new Stage {
                 scene = new Scene {
-                    title = newLocation.source.toExternalForm()
+                    title = newLocation.source.get.toExternalForm()
                     root = webView
                 }
                 width = 1024
@@ -583,7 +583,7 @@ object Hermes extends JFXApp {
             try {
                 // TODO Add support for jars in jars..
                 val classFile = ClassFileReader.ClassFile(
-                    () ⇒ newLocation.source.openConnection().getInputStream
+                    () ⇒ newLocation.source.get.openConnection().getInputStream
                 )(0)
                 webView.engine.loadContent(classFile.toXHTML().toString())
             } catch { case t: Throwable ⇒ t.printStackTrace() }

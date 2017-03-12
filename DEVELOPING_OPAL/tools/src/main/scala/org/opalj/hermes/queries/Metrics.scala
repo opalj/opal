@@ -100,8 +100,7 @@ object Metrics extends FeatureQuery {
             val pkg = classFile.thisType.packageName
             val previousEntry = packageMap.get(pkg)
             if (previousEntry == null)
-                classFile.
-                packageMap.put(pkg, (1, PackageLocation(source, pkg)))
+                packageMap.put(pkg, (1, PackageLocation(pkg)))
             else
                 packageMap.put(pkg, (previousEntry._1 + 1, previousEntry._2))
 
