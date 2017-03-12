@@ -71,5 +71,4 @@ object LocationsContainer {
     implicit def toLocationsChain[S](lc: LocationsContainer[S]): Chain[Location[S]] = {
         lc.locations
     }
-
 }
