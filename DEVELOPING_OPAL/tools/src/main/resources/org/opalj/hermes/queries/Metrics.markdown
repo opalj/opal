@@ -7,23 +7,24 @@ Extracts basic metric information of a given project. Each given metric is repes
     <th>description</th>
   </tr>
   <tr>
-    <td>FPC</td>
+    <td>fields per class (FPC)</td>
     <td>Extracts how often a class has 0, between 1 and 3, between 4 and 10, or more than 10 fields.</td>
   </tr>
   <tr>
-    <td>MPC</td>
+    <td> methods per class (MPC)</td>
     <td>Extracts how often a class has 0, between 1 and 3, between 4 and 10, or more than 10 methods.</td>
   </tr>
   <tr>
-    <td>CPP</td>
+    <td>classes per package (CPP)</td>
     <td>Extracts how often a package has between 1 and 3, between 4 and 10, or more than 10 classes.</td>
   </tr>
   <tr>
       <td>McCabe</td>
-      <td>Extracts how often a method has a complexity of 1 (linear), between 2 and 3, between 4 and 10, or more than 10 .</td>
+      <td>Extracts how often a method has a complexity of 1 (linear), between 2 and 3, between 4 and 10, or more than 10.
+      Please note that this analysis also takes exceptions into account.</td>
     </tr>
   <tr>
-      <td>NOC</td>
+      <td>number of children (NOC)</td>
       <td>Extracts how often a class has 0, between 1 and 3, between 4 and 10, or more than 10 children. 
       This metric is the number of direct descendants (subclasses) for each class. Classes with large number of children are
        considered to be difficult to modify and usually require more testing because of the effects 
