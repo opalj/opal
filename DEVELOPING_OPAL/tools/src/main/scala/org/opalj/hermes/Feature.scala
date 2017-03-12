@@ -50,11 +50,9 @@ abstract case class Feature[S] private (
         id:         String,
         count:      Int,
         extensions: Chain[Location[S]]
-)/* {
-
+) {
     assert(count >= extensions.size)
-
-}*/
+}
 
 /**
  * Factory to create features.
