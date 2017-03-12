@@ -52,7 +52,7 @@ object Metrics extends FeatureQuery {
             Seq("0 MPC", "1-3 MPC", "4-10 MPC", ">10 MPC"), // 4, 5, 6, 7
             Seq("1-3 CPP", "4-10 CPP", ">10 CPP"), // 8, 9, 10
             Seq("0 NOC", "1-3 NOC", "4-10 NOC", ">10 NOC"), //  11, 12, 13, 14
-            Seq("linear methods (McCabe)", "1-3 McCabe", "4-10 McCabe", ">10 McCabe") // 15, 16, 17 ,18
+            Seq("linear methods (McCabe)", "2-3 McCabe", "4-10 McCabe", ">10 McCabe") // 15, 16, 17 ,18
 
         ).flatten
 
@@ -107,6 +107,8 @@ object Metrics extends FeatureQuery {
             else
                 packageMap.put(pkg, (previousEntry._1 + 1, previousEntry._2))
 
+            // McCabe
+
             classFile.methods.foreach { method ⇒
                 CFGFactory(method, project.classHierarchy) match {
                     case Some(cfg) ⇒
@@ -116,8 +118,6 @@ object Metrics extends FeatureQuery {
                             res + node.successors.size
                         }
                         val mcCabe = edges - bbs.size + 2
-                        println("McCabe =  "+mcCabe)
-
                         mcCabe match {
                             case 1                     ⇒ classLocations(15) += methodLocation
                             case x if x > 1 && x <= 3  ⇒ classLocations(16) += methodLocation
