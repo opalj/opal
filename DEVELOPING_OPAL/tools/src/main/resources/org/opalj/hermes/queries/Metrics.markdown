@@ -20,7 +20,8 @@ Extracts basic metric information of a given project. Each given metric is repes
   </tr>
   <tr>
       <td>McCabe</td>
-      <td>Extracts how often a method has a complexity of 1 (linear), between 2 and 3, between 4 and 10, or more than 10 .</td>
+      <td>Extracts how often a method has a complexity of 1 (linear), between 2 and 3, between 4 and 10, or more than 10.
+      Please note that this analysis also takes exceptions into account.</td>
     </tr>
   <tr>
       <td>NOC</td>
