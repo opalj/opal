@@ -49,6 +49,14 @@ sealed abstract class Location[S] {
 
 }
 
+case class PackageLocation[S](
+        override val source: S,
+        packageName:         String
+) extends Location[S] {
+
+    override def toString: String = s"$packageName\n$source"
+}
+
 case class ClassFileLocation[S](
         override val source: S,
         classFileFQN:        String

@@ -41,27 +41,17 @@ import org.opalj.br.analyses.Project
  * @author Michael Reif
  */
 object Metrics extends FeatureQuery {
+
     /**
      * The unique ids of the extracted features.
      */
-    override def featureIDs: Seq[String] = Seq(
-        // FPC - fields per class
-        "min FPC", // 0
-        "max FPC", // 1
-        "avg FPC", // 2
-        // MPC - methods per class
-        "min MPC", // 3
-        "max MPC", // 4
-        "avg MPC", // 5
-        // CPP - classes per package
-        "min CPP", // 6
-        "max CPP", // 7
-        "avg CPP", // 8
-        // NOC - number of children
-        "min NOC", // 9
-        "max NOC", // 10
-        "avg NOC" // 11
-    )
+    override def featureIDs: Seq[String] =
+        Seq(
+            Seq("0 FPC", "1-3 FPC", "4-10 FPC", ">10 FPC"), // 0, 1, 2, 3
+            Seq("0 MPC", "1-3 MPC", "4-10 MPC", ">10 MPC"), // 4, 5, 6, 7
+            Seq("1-3 CPP", "4-10 CPP", ">10 CPP"), // 8, 9, 10
+            Seq("0 NOC", "1-3 NOC", "4-10 NOC", ">10 NOC") //  11, 12, 13, 14
+        ).flatten
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
@@ -71,12 +61,7 @@ object Metrics extends FeatureQuery {
 
         val classLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
-        val fpc = MetricValueContainer(classLocations, 0, 1, 2)
-        val mpc = MetricValueContainer(classLocations, 3, 4, 5)
-        val cpp = MetricValueContainer(classLocations, 6, 7, 8)
-        val noc = MetricValueContainer(classLocations, 9, 10, 11)
-
-        val packageMap = new JMap[String, Int]()
+        val packageMap = new JMap[String, (Int, PackageLocation[S])]()
 
         val classHierarchy = project.classHierarchy
 
@@ -84,111 +69,57 @@ object Metrics extends FeatureQuery {
             (classFile, source) ← project.projectClassFilesWithSources
             classLocation = ClassFileLocation(source, classFile)
         } {
-            // simple counts
-            fpc.update(classFile.fields.size, classLocation)
-            mpc.update(classFile.methods.size, classLocation)
-            noc.update(classHierarchy.directSubtypesOf(classFile.thisType).size, classLocation)
+            // fpc
 
-            // classes per package
+            classFile.fields.size match {
+                case 0                     ⇒ classLocations(0) += classLocation
+                case x if x > 0 && x <= 3  ⇒ classLocations(1) += classLocation
+                case x if x > 3 && x <= 10 ⇒ classLocations(2) += classLocation
+                case x if x > 10           ⇒ classLocations(3) += classLocation
+            }
+
+            // mpc
+
+            classFile.methods.size match {
+                case 0                     ⇒ classLocations(4) += classLocation
+                case x if x > 0 && x <= 3  ⇒ classLocations(5) += classLocation
+                case x if x > 3 && x <= 10 ⇒ classLocations(6) += classLocation
+                case x if x > 10           ⇒ classLocations(7) += classLocation
+            }
+
+            // noc
+
+            classHierarchy.directSubtypesOf(classFile.thisType).size match {
+                case 0                     ⇒ classLocations(11) += classLocation
+                case x if x > 0 && x <= 3  ⇒ classLocations(12) += classLocation
+                case x if x > 3 && x <= 10 ⇒ classLocations(13) += classLocation
+                case x if x > 10           ⇒ classLocations(14) += classLocation
+            }
+
+            // cpp setup - can be computed when all class files have been processed
             val pkg = classFile.thisType.packageName
-            val previousCount = packageMap.get(pkg)
-            if (previousCount == null)
-                packageMap.put(pkg, 1)
+            val previousEntry = packageMap.get(pkg)
+            if (previousEntry == null)
+                classFile.
+                packageMap.put(pkg, (1, PackageLocation(source, pkg)))
             else
-                packageMap.put(pkg, previousCount + 1)
+                packageMap.put(pkg, (previousEntry._1 + 1, previousEntry._2))
 
-            // depth of inheritance
         }
 
         //compute cpp, we need to have processed all class files before
-        packageMap.values().foreach(cpp.update(_))
+        packageMap.values().foreach { value ⇒
+            val (count, location) = value
+            count match {
+                case x if x > 0 && x <= 3  ⇒ classLocations(8) += location
+                case x if x > 3 && x <= 10 ⇒ classLocations(9) += location
+                case x if x > 10           ⇒ classLocations(10) += location
+            }
 
-        // prepare metric values
-        val values = Array[Int](
-            fpc.getMin,
-            fpc.getMax,
-            fpc.computeAvg(),
-            mpc.getMin,
-            mpc.getMax,
-            mpc.computeAvg(),
-            cpp.getMin,
-            cpp.getMax,
-            cpp.computeAvg(),
-            noc.getMin,
-            noc.getMax,
-            noc.computeAvg()
-        )
+        }
 
         for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
-            if (values(featureIDIndex) < classLocations(featureIDIndex).locations.size)
-                println(" "+featureID+" : "+values(featureIDIndex)+" < "+classLocations(featureIDIndex).locations.size)
-            Feature[S](featureID, values(featureIDIndex), classLocations(featureIDIndex).locations)
+            Feature[S](featureID, classLocations(featureIDIndex))
         }
-    }
-}
-
-/**
- * Mutable container for metric values. It has to be instantiated with the first value.
- */
-class MetricValueContainer[S](
-        location: Array[LocationsContainer[S]],
-        minIndex: Int,
-        maxIndex: Int,
-        avgIndex: Int
-) {
-
-    private[this] var min = Int.MaxValue
-    private[this] var max = Int.MinValue
-    private[this] var sum = 0
-    private[this] var vCount_ = 0
-
-    def getMin = if (min == Int.MaxValue) 0 else min
-
-    def getMax = if (max == Int.MinValue) 0 else max
-
-    def update(value: Int, classFileLocation: ClassFileLocation[S]): Unit = {
-        if (value < min) {
-            min = value
-            location(minIndex) = new LocationsContainer[S]
-            location(minIndex) += classFileLocation
-        }
-
-        if (value > max) {
-            max = value
-            location(maxIndex) = new LocationsContainer[S]
-            location(maxIndex) += classFileLocation
-        }
-
-        sum += value
-        location(avgIndex) += classFileLocation
-
-        vCount_ += 1
-    }
-
-    def update(value: Int): Unit = {
-        if (value < min) {
-            min = value
-        }
-
-        if (value > max) {
-            max = value
-        }
-
-        sum += value
-        vCount_ += 1
-    }
-
-    def computeAvg(): Int = if (vCount_ > 0) sum / vCount_ else 0
-}
-
-object MetricValueContainer {
-
-    def apply[S](
-        locations: Array[LocationsContainer[S]],
-        minIndex:  Int,
-        maxIndex:  Int,
-        avgIndex:  Int
-    ): MetricValueContainer[S] = {
-        new MetricValueContainer(locations, minIndex, maxIndex, avgIndex)
     }
 }

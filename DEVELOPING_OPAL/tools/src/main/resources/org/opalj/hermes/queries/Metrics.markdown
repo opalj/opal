@@ -1,5 +1,5 @@
 # Metrics
-Extracts basic metric information of a given project
+Extracts basic metric information of a given project. Each given metric is repesented in different feature categories.
 
 <table>
   <tr>
@@ -8,24 +8,20 @@ Extracts basic metric information of a given project
   </tr>
   <tr>
     <td>FPC</td>
-    <td>Minimum, maximum, and an average of fields per class.</td>
+    <td>Extracts how often a class has 0, between 1 and 3, between 4 and 10, or more than 10 fields.</td>
   </tr>
   <tr>
     <td>MPC</td>
-    <td>Minimum, maximum, and an average of methods per class.</td>
+    <td>Extracts how often a class has 0, between 1 and 3, between 4 and 10, or more than 10 methods.</td>
   </tr>
   <tr>
     <td>CPP</td>
-    <td>Minimum, maximum, and an average of classes per package.</td>
-  </tr>
-  <tr>
-    <td>DIP</td>
-    <td>Minimum, maximum, and an average of the depth of inheritance tree. </td>
+    <td>Extracts how often a package has between 1 and 3, between 4 and 10, or more than 10 classes.</td>
   </tr>
   <tr>
       <td>NOC</td>
-      <td>Minimum, maximum, and an average of the number of children. This metric is the number of
-      direct descendants (subclasses) for each class. Classes with large number of children are
+      <td>Extracts how often a class has 0, between 1 and 3, between 4 and 10, or more than 10 children. 
+      This metric is the number of direct descendants (subclasses) for each class. Classes with large number of children are
        considered to be difficult to modify and usually require more testing because of the effects 
        on changes on all the children. They are also considered more complex and fault-prone because
         a class with numerous children may have to provide services in a larger number of contexts
