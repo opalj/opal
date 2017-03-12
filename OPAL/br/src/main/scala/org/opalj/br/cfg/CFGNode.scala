@@ -119,7 +119,6 @@ trait CFGNode extends Node {
                     if !remainingSuccessors.contains(nextSuccessor)
                     if !reachable.contains(nextSuccessor)
                 } {
-
                     remainingSuccessors += nextSuccessor
                 }
             }
