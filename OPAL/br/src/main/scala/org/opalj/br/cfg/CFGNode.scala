@@ -151,7 +151,8 @@ trait CFGNode extends Node {
                     // of a subroutine because a subroutine's code is never reached via a
                     // normal control flow...(it may however contain a call to a subroutine!)
                     if (nextBB.isStartOfSubroutine) {
-                        nextBB = bbs(code.pcOfNextInstruction(bb.asBasicBlock.endPC /*the jsr instruction...*/ ))
+                        val jsrPC = bb.asBasicBlock.endPC /*the jsr instruction...*/
+                        nextBB = bbs(code.pcOfNextInstruction(jsrPC))
                     }
                     if (!seen.contains(nextBB)) {
                         seen += nextBB

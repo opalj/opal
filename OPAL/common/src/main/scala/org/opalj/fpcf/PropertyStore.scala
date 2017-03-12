@@ -1082,7 +1082,10 @@ class PropertyStore private (
      *      ps(e,pk).get
      *      }}}
      */
-    def scheduleOnDemandComputation[P <: Property](pk: PropertyKey[P], dpc: (Entity) ⇒ Property): Unit = accessStore {
+    def scheduleOnDemandComputation[P <: Property](
+        pk:  PropertyKey[P],
+        dpc: (Entity) ⇒ Property
+    ): Unit = accessStore {
         /* The framework has to handle the situation that the same dpc is potentially triggered
          * by multiple other analyses concurrently!
          *
