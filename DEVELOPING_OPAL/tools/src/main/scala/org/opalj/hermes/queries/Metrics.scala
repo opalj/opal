@@ -31,10 +31,9 @@ package hermes
 package queries
 
 import java.util.{HashMap ⇒ JMap}
-
 import scala.collection.JavaConversions._
+
 import org.opalj.br.analyses.Project
-import org.opalj.br.cfg.CFGFactory
 
 /**
  * Extracts basic metric information.
@@ -51,9 +50,7 @@ object Metrics extends FeatureQuery {
             Seq("0 FPC", "1-3 FPC", "4-10 FPC", ">10 FPC"), // 0, 1, 2, 3
             Seq("0 MPC", "1-3 MPC", "4-10 MPC", ">10 MPC"), // 4, 5, 6, 7
             Seq("1-3 CPP", "4-10 CPP", ">10 CPP"), // 8, 9, 10
-            Seq("0 NOC", "1-3 NOC", "4-10 NOC", ">10 NOC"), //  11, 12, 13, 14
-            Seq("linear methods (McCabe)", "1-3 McCabe", "4-10 McCabe", ">10 McCabe") // 15, 16, 17 ,18
-
+            Seq("0 NOC", "1-3 NOC", "4-10 NOC", ">10 NOC") //  11, 12, 13, 14
         ).flatten
 
     override def apply[S](
@@ -103,30 +100,10 @@ object Metrics extends FeatureQuery {
             val pkg = classFile.thisType.packageName
             val previousEntry = packageMap.get(pkg)
             if (previousEntry == null)
-                packageMap.put(pkg, (1, PackageLocation(source, pkg)))
+                packageMap.put(pkg, (1, PackageLocation(pkg)))
             else
                 packageMap.put(pkg, (previousEntry._1 + 1, previousEntry._2))
 
-            classFile.methods.foreach { method ⇒
-                CFGFactory(method, project.classHierarchy) match {
-                    case Some(cfg) ⇒
-                        val methodLocation = MethodLocation(classLocation, method)
-                        val bbs = cfg.reachableBBs
-                        val edges = bbs.foldLeft(0) { (res, node) ⇒
-                            res + node.successors.size
-                        }
-                        val mcCabe = edges - bbs.size + 2
-                        println("McCabe =  "+mcCabe)
-
-                        mcCabe match {
-                            case 1                     ⇒ classLocations(15) += methodLocation
-                            case x if x > 1 && x <= 3  ⇒ classLocations(16) += methodLocation
-                            case x if x > 3 && x <= 10 ⇒ classLocations(17) += methodLocation
-                            case x if x > 10           ⇒ classLocations(18) += methodLocation
-                        }
-                    case None ⇒
-                }
-            }
         }
 
         //compute cpp, we need to have processed all class files before
