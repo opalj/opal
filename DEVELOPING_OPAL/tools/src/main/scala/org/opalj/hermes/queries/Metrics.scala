@@ -75,28 +75,28 @@ object Metrics extends FeatureQuery {
             // fpc
 
             classFile.fields.size match {
-                case 0                     ⇒ classLocations(0) += classLocation
-                case x if x > 0 && x <= 3  ⇒ classLocations(1) += classLocation
-                case x if x > 3 && x <= 10 ⇒ classLocations(2) += classLocation
-                case x if x > 10           ⇒ classLocations(3) += classLocation
+                case 0            ⇒ classLocations(0) += classLocation
+                case x if x <= 3  ⇒ classLocations(1) += classLocation
+                case x if x <= 10 ⇒ classLocations(2) += classLocation
+                case x            ⇒ classLocations(3) += classLocation
             }
 
             // mpc
 
             classFile.methods.size match {
-                case 0                     ⇒ classLocations(4) += classLocation
-                case x if x > 0 && x <= 3  ⇒ classLocations(5) += classLocation
-                case x if x > 3 && x <= 10 ⇒ classLocations(6) += classLocation
-                case x if x > 10           ⇒ classLocations(7) += classLocation
+                case 0            ⇒ classLocations(4) += classLocation
+                case x if x <= 3  ⇒ classLocations(5) += classLocation
+                case x if x <= 10 ⇒ classLocations(6) += classLocation
+                case x            ⇒ classLocations(7) += classLocation
             }
 
             // noc
 
             classHierarchy.directSubtypesOf(classFile.thisType).size match {
-                case 0                     ⇒ classLocations(11) += classLocation
-                case x if x > 0 && x <= 3  ⇒ classLocations(12) += classLocation
-                case x if x > 3 && x <= 10 ⇒ classLocations(13) += classLocation
-                case x if x > 10           ⇒ classLocations(14) += classLocation
+                case 0            ⇒ classLocations(11) += classLocation
+                case x if x <= 3  ⇒ classLocations(12) += classLocation
+                case x if x <= 10 ⇒ classLocations(13) += classLocation
+                case x            ⇒ classLocations(14) += classLocation
             }
 
             // cpp setup - can be computed when all class files have been processed
@@ -119,10 +119,10 @@ object Metrics extends FeatureQuery {
                         }
                         val mcCabe = edges - bbs.size + 2
                         mcCabe match {
-                            case 1                     ⇒ classLocations(15) += methodLocation
-                            case x if x > 1 && x <= 3  ⇒ classLocations(16) += methodLocation
-                            case x if x > 3 && x <= 10 ⇒ classLocations(17) += methodLocation
-                            case x if x > 10           ⇒ classLocations(18) += methodLocation
+                            case 1            ⇒ classLocations(15) += methodLocation
+                            case x if x <= 3  ⇒ classLocations(16) += methodLocation
+                            case x if x <= 10 ⇒ classLocations(17) += methodLocation
+                            case x            ⇒ classLocations(18) += methodLocation
                         }
                     case None ⇒
                 }
@@ -133,9 +133,9 @@ object Metrics extends FeatureQuery {
         packageMap.values().foreach { value ⇒
             val (count, location) = value
             count match {
-                case x if x > 0 && x <= 3  ⇒ classLocations(8) += location
-                case x if x > 3 && x <= 10 ⇒ classLocations(9) += location
-                case x if x > 10           ⇒ classLocations(10) += location
+                case x if x <= 3  ⇒ classLocations(8) += location
+                case x if x <= 10 ⇒ classLocations(9) += location
+                case x            ⇒ classLocations(10) += location
             }
 
         }
