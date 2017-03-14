@@ -54,7 +54,7 @@ case class Query(query: String, activate: Boolean = true) {
             Some(companionObject.instance.asInstanceOf[FeatureQuery])
         } catch {
             case t: Throwable ⇒
-                error("application configuration", s"failed to load: $query")(GlobalLogContext)
+                error("application configuration", s"failed to load: $query", t)(GlobalLogContext)
                 None
         }
     }

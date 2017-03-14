@@ -32,6 +32,7 @@ package hermes
 import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
+import org.opalj.br.analyses.MethodInfo
 
 /**
  * The location where a specific feature was found.
@@ -147,6 +148,10 @@ object MethodLocation {
 
     def apply[S](classFileLocation: ClassFileLocation[S], method: Method): MethodLocation[S] = {
         new MethodLocation(classFileLocation, method.descriptor.toJava(method.name))
+    }
+
+    final def apply[S](methodInfo: MethodInfo[S]): MethodLocation[S] = {
+        MethodLocation(methodInfo.source, methodInfo.classFile, methodInfo.method)
     }
 
 }
