@@ -76,7 +76,9 @@ object TrivialReflectionUsage extends FeatureQuery {
                 for {
                     (pc, i) ← classForNameCalls
                     classNameParameterIndex = i.parametersCount - 1
-                    classNameParameter = aiResult.operandsArray(pc)(classNameParameterIndex)
+                    operands = aiResult.operandsArray(pc) // if i is dead... opeands is null
+                    if operands ne null
+                    classNameParameter = operands(classNameParameterIndex)
                 } {
                     classNameParameter match {
                         case aiResult.domain.StringValue(className) ⇒
