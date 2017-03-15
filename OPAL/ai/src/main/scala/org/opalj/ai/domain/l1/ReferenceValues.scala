@@ -1803,8 +1803,11 @@ case No ⇒
     }
 
     object MultipleReferenceValues {
-        def unapply(value: MultipleReferenceValues): Some[SortedSet[DomainSingleOriginReferenceValue]] = {
-            Some(value.values)
+        def unapply(value: DomainValue): Option[SortedSet[DomainSingleOriginReferenceValue]] = {
+            value match {
+                case mrv: MultipleReferenceValues ⇒ Some(mrv.values)
+                case _                            ⇒ None
+            }
         }
     }
 

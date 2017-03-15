@@ -51,7 +51,10 @@ object TrivialReflectionUsage extends FeatureQuery {
 
     val Class = ObjectType.Class
     val forName1MD = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
-    val forName3MD = MethodDescriptor("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;")
+    val forName3MD =
+        MethodDescriptor(
+            "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;"
+        )
 
     val TrivialForNameUsage = "Trivial Class.forName Usage"
 
@@ -83,6 +86,13 @@ object TrivialReflectionUsage extends FeatureQuery {
                     classNameParameter match {
                         case aiResult.domain.StringValue(className) ⇒
                             locations += InstructionLocation(methodLocation, pc)
+                        case aiResult.domain.MultipleReferenceValues(classNameParameters) ⇒
+                            val classNames = classNameParameters.collect {
+                                case aiResult.domain.StringValue(className) ⇒ className
+                            }
+                            if (classNames.size == classNameParameters.size) {
+                                locations += InstructionLocation(methodLocation, pc)
+                            }
                         case _ ⇒ // empty for now...
                     }
                 }
