@@ -30,9 +30,8 @@ package org.opalj
 package hermes
 package queries
 
-import java.util.{HashMap ⇒ JMap}
-
 import scala.collection.JavaConversions._
+import scala.collection.mutable
 import org.opalj.br.analyses.Project
 import org.opalj.br.cfg.CFGFactory
 
@@ -64,7 +63,8 @@ object Metrics extends FeatureQuery {
 
         val classLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
-        val packageMap = new JMap[String, (Int, PackageLocation[S])]()
+        class PackageInfo(var classesCount: Int = 0, val location: PackageLocation[S])
+        val packagesInfo = mutable.Map.empty[String, PackageInfo]
 
         val classHierarchy = project.classHierarchy
 
@@ -99,45 +99,39 @@ object Metrics extends FeatureQuery {
                 case x            ⇒ classLocations(14) += classLocation
             }
 
-            // cpp setup - can be computed when all class files have been processed
-            val pkg = classFile.thisType.packageName
-            val previousEntry = packageMap.get(pkg)
-            if (previousEntry == null)
-                packageMap.put(pkg, (1, PackageLocation(pkg)))
-            else
-                packageMap.put(pkg, (previousEntry._1 + 1, previousEntry._2))
+            // count the classes per package
+            val packageName = classFile.thisType.packageName
+            val packageInfo = packagesInfo.getOrElseUpdate(
+                packageName,
+                new PackageInfo(location = PackageLocation(packageName))
+            )
+            packageInfo.classesCount += 1
 
             // McCabe
-
             classFile.methods.foreach { method ⇒
-                CFGFactory(method, project.classHierarchy) match {
-                    case Some(cfg) ⇒
-                        val methodLocation = MethodLocation(classLocation, method)
-                        val bbs = cfg.reachableBBs
-                        val edges = bbs.foldLeft(0) { (res, node) ⇒
-                            res + node.successors.size
-                        }
-                        val mcCabe = edges - bbs.size + 2
-                        mcCabe match {
-                            case 1            ⇒ classLocations(15) += methodLocation
-                            case x if x <= 3  ⇒ classLocations(16) += methodLocation
-                            case x if x <= 10 ⇒ classLocations(17) += methodLocation
-                            case x            ⇒ classLocations(18) += methodLocation
-                        }
-                    case None ⇒
+                CFGFactory(method, project.classHierarchy).foreach { cfg ⇒
+                    val methodLocation = MethodLocation(classLocation, method)
+                    val bbs = cfg.reachableBBs
+                    val edges = bbs.foldLeft(0) { (res, node) ⇒
+                        res + node.successors.size
+                    }
+                    val mcCabe = edges - bbs.size + 2
+                    mcCabe match {
+                        case 1            ⇒ classLocations(15) += methodLocation
+                        case x if x <= 3  ⇒ classLocations(16) += methodLocation
+                        case x if x <= 10 ⇒ classLocations(17) += methodLocation
+                        case x            ⇒ classLocations(18) += methodLocation
+                    }
                 }
             }
         }
 
-        //compute cpp, we need to have processed all class files before
-        packageMap.values().foreach { value ⇒
-            val (count, location) = value
-            count match {
-                case x if x <= 3  ⇒ classLocations(8) += location
-                case x if x <= 10 ⇒ classLocations(9) += location
-                case x            ⇒ classLocations(10) += location
+        packagesInfo.values().foreach { pi ⇒
+            pi.classesCount match {
+                case x if x <= 3  ⇒ classLocations(8) += pi.location
+                case x if x <= 10 ⇒ classLocations(9) += pi.location
+                case x            ⇒ classLocations(10) += pi.location
             }
-
         }
 
         for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
