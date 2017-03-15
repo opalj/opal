@@ -49,14 +49,13 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  */
 object TrivialReflectionUsage extends FeatureQuery {
 
-    val Class = ObjectType.Class
-    val forName1MD = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
-    val forName3MD =
+    private val Class = ObjectType.Class
+    private val ForName1MD = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
+    private val ForName3MD =
         MethodDescriptor(
             "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;"
         )
-
-    val TrivialForNameUsage = "Trivial Class.forName Usage"
+    private val TrivialForNameUsage = "Trivial Class.forName Usage"
 
     override def featureIDs: List[String] = List(TrivialForNameUsage)
 
@@ -71,7 +70,7 @@ object TrivialReflectionUsage extends FeatureQuery {
         val errors = project.parForeachMethodWithBody(isInterrupted = this.isInterrupted) { mi ⇒
             val MethodInfo(source, cf, m @ MethodWithBody(code)) = mi
             val classForNameCalls = code.collect {
-                case i @ INVOKESTATIC(Class, false, "forName", `forName1MD` | `forName3MD`) ⇒ i
+                case i @ INVOKESTATIC(Class, false, "forName", ForName1MD | ForName3MD) ⇒ i
             }
             if (classForNameCalls.nonEmpty) {
                 val aiResult = BaseAI(cf, m, new DefaultDomainWithCFGAndDefUse(project, cf, m))
@@ -90,6 +89,7 @@ object TrivialReflectionUsage extends FeatureQuery {
                             val classNames = classNameParameters.collect {
                                 case aiResult.domain.StringValue(className) ⇒ className
                             }
+                            // check if we have a concrete string in all cases..
                             if (classNames.size == classNameParameters.size) {
                                 locations += InstructionLocation(methodLocation, pc)
                             }
