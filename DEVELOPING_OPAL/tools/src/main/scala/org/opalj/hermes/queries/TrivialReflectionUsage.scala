@@ -93,7 +93,7 @@ object TrivialReflectionUsage extends FeatureQuery {
                             if (classNames.size == classNameParameters.size) {
                                 locations += InstructionLocation(methodLocation, pc)
                             }
-                        case _ ⇒ // empty for now...
+                        case _ ⇒ // we don't have trivially available information...
                     }
                 }
             }
