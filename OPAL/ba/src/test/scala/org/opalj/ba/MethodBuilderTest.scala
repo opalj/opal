@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -58,7 +58,7 @@ class MethodBuilderTest extends FlatSpec {
                 ACONST_NULL,
                 ARETURN
             )
-        )
+        ) DEPRECATED () SYNTHETIC () EXCEPTIONS "java/lang/Exception"
     )
 
     val assembledCF = Assembler(simpleMethodClass.buildDAClassFile._1)
@@ -92,6 +92,19 @@ class MethodBuilderTest extends FlatSpec {
         assert(
             testMethod.get.accessFlags == (ACC_PUBLIC.mask | ACC_FINAL.mask | ACC_SYNTHETIC.mask)
         )
+    }
+
+    it should "have the Deprecated Attribute set" in {
+        assert(testMethod.get.attributes.exists(a ⇒ a.kindId == 22))
+    }
+
+    it should "have the Synthetic attribute" in {
+        assert(testMethod.get.attributes.exists(a ⇒ a.kindId == 11))
+    }
+
+    it should "have the Exception Attribute set: 'java/lang/Exception" in {
+        val attribute = testMethod.get.attributes.collect { case e: br.ExceptionTable ⇒ e }
+        assert(attribute.head.exceptions.head.fqn == "java/lang/Exception")
     }
 
     "maxLocals of method SimpleMethodClass.testMethod" should "be set automatically to: 2" in {

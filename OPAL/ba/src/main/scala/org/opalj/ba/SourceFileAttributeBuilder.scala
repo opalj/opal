@@ -29,51 +29,16 @@
 package org.opalj
 package ba
 
-import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
-
-import org.opalj.bc.Assembler
-import org.opalj.br.instructions.ALOAD_0
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.RETURN
-import org.opalj.util.InMemoryClassLoader
-
 /**
- * Tests annotating instructions in the BytecodeAssembler DSL.
+ * Factory for builders to add the [[org.opalj.br.SourceFile]] attribute.
  *
  * @author Malte Limmeroth
  */
-@RunWith(classOf[JUnitRunner])
-class AnnotatedInstructionsTest extends FlatSpec {
-    behavior of "Annotated Instructions"
-    val testClass = (PUBLIC CLASS "Test" EXTENDS "java/lang/Object")(
-        PUBLIC("<init>", "()", "V")(
-            CODE(
-                'UnUsedLabel1,
-                ALOAD_0 → "MarkerAnnotation1",
-                'UnUsedLabel2,
-                INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                RETURN → "MarkerAnnotation2"
-            )
-        )
-    )
-
-    val (daClassFile, annotations) = testClass.buildDAClassFile
-    val loader = new InMemoryClassLoader(
-        Map("Test" → Assembler(daClassFile)),
-        this.getClass.getClassLoader
-    )
-    import loader.loadClass
-
-    "the generated class" should "load correctly" in {
-        assert("Test" == loadClass("Test").getSimpleName)
+trait SourceFileAttributeBuilder extends AttributeBuilder {
+    /**
+     * Defines the [[org.opalj.br.SourceFile]] attribute.
+     */
+    def SOURCEFILE(sourceFile: String): this.type = {
+        addAttribute(br.SourceFile(sourceFile))
     }
-
-    "the method '<init>()V'" should "have the correct annotations" in {
-        val (_, methodAnnotations) = annotations.head
-        assert(methodAnnotations(0).asInstanceOf[String] == "MarkerAnnotation1")
-        assert(methodAnnotations(4).asInstanceOf[String] == "MarkerAnnotation2")
-    }
-
 }

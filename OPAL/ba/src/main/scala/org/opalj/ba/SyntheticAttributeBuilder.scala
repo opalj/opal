@@ -26,17 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ba
+package org.opalj.ba
+
+import org.opalj.br
 
 /**
- * Builder for members of a class – that are: Fields and Methods.
+ * Factory for builders to add the [[org.opalj.br.Synthetic]] attribute.
  *
  * @author Malte Limmeroth
  */
-trait ClassFileMemberBuilder {
+trait SyntheticAttributeBuilder extends AttributeBuilder {
     /**
-     * Adds the given accessFlag to the ClassFileMemberBuilders accessFlags.
+     * Defines the [[org.opalj.br.Synthetic]] attribute.
      */
-    private[ba] def addAccessFlags(accessFlags: Int): this.type
+    def SYNTHETIC(): this.type = addAttribute(br.Synthetic)
 }

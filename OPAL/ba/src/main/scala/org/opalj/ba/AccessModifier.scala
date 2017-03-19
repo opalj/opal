@@ -100,6 +100,20 @@ final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
     }
 
     /**
+     * Creates a new FieldBuilder with the previously defined AccessModifiers.
+     *
+     * @param name the fields name
+     * @param fieldType the fieldType in JVM notation, e.g. "I" for integer
+     */
+    def apply(name: String, fieldType: String): FieldBuilder = {
+        new FieldBuilder(
+            accessFlags = accessFlags,
+            name = name,
+            fieldType = br.FieldType(fieldType)
+        )
+    }
+
+    /**
      * Adds this [[AccessModifier]]s AccessFlag to the AccessFlags of the given
      * [[ClassFileMemberBuilder]].
      */

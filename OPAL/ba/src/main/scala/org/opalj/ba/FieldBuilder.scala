@@ -28,52 +28,40 @@
  */
 package org.opalj
 package ba
-
-import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
-
-import org.opalj.bc.Assembler
-import org.opalj.br.instructions.ALOAD_0
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.RETURN
-import org.opalj.util.InMemoryClassLoader
+import org.opalj.br.Attribute
 
 /**
- * Tests annotating instructions in the BytecodeAssembler DSL.
+ * Builder for creating Fields and specifying their attributes.
  *
  * @author Malte Limmeroth
  */
-@RunWith(classOf[JUnitRunner])
-class AnnotatedInstructionsTest extends FlatSpec {
-    behavior of "Annotated Instructions"
-    val testClass = (PUBLIC CLASS "Test" EXTENDS "java/lang/Object")(
-        PUBLIC("<init>", "()", "V")(
-            CODE(
-                'UnUsedLabel1,
-                ALOAD_0 → "MarkerAnnotation1",
-                'UnUsedLabel2,
-                INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                RETURN → "MarkerAnnotation2"
-            )
+class FieldBuilder(
+    private var accessFlags: Int,
+    private var name:        String,
+    private var fieldType:   br.FieldType,
+    private var attributes:  br.Attributes = IndexedSeq.empty
+) extends ClassFileMemberBuilder
+        with DeprecatedAttributeBuilder
+        with SyntheticAttributeBuilder
+        with ConstantValueAttributeBuilder {
+    override private[ba] def addAccessFlags(accessFlags: Int) = {
+        this.accessFlags = this.accessFlags | accessFlags
+
+        this
+    }
+
+    def buildField: br.Field = {
+        br.Field(
+            accessFlags = accessFlags,
+            name = name,
+            fieldType = fieldType,
+            attributes = attributes
         )
-    )
-
-    val (daClassFile, annotations) = testClass.buildDAClassFile
-    val loader = new InMemoryClassLoader(
-        Map("Test" → Assembler(daClassFile)),
-        this.getClass.getClassLoader
-    )
-    import loader.loadClass
-
-    "the generated class" should "load correctly" in {
-        assert("Test" == loadClass("Test").getSimpleName)
     }
 
-    "the method '<init>()V'" should "have the correct annotations" in {
-        val (_, methodAnnotations) = annotations.head
-        assert(methodAnnotations(0).asInstanceOf[String] == "MarkerAnnotation1")
-        assert(methodAnnotations(4).asInstanceOf[String] == "MarkerAnnotation2")
-    }
+    override private[ba] def addAttribute(attribute: Attribute) = {
+        attributes :+= attribute
 
+        this
+    }
 }

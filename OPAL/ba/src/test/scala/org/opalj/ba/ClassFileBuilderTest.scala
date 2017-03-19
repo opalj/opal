@@ -65,7 +65,7 @@ class ClassFileBuilderTest extends FlatSpec {
         PUBLIC + SUPER + FINAL + SYNTHETIC CLASS "ConcreteClass"
         EXTENDS "org/opalj/bc/AbstractClass"
         IMPLEMENTS ("MarkerInterface1", "MarkerInterface2")
-    ) Version (minorVersion = 2, majorVersion = 49)
+    ) VERSION (minorVersion = 2, majorVersion = 49) SOURCEFILE "ConcreteClass.java" DEPRECATED () SYNTHETIC ()
 
     val abstractAsm = Assembler(abstractClass.buildDAClassFile._1)
     val concreteAsm = Assembler(simpleConcreteClass.buildDAClassFile._1)
@@ -121,6 +121,19 @@ class ClassFileBuilderTest extends FlatSpec {
 
     it should "have the specified major version: 49" in {
         assert(concreteBRClassFile.majorVersion == 49)
+    }
+
+    it should "have the specified SourceFile attribute: 'ConcreteClass.java'" in {
+        val sourceFileAttribute = concreteBRClassFile.attributes.collect { case s: br.SourceFile ⇒ s }
+        assert(sourceFileAttribute.head.sourceFile == "ConcreteClass.java")
+    }
+
+    it should "have the Deprecated attribute" in {
+        assert(concreteBRClassFile.attributes.exists(a ⇒ a.kindId == 22))
+    }
+
+    it should "have the Synthetic attribute" in {
+        assert(concreteBRClassFile.attributes.exists(a ⇒ a.kindId == 11))
     }
 
     "the generated class 'AbstractClass'" should "have the default minor version" in {
