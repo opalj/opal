@@ -16,13 +16,13 @@ OPAL consists of several projects which are found in the folder OPAL:
 
 * **Bytecode Representation**(OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses on top of Java class files.  
 
-* **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at very different levels of precision. Additionally a three-address representation is provided that uses the results of a basic abstract interpretation.
+* **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at different levels of precision. Additionally, a three-address representation is provided that uses the results of a basic abstract interpretation.
 
 * **Dependencies Extraction**(OPAL/de): Provides support for extracting and analyzing a project's source code dependencies. This project is the foundation for projects to, e.g., check architectures.
 
 * **Architecture Validation**(OPAL/av): A small framework to check a project's implemented architecture against a specified one.
 
-* **Demos**(OPAL/demos): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos`). After that you can `run` several small demo analyses.
+* **Demos**(OPAL/demos): Contains working code samples that demonstrates how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos`). After that you can `run` several small demo analyses.
 
 * **BugPicker**(OPAL/TOOLS/bp): A tool to find data-flow dependent issues in source code. The kind of issues that are identified range from useless defensive checks to bugs that lead to (unhandled) runtime exceptions.
 
@@ -33,13 +33,12 @@ OPAL uses SBT as its build tool and working with OPAL is particularly easy using
 Make sure that you have Java 8, Scala 2.11.8 and SBT 0.13.x installed and running. Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder.
 
-* Call `sbt clean cleanFiles cleanCache cleanLocal eclipse copyResources it:compile test:compile unidoc publishLocal`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
+* Call `sbt cleanBuild`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
 * Go to the `TOOLS/bp` folder and call `sbt compile` to compile the BugPicker. You can run the BugPicker using `sbt run`.
 * [Optional - but highly recommended] Edit the file `local.sbt` and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
 -Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (CPUBoundTasks === "Number of real CPUs (Cores)", IOBoundTasks === "Number of (hyperthreaded) cores * 1 .5"). You can also set these properties when using sbt by typing: `eval sys.props("org.opalj.threads.CPUBoundTasks") = "1"`.
-* Call `sbt test` to run the unit tests and to test that everything works as expected. Please note, that some tests generate some additional (colored) output. However, as long as all tests succeed without an error, everything is OK. *If `sbt test` fails it may be due to insufficient memory. In this case it is necessary to edit your `.sbtconfig` file and to specify that you want to use more memory (`-Xmx3072M`).*
+* Call `sbt test` to run the unit tests and to test that everything works as expected. Please note, that some tests generate some additional (colored) output. However, as long as all tests succeed without an error, everything is OK. *If `sbt test` fails it may be due to insufficient memory. In this case it is necessary to start SBT itself with more memory.*
 * Call `sbt it:test` to run the integration test suite. Executing this test suite will take several minutes (your .sbtconfig file needs to be changed accordingly).
-* If you want to contribute to OPAL and want to develop your analyses using Eclipse, call `sbt eclipse` in the main folder and/or in the `TOOLS/bp` folder to create Eclipse projects. Afterwards, you can directly import the projects into Eclipse.
 
 You are ready to go.
 
