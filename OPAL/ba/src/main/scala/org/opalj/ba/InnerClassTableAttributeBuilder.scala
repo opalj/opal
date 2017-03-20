@@ -35,10 +35,9 @@ package ba
  * @author Malte Limmeroth
  */
 trait InnerClassTableAttributeBuilder {
+
     /**
      * Defines the [[org.opalj.br.InnerClassTable]] attribute.
-     *
-     *
      */
     def INNERCLASSES(): this.type
 }

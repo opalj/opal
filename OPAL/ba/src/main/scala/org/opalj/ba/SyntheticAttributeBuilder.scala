@@ -31,11 +31,12 @@ package org.opalj.ba
 import org.opalj.br
 
 /**
- * Factory for builders to add the [[org.opalj.br.Synthetic]] attribute.
+ * Factory to add the [[org.opalj.br.Synthetic]] attribute.
  *
  * @author Malte Limmeroth
  */
-trait SyntheticAttributeBuilder extends AttributeBuilder {
+trait SyntheticAttributeBuilder { this: AttributesContainer ⇒
+
     /**
      * Defines the [[org.opalj.br.Synthetic]] attribute.
      */

@@ -35,11 +35,14 @@ package ba
  * @author Malte Limmeroth
  *
  */
-trait ExceptionsAttributeBuilder extends AttributeBuilder {
+trait ExceptionsAttributeBuilder { this: AttributesContainer ⇒
+
     /**
      * Defines the [[org.opalj.br.ExceptionTable]] attribute.
      *
      * @param fqn the Exception(s) as fully qualified names in JVM notation.
      */
-    def EXCEPTIONS(fqn: String*): this.type = addAttribute(br.ExceptionTable(fqn.map(s ⇒ br.ObjectType(s))))
+    def EXCEPTIONS(fqn: String*): this.type = {
+        addAttribute(br.ExceptionTable(fqn.map(br.ObjectType.apply)))
+    }
 }

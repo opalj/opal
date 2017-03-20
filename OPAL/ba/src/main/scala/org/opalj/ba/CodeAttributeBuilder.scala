@@ -50,6 +50,7 @@ class CodeAttributeBuilder private[ba] (
         private var exceptionHandlers: br.ExceptionHandlers,
         private var attributes:        br.Attributes
 ) {
+
     /**
      * Defines the max_stack value.
      */

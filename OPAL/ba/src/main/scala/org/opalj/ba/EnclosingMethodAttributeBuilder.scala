@@ -36,7 +36,7 @@ import org.opalj.br.ObjectType
  *
  * @author Malte Limmeroth
  */
-trait EnclosingMethodAttributeBuilder extends AttributeBuilder {
+trait EnclosingMethodAttributeBuilder { this: AttributesContainer ⇒
     /**
      * Defines the [[org.opalj.br.EnclosingMethod]] attribute.
      *

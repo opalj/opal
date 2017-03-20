@@ -34,11 +34,13 @@ package ba
  *
  * @author Malte Limmeroth
  */
-trait SourceFileAttributeBuilder extends AttributeBuilder {
+trait SourceFileAttributeBuilder { this: AttributesContainer ⇒
+
     /**
      * Defines the [[org.opalj.br.SourceFile]] attribute.
      */
     def SOURCEFILE(sourceFile: String): this.type = {
         addAttribute(br.SourceFile(sourceFile))
     }
+
 }

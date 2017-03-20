@@ -43,13 +43,20 @@ class MethodBuilder(
     private var attributes:  br.Attributes       = IndexedSeq.empty,
     private var body:        Option[br.Code]     = None,
     private var annotations: Map[br.PC, AnyRef]  = Map.empty
-) extends ClassFileMemberBuilder
+) extends AttributesContainer
+        with ClassFileMemberBuilder
         with DeprecatedAttributeBuilder
         with ExceptionsAttributeBuilder
         with SyntheticAttributeBuilder {
 
-    override private[ba] def addAccessFlags(accessFlags: Int): this.type = {
+    override def addAccessFlags(accessFlags: Int): this.type = {
         this.accessFlags = this.accessFlags | accessFlags
+
+        this
+    }
+
+    override def addAttribute(attribute: Attribute) = {
+        attributes :+= attribute
 
         this
     }
@@ -60,8 +67,8 @@ class MethodBuilder(
      * @see [[CODE$]]
      * @see [[CodeAttributeBuilder]]
      */
-    def apply(codeAttributeBuilder: CodeAttributeBuilder): this.type = {
-        val (code, tempAnnotations) = codeAttributeBuilder.buildCodeAndAnnotations(accessFlags, name, descriptor)
+    def apply(codeBuilder: CodeAttributeBuilder): this.type = {
+        val (code, tempAnnotations) = codeBuilder.buildCodeAndAnnotations(accessFlags, name, descriptor)
         body = Some(code)
         annotations = tempAnnotations
         this
@@ -86,9 +93,4 @@ class MethodBuilder(
         (method, annotations)
     }
 
-    override def addAttribute(attribute: Attribute) = {
-        attributes :+= attribute
-
-        this
-    }
 }

@@ -47,17 +47,16 @@ class ClassFileBuilder(
     private var methods:        br.Methods                      = IndexedSeq.empty,
     private var attributes:     br.Attributes                   = IndexedSeq.empty,
     private var annotations:    Map[br.Method, Map[br.PC, Any]] = Map.empty
-) extends AttributeBuilder
+) extends AttributesContainer
         with DeprecatedAttributeBuilder
         with EnclosingMethodAttributeBuilder
         with SyntheticAttributeBuilder
         with SourceFileAttributeBuilder {
 
     /**
-     * Defines the extending class.
+     * Specifies the extended class.
      *
-     * @param fqn The extending class name in JVM notation as a fully qualified name, e.g.
-     *            "java/lang/Object".
+     * @param fqn The extended class in JVM notation, e.g. "java/lang/Object".
      */
     def EXTENDS(fqn: String): this.type = {
         superclassType = Some(br.ObjectType(fqn))
@@ -66,10 +65,9 @@ class ClassFileBuilder(
     }
 
     /**
-     * Defines the implemented interfaces.
+     * Specifies the implemented interfaces.
      *
-     * @param fqns The interfaces class names in JVM notation as a fully qualified name, e.g.
-     *            "java/lang/Object".
+     * @param fqns The implemented interfaces in JVM notation, e.g. "java/io/Serializable".
      */
     def IMPLEMENTS(fqns: String*): this.type = {
         interfaceTypes = fqns.map(br.ObjectType.apply)
@@ -114,9 +112,9 @@ class ClassFileBuilder(
         if (!(
             bi.ACC_INTERFACE.isSet(accessFlags) ||
             methods.exists(_.isConstructor) ||
-            // If "only" the following partical condition holds,
-            // the the class file will be invalid, but we can't 
-            // generate a default constructor, because we don't 
+            // If "only" the following partial condition holds,
+            // then the class file will be invalid; we can't
+            // generate a default constructor, because we don't
             // know the target!
             superclassType.isEmpty
         )) {
@@ -149,7 +147,7 @@ class ClassFileBuilder(
     /**
      * Adds the given [[org.opalj.br.Attribute]].
      */
-    override private[ba] def addAttribute(attribute: br.Attribute): this.type = {
+    override def addAttribute(attribute: br.Attribute): this.type = {
         attributes :+= attribute
 
         this

@@ -36,7 +36,8 @@ import org.opalj.br
  * @author Malte Limmeroth
  *
  */
-trait DeprecatedAttributeBuilder extends AttributeBuilder {
+trait DeprecatedAttributeBuilder { this: AttributesContainer ⇒
+
     /**
      * Defines the [[org.opalj.br.Deprecated]] attribute.
      */

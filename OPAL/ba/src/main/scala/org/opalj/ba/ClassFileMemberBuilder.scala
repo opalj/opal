@@ -35,8 +35,10 @@ package ba
  * @author Malte Limmeroth
  */
 trait ClassFileMemberBuilder {
+
     /**
      * Adds the given accessFlag to the ClassFileMemberBuilders accessFlags.
      */
-    private[ba] def addAccessFlags(accessFlags: Int): this.type
+    def addAccessFlags(accessFlags: Int): this.type
+
 }

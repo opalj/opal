@@ -30,14 +30,15 @@ package org.opalj
 package ba
 
 /**
- * Factory for builders to add [[org.opalj.br.Attribute]]s.
+ * Container for [[org.opalj.br.Attribute]]s.
  *
  * @author Malte Limmeroth
  */
-trait AttributeBuilder {
+trait AttributesContainer {
+
     /**
-     * Adds the given [[org.opalj.br.Attribute]].
+     * Adds the given [[org.opalj.br.Attribute]] to the class file's attributes.
      */
-    private[ba] def addAttribute(attribute: br.Attribute): this.type
+    def addAttribute(attribute: br.Attribute): this.type
 
 }

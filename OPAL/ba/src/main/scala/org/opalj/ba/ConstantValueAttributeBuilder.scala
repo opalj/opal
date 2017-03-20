@@ -33,15 +33,31 @@ package ba
  * Factory for the [[org.opalj.br.ConstantFieldValue]] attribute.
  *
  * @author Malte Limmeroth
- *
  */
-trait ConstantValueAttributeBuilder extends AttributeBuilder {
+trait ConstantValueAttributeBuilder { this: AttributesContainer ⇒
+
     /**
-     * Defines the [[org.opalj.br.ConstantFieldValue]] attribute.
+     * Adds the [[org.opalj.br.ConstantLong]] attribute.
      */
     def CONSTANTVALUE(v: Long): this.type = addAttribute(br.ConstantLong(v))
+
+    /**
+     * Adds the [[org.opalj.br.ConstantFloat]] attribute.
+     */
     def CONSTANTVALUE(v: Float): this.type = addAttribute(br.ConstantFloat(v))
+
+    /**
+     * Adds the [[org.opalj.br.ConstantDouble]] attribute.
+     */
     def CONSTANTVALUE(v: Double): this.type = addAttribute(br.ConstantDouble(v))
+
+    /**
+     * Adds the [[org.opalj.br.ConstantInteger]] attribute.
+     */
     def CONSTANTVALUE(v: Int): this.type = addAttribute(br.ConstantInteger(v))
+
+    /**
+     * Adds the [[org.opalj.br.ConstantString]] attribute.
+     */
     def CONSTANTVALUE(v: String): this.type = addAttribute(br.ConstantString(v))
 }

@@ -40,12 +40,20 @@ class FieldBuilder(
     private var name:        String,
     private var fieldType:   br.FieldType,
     private var attributes:  br.Attributes = IndexedSeq.empty
-) extends ClassFileMemberBuilder
+) extends AttributesContainer
+        with ClassFileMemberBuilder
         with DeprecatedAttributeBuilder
         with SyntheticAttributeBuilder
         with ConstantValueAttributeBuilder {
-    override private[ba] def addAccessFlags(accessFlags: Int) = {
+
+    override def addAccessFlags(accessFlags: Int) = {
         this.accessFlags = this.accessFlags | accessFlags
+
+        this
+    }
+
+    override def addAttribute(attribute: Attribute) = {
+        attributes :+= attribute
 
         this
     }
@@ -59,9 +67,4 @@ class FieldBuilder(
         )
     }
 
-    override private[ba] def addAttribute(attribute: Attribute) = {
-        attributes :+= attribute
-
-        this
-    }
 }

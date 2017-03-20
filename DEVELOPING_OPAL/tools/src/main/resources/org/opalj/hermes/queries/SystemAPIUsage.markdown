@@ -1,30 +1,21 @@
-#System and Runtime API
+# java.lang.System and java.lang.Runtime API
 
-Represents the pure API usage to certain Java API feature that concern the JVM, Permissions, and the
-underlying operating system.
+Represents the usage of core methods of `java.lang.System` or `java.lang.Runtime` that are related to the state of the JVM, Permissions, or to accessing the underlying operating system.
 
-<dl>
-<dt>Process</dt>
-<dd>The <i>Command Execution</i> feature shows if external processes are created. In Java that can be
-either achieved by <code>Runtime.exec(...)</code> or via a <code>java.lang.ProcessBuilder</code>.</dd>
+## Command Execution
+Counts method calls that create external processes. In Java that can be either achieved using `Runtime.exec(...)` or using `java.lang.ProcessBuilder`.
 
-<dt>JVM Exit</dt>
-<dd>The <i>JVM Exit</i> feature reveals calls that stop the JVM either by a normal exit or a
-forced stop.</dd>
+## JVM Exit
+Counts calls to JVM methods (`Runtime.halt`/`Runtime.exit`) that stop the JVM.
 
-<dt>Native Libraries</dt>
-<dd>The <i>Native Libraries</i> feature does reflect the usage of native libraries. The count
-shows how many native libraries are loaded within the given project.</dd>
+## Native Libraries
+The *Native Libraries* feature reflects the usage of native libraries loaded using `java.lang.Runtime`. The count shows how many load library calls are found in the project.
 
-<dt>SecurityManager</dt>
-<dd>The <i>SecurityManager</i> category keeps track of the usage of a <code>java.lang.SecurityManager</code>
-in a project. Those features include getting as well as setting an instance of <code>java.lang.SecurityManager</code>.
-</dd>
+## SecurityManager
+Counts usages of the `java.lang.SecurityManager` in a project. This includes getting as well as setting an instance of `java.lang.SecurityManager`.
 
-<dt>Environment</dt>
-<dd>Any access or query to the system's environment variables is captured by the <code>Information</code> group.</dd>
+## Sound
+The Sound group counts how often the sound API to play songs is used. This group only considers the classes in the two packages `javax.sound.sampled` and `javax.scene.media`
 
-<dt>Sound</dt>
-<dd>The <i>Sound</i> group counts how often a sound is played. This group fully relies on the classes
-in the two packages <code>javax.sound.sampled</code> and <code>javax.scene.media</code>.</dd>
-</dl>
+## Environment
+Any access or query to the system's environment variables is captured by the `Information` group.
