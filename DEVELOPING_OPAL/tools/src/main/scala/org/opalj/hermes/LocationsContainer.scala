@@ -27,39 +27,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package properties
+package hermes
 
-import org.opalj.br.ClassFile
+import scala.language.implicitConversions
+
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain
 
 /**
- * This set property describes if a class is further extensible by yet unknown types (i.e., can be (transitively) inherited from).
- * This property generally depends on the kind of the project. If the project is an application, all classes
- * are considered to be closed; i.e., the class hierarchy is considered to be fixed; if the
- * analyzed project is a library then the result depends on the concrete assumption about the
- * openness of the library.
+ * A collection of up to [[org.opalj.hermes.Globals.MaxLocations]] locations where a specific
+ * feature was found.
  *
- * == Extensibility w.r.t. the open-packages assumption ==
+ * Using a `LocationsContainer` has the advantage that we do not store unwanted locations.
  *
- * A class is extensible if:
- *  $ - the class is not (effectively) final
- *  $ - one of its subclasses is extensible
+ * @tparam S The kind of the source. E.g., `java.net.URL`.
  *
- * == Extensibility w.r.t. the closed-packages assumption ==
- *
- * A class is extensible if:
- *  $ - the class is public and not (effectively) final
- *  $ - one of its subclasses is extensible
- *
- * == Special cases ==
- *
- * If a class is defined in a package starting with '''java.*''', it has to be treated like classes that are
- * analyzed w.r.t. to closed-packages assumption. This is necessary because the default `ClassLoader` prevents
- * the definition of further classes within these packages, hence, they are closed by definition.
- *
- * If the analyzed codebase has an incomplete type hierarchy which leads to unknown subtype relationships, it is
- * necessary to add these particular classes to the computed set of extensible classes.
- *
- * @author Michael Reif
+ * @author Michael Eichberg
  */
-case object IsExtensible extends SetProperty[ClassFile]
+class LocationsContainer[S] {
+
+    private var theLocationsCount = 0
+    private var theLocations: Chain[Location[S]] = Naught
+
+    def +=(location: ⇒ Location[S]): Unit = {
+        theLocationsCount += 1
+        if (theLocationsCount <= Globals.MaxLocations) {
+            theLocations :&:= location
+        }
+    }
+
+    /** The number of locations that were seen. */
+    def size: Int = theLocationsCount
+
+    /**
+     * The locations that were memorized; this depends on the global settings regarding the
+     * precision and amount of location information that is kept.
+     */
+    def locations: Chain[Location[S]] = theLocations
+}
+
+object LocationsContainer {
+
+    implicit def toLocationsChain[S](lc: LocationsContainer[S]): Chain[Location[S]] = {
+        lc.locations
+    }
+}

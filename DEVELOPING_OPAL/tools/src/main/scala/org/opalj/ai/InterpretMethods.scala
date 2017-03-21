@@ -208,7 +208,7 @@ object InterpretMethodsAnalysis {
                     val message = method.toJava(
                         classFile,
                         s"Evaluation steps (code length:$codeLength): "+
-                            s"${naiveEvaluatedCount} vs. $evaluatedCount"
+                            s"${naiveEvaluatedCount} (w/o dead variables analysis) vs. $evaluatedCount"
                     )
                     println(message)
                 }

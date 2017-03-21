@@ -39,19 +39,18 @@ import java.io.ByteArrayOutputStream
 case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_Pool_Entry {
 
     override final def size: Int = {
-        1 + // tag
-            2 + // to store the length
-            // The length of the string in bytes if the modified UTF-8 encoding is used which
-            // is not equivalent to `value.length`.
-            raw.length
+        // The length of the string in bytes is not equivalent to `value.length` due to the
+        // usage of the modified UTF8 enconding.
+        1 /* tag */ + 2 /* the length */ + raw.length /* the bytes of the string */
     }
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Utf8
 
     override def asString = value
 
-    override def asCPNode(implicit cp: Constant_Pool): Node =
+    override def asCPNode(implicit cp: Constant_Pool): Node = {
         <span class="cp_entry">CONSTANT_Utf8_info("<span class="constant_value">{ value }</span>")</span>
+    }
 
     override def asInlineNode(implicit cp: Constant_Pool): Node =
         throw new UnsupportedOperationException
@@ -73,4 +72,3 @@ object CONSTANT_Utf8 {
         )
     }
 }
-

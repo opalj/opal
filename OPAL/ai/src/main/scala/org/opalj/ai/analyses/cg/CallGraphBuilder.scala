@@ -50,8 +50,6 @@ import org.opalj.br.analyses.SomeProject
  */
 class CallGraphBuilder(val project: SomeProject) {
 
-    type PCs = UShortSet
-
     private[this] var allCallEdges = List.empty[(Method, Map[PC, Set[Method]])]
 
     /**
@@ -78,10 +76,10 @@ class CallGraphBuilder(val project: SomeProject) {
 
         import scala.collection.mutable.{OpenHashMap, AnyRefMap, WrappedArray}
 
-        val calledByMapFuture: Future[AnyRefMap[Method, AnyRefMap[Method, PCs]]] = Future {
+        val calledByMapFuture: Future[AnyRefMap[Method, AnyRefMap[Method, MutablePCs]]] = Future {
 
-            val calledByMap: AnyRefMap[Method, AnyRefMap[Method, PCs]] =
-                new AnyRefMap[Method, AnyRefMap[Method, PCs]](project.methodsCount)
+            val calledByMap: AnyRefMap[Method, AnyRefMap[Method, MutablePCs]] =
+                new AnyRefMap[Method, AnyRefMap[Method, MutablePCs]](project.methodsCount)
             for {
                 (caller, edges) ← allCallEdges
                 (pc, callees) ← edges
@@ -90,7 +88,7 @@ class CallGraphBuilder(val project: SomeProject) {
                 val callers =
                     calledByMap.getOrElseUpdate(
                         callee,
-                        new AnyRefMap[Method, PCs](8)
+                        new AnyRefMap[Method, MutablePCs](8)
                     )
                 callers.get(caller) match {
                     case Some(pcs) ⇒

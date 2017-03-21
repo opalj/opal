@@ -31,7 +31,7 @@ package org.opalj.fpcf
 /**
  * Encapsulates the result of the computation of a property.
  */
-sealed trait PropertyComputationResult {
+sealed abstract class PropertyComputationResult {
 
     private[fpcf] def id: Int
 
@@ -49,7 +49,7 @@ sealed trait PropertyComputationResult {
  *      the property store – the behavior is undefined and may/will result in immediate but
  *      also deferred arbitrary failures!
  */
-sealed trait FinalPropertyComputationResult extends PropertyComputationResult
+sealed abstract class FinalPropertyComputationResult extends PropertyComputationResult
 
 /**
  * Encapsulates the '''final result''' of the computation of the property `p` for the given
@@ -178,8 +178,12 @@ case class IntermediateResult(
 private[fpcf] object IntermediateResult { private[fpcf] final val id = 6 }
 
 /**
- * Encapsulates some result and also some computations that should be scheduled after handling the
- * result.
+ * Encapsulates some result and also some computations that should be scheduled after the results
+ * were stored. I.e., in this case the property store guarantees that all values can be queried
+ * by `nextComputations` if necessary.
+ *
+ * Incremental results are particularly usefull to process tree structures such as the class
+ * hierarchy.
  */
 case class IncrementalResult[E <: Entity](
         result:           PropertyComputationResult,
@@ -192,6 +196,11 @@ case class IncrementalResult[E <: Entity](
 
 private[fpcf] object IncrementalResult { private[fpcf] final val id = 7 }
 
+/**
+ * Just a collection of multiple results.
+ *
+ * @param results
+ */
 case class Results(
         results: TraversableOnce[PropertyComputationResult]
 ) extends PropertyComputationResult {
@@ -213,10 +222,10 @@ private[fpcf] object Results {
  * been computed concurrently. I.e., it may be the case that multiple analyses did derive some
  * knowledge concurrently; this generally happens if during the analysis of an
  * entity A some knowledge may be derived about an entity B and if there maybe an entity
- * C, which when analyzed, will also derive the same knowledge about B.
+ * C, which, when analyzed, will also derive the some knowledge about B.
  *
  * @note    In simple cases, i.e., where a property is always unknown or has one specific
- *          value it may be easier and more efficient to just `set` or `put` the value directly.
+ *          value, it may be easier and more efficient to just `set` or `put` the value directly.
  *
  * @param   f A function that is given the current property associated with e and
  *          which computes the new property or leaves the property unchanged.
@@ -241,7 +250,7 @@ private[fpcf] object ConcurrentResult { private[fpcf] final val id = 9 }
 
 //
 //
-// PACKAGE PRIVATE (INTERNALLY USED) PropertyComputationResult OBJECTS
+// PropertyStore PRIVATE (INTERNALLY USED) PropertyComputationResult OBJECTS
 //
 //
 

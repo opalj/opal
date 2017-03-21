@@ -34,40 +34,80 @@ package util
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * A common super trait for API related feature such as the usage of common or interesting APIs.
  *
  * @author Michael Reif
  */
-sealed trait APIFeature {
+sealed abstract class APIFeature {
 
     /**
      * Return the feature id of the the feature.
      *
      * @note Feature ids have to be unique.
      */
-    def toFeatureID: String
+    def featureID: String
 
     /**
      * Returns all methods of the API that belong to this feature.
      */
-    def getAPIMethods: Chain[APIMethod]
+    def apiMethods: Chain[APIMethod]
 }
+
+/**
+ * Common trait that abstracts over all Class extension scenarios.
+ *
+ */
+sealed abstract class ClassExtension extends APIFeature {
+
+    def declClass: ObjectType
+
+    override def apiMethods: Chain[APIMethod] = Naught
+}
+
+/**
+ * Represents an extension of a specific class
+ */
+case class APIClassExtension(featureID: String, declClass: ObjectType) extends ClassExtension
 
 /**
  * Common trait that abstracts over instance and static api methods.
  */
-sealed trait APIMethod extends APIFeature
+sealed abstract class APIMethod extends APIFeature {
+
+    def declClass: ObjectType
+
+    def name: String
+
+    def descriptor: Option[MethodDescriptor]
+
+    def unapply(i: MethodInvocationInstruction): Boolean
+
+    final override val apiMethods = Chain(this)
+
+    /**
+     * Return the feature id of the feature.
+     *
+     * @note Feature ids have to be unique.
+     */
+    override val featureID: String = {
+        val methodName = descriptor.map(_.toJava(name)).getOrElse(name)
+        val abbreviatedMethodName = methodName.replaceAll("java.lang.Object", "Object")
+        s"${declClass.toJava}\n$abbreviatedMethodName"
+    }
+
+}
 
 /**
  * Represents an instance API call.
  *
- *
- * @param declClass ObjectType of the receiver.
- * @param name Name of the API method.
- * @param descriptor Optional method descriptor, is no descriptor assigned, it represents all methods
- *                   with the same name, declared in the same class.
+ * @param  declClass ObjectType of the receiver.
+ * @param  name Name of the API method.
+ * @param  descriptor Optional method descriptor, is no descriptor assigned, it represents
+ *         all methods with the same name, declared in the same class.
  */
 case class InstanceAPIMethod(
         declClass:  ObjectType,
@@ -75,20 +115,12 @@ case class InstanceAPIMethod(
         descriptor: Option[MethodDescriptor]
 ) extends APIMethod {
 
-    /**
-     * Return the feature id of the the feature.
-     *
-     * @note Feature ids have to be unique.
-     */
-    override def toFeatureID: String = {
-        val methodName = descriptor match {
-            case Some(md) ⇒ md.toJava(name).replaceAll("java.lang.Object", "Object")
-            case None     ⇒ name
-        }
-
-        s"${declClass.toJava}\n$methodName"
+    def unapply(i: MethodInvocationInstruction): Boolean = {
+        i.isInstanceMethod &&
+            this.declClass == i.declaringClass &&
+            this.name == i.name &&
+            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
     }
-    override def getAPIMethods = Chain(this)
 }
 
 /**
@@ -117,10 +149,10 @@ object InstanceAPIMethod {
  * Represents a static API call.
  *
  *
- * @param declClass ObjectType of the receiver.
- * @param name Name of the API method.
- * @param descriptor Optional method descriptor, is no descriptor assigned, it represents all methods
- *                   with the same name, declared in the same class.
+ * @param  declClass ObjectType of the receiver.
+ * @param  name Name of the API method.
+ * @param  descriptor Optional method descriptor, is no descriptor assigned, it represents
+ *         all methods with the same name, declared in the same class.
  */
 case class StaticAPIMethod(
         declClass:  ObjectType,
@@ -128,21 +160,12 @@ case class StaticAPIMethod(
         descriptor: Option[MethodDescriptor]
 ) extends APIMethod {
 
-    /**
-     * Return the feature id of the the feature.
-     *
-     * @note Feature ids have to be unique.
-     */
-    override def toFeatureID: String = {
-        val methodName = descriptor match {
-            case Some(md) ⇒ md.toJava(name)
-            case None     ⇒ name
-        }
-
-        s"${declClass.fqn}\n$methodName"
+    def unapply(i: MethodInvocationInstruction): Boolean = {
+        !i.isInstanceMethod &&
+            this.declClass == i.declaringClass &&
+            this.name == i.name &&
+            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
     }
-
-    override def getAPIMethods = Chain(this)
 }
 
 /**
@@ -174,12 +197,4 @@ object StaticAPIMethod {
  *
  * @note It is assumed that the passed featureID is unique throughout all feature extractors.
  */
-case class APIFeatureGroup(
-        apiMethods: Chain[APIMethod],
-        featureID:  String
-) extends APIFeature {
-
-    override def toFeatureID: String = this.featureID
-
-    override def getAPIMethods: Chain[APIMethod] = apiMethods
-}
+case class APIFeatureGroup(apiMethods: Chain[APIMethod], featureID: String) extends APIFeature

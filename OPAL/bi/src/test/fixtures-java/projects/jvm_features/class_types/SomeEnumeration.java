@@ -26,56 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-/*
-package org.opalj
-package collection
-package immutable
+package class_types;
 
 /**
- * Implementation of a immutable binary digital search tree (a Trie with M=2) that
- * is optimized for memory efficiency.
+ * Defines a simple marker annotation.
  *
+ * NOTE<br />
+ * This class is only meant to be (automatically) compiled by OPAL's build script.
+ *
+ * @author Michael Eichberg
  */
-sealed trait TrieNode[+T] {
+public enum SomeEnumeration {
 
-    def add[X >: T](value: X)(implicit key: Int): TrieNode[X]
-
-    def foreach[U](f: (T) ⇒ U): Unit
-
-    // Trie Management
-    protected def left: TrieNode[T]
-    protected def right: TrieNode[T]
+    Value1, Value2, Value3;
 
 }
-
-case object EmptyTrie extends TrieNode[Nothing] {
-    def foreach[U](f: (Nothing) ⇒ U): Unit = {}
-    def add[X >: Nothing](value: X)(implicit key: Int): TrieNode[X] = new LTrieNode(value)
-    protected def left: TrieNode[Nothing] = null
-    protected def right: TrieNode[Nothing] = null
-}
-
-class LTrieNode[+T](val value: T) extends TrieNode[T] {
-    def foreach[U](f: (T) ⇒ U): Unit = { f(value) }
-
-    def add[X >: T](value: X)(implicit key: Int): TrieNode[X]
-
-    protected def left = null
-    protected def right = null
-}
-
-abstract class LOTrieNode[+T](
-        val v:              T,
-        protected var left: TrieNode[T]
-) extends TrieNode[T] {
-    protected def right = null
-}
-
-object TrieDemo extends App {
-
-    class Store extends TrieNode[Int] {
-
-    }
-
-}
-*/

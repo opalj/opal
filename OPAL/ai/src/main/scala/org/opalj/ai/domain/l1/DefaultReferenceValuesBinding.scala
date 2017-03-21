@@ -38,7 +38,7 @@ import org.opalj.collection.immutable.UIDSet
 
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
-import org.opalj.br.UpperTypeBound
+import org.opalj.br.ReferenceType
 
 /**
  * @author Michael Eichberg
@@ -96,7 +96,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         t:              Timestamp
     ): DomainObjectValue = {
         if (upperTypeBound.isSingletonSet) {
-            ObjectValue(origin, isNull, false, upperTypeBound.first, t)
+            ObjectValue(origin, isNull, false, upperTypeBound.head, t)
         } else
             new MObjectValue(origin, isNull, upperTypeBound, t)
     }
@@ -127,7 +127,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         values:            SortedSet[DomainSingleOriginReferenceValue],
         isNull:            Answer,
         isPrecise:         Boolean,
-        theUpperTypeBound: UpperTypeBound,
+        theUpperTypeBound: UIDSet[_ <: ReferenceType],
         t:                 Timestamp
     ): DomainMultipleReferenceValues = {
         new MultipleReferenceValues(values, isNull, isPrecise, theUpperTypeBound, t)

@@ -34,24 +34,36 @@ import java.net.URL
 
 import scala.collection.Map
 
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.GlobalLogContext
 import org.opalj.br
 import org.opalj.da
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.Project.JavaLibraryClassFileReader
+import org.opalj.br.analyses.Project.JavaClassFileReader
 
 /**
  * Meta-information about a project that belongs to a corpus.
  *
- * @note Represents the corresponding information in the corpus specific configuration file.
+ * @note Represents one project of the configured using the config key: "org.opalj.hermes.projects".
  *
  * @author Michael Eichberg
  */
-case class ProjectConfiguration(id: String, cp: String, libcp: Option[String]) {
+case class ProjectConfiguration(
+        id:             String,
+        cp:             String,
+        libcp:          Option[String],
+        libcp_defaults: Option[String]
+) {
 
     private[this] var theProjectStatistics: Map[String, Int] = Map.empty
 
     /**
-     * General statistics about a project. See
-     * [[org.opalj.br.analyses.Project.statistics]] for further information.
+     * General statistics about a project.
+     * See [[org.opalj.br.analyses.Project.statistics]] for further information.
+     *
+     * @note This information is only available after instantiate was called.
      */
     def statistics: Map[String, Int] = {
         theProjectStatistics
@@ -64,36 +76,84 @@ case class ProjectConfiguration(id: String, cp: String, libcp: Option[String]) {
      * also returned to facilitate analyses w.r.t. the representativeness of the bytecode.
      */
     def instantiate: ProjectInstantiation = {
-        // we will do our best to garbage collect previous projects
-        org.opalj.util.gc()
 
+        // let's try to garbage collect previous projects
+        new Thread(new Runnable { def run: Unit = { System.gc() } }).start
+
+        info(
+            "project setup",
+            s"creating new project: $id\n\t\t"+
+                s"cp=$cp\n\t\tlibcp=$libcp\n\t\tlibcp_defaults=$libcp_defaults"
+        )(GlobalLogContext)
+
+        val cpJARs = cp.split(File.pathSeparatorChar).flatMap { jar ⇒
+            val jarFile = new File(jar)
+            if (!jarFile.exists || !jarFile.canRead()) {
+                error("project configuration", s"invalid class path: $jarFile")(GlobalLogContext)
+                None
+            } else {
+                Some(jarFile)
+            }
+        }
+
+        //
+        // SETUP BR PROJECT
+        //
         val noBRClassFiles = Traversable.empty[(br.ClassFile, URL)]
-        val noDAClassFiles = Traversable.empty[(da.ClassFile, URL)]
-
-        val projectJARs = cp.split(File.pathSeparatorChar)
-
-        val daProjectClassFiles = projectJARs.foldLeft(noDAClassFiles) { (classFiles, jarFile) ⇒
-            val theFile = new File(jarFile)
-            if (!theFile.exists || !theFile.canRead())
-                Console.err.println(s"invalid class path: $theFile")
-            classFiles ++ da.ClassFileReader.ClassFiles(theFile)
+        val brProjectClassFiles = cpJARs.foldLeft(noBRClassFiles) { (classFiles, cpJAR) ⇒
+            classFiles ++ JavaClassFileReader().ClassFiles(cpJAR)
         }
-        val brProjectClassFiles = projectJARs.foldLeft(noBRClassFiles) { (classFiles, jarFile) ⇒
-            classFiles ++ Project.JavaClassFileReader().ClassFiles(new File(jarFile))
-        }
-        val libraryClassFiles = {
+        val libcpJARs = {
             libcp match {
                 case None ⇒
                     noBRClassFiles
-                case Some(cp) ⇒
-                    val libraryJARs = cp.split(File.pathSeparatorChar)
-                    libraryJARs.foldLeft(noBRClassFiles) { (classFiles, jar) ⇒
-                        classFiles ++ Project.JavaLibraryClassFileReader.ClassFiles(new File(jar))
+                case Some(libs) ⇒
+                    val libcpJARs = libs.split(File.pathSeparatorChar)
+                    libcpJARs.foldLeft(noBRClassFiles) { (classFiles, libcpJAR) ⇒
+                        val libcpJARFile = new File(libcpJAR)
+                        if (!libcpJARFile.exists || !libcpJARFile.canRead()) {
+                            error(
+                                "project configuration", s"invalid library: $libcpJARFile"
+                            )(GlobalLogContext)
+                            classFiles
+                        } else
+                            classFiles ++ JavaLibraryClassFileReader.ClassFiles(libcpJARFile)
                     }
             }
         }
+        val libraryClassFiles: Traversable[(br.ClassFile, URL)] = libcp_defaults match {
+            case None ⇒ libcpJARs
+            case Some(libraries) ⇒
+                var predefinedLibrariesClassFiles = Traversable.empty[(br.ClassFile, URL)]
+                var predefinedLibraries = libraries.split(File.pathSeparatorChar)
+                while (predefinedLibraries.nonEmpty) {
+                    predefinedLibraries.head match {
+                        case "RTJar" ⇒
+                            predefinedLibrariesClassFiles ++=
+                                br.reader.readRTJarClassFiles()(reader = JavaLibraryClassFileReader)
+                        case "JRE" ⇒
+                            predefinedLibrariesClassFiles ++=
+                                br.reader.readJREClassFiles()(reader = JavaLibraryClassFileReader)
+                        case unmatched ⇒
+                            error(
+                                "project configuration", s"unknown library: $unmatched"
+                            )(GlobalLogContext)
+
+                    }
+                    predefinedLibraries = predefinedLibraries.tail
+                }
+                predefinedLibrariesClassFiles ++ libcpJARs
+        }
         val brProject = Project(brProjectClassFiles, libraryClassFiles, true)
         theProjectStatistics = brProject.statistics
+
+        //
+        // SETUP DA CLASS FILE
+        //
+        val noDAClassFiles = Traversable.empty[(da.ClassFile, URL)]
+        val daProjectClassFiles = cpJARs.foldLeft(noDAClassFiles) { (classFiles, cpJAR) ⇒
+            classFiles ++ da.ClassFileReader.ClassFiles(cpJAR)
+        }
 
         ProjectInstantiation(brProject, daProjectClassFiles)
     }

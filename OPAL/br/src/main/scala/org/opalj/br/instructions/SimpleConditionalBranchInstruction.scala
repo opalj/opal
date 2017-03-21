@@ -75,7 +75,7 @@ trait SimpleConditionalBranchInstruction
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         val nextInstruction = indexOfNextInstruction(currentPC)
         val jumpInstruction = currentPC + branchoffset
@@ -91,8 +91,14 @@ trait SimpleConditionalBranchInstruction
     }
 
 }
+/**
+ * Extractor for [[SimpleConditionalBranchInstruction]]s.
+ */
 object SimpleConditionalBranchInstruction {
 
+    /**
+     * Extracts the instructions branchoffset.
+     */
     def unapply(i: SimpleConditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
 
 }

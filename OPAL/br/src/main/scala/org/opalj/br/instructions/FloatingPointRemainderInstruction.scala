@@ -47,7 +47,7 @@ abstract class FloatingPointRemainderInstruction extends RemainderInstruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         Chain.singleton(indexOfNextInstruction(currentPC))
     }

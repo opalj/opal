@@ -52,6 +52,17 @@ class Seconds(val timeSpan: Double) extends AnyVal with Serializable {
 
     def +(other: Seconds): Seconds = new Seconds(this.timeSpan + other.timeSpan)
 
+    final def toNanoseconds: Nanoseconds = {
+        new Nanoseconds((timeSpan * 1000.0d * 1000.0d * 1000.0d).toLong)
+    }
+
+    /**
+     * Conversion to [[Milliseconds]].
+     */
+    final def toMilliseconds: Milliseconds = {
+        new Milliseconds((timeSpan * 1000).toLong)
+    }
+
     override def toString: String = toString(withUnit = true)
 
 }

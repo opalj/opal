@@ -51,6 +51,8 @@ class BasicBlock(
         this.setSuccessors(successors)
     }
 
+    final override def nodeId: Int = startPC
+
     def copy(
         startPC:      Int          = this.startPC,
         endPC:        Int          = this.endPC,
@@ -150,8 +152,6 @@ class BasicBlock(
     //
 
     override def toString: String = s"BasicBlock(startPC=$startPC, endPC=$endPC)"
-
-    override def nodeId: Long = startPC.toLong
 
     override def toHRR: Option[String] = Some(s"[$startPC,$endPC]#=${endPC - startPC + 1}")
 

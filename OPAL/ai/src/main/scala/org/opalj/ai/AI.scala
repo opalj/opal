@@ -113,6 +113,27 @@ import org.opalj.br.instructions._
  *         about 4,5%. Additionally, it also reduces the effort spent on "expensive" joins which
  *         leads to an overall(!) improvement for the l1.DefaultDomain of ~8,5%.
  *
+ *         ==Dead Variables Elimination based on Definitive Paths==
+ *         (STILL IN DESIGN!!!!)
+ *         ===Idea===
+ *         Given an instruction i which may result in a fork of the control-flow (e.g.,
+ *         a conditional branch or an invoke instruction that may throw a catched exception).
+ *         If the (frist) evaluation of i definitively rules out several possible paths and - on
+ *         all paths that are taken - some values are dead, but live on some of the other paths,
+ *         then the respectively current values will never be propagated to the remaining paths,
+ *         even if the remaining paths are eventually taken!
+ *         This helps in variety of cases such as, e.g.,
+ *         {{{
+ *         var s : Object = null
+ *         for{/* it can statically be determined that this path is taken at least once!*/} {
+ *             s = "something else"
+ *         }
+ *         doIt(s); // here, "s" is guaranteed not to reference the orignal value "null"!
+ *         }}}
+ *         ===Implementation===
+ *         When we have a fork, check if all paths...
+ *
+ *
  * ==Customizing the Abstract Interpretation Framework==
  * Customization of the abstract interpreter is done by creating new subclasses that
  * override the relevant methods (in particular: [[AI#isInterrupted]] and [[AI#tracer]]).
@@ -366,7 +387,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 case domainWithClassHierarchy: TheClassHierarchy ⇒
                     domainWithClassHierarchy.classHierarchy
                 case _ ⇒
-                    Code.preDefinedClassHierarchy
+                    Code.BasicClassHierarchy
             }
         val (predecessorPCs, finalPCs, cfJoins) = code.predecessorPCs(classHierarchy)
         val liveVariables = code.liveVariables(predecessorPCs, finalPCs, cfJoins)
@@ -1146,6 +1167,15 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
+                def checkDefinitivePath(nextPC: PC, altPC: PC, qualifier: String): Unit = {
+                    /*    if (worklist.isEmpty &&
+                        liveVariables(nextPC) != liveVariables(altPC) &&
+                        evaluated.exists(cfJoins.contains) // if it works out we should use something more efficient than the evaluated set (e.g. evaluatedCFJoins)
+                        )
+                        println(s"$pc > $nextPC(alt: $altPC):definitive path -$qualifier")
+                        */
+                }
+
                 /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
                  * value.
@@ -1164,12 +1194,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                     domainTest(pc, operand) match {
                         case Yes ⇒
+                            checkDefinitivePath(branchTargetPC, nextPC, "ifXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 branchTargetPC, isExceptionalControlFlow = false,
                                 rest, locals
                             )
                         case No ⇒
+                            checkDefinitivePath(nextPC, branchTargetPC, "ifXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 nextPC, isExceptionalControlFlow = false,
@@ -1230,12 +1262,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val testResult = domainTest(pc, left, right)
                     testResult match {
                         case Yes ⇒
+                            checkDefinitivePath(branchTargetPC, nextPC, "ifTcmpXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 branchTargetPC, isExceptionalControlFlow = false,
                                 rest, locals
                             )
                         case No ⇒
+                            checkDefinitivePath(nextPC, branchTargetPC, "ifTcmpXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 nextPC, isExceptionalControlFlow = false,
@@ -1404,12 +1438,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 def fallThrough(
                     newOperands: Operands = operands,
                     newLocals:   Locals   = locals
-                ): Unit = {
+                ): PC = {
+                    val nextPC = pcOfNextInstruction
                     gotoTarget(
                         pc, instruction, operands, locals,
-                        pcOfNextInstruction, isExceptionalControlFlow = false,
+                        nextPC, isExceptionalControlFlow = false,
                         newOperands, newLocals
                     )
+                    nextPC
                 }
 
                 def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit = {
@@ -1421,10 +1457,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.returnsNormally)
-                        fallThrough(rest)
-                    if (computation.throwsException)
-                        handleException(computation.exceptions)
+                    //TODO val regPC =
+                    if (computation.returnsNormally) fallThrough(rest) // else -1
+                    //TODOval exPCs =
+                    if (computation.throwsException) handleException(computation.exceptions) // else UShortSet.empty
+
+                    //TODOif (computation.returnsNormally != computation.throwsException)
+                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
                 }
 
                 def computationWithExceptions(
@@ -1432,10 +1471,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.returnsNormally)
-                        fallThrough(rest)
-                    if (computation.throwsException)
-                        handleExceptions(computation.exceptions)
+                    if (computation.returnsNormally) fallThrough(rest)
+                    if (computation.throwsException) handleExceptions(computation.exceptions)
                 }
 
                 def computationWithReturnValueAndException(
@@ -1443,10 +1480,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.hasResult)
-                        fallThrough(computation.result :&: rest)
-                    if (computation.throwsException)
-                        handleException(computation.exceptions)
+                    //TODOval regPC =
+                    if (computation.hasResult) fallThrough(computation.result :&: rest) // else -1
+                    //TODO val exPCs =
+                    if (computation.throwsException) handleException(computation.exceptions) // else UShortSet.empty
+
+                    //TODO if (computation.returnsNormally != computation.throwsException)
+                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
                 }
 
                 def computationWithReturnValueAndExceptions(
@@ -1454,10 +1494,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.hasResult)
-                        fallThrough(computation.result :&: rest)
-                    if (computation.throwsException)
-                        handleExceptions(computation.exceptions)
+                    if (computation.hasResult) fallThrough(computation.result :&: rest)
+                    if (computation.throwsException) handleExceptions(computation.exceptions)
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
@@ -1471,8 +1509,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         else
                             fallThrough(rest)
                     }
-                    if (computation.throwsException)
-                        handleExceptions(computation.exceptions)
+                    if (computation.throwsException) handleExceptions(computation.exceptions)
+
+                    //TODOif (computation.hasResult != computation.throwsException)
+                    //TODO    println(s"$pc: DEFINITIVE PATH - $instruction")
                 }
 
                 // Small helper method to make type casts shorter.
@@ -2408,7 +2448,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             fallThrough(v1 :&: v2 :&: v1 :&: rest)
                     }
                     case 94 /*dup2_x2*/ ⇒ operands match {
-                        case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: (v4 /*@ CTC1()*/ ) :&: rest ⇒
+                        case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: v4 :&: rest ⇒
                             fallThrough(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest)
                         case (v1 @ CTC2()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: rest ⇒
                             fallThrough(v1 :&: v2 :&: v3 :&: v1 :&: rest)
@@ -2478,13 +2518,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         else {
                             theDomain.isValueSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
-                                    // if objectref is a subtype (or if null == Unknown) => UNCHANGED
+                                    // if objectref is a subtype or if null is Unknown => UNCHANGED
                                     fallThrough()
 
                                 case No ⇒
                                     if (isNull.isNo)
                                         handleException(theDomain.VMClassCastException(pc))
-                                    else { //isNull is unknown
+                                    else { // isNull is unknown
                                         val (newOperands, newLocals) =
                                             theDomain.refTopOperandIsNull(pc, operands, locals)
                                         fallThrough(newOperands, newLocals)
@@ -2503,9 +2543,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     // The following assert may catch bugs in the
                                     // implementation of domains!
                                     assert(
-                                        theDomain.isValueSubtypeOf(newOperands.head, supertype).isYes,
+                                        {
+                                            val castedValue = newOperands.head
+                                            theDomain.isValueSubtypeOf(castedValue, supertype).isYes
+                                        },
                                         s"the cast of $objectref to ${supertype.toJava} failed: "+
-                                            s"the subtyping relation between ${newOperands.head} and ${supertype.toJava} is "+
+                                            s"the subtyping relation between "+
+                                            s"${newOperands.head} and ${supertype.toJava} is "+
                                             theDomain.isValueSubtypeOf(newOperands.head, supertype)
                                     )
                                     fallThrough(newOperands, newLocals)

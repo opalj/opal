@@ -39,6 +39,7 @@ import org.scalatest.Matchers
 
 import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.Chain
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.TestSupport.biProject
@@ -206,9 +207,9 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                             Chain(theObjectValue),
                             Locals(IndexedSeq(theFileValue, theObjectValue))
                         )
-                    updatedOperands.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(Serializable)
-                    updatedLocals(0).asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
-                    updatedLocals(1).asInstanceOf[ReferenceValue].upperTypeBound.first should be(Serializable)
+                    updatedOperands.head.asInstanceOf[ReferenceValue].upperTypeBound.head should be(Serializable)
+                    updatedLocals(0).asInstanceOf[ReferenceValue].upperTypeBound.head should be(File)
+                    updatedLocals(1).asInstanceOf[ReferenceValue].upperTypeBound.head should be(Serializable)
                 }
 
                 {
@@ -420,7 +421,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv2 =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v2),
-                        Unknown, true, UIDSet(ArrayType(IntegerType)),
+                        Unknown, true, UIDSet1(ArrayType(IntegerType)),
                         3
                     )
 

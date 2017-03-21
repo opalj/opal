@@ -109,7 +109,7 @@ object ThrowsExceptionAnalysis {
                                 allExceptions ++= morv.values
                         }
                     }
-                    allExceptions.map(_.upperTypeBound.first.toJava).mkString(", ")
+                    allExceptions.map(_.upperTypeBound.head.toJava).mkString(", ")
                 }
 
                 // If we have the case:

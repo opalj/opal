@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,58 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package hermes
 
-import org.opalj.collection.immutable._
+/**
+ * Global configuration settings initialized when the application configuration file is
+ * read.
+ *
+ * @author Michael Eichberg
+ */
+object Globals {
 
-object UIDSetDemo {
+    /** The number of locations per feature pre project that is stored. */
+    private[hermes] final val MaxLocationsKey = "org.opalj.hermes.maxLocations"
 
-    val o1 = ObjectType("o1")
-    val o2 = ObjectType("o2")
-    val o3 = ObjectType("o3")
-    val o4 = ObjectType("o4")
-    val o5 = ObjectType("o5")
-    val o6 = ObjectType("o6")
-    val o7 = ObjectType("o7")
-
-    val s1 = UIDSet(o1)
-    val s2 = UIDSet(o2)
-    val s12 = s1 + o2
-    val s21 = s2 + o1
-    s21 == s12
-
-    UIDSet(o1, o3) == UIDSet(o3, o1)
-
-    s12.map(_.id)
- 
-    s12.filter(_.id < 20)
-    s12.filter(_.id < 23)
-
-    s12.filterNot(_.id < 20)
-    s12.filterNot(_.id < 23)
-
-    !s12.exists(_ == o3)
-
-    s12.exists(_ == o1)
-    s12.exists(_ == o2)
-    s12.forall(_.id >= 0)
-    s12.find(_.id > 10).isDefined
-    !s12.find(_.id < 10).isDefined
-
-    val se = UIDSet.empty[ObjectType]
-    !se.exists(_ == o2)
-    !se.contains(o2)
-    se.filter(_.id < 20).map(_.id)
-    se.filterNot(_.id < 20).map(_.id)
-
-    s12.filter(_.id < 100) eq s12
-    s12.filterNot(_.id > 100) eq s12
-
-    val s1234 = s12 + o3 + o4
-    s1234.map(_.id).mkString(", ")
-    s1234.foldLeft(0)(_ + _.id)
-    s2.foldLeft(o1.id)(_ + _.id)
-
-    s1234 + o7 + o5 + o6
+    // MaxLocations is a stable value; i.e., only changed once!
+    private[hermes] var MaxLocations: Int = Int.MaxValue
 
 }

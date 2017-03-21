@@ -285,7 +285,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
         final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
-        final override def upperTypeBound: UpperTypeBound = UIDSet(theUpperTypeBound)
+        final override def upperTypeBound: UpperTypeBound = new UIDSet1(theUpperTypeBound)
 
         final override def summarize(pc: PC): this.type = this
 
@@ -702,7 +702,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     }
 
     object UpperTypeBound {
-        def unapply(value: AReferenceValue): Some[UpperTypeBound] = Some(value.upperTypeBound)
+        def unapply(value: AReferenceValue): Some[UIDSet[_ <: ReferenceType]] = {
+            Some(value.upperTypeBound)
+        }
     }
 
     // -----------------------------------------------------------------------------------

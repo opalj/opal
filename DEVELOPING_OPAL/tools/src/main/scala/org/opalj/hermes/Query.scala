@@ -30,11 +30,15 @@ package org.opalj
 package hermes
 
 import scala.reflect.runtime.universe
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.GlobalLogContext
 
 /**
- * Properties of a feature extractor/query.
+ * Container for feature queries.
  *
- * @note Used to represent the corresponding information in the general configuration file.
+ * @note   Used to represent the corresponding information in the general configuration file.
+ * @param  query The name of a concrete class which inherits from `FeatureQuery` and implements
+ *         a default constructor.
  *
  * @author Michael Eichberg
  */
@@ -42,15 +46,15 @@ case class Query(query: String, activate: Boolean = true) {
 
     def isEnabled: Boolean = activate
 
-    def reify: Option[FeatureExtractor] = {
+    def reify: Option[FeatureQuery] = {
         try {
             val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
             val module = runtimeMirror.staticModule(query)
             val companionObject = runtimeMirror.reflectModule(module)
-            Some(companionObject.instance.asInstanceOf[FeatureExtractor])
+            Some(companionObject.instance.asInstanceOf[FeatureQuery])
         } catch {
             case t: Throwable ⇒
-                Console.err.println(s"failed to load: $query")
+                error("application configuration", s"failed to load: $query", t)(GlobalLogContext)
                 None
         }
     }

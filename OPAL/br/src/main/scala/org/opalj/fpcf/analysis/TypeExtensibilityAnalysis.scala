@@ -30,29 +30,34 @@ package org.opalj
 package fpcf
 package analysis
 
+import scala.annotation.tailrec
 import scala.collection.mutable.Queue
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ObjectType
-import scala.annotation.tailrec
-import org.opalj.fpcf.properties.IsExtensible
+import org.opalj.fpcf.properties.TypeExtensibility
+import org.opalj.fpcf.properties.ExtensibleType
+import org.opalj.fpcf.properties.NotExtensibleType
+import org.opalj.fpcf.properties.MaybeExtensibleType
 
 /**
  * Determines if a class is extensible (i.e., can be inherited from). This property generally
  * depends on the kind of the project. If the project is an application, all classes
  * are considered to be closed; i.e., the class hierarchy is considered to be fixed; if the
- * analyzed project is a library then the result depends on the concrete assumption about the
+ * analyzed project is a library, then the result depends on the concrete assumption about the
  * openness of the library.
  *
  * However, package visible classes in packages starting with "java." are always treated as not
  * client extensible as this would require that those classes are defined in the respective
  * package which is prevented by the default `ClassLoader` in all cases.
  *
- * @note Since the computed property is a set property, other analyses have to wait till the
- *      property is computed.
+ * @note   Since the computed property is a set property, other analyses have to wait till the
+ *         property is computed.
  *
  * @author Michael Reif
  */
-class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
+// Add Java9 support for modules
+class TypeExtensibilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * Computes the extensibility of the given class or interface and also of all supertypes of it.
@@ -67,9 +72,8 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
         hasUnknownSubtype:    Array[Boolean],
         isEnqueued:           Array[Boolean]
     ): Unit = {
-
-        // we use a queue to ensure that we always first process all subtypes of a type to 
-        // ensure that we have final knowledge about the subtypes' extensibility
+        // We use a queue to ensure that we always first process all subtypes of a type to
+        // ensure that we have final knowledge about the subtypes' extensibility.
 
         val objectType = typesToProcess.dequeue()
         val oid = objectType.id
@@ -77,23 +81,22 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
             case Some(classFile) ⇒
 
                 val isExtensible =
-                    hasExtensibleSubtype(oid) ||
-                        (
-                            !classFile.isEffectivelyFinal &&
+                    hasExtensibleSubtype(oid) || {
+                        !classFile.isEffectivelyFinal /* <= true only in VERY broken projects... */ &&
                             (
                                 classFile.isPublic ||
                                 (isOpenLibrary && !classFile.thisType.packageName.startsWith("java."))
                             )
-                        )
+                    }
 
                 if (isExtensible) {
                     classFile.superclassType.foreach(st ⇒ hasExtensibleSubtype(st.id) = true)
                     classFile.interfaceTypes.foreach(it ⇒ hasExtensibleSubtype(it.id) = true)
-                    propertyStore.add(IsExtensible, classFile, Yes)
+                    propertyStore.set(classFile, ExtensibleType)
                 } else if (hasUnknownSubtype(oid)) {
-                    propertyStore.add(IsExtensible, classFile, Unknown)
+                    propertyStore.set(classFile, MaybeExtensibleType)
                 } else {
-                    propertyStore.add(IsExtensible, classFile, No)
+                    propertyStore.set(classFile, NotExtensibleType)
                 }
 
             case None ⇒
@@ -110,47 +113,54 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
         }
 
         if (typesToProcess.nonEmpty) {
-            determineExtensibility(typesToProcess, hasExtensibleSubtype, hasUnknownSubtype, isEnqueued)
-        } else {
-            // do nothing
+            // tail-recursive call... to process the workqueue
+            determineExtensibility(
+                typesToProcess,
+                hasExtensibleSubtype, hasUnknownSubtype,
+                isEnqueued
+            )
         }
     }
 }
 
-object ClassExtensibilityAnalysis extends FPCFAnalysisRunner {
+object TypeExtensibilityAnalysis extends FPCFAnalysisRunner {
 
-    override def derivedProperties: Set[PropertyKind] = Set(IsExtensible)
+    override def derivedProperties: Set[PropertyKind] = Set(TypeExtensibility)
 
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+
         import AnalysisModes.{isDesktopApplication, isJEE6WebApplication}
-        val analysis = new ClassExtensibilityAnalysis(project)
+        val analysis = new TypeExtensibilityAnalysis(project)
         val analysisMode = project.analysisMode
+
         if (isDesktopApplication(analysisMode) || isJEE6WebApplication(analysisMode)) {
             // application types can not be extended
-            project.allClassFiles.foreach { cf ⇒ propertyStore.add(IsExtensible, cf, No) }
+            project.allClassFiles.foreach { cf ⇒ propertyStore.set(cf, NotExtensibleType) }
         } else {
-            import project.classHierarchy.hasSubtypes
 
             val leafTypes = project.classHierarchy.leafTypes
+            if (leafTypes.isEmpty)
+                return analysis;
+
             val typesToProcess = Queue.empty[ObjectType] ++ leafTypes
             val hasExtensibleSubtype = new Array[Boolean](ObjectType.objectTypesCount)
             val hasUnknownSubtype = new Array[Boolean](ObjectType.objectTypesCount)
             val isEnqueued = new Array[Boolean](ObjectType.objectTypesCount)
             typesToProcess foreach { ot ⇒
-                val oid = ot.id
-                isEnqueued(oid) = true
-                if (hasSubtypes(ot).isYesOrUnknown) hasUnknownSubtype(oid) = true
+                isEnqueued(ot.id) = true
+                if (project.classHierarchy.hasSubtypes(ot).isYesOrUnknown) {
+                    // this test should never succeed.... because we start with the leaf types...
+                    // hence, the types are known...
+                    throw new UnknownError()
+                    // hasUnknownSubtype(oid) = true
+                }
             }
 
-            if (typesToProcess.nonEmpty)
-                analysis.determineExtensibility(
-                    typesToProcess,
-                    hasExtensibleSubtype, hasUnknownSubtype,
-                    isEnqueued
-                )
+            analysis.determineExtensibility(
+                typesToProcess,
+                hasExtensibleSubtype, hasUnknownSubtype,
+                isEnqueued
+            )
         }
         analysis
     }

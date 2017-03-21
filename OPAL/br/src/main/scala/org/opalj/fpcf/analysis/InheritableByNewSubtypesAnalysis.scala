@@ -152,7 +152,10 @@ object InheritableByNewSubtypesAnalysis extends FPCFAnalysisRunner {
     ): FPCFAnalysis = {
         val analysis = new InheritableByNewSubtypesAnalysis(project)
         val isApplicationMode: Boolean = AnalysisModes.isApplicationLike(project.analysisMode)
-        propertyStore <<! (InheritableByNewTypes.Key, analysis.subtypeInheritability(isApplicationMode))
+        propertyStore scheduleOnDemandComputation (
+            InheritableByNewTypes.Key,
+            analysis.subtypeInheritability(isApplicationMode)
+        )
         analysis
     }
 }

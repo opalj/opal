@@ -46,9 +46,10 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     final def tag: Int = Constant_Type_Value.id
 
-    def asString: String = throw new UnsupportedOperationException()
-
-    def toString(implicit cp: Constant_Pool): String
+    /**
+     * Resolves this constant pool entry and creates a type name as used by Java.
+     */
+    def asJavaType(implicit cp: Constant_Pool): String = throw new UnsupportedOperationException()
 
     /**
      * Creates a one-to-one representation of this constant pool entry node. The
@@ -56,6 +57,12 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
      * constant pool entry.
      */
     def asCPNode(implicit cp: Constant_Pool): Node
+
+    //// OLD CONVERSION Methods
+
+    def asString: String = throw new UnsupportedOperationException()
+
+    def toString(implicit cp: Constant_Pool): String
 
     /**
      * Creates a resolved representation of this constant pool entry that is well-suited as an

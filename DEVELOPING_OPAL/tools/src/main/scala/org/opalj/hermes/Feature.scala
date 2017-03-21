@@ -35,19 +35,44 @@ import org.opalj.collection.immutable.Chain
 /**
  * Represents the immutable results of a query.
  *
- * @param  id A very short identifier of the this feature. E.g., `Java8ClassFile` or
+ * @param  id A very short identifier of this feature. E.g., `Java8ClassFile` or
  *         `ProtectedMethod` or `DeadMethod`. The name must not contain spaces or other
  *         special characters.
- * @param  extensions The places where the feature was found. This information is
+ * @param  count How often the feature was found in a project.
+ * @param  extensions (Some of) The places where the feature was found. This information is
  *         primarily useful when navigating the project and is optional.
- *         I.e., `extensions.size` can be  smaller than `count`
+ *         I.e., `extensions.size` can be  smaller than `count`. The maximum number
+ *         of stored locations is set using the global setting: "org.opalj.hermes.maxLocations"
+ *
+ * @author Michael Eichberg
  */
-case class Feature[S](
+abstract case class Feature[S] private (
+        id:         String,
+        count:      Int,
+        extensions: Chain[Location[S]]
+) {
+    assert(count >= extensions.size)
+}
+
+/**
+ * Factory to create features.
+ *
+ * @author Michael Eichberg
+ */
+object Feature {
+
+    def apply[S](
         id:         String,
         count:      Int                = 0,
         extensions: Chain[Location[S]] = Naught
-) {
+    ): Feature[S] = {
+        new Feature(id, count, extensions.takeUpTo(Globals.MaxLocations)) {}
+    }
 
-    assert(count >= extensions.size)
-
+    def apply[S](
+        id:        String,
+        locations: LocationsContainer[S]
+    ): Feature[S] = {
+        new Feature(id, locations.size, locations.locations) {}
+    }
 }

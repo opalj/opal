@@ -33,18 +33,16 @@ package queries
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.cfg.CFGFactory
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
 
 /**
  * Counts the number of class files per class file version.
  *
  * @author Michael Eichberg
  */
-object MethodsWithoutReturns extends FeatureExtractor {
+object MethodsWithoutReturns extends FeatureQuery {
 
     final val AlwaysThrowsExceptionMethodsFeatureId = "Never Returns Normally"
-    final val InfiniteLoopMethodsFeatureId = "Method with Infinite Loops"
+    final val InfiniteLoopMethodsFeatureId = "Method with Infinite Loop"
     override def featureIDs: Seq[String] = List(
         AlwaysThrowsExceptionMethodsFeatureId,
         InfiniteLoopMethodsFeatureId
@@ -55,31 +53,28 @@ object MethodsWithoutReturns extends FeatureExtractor {
         project:              Project[S],
         rawClassFiles:        Traversable[(da.ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
-        var infiniteLoopMethods: Chain[MethodLocation[S]] = Naught
-        var alwaysThrowsExceptionMethods: Chain[MethodLocation[S]] = Naught
+        val infiniteLoopMethods: LocationsContainer[S] = new LocationsContainer[S]
+        val alwaysThrowsExceptionMethods: LocationsContainer[S] = new LocationsContainer[S]
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             method ← classFile.methods
             body ← method.body
-            if !isInterrupted
-            hasReturn = body.exists { (pc, i) ⇒ i.isInstanceOf[ReturnInstruction] }
-            if !hasReturn
+            hasReturnInstruction = body.exists { (pc, i) ⇒ i.isInstanceOf[ReturnInstruction] }
+            if !hasReturnInstruction
         } {
             val cfg = CFGFactory(body, project.classHierarchy)
             if (cfg.abnormalReturnNode.predecessors.isEmpty)
-                infiniteLoopMethods :&:= MethodLocation(classFileLocation, method)
+                infiniteLoopMethods += MethodLocation(classFileLocation, method)
             else
-                alwaysThrowsExceptionMethods :&:= MethodLocation(classFileLocation, method)
+                alwaysThrowsExceptionMethods += MethodLocation(classFileLocation, method)
         }
 
         List(
-            Feature[S](
-                AlwaysThrowsExceptionMethodsFeatureId,
-                alwaysThrowsExceptionMethods.size, alwaysThrowsExceptionMethods
-            ),
-            Feature[S](InfiniteLoopMethodsFeatureId, infiniteLoopMethods.size, infiniteLoopMethods)
+            Feature[S](AlwaysThrowsExceptionMethodsFeatureId, alwaysThrowsExceptionMethods),
+            Feature[S](InfiniteLoopMethodsFeatureId, infiniteLoopMethods)
         )
     }
 }
