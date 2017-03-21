@@ -84,7 +84,7 @@ final class Code private (
     def codeSize: Int = instructions.length
 
     /**
-     * Represents some filtered code. Primarily implicitly used when a for-comprehension
+     * Represents some filtered code. Primarily, implicitly used when a for-comprehension
      * is used to process the code.
      */
     class FilteredCode( final val p: ((PC, Instruction)) ⇒ Boolean)
@@ -151,9 +151,7 @@ final class Code private (
         that.result
     }
 
-    def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilterMonadic[(PC, Instruction), Nothing] = {
-        new FilteredCode(p)
-    }
+    def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilteredCode = new FilteredCode(p)
 
     override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 

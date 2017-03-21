@@ -81,7 +81,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with RecordCFG // <=== the domain we are going to test!
 
-    def terminateAfter[T >: Null <: AnyRef](millis: Long, msg : => String)(f: ⇒ T): T = {
+    def terminateAfter[T >: Null <: AnyRef](millis: Long, msg: ⇒ String)(f: ⇒ T): T = {
         @volatile var result: T = null
         val t = new Thread(new Runnable { def run(): Unit = { result = f } })
         t.start
@@ -167,7 +167,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                 val postDT = dTime('PostDominators) { domain.postDominatorTree }
 
                 val cdg =
-                    terminateAfter[ControlDependencies](1000l,{method.toJava(classFile)}) {
+                    terminateAfter[ControlDependencies](1000l, { method.toJava(classFile) }) {
                         dTime('ControlDependencies) { domain.controlDependencies }
                     }
 
