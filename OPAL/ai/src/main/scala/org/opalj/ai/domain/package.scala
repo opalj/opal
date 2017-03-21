@@ -52,14 +52,14 @@ import org.opalj.br.ReferenceType
  *      origin of a value should consider to implement.
  *      - [[TheProject]] defines a standard mechanism how a domain can access the
  *      ''current'' project.
- *      - [[ClassHierarchy]] defines a standard mechanism how to get the project's
+ *      - [[TheClassHierarchy]] defines a standard mechanism how to get the project's
  *      class hierarchy.
  *      - ...
  *
  *  - Domains That Provide a Default Implementation
  *      - [[Origin]] defines the functionality to return a value's origin if the value
  *      supports that.
- *      - [[TheProject]] default implementation of the [[ClassHierarchy]]
+ *      - [[TheProject]] default implementation of the [[TheClassHierarchy]]
  *      trait that uses the project's class hierarchy.
  *      - [[DefaultHandlingOfMethodResults]] basically implements a Domain's methods
  *      related to return instructions an uncaught exceptions.
