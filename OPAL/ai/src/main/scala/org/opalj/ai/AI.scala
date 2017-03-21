@@ -2448,7 +2448,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             fallThrough(v1 :&: v2 :&: v1 :&: rest)
                     }
                     case 94 /*dup2_x2*/ ⇒ operands match {
-                        case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: (v4 /*@ CTC1()*/ ) :&: rest ⇒
+                        case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: v4 :&: rest ⇒
                             fallThrough(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest)
                         case (v1 @ CTC2()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: rest ⇒
                             fallThrough(v1 :&: v2 :&: v3 :&: v1 :&: rest)
@@ -2518,13 +2518,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         else {
                             theDomain.isValueSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
-                                    // if objectref is a subtype (or if null == Unknown) => UNCHANGED
+                                    // if objectref is a subtype or if null is Unknown => UNCHANGED
                                     fallThrough()
 
                                 case No ⇒
                                     if (isNull.isNo)
                                         handleException(theDomain.VMClassCastException(pc))
-                                    else { //isNull is unknown
+                                    else { // isNull is unknown
                                         val (newOperands, newLocals) =
                                             theDomain.refTopOperandIsNull(pc, operands, locals)
                                         fallThrough(newOperands, newLocals)
@@ -2543,9 +2543,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     // The following assert may catch bugs in the
                                     // implementation of domains!
                                     assert(
-                                        theDomain.isValueSubtypeOf(newOperands.head, supertype).isYes,
+                                        {
+                                            val castedValue = newOperands.head
+                                            theDomain.isValueSubtypeOf(castedValue, supertype).isYes
+                                        },
                                         s"the cast of $objectref to ${supertype.toJava} failed: "+
-                                            s"the subtyping relation between ${newOperands.head} and ${supertype.toJava} is "+
+                                            s"the subtyping relation between "+
+                                            s"${newOperands.head} and ${supertype.toJava} is "+
                                             theDomain.isValueSubtypeOf(newOperands.head, supertype)
                                     )
                                     fallThrough(newOperands, newLocals)
