@@ -1457,13 +1457,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    //val regPC =
+                    //TODO val regPC =
                     if (computation.returnsNormally) fallThrough(rest) // else -1
-                    //val exPCs =
+                    //TODOval exPCs =
                     if (computation.throwsException) handleException(computation.exceptions) // else UShortSet.empty
 
-                    //if (computation.returnsNormally != computation.throwsException)
-                    //    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
+                    //TODOif (computation.returnsNormally != computation.throwsException)
+                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
                 }
 
                 def computationWithExceptions(
@@ -1480,13 +1480,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     rest:        Operands
                 ): Unit = {
 
-                    //val regPC =
+                    //TODOval regPC =
                     if (computation.hasResult) fallThrough(computation.result :&: rest) // else -1
-                    // val exPCs =
+                    //TODO val exPCs =
                     if (computation.throwsException) handleException(computation.exceptions) // else UShortSet.empty
 
-                    // if (computation.returnsNormally != computation.throwsException)
-                    //    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
+                    //TODO if (computation.returnsNormally != computation.throwsException)
+                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
                 }
 
                 def computationWithReturnValueAndExceptions(
@@ -1511,8 +1511,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     }
                     if (computation.throwsException) handleExceptions(computation.exceptions)
 
-                    //if (computation.hasResult != computation.throwsException)
-                    //    println(s"$pc: DEFINITIVE PATH - $instruction")
+                    //TODOif (computation.hasResult != computation.throwsException)
+                    //TODO    println(s"$pc: DEFINITIVE PATH - $instruction")
                 }
 
                 // Small helper method to make type casts shorter.
