@@ -93,7 +93,7 @@ class CFGFactoryTest extends CFGTests {
                     if (allStartPCs.contains(bb.startPC))
                         fail(
                             s"the startPC ${bb.startPC} is used by multiple basic blocks "+
-                            s" (${cfg.allBBs.mkString(", ")}"
+                                s" (${cfg.allBBs.mkString(", ")}"
                         )
                     else
                         allStartPCs += bb.startPC
