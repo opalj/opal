@@ -15,3 +15,6 @@
  (~ 25%) and to avoid unnecessary boxing operations
  - added preliminary Java 9 support
  - added the fix-point computations framework to facilitate the implementation of concurrent, fix-point based analyses
+ 
+## Pre 0.8.9
+Initial release of OPAL on Maven. 
