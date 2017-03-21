@@ -109,11 +109,11 @@ trait FPCFAnalysisRunner {
     def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
     /**
-     * Returns a set of integers that contains the id of every [[Property]] or [[SetProperty]] that is derived by
+     * Returns a set of integers that contains the id of every [[Property]] that is derived by
      * the underlying analysis which is described by this [[FPCFAnalysisRunner]].
      *
-     * This method has to be overridden in every subclass since it is used by the [[FPCFAnalysesManager]] to guarantee the save
-     * execution of all FPCFAnalysis.
+     * This method has to be overridden in every subclass since it is used by the
+     * [[FPCFAnalysesManager]] to guarantee the save execution of all FPCFAnalysis.
      */
     protected[fpcf] def derivedProperties: Set[PropertyKind]
 
