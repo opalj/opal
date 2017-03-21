@@ -39,14 +39,14 @@ import org.opalj.br.analyses.Project
  */
 object MethodTypes extends FeatureQuery {
 
-    override def featureIDs: List[String] = {
+    override val featureIDs: List[String] = {
         List(
             /*0*/ "native methods",
             /*1*/ "synthetic methods",
             /*2*/ "bridge methods",
             /*3*/ "synchronized methods",
             /*4*/ "varargs methods",
-            // second category...   
+            // second category...
             /*5*/ "static initializers",
             /*6*/ "static methods\n(not including static initializers)",
             /*7*/ "constructors",

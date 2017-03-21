@@ -35,7 +35,8 @@ import org.opalj.br.ClassFile
 import org.opalj.br.analyses.MethodInfo
 
 /**
- * The location where a specific feature was found.
+ * The location where a specific feature was found. In general, a feature query should always use
+ * a [[LocationsContainer]] to manage the identified locations.
  *
  * @tparam S The kind of the source. E.g., `java.net.URL`.
  *

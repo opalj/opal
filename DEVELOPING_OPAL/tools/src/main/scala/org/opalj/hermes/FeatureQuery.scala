@@ -101,7 +101,7 @@ trait FeatureQuery {
      * By default the name of the class is used to lookup the resource "className.markdown"
      * which is expected to be found along the extractor.
      */
-    def mdDescription: String = {
+    protected def mdDescription: String = {
         val descriptionResource = s"$id.markdown"
         val descriptionResourceURL = this.getClass.getResource(descriptionResource)
         try {
@@ -120,7 +120,7 @@ trait FeatureQuery {
      *
      * @return An HTML document/a link to an HTML document that describes this query.
      */
-    def htmlDescription: Either[String, URL] = Left(Processor.process(mdDescription))
+    val htmlDescription: Either[String, URL] = Left(Processor.process(mdDescription))
 
     // =============================== HERMES INTERNAL FUNCTIONALITY ===============================
 

@@ -45,15 +45,15 @@ object Metrics extends FeatureQuery {
     /**
      * The unique ids of the extracted features.
      */
-    override def featureIDs: Seq[String] =
+    override val featureIDs: Seq[String] = {
         Seq(
-            Seq("0 FPC", "1-3 FPC", "4-10 FPC", ">10 FPC"), // 0, 1, 2, 3
-            Seq("0 MPC", "1-3 MPC", "4-10 MPC", ">10 MPC"), // 4, 5, 6, 7
-            Seq("1-3 CPP", "4-10 CPP", ">10 CPP"), // 8, 9, 10
-            Seq("0 NOC", "1-3 NOC", "4-10 NOC", ">10 NOC"), //  11, 12, 13, 14
-            Seq("linear methods (McCabe)", "2-3 McCabe", "4-10 McCabe", ">10 McCabe") // 15, 16, 17 ,18
-
-        ).flatten
+            "0 FPC", "1-3 FPC", "4-10 FPC", ">10 FPC", // 0, 1, 2, 3
+            "0 MPC", "1-3 MPC", "4-10 MPC", ">10 MPC", // 4, 5, 6, 7
+            "1-3 CPP", "4-10 CPP", ">10 CPP", // 8, 9, 10
+            "0 NOC", "1-3 NOC", "4-10 NOC", ">10 NOC", //  11, 12, 13, 14
+            "linear methods (McCabe)", "2-3 McCabe", "4-10 McCabe", ">10 McCabe" // 15, 16, 17 ,18
+        )
+    }
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,

@@ -46,7 +46,7 @@ object BytecodeInstructions extends FeatureQuery {
     final val JVMInstructions: List[(Int, String)] = bytecode.JVMInstructions
     private[this] final val OpcodesToOrdinalNumbers = new Array[Int](256)
 
-    override def htmlDescription: Either[String, URL] = {
+    override val htmlDescription: Either[String, URL] = {
         Right(new URL("http://www.opal-project.de/bi/JVMInstructions.xml"))
     }
 

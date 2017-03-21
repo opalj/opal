@@ -49,23 +49,21 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  */
 object TrivialReflectionUsage extends FeatureQuery {
 
-    private val Class = ObjectType.Class
-    private val ForName1MD = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
-    private val ForName3MD =
-        MethodDescriptor(
-            "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;"
-        )
+    final val TrivialForNameUsage = "Trivial Class.forName Usage"
+    final val NonTrivialForNameUsage = "Nontrivial Class.forName Usage"
 
-    private val TrivialForNameUsage = "Trivial Class.forName Usage"
-    private val NonTrivialForNameUsage = "Nontrivial Class.forName Usage"
-
-    override def featureIDs: List[String] = List(TrivialForNameUsage, NonTrivialForNameUsage)
+    override val featureIDs: List[String] = List(TrivialForNameUsage, NonTrivialForNameUsage)
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
+        val Class = ObjectType.Class
+        val ForName1MD =
+            MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
+        val ForName3MD =
+            MethodDescriptor("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;")
 
         val trivialLocations = new LocationsContainer[S]
         val nontrivialLocations = new LocationsContainer[S]

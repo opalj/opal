@@ -33,7 +33,7 @@ import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 
 /**
- * Represents the immutable results of a query.
+ * Represents the immutable results of a feature query.
  *
  * @param  id A very short identifier of this feature. E.g., `Java8ClassFile` or
  *         `ProtectedMethod` or `DeadMethod`. The name must not contain spaces or other
