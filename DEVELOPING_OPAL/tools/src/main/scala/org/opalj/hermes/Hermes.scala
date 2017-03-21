@@ -732,7 +732,7 @@ object Hermes extends JFXApp {
                     tickLabelsVisible = false
                 }
                 corpusAnalysisTime.onChange { (_, _, newValue) ⇒
-                    xAxis.label = "Feature Queries ∑"+(new Nanoseconds(newValue.longValue).toSeconds)
+                    xAxis.label = "Feature Queries ∑"+(Nanoseconds(newValue.longValue).toSeconds)
                 }
                 val yAxis = new NumberAxis()
 
