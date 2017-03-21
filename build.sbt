@@ -1,5 +1,3 @@
-import sbtunidoc.Plugin.UnidocKeys.unidoc
-
 name := "OPAL Library"
 
 version 		in ThisBuild := "0.9.0-SNAPSHOT"

@@ -34,6 +34,7 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
 import sbtassembly.AssemblyPlugin.autoImport._
+import sbtunidoc.ScalaUnidocPlugin
 
 import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 
@@ -64,24 +65,25 @@ object OPALBuild extends Build {
     lazy val opal = Project(
         id = "OPAL",
         base = file("."),
-        settings = Defaults.coreDefaultSettings ++
-            sbtunidoc.Plugin.unidocSettings ++ 
-            Seq(publishArtifact := false)
-    ).aggregate(
-        common,
-        bi,
-        br,
-        da,
-        bc,
-        ba,
-        ai,
-        bp,
-        de,
-        av,
-        DeveloperTools,
-        Validate,
-        demos,
-        incubation)
+        settings = Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)
+    ).
+        enablePlugins(ScalaUnidocPlugin).
+        aggregate(
+            common,
+            bi,
+            br,
+            da,
+            bc,
+            ba,
+            ai,
+            bp,
+            de,
+            av,
+            DeveloperTools,
+            Validate,
+            demos,
+            incubation
+        )
 
     /*****************************************************************************
      *
