@@ -1054,12 +1054,12 @@ object ObjectType {
     /**
      * Factory method to create `ObjectType`s.
      *
-     * @param fqn The fully qualified name of a class or interface type in
-     *      binary notation.
-     * @note `ObjectType` objects are cached internally to reduce the overall memory
-     *      requirements and to ensure that only one instance of an `ObjectType` exists
-     *      per fully qualified name. Hence, comparing `ObjectTypes` using reference
-     *      comparison is explicitly supported.
+     * @param  fqn The fully qualified name of a class or interface type in
+     *         binary notation.
+     * @note   `ObjectType` objects are cached internally to reduce the overall memory
+     *         requirements and to ensure that only one instance of an `ObjectType` exists
+     *         per fully qualified name. Hence, comparing `ObjectTypes` using reference
+     *         comparison is explicitly supported.
      */
     def apply(fqn: String): ObjectType = {
         val readLock = cacheRWLock.readLock()
