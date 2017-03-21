@@ -42,7 +42,7 @@ import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 
 /**
- * Counts trivial usages of "Class.forName(...)".
+ * Counts (non-)trivial usages of "Class.forName(...)".
  *
  * @author Michael Reif
  * @author Michael Eichberg
@@ -55,9 +55,11 @@ object TrivialReflectionUsage extends FeatureQuery {
         MethodDescriptor(
             "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;"
         )
-    private val TrivialForNameUsage = "Trivial Class.forName Usage"
 
-    override def featureIDs: List[String] = List(TrivialForNameUsage)
+    private val TrivialForNameUsage = "Trivial Class.forName Usage"
+    private val NonTrivialForNameUsage = "Nontrivial Class.forName Usage"
+
+    override def featureIDs: List[String] = List(TrivialForNameUsage, NonTrivialForNameUsage)
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
@@ -65,7 +67,8 @@ object TrivialReflectionUsage extends FeatureQuery {
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
 
-        val locations = new LocationsContainer[S]
+        val trivialLocations = new LocationsContainer[S]
+        val nontrivialLocations = new LocationsContainer[S]
 
         val errors = project.parForeachMethodWithBody(isInterrupted = this.isInterrupted) { mi ⇒
             val MethodInfo(source, cf, m @ MethodWithBody(code)) = mi
@@ -84,16 +87,20 @@ object TrivialReflectionUsage extends FeatureQuery {
                 } {
                     classNameParameter match {
                         case aiResult.domain.StringValue(className) ⇒
-                            locations += InstructionLocation(methodLocation, pc)
+                            trivialLocations += InstructionLocation(methodLocation, pc)
                         case aiResult.domain.MultipleReferenceValues(classNameParameters) ⇒
                             val classNames = classNameParameters.collect {
                                 case aiResult.domain.StringValue(className) ⇒ className
                             }
                             // check if we have a concrete string in all cases..
-                            if (classNames.size == classNameParameters.size) {
-                                locations += InstructionLocation(methodLocation, pc)
+                            val locations = if (classNames.size == classNameParameters.size) {
+                                trivialLocations
+                            } else {
+                                nontrivialLocations
                             }
-                        case _ ⇒ // we don't have trivially available information...
+                            locations += InstructionLocation(methodLocation, pc)
+                        case _ ⇒
+                            nontrivialLocations += InstructionLocation(methodLocation, pc)
                     }
                 }
             }
@@ -105,6 +112,9 @@ object TrivialReflectionUsage extends FeatureQuery {
             )(project.logContext)
         }
 
-        List(Feature[S](TrivialForNameUsage, locations))
+        List(
+            Feature[S](TrivialForNameUsage, trivialLocations),
+            Feature[S](NonTrivialForNameUsage, nontrivialLocations)
+        )
     }
 }
