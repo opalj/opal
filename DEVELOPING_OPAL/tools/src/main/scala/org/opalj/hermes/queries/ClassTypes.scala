@@ -39,7 +39,7 @@ import org.opalj.br.analyses.Project
  */
 object ClassTypes extends FeatureQuery {
 
-    override def featureIDs: List[String] = {
+    override val featureIDs: List[String] = {
         List(
             /*0*/ "(concrete) classes",
             /*1*/ "abstract classes",

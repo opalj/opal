@@ -43,7 +43,7 @@ object MethodsWithoutReturns extends FeatureQuery {
 
     final val AlwaysThrowsExceptionMethodsFeatureId = "Never Returns Normally"
     final val InfiniteLoopMethodsFeatureId = "Method with Infinite Loop"
-    override def featureIDs: Seq[String] = List(
+    override val featureIDs: List[String] = List(
         AlwaysThrowsExceptionMethodsFeatureId,
         InfiniteLoopMethodsFeatureId
     )
