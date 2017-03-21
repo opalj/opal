@@ -43,41 +43,47 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 object JDBCAPIUsage extends APIFeatureQuery {
 
-    val DriverManager = ObjectType("java/sql/DriverManager")
-    val Connection = ObjectType("java/sql/Connection")
-    val Statement = ObjectType("java/sql/Statement")
-    val PreparedStatement = ObjectType("java/sql/PreparedStatement")
-    val CallableStatement = ObjectType("java/sql/CallableStatement")
+    override val apiFeatures: Chain[APIFeature] = {
+        val DriverManager = ObjectType("java/sql/DriverManager")
+        val Connection = ObjectType("java/sql/Connection")
+        val Statement = ObjectType("java/sql/Statement")
+        val PreparedStatement = ObjectType("java/sql/PreparedStatement")
+        val CallableStatement = ObjectType("java/sql/CallableStatement")
 
-    override def apiFeatures: Chain[APIFeature] = Chain(
-        StaticAPIMethod(DriverManager, "getConnection"),
-        InstanceAPIMethod(Connection, "rollback"),
+        Chain(
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Connection, "createStatement"),
-                InstanceAPIMethod(Statement, "execute"),
-                InstanceAPIMethod(Statement, "executeQuery"),
-                InstanceAPIMethod(Statement, "executeUpdate")
-            ), "creation and execution of\njava.sql.Statement"
-        ),
+            StaticAPIMethod(DriverManager, "getConnection"),
+            InstanceAPIMethod(Connection, "rollback"),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Connection, "prepareStatement"),
-                InstanceAPIMethod(PreparedStatement, "execute"),
-                InstanceAPIMethod(PreparedStatement, "executeQuery"),
-                InstanceAPIMethod(PreparedStatement, "executeUpdate")
-            ), "creation and execution of\njava.sql.PreparedStatement"
-        ),
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Connection, "createStatement"),
+                    InstanceAPIMethod(Statement, "execute"),
+                    InstanceAPIMethod(Statement, "executeQuery"),
+                    InstanceAPIMethod(Statement, "executeUpdate")
+                ),
+                "creation and execution of\njava.sql.Statement"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Connection, "prepareCall"),
-                InstanceAPIMethod(CallableStatement, "execute"),
-                InstanceAPIMethod(CallableStatement, "executeQuery"),
-                InstanceAPIMethod(CallableStatement, "executeUpdate")
-            ), "creation and execution of\njava.sql.CallableStatement"
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Connection, "prepareStatement"),
+                    InstanceAPIMethod(PreparedStatement, "execute"),
+                    InstanceAPIMethod(PreparedStatement, "executeQuery"),
+                    InstanceAPIMethod(PreparedStatement, "executeUpdate")
+                ),
+                "creation and execution of\njava.sql.PreparedStatement"
+            ),
+
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Connection, "prepareCall"),
+                    InstanceAPIMethod(CallableStatement, "execute"),
+                    InstanceAPIMethod(CallableStatement, "executeQuery"),
+                    InstanceAPIMethod(CallableStatement, "executeUpdate")
+                ),
+                "creation and execution of\njava.sql.CallableStatement"
+            )
         )
-    )
+    }
 }

@@ -47,20 +47,20 @@ import org.opalj.da.ClassFile
  *
  * Example of an `apiFeature` declaration in a subclass:
  * {{{
- * val Unsafe = ObjectType("sun/misc/Unsafe")
- *
  * override def apiFeatures: Chain[APIFeatures] = Chain[APIFeature](
+ *  val Unsafe = ObjectType("sun/misc/Unsafe")
+ *
  *  StaticAPIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;")),
  *  APIFeatureGroup(
- *      Chain(
- *          InstanceAPIMethod(Unsafe, "allocateInstance")
- *      ), "Unsafe - Alloc"
+ *      Chain(InstanceAPIMethod(Unsafe, "allocateInstance")),
+ *      "Unsafe - Alloc"
  *  ),
  *  APIFeatureGroup(
  *      Chain(
  *          InstanceAPIMethod(Unsafe, "arrayIndexScale"),
  *          InstanceAPIMethod(Unsafe, "arrayBaseOffset")
- *      ), "Unsafe - Array"
+ *      ),
+ *      "Unsafe - Array"
  *  )
  * )
  * }}}
@@ -71,22 +71,20 @@ trait APIFeatureQuery extends FeatureQuery {
 
     def apiFeatures: Chain[APIFeature]
 
-    /*
-     * Returns a set of all relevant receiver types.
-     */
-    private[this] def usedAPITypes: Set[ObjectType] = {
-        apiFeatures.foldLeft(Set.empty[ObjectType]) { (res, acc) ⇒
-            res ++ acc.getAPIMethods.map(_.declClass)
-        }
-    }
-
     /**
      * The unique ids of the computed features.
      */
-    override def featureIDs: Seq[String] = apiFeatures.map(_.toFeatureID).toSeq
+    override lazy val featureIDs: Seq[String] = apiFeatures.map(_.featureID).toSeq
 
     /**
-     * The function which analyzes the project and extracts the feature information.
+     * Returns the set of all relevant receiver types.
+     */
+    private[this] final lazy val apiTypes: Set[ObjectType] = {
+        apiFeatures.foldLeft(Set.empty[ObjectType])(_ ++ _.apiMethods.map(_.declClass))
+    }
+
+    /**
+     * Analyzes the project and extracts the feature information.
      *
      * @note '''Every query should regularly check that its thread is not interrupted!''' E.g.,
      *       using `Thread.currentThread().isInterrupted()`.
@@ -97,37 +95,41 @@ trait APIFeatureQuery extends FeatureQuery {
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
 
-        val apiTypes = usedAPITypes
+        val classHierarchy = project.classHierarchy
+        import classHierarchy.allSubtypes
+        import project.isProjectType
+
+        def getClassFileLocation(objectType: ObjectType): Option[ClassFileLocation[S]] = {
+            val classFile = project.classFile(objectType)
+            classFile.flatMap { cf ⇒ project.source(cf).map(src ⇒ ClassFileLocation(src, cf)) }
+        }
 
         var occurrencesCount = apiFeatures.foldLeft(Map.empty[String, Int])(
-            (result, feature) ⇒ result + ((feature.toFeatureID, 0))
+            (result, feature) ⇒ result + ((feature.featureID, 0))
         )
 
+        // TODO Use LocationsContainer
         val locations = mutable.Map.empty[String, Chain[Location[S]]]
 
-        val classFeatures = apiFeatures.collect { case ce: ClassExtension ⇒ ce }
-
-        val classHierarchy = project.classHierarchy
         for {
-            classFeature ← classFeatures
-            featureID = classFeature.toFeatureID
-        } yield {
-            val subtypes = classHierarchy.allSubtypes(classFeature.declClass, reflexive = false).
-                filter(project.isProjectType)
-            val size = subtypes.size
-
+            classFeature ← apiFeatures.collect { case ce: ClassExtension ⇒ ce }
+            featureID = classFeature.featureID
+            subtypes = allSubtypes(classFeature.declClass, reflexive = false).filter(isProjectType)
+            size = subtypes.size
+            if size > 0
+        } {
             val count = occurrencesCount.get(featureID).get + size
-            occurrencesCount = occurrencesCount + ((featureID, count))
+            occurrencesCount += ((featureID, count))
 
-            if (size > 0) {
-                subtypes.filter(project.isProjectType).foreach { ot ⇒
-                    val cfLoc = getClassFileLocation(project, ot)
-                    if (cfLoc.nonEmpty)
-                        locations += ((
-                            featureID,
-                            cfLoc.get :&: locations.getOrElse(featureID, Naught)
-                        ))
-                }
+            for {
+                subtype ← subtypes
+                if project.isProjectType(subtype)
+                classFileLocation ← getClassFileLocation(subtype)
+            } {
+                locations += ((
+                    featureID,
+                    classFileLocation :&: locations.getOrElse(featureID, Naught)
+                ))
             }
         }
 
@@ -136,44 +138,28 @@ trait APIFeatureQuery extends FeatureQuery {
         for {
             cf ← project.allProjectClassFiles
             if !isInterrupted()
+            source ← project.source(cf)
             m @ MethodWithBody(code) ← cf.methods
             (pc, mii @ MethodInvocationInstruction(declClass, _, name, methodDescriptor)) ← code
-            if declClass.isObjectType && apiTypes.contains(declClass.asObjectType)
+            if declClass.isObjectType
+            if apiTypes.contains(declClass.asObjectType)
             apiFeature ← apiFeatures
-            featureID = apiFeature.toFeatureID
-            apiMethod ← apiFeature.getAPIMethods
-        } yield {
-            def putInstructionLocation(): Unit = {
-                val source = project.source(cf)
-                if (source.isEmpty)
-                    return ;
+            featureID = apiFeature.featureID
+            APIMethod ← apiFeature.apiMethods
+        } {
+            mii match {
+                case APIMethod() ⇒
+                    val l = InstructionLocation(source, cf, m, pc)
+                    locations += ((featureID, l :&: locations.getOrElse(featureID, Naught)))
+                    val count = occurrencesCount.get(featureID).get + 1
+                    occurrencesCount = occurrencesCount + ((featureID, count))
 
-                val instLoc = InstructionLocation(source.get, cf, m, pc)
-                locations += ((featureID, instLoc :&: locations.getOrElse(featureID, Naught)))
-
-                val count = occurrencesCount.get(featureID).get + 1
-                occurrencesCount = occurrencesCount + ((featureID, count))
-            }
-
-            apiMethod match {
-                case InstanceAPIMethod(
-                    `declClass`,
-                    `name`,
-                    None | Some(`methodDescriptor`)
-                    ) if mii.isInstanceMethod ⇒
-                    putInstructionLocation()
-                case StaticAPIMethod(
-                    `declClass`,
-                    `name`,
-                    None | Some(`methodDescriptor`)
-                    ) if !mii.isInstanceMethod ⇒
-                    putInstructionLocation()
-                case _ ⇒ /*empty*/
+                case _ ⇒ /* irrelevant method */
             }
         }
 
         apiFeatures.map { apiFeature ⇒
-            val featureID = apiFeature.toFeatureID
+            val featureID = apiFeature.featureID
             Feature(
                 featureID,
                 occurrencesCount.get(featureID).get,
@@ -182,17 +168,4 @@ trait APIFeatureQuery extends FeatureQuery {
         }
     }
 
-    private[this] def getClassFileLocation[S](
-        project:    Project[S],
-        objectType: ObjectType
-    ): Option[ClassFileLocation[S]] = {
-        val classFile = project.classFile(objectType)
-        classFile match {
-            case Some(classFile) ⇒ project.source(classFile) match {
-                case Some(source) ⇒ Some(ClassFileLocation(source, classFile))
-                case None         ⇒ None
-            }
-            case None ⇒ None
-        }
-    }
 }
