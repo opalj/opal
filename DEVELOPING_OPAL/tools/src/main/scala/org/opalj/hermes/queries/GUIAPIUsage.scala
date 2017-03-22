@@ -37,24 +37,23 @@ import org.opalj.da.ClassFile
 /**
  * Scans a class file's constant pool to check whether it refers to packages that belong to an API
  * for graphical user interfaces. The current analysis supports:
- *
- * - JavaFX (javafx.)
- * - SWT (org.eclipse.swt)
- * - Swing (javax.swing)
- * - AWT (java.awt)
+ *  - JavaFX (javafx.)
+ *  - SWT (org.eclipse.swt)
+ *  - Swing (javax.swing)
+ *  - AWT (java.awt)
  *
  * @author Michael Reif
  */
 object GUIAPIUsage extends FeatureQuery {
-    /**
-     * The unique ids of the extracted features.
-     */
-    override def featureIDs: Seq[String] = Seq(
-        /* 0 */ "JavaFX",
-        /* 1 */ "SWT",
-        /* 2 */ "Swing",
-        /* 3 */ "AWT"
-    )
+
+    override val featureIDs: List[String] = {
+        List(
+            /* 0 */ "JavaFX",
+            /* 1 */ "SWT",
+            /* 2 */ "Swing",
+            /* 3 */ "AWT"
+        )
+    }
 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
@@ -62,33 +61,27 @@ object GUIAPIUsage extends FeatureQuery {
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
 
-        val packageLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
+        val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
             (classFile, source) ← rawClassFiles
-            cp = classFile.constant_pool
-            cp_entry ← cp
+            location = ClassFileLocation(Some(source), classFile.thisType)
+            CONSTANT_Utf8_info(_, entry) ← classFile.constant_pool
         } {
-            cp_entry match {
-                case CONSTANT_Utf8_info(_, entry) ⇒
-                    val location = ClassFileLocation(Some(source), classFile.thisType)
-                    if (entry.startsWith("javafx.")) {
-                        // note: package "javafx" is empty,
-                        packageLocations(0) += location
-                    } else if (entry.startsWith("org.eclipse.swt")) {
-                        packageLocations(1) += location
-                    } else if (entry.startsWith(("javax.swing"))) {
-                        packageLocations(2) += location
-                    } else if (entry.startsWith(("java.awt"))) {
-                        packageLocations(3) += location
-                    }
-
-                case _ ⇒
+            if (entry.startsWith("javafx/")) {
+                // note: package "javafx" is empty,
+                locations(0) += location
+            } else if (entry.startsWith("org/eclipse/swt")) {
+                locations(1) += location
+            } else if (entry.startsWith(("javax/swing"))) {
+                locations(2) += location
+            } else if (entry.startsWith(("java/awt"))) {
+                locations(3) += location
             }
         }
 
         for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
-            Feature[S](featureID, packageLocations(featureIDIndex))
+            Feature[S](featureID, locations(featureIDIndex))
         }
     }
 }
