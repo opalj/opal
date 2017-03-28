@@ -65,7 +65,7 @@ import org.opalj.log.OPALLogger.error
  *
  * @author Michael Reif
  */
-object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean] {
+object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesContext] {
 
     private[this] final val _defautlPackageContext = "org.opalj.br.analyses.OpenCodeBase"
 
@@ -78,7 +78,7 @@ object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean] {
      */
     override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
-    override protected def compute(project: SomeProject): String ⇒ Boolean = {
+    override protected def compute(project: SomeProject): ClosedPackagesContext = {
         val packageContext = project.config.as[Option[String]](ConfigKeyPrefix+"packageContext").getOrElse(_defautlPackageContext)
         reify(project, packageContext).get
     }
