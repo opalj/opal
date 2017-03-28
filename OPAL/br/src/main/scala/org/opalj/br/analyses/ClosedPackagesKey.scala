@@ -31,48 +31,71 @@ package br
 package analyses
 
 import net.ceedubs.ficus.Ficus._
-import scala.reflect.runtime.universe
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 
-
-
 /**
-  * The ''key'' object to get a function that determines whether a package is closed or not.
-  * A package is closed if a developer cannot add new classes into the package, i.e., a developer
-  * is not able to create new class in the namespace of some dependee library.
-  *
-  * @author Michael Reif
-  */
-object ClosedPackagesKey extends ProjectInformationKey[String => Boolean]{
+ * The ''key'' object to get a function that determines whether a package is closed or not.
+ * A package is closed if a developer cannot add new classes into the package, i.e., a developer
+ * is not able to create new class in the namespace of some dependee library.
+ *
+ * This ''key'' reflectively instantiates the analysis that determines whether a package is closed
+ * or not. All instantiated analyses have to extend the abstract [[ClosedPackagesContext]] class.
+ * To configure which analysis is used - it has to be configured in the project's configuration.
+ * Please you the key '''org.opalj.br.analyses.ClosedPackagesKey.{ClosedPackagesContext}'''. Please
+ * find the example configuration below:
+ *
+ * {{{
+ *   org.opalj {
+ *    br {
+ *      analyses{
+ *        ClosedPackagesKey {
+ *          packageContext = "org.opalj.br.analyses.ClosedPackagesConfiguration"
+ *          closedPackages = "java(/.*)*"
+ *       }
+ *     }
+ *   }
+ *  }
+ * }}}
+ *
+ * @note Please see the documentation of [[ClosedPackagesContext]] and its sub types for more
+ *       information.
+ * @note The default configuration is the rather conservative [[OpenCodeBase]] analysis.
+ *
+ * @author Michael Reif
+ */
+object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean] {
 
-  private[this] final val _defautlPackageContext = OpenCodeBase.fqn
+    private[this] final val _defautlPackageContext = "org.opalj.br.analyses.OpenCodeBase"
 
-  final val ConfigKeyPrefix = "org.opalj.br.analyses.ClosedPackagesKey."
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.ClosedPackagesKey."
 
-  /**
-    * The [[ClosedPackagesKey]] has no special prerequisites.
-    *
-    * @return `Nil`.
-    */
-  override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    /**
+     * The [[ClosedPackagesKey]] has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
-  override protected def compute(project: SomeProject): String ⇒ Boolean = {
-    val packageContext = project.config.as[Option[String]](ConfigKeyPrefix+"packageContext").getOrElse(_defautlPackageContext)
-    reify(packageContext).get.isClosedPackage(project)
-  }
-
-  def reify(packageContext: String): Option[ClosedPackagesContext] = {
-    try {
-      val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
-      val module = runtimeMirror.staticModule(packageContext)
-      val companionObject = runtimeMirror.reflectModule(module)
-      Some(companionObject.instance.asInstanceOf[ClosedPackagesContext])
-    } catch {
-      case t: Throwable ⇒
-        error("project configuration", s"failed to load: $packageContext", t)(GlobalLogContext)
-        None
+    override protected def compute(project: SomeProject): String ⇒ Boolean = {
+        val packageContext = project.config.as[Option[String]](ConfigKeyPrefix+"packageContext").getOrElse(_defautlPackageContext)
+        reify(project, packageContext).get
     }
-  }
+
+    /*
+     * Reflectively instantiates a ClosedPackagesContext. The instantiated class has to satisfy the
+     * interface and needs to provide a single constructor parameterized over a Project.
+     */
+    private[this] def reify(project: SomeProject, packageContext: String): Option[ClosedPackagesContext] = {
+        try {
+            val cls = Class.forName(packageContext)
+            val cons = cls.getConstructors.head
+            Some(cons.newInstance(project).asInstanceOf[ClosedPackagesContext])
+        } catch {
+            case t: Throwable ⇒
+                error("project configuration", s"failed to load: $packageContext", t)(GlobalLogContext)
+                None
+        }
+    }
 }
