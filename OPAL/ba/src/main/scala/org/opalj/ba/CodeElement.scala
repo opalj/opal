@@ -34,16 +34,22 @@ import scala.language.implicitConversions
 import org.opalj.br.instructions.InstructionLike
 
 /**
- * Wrapper for elements that will generate the instructions of a [[org.opalj.br.Code]] and the
- * annotations of the ByteCode.
+ * Wrapper for elements that will generate the instructions and attributes of a
+ * [[org.opalj.br.Code]] and the annotations of the bytecode.
  *
  * @see [[InstructionElement]]
  * @see [[AnnotatedInstructionElement]]
- * @see [[LabelElement]]
+ * @see [[PseudoInstruction]]
  *
  * @author Malte Limmeroth
  */
 trait CodeElement
+
+/**
+ * Marker trait for labels ([[scala.Symbol]]) and pseudo instructions generating `Code` attributes.
+ * @author Malte Limmeroth
+ */
+trait PseudoInstruction extends CodeElement
 
 /**
  * Implicit conversions to [[CodeElement]].
@@ -65,7 +71,7 @@ object CodeElement {
     /**
      * Converts a `Symbol` (label) to [[LabelElement]].
      */
-    implicit def labelToMethodElement(label: Symbol): LabelElement = LabelElement(label)
+    implicit def labelToCodeElement(label: Symbol): LabelElement = LabelElement(label)
 }
 
 /**
@@ -76,7 +82,7 @@ case class InstructionElement(instruction: InstructionLike) extends CodeElement
 /**
  * Wrapper for `Symbols` (labels) representing branch targets.
  */
-case class LabelElement(label: Symbol) extends CodeElement
+case class LabelElement(label: Symbol) extends PseudoInstruction
 
 /**
  * Wrapper for annotated [[InstructionLike]]s.

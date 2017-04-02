@@ -43,7 +43,6 @@ import org.opalj.br.instructions.WIDE
  */
 class CodeAttributeBuilder private[ba] (
         private val instructions:      Array[Instruction],
-        private val labels:            Map[Symbol, br.PC],
         private val annotations:       Map[br.PC, AnyRef],
         private var maxStack:          Option[Int],
         private var maxLocals:         Option[Int],
@@ -122,7 +121,7 @@ object CODE {
      * Creates a new [[CodeAttributeBuilder]] with the given [[CodeElement]]s converted to
      * [[org.opalj.br.instructions.Instruction]]. In case of
      * [[org.opalj.br.instructions.LabeledInstruction]]s the label is already resolved. The
-     * annotations are resolved to program counters aswell.
+     * annotations are resolved to program counters as well.
      *
      * @see [[CodeElement]] for possible arguments.
      */
@@ -150,21 +149,10 @@ object CODE {
                 }
             }
         }
-
-        val (instructions, labels, annotations) = buildInstructionArray(codeElements.toIndexedSeq)
-
-        new CodeAttributeBuilder(
-            instructions,
-            labels,
-            annotations,
-            None,
-            None,
-            IndexedSeq.empty,
-            IndexedSeq.empty
-        )
+        buildCodeAttributeBuilder(codeElements.toIndexedSeq)
     }
 
-    private def buildInstructionArray(codeElements: IndexedSeq[CodeElement]): (Array[Instruction], Map[Symbol, br.PC], Map[br.PC, AnyRef]) = {
+    private def buildCodeAttributeBuilder(codeElements: IndexedSeq[CodeElement]): CodeAttributeBuilder = {
         val instructionsWithPlaceholders = scala.collection.mutable.ArrayBuffer.empty[CodeElement]
 
         //fill the array with `null` for PCs representing instruction arguments
@@ -185,16 +173,32 @@ object CODE {
                     if (inst == WIDE) {
                         modifiedByWide = true
                     }
-                case LabelElement(l) ⇒
+                case _ ⇒
             }
         }
 
-        //calculate the PCs of all labels
-        var labels: Map[Symbol, br.PC] = Map()
-        for ((LabelElement(label), index) ← instructionsWithPlaceholders.zipWithIndex) {
-            instructionsWithPlaceholders.remove(index - labels.size)
-            labels += (label → (index - labels.size))
+        //calculate the PCs of all PseudoInstructions
+        var labels: Map[Symbol, br.PC] = Map.empty
+        val exceptionHandlerGenerator = new ExceptionHandlerGenerator
+        val lineNumberTableGenerator = new LineNumberTableGenerator
+        var count: Int = 0
+        for ((inst, index) ← instructionsWithPlaceholders.zipWithIndex) {
+            if (inst.isInstanceOf[PseudoInstruction]) {
+                val pc = index - count
+                instructionsWithPlaceholders.remove(pc)
+                inst match {
+                    case LabelElement(label)        ⇒ labels += (label → (pc))
+                    case e: ExceptionHandlerElement ⇒ exceptionHandlerGenerator.add(e, pc)
+                    case l: LINENUMBER              ⇒ lineNumberTableGenerator.add(l, pc)
+                }
+                count += 1
+            }
         }
+
+        val exceptionHandlers = exceptionHandlerGenerator.finalizeHandlers
+
+        var attributes = Seq.empty[br.Attribute]
+        attributes ++:= lineNumberTableGenerator.finalizeLineNumberTable.to[Seq] //TODO: add more code attributes
 
         val annotations = instructionsWithPlaceholders.zipWithIndex.collect {
             case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)
@@ -214,6 +218,13 @@ object CODE {
             }
         }
 
-        (instructions.toArray, labels, annotations)
+        new CodeAttributeBuilder(
+            instructions.toArray,
+            annotations,
+            None,
+            None,
+            exceptionHandlers,
+            attributes
+        )
     }
 }

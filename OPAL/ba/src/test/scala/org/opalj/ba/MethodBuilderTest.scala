@@ -120,8 +120,49 @@ class MethodBuilderTest extends FlatSpec {
             CODE(
                 ALOAD_0,
                 INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                'return,
+                LINENUMBER(1),
                 RETURN
             ) MAXSTACK 2 MAXLOCALS 3
+        ),
+        //if parameter <0 => catch-Block defines return value       => 0
+        //if parameter =0 => try-Block defines return value         => 1
+        //if parameter >0 => finally-Block  defines return value    => 2
+        PUBLIC("tryCatchFinallyTest", "(I)", "I")(
+            CODE(
+                ICONST_1,
+                ISTORE_2,
+                TRY('Try1),
+                TRY('FinallyTry2),
+                TRY('LastPCTry3),
+                ILOAD_1,
+                IFGE('tryEnd),
+                NEW("java/lang/Exception"),
+                DUP,
+                INVOKESPECIAL("java/lang/Exception", false, "<init>", "()V"),
+                ATHROW,
+                'tryEnd,
+                TRYEND('Try1),
+                GOTO('finally),
+                CATCH('Try1, "java/lang/Exception"),
+                POP,
+                ICONST_0,
+                ISTORE_2,
+                TRYEND('FinallyTry2),
+                GOTO('finally),
+                CATCH('FinallyTry2),
+                CATCH('LastPCTry3),
+                POP,
+                'finally,
+                ILOAD_1,
+                IFLE('return),
+                ICONST_2,
+                ISTORE_2,
+                'return,
+                ILOAD_2,
+                IRETURN,
+                TRYEND('LastPCTry3)
+            ) MAXLOCALS 3
         )
     )
 
@@ -145,6 +186,40 @@ class MethodBuilderTest extends FlatSpec {
 
     it should "have 'maxLocals' set to: 3" in {
         assert(attributeTestMethod.body.get.maxLocals == 3)
+
+    }
+
+    it should "have a LineNumberTable" in {
+        val lineNumberTable = attributeTestMethod.body.get.attributes.collect {
+            case l: br.LineNumberTable ⇒ l
+        }.head
+        assert(lineNumberTable.lookupLineNumber(4).get == 1)
+    }
+
+    "the generated method `tryCatchFinallyTest`" should "have the correct exceptionTable set" in {
+        val exceptionTable = attributeBrClassFile.methods.find {
+            m ⇒ m.name == "tryCatchFinallyTest"
+        }.get.body.get.exceptionHandlers
+
+        println(exceptionTable)
+
+        assert(
+            exceptionTable.contains(
+                br.ExceptionHandler(2, 14, 17, Some(br.ObjectType("java/lang/Exception")))
+            )
+        )
+        assert(exceptionTable.contains(br.ExceptionHandler(2, 20, 23, None)))
+        assert(exceptionTable.contains(br.ExceptionHandler(2, 32, 23, None)))
+    }
+
+    "the generated method `tryCatchFinallyTest`" should "execute as expected" in {
+        val attributeTestInstance = loader.loadClass("AttributeMethodClass").newInstance()
+        val mirror = runtimeMirror(loader).reflect(attributeTestInstance)
+        val method = mirror.symbol.typeSignature.member(TermName("tryCatchFinallyTest")).asMethod
+
+        assert(mirror.reflectMethod(method)(-1) == 0)
+        assert(mirror.reflectMethod(method)(0) == 1)
+        assert(mirror.reflectMethod(method)(1) == 2)
     }
 
 }
