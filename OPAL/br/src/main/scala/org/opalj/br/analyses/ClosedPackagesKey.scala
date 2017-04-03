@@ -41,7 +41,7 @@ import org.opalj.log.OPALLogger.error
  * is not able to create new class in the namespace of some dependee library.
  *
  * This ''key'' reflectively instantiates the analysis that determines whether a package is closed
- * or not. All instantiated analyses have to extend the abstract [[ClosedPackagesContext]] class.
+ * or not. All instantiated analyses have to extend the abstract [[ClosedPackagesInformation]] class.
  * To configure which analysis is used - it has to be configured in the project's configuration.
  * Please you the key '''org.opalj.br.analyses.ClosedPackagesKey.{ClosedPackagesContext}'''. Please
  * find the example configuration below:
@@ -59,13 +59,12 @@ import org.opalj.log.OPALLogger.error
  *  }
  * }}}
  *
- * @note Please see the documentation of [[ClosedPackagesContext]] and its sub types for more
+ * @note Please see the documentation of [[ClosedPackagesInformation]] and its sub types for more
  *       information.
  * @note The default configuration is the rather conservative [[OpenCodeBase]] analysis.
- *
  * @author Michael Reif
  */
-object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesContext] {
+object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesInformation] {
 
     private[this] final val _defautlPackageContext = "org.opalj.br.analyses.OpenCodeBase"
 
@@ -78,7 +77,7 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesContext] {
      */
     override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
-    override protected def compute(project: SomeProject): ClosedPackagesContext = {
+    override protected def compute(project: SomeProject): ClosedPackagesInformation = {
         val packageContext = project.config.as[Option[String]](ConfigKeyPrefix+"packageContext").getOrElse(_defautlPackageContext)
         reify(project, packageContext).get
     }
@@ -87,11 +86,11 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesContext] {
      * Reflectively instantiates a ClosedPackagesContext. The instantiated class has to satisfy the
      * interface and needs to provide a single constructor parameterized over a Project.
      */
-    private[this] def reify(project: SomeProject, packageContext: String): Option[ClosedPackagesContext] = {
+    private[this] def reify(project: SomeProject, packageContext: String): Option[ClosedPackagesInformation] = {
         try {
             val cls = Class.forName(packageContext)
             val cons = cls.getConstructors.head
-            Some(cons.newInstance(project).asInstanceOf[ClosedPackagesContext])
+            Some(cons.newInstance(project).asInstanceOf[ClosedPackagesInformation])
         } catch {
             case t: Throwable ⇒
                 error("project configuration", s"failed to load: $packageContext", t)(GlobalLogContext)
