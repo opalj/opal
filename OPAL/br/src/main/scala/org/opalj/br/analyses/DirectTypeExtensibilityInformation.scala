@@ -54,7 +54,9 @@ class DirectTypeExtensibilityInformation(
 
             val objectType = classFile.thisType
 
-            if (classFile.isEffectivelyFinal)
+            if (classFile.isEffectivelyFinal ||
+                classFile.isEnumDeclaration ||
+                classFile.isAnnotationDeclaration)
                 extensibility.put(objectType, No)
             else if (classFile.isPublic)
                 extensibility.put(objectType, Yes)
