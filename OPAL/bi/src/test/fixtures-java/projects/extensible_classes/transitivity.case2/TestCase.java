@@ -26,28 +26,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
+package extensible_classes.transitivity.case2;
 
 /**
- * The ''key'' object to get a function that determines whether a type is extensible or not.
- * A type is extensible if a developer could have defined a subtype that is not part of the given
- * application/library.
  *
- * @author Michael Eichberg
  * @author Michael Reif
  */
-object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer] {
+public final class TestCase extends Class implements Interface {
 
-    /**
-     * The [[TypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
-     *
-     * @return Seq(ClosedPackagesKey).
-     */
-    override protected def requirements = Seq(DirectTypeExtensibilityKey)
+}
 
-    override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
-        new TypeExtensibilityInformationAnalysis(project)
-    }
+class PackageVisibleSubclass extends Class implements Interface {
+
+}
+
+interface Interface {
+
+}
+
+// not extensible when this package is considered closed.
+class Class {
+
 }

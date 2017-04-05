@@ -207,28 +207,31 @@ object ClosedPackagesConfig {
 
     val openCodeBase =
         """
-        |org.opalj.br.analyses.ClosedPackagesKey {
-        |         packageContext = "org.opalj.br.analyses.OpenCodeBase"
-        |     }
+          |org.opalj.br.analyses.ClosedPackagesKey {
+          |         packageContext = "org.opalj.br.analyses.OpenCodeBase"
+          |     }
       """.stripMargin
 
-    val closedCodeBase = """
-      |org.opalj.br.analyses.ClosedPackagesKey {
-      |        packageContext = "org.opalj.br.analyses.ClosedCodeBase"
-      |      }
+    val closedCodeBase =
+        """
+           |org.opalj.br.analyses.ClosedPackagesKey {
+           |        packageContext = "org.opalj.br.analyses.ClosedCodeBase"
+           |      }
+         """.stripMargin
+
+    def configureClosedPackages(regex: String = "java(/.*)") =
+        s"""
+            |org.opalj.br.analyses.ClosedPackagesKey {
+            |        packageContext = "org.opalj.br.analyses.ClosedPackagesConfiguration"
+            |        closedPackages = "$regex"
+            |      }
     """.stripMargin
 
-    def configureClosedPackages(regex: String = "java(/.*)") = s"""
-      |org.opalj.br.analyses.ClosedPackagesKey {
-      |        packageContext = "org.opalj.br.analyses.ClosedPackagesConfiguration"
-      |        closedPackages = "$regex"
-      |      }
-    """.stripMargin
-
-    def configureOpenPackages(regex: String = ".*") = s"""
-      |org.opalj.br.analyses.ClosedPackagesKey {
-      |        packageContext = "org.opalj.br.analyses.ClosedPackagesConfiguration"
-      |        openPackages = "$regex"
-      |      }
-    """.stripMargin
+    def configureOpenPackages(regex: String = ".*") =
+        s"""
+           |org.opalj.br.analyses.ClosedPackagesKey {
+           |        packageContext = "org.opalj.br.analyses.ClosedPackagesConfiguration"
+           |        openPackages = "$regex"
+           |      }
+        """.stripMargin
 }
