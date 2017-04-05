@@ -32,11 +32,12 @@ package ba
 import org.opalj.br.ObjectType
 
 /**
- * Factory for the [[org.opalj.br.EnclosingMethod]] attribute.
+ * Factory for [[org.opalj.br.EnclosingMethod]] attributes.
  *
  * @author Malte Limmeroth
  */
 trait EnclosingMethodAttributeBuilder { this: AttributesContainer ⇒
+
     /**
      * Defines the [[org.opalj.br.EnclosingMethod]] attribute.
      *

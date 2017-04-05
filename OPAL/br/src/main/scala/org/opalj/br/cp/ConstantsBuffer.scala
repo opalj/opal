@@ -43,8 +43,8 @@ import org.opalj.br.instructions.LoadMethodType
 /**
  * This class can be used to (re)build a [[org.opalj.br.ClassFile]]'s constant pool.
  *
- * @note    The builder will try its best to create a valid constant pool and will also report
- *          issues.
+ * @note    The builder will try its best to create a valid constant pool (w.r.t. the overall size
+ *          and size of the indexes). Issues will be reported.
  *          Use the factory method defined by the companion object [[ConstantsBuffer$]] to
  *          create an instance and to get information about the requirements.
  * @author  Andre Pacak
@@ -209,7 +209,6 @@ class ConstantsBuffer private (
 
         //need to build up bootstrap_methods
         var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
-
         if (indexOfBootstrapMethod == -1) {
             bootstrapMethods += bootstrapMethod
             CPEMethodHandle(bootstrapMethod.handle, false)
@@ -225,7 +224,7 @@ class ConstantsBuffer private (
      * current state of the constants pool. This in particular enables the creation of the
      * `BootstrapMethodTable` attribute - iff the table is not empty! If the table is empty
      * it is not guaranteed that the name of the `BootstrapMethodTable` attribute is defined by
-     * the constant pool.
+     * the constant poo, but there is also no need to add the attribute.
      */
     def build: (Array[Constant_Pool_Entry], ConstantsPool) = {
         val cp = new Array[Constant_Pool_Entry](nextIndex)
@@ -260,11 +259,13 @@ object ConstantsBuffer {
     def getOrCreateCPEntry(ldc: LDC[_])(implicit constantsBuffer: ConstantsBuffer): Int = {
         import constantsBuffer._
         ldc match {
-            case LoadInt(value)          ⇒ CPEInteger(value, requiresUByteIndex = true)
-            case LoadFloat(value)        ⇒ CPEFloat(value, requiresUByteIndex = true)
-            case LoadString(value)       ⇒ CPEString(value, requiresUByteIndex = true)
-            case LoadClass(value)        ⇒ CPEClass(value, requiresUByteIndex = true)
-            case LoadMethodHandle(value) ⇒ CPEMethodHandle(value, requiresUByteIndex = true)
+            case LoadInt(value)    ⇒ CPEInteger(value, requiresUByteIndex = true)
+            case LoadFloat(value)  ⇒ CPEFloat(value, requiresUByteIndex = true)
+            case LoadString(value) ⇒ CPEString(value, requiresUByteIndex = true)
+            case LoadClass(value)  ⇒ CPEClass(value, requiresUByteIndex = true)
+
+            case LoadMethodHandle(value) ⇒
+                CPEMethodHandle(value, requiresUByteIndex = true)
             case LoadMethodType(value) ⇒
                 CPEMethodType(value.toJVMDescriptor, requiresUByteIndex = true)
         }
@@ -279,7 +280,7 @@ object ConstantsBuffer {
      *
      * @note    If a class has more than 254 unique constants and all of them use simple `LDC` (not
      *          LDC_W) instructions, a [[ConstantPoolException]] will be thrown.
-     *          Furthermore, a [[ConstantPoolException]] if the maximum size of the pool
+     *          Furthermore, a [[ConstantPoolException]] is thrown if the maximum size of the pool
      *          (65535 entries) is exceeded.
      *
      * @param   ldcs The set of unique LDC instructions. For each constant referred to by an LDC

@@ -31,12 +31,12 @@ package br
 package cp
 
 /**
- *
  * @note    The subclasses define in which case which exceptions may be thrown!
  *
  * @author  Michael Eichberg
  */
 trait ConstantsPoolLike {
+
     def CPEClass(referenceType: ReferenceType, requiresUByteIndex: Boolean): Int
     def CPEFloat(value: Float, requiresUByteIndex: Boolean): Int
     def CPEInteger(value: Int, requiresUByteIndex: Boolean): Int
@@ -138,4 +138,3 @@ trait ConstantsPoolLike {
         }
     }
 }
-

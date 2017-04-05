@@ -86,15 +86,15 @@ import org.opalj.br.instructions._ // we need ALL of them...
 package object ba { ba ⇒
 
     {
+        val name = "Bytecode Assembler"
         // Log the information whether a production build or a development build is used.
         implicit val logContext = GlobalLogContext
         import OPALLogger.info
         try {
             scala.Predef.assert(false)
-            info("OPAL", "Bytecode Assembler - Production Build")
+            info("OPAL", s"$name - Production Build")
         } catch {
-            case ae: AssertionError ⇒
-                info("OPAL", "Bytecode Assembler - Development Build (Assertions are enabled)")
+            case ae: AssertionError ⇒ info("OPAL", s"$name - Development Build (with Assertions)")
         }
     }
 
@@ -120,7 +120,7 @@ package object ba { ba ⇒
 
     // *********************************************************************************************
     //
-    //          F U N C T I O N A L I T Y   T O  C R E A T E    "br." C L A S S F I L E S
+    //          F U N C T I O N A L I T Y   T O   C R E A T E   "br."   C L A S S F I L E S
     //
     // *********************************************************************************************
 
@@ -130,9 +130,7 @@ package object ba { ba ⇒
             new da.BootstrapMethod(
                 CPEMethodHandle(bootstrapMethod.handle, false),
                 bootstrapMethod.arguments map { arguement ⇒
-                    new da.BootstrapArgument(
-                        CPEntryForBootstrapArgument(arguement)
-                    )
+                    new da.BootstrapArgument(CPEntryForBootstrapArgument(arguement))
                 }
             )
         }
@@ -220,7 +218,6 @@ package object ba { ba ⇒
             instructions.writeByte(opcode)
 
             i.opcode match {
-                // the
 
                 case ALOAD_0.opcode | ALOAD_1.opcode | ALOAD_2.opcode | ALOAD_3.opcode |
                     ASTORE_0.opcode | ASTORE_1.opcode | ASTORE_2.opcode | ASTORE_3.opcode |
@@ -282,7 +279,9 @@ package object ba { ba ⇒
                     D2L.opcode | I2L.opcode | F2L.opcode |
                     F2D.opcode | I2D.opcode | L2D.opcode |
                     I2C.opcode | I2B.opcode | I2S.opcode |
+
                     MONITORENTER.opcode | MONITOREXIT.opcode |
+
                     ATHROW.opcode ⇒
                 // Nothing to do; the opcode is already written!
 
@@ -365,9 +364,7 @@ package object ba { ba ⇒
                     val cpeRef = CPEFieldRef(declaringClass, fieldName, jvmFieldType)
                     instructions.writeShort(cpeRef)
 
-                case INVOKESPECIAL.opcode |
-                    INVOKEVIRTUAL.opcode |
-                    INVOKESTATIC.opcode ⇒
+                case INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode | INVOKESTATIC.opcode ⇒
                     writeMethodRef(i)
 
                 case INVOKEINTERFACE.opcode ⇒
@@ -394,11 +391,13 @@ package object ba { ba ⇒
                 case LDC_W.opcode ⇒
                     instructions.writeShort(
                         i match {
-                            case LoadInt_W(value)          ⇒ CPEInteger(value, false)
-                            case LoadFloat_W(value)        ⇒ CPEFloat(value, false)
-                            case LoadClass_W(value)        ⇒ CPEClass(value, false)
-                            case LoadString_W(value)       ⇒ CPEString(value, false)
-                            case LoadMethodHandle_W(value) ⇒ CPEMethodHandle(value, false)
+                            case LoadInt_W(value)    ⇒ CPEInteger(value, false)
+                            case LoadFloat_W(value)  ⇒ CPEFloat(value, false)
+                            case LoadClass_W(value)  ⇒ CPEClass(value, false)
+                            case LoadString_W(value) ⇒ CPEString(value, false)
+
+                            case LoadMethodHandle_W(value) ⇒
+                                CPEMethodHandle(value, false)
                             case LoadMethodType_W(value) ⇒
                                 CPEMethodType(value.toJVMDescriptor, false)
                         }
@@ -427,9 +426,8 @@ package object ba { ba ⇒
                     instructions.writeInt(defaultOffset)
                     instructions.writeInt(low)
                     instructions.writeInt(high)
-                    jumpOffsets.foreach { offset ⇒
-                        instructions.writeInt(offset)
-                    }
+                    jumpOffsets.foreach { instructions.writeInt }
+
                 case LOOKUPSWITCH.opcode ⇒
                     val LOOKUPSWITCH(defaultOffset, npairs) = i
                     var padding = 3 - (pc % 4)
@@ -443,8 +441,7 @@ package object ba { ba ⇒
                     }
 
                 case WIDE.opcode ⇒
-                    if (modifiedByWide)
-                        throw new IllegalArgumentException(s"the wide at $pc follows a wide")
+                    if (modifiedByWide) throw new IllegalArgumentException(s"$pc: wide after wide")
                     // modifiedByWide will be set to false by the subsequent instruction
                     modifiedByWide = true
             }
@@ -570,11 +567,12 @@ package object ba { ba ⇒
             case br.MethodParameterTable(parameters) ⇒
                 da.MethodParameters_attribute(
                     CPEUtf8(bi.MethodParametersAttribute.Name),
-                    parameters.map(p ⇒
+                    parameters.map { p ⇒
                         da.MethodParameter(
                             if (p.name.isDefined) CPEUtf8(p.name.get) else 0,
                             p.access_flags
-                        ))
+                        )
+                    }
                 )
             case br.ExceptionTable(exceptions) ⇒
                 da.Exceptions_attribute(

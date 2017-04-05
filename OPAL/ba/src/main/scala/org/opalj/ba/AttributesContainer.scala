@@ -30,14 +30,17 @@ package org.opalj
 package ba
 
 /**
- * Container for [[org.opalj.br.Attribute]]s.
+ * Common supertrait of all code elements that can have one or more [[org.opalj.br.Attribute]]s.
  *
  * @author Malte Limmeroth
  */
 trait AttributesContainer {
 
     /**
-     * Adds the given [[org.opalj.br.Attribute]] to the class file's attributes.
+     * Adds the given [[org.opalj.br.Attribute]] to the code element's attributes.
+     *
+     * @note   If the same (kind of) attribute is added twice, it is stored twice because some
+     *         attributes can be attached multiple times to the same code element.
      */
     def addAttribute(attribute: br.Attribute): this.type
 
