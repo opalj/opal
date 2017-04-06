@@ -170,9 +170,13 @@ final class ClassFile private (
      * Returns `true` if the class is final or if it only defines private constructors and it
      * is therefore not possible to inherit from this class.
      *
-     * An interface is never effectively final.
+     * An abstract type (abstract classes and interfaces) is never effectively final.
      */
-    def isEffectivelyFinal: Boolean = isFinal || (constructors forall { _.isPrivate })
+    def isEffectivelyFinal: Boolean = {
+         isFinal || (
+             !isAbstract &&  (constructors forall { _.isPrivate })
+        )
+     }
 
     /**
      * `true` if the class file has public visibility. If `false` the method `isPackageVisible`
