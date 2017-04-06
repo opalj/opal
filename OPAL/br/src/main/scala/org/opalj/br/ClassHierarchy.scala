@@ -257,19 +257,19 @@ class ClassHierarchy private (
     }
 
     /**
-     * Iterates over all interfaces which only inherit from java.lang.Object.
+     * Iterates over all interfaces which only inherit from java.lang.Object; that is, Iterates
+     * over all interfaces which are at the top of the interface inheritance hierarchy.
      */
     def rootInterfaceTypes(coll: Growable[ObjectType]): coll.type = {
         val ObjectId = ObjectType.Object.id
         if (knownTypesMap(ObjectId) eq null)
             return coll;
 
-        //        subinterfaceTypesMap(ObjectId) filter { subInterfaceType ⇒
-        //            superinterfaceTypesMap(subInterfaceType.id).isEmpty
-        //        }
         superinterfaceTypesMap.view.zipWithIndex.foreach { si ⇒
             val (superinterfaceTypes, id) = si
-            if ((superinterfaceTypes ne null) && superinterfaceTypes.isEmpty)
+            if ((superinterfaceTypes ne null) &&
+                superinterfaceTypes.isEmpty &&
+                isInterface(id))
                 coll += knownTypesMap(id)
         }
         coll
@@ -505,6 +505,11 @@ class ClassHierarchy private (
             Unknown
         else
             Answer(interfaceTypesMap(objectType.id))
+    }
+
+    /** Returns  `true` if and only if the given type is known to define an interface! */
+    @inline private[this] def isInterface(objectTypeId: Int): Boolean = {
+        isKnown(objectTypeId) && interfaceTypesMap(objectTypeId)
     }
 
     /**
