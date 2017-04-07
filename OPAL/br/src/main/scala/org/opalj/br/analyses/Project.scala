@@ -1428,7 +1428,9 @@ object Project {
                         info("project configuration", "the JDK is part of the analysis")
                         ClassHierarchy.noDefaultTypeHierarchyDefinitions
                     } else {
-                        val alternative = "(using the preconfigured type hierarchy (based on Java 7) for classes belonging java.lang)"
+                        val alternative =
+                            "(using the preconfigured type hierarchy (based on Java 7) "+
+                                "for classes belonging java.lang)"
                         info("project configuration", "JDK classes not found "+alternative)
                         ClassHierarchy.defaultTypeHierarchyDefinitions
                     }

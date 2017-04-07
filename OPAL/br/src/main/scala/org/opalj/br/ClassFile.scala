@@ -173,10 +173,10 @@ final class ClassFile private (
      * An abstract type (abstract classes and interfaces) is never effectively final.
      */
     def isEffectivelyFinal: Boolean = {
-         isFinal || (
-             !isAbstract &&  (constructors forall { _.isPrivate })
+        isFinal || (
+            !isAbstract && (constructors forall { _.isPrivate })
         )
-     }
+    }
 
     /**
      * `true` if the class file has public visibility. If `false` the method `isPackageVisible`
