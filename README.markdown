@@ -42,6 +42,13 @@ Go to OPAL's root folder.
 
 You are ready to go.
 
+#### Toubleshooting:
+
+When you encounter problems to build OPAL, please consider the following options.
+
+ - Windows users have to adapt the __global__ sbt options such that it does work with UTF-8. To achieve this you have to add the JVM parameter `-Dfile.encoding=UTF8` to the sbt's _sbtopts_ file that is located in the sbt installation directory.
+ - OPAL depends on JavaFX and therefore requires the Oracle JDK and does NOT work with the OpenJDK. 
+
 # Using OPAL
 To get started, go to the webpage of the project [The OPAL Project](http://www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
 
