@@ -32,53 +32,50 @@ import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFile
 import org.opalj.hermes.{Feature, FeatureQuery, ProjectConfiguration}
 
-
 /**
-  * Computes the depth of inheritance tree for each class of a project and then assigns the
-  * class to its respective category.
-  *
-  * Here, the depth is measured using the shortest path from `java.lang.Object` to the respective
-  * class.
-  *
-  * @author Ben Hermann
-  */
+ * Computes the depth of inheritance tree for each class of a project and then assigns the
+ * class to its respective category.
+ *
+ * Here, the depth is measured using the shortest path from `java.lang.Object` to the respective
+ * class.
+ *
+ * @author Ben Hermann
+ */
 object InheritenceTreeDepth extends FeatureQuery {
 
+    override val featureIDs: List[String] = {
+        List(
+            "Very Small", // [0 ... 1 x CategorySize)
+            "Small", // [CategorySize ... 2 x CategorySize)
+            "Medium", // [CategorySize ... 3 x CategorySize)
+            "High", // [CategorySize ... 4 x CategorySize)
+            "Very High", // [CategorySize ... 5 x CategorySize)
+            "Extremely High", // [CategorySize ... 6 x Int.MaxValue)
+            "Unknown" // The project is not complete
+        )
+    }
 
+    override def apply[S](
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(ClassFile, S)]
+    ): TraversableOnce[Feature[S]] = {
 
-  override val featureIDs: List[String] = {
-    List(
-      "Very Small", // [0 ... 1 x CategorySize)
-      "Small", // [CategorySize ... 2 x CategorySize)
-      "Medium", // [CategorySize ... 3 x CategorySize)
-      "High", // [CategorySize ... 4 x CategorySize)
-      "Very High", // [CategorySize ... 5 x CategorySize)
-      "Extremely High", // [CategorySize ... 6 x Int.MaxValue)
-      "Unknown" // The project is not complete
-    )
-  }
+        /* Determins the size for each category. */
+        val CategorySize: Int = 3 // TODO read from config file
 
-  override def apply[S](
-                         projectConfiguration: ProjectConfiguration,
-                         project: Project[S],
-                         rawClassFiles: Traversable[(ClassFile, S)]
-                       ): TraversableOnce[Feature[S]] = {
+        val features = Array.fill[Int](featureIDs.length)(0)
 
-                           /* Determins the size for each category. */
-                           val CategorySize : Int =  3 // TODO read from config file
+        val hierarchySizes = project.classHierarchy.leafClassTypes.map(c ⇒ project.classHierarchy.allSubtypes(c, false).size)
 
-    val features = Array.fill[Int](featureIDs.length)(0)
+        features(0) = hierarchySizes.min
+        features(1) = hierarchySizes.max
 
-    val hierarchySizes = project.classHierarchy.leafClassTypes.map(c => project.classHierarchy.allSubtypes(c,false).size)
-
-    features(0) = hierarchySizes.min
-    features(1) = hierarchySizes.max
-
-    null
-    /*for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+        null
+        /*for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
         Feature[S](featureID, features(featureIDIndex))
     }*/
 
-  }
+    }
 
 }
