@@ -167,6 +167,9 @@ case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     def isSingletonSet: Boolean = true
 
     def ++(es: UIDSet[T]): UIDSet[T] = {
+        if (es eq this)
+            return this;
+
         es.size match {
             case 0 ⇒ this
             case 1 ⇒ this + es.head
@@ -244,6 +247,9 @@ case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     def isSingletonSet: Boolean = false
 
     def ++(es: UIDSet[T]): UIDSet[T] = {
+        if (es eq this)
+            return this;
+
         es.size match {
             case 0 ⇒ this
             case 1 ⇒ this + es.head
@@ -446,10 +452,17 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
     def isSingletonSet: Boolean = false
 
     def ++(es: UIDSet[T]): UIDSet[T] = {
+        if (es eq this)
+            return this;
+
         es.size match {
             case 0 ⇒ this
             case 1 ⇒ this + es.head
-            case _ ⇒ es.foldLeft(this: UIDSet[T])(_ + _)
+            case esSize ⇒
+                if (this.size > esSize)
+                    es.foldLeft(this: UIDSet[T])(_ + _)
+                else
+                    this.foldLeft(es: UIDSet[T])(_ + _)
         }
     }
 
