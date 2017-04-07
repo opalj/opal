@@ -151,6 +151,10 @@ class ClassHierarchy private (
         implicit
         val logContext: LogContext
 ) {
+    // TODO Use all subTypes/subclassTypes/subinterfaceTypes
+    // TODO Use all supertypes/superclassTypes/superinterfaceTypes
+    // TODO Precompute all subTypesCF/subclassTypesCF/subinterfaceTypesCF
+    // TODO Precompute all supertypesCF/superclassTypesCF/superinterfaceTypesCF
 
     /**
      * The set of ''all class types'' (excluding interfaces) which have no super type or
@@ -312,9 +316,6 @@ class ClassHierarchy private (
     // REGULAR METHODS
     //
     //
-
-    // TODO Precompute all subTypes/subclassTypes/subinterfaceTypes; subTypesCF/subclassTypesCF/subinterfaceTypesCF
-    // TODO Precompute all supertypes/superclassTypes/superinterfaceTypes; supertypesCF/superclassTypesCF/superinterfaceTypesCF
 
     /**
      * Returns `true` if the class hierarchy has some information about the given
@@ -2920,17 +2921,16 @@ object ClassHierarchy {
 
 sealed abstract class TypeHierarchyInformation {
 
-    def typeInformationType : String
+    def typeInformationType: String
     def classTypes: UIDSet[ObjectType]
     def interfaceTypes: UIDSet[ObjectType]
 
-
+    def size: Int = classTypes.size + interfaceTypes.size
 
     def foreach[T](f: ObjectType ⇒ T): Unit = {
         classTypes.foreach(f)
         interfaceTypes.foreach(f)
     }
-
 
     override def toString: String = {
         val classInfo = classTypes.map(_.toJava).mkString("classes={", ", ", "}")
@@ -2946,7 +2946,7 @@ sealed abstract class TypeHierarchyInformation {
  * @author Michael Eichberg
  */
 sealed abstract class SubtypeInformation extends TypeHierarchyInformation {
-    def typeInformationType : String = "SubtypeInformation"
+    def typeInformationType: String = "SubtypeInformation"
 }
 
 object SubtypeInformation {
@@ -2988,7 +2988,7 @@ object SubtypeInformation {
  * @author Michael Eichberg
  */
 sealed abstract class SupertypeInformation extends TypeHierarchyInformation {
-    def typeInformationType : String = "SupertypeInformation"
+    def typeInformationType: String = "SupertypeInformation"
 }
 
 object SupertypeInformation {
