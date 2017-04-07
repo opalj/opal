@@ -34,16 +34,27 @@ import org.opalj.hermes.{Feature, FeatureQuery, ProjectConfiguration}
 
 
 /**
-  * Provides metrics on the depth of the inheritence tree
+  * Computes the depth of inheritance tree for each class of a project and then assigns the
+  * class to its respective category.
+  *
+  * Here, the depth is measured using the shortest path from `java.lang.Object` to the respective
+  * class.
   *
   * @author Ben Hermann
   */
 object InheritenceTreeDepth extends FeatureQuery {
 
+
+
   override val featureIDs: List[String] = {
     List(
-      /*0*/ "minimum depth",
-      /*1*/ "maximum depth"
+      "Very Small", // [0 ... 1 x CategorySize)
+      "Small", // [CategorySize ... 2 x CategorySize)
+      "Medium", // [CategorySize ... 3 x CategorySize)
+      "High", // [CategorySize ... 4 x CategorySize)
+      "Very High", // [CategorySize ... 5 x CategorySize)
+      "Extremely High", // [CategorySize ... 6 x Int.MaxValue)
+      "Unknown" // The project is not complete
     )
   }
 
@@ -52,6 +63,9 @@ object InheritenceTreeDepth extends FeatureQuery {
                          project: Project[S],
                          rawClassFiles: Traversable[(ClassFile, S)]
                        ): TraversableOnce[Feature[S]] = {
+
+                           /* Determins the size for each category. */
+                           val CategorySize : Int =  3 // TODO read from config file
 
     val features = Array.fill[Int](featureIDs.length)(0)
 
