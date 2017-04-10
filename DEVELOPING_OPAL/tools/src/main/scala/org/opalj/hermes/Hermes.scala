@@ -125,6 +125,13 @@ object Hermes extends JFXApp {
         System.exit(1)
     }
 
+    // ---------------------------------------------------------------------------------------------
+    //
+    //
+    // STATIC CONFIGURATION
+    //
+    //
+    // ---------------------------------------------------------------------------------------------
     /** Creates the initial, overall configuration. */
     private[this] def initConfig(configFile: File): Config = {
         if (!configFile.exists || !configFile.canRead()) {
@@ -162,14 +169,46 @@ object Hermes extends JFXApp {
         queries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
     }
 
-    /** The list of unique features derived by enabled feature queries. */
+    /**
+     * The list of unique features derived by enabled feature queries; one ''feature query'' may
+     * be referenced by multiple unique feature queries.
+     */
     val featureIDs: List[(String, FeatureQuery)] = {
-        featureQueries.flatMap(fe ⇒ fe.featureIDs.map((_, fe)))
+        var featureIDs: List[(String, FeatureQuery)] = List.empty
+
+        for {
+            featureQuery ← featureQueries
+            featureID ← featureQuery.featureIDs
+        } {
+            if (!featureIDs.contains(featureID))
+                featureIDs +:= ((featureID, featureQuery))
+            else
+                throw DuplicateFeatureIDException(
+                    featureID,
+                    featureQuery,
+                    featureIDs.collectFirst { case (`featureID`, fq) ⇒ fq }.get
+                )
+        }
+
+        featureIDs
     }
 
     /** The set of all project configurations. */
-    val projectConfigurations = config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
-    // TODO Validate that all project names are unique!
+    val projectConfigurations = {
+        val pcs = config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
+        if (pcs.map(_.id).toSet.size != pcs.size) {
+            throw new RuntimeException("some project names are not unique")
+        }
+        pcs
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    //
+    //
+    // FIELDS FOR STORING QUERY RESULTS
+    //
+    //
+    // ---------------------------------------------------------------------------------------------
 
     /** The matrix containing for each project the extensions of all features. */
     private[this] val featureMatrix: ObservableBuffer[ProjectFeatures[URL]] = {
