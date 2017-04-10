@@ -250,9 +250,10 @@ object Hermes extends JFXApp {
 
     def exportCSV(file: File): Unit = {
         // Logic to create the csv file:
+        val csvSchemaBuilder = CsvSchema.builder().addColumn("Project")
         val csvSchema =
             featureIDs.
-                foldLeft(CsvSchema.builder().addColumn("Project")) { (schema, feature) ⇒
+                foldLeft(csvSchemaBuilder) { (schema, feature) ⇒
                     schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
                 }.
                 setUseHeader(true).
