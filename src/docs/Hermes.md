@@ -89,3 +89,7 @@ Next, we will discuss a complete query for *native* methods.
             Feature[S](featureIDs.head, nativeMethods)
         }
     }
+
+In some cases it might be interesting to also derive general project-wide statistic on the fly. In this case, the results should be stored in the project configuration's statistics object. E.g., if you would have computed the average size on the fly, you can then store the value in the project's statistics as shown below.
+
+    projectConfiguration.addStatistic("⟨SizeOfInheritanceTree⟩",averageSizeOfInheritanceTree)
