@@ -90,6 +90,6 @@ Next, we will discuss a complete query for *native* methods.
         }
     }
 
-In some cases it might be interesting to also derive general project-wide statistic on the fly. In this case, the results should be stored in the project configuration's statistics object. E.g., if you would have computed the average size on the fly, you can then store the value in the project's statistics as shown below.
+In some cases it might be interesting to also derive general project-wide statistic on the fly. In this case, the results should be stored in the project configuration's statistics object. E.g., if you would have computed the average size of the inheritance tree on the fly, you would then store the value in the project's statistics as shown below.
 
     projectConfiguration.addStatistic("⟨SizeOfInheritanceTree⟩",averageSizeOfInheritanceTree)
