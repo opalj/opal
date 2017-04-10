@@ -64,6 +64,7 @@ object SizeOfInheritanceTree extends FeatureQuery {
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
         val classHierarchy = project.classHierarchy
+        import classHierarchy.isSupertypeInformationComplete
 
         /* Determines the size for each category. */
         val CategorySize: Int = 3 // TODO read from project config file
@@ -75,12 +76,12 @@ object SizeOfInheritanceTree extends FeatureQuery {
         classHierarchy.foreachKnownType { t ⇒
             val l = ClassFileLocation(project, t)
             supertypes.get(t) match {
-                case Some(supertypeInformation) ⇒
+                case Some(supertypeInformation) if isSupertypeInformationComplete(t) ⇒
                     val sizeOfInheritanceTree = supertypeInformation.size
                     features(Math.min(sizeOfInheritanceTree / CategorySize, 5)) += l
                     classCount += 1
                     sumOfSizeOfInheritanceTrees += sizeOfInheritanceTree
-                case None ⇒
+                case _ /* None or <incomplete> */ ⇒
                     features(6) += l
             }
         }

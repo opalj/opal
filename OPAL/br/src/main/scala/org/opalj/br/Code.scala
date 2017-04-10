@@ -928,7 +928,7 @@ final class Code private (
     def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber)
 
     /**
-     * Collects all local variable tables.
+     * Collects (the merged if necessary) local variable table.
      *
      * @note   A code attribute is allowed to have multiple local variable tables. However, all
      *         tables are merged into one by OPAL at class loading time.

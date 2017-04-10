@@ -194,7 +194,7 @@ object Hermes extends JFXApp {
             featureID ← featureQuery.featureIDs
         } {
             if (!featureIDs.contains(featureID))
-                featureIDs +:= ((featureID, featureQuery))
+                featureIDs :+= ((featureID, featureQuery))
             else
                 throw DuplicateFeatureIDException(
                     featureID,
@@ -251,8 +251,15 @@ object Hermes extends JFXApp {
     }
 
     def exportCSV(file: File): Unit = {
+        // Create the set of all names of all project-wide statistics
+        var projectStatisticsIDs = Set.empty[String]
+        featureMatrix.foreach { pf ⇒
+            projectStatisticsIDs ++= pf.projectConfiguration.statistics.keySet
+        }
+
         // Logic to create the csv file:
         val csvSchemaBuilder = CsvSchema.builder().addColumn("Project")
+        projectStatisticsIDs.foreach { id ⇒ csvSchemaBuilder.addColumn(id) }
         val csvSchema =
             featureIDs.
                 foldLeft(csvSchemaBuilder) { (schema, feature) ⇒
@@ -266,6 +273,12 @@ object Hermes extends JFXApp {
         featureMatrix.foreach { pf ⇒
             csvGenerator.writeStartArray()
             csvGenerator.writeString(pf.id.value)
+            projectStatisticsIDs.foreach { id ⇒
+                pf.projectConfiguration.statistics.get(id) match {
+                    case Some(number) ⇒ csvGenerator.writeNumber(number)
+                    case None         ⇒ csvGenerator.writeString("N/A")
+                }
+            }
             pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.value.count) }
             csvGenerator.flush()
             csvGenerator.writeEndArray()
