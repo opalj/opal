@@ -41,7 +41,6 @@ import scala.concurrent.ExecutionContext
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigRenderOptions
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
@@ -163,18 +162,11 @@ object Hermes extends JFXApp {
     }
 
     /** The base configuration of OPAL and Hermes. */
-    val config = initConfig(new File(parameters.unnamed(0)))
-    Globals.MaxLocations = config.getInt(Globals.MaxLocationsKey)
-
-    /** Textual representation of the configuration related to OPAL/Hermes.  */
-    def renderConfig: String = {
-        val rendererConfig = ConfigRenderOptions.defaults().setOriginComments(false)
-        config.getObject("org.opalj").render(rendererConfig)
-    }
+    Globals.setConfig(initConfig(new File(parameters.unnamed(0))))
 
     /** The list of all registered feature queries. */
     val registeredQueries: List[Query] = {
-        config.as[List[Query]]("org.opalj.hermes.queries.registered")
+        Globals.Config.as[List[Query]]("org.opalj.hermes.queries.registered")
     }
 
     /** The list of enabled feature queries. */
@@ -208,7 +200,7 @@ object Hermes extends JFXApp {
 
     /** The set of all project configurations. */
     val projectConfigurations = {
-        val pcs = config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
+        val pcs = Globals.Config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
         if (pcs.map(_.id).toSet.size != pcs.size) {
             throw new RuntimeException("some project names are not unique")
         }
@@ -727,7 +719,7 @@ object Hermes extends JFXApp {
 
         val showConfig = new MenuItem("Show Config...") {
             onAction = handle {
-                val configurationDetails = new TextArea(renderConfig) {
+                val configurationDetails = new TextArea(Globals.renderConfig) {
                     editable = false
                     prefHeight = 600d
                 }
