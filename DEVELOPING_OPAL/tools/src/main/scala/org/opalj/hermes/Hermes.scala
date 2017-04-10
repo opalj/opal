@@ -192,7 +192,7 @@ object Hermes extends JFXApp {
             featureID ← featureQuery.featureIDs
         } {
             if (!featureIDs.contains(featureID))
-                featureIDs +:= ((featureID, featureQuery))
+                featureIDs :+= ((featureID, featureQuery))
             else
                 throw DuplicateFeatureIDException(
                     featureID,
