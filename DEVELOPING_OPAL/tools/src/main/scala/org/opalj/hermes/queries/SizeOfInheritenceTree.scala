@@ -47,12 +47,12 @@ object SizeOfInheritanceTree extends FeatureQuery {
 
     override val featureIDs: List[String] = {
         List(
-            /*0*/ "Very Small", // [0 ... 1 x CategorySize)
-            /*1*/ "Small", // [1 x CategorySize ... 2 x CategorySize)
-            /*2*/ "Medium", // [2 x CategorySize ... 3 x CategorySize)
-            /*3*/ "High", // [3 x CategorySize ... 4 x CategorySize)
-            /*4*/ "Very High", // [4 x CategorySize ... 5 x CategorySize)
-            /*5*/ "Extremely High", // [5 x CategorySize ... 6 x Int.MaxValue)
+            /*0*/ "Very Small Inheritance Tree", // [0 ... 1 x CategorySize)
+            /*1*/ "Small Inheritance Tree", // [1 x CategorySize ... 2 x CategorySize)
+            /*2*/ "Medium Inheritance Tree", // [2 x CategorySize ... 3 x CategorySize)
+            /*3*/ "Large Inheritance Tree", // [3 x CategorySize ... 4 x CategorySize)
+            /*4*/ "Very Large Inheritance Tree", // [4 x CategorySize ... 5 x CategorySize)
+            /*5*/ "Huge Inheritance Tree", // [5 x CategorySize ... 6 x Int.MaxValue)
 
             /*6*/ "Unknown" // The project is not complete
         )
