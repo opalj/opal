@@ -47,7 +47,7 @@ Next, we will discuss a complete query for *native* methods.
         // recommended to use short, but descriptive names.
         // Additionally, it is recommend to capitalize the name as used in titles.
         //
-        // The names of the features return hered, have to equal to the names used by
+        // The names of the features returned here have to equal to the names used by
         // the query!
         override val featureIDs: List[String] = List("Native Methods")
 
@@ -80,7 +80,7 @@ Next, we will discuss a complete query for *native* methods.
                 m ← classFile.methods
                 if m.isNative
             } {
-                // The current method is native and should be selected.
+                // The current method is native and is added to the set of collections..
                 nativeMethods += MethodLocation(classLocation, m)
             }
 
