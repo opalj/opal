@@ -173,7 +173,9 @@ object Hermes extends JFXApp {
     }
 
     /** The list of all registered feature queries. */
-    val registeredQueries: List[Query] = config.as[List[Query]]("org.opalj.hermes.queries")
+    val registeredQueries: List[Query] = {
+        config.as[List[Query]]("org.opalj.hermes.queries.registered")
+    }
 
     /** The list of enabled feature queries. */
     val featureQueries: List[FeatureQuery] = {
