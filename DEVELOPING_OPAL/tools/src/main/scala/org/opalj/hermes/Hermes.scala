@@ -248,6 +248,28 @@ object Hermes extends JFXApp {
         perFeatureCounts
     }
 
+    def exportCSV(file: File): Unit = {
+        // Logic to create the csv file:
+        val csvSchema =
+            featureIDs.
+                foldLeft(CsvSchema.builder().addColumn("Project")) { (schema, feature) ⇒
+                    schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
+                }.
+                setUseHeader(true).
+                build()
+        val writer = new BufferedWriter(new FileWriter(file))
+        val csvGenerator = new CsvFactory().createGenerator(writer)
+        csvGenerator.setSchema(csvSchema)
+        featureMatrix.foreach { pf ⇒
+            csvGenerator.writeStartArray()
+            csvGenerator.writeString(pf.id.value)
+            pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.value.count) }
+            csvGenerator.flush()
+            csvGenerator.writeEndArray()
+        }
+        csvGenerator.close()
+    }
+
     /* @stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
 
     // some statistics
@@ -709,25 +731,7 @@ object Hermes extends JFXApp {
                 }
                 val selectedFile = fileChooser.showSaveDialog(stage)
                 if (selectedFile != null) {
-                    // Logic to create the csv file:
-                    val csvSchema =
-                        featureIDs.
-                            foldLeft(CsvSchema.builder().addColumn("Project")) { (schema, feature) ⇒
-                                schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
-                            }.
-                            setUseHeader(true).
-                            build()
-                    val writer = new BufferedWriter(new FileWriter(selectedFile))
-                    val csvGenerator = new CsvFactory().createGenerator(writer)
-                    csvGenerator.setSchema(csvSchema)
-                    featureMatrix.foreach { pf ⇒
-                        csvGenerator.writeStartArray()
-                        csvGenerator.writeString(pf.id.value)
-                        pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.value.count) }
-                        csvGenerator.flush()
-                        csvGenerator.writeEndArray()
-                    }
-                    csvGenerator.close()
+                    exportCSV(selectedFile)
                 }
             }
         }
