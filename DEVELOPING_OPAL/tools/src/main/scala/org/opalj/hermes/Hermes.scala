@@ -365,7 +365,7 @@ object Hermes extends JFXApp {
         // - [per feature f] sum(p_i which has feature f) > 0
         val releventProjectFeatures =
             featureMatrix.filter { pf ⇒
-                pf.projectConfiguration.statistics.getOrElse("ProjectMethods", 0) > 0
+                pf.projectConfiguration.statistics.getOrElse("ProjectMethods", 0.0d) >= 1.0d
             }.toArray
         val pis: Array[IntVar] = releventProjectFeatures.map(pf ⇒ model.boolVar(pf.id.value))
         perFeatureCounts.iterator.zipWithIndex foreach { fCount_fIndex ⇒
@@ -378,7 +378,7 @@ object Hermes extends JFXApp {
             }
         }
         val piSizes: Array[Int] =
-            releventProjectFeatures.map(pf ⇒ pf.projectConfiguration.statistics("ProjectMethods"))
+            releventProjectFeatures.map(_.projectConfiguration.statistics("ProjectMethods").toInt)
         // OPTIMIZATION GOAL
         val overallSize = model.intVar("objective", 0, IntVar.MAX_INT_BOUND /*=21474836*/ )
         model.scalar(pis, piSizes, "=", overallSize).post()
@@ -466,12 +466,11 @@ object Hermes extends JFXApp {
                     popOver.headerAlwaysVisibleProperty().value = true
                     infoButton.onAction = handle {
                         if (!popOver.isShowing()) {
-                            val statistics =
-                                featureMatrix.
-                                    find(_.id.value == newProject).get.
-                                    projectConfiguration.
-                                    statistics.map(e ⇒ e._1+": "+e._2).toList.sorted.mkString("\n")
-                            textArea.text = statistics
+                            val projectFeatures = featureMatrix.find(_.id.value == newProject).get
+                            val projectConfiguration = projectFeatures.projectConfiguration
+                            val projectStatistics = projectConfiguration.statistics
+                            val statistics = projectStatistics.map(e ⇒ f"${e._1}%-32s${e._2}%12.2f")
+                            textArea.text = statistics.toList.sorted.mkString("\n")
                             popOver.show(infoButton)
                         }
                     }

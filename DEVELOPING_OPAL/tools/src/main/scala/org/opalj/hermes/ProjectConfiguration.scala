@@ -57,7 +57,7 @@ case class ProjectConfiguration(
         libcp_defaults: Option[String]
 ) {
 
-    private[this] var theProjectStatistics: Map[String, Int] = Map.empty
+    @volatile private[this] var theProjectStatistics: Map[String, Double] = Map.empty
 
     /**
      * General statistics about a project.
@@ -65,8 +65,21 @@ case class ProjectConfiguration(
      *
      * @note This information is only available after instantiate was called.
      */
-    def statistics: Map[String, Int] = {
+    def statistics: Map[String, Double] = {
         theProjectStatistics
+    }
+
+    /**
+     * @param  key The unique name of the statistic. If the name is not unique an exception will
+     *         be thrown.
+     */
+    def addStatistic(key: String, value: Double) = {
+        this.synchronized {
+            if (theProjectStatistics.contains(key))
+                throw new IllegalArgumentException(s"the key: $key is already used")
+            else
+                theProjectStatistics += ((key, value))
+        }
     }
 
     /**
@@ -145,7 +158,9 @@ case class ProjectConfiguration(
                 predefinedLibrariesClassFiles ++ libcpJARs
         }
         val brProject = Project(brProjectClassFiles, libraryClassFiles, true)
-        theProjectStatistics = brProject.statistics
+        this.synchronized {
+            theProjectStatistics ++= brProject.statistics.map { kv ⇒ val (k, v) = kv; (k, v.toDouble) }
+        }
 
         //
         // SETUP DA CLASS FILE
