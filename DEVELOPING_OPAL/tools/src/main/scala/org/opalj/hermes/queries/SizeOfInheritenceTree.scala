@@ -54,7 +54,7 @@ object SizeOfInheritanceTree extends FeatureQuery {
             /*4*/ "Very Large Inheritance Tree", // [4 x CategorySize ... 5 x CategorySize)
             /*5*/ "Huge Inheritance Tree", // [5 x CategorySize ... 6 x Int.MaxValue)
 
-            /*6*/ "Unknown" // The project is not complete
+            /*6*/ "Size of the Inheritance Tree Unknown" // The project is not complete
         )
     }
 
