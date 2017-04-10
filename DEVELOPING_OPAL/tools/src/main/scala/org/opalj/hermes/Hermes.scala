@@ -271,6 +271,14 @@ object Hermes extends JFXApp {
     }
 
     /* @stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
+    if (parameters.named.size == 1) {
+        analysesFinished onChange { (_, _, isFinished) ⇒
+            if (isFinished) {
+                exportCSV(new File(parameters.named("csv")))
+                stage.close()
+            }
+        }
+    }
 
     // some statistics
     val corpusAnalysisTime = new LongProperty
