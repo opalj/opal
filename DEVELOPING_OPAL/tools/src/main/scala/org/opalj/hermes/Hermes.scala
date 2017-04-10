@@ -114,13 +114,18 @@ import org.opalj.util.Nanoseconds
  */
 object Hermes extends JFXApp {
 
-    val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
-
-    if (parameters.unnamed.size != 1) {
+    if (parameters.unnamed.size != 1 ||
+        parameters.named.size > 1 || (
+            parameters.named.size == 1 && parameters.named.get("csv").isEmpty
+        )) {
         import Console.err
         err.println("OPAL - Hermes")
-        err.println("Invalid parameters. ")
-        err.println("The parameter has to be the configuration which lists a corpus' projects.")
+        err.println("Invalid parameters: "+parameters.named.mkString("{", ",", "}"))
+        err.println("The parameter has to be the configuration which lists a corpus' projects and, ")
+        err.println("optionally, the file to which the results should be exported ")
+        err.println("(\"--csv=<FileName>\"). If such a file is specified the application will")
+        err.println("close automatically after running all analyses.")
+        err.println()
         err.println("java org.opalj.hermes.Hermes <ConfigFile.json>")
         System.exit(1)
     }
@@ -132,10 +137,15 @@ object Hermes extends JFXApp {
     //
     //
     // ---------------------------------------------------------------------------------------------
+
+    // We use standard preferences for saving the state of the application only; not for
+    // permanent configuration settings!
+    val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
+
     /** Creates the initial, overall configuration. */
     private[this] def initConfig(configFile: File): Config = {
+        import Console.err
         if (!configFile.exists || !configFile.canRead()) {
-            import Console.err
             err.println(s"The config file cannot be found or read: $configFile")
             System.exit(2)
         }
@@ -143,10 +153,12 @@ object Hermes extends JFXApp {
             ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
         } catch {
             case t: Throwable ⇒
-                import Console.err
                 err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
                 System.exit(3)
-                throw t; //... if System.exit doe not terminate the app.
+                //... if System.exit does not terminate the app; this will at least kill the
+                // the current call.
+                throw t;
+
         }
     }
 
@@ -156,17 +168,16 @@ object Hermes extends JFXApp {
 
     /** Textual representation of the configuration related to OPAL/Hermes.  */
     def renderConfig: String = {
-        config.
-            getObject("org.opalj").
-            render(ConfigRenderOptions.defaults().setOriginComments(false))
+        val rendererConfig = ConfigRenderOptions.defaults().setOriginComments(false)
+        config.getObject("org.opalj").render(rendererConfig)
     }
 
     /** The list of all registered feature queries. */
-    val queries: List[Query] = config.as[List[Query]]("org.opalj.hermes.queries")
+    val registeredQueries: List[Query] = config.as[List[Query]]("org.opalj.hermes.queries")
 
     /** The list of enabled feature queries. */
     val featureQueries: List[FeatureQuery] = {
-        queries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
+        registeredQueries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
     }
 
     /**
@@ -222,7 +233,7 @@ object Hermes extends JFXApp {
 
     /** Summary of the number of occurrences of a feature across all projects. */
     val perFeatureCounts: Array[IntegerProperty] = {
-        val perFeatureCounts = Array.fill(featureIDs.length)(IntegerProperty(0))
+        val perFeatureCounts = Array.fill(featureIDs.size)(IntegerProperty(0))
         featureMatrix.foreach { projectFeatures ⇒
             projectFeatures.features.view.zipWithIndex foreach { fi ⇒
                 val (feature, index) = fi
@@ -388,16 +399,18 @@ object Hermes extends JFXApp {
         computeSolutions()
 
         dialog.showAndWait()
-        // Make sure that – when the dialog has been close while we are still computing solutions -
+        // Make sure that – when the dialog has been closed while we are still computing solutions -
         // the computation process "finishes soon".
         aborted = true
     }
 
+    // ---------------------------------------------------------------------------------------------
     //
     //
     // UI SETUP CODE
     //
     //
+    // ---------------------------------------------------------------------------------------------
 
     val progressBar = new ProgressBar { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
 
