@@ -1008,5 +1008,8 @@ final case class :&:[@specialized(Int) T](
             newHead
     }
 
-    override def toString: String = s"$head :&: ${rest.toString}"
+    override def toString: String = {
+        //s"$head :&: ${rest.toString}" // cannot handle very long lists (uses recursion)...
+        mkString(" :&: ")
+    }
 }
