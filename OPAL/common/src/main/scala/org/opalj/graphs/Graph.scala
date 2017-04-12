@@ -43,6 +43,9 @@ import org.opalj.collection.immutable.Naught
 /**
  * Represents a mutable (multi-)graph with ordered edges.
  *
+ * ==Thread Safety==
+ * This class is not thread-safe!
+ *
  * @author Michael Eichberg
  */
 class Graph[@specialized(Int) N: ClassTag] private (
