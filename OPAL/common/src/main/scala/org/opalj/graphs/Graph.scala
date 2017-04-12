@@ -31,8 +31,11 @@ package graphs
 
 import scala.language.implicitConversions
 
+import scala.reflect.ClassTag
+
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
+import scala.collection.mutable.HashMap
 import scala.collection.{Map ⇒ AMap}
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -42,7 +45,7 @@ import org.opalj.collection.immutable.Naught
  *
  * @author Michael Eichberg
  */
-class Graph[@specialized(Int) N] private (
+class Graph[@specialized(Int) N: ClassTag] private (
         val vertices:     Set[N],
         val successors:   LinkedHashMap[N, Chain[N]],
         val predecessors: LinkedHashMap[N, Chain[N]]
@@ -151,6 +154,29 @@ class Graph[@specialized(Int) N] private (
      */
     def leafNodes: Set[N] = vertices.filter(v ⇒ !successors.contains(v) || successors(v).isEmpty)
 
+    def sccs(filterSingletons: Boolean = false): Iterator[Iterator[N]] = {
+        val size = vertices.size
+        val indexToN = new Array[N](size)
+        val nToIndex = new HashMap[N, Int] { override def initialSize = size }
+        for {
+            e @ (n, index) ← vertices.iterator.zipWithIndex
+        } {
+            indexToN(index) = n
+            nToIndex += e
+        }
+        val es: Int ⇒ Iterator[Int] = {
+            (index: Int) ⇒
+                successors.get(indexToN(index)) match {
+                    case Some(successors) ⇒ successors.toIterator.map(nToIndex)
+                    case None             ⇒ Iterator.empty
+                }
+        }
+
+        org.opalj.graphs.sccs(size, es, filterSingletons).toIterator.map { scc ⇒
+            scc.toIterator.map(indexToN)
+        }
+    }
+
     //
     // GENERATE VARIOUS KINDS OF DEBUG OUTPUTS
     //
@@ -191,9 +217,11 @@ object Graph {
 
     implicit def AnyRefToAnyRef(o: AnyRef): AnyRef = o
 
-    def empty[N]: Graph[N] = new Graph[N](Set.empty, LinkedHashMap.empty, LinkedHashMap.empty)
+    def empty[N: ClassTag]: Graph[N] = {
+        new Graph[N](Set.empty, LinkedHashMap.empty, LinkedHashMap.empty)
+    }
 
-    def apply[N](edges: AMap[N, List[N]]): Graph[N] = {
+    def apply[N: ClassTag](edges: AMap[N, List[N]]): Graph[N] = {
         val g = Graph.empty[N]
         edges foreach { e ⇒
             val (s, ts) = e
