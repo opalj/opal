@@ -2932,6 +2932,8 @@ sealed abstract class TypeHierarchyInformation {
         interfaceTypes.foreach(f)
     }
 
+    def all: UIDSet[ObjectType] = classTypes ++ interfaceTypes
+
     override def toString: String = {
         val classInfo = classTypes.map(_.toJava).mkString("classes={", ", ", "}")
         val interfaceInfo = interfaceTypes.map(_.toJava).mkString("interfaces={", ", ", "}")
