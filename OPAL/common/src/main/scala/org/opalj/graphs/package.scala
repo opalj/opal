@@ -101,6 +101,30 @@ package object graphs {
         s
     }
 
+    /**
+     * Function to convert a given dot file to SVG. The transformation is done using the
+     * vis-js.com library which is a translated version of graphviz to JavaScript.
+     *
+     * The first call, which will initialize the JavaScript engine will take some time. Afterwards,
+     * the evaluation is much faster.
+     */
+    final lazy val dotToSVG: (String) ⇒ String = {
+        import javax.script.Invocable
+        import javax.script.ScriptEngine
+        import javax.script.ScriptEngineManager
+        import java.io.BufferedReader
+        import java.io.InputStreamReader
+
+        val engineManager = new ScriptEngineManager()
+        val engine: ScriptEngine = engineManager.getEngineByName("nashorn")
+        val reader = new BufferedReader(new InputStreamReader(this.getClass.getResourceAsStream("viz-lite.js")))
+        engine.eval(reader)
+        reader.close()
+        val invocable: Invocable = engine.asInstanceOf[Invocable]
+
+        (dot: String) ⇒ invocable.invokeFunction("Viz", dot).toString
+    }
+
     // ---------------------------------------------------------------------------------------
     //
     // Closed strongly connected components
