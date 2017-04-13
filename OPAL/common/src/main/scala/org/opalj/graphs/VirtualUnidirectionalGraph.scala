@@ -41,17 +41,11 @@ import org.opalj.collection.immutable.Chain
  * This class is not thread-safe!
  *
  * @example
- * If all nodes have at least one successor:
+ * Some nodes may have no successors:
  * {{{
- * val g = Map((0 -> Iterator(1)),(1 -> Iterator(0)),(2 -> Iterator(3)),(3 -> Iterator(0)))
- * val vg = new org.opalj.graphs.VirtualUnidirectionalGraph(4/*max id of a node +1 */,g)
- * }}}
- *
- * If some nodes may have no successors
- * {{{
- * val edges = Map((0 -> 1),(1 -> 0),(2 -> 3)/* node 3 has no successors*/)
- * val successors : Int => Iterator[Int] = (i : Int) = {
- *      edge.get(i) match {case Some(successor) => Iterator(successor); case _ => Iterator.empty }
+ * val edges = Map((0 -> List(1)),(1 -> List(0)),(2 -> List(3))/*,(3 -> List())*/)
+ * val successors : Int => Iterator[Int] = (i : Int) => {
+ * edges.get(i) match {case Some(successors) => successors.toIterator; case _ => Iterator.empty }
  * }
  * val vg = new org.opalj.graphs.VirtualUnidirectionalGraph(4/*max id of a node +1 */,successors)
  * }}}
