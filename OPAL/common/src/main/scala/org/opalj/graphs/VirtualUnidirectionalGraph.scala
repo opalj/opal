@@ -41,16 +41,27 @@ import org.opalj.collection.immutable.Chain
  * This class is not thread-safe!
  *
  * @example
+ * If all nodes have at least one successor:
  * {{{
- * val g = new org.opalj.graphs.UnidirectionalGraph(10)() += (3,2) += (4,4) += (4,2) += (2, 4)
+ * val g = Map((0 -> Iterator(1)),(1 -> Iterator(0)),(2 -> Iterator(3)),(3 -> Iterator(0)))
+ * val vg = new org.opalj.graphs.VirtualUnidirectionalGraph(4/*max id of a node +1 */,g)
  * }}}
+ *
+ * If some nodes may have no successors
+ * {{{
+ * val edges = Map((0 -> 1),(1 -> 0),(2 -> 3)/* node 3 has no successors*/)
+ * val successors : Int => Iterator[Int] = (i : Int) = {
+ *      edge.get(i) match {case Some(successor) => Iterator(successor); case _ => Iterator.empty }
+ * }
+ * val vg = new org.opalj.graphs.VirtualUnidirectionalGraph(4/*max id of a node +1 */,successors)
+ * }}}
+ *
  *
  * @author Michael Eichberg
  */
-class UnidirectionalGraph(
-        val verticesCount: Int
-)( // a graph which contains the nodes with the ids: [0...vertices-1]
-        private val successors: Array[Set[Int]] = new Array[Set[Int]](verticesCount)
+class VirtualUnidirectionalGraph(
+        val verticesCount: Int,
+        val successors:    (Int ⇒ Iterator[Int])
 ) extends AbstractGraph[Int] {
 
     def vertices: Range = (0 until this.verticesCount)
@@ -60,27 +71,9 @@ class UnidirectionalGraph(
     /**
      * Returns a node's successors.
      */
-    override def apply(s: Int): Set[Int] = {
-        val sSuccessors = successors(s)
-        if (sSuccessors eq null)
-            Set.empty
-        else
-            sSuccessors
-    }
-
-    def edges: Int ⇒ Iterator[Int] = (n: Int) ⇒ { this(n).toIterator }
-
-    /**
-     * Adds a new edge between the given vertices.
-     *
-     * (If the vertices were not previously added, they will be added.)
-     */
-    def +=(s: Int, t: Int): this.type = {
-        successors(s) = apply(s) + t
-        this
-    }
+    def apply(s: Int): Iterator[Int] = successors(s)
 
     def sccs(filterSingletons: Boolean = false): Chain[Chain[Int]] = {
-        org.opalj.graphs.sccs(verticesCount, edges, filterSingletons)
+        org.opalj.graphs.sccs(verticesCount, successors, filterSingletons)
     }
 }
