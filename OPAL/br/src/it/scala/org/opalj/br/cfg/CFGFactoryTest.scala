@@ -91,7 +91,10 @@ class CFGFactoryTest extends CFGTests {
                     if (bb.startPC > bb.endPC)
                         fail(s"the startPC ${bb.startPC} is larger than the endPC ${bb.endPC}")
                     if (allStartPCs.contains(bb.startPC))
-                        fail(s"the startPC ${bb.startPC} is used by multiple basic blocks (${cfg.allBBs.mkString(", ")}")
+                        fail(
+                            s"the startPC ${bb.startPC} is used by multiple basic blocks "+
+                                s" (${cfg.allBBs.mkString(", ")}"
+                        )
                     else
                         allStartPCs += bb.startPC
 
@@ -114,6 +117,7 @@ class CFGFactoryTest extends CFGTests {
                             fail(s"the predecessor $predecessorBB does not reference its successor $bb")
                     }
                 }
+                cfg.reachableBBs should not be (empty)
 
                 // check the correspondence of "instruction.nextInstruction" and the information
                 // contained in the cfg

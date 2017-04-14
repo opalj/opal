@@ -34,7 +34,11 @@ import org.opalj.fpcf.properties.NoEntryPoint
 import org.opalj.fpcf.properties.IsEntryPoint
 import org.opalj.fpcf.properties.EntryPoint
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br._
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ArrayType
+import org.opalj.br.VoidType
 
 /**
  * Determines the methods that are Entry Points into a given Program.
@@ -46,16 +50,14 @@ class EntryPointsAnalysis private (
         val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private[this] val mainMethodDescriptor = MethodDescriptor(ObjectType.String, VoidType)
+    val MainMethodDescriptor = MethodDescriptor(ArrayType(ObjectType.String), VoidType)
 
     /*
    * This method is only called in the corresponding analysis runner. Therefore it it guaranteed that
    * the analysisMode during the execution is always a desktop application.
    */
     def determineEntrypoints(method: Method): PropertyComputationResult = {
-        if (method.isStatic &&
-            method.isPublic &&
-            (method.descriptor eq mainMethodDescriptor) &&
+        if (method.isStatic && method.isPublic && method.descriptor == MainMethodDescriptor &&
             method.name == "main")
             ImmediateResult(method, IsEntryPoint)
         else

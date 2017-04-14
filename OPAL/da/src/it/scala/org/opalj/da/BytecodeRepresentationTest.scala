@@ -72,7 +72,7 @@ class BytecodeRepresentationTest extends FlatSpec with Matchers {
                 entriesCount.incrementAndGet()
             } catch {
                 case e: Exception ⇒ Lock.synchronized {
-                    val message = s"failed: $ze(${classFile.fqn}); message:"+e.getMessage()
+                    val message = s"failed: $ze(${classFile.thisType}); message:"+e.getMessage()
                     val newException = new RuntimeException(message, e)
                     exceptions = newException :: exceptions
                 }

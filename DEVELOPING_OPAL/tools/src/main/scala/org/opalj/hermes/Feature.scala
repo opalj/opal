@@ -26,53 +26,53 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package hermes
 
-import java.util.concurrent.atomic.AtomicInteger
-import org.opalj.collection.mutable.ArrayMap
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain
 
 /**
- * A property that is shared by a set of entities. Compared to a normal property, a set property
- * generally cannot be refined and cannot be revoked.
+ * Represents the immutable results of a feature query.
  *
- * A [[SetProperty]] is compared with other properties using reference comparison. Hence, in
- * general a new [[SetProperty]] is created by creating an object that inherits from
- * [[SetProperty]]. For example:
- * {{{
- * object IsReachable extends SetProperty[Method]
- * }}}
+ * @param  id A very short identifier of this feature. E.g., `Java8ClassFile` or
+ *         `ProtectedMethod` or `DeadMethod`. The name must not contain spaces or other
+ *         special characters.
+ * @param  count How often the feature was found in a project.
+ * @param  extensions (Some of) The places where the feature was found. This information is
+ *         primarily useful when navigating the project and is optional.
+ *         I.e., `extensions.size` can be  smaller than `count`. The maximum number
+ *         of stored locations is set using the global setting: "org.opalj.hermes.maxLocations"
  *
  * @author Michael Eichberg
  */
-trait SetProperty[E <: AnyRef] extends PropertyKind {
-
-    /**
-     * A unique id that is automatically assigned with each instance of a `SetProperty` kind.
-     */
-    // the id is used to efficiently get the respective (identity) set
-    final val id = { SetProperty.nextId(this.getClass().getSimpleName) }
-
-    private[fpcf] final val index: Int = -id - 1
-
-    private[fpcf] final val mutex = new Object
+abstract case class Feature[S] private (
+        id:         String,
+        count:      Int,
+        extensions: Chain[Location[S]]
+) {
+    assert(count >= extensions.size)
 }
 
-private[fpcf] object SetProperty {
+/**
+ * Factory to create features.
+ *
+ * @author Michael Eichberg
+ */
+object Feature {
 
-    private[this] final val idGenerator = new AtomicInteger(-1)
-
-    private[this] final val theSetPropertyNames = ArrayMap[String](5)
-
-    def propertyName(index: Int): String = {
-        theSetPropertyNames.synchronized { theSetPropertyNames(index) }
+    def apply[S](
+        id:         String,
+        count:      Int                = 0,
+        extensions: Chain[Location[S]] = Naught
+    ): Feature[S] = {
+        new Feature(id, count, extensions.takeUpTo(Globals.MaxLocations)) {}
     }
 
-    def nextId(name: String): Int = {
-        val n = if (name.endsWith("$")) name.substring(0, name.length() - 1) else name
-        val nextId = idGenerator.getAndDecrement
-        val index = -nextId - 1
-        theSetPropertyNames.synchronized { theSetPropertyNames(index) = n }
-        nextId
+    def apply[S](
+        id:        String,
+        locations: LocationsContainer[S]
+    ): Feature[S] = {
+        new Feature(id, locations.size, locations.locations) {}
     }
-
 }

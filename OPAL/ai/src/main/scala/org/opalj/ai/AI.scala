@@ -47,6 +47,7 @@ import org.opalj.ai.util.removeFirstUnless
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
+import org.opalj.br.LiveVariables
 import org.opalj.br._
 import org.opalj.br.instructions._
 
@@ -85,12 +86,53 @@ import org.opalj.br.instructions._
  * Subclasses '''are not required to be thread-safe and may have more complex state.'''
  *
  * @note
- *     OPAL does not make assumptions about the number of domain objects that
- *     are used. However, if a single domain object is used by multiple instances
- *     of this class and the abstract interpretations are executed concurrently, then
- *     the domain has to be thread-safe.
- *     The latter is trivially the case when the domain object itself does not have
- *     any state; however, most domain objects have some state.
+ *         OPAL does not make assumptions about the number of domain objects that
+ *         are used. However, if a single domain object is used by multiple instances
+ *         of this class and the abstract interpretations are executed concurrently, then
+ *         the domain has to be thread-safe.
+ *         The latter is trivially the case when the domain object itself does not have
+ *         any state; however, most domain objects have some state.
+ *
+ * @note
+ *         == Useless Joins Avoidance ==
+ *         OPAL tries to minimize unnecessary joins by using the results of a naive live
+ *         variables analysis (limited to the registers only!). This analysis helps to
+ *         prevent unnecessary joins and also helps to reduce the overall number of
+ *         processing steps. E.g., in the following case the swallowed exceptions that
+ *         may occur whenever transformIt is called, would lead to an unnecessary
+ *         join though the exception is not required!
+ *         {{{
+ *         if (enc != null) {
+ *           try {
+ *             return transformIt(transformIt(enc));
+ *           } catch (RuntimeException re) {}
+ *         }
+ *         return "";
+ *         }}}
+ *         This analysis leads to an overall reduction in the number of evaluated instruction of
+ *         about 4,5%. Additionally, it also reduces the effort spent on "expensive" joins which
+ *         leads to an overall(!) improvement for the l1.DefaultDomain of ~8,5%.
+ *
+ *         ==Dead Variables Elimination based on Definitive Paths==
+ *         (STILL IN DESIGN!!!!)
+ *         ===Idea===
+ *         Given an instruction i which may result in a fork of the control-flow (e.g.,
+ *         a conditional branch or an invoke instruction that may throw a catched exception).
+ *         If the (frist) evaluation of i definitively rules out several possible paths and - on
+ *         all paths that are taken - some values are dead, but live on some of the other paths,
+ *         then the respectively current values will never be propagated to the remaining paths,
+ *         even if the remaining paths are eventually taken!
+ *         This helps in variety of cases such as, e.g.,
+ *         {{{
+ *         var s : Object = null
+ *         for{/* it can statically be determined that this path is taken at least once!*/} {
+ *             s = "something else"
+ *         }
+ *         doIt(s); // here, "s" is guaranteed not to reference the orignal value "null"!
+ *         }}}
+ *         ===Implementation===
+ *         When we have a fork, check if all paths...
+ *
  *
  * ==Customizing the Abstract Interpretation Framework==
  * Customization of the abstract interpreter is done by creating new subclasses that
@@ -98,7 +140,7 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-abstract class AI[D <: Domain] {
+abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true) {
 
     type SomeLocals[V <: d.DomainValue forSome { val d: D }] = Option[IndexedSeq[V]]
 
@@ -326,11 +368,9 @@ abstract class AI[D <: Domain] {
         val localsArray = new Array[theDomain.Locals](codeLength)
         localsArray(0) = initialLocals
 
-        continueInterpretation(
-            code, theDomain
-        )(
-            AI.initialWorkList, Nil /*List.empty[PC]*/ , operandsArray, localsArray
-        )
+        val wl = AI.initialWorkList
+        val ae: List[PC] /*alreadyEvaluated*/ = Nil
+        continueInterpretation(code, theDomain)(wl, ae, operandsArray, localsArray)
     }
 
     def continueInterpretation(
@@ -347,10 +387,12 @@ abstract class AI[D <: Domain] {
                 case domainWithClassHierarchy: TheClassHierarchy ⇒
                     domainWithClassHierarchy.classHierarchy
                 case _ ⇒
-                    Code.preDefinedClassHierarchy
+                    Code.BasicClassHierarchy
             }
+        val (predecessorPCs, finalPCs, cfJoins) = code.predecessorPCs(classHierarchy)
+        val liveVariables = code.liveVariables(predecessorPCs, finalPCs, cfJoins)
         continueInterpretation(
-            code, code.cfJoins(classHierarchy),
+            code, cfJoins, liveVariables,
             theDomain
         )(
             initialWorkList, alreadyEvaluated,
@@ -367,10 +409,11 @@ abstract class AI[D <: Domain] {
      * This method is called before the abstract interpretation is started/continued.
      */
     protected[this] def preInterpretationInitialization(
-        code:         Code,
-        instructions: Array[Instruction],
-        cfJoins:      BitSet,
-        theDomain:    D
+        code:          Code,
+        instructions:  Array[Instruction],
+        cfJoins:       BitSet,
+        liveVariables: LiveVariables,
+        theDomain:     D
     )(
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
@@ -386,7 +429,7 @@ abstract class AI[D <: Domain] {
             case _           ⇒ /*nothing to do*/
         }
         theDomain match {
-            case d: TheCodeStructure ⇒ d.setCodeStructure(instructions, cfJoins)
+            case d: TheCodeStructure ⇒ d.setCodeStructure(instructions, cfJoins, liveVariables)
             case _                   ⇒ /*nothing to do*/
         }
         theDomain match {
@@ -420,16 +463,16 @@ abstract class AI[D <: Domain] {
      * @param  theDomain The domain that will be used to perform the domain
      *         dependent computations.
      *
-     * @param initialWorkList The list of program counters with which the interpretation
-     *      will continue. If the method was never analyzed before, the list should just
-     *      contain the value "0"; i.e., we start with the interpretation of the
-     *      first instruction (see `initialWorkList`).
-     *      '''Note that the worklist may contain negative values. These values are not
-     *      related to a specific instruction per-se but encode the necessary information
-     *      to handle subroutines. In case of calls to a subroutine we add the special
-     *      values `SUBROUTINE` and `SUBROUTINE_START` to the list to encode when the
-     *      evaluation started. This is needed to completely process the subroutine
-     *      (to explore all paths) before we finally return to the main method.'''
+     * @param  initialWorkList The list of program counters with which the interpretation
+     *         will continue. If the method was never analyzed before, the list should just
+     *         contain the value "0"; i.e., we start with the interpretation of the
+     *         first instruction (see `initialWorkList`).
+     *         '''Note that the worklist may contain negative values. These values are not
+     *         related to a specific instruction per-se but encode the necessary information
+     *         to handle subroutines. In case of calls to a subroutine we add the special
+     *         values `SUBROUTINE` and `SUBROUTINE_START` to the list to encode when the
+     *         evaluation started. This is needed to completely process the subroutine
+     *         (to explore all paths) before we finally return to the main method.'''
      *
      * @param alreadyEvaluated The list of the program counters (PC) of the instructions
      *      that were already evaluated. Initially (i.e., if the given code is analyzed
@@ -464,7 +507,7 @@ abstract class AI[D <: Domain] {
      *      a subroutine was already analyzed.
      */
     def continueInterpretation(
-        code: Code, cfJoins: BitSet,
+        code: Code, cfJoins: BitSet, liveVariables: LiveVariables,
         theDomain: D
     )(
         initialWorkList:                     List[PC],
@@ -519,7 +562,7 @@ abstract class AI[D <: Domain] {
         val instructions: Array[Instruction] = code.instructions
 
         preInterpretationInitialization(
-            code, instructions, cfJoins, theDomain
+            code, instructions, cfJoins, liveVariables, theDomain
         )(
             theOperandsArray, theLocalsArray,
             theMemoryLayoutBeforeSubroutineCall,
@@ -738,7 +781,25 @@ abstract class AI[D <: Domain] {
                     // We analyze the instruction for the first time.
                     isTargetScheduled = Yes // it is already or will be scheduled...
                     targetOperandsArray(targetPC) = operands
-                    targetLocalsArray(targetPC) = locals
+                    if (IdentifyDeadVariables && cfJoins.contains(targetPC)) {
+                        var i = 0
+                        val theLiveVariables = liveVariables(targetPC)
+                        val newLocals = locals.mapConserve { v: theDomain.DomainValue ⇒
+                            val lvIndex = i
+                            i += 1
+                            if ((v eq null) ||
+                                (v eq theDomain.TheIllegalValue) ||
+                                theLiveVariables.contains(lvIndex)) {
+                                v
+                            } else {
+                                theDomain.TheIllegalValue
+                            }
+                        }
+                        targetLocalsArray(targetPC) = newLocals
+                    } else {
+                        targetLocalsArray(targetPC) = locals
+                    }
+
                     if (abruptSubroutineTerminationCount > 0) {
                         handleAbruptSubroutineTermination(forceSchedule = true)
                     } else if (worklist.nonEmpty && cfJoins.contains(targetPC)) {
@@ -759,7 +820,7 @@ abstract class AI[D <: Domain] {
                     //
                     // 0: int i = 0
                     // 1: do {
-                    // 2:     if (UNDECIED) "A" else "B"
+                    // 2:     if (UNDECIDED) "A" else "B"
                     // 3: } while (i<5)
                     //
                     // In this case, it may happen that (we are primarily doing
@@ -922,7 +983,7 @@ abstract class AI[D <: Domain] {
             if (isInterrupted) {
                 val result =
                     AIResultBuilder.aborted(
-                        code, cfJoins, theDomain
+                        code, cfJoins, liveVariables, theDomain
                     )(
                         worklist, evaluated,
                         operandsArray, localsArray,
@@ -1080,7 +1141,7 @@ abstract class AI[D <: Domain] {
                         integrateSubroutineInformation()
                         val result =
                             AIResultBuilder.completed(
-                                code, cfJoins, theDomain
+                                code, cfJoins, liveVariables, theDomain
                             )(
                                 evaluated, operandsArray, localsArray
                             )
@@ -1106,6 +1167,15 @@ abstract class AI[D <: Domain] {
 
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
+                def checkDefinitivePath(nextPC: PC, altPC: PC, qualifier: String): Unit = {
+                    /*    if (worklist.isEmpty &&
+                        liveVariables(nextPC) != liveVariables(altPC) &&
+                        evaluated.exists(cfJoins.contains) // if it works out we should use something more efficient than the evaluated set (e.g. evaluatedCFJoins)
+                        )
+                        println(s"$pc > $nextPC(alt: $altPC):definitive path -$qualifier")
+                        */
+                }
+
                 /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
                  * value.
@@ -1124,12 +1194,14 @@ abstract class AI[D <: Domain] {
 
                     domainTest(pc, operand) match {
                         case Yes ⇒
+                            checkDefinitivePath(branchTargetPC, nextPC, "ifXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 branchTargetPC, isExceptionalControlFlow = false,
                                 rest, locals
                             )
                         case No ⇒
+                            checkDefinitivePath(nextPC, branchTargetPC, "ifXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 nextPC, isExceptionalControlFlow = false,
@@ -1190,12 +1262,14 @@ abstract class AI[D <: Domain] {
                     val testResult = domainTest(pc, left, right)
                     testResult match {
                         case Yes ⇒
+                            checkDefinitivePath(branchTargetPC, nextPC, "ifTcmpXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 branchTargetPC, isExceptionalControlFlow = false,
                                 rest, locals
                             )
                         case No ⇒
+                            checkDefinitivePath(nextPC, branchTargetPC, "ifTcmpXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 nextPC, isExceptionalControlFlow = false,
@@ -1364,12 +1438,14 @@ abstract class AI[D <: Domain] {
                 def fallThrough(
                     newOperands: Operands = operands,
                     newLocals:   Locals   = locals
-                ): Unit = {
+                ): PC = {
+                    val nextPC = pcOfNextInstruction
                     gotoTarget(
                         pc, instruction, operands, locals,
-                        pcOfNextInstruction, isExceptionalControlFlow = false,
+                        nextPC, isExceptionalControlFlow = false,
                         newOperands, newLocals
                     )
+                    nextPC
                 }
 
                 def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit = {
@@ -1381,10 +1457,13 @@ abstract class AI[D <: Domain] {
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.returnsNormally)
-                        fallThrough(rest)
-                    if (computation.throwsException)
-                        handleException(computation.exceptions)
+                    //TODO val regPC =
+                    if (computation.returnsNormally) fallThrough(rest) // else -1
+                    //TODOval exPCs =
+                    if (computation.throwsException) handleException(computation.exceptions) // else UShortSet.empty
+
+                    //TODOif (computation.returnsNormally != computation.throwsException)
+                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
                 }
 
                 def computationWithExceptions(
@@ -1392,10 +1471,8 @@ abstract class AI[D <: Domain] {
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.returnsNormally)
-                        fallThrough(rest)
-                    if (computation.throwsException)
-                        handleExceptions(computation.exceptions)
+                    if (computation.returnsNormally) fallThrough(rest)
+                    if (computation.throwsException) handleExceptions(computation.exceptions)
                 }
 
                 def computationWithReturnValueAndException(
@@ -1403,10 +1480,13 @@ abstract class AI[D <: Domain] {
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.hasResult)
-                        fallThrough(computation.result :&: rest)
-                    if (computation.throwsException)
-                        handleException(computation.exceptions)
+                    //TODOval regPC =
+                    if (computation.hasResult) fallThrough(computation.result :&: rest) // else -1
+                    //TODO val exPCs =
+                    if (computation.throwsException) handleException(computation.exceptions) // else UShortSet.empty
+
+                    //TODO if (computation.returnsNormally != computation.throwsException)
+                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
                 }
 
                 def computationWithReturnValueAndExceptions(
@@ -1414,10 +1494,8 @@ abstract class AI[D <: Domain] {
                     rest:        Operands
                 ): Unit = {
 
-                    if (computation.hasResult)
-                        fallThrough(computation.result :&: rest)
-                    if (computation.throwsException)
-                        handleExceptions(computation.exceptions)
+                    if (computation.hasResult) fallThrough(computation.result :&: rest)
+                    if (computation.throwsException) handleExceptions(computation.exceptions)
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
@@ -1431,8 +1509,10 @@ abstract class AI[D <: Domain] {
                         else
                             fallThrough(rest)
                     }
-                    if (computation.throwsException)
-                        handleExceptions(computation.exceptions)
+                    if (computation.throwsException) handleExceptions(computation.exceptions)
+
+                    //TODOif (computation.hasResult != computation.throwsException)
+                    //TODO    println(s"$pc: DEFINITIVE PATH - $instruction")
                 }
 
                 // Small helper method to make type casts shorter.
@@ -2368,7 +2448,7 @@ abstract class AI[D <: Domain] {
                             fallThrough(v1 :&: v2 :&: v1 :&: rest)
                     }
                     case 94 /*dup2_x2*/ ⇒ operands match {
-                        case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: (v4 /*@ CTC1()*/ ) :&: rest ⇒
+                        case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: v4 :&: rest ⇒
                             fallThrough(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest)
                         case (v1 @ CTC2()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: rest ⇒
                             fallThrough(v1 :&: v2 :&: v3 :&: v1 :&: rest)
@@ -2438,13 +2518,13 @@ abstract class AI[D <: Domain] {
                         else {
                             theDomain.isValueSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
-                                    // if objectref is a subtype (or if null == Unknown) => UNCHANGED
+                                    // if objectref is a subtype or if null is Unknown => UNCHANGED
                                     fallThrough()
 
                                 case No ⇒
                                     if (isNull.isNo)
                                         handleException(theDomain.VMClassCastException(pc))
-                                    else { //isNull is unknown
+                                    else { // isNull is unknown
                                         val (newOperands, newLocals) =
                                             theDomain.refTopOperandIsNull(pc, operands, locals)
                                         fallThrough(newOperands, newLocals)
@@ -2463,9 +2543,13 @@ abstract class AI[D <: Domain] {
                                     // The following assert may catch bugs in the
                                     // implementation of domains!
                                     assert(
-                                        theDomain.isValueSubtypeOf(newOperands.head, supertype).isYes,
+                                        {
+                                            val castedValue = newOperands.head
+                                            theDomain.isValueSubtypeOf(castedValue, supertype).isYes
+                                        },
                                         s"the cast of $objectref to ${supertype.toJava} failed: "+
-                                            s"the subtyping relation between ${newOperands.head} and ${supertype.toJava} is "+
+                                            s"the subtyping relation between "+
+                                            s"${newOperands.head} and ${supertype.toJava} is "+
                                             theDomain.isValueSubtypeOf(newOperands.head, supertype)
                                     )
                                     fallThrough(newOperands, newLocals)
@@ -2535,7 +2619,7 @@ abstract class AI[D <: Domain] {
         integrateSubroutineInformation()
         val result =
             AIResultBuilder.completed(
-                code, cfJoins, theDomain
+                code, cfJoins, liveVariables, theDomain
             )(
                 evaluated, operandsArray, localsArray
             )

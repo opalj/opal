@@ -30,13 +30,13 @@ package org.opalj
 
 import scala.language.existentials
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
-import org.opalj.collection.immutable.Chain
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -92,6 +92,7 @@ package object ai {
     type PC = org.opalj.br.PC
     type PCs = org.opalj.br.PCs
     final def NoPCs = org.opalj.br.NoPCs
+    type MutablePCs = org.opalj.collection.mutable.UShortSet
 
     /**
      * A value of type `ValueOrigin` identifies the origin of a value. In most cases the

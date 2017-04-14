@@ -65,7 +65,7 @@ object AsQuadruples {
      */
     def apply(
         method:           Method,
-        classHierarchy:   ClassHierarchy        = Code.preDefinedClassHierarchy,
+        classHierarchy:   ClassHierarchy        = Code.BasicClassHierarchy,
         aiResult:         Option[AIResult]      = None,
         optimizations:    List[TACOptimization] = NoOptimizations,
         forceCFGCreation: Boolean               = false

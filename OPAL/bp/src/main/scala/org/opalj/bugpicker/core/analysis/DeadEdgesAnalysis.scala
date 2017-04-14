@@ -295,6 +295,7 @@ object DeadEdgesAnalysis {
                         BaseAI.continueInterpretation(
                             result.code,
                             result.cfJoins,
+                            result.liveVariables,
                             zDomain
                         )(
                             /*initialWorkList =*/ Chain(nextPC),

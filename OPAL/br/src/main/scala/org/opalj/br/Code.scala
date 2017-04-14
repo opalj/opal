@@ -33,15 +33,16 @@ import scala.annotation.tailrec
 import scala.annotation.switch
 
 import java.util.Arrays.fill
-import java.util.LinkedList
 
 import scala.collection.BitSet
-import scala.collection.immutable.IntMap
+
 import scala.collection.mutable
 import scala.collection.immutable
+import scala.collection.immutable.IntMap
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
+import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.mutable.UShortSet
@@ -78,8 +79,12 @@ final class Code private (
         with InstructionsContainer
         with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
+    import Code.BasicClassHierarchy
+
+    def codeSize: Int = instructions.length
+
     /**
-     * Represents some filtered code. Primarily implicitly used when a for-comprehension
+     * Represents some filtered code. Primarily, implicitly used when a for-comprehension
      * is used to process the code.
      */
     class FilteredCode( final val p: ((PC, Instruction)) ⇒ Boolean)
@@ -146,9 +151,7 @@ final class Code private (
         that.result
     }
 
-    def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilterMonadic[(PC, Instruction), Nothing] = {
-        new FilteredCode(p)
-    }
+    def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilteredCode = new FilteredCode(p)
 
     override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 
@@ -172,12 +175,9 @@ final class Code private (
         }
 
     /**
-     * Counts the number of instructions. This operation has complexity O(n).
-     *
-     * The number of instructions is always smaller or equal to the size of the code
-     * array.
-     *
-     * @note The result is not cached and recalculated on-demand.
+     * Computes the number of instructions.
+     * @note The number of instructions is always smaller or equal to the size of the code array.
+     * @note This operation has complexity O(n).
      */
     def instructionsCount: Int = {
         var c = 0
@@ -210,11 +210,11 @@ final class Code private (
         val subroutineIds = new Array[Int](instructions.length)
         fill(subroutineIds, -1) // <= initially all instructions belong to "no routine"
 
-        val nextSubroutines = mutable.Queue[PC](0)
+        val nextSubroutines = new IntQueue(0)
 
         def propagate(subroutineId: Int, subroutinePC: PC): Unit = {
 
-            val nextPCs = mutable.Queue[PC](subroutinePC)
+            val nextPCs = new IntQueue(subroutinePC)
             while (nextPCs.nonEmpty) {
                 val pc = nextPCs.dequeue
                 if (subroutineIds(pc) == -1) {
@@ -223,27 +223,27 @@ final class Code private (
 
                     (instruction.opcode: @switch) match {
                         case ATHROW.opcode                                    ⇒
-                        /*Nothing do to. (Will be handled when we deal with exceptions)*/
+                        /* Nothing do to; will be handled when we deal with exceptions. */
 
                         case /* xReturn: */ 176 | 175 | 174 | 172 | 173 | 177 ⇒
-                        /*Nothing to do. (no successor!)*/
+                        /* Nothing to do; there are no successor! */
 
                         case RET.opcode                                       ⇒
                         /*Nothing to do; handled by JSR*/
                         case JSR.opcode | JSR_W.opcode ⇒
-                            val jsrInstr = instruction.asInstanceOf[JSRInstruction]
-                            nextSubroutines.enqueue(pc + jsrInstr.branchoffset)
+                            val UnconditionalBranchInstruction(branchoffset) = instruction
+                            nextSubroutines.enqueue(pc + branchoffset)
                             nextPCs.enqueue(pcOfNextInstruction(pc))
 
                         case GOTO.opcode | GOTO_W.opcode ⇒
-                            val bInstr = instruction.asInstanceOf[UnconditionalBranchInstruction]
-                            nextPCs.enqueue(pc + bInstr.branchoffset)
+                            val UnconditionalBranchInstruction(branchoffset) = instruction
+                            nextPCs.enqueue(pc + branchoffset)
 
                         case /*IFs:*/ 165 | 166 | 198 | 199 |
                             159 | 160 | 161 | 162 | 163 | 164 |
                             153 | 154 | 155 | 156 | 157 | 158 ⇒
-                            val bInstr = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
-                            nextPCs.enqueue(pc + bInstr.branchoffset)
+                            val SimpleConditionalBranchInstruction(branchoffset) = instruction
+                            nextPCs.enqueue(pc + branchoffset)
                             nextPCs.enqueue(pcOfNextInstruction(pc))
 
                         case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
@@ -261,17 +261,13 @@ final class Code private (
         var remainingExceptionHandlers = exceptionHandlers
 
         while (nextSubroutines.nonEmpty) {
-            val subroutineId = nextSubroutines.dequeue()
+            val subroutineId = nextSubroutines.dequeue
             propagate(subroutineId, subroutineId)
 
             // all handlers that handle exceptions related to one of the instructions
             // belonging to this subroutine belong to this subroutine (unless the handler
             // is already associated with a previous subroutine!)
-            @inline def belongsToCurrentSubroutine(
-                startPC:   PC,
-                endPC:     PC,
-                handlerPC: PC
-            ): Boolean = {
+            def belongsToCurrentSubroutine(startPC: PC, endPC: PC, handlerPC: PC): Boolean = {
                 var currentPC = startPC
                 while (currentPC < endPC) {
                     if (subroutineIds(currentPC) != -1) {
@@ -316,10 +312,7 @@ final class Code private (
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers with a fitting type may be reached on multiple paths.
      */
-    def cfJoins(
-        implicit
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
-    ): BitSet = {
+    def cfJoins(implicit classHierarchy: ClassHierarchy = BasicClassHierarchy): BitSet = {
         /* OLD - DOESN'T USE THE CLASS HIERARCHY!
         val instructions = this.instructions
         val instructionsLength = instructions.length
@@ -405,11 +398,10 @@ final class Code private (
             }
 
             (instruction.opcode: @switch) match {
-                case RET.opcode ⇒
-                // The potential path joins are determined when we process the JSR.
+                case RET.opcode ⇒ // potential path joins are determined when we process jsrs
 
                 case JSR.opcode | JSR_W.opcode ⇒
-                    val UnconditionalBranch(branchoffset) = instruction
+                    val UnconditionalBranchInstruction(branchoffset) = instruction
                     runtimeSuccessor(pc + branchoffset)
                     runtimeSuccessor(nextPC)
 
@@ -424,6 +416,10 @@ final class Code private (
     }
 
     /**
+     * Computes for each instruction the set of predecessor instructions as well as all
+     * instructions without predecessors. Those instructions with multiple predecessors
+     * are also returned.
+     *
      * @return  An array which contains for each instruction the set of all predecessors as well
      *          as the set of all instructions which have only predecessors; i.e., no successors
      *          and also the set of all instructions where multiple paths join.
@@ -446,7 +442,7 @@ final class Code private (
             else
                 isReached += successorPC
         }
-        lazy val cfg = CFGFactory(code, classHierarchy)
+        lazy val cfg = CFGFactory(code, classHierarchy) // fallback if we analyze pre Java 5 code...
         var pc = 0
         while (pc < instructionsLength) {
             val i = instructions(pc)
@@ -476,40 +472,49 @@ final class Code private (
         (allPredecessorPCs, exitPCs, cfJoins)
     }
 
-    def liveVariables(implicit classHierarchy: ClassHierarchy): Array[BitSet] = {
+    /**
+     * Computes for each instruction which variables are live; see
+     * `liveVariables(predecessorPCs: Array[PCs], finalPCs: PCs, cfJoins: BitSet)` for further
+     * details.
+     */
+    def liveVariables(implicit classHierarchy: ClassHierarchy): LiveVariables = {
         val (predecessorPCs, finalPCs, cfJoins) = this.predecessorPCs(classHierarchy)
         liveVariables(predecessorPCs, finalPCs, cfJoins)
     }
 
     /**
-     * @return  For each instruction (identified by its pc) the set of variables
-     *             (register values) live (identified
-     *          by their index.) I.e., if you need to know if the variable with the index 5 is
+     * Performs a live variable analysis restricted to a method's locals.
+     *
+     * @note    An IINC instruction does not change live variable information.
+     *
+     * @return  For each instruction (identified by its pc) the set of variables (register values)
+     *          which are live (identified by their index.) is determined.
+     *          I.e., if you need to know if the variable with the index 5 is
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.
      */
-    def liveVariables(
-        predecessorPCs: Array[PCs],
-        finalPCs:       PCs,
-        cfJoins:        BitSet
-    ): Array[BitSet] = {
+    def liveVariables(predecessorPCs: Array[PCs], finalPCs: PCs, cfJoins: BitSet): LiveVariables = {
         val instructions = this.instructions
-        val max = instructions.length
-        val liveVariables = new Array[BitSet](max)
-        val workqueue = new LinkedList[PC]
-        finalPCs foreach { pc ⇒ liveVariables(pc) = immutable.BitSet.empty; workqueue.add(pc) }
+        val instructionsLength = instructions.length
+        val liveVariables = new Array[BitSet](instructionsLength)
+        val workqueue = IntQueue.empty
+        val AllDead = immutable.BitSet.empty
+        finalPCs foreach { pc ⇒ liveVariables(pc) = AllDead; workqueue.enqueue(pc) }
         // required to handle endless loops!
         cfJoins foreach { pc ⇒
             val instruction = instructions(pc)
-            var liveVariableInfo = immutable.BitSet.empty
+            var liveVariableInfo = AllDead
             if (instruction.readsLocal && instruction.opcode != IINC.opcode) {
+                // This instruction is by construction "not a final instruction"
+                // because these instructions never throw any(!) exceptions and
+                // are also never "return" instructions.
                 liveVariableInfo += instruction.indexOfReadLocal
             }
             liveVariables(pc) = liveVariableInfo
-            workqueue.add(pc)
+            workqueue.enqueue(pc)
         }
         while (!workqueue.isEmpty) {
-            val pc = workqueue.removeFirst()
+            val pc = workqueue.dequeue
             val instruction = instructions(pc)
             var liveVariableInfo = liveVariables(pc)
             if (instruction.opcode != IINC.opcode) {
@@ -527,16 +532,29 @@ final class Code private (
                     }
                 }
             }
-            predecessorPCs(pc) foreach { predecessorPC ⇒
-                val predecessorLiveVariableInfo = liveVariables(predecessorPC)
-                if (predecessorLiveVariableInfo eq null) {
-                    liveVariables(predecessorPC) = liveVariableInfo
-                    workqueue.add(predecessorPC)
-                } else {
-                    val newLiveVariableInfo = (predecessorLiveVariableInfo | liveVariableInfo)
-                    if (newLiveVariableInfo != predecessorLiveVariableInfo) {
-                        liveVariables(predecessorPC) = newLiveVariableInfo
-                        workqueue.add(predecessorPC)
+            val thePCPredecessorPCs = predecessorPCs(pc)
+            // if the code contains some "trivially" dead code as, e.g., shown next:
+            // com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary (JDK8u92)
+            // PC   Line  Instruction
+            // 0    1363  aload_0
+            // 1    |     checkcast com.sun.org.apache.xalan.internal.xsltc.DOM
+            // 4    |     areturn
+            // 5    1365  astore_1  // ... exception handler for irrelevant exception...
+            // ...
+            // 23   |   areturn
+            // predecessorPCs(pc) will be null!
+            if (thePCPredecessorPCs ne null) {
+                thePCPredecessorPCs foreach { predecessorPC ⇒
+                    val predecessorLiveVariableInfo = liveVariables(predecessorPC)
+                    if (predecessorLiveVariableInfo eq null) {
+                        liveVariables(predecessorPC) = liveVariableInfo
+                        workqueue.enqueue(predecessorPC)
+                    } else {
+                        val newLiveVariableInfo = (predecessorLiveVariableInfo | liveVariableInfo)
+                        if (newLiveVariableInfo != predecessorLiveVariableInfo) {
+                            liveVariables(predecessorPC) = newLiveVariableInfo
+                            workqueue.enqueue(predecessorPC)
+                        }
                     }
                 }
             }
@@ -545,18 +563,17 @@ final class Code private (
     }
 
     /**
-     * Returns the set of all program counters where two or more control flow
-     * paths join of fork.
+     * Returns the set of all program counters where two or more control flow paths join or fork.
      *
      * ==Example==
      * {{{
-     *     0: iload_1
-     *     1: ifgt    6 // <= PATH FORK
-     *     2: iconst_1
-     *     5: goto 10
-     *     6: ...
-     *     9: iload_1
-     *  10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
+     *  0: iload_1
+     *  1: ifgt    6 // <= PATH FORK
+     *  2: iconst_1
+     *  5: goto 10
+     *  6: ...
+     *  9: iload_1
+     * 10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
      * }}}
      *
      * In case of exception handlers the sound overapproximation is made that
@@ -569,7 +586,7 @@ final class Code private (
      */
     def cfPCs(
         implicit
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = BasicClassHierarchy
     ): (BitSet /*joins*/ , BitSet /*forks*/ , IntMap[UShortSet] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
@@ -622,8 +639,7 @@ final class Code private (
     }
 
     /**
-     * Iterates over all instructions and calls the given function `f`
-     * for every instruction.
+     * Iterates over all instructions and calls the given function `f` for every instruction.
      */
     @inline final def iterate[U](f: (PC, Instruction) ⇒ U): Unit = {
         val instructionsLength = instructions.length
@@ -697,8 +713,7 @@ final class Code private (
      * In case of multiple exception handlers that are identical (in particular
      * in case of the finally handlers) only the first one is returned as that
      * one is the one that will be used by the JVM at runtime.
-     * In case of identical caught exceptions only the
-     * first of them will be returned. No further checks (w.r.t. the type hierarchy) are done.
+     * No further checks (w.r.t. the type hierarchy) are done.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
@@ -755,7 +770,7 @@ final class Code private (
         exception: ObjectType
     )(
         implicit
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[ExceptionHandler] = {
         import classHierarchy.isSubtypeOf
 
@@ -832,10 +847,10 @@ final class Code private (
      * Returns the program counter of the next instruction after the instruction with
      * the given counter (`currentPC`).
      *
-     * @param currentPC The program counter of an instruction. If `currentPC` is the
-     *      program counter of the last instruction of the code block then the returned
-     *      program counter will be equivalent to the length of the Code/Instructions
-     *      array.
+     * @param  currentPC The program counter of an instruction. If `currentPC` is the
+     *         program counter of the last instruction of the code block then the returned
+     *         program counter will be equivalent to the length of the Code/Instructions
+     *         array.
      */
     @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         instructions(currentPC).indexOfNextInstruction(currentPC)(this)
@@ -887,9 +902,7 @@ final class Code private (
      * @param pc Index of the instruction for which we want to get the line number.
      * @return `Some` line number or `None` if no line-number information is available.
      */
-    def lineNumber(pc: PC): Option[Int] = {
-        lineNumberTable.flatMap(_.lookupLineNumber(pc))
-    }
+    def lineNumber(pc: PC): Option[Int] = lineNumberTable.flatMap(_.lookupLineNumber(pc))
 
     /**
      * Returns `Some(true)` if both pcs have the same line number. If line number information
@@ -902,25 +915,25 @@ final class Code private (
     /**
      * Returns the smallest line number (if any).
      *
-     * @note The line number associated with the first instruction (pc === 0) is
-     *      not necessarily the smallest one.
-     *      {{{
-     *      public void foo(int i) {
-     *          super.foo( // The call has the smallest line number.
-     *              i+=1; // THIS IS THE FIRST OPERATION...
-     *          )
-     *      }
-     *      }}}
+     * @note   The line number associated with the first instruction (pc === 0) is
+     *         not necessarily the smallest one.
+     *         {{{
+     *         public void foo(int i) {
+     *           super.foo( // The call has the smallest line number.
+     *             i+=1; // THIS IS THE FIRST OPERATION...
+     *           )
+     *         }
+     *         }}}
      */
     def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber)
 
     /**
-     * Collects all local variable tables.
+     * Collects (the merged if necessary) local variable table.
      *
-     * @note A code attribute is allowed to have multiple local variable tables. However, all
-     *      tables are merged into one by OPAL at class loading time.
+     * @note   A code attribute is allowed to have multiple local variable tables. However, all
+     *         tables are merged into one by OPAL at class loading time.
      *
-     * @note Depending on the configuration of the reader for `ClassFile`s this
+     * @note   Depending on the configuration of the reader for `ClassFile`s this
      *         attribute may not be reified.
      */
     def localVariableTable: Option[LocalVariables] = {
@@ -928,10 +941,10 @@ final class Code private (
     }
 
     /**
-     * Returns the set of local variables defined at the given pc.
+     * Returns the set of local variables defined at the given pc base on debug information.
      *
      * @return A mapping of the index to the name of the local variable. The map is
-     *      empty if no debug information is available.
+     *         empty if no debug information is available.
      */
     def localVariablesAt(pc: PC): Map[Int, LocalVariable] = {
         localVariableTable match {
@@ -1605,7 +1618,7 @@ object Code {
      * Used to determine the potential handlers in case that an exception is
      * thrown by an instruction.
      */
-    val preDefinedClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
+    val BasicClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
 
     /**
      * The maximum number of registers required to execute the code - independent
@@ -1614,8 +1627,7 @@ object Code {
      * @note    The method's descriptor may actually require
      */
     def computeMaxLocalsRequiredByCode(instructions: Array[Instruction]): Int = {
-
-        val maxPC = instructions.length
+        val instructionsLength = instructions.length
         var pc = 0
         var maxRegisters = 0
         var modifiedByWide = false
@@ -1625,13 +1637,13 @@ object Code {
                 modifiedByWide = true
                 pc += 1
             } else {
-                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters)
+                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters) {
                     maxRegisters = i.indexOfWrittenLocal
+                }
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
                 modifiedByWide = false
             }
-
-        } while (pc < maxPC)
+        } while (pc < instructionsLength)
         maxRegisters
     }
 
@@ -1649,8 +1661,7 @@ object Code {
     }
 
     /**
-     * Calculates the maximum stack size required during execution of this code
-     * block.
+     * Computes the maximum stack size required during execution of this code block.
      *
      * @throws java.lang.ClassFormatError If the stack size differs between execution paths.
      */
@@ -1663,7 +1674,7 @@ object Code {
         val tempCode = Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers)
         val cfg = CFGFactory(tempCode, classHierarchy)
 
-        // Basic ides: follow all paths
+        // Basic idea: follow all paths
         var maxStackDepth: Int = 0;
 
         var paths: Chain[(PC, Int /*stackdepth before executing the instruction with pc*/ )] = Naught
@@ -1674,7 +1685,7 @@ object Code {
         visitedPCs += 0
 
         // We have to make sure, that all exception handlers are evaluated for
-        // max_stack, if an exception is catched, the stack size is always 1 -
+        // max_stack, if an exception is caught, the stack size is always 1 -
         // containing the exception itself.
         for (exceptionHandler ← exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC

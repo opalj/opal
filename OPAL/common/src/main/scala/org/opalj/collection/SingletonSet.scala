@@ -39,6 +39,6 @@ import scala.collection.Set
 object SingletonSet {
 
     def unapply[T](s: Set[T]): Option[T] = {
-        if (s != null && s.size == 1) s.headOption else None
+        if ((s ne null) && s.size == 1) s.headOption else None
     }
 }

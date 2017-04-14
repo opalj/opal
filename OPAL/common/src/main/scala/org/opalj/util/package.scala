@@ -88,8 +88,8 @@ package object util {
             // run, but we still do our best.
             memoryMXBean.gc()
             if (memoryMXBean.getObjectPendingFinalizationCount() > 0) {
-                // It may be the case that some finalizers (of just gc'ed object) are still running and
-                // -- therefore -- some further objects are freed after the gc run.
+                // It may be the case that some finalizers (of just gc'ed object) are still running
+                // and -- therefore -- some further objects are freed after the gc run.
                 Thread.sleep(50)
                 memoryMXBean.gc()
             }

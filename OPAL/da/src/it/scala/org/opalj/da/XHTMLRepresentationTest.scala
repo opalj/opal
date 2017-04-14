@@ -36,9 +36,9 @@ import org.scalatest.Matchers
 import org.opalj.io.writeAndOpen
 
 /**
- * This system test(suite) just loads a very large number of class files and creates
- * an HTML representation of the bytecode. It basically tests if we can load and
- * process a large number of different classes without exceptions.
+ * This test(suite) just loads a very large number of class files and creates
+ * the xHTML representation of the classes. It basically tests if we can load and
+ * process a large number of different classes without exceptions (smoke test).
  *
  * @author Michael Eichberg
  */
@@ -66,7 +66,7 @@ class XHTMLRepresentationTest extends FlatSpec with Matchers {
 
         val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
             val (classFile, _ /*url*/ ) = e
-            val fqn = classFile.fqn
+            val fqn = classFile.thisType
             if (fqn.contains('.'))
                 fqn.substring(0, fqn.lastIndexOf('.'))
             else

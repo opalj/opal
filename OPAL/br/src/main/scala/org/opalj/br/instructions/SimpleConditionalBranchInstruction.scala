@@ -63,7 +63,7 @@ trait SimpleConditionalBranchInstruction
     def branchoffset: Int
 
     /**
-     * @inheritedDoc
+     * @inheritdoc
      *
      * A simple conditional branch instruction has two targets unless both targets point
      * to the same instruction. In that case the jump has only one target, because the state
@@ -75,7 +75,7 @@ trait SimpleConditionalBranchInstruction
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         val nextInstruction = indexOfNextInstruction(currentPC)
         val jumpInstruction = currentPC + branchoffset
@@ -91,8 +91,14 @@ trait SimpleConditionalBranchInstruction
     }
 
 }
+/**
+ * Extractor for [[SimpleConditionalBranchInstruction]]s.
+ */
 object SimpleConditionalBranchInstruction {
 
+    /**
+     * Extracts the instructions branchoffset.
+     */
     def unapply(i: SimpleConditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
 
 }

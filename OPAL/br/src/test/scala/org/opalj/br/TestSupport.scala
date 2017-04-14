@@ -32,8 +32,9 @@ package br
 import java.net.URL
 
 import org.opalj.util.gc
-import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bytecode.RTJar
+import org.opalj.br.reader.readJREClassFiles
+import org.opalj.br.reader.readRTJarClassFiles
 import org.opalj.br.reader.{ClassFileBinding ⇒ ClassFileReader}
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
@@ -49,34 +50,6 @@ import org.opalj.bi.TestSupport.allBITestJARs
  */
 object TestSupport {
 
-    /**
-     * Loads class files from JRE .jars found in the boot classpath.
-     *
-     * @return List of class files ready to be passed to a `IndexBasedProject`.
-     */
-    def readJREClassFiles(
-        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
-    ): Seq[(ClassFile, URL)] = {
-        val reader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
-        val classFiles = reader.ClassFiles(JRELibraryFolder)
-        if (classFiles.isEmpty) {
-            sys.error(s"loading the JRE ($JRELibraryFolder) failed")
-        }
-
-        classFiles.toSeq
-    }
-
-    def readRTJarClassFiles(
-        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
-    ): Seq[(ClassFile, URL)] = {
-        val reader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
-        val classFiles = reader.ClassFiles(RTJar)
-        if (classFiles.isEmpty) {
-            sys.error(s"loading the JRE ($JRELibraryFolder) failed")
-        }
-        classFiles.toSeq
-    }
-
     def createJREProject(): Project[URL] = Project(readJREClassFiles(), Traversable.empty, true)
 
     def createRTJarProject(): Project[URL] = Project(readRTJarClassFiles(), Traversable.empty, true)
@@ -90,6 +63,8 @@ object TestSupport {
     }
 
     /**
+     * Iterator over all jars belonging to OPAL's test suite.
+     *
      * @note     The projects are not immediately created to facilitate the integration with
      *           ScalaTest.
      * @example
@@ -121,7 +96,7 @@ object TestSupport {
                 )
             }
         } else {
-            allBITestJARs().toIterator.map { biProjectJAR ⇒
+            allBITestJARs().toIterator map { biProjectJAR ⇒
                 (
                     biProjectJAR.getName,
                     () ⇒ {

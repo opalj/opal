@@ -263,6 +263,69 @@ class ProjectTest extends FlatSpec with Matchers {
         project.packages should be(project.projectPackages ++ project.libraryPackages)
     }
 
+    behavior of "a Project's parForeachMethodWithBody method"
+
+    def testAllMethodsWithBodyWithContext(project: SomeProject, name: String): Unit = {
+        it should s"allMethodsWithBodyWithContext should return ALL concrete methods for $name" in {
+            var allConcreteMethods = project.allMethodsWithBodyWithContext.map(_.method).toSet
+            val missedMethods: Iterable[Method] = (for {
+                c ← project.allClassFiles
+                m ← c.methods
+                if m.body.isDefined
+            } yield {
+                if (allConcreteMethods.contains(m)) {
+                    allConcreteMethods -= m
+                    None
+                } else {
+                    Some(m)
+                }
+            }).flatten
+            missedMethods should be('empty)
+        }
+    }
+    testAllMethodsWithBodyWithContext(project, "Methods.jar")
+    testAllMethodsWithBodyWithContext(overallProject, "Code.jar")
+    testAllMethodsWithBodyWithContext(opalProject, "OPAL")
+
+    def testParForeachMethodWithBody(project: SomeProject, name: String): Unit = {
+        it should s"return that same methods for $name as a manual search" in {
+            val mutex = new Object
+            var methods = List.empty[Method]
+            val exceptions = project.parForeachMethodWithBody() { mi ⇒
+                mutex.synchronized { methods ::= mi.method }
+            }
+            assert(exceptions.isEmpty)
+            val missedMethods = for {
+                c ← project.allClassFiles
+                m ← c.methods
+                if m.body.isDefined
+                if !methods.contains(m)
+            } yield {
+                (c, m)
+            }
+            assert(
+                missedMethods.isEmpty, {
+                s"; missed ${missedMethods.size} methods: "+
+                    missedMethods.map { mm ⇒
+                        val (c, m) = mm
+                        val belongsToProject = project.isProjectType(c.thisType)
+                        m.toJava(
+                            c,
+                            m.body.get.instructions.length.toString+
+                                "; belongs to project = "+belongsToProject
+                        )
+                    }.mkString("\n\t", "\n\t", "\n")
+            }
+            )
+            val methodsCount = methods.size
+            info(s"parForeachMethodWithBody iterated over $methodsCount methods")
+            assert(methodsCount == methods.toSet.size)
+        }
+    }
+    testParForeachMethodWithBody(project, "Methods.jar")
+    testParForeachMethodWithBody(overallProject, "Code.jar")
+    testParForeachMethodWithBody(opalProject, "OPAL")
+
     // -----------------------------------------------------------------------------------
     //
     // TESTING THE RESOLVING OF FIELD REFERENCES

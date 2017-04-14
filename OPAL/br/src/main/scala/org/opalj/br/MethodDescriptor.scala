@@ -463,6 +463,10 @@ object MethodDescriptor {
 
     final val JustTakesObject: MethodDescriptor = apply(ObjectType.Object, VoidType)
 
+    def JustTakes(parameterType: FieldType): MethodDescriptor = {
+        new SingleArgumentMethodDescriptor(parameterType, VoidType)
+    }
+
     final val ReadObjectDescriptor = {
         MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)
     }

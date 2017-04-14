@@ -68,9 +68,9 @@ case class Compare(
     final def cTpe: ComputationalType = ComputationalTypeInt
 }
 
-sealed trait Const extends ValueExpr
+sealed abstract class Const extends ValueExpr
 
-sealed trait SimpleValueConst extends Const
+sealed abstract class SimpleValueConst extends Const
 
 case class IntConst(pc: PC, value: Int) extends SimpleValueConst {
     final def tpe: Type = IntegerType
@@ -174,11 +174,11 @@ case class Invokedynamic(
     final def cTpe: ComputationalType = descriptor.returnType.computationalType
 }
 
-sealed trait FunctionCall extends Call with Expr {
+sealed abstract class FunctionCall extends Expr with Call {
     final def cTpe: ComputationalType = descriptor.returnType.computationalType
 }
 
-sealed trait InstanceFunctionCall extends FunctionCall {
+sealed abstract class InstanceFunctionCall extends FunctionCall {
     def receiver: Expr
 }
 
@@ -211,7 +211,7 @@ case class StaticFunctionCall(
 trait Var extends ValueExpr {
 
     /**
-     * A human readable name of the local variable.
+     * A ''human readable'' name of the local variable.
      */
     def name: String
 

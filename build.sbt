@@ -1,10 +1,9 @@
-import sbtunidoc.Plugin.UnidocKeys.unidoc
-
 name := "OPAL Library"
 
-
-//version 		in ThisBuild := "0.8.10-SNAPSHOT"
-version 		in ThisBuild := "0.8.10"
+// SNAPSHOT version 		in ThisBuild := "0.9.0-SNAPSHOT"
+// NEXT version 		in ThisBuild := "0.8.11"
+version 		in ThisBuild := "0.8.11"
+// RELEASED version 		in ThisBuild := "0.8.10"
 // RELEASED version 		in ThisBuild := "0.8.9"
 organization 	in ThisBuild := "de.opal-project"
 homepage 		in ThisBuild := Some(url("http://www.opal-project.de"))
@@ -62,9 +61,11 @@ javaOptions in ThisBuild ++= Seq(
 
 addCommandAlias("compileAll","; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
 
+addCommandAlias("buildAll","; compileAll ; unidoc ;  publishLocal ")
+
 addCommandAlias("cleanAll","; clean ; test:clean ; it:clean ; cleanFiles ; cleanCache ; cleanLocal ")
 
-addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; compileAll ; unidoc ;  publishLocal ")
+addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; buildAll ")
 
 EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18)
 EclipseKeys.withSource := true

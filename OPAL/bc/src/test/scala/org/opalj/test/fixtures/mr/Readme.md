@@ -2,6 +2,26 @@
 This package contains code to engineer classes to test method resolution in
 those cases that are not possible to create using Java source code.
 
+The following is the generic stub used by the subsequent examples.
+```java
+class C implements Intf {
+    public void f(){ this.m(); }
+}
+
+class Helper {
+    public static void println(java.lang.String s) {
+        System.out.println(s);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        C c  = new C();
+        c.f();
+    }
+}
+```
+
 ## "Inherited"StaticMethods
 The following is the Java code to facilitate comprehension of the test case.
 
@@ -30,25 +50,6 @@ class Main {
 
 ## Java 8 Method Call Semantics
 
-The following is the generic stub used by the subsequent examples.
-```java
-class C implements Intf {
-    public void f(){ this.m(); }
-}
-
-class Helper {
-    public static void println(java.lang.String s) {
-        System.out.println(s);
-    }
-}
-
-public class Main {
-    public static void main(String[] args) {
-        C c  = new C();
-        c.f();
-    }
-}
-```
 
 
 ### StaticAndDefaultInterfaceMethods

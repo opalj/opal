@@ -58,6 +58,8 @@ case class INVOKESTATIC(
         methodDescriptor.parametersCount
     }
 
+    final def parametersCount = methodDescriptor.parametersCount
+
     override def toString = {
         if (isInterface)
             "/* interface */"+super.toString

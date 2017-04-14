@@ -28,9 +28,14 @@
  */
 package org.opalj
 
+import scala.annotation.switch
+
 import scala.xml.Node
+import scala.xml.NodeSeq
+
 import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.AccessFlagsContext
+import org.opalj.bi.VisibilityModifier
 
 /**
  *
@@ -51,6 +56,24 @@ package object da {
     type Attributes = Seq[Attribute]
 
     type ExceptionTable = IndexedSeq[ExceptionTableEntry]
+
+    /**
+     * A node representing the context's access flags and a string that can be used
+     * for filtering purposes and can be attached to the member's node.
+     *
+     * In the string the default visibility is represented using the name `default`.
+     */
+    def accessFlagsToXHTML(access_flags: Int, context: AccessFlagsContext): (Node, String) = {
+        val accessFlags = AccessFlags.toString(access_flags, context)
+
+        val explicitAccessFlags =
+            VisibilityModifier.get(access_flags) match {
+                case None ⇒ if (accessFlags.length() == 0) "default" else accessFlags+" default"
+                case _    ⇒ accessFlags
+            }
+
+        (<span class="access_flags">{ accessFlags }</span>, explicitAccessFlags)
+    }
 
     def asReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
         val rt = cp(cpIndex).toString(cp)
@@ -74,7 +97,7 @@ package object da {
         if (rt.charAt(0) == 'V')
             "void"
         else
-            parseFieldType(rt).javaTypeName
+            parseFieldType(rt).asJavaType
     }
 
     /**
@@ -156,14 +179,14 @@ package object da {
                         }
                     }
                 else
-                    scala.xml.NodeSeq.Empty
+                    NodeSeq.Empty
             })</span>
         </span>
     }
 
     private[this] def parseParameterType(md: String, startIndex: Int): (String, Int) = {
         val td = md.charAt(startIndex)
-        (td: @scala.annotation.switch) match {
+        (td: @switch) match {
             case 'L' ⇒
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple
@@ -178,28 +201,20 @@ package object da {
                 )
             case _ ⇒
                 ( // this is the return tuple
-                    parseFieldType(td.toString).javaTypeName,
+                    parseFieldType(td.toString).asJavaType,
                     startIndex + 1
                 )
         }
     }
 
-    def methodAccessFlagsToString(access_flags: Int): String =
-        AccessFlags.toString(access_flags, AccessFlagsContexts.METHOD)
+    def abbreviateType(definingType: String, memberType: String): Node = {
+        val classAttrtibute = "type "+(if (definingType.indexOf('[') == -1) "object" else "array")
 
-    def abbreviateFQN(definingTypeFQN: String, memberTypeFQN: String): Node = {
-        val abbreviatedMemberTypeFQN =
-            org.opalj.bytecode.abbreviateFQN(definingTypeFQN, memberTypeFQN, '.')
-
-        if (abbreviatedMemberTypeFQN == memberTypeFQN)
-            <span class="fqn"> { memberTypeFQN } </span>
-        else
-            <span class="fqn tooltip">
-                { abbreviatedMemberTypeFQN }<span>{ memberTypeFQN }</span>
-            </span>
+        val abbreviatedMemberType = org.opalj.bytecode.abbreviateType(definingType, memberType, '.')
+        <span class={ classAttrtibute } data-type={ memberType }> { abbreviatedMemberType } </span>
     }
 
     def byteArrayToNode(info: Array[Byte]): Node = {
-        <pre>{ info.map(b ⇒ f"$b%02x").grouped(40).map(_.mkString("", " ", "\n")).mkString }</pre>
+        <pre>{ info.map(b ⇒ f"$b%02x").grouped(32).map(_.mkString("", " ", "\n")).mkString }</pre>
     }
 }

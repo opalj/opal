@@ -209,7 +209,7 @@ object ToJavaLike {
 
     def apply(
         method:         Method,
-        classHierarchy: ClassHierarchy   = Code.preDefinedClassHierarchy,
+        classHierarchy: ClassHierarchy   = Code.BasicClassHierarchy,
         aiResult:       Option[AIResult] = None
     ): String = {
         val optimizations = List(SimplePropagation)

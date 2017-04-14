@@ -87,6 +87,14 @@ package object bi {
         }
     }
 
+    final val Java9MajorVersion = 53
+    final val Java8MajorVersion = 52
+    final val Java7MajorVersion = 51
+    final val Java6MajorVersion = 50
+    final val Java5MajorVersion = 49
+    // all other versions are not really relevant in the context of Java bytecode
+    final val Java1MajorVersion = 45
+
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.
      *
@@ -108,8 +116,7 @@ package object bi {
         } catch {
             case t: Throwable ⇒
                 OPALLogger.error(
-                    "system configuration",
-                    s"could not interpret current JRE version: $versionString"
+                    "system configuration", s"could not interpret JRE version: $versionString"
                 )(GlobalLogContext)
                 false
         }

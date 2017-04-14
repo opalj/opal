@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 
 import scala.language.existentials
+
 import java.util.{IdentityHashMap ⇒ JIDMap}
 import java.util.{Set ⇒ JSet}
 import java.util.concurrent.atomic.AtomicLong
@@ -40,6 +41,7 @@ import java.util.concurrent.{ConcurrentHashMap ⇒ JCHMap}
 
 import scala.reflect.ClassTag
 import scala.collection.mutable
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable.{HashSet ⇒ HSet}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
 import scala.collection.JavaConverters._
@@ -58,7 +60,6 @@ import org.opalj.log.OPALLogger.{warn ⇒ logWarn}
 import org.opalj.log.{LogContext, OPALLogger}
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.UID
-import org.opalj.collection.immutable.UIDSet
 
 /**
  * The property store manages the execution of computations of properties related to specific
@@ -250,7 +251,7 @@ class PropertyStore private (
     //            withWriteLocks(entityLocks)(f)
     //        }
     @inline final private[this] def withEntitiesWriteLocks[T](
-        sortedEntityProperties: UIDSet[EntityProperties]
+        sortedEntityProperties: SortedSet[EntityProperties]
     )(
         f: ⇒ T
     ): T = {
@@ -261,28 +262,24 @@ class PropertyStore private (
     /**
      * Clears all properties and property computation functions.
      */
-    // Locks: SetPropertyObservers (write), accessStore
+    // Locks: accessStore
     def reset(): Unit = {
-        writeSetPropertyObservers {
-            accessStore {
-                Tasks.reset()
 
-                // reset statistics
-                propagationCount.set(0L)
-                effectiveDefaultPropertiesCount.set(0L)
+        accessStore {
+            Tasks.reset()
 
-                // reset set property related information
-                theSetPropertyObservers.clear()
-                theSetProperties.clear()
+            // reset statistics
+            propagationCount.set(0L)
+            effectiveDefaultPropertiesCount.set(0L)
 
-                // reset entity related information
-                theDirectPropertyComputations.clear()
-                theLazyPropertyComputations.clear()
-                theOnPropertyComputations.clear()
-                observers.clear()
-                entitiesProperties foreach { eps ⇒ eps.ps.clear() /*delete properties*/ }
-            }
+            // reset entity related information
+            theDirectPropertyComputations.clear()
+            theLazyPropertyComputations.clear()
+            theOnPropertyComputations.clear()
+            observers.clear()
+            entitiesProperties foreach { eps ⇒ eps.ps.clear() /*delete properties*/ }
         }
+
     }
 
     /**
@@ -322,14 +319,6 @@ class PropertyStore private (
 
     private[this] val snapshotMutex = new Object
     private[this] def snapshotToString(printProperties: Boolean): String = snapshotMutex.synchronized {
-
-        val entitiesPerSetPropertyCount = theSetProperties map { (index, entities) ⇒
-            (SetProperty.propertyName(index), entities.size)
-        }
-        val overallSetPropertyCount = entitiesPerSetPropertyCount.map(_._2).sum
-        val setPropertiesStatistics =
-            s"∑$overallSetPropertyCount: "+
-                entitiesPerSetPropertyCount.map(e ⇒ e._1+":"+e._2).mkString("(", ", ", ")")
 
         val perPropertyKeyEntities = new Array[Int](PropertyKey.maxId + 1)
         var perEntityPropertiesCount = 0
@@ -386,15 +375,13 @@ class PropertyStore private (
             s"\tunsatisfiedPropertyDependencies=$unsatisfiedPropertyDependencies\n"+
             s"\tregisteredObservers=$registeredObservers\n"+
             s"\teffectiveDefaultPropertiesCount=$effectiveDefaultPropertiesCount\n"+
-            (if (printProperties)
-                s"\tperEntityProperties[$perEntityPropertiesStatistics]"+"\n"+properties
-            else
-                "") +
-            (if (overallSetPropertyCount > 0)
-                s"\tperSetPropertyEntities[$setPropertiesStatistics]\n"
-            else
-                "")+
-            ")"
+            (
+                if (printProperties)
+                    s"\tperEntityProperties[$perEntityPropertiesStatistics]"+"\n"+properties
+                else
+                    ""
+            )+
+                ")"
     }
 
     /**
@@ -471,120 +458,6 @@ class PropertyStore private (
     }
 
     // =============================================================================================
-    // SET PROPERTIES
-    //
-    //
-
-    private[this] final val theSetPropertyObserversLock = new ReentrantReadWriteLock
-    // Access to the set of property observers needs to be synchronized!
-    // The key of the following "ArrayMap"s is the id of the SetProperty.
-    private[this] final val theSetPropertyObservers = ArrayMap[List[(Entity, Answer) ⇒ Unit]](5)
-    private[this] final val theSetProperties = ArrayMap[JIDMap[Entity, Answer]](5)
-
-    private[this] def writeSetPropertyObservers[U](f: ⇒ U): U = {
-        withWriteLock(theSetPropertyObserversLock)(f)
-    }
-
-    private[this] def querySetPropertyObservers[U](f: ⇒ U): U = {
-        withReadLock(theSetPropertyObserversLock)(f)
-    }
-
-    /**
-     * Registers the given callback function `f`. `f` will be called if any entity is added to
-     * the set identified by the given [[SetProperty]].
-     *
-     * Adds the given function `f` to the set of functions that will be called
-     * when an entity `e` gets the [[SetProperty]] `sp`. For those entities that already
-     * have the respective property; i.e., where the answer is either `Yes` or `No`,
-     * the function `f` will immediately be scheduled.
-     *
-     * I.e., the function `f` has to be thread-safe as it will be executed concurrently for
-     * each entity `e` that has the respective property.
-     */
-    // Locks: Set Property Observers (write), Set Property
-    def onPropertyDerivation[E <: Entity](sp: SetProperty[E])(f: (E, Answer) ⇒ Unit): Unit = {
-        val spIndex = sp.index
-        val spMutex = sp.mutex
-        writeSetPropertyObservers {
-            val oldObservers = theSetPropertyObservers.getOrElse(spIndex, Nil)
-            theSetPropertyObservers(spIndex) =
-                f.asInstanceOf[(Entity, Answer) ⇒ Unit] :: oldObservers
-            spMutex.synchronized {
-                import scala.collection.JavaConversions._
-                val spData = theSetProperties.getOrElseUpdate(spIndex, new JIDMap())
-                spData foreach { entry ⇒
-                    val (e, a) = entry
-                    if (a.isYesOrNo) scheduleRunnable { f(e.asInstanceOf[E], a) }
-                }
-            }
-        }
-    }
-
-    /**
-     * Directly associates the given [[SetProperty]] `sp` with the given entity `e`.
-     *
-     * If the given entity already has the associated property nothing will happen;
-     * if not, we will immediately schedule the execution of all functions that
-     * are interested in this property.
-     *
-     * @param e Some entity. This entity can be independent of the entities managed
-     *          by the store.
-     */
-    // Locks: Set Property Observers (read), Set Property
-    def add[E <: AnyRef](sp: SetProperty[E], e: E, answer: Answer): Unit = {
-        val spIndex = sp.index
-        val spMutex = sp.mutex
-        querySetPropertyObservers {
-            val isAdded = spMutex.synchronized {
-                val spData = theSetProperties.getOrElseUpdate(spIndex, new JIDMap())
-                val previousAnswer = spData.put(e, answer)
-                /*user-level*/ assert(previousAnswer == null || answer == previousAnswer)
-                previousAnswer == null
-            }
-            if (isAdded) {
-                // ATTENTION: We must not hold the lock on the store/a store entity, because
-                // scheduleRunnable requires the write lock!
-                theSetPropertyObservers.getOrElse(spIndex, Nil) foreach { f ⇒
-                    propagationCount.incrementAndGet()
-                    scheduleRunnable(f(e, answer))
-                }
-            }
-        }
-    }
-
-    /**
-     * The current set of all entities which have/do not have the given [[SetProperty]]; i.e.,
-     * where the answer is `Yes` or `No`.
-     *
-     * This is a blocking operation w.r.t. the set property; the returned set is a copy of the
-     * original set.
-     */
-    // Locks: Set Property
-    def entities[E <: AnyRef](sp: SetProperty[E]): Iterable[(E, Answer)] = {
-        sp.mutex.synchronized {
-            val entities = theSetProperties.get(sp.index)
-            if (entities.isEmpty)
-                Map.empty
-            else {
-                entities.get.
-                    clone().asInstanceOf[JIDMap[E, Answer]].asScala.
-                    view.filter(_._2.isYesOrNo)
-            }
-        }
-    }
-
-    /**
-     * Returns whether the entity currently has/does not have a respective property.
-     */
-    def apply[E <: Entity](sp: SetProperty[E], e: E): Answer = {
-        if (debug) assert(data.containsKey(e), s"$e is not stored in the property store")
-
-        sp.mutex.synchronized {
-            theSetProperties.get(sp.index).map(_.get(e)).getOrElse(Unknown)
-        }
-    }
-
-    // =============================================================================================
     //
     // PER ENTITY PROPERTIES
     //
@@ -616,9 +489,9 @@ class PropertyStore private (
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
      *
-     * @note Querying the properties of the given entities will trigger lazy and direct property
-     *      computations.
-     * @note The returned collection can be used to create an [[IntermediateResult]].
+     * @note   Querying the properties of the given entities will trigger lazy and direct property
+     *         computations.
+     * @note   The returned collection can be used to create an [[IntermediateResult]].
      */
     // Locks (indirectly): apply(Entity,PropertyKey)
     def apply[E <: Entity, P <: Property](
@@ -636,7 +509,7 @@ class PropertyStore private (
      * @note The returned collection can be used to create an [[IntermediateResult]].
      */
     // Locks (indirectly): apply(Entity,PropertyKey)
-    def apply[E <: Entity, P <: Property](
+    final def apply[E <: Entity, P <: Property](
         es:  Traversable[E],
         pmi: PropertyMetaInformation { type Self <: P }
     ): Traversable[EOptionP[E, P]] = {
@@ -647,7 +520,7 @@ class PropertyStore private (
      * Returns the property of the respective property kind `pk` currently associated
      * with the given element `e`.
      *
-     * This is most basic method to get some property and it is the preferred way
+     * This is the most basic method to get some property and it is the preferred way
      * if (a) you know that the property is already available – e.g., because some
      * property computation function was strictly run before the current one – or
      * if (b) the property is computed using a direct or a lazy property computation - or
@@ -793,6 +666,7 @@ class PropertyStore private (
      * @param dependeeE The entity about which some information is strictly required to compute the
      *      property `dependerPK`.
      */
+    // TODO Remove ... this completely counters  the concept of independent analysis
     // Locks of this.apply(...): Store, Entity
     def require[DependeeP <: Property](
         dependerE:  Entity,
@@ -968,14 +842,16 @@ class PropertyStore private (
     // TODO FOREACH
 
     /**
-     * Directly associate the given property `p` with given entity `e` if `e` has no property
+     * Directly associate the given property `p` with the given entity `e` if `e` has no property
      * of the respective kind and no other lazy or direct computation is currently executed.
      *
      * This method must not be used '''if there might be a regular scheduled computation that
      * computes the property `p` for `e`'''.
      *
-     * A use case is an analysis that does not use the property store for executing the analysis,
-     * but wants to store some results in the store.
+     * A use case is an analysis that does not interact with the property store while
+     * executing the analysis, but wants to store some results in the store.
+     * (If the property store is "just" used for parallelizing the execution of the analysis
+     * it is still possible to use `set`.)
      *
      * If a property is already associated with the given entity, an exception is thrown
      * to prevent programming errors.
@@ -1206,7 +1082,10 @@ class PropertyStore private (
      *      ps(e,pk).get
      *      }}}
      */
-    def <<![P <: Property](pk: PropertyKey[P], dpc: (Entity) ⇒ Property): Unit = accessStore {
+    def scheduleOnDemandComputation[P <: Property](
+        pk:  PropertyKey[P],
+        dpc: (Entity) ⇒ Property
+    ): Unit = accessStore {
         /* The framework has to handle the situation that the same dpc is potentially triggered
          * by multiple other analyses concurrently!
          *
@@ -1238,7 +1117,10 @@ class PropertyStore private (
      * than once for the same element at the same time. If `pc` is invoked again for a specific
      * element then only because a dependee has changed!
      */
-    def <<?[P <: Property](pk: PropertyKey[P], pc: SomePropertyComputation): Unit = accessStore {
+    def scheduleLazyComputation[P <: Property](
+        pk: PropertyKey[P],
+        pc: SomePropertyComputation
+    ): Unit = accessStore {
         theLazyPropertyComputations(pk.id) = pc
     }
 
@@ -1276,15 +1158,15 @@ class PropertyStore private (
     }
 
     /**
-     * Registers a function `c` that calculates a property for those elements
+     * Registers a function `c` that computes a property for those elements
      * of the store that are collected by the given partial function `pf`.
      *
      * The partial function is evaluated for all entities as part of this
      * method; i.e., the calling thread.
      *
-     * @param pf A a partial function that is used to collect those elements that will be
-     *      passed to the function`c` and for which the analysis may compute some property.
-     *      The function pf is performed in the context of the calling thread.
+     * @param  pf A a partial function that is used to collect those elements that will be
+     *         passed to the function`c` and for which the analysis may compute some property.
+     *         The function pf is performed in the context of the calling thread.
      */
     def <||<[E <: Entity](pf: PartialFunction[Entity, E], c: PropertyComputation[E]): Unit = {
         val es = keysList.collect(pf)
@@ -2091,9 +1973,13 @@ class PropertyStore private (
                     //val accessedEPs =
                     //    SortedSet(data.get(dependerE))(EntityPropertiesOrdering) ++
                     //        dependees.view.map(d ⇒ data.get(d.e))
-                    val dependerEP = UIDSet(data.get(dependerE))
-                    //val accessedEPs = accessedDepender ++ dependees.view.map(d ⇒ data.get(d.e))
-                    val accessedEPs = dependees.foldLeft(dependerEP)((c, d) ⇒ c + data.get(d.e))
+                    // val dependerEP = UIDSet(data.get(dependerE)) !!!!! UID SETS ARE NO LONGER SORTED !!!!
+                    //val accessedEPs = dependees.foldLeft(dependerEP)((c, d) ⇒ c + data.get(d.e))
+                    val accessedEPs =
+                        dependees.
+                            foldLeft(SortedSet(data.get(dependerE))(EntityPropertiesOrdering)) { (c, d) ⇒
+                                c + data.get(d.e)
+                            }
                     withEntitiesWriteLocks(accessedEPs) {
                         /*internal*/ /* assert(
                             { val os = observers.get(dependerEPK); (os eq null) || (os.isEmpty) },
@@ -2321,7 +2207,9 @@ object PropertyStore {
      * @param debug `true` if debug output should be generated.
      * @param context A collection of objects which are of different types and which
      *        can be queried later on to get information about the property store's
-     *        context.
+     *        context. For example, in case of OPAL the project to which this property store
+     *        belongs is stored as context information.
+     *
      * @param logContext The [[org.opalj.log.LogContext]] that will be used for debug etc. messages.
      * @return The newly created [[PropertyStore]].
      */
@@ -2404,7 +2292,10 @@ private[fpcf] object PropertyAndObservers {
 private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObservers, Property] {
 
     def isDefinedAt(pos: PropertyAndObservers): Boolean = {
-        (pos ne null) && { val p = pos.p; (p ne null) && !p.isBeingComputed }
+        (pos ne null) && {
+            val p = pos.p
+            (p ne null) && !p.isBeingComputed
+        }
     }
 
     def apply(pos: PropertyAndObservers): Property = pos.p
@@ -2428,6 +2319,6 @@ private[fpcf] object PropertiesOfEntity {
 
 }
 
-object EntityPropertiesOrdering extends Ordering[EntityProperties] {
+private[fpcf] object EntityPropertiesOrdering extends Ordering[EntityProperties] {
     def compare(x: EntityProperties, y: EntityProperties): Int = x.id - y.id
 }

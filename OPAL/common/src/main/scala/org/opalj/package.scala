@@ -131,7 +131,7 @@ package object opalj {
      * A simple type alias that can be used to communicate that the respective
      * value will/should only take values in the range of unsigned short values.
      */
-    final type UShort = Int
+    final type UShort = Int // TODO: Use char???
 
     /**
      * A simple type alias that can be used to communicate that the respective

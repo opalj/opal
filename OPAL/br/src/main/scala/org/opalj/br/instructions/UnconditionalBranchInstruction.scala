@@ -53,13 +53,9 @@ trait UnconditionalBranchInstructionLike
     override final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }
-object UnconditionalBranch {
-
-    def unapply(i: UnconditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
-
-}
 
 trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranchInstructionLike {
+
     def branchoffset: Int
 
     override final def nextInstructions(
@@ -68,7 +64,7 @@ trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranc
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         Chain.singleton(currentPC + branchoffset)
     }
@@ -77,5 +73,17 @@ trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranc
         val direction = (if (branchoffset >= 0) "↓" else "↑")
         getClass.getSimpleName+" "+(currentPC + branchoffset) + direction
     }
+
+}
+
+/**
+ * Extractor for [[UnconditionalBranchInstruction]]s.
+ */
+object UnconditionalBranchInstruction {
+
+    /**
+     * Extracts the instructions branchoffset.
+     */
+    def unapply(i: UnconditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
 
 }

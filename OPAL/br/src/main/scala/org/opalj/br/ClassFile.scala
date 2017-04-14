@@ -140,9 +140,11 @@ final class ClassFile private (
 
     import ClassFile._
 
-    final def minorVersion = version.minor
+    final def minorVersion: UShort = version.minor
 
-    final def majorVersion = version.major
+    final def majorVersion: UShort = version.major
+
+    final def jdkVersion: String = org.opalj.bi.jdkVersion(majorVersion)
 
     final override def isClass: Boolean = true
 
@@ -168,9 +170,13 @@ final class ClassFile private (
      * Returns `true` if the class is final or if it only defines private constructors and it
      * is therefore not possible to inherit from this class.
      *
-     * An interface is never effectively final.
+     * An abstract type (abstract classes and interfaces) is never effectively final.
      */
-    def isEffectivelyFinal: Boolean = isFinal || (constructors forall { _.isPrivate })
+    def isEffectivelyFinal: Boolean = {
+        isFinal || (
+            !isAbstract && (constructors forall { _.isPrivate })
+        )
+    }
 
     /**
      * `true` if the class file has public visibility. If `false` the method `isPackageVisible`
@@ -201,6 +207,9 @@ final class ClassFile private (
      * Returns true if this class file represents an interface.
      *
      * @note From the JVM point-of-view annotations are also interfaces!
+     *
+     * @see [[org.opalj.br.analyses.Project]] to determine if this interface declaration is a
+     *      functional interface.
      */
     def isInterfaceDeclaration: Boolean = (accessFlags & ACC_INTERFACE.mask) == ACC_INTERFACE.mask
 

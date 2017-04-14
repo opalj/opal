@@ -69,7 +69,7 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Naught
@@ -106,7 +106,7 @@ object ReturnInstruction {
         }
     }
 
-    def apply(theType: Type): ReturnInstruction =
+    def apply(theType: Type): ReturnInstruction = {
         (theType.id: @switch) match {
             case VoidType.id    ⇒ RETURN
             case IntegerType.id ⇒ IRETURN
@@ -118,6 +118,20 @@ object ReturnInstruction {
             case FloatType.id   ⇒ FRETURN
             case DoubleType.id  ⇒ DRETURN
             case _              ⇒ ARETURN
+        }
+    }
+
+    def unapply(instruction: Instruction): Option[ReturnInstruction] =
+        (instruction.opcode: @switch) match {
+            case RETURN.opcode
+                | IRETURN.opcode
+                | LRETURN.opcode
+                | FRETURN.opcode
+                | DRETURN.opcode
+                | ARETURN.opcode ⇒
+                Some(instruction.asInstanceOf[ReturnInstruction])
+            case _ ⇒
+                None
         }
 
 }

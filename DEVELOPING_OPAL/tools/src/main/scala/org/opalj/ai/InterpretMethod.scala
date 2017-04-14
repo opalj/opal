@@ -52,7 +52,7 @@ import org.opalj.graphs.toDot
  */
 object InterpretMethod {
 
-    private object AI extends AI[Domain] {
+    private class IMAI(IdentifyDeadVariables: Boolean) extends AI[Domain](IdentifyDeadVariables) {
 
         override def isInterrupted: Boolean = Thread.interrupted()
 
@@ -86,6 +86,7 @@ object InterpretMethod {
             println("\t3: the simple name or signature of a method of the specified class.")
             println("\t4[Optional]: -domain=CLASS the name of the class of the configurable domain to use.")
             println("\t5[Optional]: -trace={true,false} default:true")
+            println("\t6[Optional]: -identifyDeadVariables={true,false} default:true")
         }
 
         if (args.size < 3 || args.size > 5) {
@@ -98,7 +99,8 @@ object InterpretMethod {
         val methodName = remainingArgs.head; remainingArgs = remainingArgs.tail
         val domainClass = {
             if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-domain=")) {
-                val clazz = Class.forName(remainingArgs.head.substring(8)).asInstanceOf[Class[_ <: Domain]]
+                val domainRawClass = Class.forName(remainingArgs.head.substring(8))
+                val clazz = domainRawClass.asInstanceOf[Class[_ <: Domain]]
                 remainingArgs = remainingArgs.tail
                 clazz
             } else // default domain
@@ -106,10 +108,24 @@ object InterpretMethod {
         }
         val doTrace = {
             if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-trace=")) {
-                val result = (remainingArgs.head == "-trace=true" || remainingArgs.head == "-trace=1")
+                val result = (
+                    remainingArgs.head == "-trace=true" ||
+                    remainingArgs.head == "-trace=1"
+                )
                 remainingArgs = remainingArgs.tail
                 result
-            } else // default domain
+            } else
+                true
+        }
+        val doIdentifyDeadVariables = {
+            if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-identifyDeadVariables=")) {
+                val result = (
+                    remainingArgs.head == "-identifyDeadVariables=true" ||
+                    remainingArgs.head == "-identifyDeadVariables=1"
+                )
+                remainingArgs = remainingArgs.tail
+                result
+            } else
                 true
         }
         if (remainingArgs.nonEmpty) {
@@ -183,7 +199,9 @@ object InterpretMethod {
         try {
             val result =
                 if (doTrace)
-                    AI(classFile, method, createDomain(project, classFile, method))
+                    new IMAI(doIdentifyDeadVariables)(
+                        classFile, method, createDomain(project, classFile, method)
+                    )
                 else {
                     val body = method.body.get
                     println("Starting abstract interpretation of: ")
@@ -193,7 +211,10 @@ object InterpretMethod {
                         "; #max_stack="+body.maxStack+
                         "; #locals="+body.maxLocals+"]")
                     println("\t}")
-                    val result = BaseAI(classFile, method, createDomain(project, classFile, method))
+                    val result =
+                        new BaseAI(doIdentifyDeadVariables)(
+                            classFile, method, createDomain(project, classFile, method)
+                        )
                     println("Finished abstract interpretation.")
                     result
                 }
@@ -234,17 +255,24 @@ object InterpretMethod {
                     Some(method),
                     method.body.get,
                     Some(
-                        s"Created: ${new Date}<br>Domain: ${domainClass.getName}<br>"+
-                            XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
+
+                        s"Analyzed: ${new Date}<br>Domain: ${domainClass.getName}<br>"+
                             (
-                                if (result.subroutineInstructions.nonEmpty)
-                                    XHTML.instructionsToXHTML(
-                                    "Subroutine instructions",
-                                    result.subroutineInstructions.iterable
-                                )
+                                if (doIdentifyDeadVariables)
+                                    "<b>Dead Variables Identification</b><br>"
                                 else
-                                    ""
-                            ) + XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                                    "<u>Dead Variables are not filtered</u>.<br>"
+                            ) +
+                                XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
+                                (
+                                    if (result.subroutineInstructions.nonEmpty)
+                                        XHTML.instructionsToXHTML(
+                                        "Subroutine instructions",
+                                        result.subroutineInstructions.iterable
+                                    )
+                                    else
+                                        ""
+                                ) + XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain
                 )(result.cfJoins, result.operandsArray, result.localsArray),

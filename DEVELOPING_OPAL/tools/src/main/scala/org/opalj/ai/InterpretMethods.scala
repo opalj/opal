@@ -42,6 +42,7 @@ import org.opalj.log.LogContext
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.ai.util.XHTML
+import org.opalj.io.writeAndOpen
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
@@ -172,14 +173,10 @@ object InterpretMethodsAnalysis {
             try {
                 if (beVerbose) println(method.toJava(classFile, YELLOW+"[started]"+RESET))
 
-                time('AI) {
-                    val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor)
-                    val result =
-                        ai.apply(
-                            classFile,
-                            method,
-                            domainConstructor.newInstance(project, classFile, method)
-                        )
+                val evaluatedCount = time('AI) {
+                    val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor, true)
+                    val domain = domainConstructor.newInstance(project, classFile, method)
+                    val result = ai(classFile, method, domain)
                     if (result.wasAborted) {
                         if (beVerbose)
                             println(
@@ -195,8 +192,27 @@ object InterpretMethodsAnalysis {
                         val message = s"evaluation bound (max=${ai.maxEvaluationCount}) exceeded"
                         throw new InterruptedException(message)
                     }
-                    instructionEvaluationsCount.addAndGet(ai.currentEvaluationCount.toLong)
+                    val evaluatedCount = ai.currentEvaluationCount.toLong
+                    instructionEvaluationsCount.addAndGet(evaluatedCount)
+                    evaluatedCount
                 }
+                val naiveEvaluatedCount = time('NAIVE_AI) {
+                    val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor, false)
+                    val domain = domainConstructor.newInstance(project, classFile, method)
+                    ai(classFile, method, domain)
+                    ai.currentEvaluationCount
+                }
+
+                if (naiveEvaluatedCount > evaluatedCount) {
+                    val codeLength = body.instructions.length
+                    val message = method.toJava(
+                        classFile,
+                        s"Evaluation steps (code length:$codeLength): "+
+                            s"${naiveEvaluatedCount} (w/o dead variables analysis) vs. $evaluatedCount"
+                    )
+                    println(message)
+                }
+
                 if (beVerbose) println(method.toJava(classFile, GREEN+"[finished]"+RESET))
                 methodsCount.incrementAndGet()
                 None
@@ -204,12 +220,8 @@ object InterpretMethodsAnalysis {
                 case ct: ControlThrowable ⇒ throw ct
                 case t: Throwable ⇒
                     // basically, we want to catch everything!
-                    Some((
-                        project.source(classFile.thisType).get.toString,
-                        classFile,
-                        method,
-                        t
-                    ))
+                    val source = project.source(classFile.thisType).get.toString
+                    Some((source, classFile, method, t))
             }
         }
 
@@ -248,14 +260,9 @@ object InterpretMethodsAnalysis {
 
             val node =
                 XHTML.createXHTML(
-                    Some("Exceptions Thrown During Interpretation"),
-                    scala.xml.NodeSeq.fromSeq(body)
+                    Some("Exceptions Thrown During Interpretation"), scala.xml.NodeSeq.fromSeq(body)
                 )
-            val file =
-                org.opalj.io.writeAndOpen(
-                    node,
-                    "ExceptionsOfCrashedAbstractInterpretations", ".html"
-                )
+            val file = writeAndOpen(node, "ExceptionsOfCrashedAbstractInterpretations", ".html")
 
             (
                 "During the interpretation of "+
@@ -269,9 +276,10 @@ object InterpretMethodsAnalysis {
             (
                 "No exceptions occured during the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (real time: "+getTime('OVERALL).toSeconds+
-                ", ai (∑CPU Times): "+getTime('AI).toSeconds+")"+
-                s", evaluated ${instructionEvaluationsCount.get} instructions",
+                project.classFilesCount+" classes\nreal time: "+getTime('OVERALL).toSeconds+"\n"+
+                "ai (∑CPU Times): "+getTime('AI).toSeconds +
+                s"; evaluated ${instructionEvaluationsCount.get} instructions\n"+
+                "naive ai (∑CPU Times): "+getTime('NAIVE_AI).toSeconds+"\n",
                 None
             )
         }

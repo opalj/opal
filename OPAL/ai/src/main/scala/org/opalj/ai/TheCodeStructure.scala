@@ -31,6 +31,7 @@ package ai
 
 import scala.collection.BitSet
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.LiveVariables
 
 /**
  * Mixin this trait if the domain needs information about the structure of the code.
@@ -59,8 +60,9 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
      * This method is called by the AI framework immediately before the interpretation (continues).
      */
     private[ai] def setCodeStructure(
-        theInstructions: Array[Instruction],
-        theCFJoins:      BitSet
+        theInstructions:  Array[Instruction],
+        theCFJoins:       BitSet,
+        theLiveVariables: LiveVariables
     ): Unit = {
         this.theInstructions = theInstructions
         this.theCFJoins = theCFJoins

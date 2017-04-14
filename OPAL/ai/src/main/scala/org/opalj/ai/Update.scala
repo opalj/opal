@@ -39,7 +39,7 @@ package ai
  *
  * @author Michael Eichberg
  */
-sealed trait Update[+V] {
+sealed abstract class Update[+V] {
 
     /**
      * Merges a given `updateType` value with the type of this update and returns a

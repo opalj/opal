@@ -39,6 +39,7 @@ import org.opalj.br.ExceptionHandler
  *         exception handlers is responsible for handling multiple different exceptions.
  *         This situation generally arises in case of Java`s multi-catch expressions.
  *
+ * @param  index The index of the underlying exception handler in the exception table.
  * @param  startPC The start pc of the try-block.
  * @param  endPC The pc of the first instruction after the try-block (exclusive!).
  * @param  handlerPC The first pc of the handler block.
@@ -49,23 +50,30 @@ import org.opalj.br.ExceptionHandler
  * @author Michael Eichberg
  */
 class CatchNode(
+        val index:     Int, // primarily used to compute a unique id
         val startPC:   PC,
         val endPC:     PC,
         val handlerPC: PC,
         val catchType: Option[ObjectType]
 ) extends CFGNode {
 
-    def this(handler: ExceptionHandler) {
-        this(handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
+    def this(handler: ExceptionHandler, index: Int) {
+        this(index, handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
+    }
+
+    final override def nodeId: Int = {
+        // the index is required to avoid collusions with standard basic blocks
+        startPC | (index << 16)
     }
 
     def copy(
+        index:     Int                = this.index,
         startPC:   PC                 = this.startPC,
         endPC:     PC                 = this.endPC,
         handlerPC: PC                 = this.handlerPC,
         catchType: Option[ObjectType] = this.catchType
     ): CatchNode = {
-        new CatchNode(startPC, endPC, handlerPC, catchType)
+        new CatchNode(index, startPC, endPC, handlerPC, catchType)
     }
 
     final override def isBasicBlock: Boolean = false
@@ -78,11 +86,6 @@ class CatchNode(
     //
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
-
-    override def nodeId: Long = {
-        val typeId = if (catchType.isDefined) catchType.get.hashCode.toLong else -1L
-        startPC.toLong | (endPC.toLong << 15) | (handlerPC.toLong << 30) | typeId << 46
-    }
 
     override def toHRR: Option[String] = Some(
         s"try[$startPC,$endPC) ⇒ $handlerPC{${catchType.map(_.toJava).getOrElse("Any")}}"

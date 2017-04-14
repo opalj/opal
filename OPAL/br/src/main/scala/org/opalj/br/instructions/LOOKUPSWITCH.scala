@@ -91,7 +91,7 @@ case class LOOKUPSWITCH(
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC] = {
         val defaultTarget = currentPC + defaultOffset
         var pcs = Chain.singleton(defaultTarget)

@@ -137,7 +137,14 @@ trait StringValues
 
     }
 
-    object StringValue { def unapply(value: StringValue): Some[String] = Some(value.value) }
+    object StringValue {
+        def unapply(value: DomainValue): Option[String] = {
+            value match {
+                case s: StringValue ⇒ Some(s.value)
+                case _              ⇒ None
+            }
+        }
+    }
 
     abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
         value match {

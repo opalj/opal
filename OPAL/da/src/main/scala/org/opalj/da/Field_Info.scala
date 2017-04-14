@@ -30,9 +30,9 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsContexts
-import scala.xml.NodeSeq
+import scala.xml.Text
+
+import org.opalj.bi.AccessFlagsContexts.FIELD
 
 /**
  * @author Michael Eichberg
@@ -46,32 +46,36 @@ case class Field_Info(
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
         attributes:       Attributes          = IndexedSeq.empty
-) {
+) extends ClassMember {
 
     def size: Int = 2 + 2 + 2 + 2 /* attributes_count*/ + attributes.view.map(_.size).sum
 
-    def name(implicit cp: Constant_Pool): String = cp(name_index).asString
+    /**
+     * The field's name.
+     */
+    def fieldName(implicit cp: Constant_Pool): String = cp(name_index).asString
 
     /**
-     * @param definingTypeFQN The FQN of the class defining this field.
+     * The type of the field.
      */
-    def toXHTML(definingTypeFQN: String)(implicit cp: Constant_Pool): Node = {
+    def fieldType(definingType: String)(implicit cp: Constant_Pool): Node = {
         val TypeInfo(fieldType, isBaseType) = parseFieldType(cp(descriptor_index).asString)
-        val typeInfo = if (isBaseType) fieldType else abbreviateFQN(definingTypeFQN, fieldType)
-
-        // create row which describes the field
-        <tr class="field">
-            <td class="access_flags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</td>
-            <td>{ typeInfo }</td>
-            <td class="field_name"> { name } </td>
-            <td>{ attributesToXHTML(cp) }</td>
-        </tr>
+        if (isBaseType) Text(fieldType) else abbreviateType(definingType, fieldType)
     }
 
-    def attributesToXHTML(implicit cp: Constant_Pool): Seq[Node] = {
-        if (attributes.nonEmpty)
-            attributes.map(_.toXHTML(cp))
-        else
-            NodeSeq.Empty
+    /**
+     * @param definingType The name of the class defining this field.
+     */
+    def toXHTML(definingType: String)(implicit cp: Constant_Pool): Node = {
+        val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, FIELD)
+        <div class="field" data-access-flags={ explicitAccessFlags }>
+            { accessFlags }
+            { fieldType(definingType) }
+            <span class="name"> { fieldName } </span>
+            { attributesToXHTML(cp) }
+        </div>
     }
+
+    def attributesToXHTML(implicit cp: Constant_Pool): Seq[Node] = attributes.map(_.toXHTML)
+
 }

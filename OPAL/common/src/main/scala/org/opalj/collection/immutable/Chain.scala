@@ -575,14 +575,14 @@ sealed trait Chain[@specialized(Int) +T]
     def fuse[X >: T <: AnyRef](that: Chain[X], onDiff: (T, X) ⇒ X): Chain[X]
 }
 
-trait ChainLowPriorityImplicits
+//trait ChainLowPriorityImplicits
 
 /**
  * Factory for [[Chain]]s.
  *
  * @author Michael Eichberg
  */
-object Chain extends ChainLowPriorityImplicits {
+object Chain /* extends ChainLowPriorityImplicits */ {
 
     /**
      * Builder for [[Chain]]s. The builder is specialized for the primitive
@@ -1008,5 +1008,8 @@ final case class :&:[@specialized(Int) T](
             newHead
     }
 
-    override def toString: String = s"$head :&: ${rest.toString}"
+    override def toString: String = {
+        //s"$head :&: ${rest.toString}" // cannot handle very long lists (uses recursion)...
+        mkString("", " :&: ", " :&: Naught")
+    }
 }

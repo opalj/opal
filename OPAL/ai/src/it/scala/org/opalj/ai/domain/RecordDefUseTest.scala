@@ -30,16 +30,18 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.JavaConverters._
+
 import org.junit.runner.RunWith
-import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
 import org.scalatest.FunSpec
-import scala.collection.JavaConverters._
+
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.br.analyses.Project
+import org.opalj.br.Method
+import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.opalj.br.analyses.MethodInfo
 
 /**
@@ -143,10 +145,10 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     val methodName = method.toJava(classFile)
                     failures.add((methodName, t))
             }
-            // DEBUG[If the analysis does not terminate] 
+            // DEBUG[If the analysis does not terminate]
             // println("analysis of : "+methodName+"- finished")
         }
-        failures.addAll(exceptions.map(ex ⇒ ("additional exception", ex)).asJava)
+        failures.addAll(exceptions.map(ex ⇒ ("additional exception", ex)).asJavaCollection)
 
         val baseMessage = s"compared origin information of ${comparisonCount.get} values"
         if (failures.size > 0) {
@@ -163,7 +165,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     } else {
                         "<location unavailable>"
                     }
-                failure+" ["+root.getClass.getSimpleName+": "+root.getMessage+"; location: "+location+"] "
+                s"$failure[${root.getClass.getSimpleName}: ${root.getMessage}; location: $location]"
             }
 
             fail(failures.size + s" exceptions occured ($baseMessage) in: "+
