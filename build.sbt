@@ -1,7 +1,8 @@
 name := "OPAL Library"
 
-version 		in ThisBuild := "0.9.0-SNAPSHOT"
+// SNAPSHOT version 		in ThisBuild := "0.9.0-SNAPSHOT"
 // NEXT version 		in ThisBuild := "0.8.11"
+version 		in ThisBuild := "0.8.11"
 // RELEASED version 		in ThisBuild := "0.8.10"
 // RELEASED version 		in ThisBuild := "0.8.9"
 organization 	in ThisBuild := "de.opal-project"
