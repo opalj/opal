@@ -45,98 +45,108 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 object JavaCryptoArchitectureUsage extends APIFeatureQuery {
 
-    // java.security
-    val SecureRandom = ObjectType("java/security/SecureRandom")
-    val MessageDigest = ObjectType("java/security/MessageDigest")
-    val Signature = ObjectType("java/security/Signature")
-    val KeyFactory = ObjectType("java/security/KeyFactory")
-    val KeyPairGenerator = ObjectType("java/security/KeyPairGenerator")
-    val KeyStore = ObjectType("java/security/KeyStore")
+    override val apiFeatures: Chain[APIFeature] = {
 
-    // java.security.cert
+        // java.security
+        val SecureRandom = ObjectType("java/security/SecureRandom")
+        val MessageDigest = ObjectType("java/security/MessageDigest")
+        val Signature = ObjectType("java/security/Signature")
+        val KeyFactory = ObjectType("java/security/KeyFactory")
+        val KeyPairGenerator = ObjectType("java/security/KeyPairGenerator")
+        val KeyStore = ObjectType("java/security/KeyStore")
 
-    val CertificateFactory = ObjectType("java/security/cert/CertificateFactory")
-    val CertPathBuilder = ObjectType("java/security/cert/CertPathBuilder")
-    val CertPathValidator = ObjectType("java/security/cert/CertPathValidator")
-    val CertStore = ObjectType("java/security/cert/CertStore")
+        // java.security.cert
 
-    // javax/crypto
-    val Cipher = ObjectType("javax/crypto/Cipher")
-    val Mac = ObjectType("javax/crypto/Mac")
-    val SecretKeyFactory = ObjectType("javax/crypto/SecretKeyFactory")
-    val KeyGenerator = ObjectType("javax/crypto/KeyGenerator")
-    val KeyAgreement = ObjectType("javax/crypto/KeyAgreement")
+        val CertificateFactory = ObjectType("java/security/cert/CertificateFactory")
+        val CertPathBuilder = ObjectType("java/security/cert/CertPathBuilder")
+        val CertPathValidator = ObjectType("java/security/cert/CertPathValidator")
+        val CertStore = ObjectType("java/security/cert/CertStore")
 
-    // common methods
-    val init = "<init>"
-    val getInstance = "getInstance"
+        // javax/crypto
+        val Cipher = ObjectType("javax/crypto/Cipher")
+        val Mac = ObjectType("javax/crypto/Mac")
+        val SecretKeyFactory = ObjectType("javax/crypto/SecretKeyFactory")
+        val KeyGenerator = ObjectType("javax/crypto/KeyGenerator")
+        val KeyAgreement = ObjectType("javax/crypto/KeyAgreement")
 
-    override def apiFeatures: Chain[APIFeature] = Chain(
+        // common methods
+        val init = "<init>"
+        val getInstance = "getInstance"
 
-        StaticAPIMethod(Cipher, getInstance),
+        Chain(
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(SecureRandom, init),
-                StaticAPIMethod(SecureRandom, getInstance),
-                StaticAPIMethod(SecureRandom, "getInstanceStrong")
-            ), s"using SecureRandom"
-        ),
+            StaticAPIMethod(Cipher, getInstance),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(MessageDigest, init),
-                StaticAPIMethod(MessageDigest, getInstance)
-            ), s"using MessageDigest"
-        ),
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(SecureRandom, init),
+                    StaticAPIMethod(SecureRandom, getInstance),
+                    StaticAPIMethod(SecureRandom, "getInstanceStrong")
+                ),
+                s"using SecureRandom"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Signature, init),
-                StaticAPIMethod(Signature, getInstance)
-            ), s"using Signature"
-        ),
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(MessageDigest, init),
+                    StaticAPIMethod(MessageDigest, getInstance)
+                ),
+                s"using MessageDigest"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Mac, init),
-                StaticAPIMethod(Mac, getInstance)
-            ), s"using Mac"
-        ),
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Signature, init),
+                    StaticAPIMethod(Signature, getInstance)
+                ),
+                s"using Signature"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(KeyFactory, init),
-                StaticAPIMethod(KeyFactory, getInstance),
-                InstanceAPIMethod(SecretKeyFactory, init),
-                StaticAPIMethod(SecretKeyFactory, getInstance),
-                InstanceAPIMethod(KeyPairGenerator, init),
-                StaticAPIMethod(KeyPairGenerator, getInstance),
-                InstanceAPIMethod(KeyGenerator, init),
-                StaticAPIMethod(KeyGenerator, getInstance),
-                InstanceAPIMethod(KeyAgreement, init),
-                StaticAPIMethod(KeyAgreement, getInstance)
-            ), s"cryptographic key handling"
-        ),
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Mac, init),
+                    StaticAPIMethod(Mac, getInstance)
+                ),
+                s"using Mac"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(KeyStore, init),
-                StaticAPIMethod(KeyStore, getInstance)
-            ), s"using KeyStore"
-        ),
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(KeyFactory, init),
+                    StaticAPIMethod(KeyFactory, getInstance),
+                    InstanceAPIMethod(SecretKeyFactory, init),
+                    StaticAPIMethod(SecretKeyFactory, getInstance),
+                    InstanceAPIMethod(KeyPairGenerator, init),
+                    StaticAPIMethod(KeyPairGenerator, getInstance),
+                    InstanceAPIMethod(KeyGenerator, init),
+                    StaticAPIMethod(KeyGenerator, getInstance),
+                    InstanceAPIMethod(KeyAgreement, init),
+                    StaticAPIMethod(KeyAgreement, getInstance)
+                ),
+                s"cryptographic key handling"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(CertificateFactory, init),
-                StaticAPIMethod(CertificateFactory, getInstance),
-                InstanceAPIMethod(CertPathBuilder, init),
-                StaticAPIMethod(CertPathBuilder, getInstance),
-                InstanceAPIMethod(CertPathValidator, init),
-                StaticAPIMethod(CertPathValidator, getInstance),
-                InstanceAPIMethod(CertStore, init),
-                StaticAPIMethod(CertStore, getInstance)
-            ), s"using Certificates"
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(KeyStore, init),
+                    StaticAPIMethod(KeyStore, getInstance)
+                ),
+                s"using KeyStore"
+            ),
+
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(CertificateFactory, init),
+                    StaticAPIMethod(CertificateFactory, getInstance),
+                    InstanceAPIMethod(CertPathBuilder, init),
+                    StaticAPIMethod(CertPathBuilder, getInstance),
+                    InstanceAPIMethod(CertPathValidator, init),
+                    StaticAPIMethod(CertPathValidator, getInstance),
+                    InstanceAPIMethod(CertStore, init),
+                    StaticAPIMethod(CertStore, getInstance)
+                ),
+                s"using Certificates"
+            )
         )
-    )
+    }
 }

@@ -262,7 +262,7 @@ class PropertyStore private (
     /**
      * Clears all properties and property computation functions.
      */
-    // Locks: SetPropertyObservers (write), accessStore
+    // Locks: accessStore
     def reset(): Unit = {
 
         accessStore {

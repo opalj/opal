@@ -83,7 +83,7 @@ object Explorer extends JFXApp {
                     minWidth = 100
                     menus = Seq(new Menu("File") { items = createFileMenuItems() })
                 }
-                center = createWebView()
+                center = createWebViewForBytecode()
             }
         }
     }
@@ -113,34 +113,47 @@ object Explorer extends JFXApp {
                     if (selectedFile != null) {
                         preferences.put(LastClassFileKey, selectedFile.getAbsoluteFile.toString)
                         preferences.flush()
-                        webEngine.loadContent(renderClassFileAsXHTML(selectedFile))
+                        webEngine.loadContent(loadClassFile(selectedFile).toXHTML().toString)
                     }
                 }
             }
         )
     }
 
-    def renderClassFileAsXHTML(file: File): String = {
+    def loadClassFile(file: File): ClassFile = {
         val classFileInputStreamCreator = () ⇒ new FileInputStream(file)
-        val classFile = ClassFile(classFileInputStreamCreator).head
-        classFile.toXHTML().toString()
+        ClassFile(classFileInputStreamCreator).head
     }
 
-    def createWebView(): WebView = {
+    def createWebViewForBytecode(): WebView = {
         // create initial/restore previous content
         var file: File = null
-        val lastClassFile: String = {
+        val (lastClassFileAsXHTML: String, classFile: Option[ClassFile]) = {
             try {
                 file = new File(preferences.get(LastClassFileKey, null))
                 if (file == null || !file.exists || !file.isFile) {
                     file = null
-                    "<b>Load new class file.</b>"
-                } else
-                    renderClassFileAsXHTML(file)
+                    ("<b>Load new class file.</b>", None)
+                } else {
+                    val classFile = loadClassFile(file)
+                    (classFile.toXHTML().toString, Some(classFile))
+                }
             } catch {
                 case t: Throwable ⇒
-                    s"<b>Failed loading previous class file: $file</b><br>Load new class file."
+                    (
+                        s"<b>Failed loading previous class file: $file</b><br>Load new class file.",
+                        None
+                    )
+
             }
+        }
+
+        val typeClicklistener = new EventListener() {
+            def handleEvent(event: Event): Unit = { println("cool...") }
+        }
+
+        val methodClicklistener = new EventListener() {
+            def handleEvent(event: Event): Unit = { println("cool method...") }
         }
 
         val browser = new WebView { contextMenuEnabled = false }
@@ -150,23 +163,34 @@ object Explorer extends JFXApp {
             if (newState == State.SUCCEEDED) {
                 if (file != null) stage.setTitle(file.toString)
 
-                val listener = new EventListener() {
-                    def handleEvent(event: Event): Unit = { println("cool...") }
-                }
-
-                def attachTypeClickListeners(element: Element): Unit = {
+                def attachClickListeners(element: Element): Unit = {
                     val childNodes = element.getChildNodes();
                     var i = 0
                     while (i < childNodes.getLength()) {
                         val item = childNodes.item(i);
                         item match {
                             case e: (Element with EventTarget) ⇒
-                                val attribute = e.getAttribute("class")
-                                if (attribute != null && attribute.contains("type")) {
-                                    println(e.getFirstChild.getNodeValue)
-                                    e.addEventListener("click", listener, false);
+                                {
+                                    val attribute = e.getAttribute("class")
+                                    if (attribute != null && attribute.contains("type")) {
+                                        println(e.getFirstChild.getNodeValue)
+                                        e.addEventListener("click", typeClicklistener, false)
+                                    }
                                 }
-                                attachTypeClickListeners(e)
+
+                                // TODO ... select the right target!
+                                {
+                                    val attribute = e.getAttribute("class")
+                                    if (attribute != null && attribute.contains("method")) {
+                                        val name = e.getFirstChild.getNodeValue
+                                        println(name)
+                                        classFile.get.methods.filter(m ⇒ m.name(classFile.get.constant_pool) == name)
+                                        // ...
+                                        e.addEventListener("click", methodClicklistener, false)
+                                    }
+                                }
+
+                                attachClickListeners(e)
 
                             case _ ⇒ // nothing to do
                         }
@@ -174,11 +198,11 @@ object Explorer extends JFXApp {
                     }
                 }
                 val document = webEngine.getDocument().getDocumentElement()
-                attachTypeClickListeners(document)
+                attachClickListeners(document)
             }
         }
 
-        webEngine.loadContent(lastClassFile)
+        webEngine.loadContent(lastClassFileAsXHTML)
 
         browser
     }

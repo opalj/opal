@@ -137,9 +137,11 @@ final class DominatorTree private (
             if (nodeId != startNode) {
                 val iDomNode = nodes(iDomNodeId)
                 if (iDomNode == null)
-                    nodes(iDomNodeId) = VizNode(iDomNodeId, iDomNodeId.toString, iDomNodeId, nodeId :: Nil)
+                    nodes(iDomNodeId) =
+                        VizNode(iDomNodeId, iDomNodeId.toString, iDomNodeId, nodeId :: Nil)
                 else
-                    nodes(iDomNodeId) = iDomNode.copy(children = nodeId :: iDomNode.children)
+                    nodes(iDomNodeId) =
+                        iDomNode.copy(children = nodeId :: iDomNode.children)
             }
         }
         Json.toJson(nodes.filter(_ ne null))
@@ -301,7 +303,7 @@ object DominatorTree {
             }
         }
 
-        // // PAPER VERSION USING RECURSION  
+        // // PAPER VERSION USING RECURSION
         // def compress(v: Int): Unit = {
         //     var theAncestor = ancestor(v)
         //     if (ancestor(theAncestor) != 0) {

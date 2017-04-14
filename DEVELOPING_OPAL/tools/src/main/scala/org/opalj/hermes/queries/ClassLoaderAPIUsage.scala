@@ -30,10 +30,10 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.SingleArgumentMethodDescriptor
 import org.opalj.collection.immutable.Chain
+import org.opalj.br.MethodDescriptor.JustTakes
+import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
+import org.opalj.br.ObjectType
 import org.opalj.hermes.queries.util.APIClassExtension
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
@@ -49,30 +49,36 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 object ClassLoaderAPIUsage extends APIFeatureQuery {
 
-    val ClassLoader = ObjectType("java/lang/ClassLoader")
+    override val apiFeatures: Chain[APIFeature] = {
 
-    override def apiFeatures: Chain[APIFeature] =
+        val ClassLoader = ObjectType("java/lang/ClassLoader")
+
         Chain(
             APIClassExtension("custom ClassLoader implementation", ClassLoader),
 
             APIFeatureGroup(
                 Chain(
                     StaticAPIMethod(ClassLoader, "getSystemClassLoader"),
-                    InstanceAPIMethod(ClassLoader, "<init>", MethodDescriptor.NoArgsAndReturnVoid)
-                ), "Retrieving the SystemClassLoader"
+                    InstanceAPIMethod(ClassLoader, "<init>", NoArgsAndReturnVoid)
+                ),
+                "Retrieving the SystemClassLoader"
             ),
 
             APIFeatureGroup(
                 Chain(
-                    InstanceAPIMethod(ClassLoader, "<init>", SingleArgumentMethodDescriptor(ClassLoader)),
+                    InstanceAPIMethod(ClassLoader, "<init>", JustTakes(ClassLoader)),
                     InstanceAPIMethod(ObjectType.Class, "getClassLoader")
-                ), "Retrieving some ClassLoader"
+                ),
+                "Retrieving some ClassLoader"
             ),
 
-            APIFeatureGroup(Chain(
-                InstanceAPIMethod(ClassLoader, "defineClass"),
-                InstanceAPIMethod(ClassLoader, "definePackage")
-            ), "define new classes/packages"),
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(ClassLoader, "defineClass"),
+                    InstanceAPIMethod(ClassLoader, "definePackage")
+                ),
+                "define new classes/packages"
+            ),
 
             APIFeatureGroup(
                 Chain(
@@ -82,7 +88,9 @@ object ClassLoaderAPIUsage extends APIFeatureQuery {
                     InstanceAPIMethod(ClassLoader, "getSystemResource"),
                     InstanceAPIMethod(ClassLoader, "getSystemResourceAsStream"),
                     InstanceAPIMethod(ClassLoader, "getSystemResources")
-                ), "accessing resources"
+                ),
+                "accessing resources"
             )
         )
+    }
 }

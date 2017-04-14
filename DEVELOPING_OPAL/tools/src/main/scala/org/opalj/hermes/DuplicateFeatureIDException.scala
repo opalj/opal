@@ -27,44 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ba
-import org.opalj.br.Attribute
+package hermes
 
 /**
- * Builder for creating Fields and specifying their attributes.
- *
- * @author Malte Limmeroth
+ * @param  featureID The id of the feature that is reued.
+ * @param  featureQueryA The id of some feature query that derives features with
+ *         the given name.
+ * @param  featureQueryB The id of another feature query that derives features with
+ *         the given name.
  */
-class FieldBuilder(
-    private var accessFlags: Int,
-    private var name:        String,
-    private var fieldType:   br.FieldType,
-    private var attributes:  br.Attributes = IndexedSeq.empty
-) extends AttributesContainer
-        with ClassFileMemberBuilder
-        with DeprecatedAttributeBuilder
-        with SyntheticAttributeBuilder
-        with ConstantValueAttributeBuilder {
-
-    override def addAccessFlags(accessFlags: Int) = {
-        this.accessFlags = this.accessFlags | accessFlags
-
-        this
-    }
-
-    override def addAttribute(attribute: Attribute) = {
-        attributes :+= attribute
-
-        this
-    }
-
-    def buildField: br.Field = {
-        br.Field(
-            accessFlags = accessFlags,
-            name = name,
-            fieldType = fieldType,
-            attributes = attributes
-        )
-    }
-
-}
+case class DuplicateFeatureIDException(
+    featureID:     String,
+    featureQueryA: FeatureQuery,
+    featureQueryB: FeatureQuery
+) extends Exception(s"$featureID is derived by ${featureQueryA.id} and by ${featureQueryB.id}")

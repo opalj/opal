@@ -32,10 +32,13 @@ package hermes
 import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.analyses.Project
 
 /**
- * The location where a specific feature was found.
+ * The location where a specific feature was found. In general, a feature query should always use
+ * a [[LocationsContainer]] to manage the identified locations.
  *
  * @tparam S The kind of the source. E.g., `java.net.URL`.
  *
@@ -93,8 +96,16 @@ object ClassFileLocation {
         new ClassFileLocation[S](None, classFile.thisType.toJava)
     }
 
+    def apply[S](objectType: ObjectType): ClassFileLocation[S] = {
+        new ClassFileLocation[S](None, objectType.toJava)
+    }
+
     def apply[S](source: S, classFile: ClassFile): ClassFileLocation[S] = {
         new ClassFileLocation[S](Some(source), classFile.thisType.toJava)
+    }
+
+    def apply[S](project: Project[S], objectType: ObjectType): ClassFileLocation[S] = {
+        new ClassFileLocation[S](project.source(objectType), objectType.toJava)
     }
 
 }

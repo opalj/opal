@@ -47,7 +47,7 @@ object ClassFileVersion extends FeatureQuery {
 
     def featureId(majorVersion: Int) = s"Class File\n${jdkVersion(majorVersion)}"
 
-    override def featureIDs: Seq[String] = {
+    override val featureIDs: Seq[String] = {
         featureId(Java1MajorVersion) +: (
             for (majorVersion ← (Java5MajorVersion to Java9MajorVersion))
                 yield featureId(majorVersion)

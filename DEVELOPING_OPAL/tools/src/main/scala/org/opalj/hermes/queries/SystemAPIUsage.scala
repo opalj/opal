@@ -43,106 +43,114 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  */
 object SystemAPIUsage extends APIFeatureQuery {
 
-    object Sound {
-        val Clip = ObjectType("javax/sound/sampled/Clip")
-        val DataLine = ObjectType("javax/sound/sampled/DataLine")
-        val TargetDataLine = ObjectType("javax/sound/sampled/TargetDataLine")
-        val SourceDataLine = ObjectType("javax/sound/sampled/SourceDataLine")
-        val MediaPlayer = ObjectType("javafx/scene/media/MediaPlayer")
-    }
+    override val apiFeatures: Chain[APIFeature] = {
 
-    object Network {
-        val Socket = ObjectType("java/net/Socket")
-        val SSLSocket = ObjectType("javax.net.ssl.SSLSocket")
-        val ServerSocket = ObjectType("java/net/ServerSocket")
-        val SSLServerSocket = ObjectType("javax.net.ssl.SSLServerSocket")
-        val DatagramSocket = ObjectType("javax.net.DatagramSocket")
-        val MulticastSocket = ObjectType("javax.net.MulticastSocket")
+        object Sound {
+            val Clip = ObjectType("javax/sound/sampled/Clip")
+            val DataLine = ObjectType("javax/sound/sampled/DataLine")
+            val TargetDataLine = ObjectType("javax/sound/sampled/TargetDataLine")
+            val SourceDataLine = ObjectType("javax/sound/sampled/SourceDataLine")
+            val MediaPlayer = ObjectType("javafx/scene/media/MediaPlayer")
+        }
 
-        val DatagramPacket = ObjectType("java/net/DatagramPacket")
-        val InetAddress = ObjectType("java/net/InetAddress")
+        object Network {
+            val Socket = ObjectType("java/net/Socket")
+            val SSLSocket = ObjectType("javax.net.ssl.SSLSocket")
+            val ServerSocket = ObjectType("java/net/ServerSocket")
+            val SSLServerSocket = ObjectType("javax.net.ssl.SSLServerSocket")
+            val DatagramSocket = ObjectType("javax.net.DatagramSocket")
+            val MulticastSocket = ObjectType("javax.net.MulticastSocket")
 
-        val URL = ObjectType("java/net/URL")
-        val URI = ObjectType("java/net/URI")
-        val URLConnection = ObjectType("java/net/URLConnection")
-    }
+            val DatagramPacket = ObjectType("java/net/DatagramPacket")
+            val InetAddress = ObjectType("java/net/InetAddress")
 
-    val constructor = "<init>"
+            val URL = ObjectType("java/net/URL")
+            val URI = ObjectType("java/net/URI")
+            val URLConnection = ObjectType("java/net/URLConnection")
+        }
 
-    val Runtime = ObjectType("java/lang/Runtime")
-    val System = ObjectType("java/lang/System")
-    val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
+        val constructor = "<init>"
 
-    override def apiFeatures: Chain[APIFeature] = Chain(
+        val Runtime = ObjectType("java/lang/Runtime")
+        val System = ObjectType("java/lang/System")
+        val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
 
-        // PROCESS
+        Chain(
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Runtime, "exec"),
-                InstanceAPIMethod(ProcessBuilder, "start")
-            ), "Process"
-        ),
+            // PROCESS
 
-        // JVM EXIT
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Runtime, "exec"),
+                    InstanceAPIMethod(ProcessBuilder, "start")
+                ),
+                "Process"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Runtime, "exit"),
-                InstanceAPIMethod(Runtime, "halt"),
-                StaticAPIMethod(System, "exit")
-            ), "JVM exit"
-        ),
+            // JVM EXIT
 
-        // NATIVE LIBRARIES
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Runtime, "exit"),
+                    InstanceAPIMethod(Runtime, "halt"),
+                    StaticAPIMethod(System, "exit")
+                ),
+                "JVM exit"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Runtime, "load"),
-                InstanceAPIMethod(Runtime, "loadLibrary"),
-                StaticAPIMethod(System, "load"),
-                StaticAPIMethod(System, "loadLibrary")
-            ), "Native Libraries"
-        ),
+            // NATIVE LIBRARIES
 
-        // SECURITY_MANAGER
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Runtime, "load"),
+                    InstanceAPIMethod(Runtime, "loadLibrary"),
+                    StaticAPIMethod(System, "load"),
+                    StaticAPIMethod(System, "loadLibrary")
+                ),
+                "Native Libraries"
+            ),
 
-        StaticAPIMethod(System, "getSecurityManager"),
-        StaticAPIMethod(System, "setSecurityManager"),
+            // SECURITY_MANAGER
 
-        // ENV
+            StaticAPIMethod(System, "getSecurityManager"),
+            StaticAPIMethod(System, "setSecurityManager"),
 
-        APIFeatureGroup(
-            Chain(
-                StaticAPIMethod(System, "getenv")
-            ), "Environment"
-        ),
+            // ENV
 
-        // SOUND
+            APIFeatureGroup(
+                Chain(
+                    StaticAPIMethod(System, "getenv")
+                ),
+                "Environment"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Sound.Clip, "start"),
-                InstanceAPIMethod(Sound.DataLine, "start"),
-                InstanceAPIMethod(Sound.TargetDataLine, "start"),
-                InstanceAPIMethod(Sound.SourceDataLine, "start"),
-                InstanceAPIMethod(Sound.MediaPlayer, "play")
-            ), "Sound"
-        ),
+            // SOUND
 
-        // NETWORK
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Sound.Clip, "start"),
+                    InstanceAPIMethod(Sound.DataLine, "start"),
+                    InstanceAPIMethod(Sound.TargetDataLine, "start"),
+                    InstanceAPIMethod(Sound.SourceDataLine, "start"),
+                    InstanceAPIMethod(Sound.MediaPlayer, "play")
+                ), "Sound"
+            ),
 
-        APIFeatureGroup(
-            Chain(
-                InstanceAPIMethod(Network.Socket, constructor),
-                InstanceAPIMethod(Network.ServerSocket, constructor),
-                InstanceAPIMethod(Network.DatagramSocket, constructor),
-                InstanceAPIMethod(Network.DatagramPacket, constructor),
-                InstanceAPIMethod(Network.MulticastSocket, constructor),
-                InstanceAPIMethod(Network.SSLSocket, constructor),
-                InstanceAPIMethod(Network.SSLServerSocket, constructor),
-                InstanceAPIMethod(Network.InetAddress, constructor)
-            ), "Network sockets"
+            // NETWORK
+
+            APIFeatureGroup(
+                Chain(
+                    InstanceAPIMethod(Network.Socket, constructor),
+                    InstanceAPIMethod(Network.ServerSocket, constructor),
+                    InstanceAPIMethod(Network.DatagramSocket, constructor),
+                    InstanceAPIMethod(Network.DatagramPacket, constructor),
+                    InstanceAPIMethod(Network.MulticastSocket, constructor),
+                    InstanceAPIMethod(Network.SSLSocket, constructor),
+                    InstanceAPIMethod(Network.SSLServerSocket, constructor),
+                    InstanceAPIMethod(Network.InetAddress, constructor)
+                ),
+                "Network sockets"
+            )
         )
-    )
+    }
 }

@@ -63,7 +63,7 @@ trait SimpleConditionalBranchInstruction
     def branchoffset: Int
 
     /**
-     * @inheritedDoc
+     * @inheritdoc
      *
      * A simple conditional branch instruction has two targets unless both targets point
      * to the same instruction. In that case the jump has only one target, because the state

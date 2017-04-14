@@ -34,6 +34,7 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
 import sbtassembly.AssemblyPlugin.autoImport._
+import sbtunidoc.ScalaUnidocPlugin
 
 import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 
@@ -49,7 +50,7 @@ object OPALBuild extends Build {
         Seq(libraryDependencies  ++= Seq(
             "junit" % "junit" % "4.12" % "test,it",
             "org.scalatest" %% "scalatest" % "3.0.1" % "test,it",
-            "org.scalacheck" %% "scalacheck" % "1.13.4" % "test,it")) ++
+            "org.scalacheck" %% "scalacheck" % "1.13.5" % "test,it")) ++
         Seq(Defaults.itSettings : _*) ++
         Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
         Seq(unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil) ++
@@ -64,24 +65,25 @@ object OPALBuild extends Build {
     lazy val opal = Project(
         id = "OPAL",
         base = file("."),
-        settings = Defaults.coreDefaultSettings ++
-            sbtunidoc.Plugin.unidocSettings ++ 
-            Seq(publishArtifact := false)
-    ).aggregate(
-        common,
-        bi,
-        br,
-        da,
-        bc,
-        ba,
-        ai,
-        bp,
-        de,
-        av,
-        DeveloperTools,
-        Validate,
-        demos,
-        incubation)
+        settings = Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)
+    ).
+        enablePlugins(ScalaUnidocPlugin).
+        aggregate(
+            common,
+            bi,
+            br,
+            da,
+            bc,
+            ba,
+            ai,
+            bp,
+            de,
+            av,
+            DeveloperTools,
+            Validate,
+            demos,
+            incubation
+        )
 
     /*****************************************************************************
      *
