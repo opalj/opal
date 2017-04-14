@@ -102,7 +102,7 @@ package object graphs {
     }
 
     /**
-     * Function to convert a given dot file to SVG. The transformation is done using the
+     * Function to convert a given graphviz dot file to SVG. The transformation is done using the
      * vis-js.com library which is a translated version of graphviz to JavaScript.
      *
      * The first call, which will initialize the JavaScript engine will take some time. Afterwards,
@@ -113,14 +113,30 @@ package object graphs {
         import javax.script.ScriptEngine
         import javax.script.ScriptEngineManager
         import java.io.BufferedReader
+        import java.io.InputStream
         import java.io.InputStreamReader
+        import org.opalj.log.OPALLogger
+        import org.opalj.log.GlobalLogContext
 
+        OPALLogger.info(
+            "setup",
+            "initialzing JavaScript engine for rendering dot graphics"
+        )(GlobalLogContext)
         val engineManager = new ScriptEngineManager()
         val engine: ScriptEngine = engineManager.getEngineByName("nashorn")
-        val reader = new BufferedReader(new InputStreamReader(this.getClass.getResourceAsStream("viz-lite.js")))
-        engine.eval(reader)
-        reader.close()
-        val invocable: Invocable = engine.asInstanceOf[Invocable]
+        var visJS: InputStream = null
+        val invocable: Invocable = try {
+            visJS = this.getClass.getResourceAsStream("viz-lite.js")
+            val reader = new BufferedReader(new InputStreamReader(visJS))
+            engine.eval(reader)
+            engine.asInstanceOf[Invocable]
+        } finally {
+            if (visJS ne null) visJS.close()
+        }
+        OPALLogger.info(
+            "setup",
+            "finished initialization of JavaScript engine for rendering dot graphics"
+        )(GlobalLogContext)
 
         (dot: String) ⇒ invocable.invokeFunction("Viz", dot).toString
     }
