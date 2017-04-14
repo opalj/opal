@@ -20,11 +20,11 @@
 ## 0.8.10
  - added support for the JSON Serialization of Milliseconds, Nanoseconds and Seconds
 
-## 0.8.9
+## 0.8.9 (Initial full release of OPAL on Maven.)
  - added a list-like data structure (`Chain`) which is specialized for int values to save memory
  (~ 25%) and to avoid unnecessary boxing operations
  - added preliminary Java 9 support
  - added the fix-point computations framework to facilitate the implementation of concurrent, fix-point based analyses
 
 ## Pre 0.8.9
-Initial release of OPAL on Maven.
+Older releases can be obtained by checking out the repository and going back in the history.
