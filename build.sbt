@@ -1,10 +1,12 @@
 name := "OPAL Library"
 
-// SNAPSHOT version 		in ThisBuild := "0.9.0-SNAPSHOT"
-// NEXT version 		in ThisBuild := "0.8.11"
-version 		in ThisBuild := "0.8.11"
+// SNAPSHOT
+version 		in ThisBuild := "0.9.0-SNAPSHOT"
+// NEXT version 		in ThisBuild := "0.8.12"
+// RELEASED version 		in ThisBuild := "0.8.11" - April 14th, 2017
 // RELEASED version 		in ThisBuild := "0.8.10"
 // RELEASED version 		in ThisBuild := "0.8.9"
+
 organization 	in ThisBuild := "de.opal-project"
 homepage 		in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
