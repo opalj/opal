@@ -29,6 +29,9 @@
 package org.opalj
 package hermes
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigRenderOptions
+
 /**
  * Global configuration settings initialized when the application configuration file is
  * read.
@@ -37,10 +40,66 @@ package hermes
  */
 object Globals {
 
-    /** The number of locations per feature pre project that is stored. */
-    private[hermes] final val MaxLocationsKey = "org.opalj.hermes.maxLocations"
+    // local state
+    private[this] var isInitialized: Boolean = false
+    private[this] var config: Config = null
 
-    // MaxLocations is a stable value; i.e., only changed once!
-    private[hermes] var MaxLocations: Int = Int.MaxValue
+    // ---------------------------------------------------------------------------------------------
+    //
+    // Configuration parameters
+    //
+    // ---------------------------------------------------------------------------------------------
+
+    /** The config key of the number of locations per feature pre project that is stored. */
+    final val MaxLocationsKey: String = "org.opalj.hermes.maxLocations"
+    private[this] var maxLocations: Int = 0
+
+    // ---------------------------------------------------------------------------------------------
+    //
+    // INITIALIZATION
+    //
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Sets the used configuration object.
+     */
+    private[hermes] def setConfig(config: Config): Unit = {
+        if (isInitialized) {
+            throw new IllegalStateException("configuration is already set")
+        }
+        this.config = config
+        isInitialized = true
+
+        maxLocations = config.getInt(MaxLocationsKey)
+    }
+
+    private[this] def validateInitialized[@specialized(Int, Boolean, Long, Double, Float) T](
+        f: ⇒ T
+    ): T = {
+        if (!isInitialized)
+            throw new IllegalStateException("configuration is not yet set")
+        else
+            f
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    //
+    // ACCESSORS
+    //
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * The global configuration file.
+     */
+    final def Config: Config = validateInitialized { config }
+
+    /** Textual representation of the configuration related to OPAL/Hermes.  */
+    def renderConfig: String = {
+        val rendererConfig = ConfigRenderOptions.defaults().setOriginComments(false)
+        config.getObject("org.opalj").render(rendererConfig)
+    }
+
+    /** The number of locations per feature pre project that is stored. */
+    final def MaxLocations: Int = validateInitialized { maxLocations }
 
 }
