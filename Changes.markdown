@@ -1,20 +1,30 @@
-# Major Changes 
+# Major Changes
 
 ## Upcomming
+
+## 0.8.11
  - the AI now prevents simple, unnecessary joins if a variable is known to be dead when multiple control flow paths join
- - `br.Code.liveVariables`: added a simple live variables analysis which computes liveness information for a code's locals (operand stack values are not considered because standard compiler generally don't create "dead operands" and the intended usage are performance and precision improvements)
+ - added a simple live variables analysis to `br.Code.liveVariables` which computes liveness information for a code's locals (operand stack values are not considered because standard compiler generally don't create "dead operands" and the intended usage are performance and precision improvements)
+ - refined the implementations of Graphs
+ - added efficient implementatin of Tarjan's algorithm for finding strongly connected components (the implementation can easily handle graphs with millions of nodes)
+ - added support for converting dot files to SVG using vis-js.com
  - completely reworked `org.opalj.collection.immmutable.UIDSet`; instead of a simple binary search tree - which had significant scalability issues - we are now using a trie.
  - initial release of Hermes
- - removed the support for `SetProperties` from the `PropertyStore`
- 
+ - removed the support for `SetProperties` from the `PropertyStore` due to conceptual mismatch
+ - we are now using sbt 0.13.15
+ - fixed ClassHierarchy.rootInterfaceTypes
+ - fixed Tasks.submit if all previously submitted tasks were already finished
+ - fixed ClassFile.isEffectiveFinal for interface types
+ - fixed the ids generated for CFGs
+
 ## 0.8.10
  - added support for the JSON Serialization of Milliseconds, Nanoseconds and Seconds
- 
-## 0.8.9
+
+## 0.8.9 (Initial full release of OPAL on Maven.)
  - added a list-like data structure (`Chain`) which is specialized for int values to save memory
  (~ 25%) and to avoid unnecessary boxing operations
  - added preliminary Java 9 support
  - added the fix-point computations framework to facilitate the implementation of concurrent, fix-point based analyses
- 
+
 ## Pre 0.8.9
-Initial release of OPAL on Maven. 
+Older releases can be obtained by checking out the repository and going back in the history.
