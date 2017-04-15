@@ -31,6 +31,7 @@ package hermes
 
 import org.opalj.br.PC
 import org.opalj.br.Method
+import org.opalj.br.Field
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.MethodInfo
@@ -108,6 +109,10 @@ object ClassFileLocation {
         new ClassFileLocation[S](project.source(objectType), objectType.toJava)
     }
 
+    final def apply[S](project: Project[S], classFile: ClassFile): ClassFileLocation[S] = {
+        apply(project, classFile.thisType)
+    }
+
 }
 
 case class FieldLocation[S](
@@ -127,6 +132,13 @@ case class FieldLocation[S](
             s + s"\n${source.get}"
         else
             s
+    }
+}
+
+object FieldLocation {
+
+    def apply[S](classFileLocation: ClassFileLocation[S], field: Field): FieldLocation[S] = {
+        new FieldLocation[S](classFileLocation, field.name)
     }
 }
 
