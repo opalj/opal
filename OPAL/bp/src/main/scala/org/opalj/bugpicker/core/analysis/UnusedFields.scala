@@ -69,7 +69,7 @@ object UnusedFields {
                 // it may be used in the source code.
                 (field.isFinal && (field.fieldType.isBaseType || field.fieldType == ObjectType.String)) ||
                 // The field is read at least once...
-                (fieldAccessInformation.readAccesses(classFile, field).nonEmpty) ||
+                (fieldAccessInformation.readAccesses(field).nonEmpty) ||
                 // We may have some users of the field in the future...
                 // IMPROVE use FutureFieldAccess property (TBD) to get the information if we may have future field accesses
                 (!field.isPrivate && AnalysisModes.isLibraryLike(theProject.analysisMode))

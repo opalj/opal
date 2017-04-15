@@ -58,20 +58,43 @@ class FieldAccessInformation(
         }.getOrElse(Seq.empty)
     }
 
-    final def writeAccesses(declaringClass: ClassFile, field: Field): Seq[(Method, PCs)] = {
-        writeAccesses(declaringClass.thisType, field.name)
-    }
-
     def writeAccesses(declaringClassType: ObjectType, fieldName: String): Seq[(Method, PCs)] = {
         accesses(allWriteAccesses, declaringClassType, fieldName)
     }
 
-    final def readAccesses(declaringClass: ClassFile, field: Field): Seq[(Method, PCs)] = {
-        readAccesses(declaringClass.thisType, field.name)
-    }
-
     def readAccesses(declaringClassType: ObjectType, fieldName: String): Seq[(Method, PCs)] = {
         accesses(allReadAccesses, declaringClassType, fieldName)
+    }
+
+    final def writeAccesses(field: Field): Seq[(Method, PCs)] = {
+        allWriteAccesses.getOrElse(field, Seq.empty)
+    }
+
+    final def readAccesses(field: Field): Seq[(Method, PCs)] = {
+        allReadAccesses.getOrElse(field, Seq.empty)
+    }
+
+    def isRead(field: Field): Boolean = {
+        allReadAccesses.get(field) match {
+            case Some(accesses) ⇒ accesses.nonEmpty
+            case None           ⇒ false
+        }
+    }
+
+    def isWritten(field: Field): Boolean = {
+        allWriteAccesses.get(field) match {
+            case Some(accesses) ⇒ accesses.nonEmpty
+            case None           ⇒ false
+        }
+    }
+
+    final def isAccessed(field: Field): Boolean = isRead(field) || isWritten(field)
+
+    /**
+     * Returns a new iterator to iterate over all field access locations.
+     */
+    def allAccesses(field: Field): Iterator[(Method, PCs)] = {
+        readAccesses(field).toIterator ++ writeAccesses(field).toIterator
     }
 
     /**
