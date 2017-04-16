@@ -117,7 +117,8 @@ object ClassFileLocation {
 
 case class FieldLocation[S](
         classFileLocation: ClassFileLocation[S],
-        fieldName:         String
+        fieldName:         String,
+        fieldType: FieldType
 ) extends Location[S] {
 
     override def source: Option[S] = classFileLocation.source
@@ -126,7 +127,7 @@ case class FieldLocation[S](
 
     override def toString: String = {
 
-        val s = s"${classFileLocation.classFileFQN}{ /*field*/ $fieldName }"
+        val s = s"${classFileLocation.classFileFQN}{ /*field*/ $fieldName : ${fieldType.toJava} }"
         val source = classFileLocation.source
         if (source.isDefined)
             s + s"\n${source.get}"
@@ -138,7 +139,7 @@ case class FieldLocation[S](
 object FieldLocation {
 
     def apply[S](classFileLocation: ClassFileLocation[S], field: Field): FieldLocation[S] = {
-        new FieldLocation[S](classFileLocation, field.name)
+        new FieldLocation[S](classFileLocation, field.name,field.fieldType)
     }
 }
 
