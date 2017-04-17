@@ -118,7 +118,7 @@ object ClassFileLocation {
 case class FieldLocation[S](
         classFileLocation: ClassFileLocation[S],
         fieldName:         String,
-        fieldType: FieldType
+        fieldType:         FieldType
 ) extends Location[S] {
 
     override def source: Option[S] = classFileLocation.source
@@ -139,7 +139,7 @@ case class FieldLocation[S](
 object FieldLocation {
 
     def apply[S](classFileLocation: ClassFileLocation[S], field: Field): FieldLocation[S] = {
-        new FieldLocation[S](classFileLocation, field.name,field.fieldType)
+        new FieldLocation[S](classFileLocation, field.name, field.fieldType)
     }
 }
 
