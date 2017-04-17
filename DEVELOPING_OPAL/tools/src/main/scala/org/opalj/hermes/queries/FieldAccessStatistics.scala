@@ -33,6 +33,7 @@ package queries
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
 
@@ -41,7 +42,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
  *
  * @author Michael Eichberg
  */
-object FieldAccessStatistics extends FeatureQuery {
+object FieldAccessStatistics extends DefaultFeatureQuery {
 
     override def featureIDs: List[String] = {
         List(
@@ -55,11 +56,11 @@ object FieldAccessStatistics extends FeatureQuery {
         )
     }
 
-    override def apply[S](
+    override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
         rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+    ): IndexedSeq[LocationsContainer[S]] = {
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         val fieldAccessInformation = project.get(FieldAccessInformationKey)
@@ -71,7 +72,10 @@ object FieldAccessStatistics extends FeatureQuery {
             cf ← project.allProjectClassFiles
             classFileLocation = ClassFileLocation(project, cf)
             field ← cf.fields
-            if !(field.isStatic && field.isFinal)
+            fieldType = field.fieldType
+            if !fieldType.isBaseType ||
+                (field.fieldType ne ObjectType.String) ||
+                !(field.isStatic && field.isFinal)
         } {
             val category =
                 if (!isAccessed(field)) {
@@ -95,9 +99,6 @@ object FieldAccessStatistics extends FeatureQuery {
                 }
             if (category != -1) locations(category) += FieldLocation(classFileLocation, field)
         }
-
-        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
-            Feature[S](featureID, locations(featureIDIndex))
-        }
+        locations
     }
 }
