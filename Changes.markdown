@@ -1,6 +1,7 @@
 # Major Changes
 
 ## Upcomming
+ - we are now using Scala 2.11.11 (this is probably the last release using Scala 2.11)
 
 ## 0.8.11
  - the AI now prevents simple, unnecessary joins if a variable is known to be dead when multiple control flow paths join
