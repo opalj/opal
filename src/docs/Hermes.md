@@ -93,3 +93,13 @@ Next, we will discuss a complete query for *native* methods.
 In some cases it might be interesting to also derive general project-wide statistic on the fly. In this case, the results should be stored in the project configuration's statistics object. E.g., if you would have computed the average size of the inheritance tree on the fly, you would then store the value in the project's statistics as shown below.
 
     projectConfiguration.addStatistic("⟨SizeOfInheritanceTree⟩",averageSizeOfInheritanceTree)
+
+## Executing Queries
+
+After the development of the query it is necessary to register it to make it possible for Hermes to execute it. For that, it is either necessary to add the query to the `application.conf` file, which is part of Hermes, or to create your own config file and add it over there. In both cases the key has to be:
+
+    org.opalj.hermes.queries.registered = [
+        {query = org.opalj.hermes.queries.NativeMethods, activate = true }
+    ]
+
+The big advantage of registering all queries in the same place is that it is easily possible to order the queries. The recommended ordering is: **descending execution time**. This will reduce the overall runtime.
