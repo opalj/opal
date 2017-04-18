@@ -135,6 +135,27 @@ trait FeatureQuery {
 
 }
 
+abstract class DefaultFeatureQuery extends FeatureQuery {
+
+    def evaluate[S](
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): IndexedSeq[LocationsContainer[S]]
+
+    final def apply[S](
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): TraversableOnce[Feature[S]] = {
+        val locations = evaluate(projectConfiguration, project, rawClassFiles)
+        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+            Feature[S](featureID, locations(featureIDIndex))
+        }
+    }
+
+}
+
 /**
  * Common constants related to feature queries.
  *

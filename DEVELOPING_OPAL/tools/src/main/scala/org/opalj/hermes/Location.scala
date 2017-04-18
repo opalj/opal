@@ -31,8 +31,10 @@ package hermes
 
 import org.opalj.br.PC
 import org.opalj.br.Method
+import org.opalj.br.Field
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
+import org.opalj.br.FieldType
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 
@@ -108,11 +110,16 @@ object ClassFileLocation {
         new ClassFileLocation[S](project.source(objectType), objectType.toJava)
     }
 
+    final def apply[S](project: Project[S], classFile: ClassFile): ClassFileLocation[S] = {
+        apply(project, classFile.thisType)
+    }
+
 }
 
 case class FieldLocation[S](
         classFileLocation: ClassFileLocation[S],
-        fieldName:         String
+        fieldName:         String,
+        fieldType:         FieldType
 ) extends Location[S] {
 
     override def source: Option[S] = classFileLocation.source
@@ -121,12 +128,19 @@ case class FieldLocation[S](
 
     override def toString: String = {
 
-        val s = s"${classFileLocation.classFileFQN}{ /*field*/ $fieldName }"
+        val s = s"${classFileLocation.classFileFQN}{ /*field*/ $fieldName : ${fieldType.toJava} }"
         val source = classFileLocation.source
         if (source.isDefined)
             s + s"\n${source.get}"
         else
             s
+    }
+}
+
+object FieldLocation {
+
+    def apply[S](classFileLocation: ClassFileLocation[S], field: Field): FieldLocation[S] = {
+        new FieldLocation[S](classFileLocation, field.name, field.fieldType)
     }
 }
 

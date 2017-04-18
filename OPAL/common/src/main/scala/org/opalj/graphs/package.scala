@@ -31,8 +31,6 @@ package org.opalj
 import scala.collection.mutable
 import scala.collection.mutable.ArrayStack
 
-import play.api.libs.json.Json
-
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -49,8 +47,6 @@ import org.opalj.collection.immutable.Naught
  * @author Michael Eichberg
  */
 package object graphs {
-
-    implicit final val VizNodeWrites = Json.writes[VizNode]
 
     /**
      * Generates a string that describes a (multi-)graph using the ".dot/.gv" file format

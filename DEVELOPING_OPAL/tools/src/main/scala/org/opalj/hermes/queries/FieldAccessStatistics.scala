@@ -29,10 +29,11 @@
 package org.opalj
 package hermes
 package queries
-/*
+
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
 
@@ -41,7 +42,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
  *
  * @author Michael Eichberg
  */
-object FieldAccessStatistics extends FeatureQuery {
+object FieldAccessStatistics extends DefaultFeatureQuery {
 
     override def featureIDs: List[String] = {
         List(
@@ -55,30 +56,49 @@ object FieldAccessStatistics extends FeatureQuery {
         )
     }
 
-    override def apply[S](
+    override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
         rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+    ): IndexedSeq[LocationsContainer[S]] = {
+        val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         val fieldAccessInformation = project.get(FieldAccessInformationKey)
-        val allAccesses =
-            fieldAccessInformation.allReadAccesses.iterator ++
-                fieldAccessInformation.allReadAccesses.iterator
-        for { (field, accesses) ← allAccesses } {
-            field.visibilityModifier match {
-                case Some(ACC_PRIVATE)   ⇒
-                case None                ⇒
-                case Some(ACC_PROTECTED) ⇒
-                case Some(ACC_PUBLIC)    ⇒
+        import fieldAccessInformation.isAccessed
+        import fieldAccessInformation.allAccesses
+        import project.classFile
 
-            }
+        for {
+            cf ← project.allProjectClassFiles
+            classFileLocation = ClassFileLocation(project, cf)
+            field ← cf.fields
+            fieldType = field.fieldType
+            if !fieldType.isBaseType ||
+                (field.fieldType ne ObjectType.String) ||
+                !(field.isStatic && field.isFinal)
+        } {
+            val category =
+                if (!isAccessed(field)) {
+                    field.visibilityModifier match {
+                        case Some(ACC_PRIVATE)   ⇒ 0
+                        case None                ⇒ 1
+                        case Some(ACC_PROTECTED) ⇒ 2
+                        case Some(ACC_PUBLIC)    ⇒ 3
+                    }
+                } else if (!field.isPrivate && allAccesses(field).forall(mi ⇒ classFile(mi._1) eq cf)) {
+                    field.visibilityModifier match {
+                        case None                ⇒ 4
+                        case Some(ACC_PROTECTED) ⇒ 5
+                        case Some(ACC_PUBLIC)    ⇒ 6
 
+                        case Some(ACC_PRIVATE) ⇒
+                            throw new UnknownError(s"non private-field $field has private modifier")
+                    }
+                } else {
+                    -1
+                }
+            if (category != -1) locations(category) += FieldLocation(classFileLocation, field)
         }
-
-        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
-            Feature[S](featureID, classTypesLocations(featureIDIndex))
-        }
+        locations
     }
 }
-*/
