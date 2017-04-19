@@ -1330,18 +1330,20 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      * Returns this array type's element type. E.g., the element type of an
      * array of arrays of arrays of `int` is `int`.
      */
-    def elementType: FieldType =
+    def elementType: FieldType = {
         componentType match {
             case at: ArrayType ⇒ at.elementType
             case _             ⇒ componentType
         }
+    }
 
     /**
      * The number of dimensions of this array. E.g. "Object[]" has one dimension and
      * "Object[][]" has two dimensions.
      */
-    def dimensions: Int =
+    def dimensions: Int = {
         1 + (componentType match { case at: ArrayType ⇒ at.dimensions; case _ ⇒ 0 })
+    }
 
     /**
      * Returns the component type of this array type after dropping the given number
@@ -1367,8 +1369,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = "["+componentType.toJVMTypeName
 
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Class.forName(toBinaryJavaName)
+    override def toJavaClass: java.lang.Class[_] = java.lang.Class.forName(toBinaryJavaName)
 
     override def adapt[T](
         targetType: Type

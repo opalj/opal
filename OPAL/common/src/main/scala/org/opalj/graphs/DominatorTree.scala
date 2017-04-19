@@ -29,8 +29,6 @@
 package org.opalj
 package graphs
 
-import play.api.libs.json.Json
-import play.api.libs.json.JsValue
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -123,26 +121,6 @@ final class DominatorTree private (
                 g += (t, s)
         }
         g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
-    }
-
-    /**
-     * Creates a graph using OPAL's Viz format.
-     */
-    def toViz(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): JsValue = {
-        val nodes = new Array[VizNode](idom.length)
-        for { (iDomNodeId, nodeId) ← idom.zipWithIndex if isIndexValid(nodeId) } {
-            if (nodes(nodeId) == null) {
-                nodes(nodeId) = VizNode(nodeId, nodeId.toString, nodeId, Nil)
-            }
-            if (nodeId != startNode) {
-                val iDomNode = nodes(iDomNodeId)
-                if (iDomNode == null)
-                    nodes(iDomNodeId) = VizNode(iDomNodeId, iDomNodeId.toString, iDomNodeId, nodeId :: Nil)
-                else
-                    nodes(iDomNodeId) = iDomNode.copy(children = nodeId :: iDomNode.children)
-            }
-        }
-        Json.toJson(nodes.filter(_ ne null))
     }
 
     // THE FOLLOWING FUNCTION IS REALLY EXPENSIVE (DUE TO (UN)BOXING)
@@ -301,7 +279,7 @@ object DominatorTree {
             }
         }
 
-        // // PAPER VERSION USING RECURSION  
+        // // PAPER VERSION USING RECURSION
         // def compress(v: Int): Unit = {
         //     var theAncestor = ancestor(v)
         //     if (ancestor(theAncestor) != 0) {

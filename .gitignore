@@ -49,3 +49,4 @@ Test.class
 /OPAL.sublime-project
 /OPAL.sublime-workspace
 .ensime_cache
+/?.gv

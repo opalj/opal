@@ -76,7 +76,7 @@ case class ProjectConfiguration(
     def addStatistic(key: String, value: Double) = {
         this.synchronized {
             if (theProjectStatistics.contains(key))
-                throw new IllegalArgumentException(s"the key: $key is already used")
+                throw new IllegalArgumentException(s"$id - $key is already set")
             else
                 theProjectStatistics += ((key, value))
         }
