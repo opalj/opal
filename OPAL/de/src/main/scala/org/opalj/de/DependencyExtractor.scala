@@ -159,17 +159,21 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     processSignature(vc, attribute.asInstanceOf[Signature])
 
                 // The following attributes do not create dependencies.
-                case Synthetic.KindId            ⇒ /*do nothing*/
-                case SourceFile.KindId           ⇒ /*do nothing*/
-                case Deprecated.KindId           ⇒ /*do nothing*/
-                case SourceDebugExtension.KindId ⇒ /*do nothing*/
+                case Synthetic.KindId             ⇒ /*do nothing*/
+                case SourceFile.KindId            ⇒ /*do nothing*/
+                case Deprecated.KindId            ⇒ /*do nothing*/
+                case SourceDebugExtension.KindId  ⇒ /*do nothing*/
 
                 // The Java 7 BootstrapMethodTable Attribute is resolved and related
                 // dependencies will be extracted when the respective invokedynamic
                 // instructions are processed.
 
                 // We know nothing about:
-                case UnknownAttribute.KindId     ⇒ /*do nothing*/
+                case UnknownAttribute.KindId      ⇒ /*do nothing*/
+
+                // These are "custom attributes"
+                case SynthesizedClassFiles.KindId ⇒ /*ignore*/
+                case VirtualTypeFlag.KindId       ⇒ /*ignore*/
 
                 case _ ⇒
                     val classInfo = classFile.thisType.toJava
@@ -856,7 +860,12 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
             }
 
             case handle: FieldAccessMethodHandle ⇒ {
-                processDependency(declaringMethod, handle.declaringClassType, DECLARING_CLASS_OF_ACCESSED_FIELD)
+                processDependency(
+                    declaringMethod,
+                    handle.declaringClassType,
+                    DECLARING_CLASS_OF_ACCESSED_FIELD
+                )
+
                 handle match {
 
                     case _: FieldReadAccessMethodHandle ⇒
@@ -869,11 +878,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                             ),
                             READS_FIELD
                         )
-                        processDependency(
-                            declaringMethod,
-                            handle.fieldType,
-                            TYPE_OF_ACCESSED_FIELD
-                        )
+                        processDependency(declaringMethod, handle.fieldType, TYPE_OF_ACCESSED_FIELD)
                         processDependency(
                             declaringMethod,
                             handle.declaringClassType,
