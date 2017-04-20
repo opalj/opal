@@ -27,8 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-package fanin_fanout;
+package metrics.fanin_fanout;
 
+/**
+ * @author Michael Reif
+ */
 public interface Expression {
 
     public int eval();
