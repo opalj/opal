@@ -1,30 +1,28 @@
 # Fan-In and Fan-Out
 
-The query computes the Fan-In, Fan-Out and the ratio between Fan-In and Fan-Out of a class.
- 
+The query computes for each class the *Fan-In*, *Fan-Out* and the ratio between both.
+
 ## Configuration
 
-All three feature kinds are configurable over two dimensions. The first dimension is the number of
-available catergories that determines the number of features per metric. (Each category relates
-to a feature.) The second dimension is the size of each category. The size of category determines
-the range of values that belong to a single feature. 
+### Configuration Options
 
-Lets assume we have 3 categories with a size of 2. That relates to the following:
+All three feature kinds are configurable over two dimensions. The first dimension is the number of catergories which also determines the number of features per metric. (Each category relates to a feature.) The second dimension is the cardinality of each category. It determines how many values belong to a single feature.
 
-Category 1: `x < 2`
+Lets assume we have 3 categories with a cardinality of 2. This will result in the following categories/features w.r.t. the fan in/out:
 
-Category 2: `x ≤ 2 < 4`
+Category 1: `Fan In/Out < 2`
 
-Category 3: `x ≥ 4`
+Category 2: `2 ≤ Fan In/Out < 4`
 
-####default configuration: 
-```
-org.opalj.hermes.queries.FanInFanOut {
-   fanin.categories = 6
-   fanin.categorySize = 3
-   fanout.categories = 6
-   fanout.categorySize = 2
-   ratio.categories = 4
-   ratio.categorySize = 0.25
-} 
-```
+Category 3: `Fan In/Out ≥ 4`
+
+### Default Configuration
+
+    org.opalj.hermes.queries.FanInFanOut {
+        fanin.categories = 6
+        fanin.categorySize = 3
+        fanout.categories = 6
+        fanout.categorySize = 2
+        ratio.categories = 4
+        ratio.categorySize = 0.25
+    }
