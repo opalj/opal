@@ -33,7 +33,7 @@ import scala.xml.Node
 import org.opalj.bi.ConstantPoolTag
 
 /**
- *
+ * @param name_index Reference to a CONSTANT_Utf8_info structure.
  * @author Michael Eichberg
  */
 case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
@@ -42,7 +42,19 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Class
 
-    override def asJavaType(implicit cp: Constant_Pool): String = {
+    override def asConstantClass: this.type = this
+
+    /**
+     * Should be called if and only if the referenced type is known not be an array type and
+     * therefore the underlying descriptor does not encode a field type descriptor.
+     */
+    def asJavaClassOrInterfaceType(implicit cp: Constant_Pool): String = {
+        asJavaObjectType(cp(name_index).asConstantUTF8.value)
+    }
+
+    // OLD CONVERSION METHODS
+
+    def asJavaType(implicit cp: Constant_Pool): String = {
         val classInfo = cp(name_index).toString
         if (classInfo.charAt(0) == '[')
             parseFieldType(classInfo).asJavaType
@@ -57,8 +69,6 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
             <span class="cp_ref">{ cp(name_index).asCPNode }</span>
             &raquo;)
         </span>
-
-    // OLD CONVERSION METHODS
 
     override def asInlineNode(implicit cp: Constant_Pool): Node = {
         <span class="fqn">{ toString }</span>
