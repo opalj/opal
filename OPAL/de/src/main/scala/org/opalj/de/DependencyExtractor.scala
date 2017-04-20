@@ -29,6 +29,9 @@
 package org.opalj
 package de
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.BasicLogMessage
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
@@ -997,19 +1000,12 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
  */
 private object DependencyExtractor {
 
-    private[this] var wasIncompleteHandlingOfInvokedynamicWarningShown = false
-
-    private val incompleteHandlingOfInvokedynamicMessage: String =
-        "[info] This project contains invokedynamic instructions. "+
-            "Using the currently configured strategy only dependencies to the runtime are resolved."
+    private final val incompleteHandlingOfInvokedynamicMessage: String = {
+        "for the code's invokedynamic instructions only dependencies to the runtime are resolved"
+    }
 
     def warnAboutIncompleteHandlingOfInvokedynamic(): Unit = {
-        if (!wasIncompleteHandlingOfInvokedynamicWarningShown)
-            this.synchronized {
-                if (!wasIncompleteHandlingOfInvokedynamicWarningShown) {
-                    wasIncompleteHandlingOfInvokedynamicWarningShown = true
-                    println(incompleteHandlingOfInvokedynamicMessage)
-                }
-            }
+        implicit val logContext = GlobalLogContext
+        OPALLogger.logOnce(BasicLogMessage(message = incompleteHandlingOfInvokedynamicMessage))
     }
 }
