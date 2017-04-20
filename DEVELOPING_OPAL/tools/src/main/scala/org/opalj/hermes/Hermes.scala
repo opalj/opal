@@ -390,9 +390,6 @@ object Hermes extends JFXApp {
         // OPTIMIZATION GOAL
         val overallSize = model.intVar("objective", 0, IntVar.MAX_INT_BOUND /*=21474836*/ )
         model.scalar(pis, piSizes, "=", overallSize).post()
-
-        pis.foreach(model.setObjective(Model.MAXIMIZE, _))
-
         model.setObjective(Model.MINIMIZE, overallSize)
         val solver = model.getSolver
 
