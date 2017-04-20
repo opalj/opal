@@ -102,12 +102,13 @@ trait FeatureQuery {
      * which is expected to be found along the extractor.
      */
     protected def mdDescription: String = {
-        val descriptionResource = s"$id.markdown"
-        val descriptionResourceURL = this.getClass.getResource(descriptionResource)
+        var descriptionResourceURL = this.getClass.getResource(s"$id.markdown")
+        if (descriptionResourceURL == null)
+            descriptionResourceURL = this.getClass.getResource(s"$id.md")
         try {
             processSource(Source.fromURL(descriptionResourceURL)(Codec.UTF8)) { _.mkString }
         } catch {
-            case t: Throwable ⇒ s"Not Available ($descriptionResourceURL; ${t.getMessage})"
+            case t: Throwable ⇒ s"not available: $descriptionResourceURL; ${t.getMessage}"
         }
     }
 
