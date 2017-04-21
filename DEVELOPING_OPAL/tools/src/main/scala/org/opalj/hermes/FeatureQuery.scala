@@ -154,6 +154,27 @@ abstract class DefaultFeatureQuery extends FeatureQuery {
             Feature[S](featureID, locations(featureIDIndex))
         }
     }
+}
+
+abstract class DefaultGroupedFeaturesQuery extends DefaultFeatureQuery {
+
+    def groupedFeatureIDs: Seq[Seq[String]]
+
+    def evaluateFeatureGroups[S](
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): TraversableOnce[TraversableOnce[LocationsContainer[S]]]
+
+    final def featureIDs: Seq[String] = groupedFeatureIDs.flatten
+
+    final def evaluate[S](
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): TraversableOnce[LocationsContainer[S]] = {
+        evaluateFeatureGroups(projectConfiguration, project, rawClassFiles).flatten
+    }
 
 }
 
