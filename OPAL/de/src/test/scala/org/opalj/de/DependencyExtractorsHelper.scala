@@ -51,19 +51,19 @@ object DependencyExtractorsHelper {
         if (t.isArrayType) t.asArrayType.elementType.toJava else t.toJava
     }
 
-    def sourceElementName(vClass: VirtualClass): String =    sourceElementName(vClass.thisType)
+    def sourceElementName(vClass: VirtualClass): String = sourceElementName(vClass.thisType)
 
     def sourceElementName(vField: VirtualField): String = {
-        sourceElementName(vField.declaringClassType) +            FIELD_AND_METHOD_SEPARATOR +            vField.name
+        sourceElementName(vField.declaringClassType) + FIELD_AND_METHOD_SEPARATOR + vField.name
     }
 
     def sourceElementName(vMethod: VirtualMethod): String = {
         sourceElementName(vMethod.declaringClassType) +
             FIELD_AND_METHOD_SEPARATOR +
             methodDescriptorToString(vMethod.name, vMethod.descriptor)
-        }
+    }
 
-    def methodDescriptorToString(        name:       String,        descriptor: MethodDescriptor    ): String = {
+    def methodDescriptorToString(name: String, descriptor: MethodDescriptor): String = {
         descriptor.parameterTypes.map { sourceElementName(_) }.mkString(name+"(", ", ", ")")
     }
 
