@@ -1,4 +1,4 @@
-image: hseeberger/scala-sbt:latest
+image: nightscape/docker-sbt:latest
 
 pipelines:
   default:
