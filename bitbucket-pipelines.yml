@@ -1,8 +1,8 @@
-+image: hseeberger/scala-sbt:latest
-+
-+pipelines:
-+  default:
-+    - step:
-+        script:
-+          - sbt buildAll
-+          - sbt test
+image: hseeberger/scala-sbt:latest
+
+pipelines:
+  default:
+    - step:
+        script:
+          - sbt buildAll
+          - sbt test
