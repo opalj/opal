@@ -29,9 +29,10 @@
 package strings;
 
 /**
- * Represents a collection of java.lang.StringBuilder usages that focus on populating/manipulating strings. It contains methods with rather simple usages as
- * well as more complex usages that can be found in real code (examples are minimized). Those methods
- * can be used to evaluate string tracking.
+ * Represents a collection of java.lang.StringBuilder usages that focus on populating/manipulating
+ * strings. It contains methods with rather simple usages as well as more complex usages that can
+ * be found in real code (examples are minimized). Those methods can be used to evaluate string
+ * tracking.
  *
  * Methods that can mutate the StringBuilder's value:
  *  - append
@@ -47,13 +48,13 @@ package strings;
  */
 public class StringBuilderUsages {
 
-
     // Requires
-    // - requires an understanding of ".toCharArray" - a precise modeling of (constant) arrays
-    // - we need to know that INIT_CHAR_ARRAY is effective not mutated/constant
-    // - (for some cases) we need to model simple alternatives/repetitions etc. =>
-    //   *lightweight matchers*: "adsfasdf(XYZ|ZDY)" where () models an alternative.
-    // - we need to be able to "unroll loops" => loop detection and loop variables detection required
+    //  - requires an understanding of ".toCharArray" - a precise modeling of (constant) arrays
+    //  - we need to know that INIT_CHAR_ARRAY is effectively not mutated/constant
+    //  - (for some cases) we need to model simple alternatives/repetitions etc. =>
+    //    *lightweight matchers*: "adsfasdf(XYZ|ZDY)" where () models an alternative.
+    //  - we need to be able to "unroll loops" => loop detection and loop variables detection
+    //    required
     //
 
     final public static String INIT_STR = "0123456789";
@@ -188,7 +189,7 @@ public class StringBuilderUsages {
 
         final StringBuilder sb = new StringBuilder();
 
-        sb.insert(0, new StringBuilder("insert calls toString on the passed object and inserts it output."));
+        sb.insert(0, new Value(100));
 
         return sb.toString();
     }
