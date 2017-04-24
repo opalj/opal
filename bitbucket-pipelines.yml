@@ -1,4 +1,7 @@
-image: nightscape/docker-sbt:latest
+#
+# image: nightscape/docker-sbt:latest
+
+image: 1science/sbt:0.13-oracle-jdk-8
 
 pipelines:
   default:
