@@ -1,7 +1,4 @@
-#
-# image: nightscape/docker-sbt:latest
-
-image: 1science/sbt:0.13-oracle-jdk-8
+image: opalj/sbt_scala_javafx
 
 pipelines:
   default:
