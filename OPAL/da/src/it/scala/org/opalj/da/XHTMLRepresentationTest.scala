@@ -59,7 +59,7 @@ class XHTMLRepresentationTest extends FlatSpec with Matchers {
             val classFiles = ClassFileReader.ClassFiles(file, exceptionHandler)
 
             exceptions should be('empty)
-            if(!file.getName()  == "Empty.jar") { classFiles.isEmpty should be(false) }
+            if(file.getName()  != "Empty.jar") { classFiles.isEmpty should be(false) }
             info(s"loaded ${classFiles.size} class files")
 
             val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
