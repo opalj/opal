@@ -31,7 +31,7 @@ package da
 
 import scala.xml.Node
 
-import org.opalj.bi.AccessFlagsContexts.METHOD
+import org.opalj.bi.AccessFlagsContexts.METHOD_PARAMETERS
 
 /**
  * @author Michael Eichberg
@@ -60,10 +60,7 @@ case class MethodParameter(
 ) {
 
     def toXHTML(implicit cp: Constant_Pool): Seq[Node] = {
-        val (accessFlags, _ /*explicitAccessFlags*/ ) = accessFlagsToXHTML(access_flags, METHOD)
-        List(
-            accessFlags,
-            <span>{ cp(name_index).toString(cp) }</span>
-        )
+        val (accessFlags, _) = accessFlagsToXHTML(access_flags, METHOD_PARAMETERS)
+        List(accessFlags, <span>{ cp(name_index).toString(cp) }</span>)
     }
 }
