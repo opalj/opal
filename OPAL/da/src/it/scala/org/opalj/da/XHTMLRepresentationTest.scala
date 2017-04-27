@@ -46,7 +46,7 @@ import org.opalj.io.writeAndOpen
 class XHTMLRepresentationTest extends FlatSpec with Matchers {
 
     behavior of "the Disassembler"
-    for { file ← bi.TestSupport.allBITestJARs ++ Traversable(bytecode.JRELibraryFolder)  } {
+    for { file ← bi.TestSupport.allBITestJARs ++ Traversable(bytecode.JRELibraryFolder) } {
 
         it should (s"be able to create the xHTML representation of every class of $file") in {
 
@@ -59,7 +59,7 @@ class XHTMLRepresentationTest extends FlatSpec with Matchers {
             val classFiles = ClassFileReader.ClassFiles(file, exceptionHandler)
 
             exceptions should be('empty)
-            if(file.getName()  != "Empty.jar") { classFiles.isEmpty should be(false) }
+            if (file.getName() != "Empty.jar") { classFiles.isEmpty should be(false) }
             info(s"loaded ${classFiles.size} class files")
 
             val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
