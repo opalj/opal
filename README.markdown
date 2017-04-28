@@ -46,7 +46,7 @@ You are ready to go.
 
 When you encounter problems to build OPAL, please consider the following options.
 
- - Windows users have to adapt the __global__ sbt options such that it does work with UTF-8. To achieve this you have to add the JVM parameter `-Dfile.encoding=UTF8` to the sbt's _sbtopts_ file that is located in the sbt installation directory.
+ - Windows users have to adapt the __global__ sbt options such that it does work with UTF-8. To achieve this you have to add the JVM parameter `-Dfile.encoding=UTF8` to the sbt's _sbtopts_ and _sbtconfig.txt_ file that is located in the sbt installation directory.
  - The OPAL developer tools subproject depends on JavaFX for and therefore, if you want to build everything, the JavaFX libraries need to be on the class path. This is always the case when you use the Oracle JDK. If you want to use the OpenJDK you have to configure this manually!
 
 # Using OPAL
