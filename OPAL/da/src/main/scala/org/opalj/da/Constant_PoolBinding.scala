@@ -46,8 +46,15 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
     protected[this] def createDeferredActionsStore(): DeferredActionsStore = {
         new mutable.ArrayBuffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry {
             override def Constant_Type_Value = throw new UnsupportedOperationException()
-            override def asCPNode(implicit cp: Constant_Pool) = throw new UnsupportedOperationException()
-            override def asInlineNode(implicit cp: Constant_Pool) = throw new UnsupportedOperationException()
+
+            override def asCPNode(implicit cp: Constant_Pool) = {
+                throw new UnsupportedOperationException()
+            }
+
+            override def asInlineNode(implicit cp: Constant_Pool) = {
+                throw new UnsupportedOperationException()
+            }
+
             override def toString(implicit cp: Constant_Pool) = {
                 throw new UnsupportedOperationException(
                     this.getClass.toString+" does not support toString(cp)"

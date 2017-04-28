@@ -35,6 +35,7 @@ package da
  * @author Michael Eichberg
  */
 sealed abstract class TypeInfo {
+
     def asJavaType: String
 
     /**
