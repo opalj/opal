@@ -59,6 +59,13 @@ public abstract class ATypeAnnotationUser<@ATypeAnnotation T extends @ATypeAnnot
         // annotated type cast
         if(x instanceof List) {
             List<?> l = (@ATypeAnnotation("annotated type cast") List<?>) x;
+            System.out.println(l);
+        }
+
+        // annotated type cast
+        if(x instanceof List) {
+            Object l = (Serializable & @ATypeAnnotation("annotation of second type of a case to an intersection type") Cloneable) x;
+            System.out.println(l);
         }
     }
 }
