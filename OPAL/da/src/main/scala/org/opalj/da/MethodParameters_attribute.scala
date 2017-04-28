@@ -61,6 +61,11 @@ case class MethodParameter(
 
     def toXHTML(implicit cp: Constant_Pool): Seq[Node] = {
         val (accessFlags, _) = accessFlagsToXHTML(access_flags, METHOD_PARAMETERS)
-        List(accessFlags, <span>{ cp(name_index).toString(cp) }</span>)
+        val parameterName =
+            if (name_index == 0)
+                "<Formal Parameter>"
+            else
+                cp(name_index).toString(cp)
+        List(accessFlags, <span>{ parameterName }</span>)
     }
 }
