@@ -57,7 +57,7 @@ public abstract class ATypeAnnotationUser<@ATypeAnnotation T extends @ATypeAnnot
 
     public <X extends @ATypeAnnotation Serializable & @ATypeAnnotation("annotation of second type of intersection type") Cloneable> void crazy(X x) {
         // annotated type cast
-        if(x instanceof List) {
+        if(x instanceof @ATypeAnnotation("annotated instanceof") List) {
             List<?> l = (@ATypeAnnotation("annotated type cast") List<?>) x;
             System.out.println(l);
         }
