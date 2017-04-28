@@ -51,6 +51,7 @@ trait TypeAnnotationTarget {
 // type_parameter_target
 
 trait Type_Parameter_Target extends TypeAnnotationTarget {
+
     def type_parameter_index: Int
 
     final override def attribute_length: Int = 1 + 1
@@ -289,18 +290,20 @@ trait Type_Argument_Target extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1 /*tag*/ + 2 + 1
 
+    /** The description of the annotated type argument as given in the JVM spec.*/
+    def description: String
+
+    final def toXHTML(implicit cp: Constant_Pool): Node = {
+        <span><i>{ description }</i>(bytecode offset = { offset }, type argument index = { type_argument_index })</span>
+    }
 }
 
-case class CastExpression(
-        offset:              Int,
-        type_argument_index: Int
-) extends Type_Argument_Target {
+case class CastExpression(offset: Int, type_argument_index: Int) extends Type_Argument_Target {
 
     final override def tag: Int = 0x47
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
-    }
+    final def description: String = "type in cast expression"
+
 }
 case class ConstructorInvocation(
         offset:              Int,
@@ -309,9 +312,11 @@ case class ConstructorInvocation(
 
     final override def tag: Int = 0x48
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
+    final def description: String = {
+        """|type argument for generic constructor in new expression or
+           |explicit constructor invocation statement""".stripMargin
     }
+
 }
 case class MethodInvocation(
         offset:              Int,
@@ -320,9 +325,10 @@ case class MethodInvocation(
 
     final override def tag: Int = 0x49
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
+    final def description: String = {
+        "type argument for generic method in method invocation expression"
     }
+
 }
 case class ConstructorInMethodReferenceExpression(
         offset:              Int,
@@ -331,8 +337,8 @@ case class ConstructorInMethodReferenceExpression(
 
     final override def tag: Int = 0x4a
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
+    final def description: String = {
+        "type argument for generic constructor in method reference expression using ::new"
     }
 }
 case class MethodInMethodReferenceExpression(
@@ -342,7 +348,7 @@ case class MethodInMethodReferenceExpression(
 
     final override def tag: Int = 0x4b
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
+    final def description: String = {
+        "type argument for generic method in method reference expression using ::Identifier"
     }
 }
