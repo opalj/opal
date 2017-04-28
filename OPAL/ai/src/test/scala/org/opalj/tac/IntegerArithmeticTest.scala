@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,8 +36,7 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 //import org.opalj.ai.BaseAI
 //import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -52,9 +51,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
 
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
+    val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
@@ -108,7 +105,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect addition") {
-                val statements = AsQuadruples(method = IntegerAddMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerAddMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -121,7 +118,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect logical and") {
-                val statements = AsQuadruples(method = IntegerAndMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerAndMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -134,7 +131,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect division") {
-                val statements = AsQuadruples(method = IntegerDivMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerDivMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -147,7 +144,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect incrementation by a constant") {
-                val statements = AsQuadruples(method = IntegerIncMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerIncMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -164,7 +161,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect negation") {
-                val statements = AsQuadruples(method = IntegerNegMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerNegMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -181,7 +178,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect multiplication") {
-                val statements = AsQuadruples(method = IntegerMulMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerMulMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -194,7 +191,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect logical or") {
-                val statements = AsQuadruples(method = IntegerOrMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerOrMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -207,7 +204,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect modulo") {
-                val statements = AsQuadruples(method = IntegerRemMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerRemMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -220,7 +217,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect shift right") {
-                val statements = AsQuadruples(method = IntegerShRMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerShRMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -233,7 +230,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect shift left") {
-                val statements = AsQuadruples(method = IntegerShLMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerShLMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -246,7 +243,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect subtraction") {
-                val statements = AsQuadruples(method = IntegerSubMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerSubMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -259,7 +256,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect arithmetic shift right") {
-                val statements = AsQuadruples(method = IntegerAShMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerAShMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -272,7 +269,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect logical xor") {
-                val statements = AsQuadruples(method = IntegerXOrMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntegerXOrMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

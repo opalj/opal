@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -48,10 +48,19 @@ case class Signature_attribute(
      */
     final override def attribute_length = 2
 
+    /*
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="simple_attribute">
             <span class="attribute_name">Signature</span>
             { ": "+cp(signature_index).toString }
         </div>
+    }*/
+
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <details>
+            <summary>Signature</summary>
+            { cp(signature_index).toString }
+        </details>
     }
+
 }

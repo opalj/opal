@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,9 +31,9 @@ package tac
 
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
 import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 //import org.opalj.ai.BaseAI
 //import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -48,9 +48,7 @@ class ArrayTest extends TACTest {
 
     val ArrayInstructionsType = ObjectType("tactest/ArrayCreationAndManipulation")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
+    val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val ArrayInstructionsClassFile = project.classFile(ArrayInstructionsType).get
 
@@ -100,7 +98,7 @@ class ArrayTest extends TACTest {
             )
 
             it("should correctly reflect reference array instructions") {
-                val statements = AsQuadruples(method = RefArrayMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = RefArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -142,7 +140,7 @@ class ArrayTest extends TACTest {
             }
 
             it("should correctly reflect multidimensional array instructions") {
-                val statements = AsQuadruples(method = MultidimArrayMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = MultidimArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -173,7 +171,7 @@ class ArrayTest extends TACTest {
             }
 
             it("should correctly reflect double array instructions") {
-                val statements = AsQuadruples(method = DoubleArrayMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = DoubleArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -183,7 +181,7 @@ class ArrayTest extends TACTest {
             }
 
             it("should correctly reflect float array instructions") {
-                val statements = AsQuadruples(method = FloatArrayMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = FloatArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -193,7 +191,7 @@ class ArrayTest extends TACTest {
             }
 
             it("should correctly reflect int array instructions") {
-                val statements = AsQuadruples(method = IntArrayMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -203,7 +201,7 @@ class ArrayTest extends TACTest {
             }
 
             it("should correctly reflect long array instructions") {
-                val statements = AsQuadruples(method = LongArrayMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = LongArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -213,7 +211,7 @@ class ArrayTest extends TACTest {
             }
 
             it("should correctly reflect short array instructions") {
-                val statements = AsQuadruples(method = ShortArrayMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = ShortArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -223,7 +221,7 @@ class ArrayTest extends TACTest {
             }
 
             it("should correctly reflect byte array instructions") {
-                val statements = AsQuadruples(method = ByteArrayMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = ByteArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -233,7 +231,7 @@ class ArrayTest extends TACTest {
             }
 
             it("should correctly reflect char array instructions") {
-                val statements = AsQuadruples(method = CharArrayMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = CharArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

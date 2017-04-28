@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -71,6 +71,8 @@ sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSe
         mapToList(_ + offset).reverse.mkString(pre, sep, pos)
     }
 
+    def hasMultipleElements: Boolean
+
     // FOR "BALANCING" THE TREE
     private[mutable] def isLeafNode: Boolean
     private[mutable] final def isUNode: Boolean = !isLeafNode
@@ -119,6 +121,8 @@ private final class UShortSet2(private var value: Int) extends UShortSet {
     override def size: Int = if (notFull) 1 else 2
 
     def isSingletonSet: Boolean = notFull
+
+    def hasMultipleElements: Boolean = isFull
 
     def contains(value: UShort): Boolean = {
         this.value1 == value || (value > 0 && this.value2 == value)
@@ -274,6 +278,8 @@ private final class UShortSet4(private var value: Long) extends UShortSet { self
     def min: UShort = value1.toInt
 
     override def size: Int = if (notFull) 3 else 4
+
+    def hasMultipleElements: Boolean = true
 
     def isSingletonSet: Boolean = false
 
@@ -536,6 +542,8 @@ private final class UShortSetNode(
 
     override def size: Int = set1.size + set2.size
 
+    def hasMultipleElements: Boolean = true
+
     def contains(value: UShort): Boolean = {
         val set1Max = (set1: SmallValuesSet).max
         if (set1Max > value)
@@ -682,6 +690,7 @@ private object EmptyUShortSet extends UShortSet {
     override def isEmpty = true
     def isFull: Boolean = true
     def isSingletonSet: Boolean = false
+    def hasMultipleElements: Boolean = false
     override def size: Int = 0
     def mutableCopy: mutable.UShortSet = this
     def iterator: Iterator[Int] = Iterator.empty
@@ -761,5 +770,12 @@ object UShortSet {
             case values     ⇒ (apply(values.head) /: values.tail)((s, v) ⇒ v +≈: s)
         }
     }
-}
 
+    /**
+     * Creates a new sorted set of unsigned short values.
+     */
+    def create(values: TraversableOnce[UShort]): UShortSet = {
+        if (values.isEmpty) EmptyUShortSet
+        else (((EmptyUShortSet: UShortSet) /: values)((s, v) ⇒ v +≈: s))
+    }
+}

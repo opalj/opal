@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,16 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.cfg
+package org.opalj.br
+package cfg
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.opalj.bi.TestSupport
+
+import java.net.URL
+
+import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
-import org.opalj.br.ObjectType
-import org.opalj.io.writeAndOpen
 
 /**
  * We merely construct CFGs for various, self-made methods and check their blocks
@@ -51,27 +51,18 @@ import org.opalj.io.writeAndOpen
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class BasicCFGJava8Test extends FunSpec with Matchers {
+class BasicCFGJava8Test extends CFGTests {
 
-    val testJAR = "classfiles/cfgtest8.jar"
-    val testFolder = TestSupport.locateTestResources(testJAR, "br")
-    val testProject = Project(testFolder)
-
-    private def test(methodName: String, cfg: CFG)(f: ⇒ Unit): Unit = {
-        try {
-            f
-        } catch {
-            case t: Throwable ⇒ writeAndOpen(cfg.toDot, methodName+"-CFG", ".gv"); throw t
-        }
-    }
+    val testProject: Project[URL] = biProject("controlflow.jar")
 
     describe("cfgs with very simple control flow") {
 
-        val testClass = testProject.classFile(ObjectType("controlflow/BoringCode")).get
+        val BoringCodeClassFile = testProject.classFile(ObjectType("controlflow/BoringCode")).get
 
         it("a cfg with no control flow statemts should consists of a single basic block") {
-            val cfg = CFGFactory(testClass.findMethod("singleBlock").head.body.get)
-            test("singleBlock", cfg) {
+            val code = BoringCodeClassFile.findMethod("singleBlock").head.body.get
+            val cfg = CFGFactory(code)
+            testCFGProperties("singleBlock", code, cfg, testProject.classHierarchy) {
                 cfg.allBBs.size should be(1)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(1)
@@ -80,8 +71,9 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         }
 
         it("a cfg with some simple control flow statemts should consists of respective single basic blocks") {
-            val cfg = CFGFactory(testClass.findMethod("conditionalOneReturn").head.body.get)
-            test("conditionalOneReturn", cfg) {
+            val code = BoringCodeClassFile.findMethod("conditionalOneReturn").head.body.get
+            val cfg = CFGFactory(code)
+            testCFGProperties("conditionalOneReturn", code, cfg, testProject.classHierarchy) {
                 cfg.allBBs.size should be(11)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(1)
@@ -90,8 +82,9 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         }
 
         it("a cfg for a method with multiple return statements should have corresponding basic blocks") {
-            val cfg = CFGFactory(testClass.findMethod("conditionalTwoReturns").head.body.get)
-            test("conditionalTwoReturns", cfg) {
+            val code = BoringCodeClassFile.findMethod("conditionalTwoReturns").head.body.get
+            val cfg = CFGFactory(code)
+            testCFGProperties("conditionalTwoReturns", code, cfg, testProject.classHierarchy) {
                 cfg.allBBs.size should be(6)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(3)

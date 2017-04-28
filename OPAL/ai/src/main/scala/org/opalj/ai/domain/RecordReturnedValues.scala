@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -84,12 +84,12 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
     private[this] var returnedValues: Map[PC, ReturnedValue] = _
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        initialLocals:    Locals
+        code:          Code,
+        cfJoins:       BitSet,
+        initialLocals: Locals
     ): Unit = {
         returnedValues = Map.empty
-        super.initProperties(code, joinInstructions, initialLocals)
+        super.initProperties(code, cfJoins, initialLocals)
     }
 
     /**

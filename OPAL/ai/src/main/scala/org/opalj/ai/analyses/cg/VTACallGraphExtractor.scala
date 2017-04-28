@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -191,7 +191,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                 assert(upperTypeBound.nonEmpty)
 
                 if (upperTypeBound.isSingletonSet) {
-                    val theType = upperTypeBound.first
+                    val theType = upperTypeBound.head
                     if (theType.isArrayType)
                         doNonVirtualCall(
                             pc, ObjectType.Object, name, descriptor,
@@ -245,7 +245,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                 }
             }
 
-            val receiverUpperTypeBound = receiver.upperTypeBound
+            val receiverUpperTypeBound = receiver.upperTypeBound.toUIDSet[ReferenceType]
 
             val receivers = receiver.referenceValues
             if (receivers.tail.nonEmpty) {
@@ -277,7 +277,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                     // BECAUSE OF THE TYPE INFORMATION!
                     val uniqueReceivers =
                         receivers.foldLeft(Map.empty[UpperTypeBound, Boolean]) { (results, rv) ⇒
-                            val utb = rv.upperTypeBound
+                            val utb = rv.upperTypeBound.toUIDSet[ReferenceType]
                             if (utb.nonEmpty)
                                 results.get(utb) match {
                                     case Some(isPrecise) ⇒

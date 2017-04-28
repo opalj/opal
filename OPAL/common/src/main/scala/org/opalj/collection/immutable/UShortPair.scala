@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,12 +43,15 @@ package immutable
  * @author Michael Eichberg
  */
 final class UShortPair private (val pair: Int) extends AnyVal {
+
     def _1: UShort = pair & UShort.MaxValue
     def key: UShort = _1
     def minor: UShort = _1
+
     def _2: UShort = pair >>> 16
     def value: UShort = _2
     def major: UShort = _2
+
     override def toString: String = s"UShortPair($key,$value)"
 }
 /**

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,8 +33,9 @@ import scala.collection.mutable
 import scala.collection.BitSet
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
-import org.opalj.collection.UShortSet
+import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.Code
+import org.opalj.br.LiveVariables
 
 /**
  * Encapsulates the ''result'' of the abstract interpretation of a method. If
@@ -47,15 +48,6 @@ import org.opalj.br.Code
 sealed abstract class AIResult {
 
     /**
-     * If `true` then the code was evaluated using `strict` semantics (in Java
-     * the `strictfp` modifier was used), otherwise
-     * it was evaluated using the standard JVM semantics.
-     *
-     * Note, that most standard JVMs nowadays always use strict semantics.
-     */
-    val strictfp: Boolean
-
-    /**
      * The code for which the abstract interpretation was performed.
      */
     val code: Code
@@ -63,12 +55,17 @@ sealed abstract class AIResult {
     /**
      * The instructions where two or more control flow paths join.
      *
-     * (See also [[org.opalj.br.Code.joinInstructions]].)
+     * @see    [[org.opalj.br.Code.cfPCs]] / [[org.opalj.br.Code.cfJoins]]
      *
-     * @note This information could be recomputed on-demand but is stored for performance
-     * reasons.
+     * @note   This information could be recomputed on-demand but is stored for performance
+     *         reasons.
      */
-    val joinInstructions: BitSet
+    val cfJoins: BitSet
+
+    /**
+     * The set of statically known live Variables.
+     */
+    val liveVariables: LiveVariables
 
     /**
      * The domain object that was used to perform the abstract interpretation.
@@ -99,8 +96,8 @@ sealed abstract class AIResult {
     /**
      * Returns all instructions that belong to a subroutine.
      */
-    lazy val subroutineInstructions: UShortSet = {
-        var instructions = org.opalj.collection.mutable.UShortSet.empty
+    lazy val subroutineInstructions: org.opalj.collection.UShortSet = {
+        var instructions = UShortSet.empty
         var subroutineLevel = 0
         // It is possible to have a method with just JSRs and no RETs...
         // Hence, we have to iterate from the beginning.
@@ -127,6 +124,9 @@ sealed abstract class AIResult {
 
     /**
      * Returns true if the instruction with the given pc was evaluated at least once.
+     *
+     * This operation is much more efficient than performing an exists check on the
+     * list of evaluated instructions!
      */
     @inline final def wasEvaluted(pc: PC): Boolean = operandsArray(pc) ne null
 
@@ -172,10 +172,10 @@ sealed abstract class AIResult {
     def stateToString: String = {
         var result = ""
         result += evaluated.mkString("Evaluated: ", ",", "\n")
-        result += (
+        result += {
             if (worklist.nonEmpty) worklist.mkString("Remaining Worklist: ", ",", "\n")
             else "Worklist: empty\n"
-        )
+        }
         if (memoryLayoutBeforeSubroutineCall.nonEmpty) {
             for ((subroutineId, operandsArray, localsArray) ← memoryLayoutBeforeSubroutineCall) {
                 result += s"Memory Layout Before Calling Subroutine $subroutineId:\n"
@@ -200,16 +200,18 @@ sealed abstract class AIAborted extends AIResult {
 
     def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
 
-    override def stateToString: String =
+    override def stateToString: String = {
         "The abstract interpretation was aborted:\n"+super.stateToString
+    }
 }
 
 object AICompleted {
 
     def unapply(
         result: AICompleted
-    ): Some[(result.domain.type, result.operandsArray.type, result.localsArray.type)] =
+    ): Some[(result.domain.type, result.operandsArray.type, result.localsArray.type)] = {
         Some((result.domain, result.operandsArray, result.localsArray))
+    }
 
 }
 
@@ -224,8 +226,9 @@ sealed abstract class AICompleted extends AIResult {
 
     def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
 
-    override def stateToString: String =
+    override def stateToString: String = {
         "The abstract interpretation succeeded:\n"+super.stateToString
+    }
 }
 
 /**
@@ -244,10 +247,10 @@ object AIResultBuilder {
      * computation.
      */
     def aborted(
-        theStrictfp:         Boolean,
-        theCode:             Code,
-        theJoinInstructions: BitSet,
-        theDomain:           Domain
+        theCode:          Code,
+        theCFJoins:       BitSet,
+        theLiveVariables: LiveVariables,
+        theDomain:        Domain
     )(
         theWorklist:                         List[PC],
         theEvaluated:                        List[PC],
@@ -259,9 +262,9 @@ object AIResultBuilder {
     ): AIAborted { val domain: theDomain.type } = {
 
         new AIAborted {
-            val strictfp: Boolean = theStrictfp
             val code: Code = theCode
-            val joinInstructions: BitSet = theJoinInstructions
+            val cfJoins: BitSet = theCFJoins
+            val liveVariables: LiveVariables = theLiveVariables
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
@@ -271,15 +274,15 @@ object AIResultBuilder {
             val subroutinesOperandsArray: theDomain.OperandsArray = theSubroutinesOperandsArray
             val subroutinesLocalsArray: theDomain.LocalsArray = theSubroutinesLocalsArray
 
-            def continueInterpretation(ai: AI[_ >: domain.type]): AIResult =
+            def continueInterpretation(ai: AI[_ >: domain.type]): AIResult = {
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain
+                    code, cfJoins, liveVariables, domain
                 )(
                     worklist, evaluated,
                     operandsArray, localsArray,
                     memoryLayoutBeforeSubroutineCall, subroutinesOperandsArray, subroutinesLocalsArray
                 )
-
+            }
         }
     }
 
@@ -289,10 +292,10 @@ object AIResultBuilder {
      * ''completed'' is depending on the used domain.
      */
     def completed(
-        theStrictfp:         Boolean,
-        theCode:             Code,
-        theJoinInstructions: BitSet,
-        theDomain:           Domain
+        theCode:          Code,
+        theCFJoins:       BitSet,
+        theLiveVariables: LiveVariables,
+        theDomain:        Domain
     )(
         theEvaluated:     List[PC],
         theOperandsArray: theDomain.OperandsArray,
@@ -300,9 +303,9 @@ object AIResultBuilder {
     ): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
-            val strictfp: Boolean = theStrictfp
             val code: Code = theCode
-            val joinInstructions = theJoinInstructions
+            val cfJoins: BitSet = theCFJoins
+            val liveVariables: LiveVariables = theLiveVariables
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
@@ -346,13 +349,12 @@ object AIResultBuilder {
                 }
 
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain
+                    code, cfJoins, liveVariables, domain
                 )(
                     AI.initialWorkList, evaluated,
                     operandsArray, localsArray,
                     Nil, subroutinesOperandsArray, subroutinesLocalsArray
                 )
-
             }
         }
     }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -42,9 +42,7 @@ package l0
  * class ZDomain extends { // we need the "early initializer"
  *      val project: SomeProject = theProject
  *      val code: Code = body
- * }
- *      with ZeroDomain
- *      with ThrowNoPotentialExceptionsConfiguration
+ * } with ZeroDomain with ThrowNoPotentialExceptionsConfiguration
  * }}}
  *
  * @author Michael Eichberg
@@ -57,4 +55,3 @@ trait ZeroDomain
         with TheCode { domain: Configuration ⇒
 
 }
-

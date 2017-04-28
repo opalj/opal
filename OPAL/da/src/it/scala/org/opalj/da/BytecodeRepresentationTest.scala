@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -72,7 +72,7 @@ class BytecodeRepresentationTest extends FlatSpec with Matchers {
                 entriesCount.incrementAndGet()
             } catch {
                 case e: Exception ⇒ Lock.synchronized {
-                    val message = s"failed: $ze(${classFile.fqn}); message:"+e.getMessage()
+                    val message = s"failed: $ze(${classFile.thisType}); message:"+e.getMessage()
                     val newException = new RuntimeException(message, e)
                     exceptions = newException :: exceptions
                 }
@@ -88,7 +88,7 @@ class BytecodeRepresentationTest extends FlatSpec with Matchers {
                 )
             fail(message)
         } else {
-            info(s"sucessfully procesed ${entriesCount.get} entries")
+            info(s"sucessfully processed ${entriesCount.get} entries")
         }
     }
 }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,9 +29,16 @@
 package org.opalj
 package br
 
+import scala.util.control.ControlThrowable
+
 import java.io.File
 import java.net.URL
-import scala.util.control.ControlThrowable
+
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bytecode.RTJar
 
 /**
  * Defines convenience methods related to reading in class files.
@@ -88,5 +95,38 @@ package object reader {
         }
         (allClassFiles.flatten.seq, exceptions)
     }
-}
 
+    /**
+     * Loads class files from JRE .jars found in the boot classpath.
+     *
+     * @return List of class files ready to be passed to a `IndexBasedProject`.
+     */
+    def readJREClassFiles(
+        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
+    )(
+        implicit
+        reader:     ClassFileBinding = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache),
+        logContext: LogContext       = GlobalLogContext
+    ): Seq[(ClassFile, URL)] = {
+        val classFiles = reader.ClassFiles(JRELibraryFolder)
+        if (classFiles.isEmpty) {
+            OPALLogger.error("project setup", s"loading the JRE ($JRELibraryFolder) failed")
+        }
+
+        classFiles.toSeq
+    }
+
+    def readRTJarClassFiles(
+        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
+    )(
+        implicit
+        reader:     ClassFileBinding = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache),
+        logContext: LogContext       = GlobalLogContext
+    ): Traversable[(ClassFile, URL)] = {
+        val classFiles = reader.ClassFiles(RTJar)
+        if (classFiles.isEmpty) {
+            OPALLogger.error("project setup", s"loading the JRE ($JRELibraryFolder) failed")
+        }
+        classFiles
+    }
+}

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -51,15 +51,24 @@ import org.opalj.br.Code
  *
  * @author Michael Eichberg
  */
-class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extends AI[D] {
+class InstructionCountBoundedAI[D <: Domain](
+        val maxEvaluationCount: Int,
+        IdentifyDeadVariables:  Boolean
+) extends AI[D](IdentifyDeadVariables) {
 
     /**
      * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
      *      before the evaluation of the method is automatically interrupted.
      */
-    def this(code: Code, maxEvaluationFactor: Double = 1.5d)(implicit logContext: LogContext) = {
-
-        this(InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor))
+    def this(
+        code:                  Code,
+        maxEvaluationFactor:   Double  = 1.5d,
+        identifyDeadVariables: Boolean = true
+    )(implicit logContext: LogContext) = {
+        this(
+            InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
+            identifyDeadVariables
+        )
     }
 
     assert(maxEvaluationCount > 0)

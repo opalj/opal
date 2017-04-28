@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,14 +31,16 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.ArrayType
 import scala.reflect.ClassTag
+
+import org.opalj.collection.immutable.Chain
+import org.opalj.br.ArrayType
 
 /**
  * @author Michael Eichberg
  */
 trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with ArrayValues {
-    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy with LogContextProvider ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with TheClassHierarchy with LogContextProvider ⇒
 
     type DomainInitializedArrayValue = InitializedArrayValue
     final val DomainInitializedArrayValue: ClassTag[DomainInitializedArrayValue] = implicitly
@@ -54,31 +56,35 @@ trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with Ar
         origin:  ValueOrigin,
         theType: ArrayType,
         values:  Array[DomainValue]
-    ): DomainConcreteArrayValue =
+    ): DomainConcreteArrayValue = {
         ArrayValue(origin, theType, values, nextT())
+    }
 
     override def ArrayValue(
         origin:  ValueOrigin,
         theType: ArrayType,
         values:  Array[DomainValue],
         t:       Timestamp
-    ): DomainConcreteArrayValue =
+    ): DomainConcreteArrayValue = {
         new ConcreteArrayValue(origin, theType, values, t)
+    }
 
     final override def InitializedArrayValue(
         origin:    ValueOrigin,
         arrayType: ArrayType,
-        counts:    List[Int]
-    ): DomainInitializedArrayValue =
+        counts:    Chain[Int]
+    ): DomainInitializedArrayValue = {
         InitializedArrayValue(origin, arrayType, counts, nextT())
+    }
 
     override def InitializedArrayValue(
         origin:    ValueOrigin,
-        arrayType: ArrayType, counts: List[Int],
-        t: Timestamp
+        arrayType: ArrayType,
+        counts:    Chain[Int],
+        t:         Timestamp
     ): DomainInitializedArrayValue = {
-        new InitializedArrayValue(origin, arrayType, counts.take(2), nextT())
+        // we currently support at most two-dimensional arrays
+        new InitializedArrayValue(origin, arrayType, counts.takeUpTo(2), t)
     }
 
 }
-

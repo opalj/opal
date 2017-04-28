@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,12 +22,15 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package ai
+
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.br.ReferenceType
 
 /**
  * This package contains definitions of common domains that can be used for the
@@ -49,14 +52,14 @@ package ai
  *      origin of a value should consider to implement.
  *      - [[TheProject]] defines a standard mechanism how a domain can access the
  *      ''current'' project.
- *      - [[ClassHierarchy]] defines a standard mechanism how to get the project's
+ *      - [[TheClassHierarchy]] defines a standard mechanism how to get the project's
  *      class hierarchy.
  *      - ...
  *
  *  - Domains That Provide a Default Implementation
  *      - [[Origin]] defines the functionality to return a value's origin if the value
  *      supports that.
- *      - [[TheProject]] default implementation of the [[ClassHierarchy]]
+ *      - [[TheProject]] default implementation of the [[TheClassHierarchy]]
  *      trait that uses the project's class hierarchy.
  *      - [[DefaultHandlingOfMethodResults]] basically implements a Domain's methods
  *      related to return instructions an uncaught exceptions.
@@ -80,4 +83,8 @@ package ai
  *
  * @author Michael Eichberg
  */
-package object domain /* currently empty */
+package object domain {
+
+    final val EmptyUpperTypeBound = UIDSet.empty[ReferenceType]
+
+}

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,9 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class DivideInstruction
-        extends StackBasedArithmeticInstruction
-        with BinaryArithmeticInstruction {
+abstract class DivideInstruction extends StackBasedBinaryArithmeticInstruction {
 
     final def operator: String = "/"
 

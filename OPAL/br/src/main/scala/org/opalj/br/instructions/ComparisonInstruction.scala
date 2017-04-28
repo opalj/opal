@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,32 +30,18 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
-
 /**
  * An instruction that compares two primitive values.
  *
  * @author Michael Eichberg
  */
-abstract class ComparisonInstruction
-        extends StackBasedArithmeticInstruction
-        with BinaryArithmeticInstruction {
+abstract class ComparisonInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def stackSlotsChange: Int = {
         // take two 2 values and push one int value
         -2 * computationalType.operandSize + 1
-    }
-
-    final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code: Code
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
     }
 
     final def isShiftInstruction: Boolean = false

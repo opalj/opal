@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Super class of all bytecode instructions that always jump to a specific
@@ -42,38 +42,48 @@ trait UnconditionalBranchInstructionLike
         extends ControlTransferInstructionLike
         with ConstantLengthInstruction {
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    final def readsLocal: Boolean = false
+    override final def readsLocal: Boolean = false
 
-    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+    override final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final def writesLocal: Boolean = false
+    override final def writesLocal: Boolean = false
 
-    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
-
-}
-object UnconditionalBranch {
-
-    def unapply(i: UnconditionalBranchInstruction): Option[Int] = Some(i.branchoffset)
+    override final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }
 
 trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranchInstructionLike {
+
     def branchoffset: Int
 
-    final def nextInstructions(
+    override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        UShortSet(currentPC + branchoffset)
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
+        Chain.singleton(currentPC + branchoffset)
     }
 
-    override def toString(currentPC: Int) =
-        getClass.getSimpleName+" "+
-            (currentPC + branchoffset) +
-            (if (branchoffset >= 0) "↓" else "↑")
+    override def toString(currentPC: Int) = {
+        val direction = (if (branchoffset >= 0) "↓" else "↑")
+        getClass.getSimpleName+" "+(currentPC + branchoffset) + direction
+    }
+
+}
+
+/**
+ * Extractor for [[UnconditionalBranchInstruction]]s.
+ */
+object UnconditionalBranchInstruction {
+
+    /**
+     * Extracts the instructions branchoffset.
+     */
+    def unapply(i: UnconditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
+
 }

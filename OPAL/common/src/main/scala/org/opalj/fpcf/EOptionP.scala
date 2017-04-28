@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,11 +29,11 @@
 package org.opalj.fpcf
 
 /**
- * An entity and (optionally) a specific associated property.
+ * An entity and a specific associated property if it is available.
  *
  * @author Michael Eichberg
  */
-sealed trait EOptionP[+E <: Entity, +P <: Property] {
+sealed abstract class EOptionP[+E <: Entity, +P <: Property] {
 
     /**
      * The entity.

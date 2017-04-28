@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,6 +31,8 @@ package br
 package instructions
 
 import scala.annotation.switch
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 import org.opalj.collection.mutable.UShortSet
 
 /**
@@ -66,9 +68,15 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        UShortSet.empty
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
+        if (regularSuccessorsOnly)
+            Naught
+        else {
+            val ehs = code.handlersForException(currentPC, ReturnInstruction.jvmExceptions.head)
+            ehs.map(_.handlerPC)
+        }
     }
 
     final def expressionResult: NoExpression.type = NoExpression
@@ -98,7 +106,7 @@ object ReturnInstruction {
         }
     }
 
-    def apply(theType: Type): ReturnInstruction =
+    def apply(theType: Type): ReturnInstruction = {
         (theType.id: @switch) match {
             case VoidType.id    ⇒ RETURN
             case IntegerType.id ⇒ IRETURN
@@ -110,6 +118,20 @@ object ReturnInstruction {
             case FloatType.id   ⇒ FRETURN
             case DoubleType.id  ⇒ DRETURN
             case _              ⇒ ARETURN
+        }
+    }
+
+    def unapply(instruction: Instruction): Option[ReturnInstruction] =
+        (instruction.opcode: @switch) match {
+            case RETURN.opcode
+                | IRETURN.opcode
+                | LRETURN.opcode
+                | FRETURN.opcode
+                | DRETURN.opcode
+                | ARETURN.opcode ⇒
+                Some(instruction.asInstanceOf[ReturnInstruction])
+            case _ ⇒
+                None
         }
 
 }
@@ -127,7 +149,7 @@ object ReturnInstructions {
         val instructions = code.instructions
         val max = instructions.length
         var pc = 0
-        var returnPCs = org.opalj.collection.mutable.UShortSet.empty
+        var returnPCs = UShortSet.empty
         while (pc < max) {
             val instruction = instructions(pc)
             if (ReturnInstruction.isReturnInstruction(instruction))

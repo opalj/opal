@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,6 +43,15 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
     def isInterfaceCall: Boolean
 
     /**
+     * Returns the number of registers required to store the method's arguments
+     * including (if required) the self reference "this".
+     */
+    def count: Int = {
+        // c.f. JVM 8 Spec. Section 6.5.
+        (if (isInstanceMethod) 1 else 0) + methodDescriptor.requiredRegisters
+    }
+
+    /**
      * Returns `true` if the called method is an instance method and virtual method
      * call resolution has to take place. I.e., if the underlying instruction is an
      * invokevirtual or an invokeinterface instruction.
@@ -83,9 +92,9 @@ object MethodInvocationInstruction {
  */
 abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction {
 
-    def isVirtualMethodCall: Boolean = true
+    override def isVirtualMethodCall: Boolean = true
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+    override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
         1 + methodDescriptor.parametersCount
     }
 
@@ -108,6 +117,6 @@ object VirtualMethodInvocationInstruction {
  */
 abstract class NonVirtualMethodInvocationInstruction extends MethodInvocationInstruction {
 
-    def isVirtualMethodCall: Boolean = false
+    override def isVirtualMethodCall: Boolean = false
 
 }

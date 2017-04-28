@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -38,6 +38,8 @@ package org.opalj.br.cfg
  */
 class ExitNode(normalReturn: Boolean) extends CFGNode {
 
+    final override def nodeId: Int = if (normalReturn) Int.MinValue else Int.MinValue + 1
+
     final override def isBasicBlock: Boolean = false
     final override def isCatchNode: Boolean = false
     final override def isExitNode: Boolean = true
@@ -55,8 +57,6 @@ class ExitNode(normalReturn: Boolean) extends CFGNode {
     //
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
-
-    override def nodeId: Long = if (normalReturn) Long.MinValue else Long.MinValue + 1L
 
     override def toString(): String = s"ExitNode(normalReturn=$normalReturn)"
 

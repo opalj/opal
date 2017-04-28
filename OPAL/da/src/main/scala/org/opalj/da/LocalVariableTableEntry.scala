@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -48,7 +48,7 @@ case class LocalVariableTableEntry(
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val name = cp(name_index).toString(cp)
-        val descriptor = parseFieldType(cp(descriptor_index).asString).javaTypeName
+        val descriptor = parseFieldType(cp(descriptor_index).asString).asJavaType
         <div class="local_variable">
             <span class="pc">pc=[{ start_pc } &rarr; { start_pc + length })</span>
             /

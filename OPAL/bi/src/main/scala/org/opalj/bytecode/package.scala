@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,6 +29,11 @@
 package org.opalj
 
 import java.io.File
+
+import scala.io.Source
+import scala.collection.immutable.BitSet
+
+import org.opalj.io.process
 
 /**
  * Defines functionality commonly useful when processing Java bytecode.
@@ -91,13 +96,13 @@ package object bytecode {
      *
      * @example
      * {{{
-     * scala> org.opalj.abbreviateFQN("a.b.T","a.T") // <= no abbrev.
+     * scala> org.opalj.abbreviateType("a.b.T","a.T") // <= no abbrev.
      * res: String = a.T
      *
-     * scala> org.opalj.abbreviateFQN("a.b.T","a.b.T")
+     * scala> org.opalj.abbreviateType("a.b.T","a.b.T")
      * res: String = …b.T
      *
-     * scala> org.opalj.abbreviateFQN("a.b.c.T","a.b.c.T.X")
+     * scala> org.opalj.abbreviateType("a.b.c.T","a.b.c.T.X")
      * res: String = …c.T.X
      * }}}
      *
@@ -106,7 +111,7 @@ package object bytecode {
      *      parameter should be `'.'`, which is the default, otherwise the parameter
      *      should be `'/'`.
      */
-    def abbreviateFQN(
+    def abbreviateType(
         definingTypeFQN:  String,
         memberTypeFQN:    String,
         pkgSeparatorChar: Int    = '.'
@@ -186,4 +191,21 @@ package object bytecode {
                 }
         }
     }
+
+    /**
+     * The list of all JVM instructions in the format: "<OPCODE><MNEMONIC>NewLine".
+     */
+    def JVMInstructions: List[(Int, String)] = {
+        process(getClass.getClassLoader.getResourceAsStream("JVMInstructionsList.txt")) { stream ⇒
+            val is = Source.fromInputStream(stream).getLines.toList.map(_.split(" ").map(_.trim))
+            is.map { i ⇒
+                val opcode = i(0)
+                val mnemonic = i(1)
+                (opcode.toInt, mnemonic)
+            }.sorted
+        }
+    }
+
+    /** The set of all valid/used opcodes. */
+    def JVMOpcodes = BitSet(JVMInstructions.map(_._1): _*)
 }

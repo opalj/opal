@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,7 +34,7 @@ package br
  *
  * @author Michael Eichberg
  */
-sealed trait MethodHandle extends ConstantValue[MethodHandle] {
+sealed abstract class MethodHandle extends ConstantValue[MethodHandle] {
 
     final override def value: this.type = this
 
@@ -51,7 +51,7 @@ sealed trait MethodHandle extends ConstantValue[MethodHandle] {
     def toJava: String
 }
 
-sealed trait FieldAccessMethodHandle extends MethodHandle {
+sealed abstract class FieldAccessMethodHandle extends MethodHandle {
 
     def declaringClassType: ObjectType
     def name: String
@@ -64,9 +64,9 @@ sealed trait FieldAccessMethodHandle extends MethodHandle {
     }
 }
 
-sealed trait FieldReadAccessMethodHandle extends FieldAccessMethodHandle
+sealed abstract class FieldReadAccessMethodHandle extends FieldAccessMethodHandle
 
-sealed trait FieldWriteAccessMethodHandle extends FieldAccessMethodHandle
+sealed abstract class FieldWriteAccessMethodHandle extends FieldAccessMethodHandle
 
 case class GetFieldMethodHandle(
     declaringClassType: ObjectType,
@@ -92,7 +92,7 @@ case class PutStaticMethodHandle(
     fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle
 
-sealed trait MethodCallMethodHandle extends MethodHandle {
+sealed abstract class MethodCallMethodHandle extends MethodHandle {
 
     def receiverType: ReferenceType
     def name: String

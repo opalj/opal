@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,6 +36,9 @@ package org.opalj
  */
 object RelationalOperators extends Enumeration {
 
+    //
+    // Operators to compare int values.
+    //
     final val LT = Value("<")
     final val < = LT
     final val GT = Value(">")
@@ -44,6 +47,10 @@ object RelationalOperators extends Enumeration {
     final val <= = LE
     final val GE = Value(">=")
     final val >= = GE
+
+    //
+    // Operators to compare int and reference values.
+    //
     final val EQ = Value("==")
     final val == = EQ
     final val NE = Value("!=")

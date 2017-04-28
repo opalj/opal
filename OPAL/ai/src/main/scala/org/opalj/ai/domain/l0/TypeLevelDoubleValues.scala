@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -70,58 +70,40 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
     //
     // UNARY EXPRESSIONS
     //
-    override def dneg(
-        pc:       PC,
-        strictfp: Boolean,
-        value:    DomainValue
-    ): DomainValue = DoubleValue(pc)
+    override def dneg(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
 
     //
     // RELATIONAL OPERATORS
     //
-    override def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         IntegerValue(pc)
+    }
 
-    override def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         IntegerValue(pc)
+    }
 
     //
     // BINARY EXPRESSIONS
     //
-    override def dadd(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue =
+    override def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         DoubleValue(pc)
+    }
 
-    override def ddiv(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue =
+    override def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         DoubleValue(pc)
+    }
 
-    override def drem(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue =
+    override def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         DoubleValue(pc)
+    }
 
-    override def dmul(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue =
+    override def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         DoubleValue(pc)
+    }
 
-    override def dsub(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue =
+    override def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         DoubleValue(pc)
+    }
 
 }
-

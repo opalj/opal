@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,33 +30,19 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
-
 /**
  * An instruction that subtracts two primitive values.
  *
  * @author Michael Eichberg
  */
-abstract class SubtractInstruction
-        extends StackBasedArithmeticInstruction
-        with BinaryArithmeticInstruction {
+abstract class SubtractInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
 
-    final def isShiftInstruction: Boolean = false
+    override final def isShiftInstruction: Boolean = false
 
-    final def operator: String = "-"
+    override final def operator: String = "-"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ObjectType] = Nil
 
-    final def stackSlotsChange: Int = -computationalType.operandSize
-
-    final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code: Code
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
-    }
+    override final def stackSlotsChange: Int = -computationalType.operandSize
 
 }

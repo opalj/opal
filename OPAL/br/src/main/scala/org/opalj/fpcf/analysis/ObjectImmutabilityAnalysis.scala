@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -402,7 +402,8 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
         // due to the lack of knowledge.
         val typesForWhichItMayBePossibleToComputeTheMutability = allSubtypes(ObjectType.Object, reflexive = true)
         val unexpectedRootTypes = rootTypes.filter(rt ⇒ (rt ne ObjectType.Object) && isInterface(rt).isNo)
-        unexpectedRootTypes.map(rt ⇒ allSubtypes(rt, reflexive = true)).flatten.view.
+        unexpectedRootTypes.flatMap(rt ⇒ allSubtypes(rt, reflexive = true)).view.
+            // TODO Either remove the following filter call or document why it is usefull!
             filter(ot ⇒ !typesForWhichItMayBePossibleToComputeTheMutability.contains(ot)).
             foreach(ot ⇒ project.classFile(ot) foreach { cf ⇒
                 handleResult(ImmediateResult(cf, MutableObjectDueToUnknownSupertypes))

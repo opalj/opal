@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -51,16 +51,14 @@ import org.opalj.br.reader.{Java8Framework, Java8LibraryFramework}
 @RunWith(classOf[JUnitRunner])
 class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
 
-    val InvokedMethod = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
+    val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 
-    val testResources = locateTestResources("classfiles/Lambdas.jar", "br")
-    val rtJar = new File(JRELibraryFolder, "rt.jar")
-
-    val project: SomeProject = Project(
-        Java8Framework.ClassFiles(testResources),
-        Java8LibraryFramework.ClassFiles(rtJar),
-        true
-    )
+    val project: SomeProject = {
+        val testResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature", "bi")
+        val projectClasses = Java8Framework.ClassFiles(testResources)
+        val libraryClasses = Java8LibraryFramework.ClassFiles(new File(JRELibraryFolder, "rt.jar"))
+        Project(projectClasses, libraryClasses, true)
+    }
 
     private def testMethod(classFile: ClassFile, name: String): Unit = {
         for {
@@ -69,7 +67,10 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
             annotations = method.runtimeVisibleAnnotations
         } {
             val invokedMethod = getInvokedMethod(annotations)
-            invokedMethod should be('defined)
+            if (invokedMethod.isEmpty)
+                throw new IllegalArgumentException(
+                    s"the method which is expected to be invoked $annotations is not found"
+                )
 
             val methodIdentifier = invokedMethod.get.toJava
             it("«"+methodIdentifier+"» should resolve to Object's method") {
@@ -104,9 +105,9 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
         val candidates: IndexedSeq[Option[Method]] = for {
             invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
             pairs = invokedMethod.elementValuePairs
-            ElementValuePair("receiverType", ClassValue(receiverType)) ← pairs
+            ElementValuePair("receiverType", StringValue(receiverType)) ← pairs
             ElementValuePair("name", StringValue(methodName)) ← pairs
-            classFile ← project.classFile(receiverType.asObjectType)
+            classFile ← project.classFile(ObjectType(receiverType))
         } yield {
             val parameterTypes = getParameterTypes(pairs)
             val returnType = getReturnType(pairs)
@@ -132,13 +133,10 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
         }.getOrElse(VoidType)
     }
 
-    describe("Invocations of inherited methods on instances of functional interfaces") {
-        val testClass = project.classFile(
-            ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")
-        ).get
-        val annotatedMethods = testClass.methods.filter(
-            _.runtimeVisibleAnnotations.nonEmpty
-        )
+    describe("invocations of inherited methods on instances of functional interfaces") {
+        val testClassType = ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")
+        val testClass = project.classFile(testClassType).get
+        val annotatedMethods = testClass.methods.filter(_.runtimeVisibleAnnotations.nonEmpty)
         annotatedMethods.foreach(m ⇒ testMethod(testClass, m.name))
     }
 }

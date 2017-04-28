@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,31 +22,31 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 "use strict";
 
-NodeList.prototype.forEach = Array.prototype.forEach; 
+NodeList.prototype.forEach = Array.prototype.forEach;
 
 function toogleFilter() {
  var flagsFilter = document.querySelectorAll('input:checked[type="checkbox"],input:checked[type="radio"]');
  var nameFilter = document.querySelector('input[type="text"]').value
  if(flagsFilter.length == 0 && nameFilter.length == 0) {
 	 // clear filter property
-	 document.querySelectorAll('div[class="method"]').forEach(function(e){e.style.display = 'block'}) 	
+	 document.querySelectorAll('div[class="method"]').forEach(function(e){e.style.display = 'block'})
  } else {
 	 // 1. hide all
 	 document.querySelectorAll("div[class='method']").forEach(function(e){e.style.display = 'none'})
-	 
+
 	 var filterString = "div[class='method']"
-	 flagsFilter.forEach(function(e){filterString += "[data-method-flags*='"+e.value+"']"});
+	 flagsFilter.forEach(function(e){filterString += "[data-access-flags*='"+e.value+"']"});
 	 if(nameFilter.length > 0)
-		 filterString += "[name*='"+document.querySelector('input[type="text"]').value+"']";
-	 	 
+		 filterString += "[data-name*='"+document.querySelector('input[type="text"]').value+"']";
+
 	 // 2. show filtered
-	 console.log(filterString);	 
+	 console.log(filterString);
 	 document.querySelectorAll(filterString).forEach(function(e){e.style.display = 'block'})
  }
  toggleUnusedFlags();
@@ -56,10 +56,10 @@ function clearFilter(){
 	// clear flags filter
 	var flagsFilter = document.querySelectorAll('input:checked[type="checkbox"],input:checked[type="radio"]');
 	flagsFilter.forEach(function(f){f.checked = false});
-	
+
 	// clear name filter
 	document.querySelectorAll('input[type="text"]').forEach(function(e){e.value = ""})
-	
+
 	// update "view"
 	toogleFilter();
 }
@@ -76,20 +76,20 @@ function toggleUnusedFlags() {
 	}
     var possibleFlags = document.querySelectorAll('input:not(:checked)[type="checkbox"],input:not(:checked)[type="radio"]');
 	var selectedFlags = document.querySelectorAll('input:checked[type="checkbox"],input:checked[type="radio"]');
-	
+
 	var filterString = "div[class='method']"
-	selectedFlags.forEach(function(e){filterString += "[data-method-flags*='"+e.value+"']"});
-	
+	selectedFlags.forEach(function(e){filterString += "[data-access-flags*='"+e.value+"']"});
+
     possibleFlags.forEach(function (e) {
 		if (e.type == "radio") {
 			// on radio types, we have to filter the currently set radio-button in the same set as they are mutually exclusive
 			filterString = "div[class='method']"
 			selectedFlags.forEach(function(f){
 				if (e.name != f.name)
-					filterString += "[data-method-flags*='"+f.value+"']";
+					filterString += "[data-access-flags*='"+f.value+"']";
 			});
 		}
-		var possibleElements = document.querySelectorAll(filterString + "[data-method-flags*='"+ e.value +"']").length;
+		var possibleElements = document.querySelectorAll(filterString + "[data-access-flags*='"+ e.value +"']").length;
 		if (possibleElements > 0)
 			disableInput(e, false);
 		else
@@ -112,7 +112,7 @@ function trimPackageNames() {
 	var definingPackages = definingClassNameFQN.split(".");
 	// splice removes the class name from the package array and returns it:
 	var definingClassName = definingPackages.splice(definingPackages.length-1);
-	
+
 	for(var i=1;i<definingPackages.length;i++) {
 		definingPackages[i] = definingPackages[i-1] + "." + definingPackages[i];
 	}
@@ -127,7 +127,7 @@ function trimPackageNames() {
 }
 
 
-/** 
+/**
  * Removes the exception name from the exceptions overview if the containing element
  * (span) would overlap to the next section of the document.
  */
@@ -139,7 +139,7 @@ function removeLongExceptionNames() {
 		if (span != null) {
 			var tbody = span.parentNode.parentNode.parentNode;
 
-			// if the totalOffset+width of the span is greater than totalOffset+height of 
+			// if the totalOffset+width of the span is greater than totalOffset+height of
 			// the table body it would overlap to the next section (exception table)
 			if (totalOffset(span).top+span.clientWidth > totalOffset(tbody).top+tbody.clientHeight) {
 				span.innerHTML = span.getAttribute("data-exception-index") + ': ...';
@@ -151,10 +151,10 @@ function removeLongExceptionNames() {
 	});
 }
 
-/** 
+/**
  * Computes the offset of an HTMLElement from the top/left corner of the document
  * in contrast to HTMLElement.offsetLeft/offsetTop which computes the offset relative
- * to their HTMLElement.offsetParent node. 
+ * to their HTMLElement.offsetParent node.
  */
 function totalOffset(elem) {
 	if(!elem) elem = this;
@@ -172,7 +172,7 @@ function totalOffset(elem) {
 
 
 /**
- * Removes (too) long exception names. This is a callback function that is called when 
+ * Removes (too) long exception names. This is a callback function that is called when
  * a details.method_body is set to open, i.e. the methods instructions can be seen.
  */
 function executeOnMethodBodyOpen() {

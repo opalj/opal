@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,7 +31,8 @@ package br
 package instructions
 
 import org.opalj.br.cfg.CFGFactory
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.br.cfg.CFG
+import org.opalj.collection.immutable.Chain
 
 /**
  * Return from subroutine.
@@ -54,27 +55,30 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        // the fallback is only used if we have multiple return instructions
-        def fallback() = {
-            val classHierarchy = Code.preDefinedClassHierarchy
-            val cfg = CFGFactory(code, classHierarchy)
-            UShortSet.create((cfg.successors(currentPC).toSeq: _*))
-        }
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
+        nextInstructions(currentPC, () ⇒ CFGFactory(code, classHierarchy))
+    }
+
+    final def nextInstructions(currentPC: PC, cfg: () ⇒ CFG)(implicit code: Code): Chain[PC] = {
 
         // If we have just one subroutine it is sufficient to collect the
         // successor instructions of all JSR instructions.
-        var jumpTargets = UShortSet.empty
+        var jumpTargets = Chain.empty[PC]
         code.iterate { (pc, instruction) ⇒
-            if (pc != currentPC) {
+            if (pc != currentPC) { // filter this ret!
                 instruction.opcode match {
+
                     case JSR.opcode | JSR_W.opcode ⇒
-                        jumpTargets = (instruction.indexOfNextInstruction(pc)) +≈: jumpTargets
+                        jumpTargets :&:= (instruction.indexOfNextInstruction(pc))
+
                     case RET.opcode ⇒
                         // we have found another RET ... hence, we have at least two subroutines
-                        return fallback();
-                    case _ ⇒ // we don't care
+                        return Chain(cfg().successors(currentPC).toSeq: _*);
+
+                    case _ ⇒
+                    // we don't care
                 }
             }
         }

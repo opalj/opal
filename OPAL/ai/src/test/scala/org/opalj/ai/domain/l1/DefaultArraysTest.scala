@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,9 +32,12 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+
+import org.opalj.collection.immutable.Chain
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.{ObjectType, ArrayType}
 import org.opalj.br.{IntegerType, ByteType, ShortType}
@@ -391,7 +394,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
                 // we are just testing the dimensions of the array property
                 operandsArray(8).head should be(
-                    InitializedArrayValue(4, fourDimIntArray, List(2, 3))
+                    InitializedArrayValue(4, fourDimIntArray, Chain(2, 3))
                 )
             }
         }
@@ -403,15 +406,15 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 val operandsArray = domain.operandsArray
 
                 operandsArray(18).head should be(
-                    InitializedArrayValue(2, twoDimIntArray, List(2))
+                    InitializedArrayValue(2, twoDimIntArray, Chain(2))
                 )
 
                 operandsArray(31).head should be(
-                    InitializedArrayValue(2, twoDimIntArray, List(2, 2))
+                    InitializedArrayValue(2, twoDimIntArray, Chain(2, 2))
                 )
 
                 operandsArray(35).head should be(
-                    InitializedArrayValue(2, twoDimIntArray, List(2))
+                    InitializedArrayValue(2, twoDimIntArray, Chain(2))
                 )
 
             }
@@ -424,15 +427,15 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 val operandsArray = domain.operandsArray
 
                 operandsArray(20).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2))
+                    InitializedArrayValue(3, threeDimIntArray, Chain(2))
                 )
 
                 operandsArray(36).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2, 2))
+                    InitializedArrayValue(3, threeDimIntArray, Chain(2, 2))
                 )
 
                 operandsArray(40).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2))
+                    InitializedArrayValue(3, threeDimIntArray, Chain(2))
                 )
 
             }
@@ -445,27 +448,27 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 val operandsArray = domain.operandsArray
 
                 operandsArray(20).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2))
+                    InitializedArrayValue(3, threeDimIntArray, Chain(2))
                 )
 
                 operandsArray(28).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2, 2))
+                    InitializedArrayValue(3, threeDimIntArray, Chain(2, 2))
                 )
 
                 operandsArray(32).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2, 2))
+                    InitializedArrayValue(3, threeDimIntArray, Chain(2, 2))
                 )
 
                 operandsArray(48).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2))
+                    InitializedArrayValue(3, threeDimIntArray, Chain(2))
                 )
 
                 operandsArray(64).head should be(
-                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2, 2))
+                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), Chain(2, 2))
                 )
 
                 operandsArray(68).head should be(
-                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2))
+                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), Chain(2))
                 )
             }
         }
@@ -608,8 +611,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
 class DefaultArraysTestDomain(
     override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with GlobalLogContextProvider
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -634,12 +636,12 @@ class DefaultArraysTestDomain(
     // array, hence we can track the contents
     override protected def reifyArray(pc: PC, count: Int, arrayType: ArrayType): Boolean = {
         super.reifyArray(pc, count, arrayType) ||
-            arrayType.componentType.isObjectType && count < maxArraySize
+            arrayType.componentType.isObjectType && count < maxTrackedArraySize
     }
 }
 
 private object DefaultArraysTest {
-    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("ai.jar", "bi"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
 }

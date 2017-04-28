@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,6 +32,10 @@ package da
 import scala.xml.Node
 import org.opalj.bi.ConstantPoolTag
 
+/**
+ *
+ * @author Michael Eichberg
+ */
 case class CONSTANT_NameAndType_info(
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index
@@ -65,7 +69,7 @@ case class CONSTANT_NameAndType_info(
             {
                 val descriptor = cp(descriptor_index).toString(cp)
                 if (descriptor.charAt(0) != '(') {
-                    <span class="fqn">{ parseFieldType(cp(descriptor_index).asString).javaTypeName } </span>
+                    <span class="fqn">{ parseFieldType(cp(descriptor_index).asString).asJavaType } </span>
                     <span class="identifier">{ cp(name_index).toString(cp) } </span>
                 } else {
                     methodDescriptorAsInlineNode(cp(name_index).asString, cp(descriptor_index).asString)
@@ -76,9 +80,9 @@ case class CONSTANT_NameAndType_info(
     override def toString(implicit cp: Constant_Pool): String = {
         val descriptor = cp(descriptor_index).toString(cp)
         if (descriptor.charAt(0) != '(')
-            parseFieldType(cp(descriptor_index).asString).javaTypeName+" "+cp(name_index).toString(cp)
+            parseFieldType(cp(descriptor_index).asString).asJavaType+" "+cp(name_index).toString(cp)
         else
-            parseMethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString)
+            methodDescriptorAsJavaSignature(cp(name_index).asString, cp(descriptor_index).asString)
     }
 
 }

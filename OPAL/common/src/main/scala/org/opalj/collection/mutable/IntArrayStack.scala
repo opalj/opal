@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -232,4 +232,12 @@ object IntArrayStack {
      * be the top value of the stack.
      */
     def fromSeq(seq: Seq[Int]): IntArrayStack = seq.foldLeft(new IntArrayStack())(_ += _)
+
+    def apply(value: Int): IntArrayStack = {
+        val initialArray = new Array[Int](10)
+        initialArray(0) = value
+        new IntArrayStack(initialArray, 1)
+    }
+
+    def empty: IntArrayStack = new IntArrayStack
 }

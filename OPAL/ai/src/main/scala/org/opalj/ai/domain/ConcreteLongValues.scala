@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -42,7 +42,7 @@ package domain
 trait ConcreteLongValues { this: ValuesDomain ⇒
 
     /**
-     * If the given value encapsulates a precise long value then the function
+     * If the given value represents one specific long value then the function
      * `ifThen` is called with the respective value otherwise `orElse` is called.
      */
     def longValue[T](value: DomainValue)(ifThen: Long ⇒ T)(orElse: ⇒ T): T

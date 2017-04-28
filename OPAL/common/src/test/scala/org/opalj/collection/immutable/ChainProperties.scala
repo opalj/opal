@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -149,6 +149,45 @@ object ChainProperties extends Properties("Chain") {
 
     // METHODS DEFINED BY CHAINED LIST
 
+    property("hasMultipleElements") = forAll { l1: List[String] ⇒
+        val fl1 = Chain(l1: _*)
+        (l1.size >= 2 && fl1.hasMultipleElements) || (l1.size <= 1 && !fl1.hasMultipleElements)
+    }
+
+    property("startsWith") = forAll { (l1: List[String], l2: List[String]) ⇒
+        val fl1 = Chain(l1: _*)
+        val fl2 = Chain(l2: _*)
+        classify(l1.startsWith(l2) || l2.startsWith(l1), "a list starts with the other list") {
+            classify(l2.length == l1.length, "both lists have the same size") {
+                l1.startsWith(l2) == fl1.startsWith(fl2) && l2.startsWith(l1) == fl2.startsWith(fl1)
+            }
+        }
+    }
+
+    property("sharedPrefix") = forAll(listsOfSingleCharStringsGen) { ls ⇒
+        val (l1: List[String], l2: List[String]) = ls
+        val fl1 = Chain(l1: _*)
+        val fl2 = Chain(l2: _*)
+        val sharedPrefixList = org.opalj.collection.commonPrefix(l1, l2)
+        classify(sharedPrefixList.nonEmpty, "non-empty shared prefix list") {
+            val sharedPrefixChain = fl1.sharedPrefix(fl2)
+            classify(sharedPrefixChain eq fl1, "the result is chain 1") {
+                classify(sharedPrefixChain eq fl2, "the result is chain 2") {
+                    Chain(sharedPrefixList: _*) == sharedPrefixChain && {
+                        ((sharedPrefixList eq l1) && (sharedPrefixChain eq fl1)) ||
+                            ((sharedPrefixList eq l2) && (sharedPrefixChain eq fl2)) ||
+                            (
+                                (sharedPrefixList ne l1) &&
+                                (sharedPrefixChain ne fl1) &&
+                                (sharedPrefixList ne l2) &&
+                                (sharedPrefixChain ne fl2)
+                            )
+                    }
+                }
+            }
+        }
+    }
+
     property("WithFilter") = forAll { orig: List[String] ⇒
         def test(s: String): Boolean = s.length > 0
         val cl = Chain(orig: _*).withFilter(test).map[String, Chain[String]](s ⇒ s)
@@ -197,31 +236,35 @@ object ChainProperties extends Properties("Chain") {
         newL == orig.reverse
     }
 
-    property("chained lists can be used in for comprehensions") = forAll(listOfListGen) { orig: List[List[String]] ⇒
-        // In the following we, have an implicit withFilter, map and flatMap call!
-        val cl = for {
-            es ← Chain(orig: _*)
-            if es.length > 1
-            if es.length < 10
-            e ← es
-            r = e.capitalize
-        } yield r+":"+r.length
+    property("chained lists can be used in for comprehensions") = {
+        forAll(listOfListGen) { orig: List[List[String]] ⇒
+            // In the following we, have an implicit withFilter, map and flatMap call!
+            val cl = for {
+                es ← Chain(orig: _*)
+                if es.length > 1
+                if es.length < 10
+                e ← es
+                r = e.capitalize
+            } yield r+":"+r.length
 
-        val l = for {
-            es ← orig
-            if es.length > 1
-            if es.length < 10
-            e ← es
-            r = e.capitalize
-        } yield r+":"+r.length
+            val l = for {
+                es ← orig
+                if es.length > 1
+                if es.length < 10
+                e ← es
+                r = e.capitalize
+            } yield r+":"+r.length
 
-        cl == Chain(l: _*)
+            cl == Chain(l: _*)
+        }
     }
 
-    property("a for-comprehension constructs specialized lists when possible") = forAll { orig: List[List[Int]] ⇒
-        // In the following we, have an implicit withFilter, map and flatMap call!
-        val cl = for { es ← Chain(orig: _*) } yield Chain(es: _*)
-        cl.forall(icl ⇒ isSpecialized(icl))
+    property("a for-comprehension constructs specialized lists when possible") = {
+        forAll { orig: List[List[Int]] ⇒
+            // In the following we, have an implicit withFilter, map and flatMap call!
+            val cl = for { es ← Chain(orig: _*) } yield Chain(es: _*)
+            cl.forall(icl ⇒ isSpecialized(icl))
+        }
     }
 
     property("hasDefiniteSize") = forAll { l: List[String] ⇒
@@ -413,10 +456,35 @@ object ChainProperties extends Properties("Chain") {
         }
     }
 
+    property("takeUpTo") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒
+        val (l, count) = listAndCount
+        classify(l.isEmpty, "list is empty") {
+            classify(count == 0, "takes no elements") {
+                classify(count == l.length, "takes all elements") {
+                    classify(count > l.length, "takes too many elements") {
+                        val fl = Chain(l: _*)
+                        Chain(l.take(count): _*) == fl.takeUpTo(count)
+                    }
+                }
+            }
+        }
+    }
+
     property("takeWhile") = forAll { (l: List[String], c: Int) ⇒
         def filter(s: String): Boolean = s.length() >= c
         val fl = Chain(l: _*)
         fl.takeWhile(filter) == Chain(l.takeWhile(filter): _*)
+    }
+
+    property("foreachWhile") = forAll { (l: List[Int], c: Int) ⇒
+        def filter(s: Int): Boolean = s >= c
+        val fl = Chain(l: _*)
+        var newL = List.empty[Int]
+        val result = fl.foreachWhile(s ⇒ if (filter(s)) { newL ::= s; true } else false)
+        classify(result, "processed the complete list") {
+            (!result || newL.reverse == l) /* we took all values */ &&
+                (l.isEmpty && newL.isEmpty) || newL.reverse == l.takeWhile(filter)
+        }
     }
 
     property("dropWhile") = forAll { (l: List[String], c: Int) ⇒

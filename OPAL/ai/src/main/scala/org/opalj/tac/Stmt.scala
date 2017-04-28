@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,7 +37,7 @@ import org.opalj.br._
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
-sealed trait Stmt extends ASTNode {
+sealed abstract class Stmt extends ASTNode {
 
     /**
      * The program counter of the original '''underyling bytecode instruction'''.
@@ -196,7 +196,7 @@ object ReturnValue {
     final val ASTID = 6
 }
 
-sealed trait SimpleStmt extends Stmt {
+sealed abstract class SimpleStmt extends Stmt {
 
     /**
      * Nothing to do.
@@ -218,7 +218,7 @@ object Nop {
     final val ASTID = 8
 }
 
-sealed trait SynchronizationStmt extends Stmt {
+sealed abstract class SynchronizationStmt extends Stmt {
     def objRef: Expr
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = objRef.remapIndexes(pcToIndex)
 }
@@ -264,7 +264,7 @@ object Throw {
     final val ASTID = 12
 }
 
-sealed trait FieldAccessStmt extends Stmt
+sealed abstract class FieldAccessStmt extends Stmt
 
 case class PutStatic(
         pc:             PC,
@@ -275,7 +275,6 @@ case class PutStatic(
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
     }
-
 }
 object PutStatic {
     final val ASTID = 13
@@ -298,9 +297,9 @@ object PutField {
     final val ASTID = 14
 }
 
-sealed trait MethodCall extends Call with Stmt
+sealed abstract class MethodCall extends Stmt with Call
 
-sealed trait InstanceMethodCall extends MethodCall {
+sealed abstract class InstanceMethodCall extends MethodCall {
     def receiver: Expr
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)

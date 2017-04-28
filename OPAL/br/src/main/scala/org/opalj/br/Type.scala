@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -40,6 +40,7 @@ import scala.collection.SortedSet
 
 import org.opalj.collection.UID
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet2
 
 /**
  * Represents a JVM type.
@@ -1053,12 +1054,12 @@ object ObjectType {
     /**
      * Factory method to create `ObjectType`s.
      *
-     * @param fqn The fully qualified name of a class or interface type in
-     *      binary notation.
-     * @note `ObjectType` objects are cached internally to reduce the overall memory
-     *      requirements and to ensure that only one instance of an `ObjectType` exists
-     *      per fully qualified name. Hence, comparing `ObjectTypes` using reference
-     *      comparison is explicitly supported.
+     * @param  fqn The fully qualified name of a class or interface type in
+     *         binary notation.
+     * @note   `ObjectType` objects are cached internally to reduce the overall memory
+     *         requirements and to ensure that only one instance of an `ObjectType` exists
+     *         per fully qualified name. Hence, comparing `ObjectTypes` using reference
+     *         comparison is explicitly supported.
      */
     def apply(fqn: String): ObjectType = {
         val readLock = cacheRWLock.readLock()
@@ -1198,7 +1199,7 @@ object ObjectType {
      * is always `Serializable` and `Cloneable`.
      */
     final val SerializableAndCloneable: UIDSet[ObjectType] = {
-        UIDSet(ObjectType.Serializable, ObjectType.Cloneable)
+        new UIDSet2(ObjectType.Serializable, ObjectType.Cloneable)
     }
 
     private final val javaLangBooleanId = Boolean.id
@@ -1329,18 +1330,20 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      * Returns this array type's element type. E.g., the element type of an
      * array of arrays of arrays of `int` is `int`.
      */
-    def elementType: FieldType =
+    def elementType: FieldType = {
         componentType match {
             case at: ArrayType ⇒ at.elementType
             case _             ⇒ componentType
         }
+    }
 
     /**
      * The number of dimensions of this array. E.g. "Object[]" has one dimension and
      * "Object[][]" has two dimensions.
      */
-    def dimensions: Int =
+    def dimensions: Int = {
         1 + (componentType match { case at: ArrayType ⇒ at.dimensions; case _ ⇒ 0 })
+    }
 
     /**
      * Returns the component type of this array type after dropping the given number
@@ -1366,8 +1369,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = "["+componentType.toJVMTypeName
 
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Class.forName(toBinaryJavaName)
+    override def toJavaClass: java.lang.Class[_] = java.lang.Class.forName(toBinaryJavaName)
 
     override def adapt[T](
         targetType: Type

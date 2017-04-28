@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -52,14 +52,14 @@ trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDoma
     final def code: Code = theCode
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        initialLocals:    Locals
+        code:          Code,
+        cfJoins:       BitSet,
+        initialLocals: Locals
     ): Unit = {
 
         this.theCode = code
 
-        super.initProperties(code, joinInstructions, initialLocals)
+        super.initProperties(code, cfJoins, initialLocals)
     }
 
 }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,6 +30,7 @@ package org.opalj
 
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
+import scala.collection.BitSet
 
 import scala.xml.Node
 import scala.xml.Text
@@ -84,6 +85,8 @@ package object br {
         if (checkAssert && !assertion)
             throw new java.lang.AssertionError("assertion failed: "+message)
     }
+
+    type LiveVariables = Array[BitSet]
 
     type Attributes = Seq[Attribute]
 

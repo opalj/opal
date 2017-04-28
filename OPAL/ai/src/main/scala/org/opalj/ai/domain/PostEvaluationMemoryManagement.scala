@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,8 +36,8 @@ import org.opalj.br.instructions.Instruction
  * Provides the possibility to further update the memory layout (registers and operands)
  * after the execution of an instruction, but before any potential join is performed.
  *
- * If this domain is mixed in then the domain cannot be used to simultaneously analyze
- * multiple different methods at the same time.
+ * @note    If this domain is mixed in then the domain cannot be used to simultaneously analyze
+ *          multiple different methods at the same time.
  *
  * @author Michael Eichberg
  */

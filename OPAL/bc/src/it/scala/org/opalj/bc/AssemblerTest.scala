@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,22 +30,25 @@ package org.opalj
 package bc
 
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import java.util.zip.ZipFile
+
 import java.io.DataInputStream
 import java.io.BufferedInputStream
+import java.io.IOException
+import java.io.ByteArrayInputStream
+import java.io.DataOutputStream
+import java.util.zip.ZipFile
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
-import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
-import java.io.ByteArrayInputStream
 
 import org.opalj.io.FailAfterByteArrayOutputStream
-import java.io.IOException
-import java.io.DataOutputStream
-import org.opalj.bi.TestSupport
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bi.TestSupport.allBITestJARs
+import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
 
 /**
  * Tests the assembler by loading and writing a large number of class files and by
@@ -58,11 +61,8 @@ class AssemberTest extends FlatSpec with Matchers {
 
     behavior of "the Assembler"
 
-    val jreLibFolder = org.opalj.bytecode.JRELibraryFolder
-    val biClassfilesFolder = TestSupport.locateTestResources("classfiles", "bi")
-
     for {
-        file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
+        file ← JRELibraryFolder.listFiles() ++ allBITestJARs()
         if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
     } {
         it should (s"be able to process every class of $file") in {
@@ -83,7 +83,7 @@ class AssemberTest extends FlatSpec with Matchers {
                     val bytesRead = bin.read(raw, 0, classFileSize)
                     assert(bytesRead == classFileSize, "the class file was not successfully read")
                     (
-                        LoadClassFile { new DataInputStream(new ByteArrayInputStream(raw)) }.head,
+                        LoadClassFile(new DataInputStream(new ByteArrayInputStream(raw))).head,
                         raw
                     )
                 }
@@ -135,7 +135,7 @@ class AssemberTest extends FlatSpec with Matchers {
                     case e: Exception ⇒
                         Lock.synchronized {
                             val details = e.getMessage + e.getClass.getSimpleName
-                            val message = s"failed: $ze(${classFile.fqn}); message:"+details
+                            val message = s"failed: $ze(${classFile.thisType}); message:"+details
                             val newException = new RuntimeException(message, e)
                             exceptions = newException :: exceptions
                         }

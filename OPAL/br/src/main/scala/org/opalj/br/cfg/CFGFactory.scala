@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -65,17 +65,18 @@ object CFGFactory {
      * Constructs the control flow graph for a given method.
      *
      * The constructed [[CFG]] basically consists of the code's basic blocks. Additionally,
-     * an artificial exit node is added to facilitate the navigation to all normal
+     * two artifical exit nodes are added.
+     * One artificial exit node is added to facilitate the navigation to all normal
      * return instructions. A second artificial node is added that enables the navigation
      * to all instructions that led to an abnormal return. Exception handlers are
      * directly added to the graph using [[CatchNode]]s. Each exception handler is
      * associated with exactly one [[CatchNode]] and all instructions that may throw
      * a corresponding exception will have the respective [[CatchNode]] as a successor.
      *
-     * @note  The algorithm supports all Java bytecode instructions. (In particular JSR/RET)
+     * @note  The algorithm supports all Java bytecode instructions - in particular JSR/RET.
      *
-     * @note  The code is only parsed linearly and the graph is therefore constructed implicitly.
-     *        Hence, it is possible that the graph contains node that cannot be reached from
+     * @note  The code is parsed linearly and the graph is therefore constructed implicitly.
+     *        Hence, it is possible that the graph contains nodes that cannot be reached from
      *        the start node.
      *
      * @param method A method with a body (i.e., with some code.)
@@ -85,7 +86,7 @@ object CFGFactory {
     def apply(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): CFG = {
 
         /*
@@ -108,8 +109,8 @@ object CFGFactory {
         // BBs is a sparse array; only those fields are used that are related to an instruction
 
         var exceptionHandlers = HashMap.empty[ExceptionHandler, CatchNode]
-        for (exceptionHandler ← code.exceptionHandlers) {
-            val catchNode = new CatchNode(exceptionHandler)
+        for ((exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex) {
+            val catchNode = new CatchNode(exceptionHandler, index)
             exceptionHandlers += (exceptionHandler → catchNode)
             val handlerPC = exceptionHandler.handlerPC
             var handlerBB = bbs(handlerPC)
@@ -261,7 +262,8 @@ object CFGFactory {
                 case JSR.opcode | JSR_W.opcode ⇒
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     val subroutinePC = pc + jsrInstr.branchoffset
-                    val thisSubroutineReturnPCs = subroutineReturnPCs.getOrElse(subroutinePC, UShortSet.empty)
+                    val thisSubroutineReturnPCs =
+                        subroutineReturnPCs.getOrElse(subroutinePC, UShortSet.empty)
                     subroutineReturnPCs += (
                         subroutinePC →
                         (jsrInstr.indexOfNextInstruction(pc) +≈: thisSubroutineReturnPCs)
@@ -338,7 +340,7 @@ object CFGFactory {
                     normalReturnNode.addPredecessor(currentBB)
                     runningBB = null
 
-                case _ /*ALL STANDARD INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ ⇒
+                case _ /* INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ ⇒
                     assert(instruction.nextInstructions(pc, regularSuccessorsOnly = true).size == 1)
 
                     val currentBB = useRunningBB()
@@ -397,9 +399,16 @@ object CFGFactory {
             }
         }
 
+        val effectiveExceptionHandlers = exceptionHandlers.values filter { catchNode ⇒
+            catchNode.predecessors.nonEmpty || {
+                catchNode.successors foreach { successor ⇒ successor.removePredecessor(catchNode) }
+                false
+            }
+        }
+
         CFG(
             code,
-            normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList,
+            normalReturnNode, abnormalReturnNode, effectiveExceptionHandlers.toList,
             bbs
         )
     }

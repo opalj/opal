@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -65,7 +65,7 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-sealed trait ThrownExceptions extends Property {
+sealed abstract class ThrownExceptions extends Property {
 
     final type Self = ThrownExceptions
 
@@ -186,7 +186,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
         //... when we reach this point the method is non-empty
         //
         val code = body.get
-        val joinInstructions = code.joinInstructions
+        val cfJoins = code.cfJoins
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
@@ -234,8 +234,8 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        joinInstructions.contains(pc) || // <= we cannot locally decide who is the receiver 
-                        instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null.. 
+                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
+                        instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
                     true
 
                 case PUTFIELD.opcode ⇒
@@ -243,7 +243,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        joinInstructions.contains(pc) || // <= we cannot locally decide who is the receiver 
+                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
                         {
                             val predecessorPC = code.pcOfPreviousInstruction(pc)
                             val predecessorOfPredecessorPC = code.pcOfPreviousInstruction(predecessorPC)
@@ -270,7 +270,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     true
 
                 case IREM.opcode | IDIV.opcode ⇒
-                    if (!joinInstructions.contains(pc)) {
+                    if (!cfJoins.contains(pc)) {
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
@@ -287,7 +287,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     }
 
                 case LREM.opcode | LDIV.opcode ⇒
-                    if (!joinInstructions.contains(pc)) {
+                    if (!cfJoins.contains(pc)) {
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
@@ -335,4 +335,3 @@ class ThrownExceptionsFallbackAnalysis(ps: PropertyStore) extends PropertyComput
         ImmediateResult(m, ThrownExceptionsFallbackAnalysis(ps, m))
     }
 }
-

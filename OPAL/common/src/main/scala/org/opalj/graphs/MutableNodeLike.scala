@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -38,18 +38,19 @@ import scala.collection.Map
  * ==Thread Safety==
  * This class is thread-safe. It is possible to add multiple child nodes concurrently.
  *
- * @see The demo project for example usages.
+ * @see    The demo project for example usages.
  *
  * @tparam I The type of the object that is associated with this node/the type of
- *      the object for which this node object is created.
- * @param identifier The underlying object.
- *       '''The underlying object must correctly implement the equals/hashCode contract.
- *       I.e., the `hashCode` of two object instances that are added to the same graph is
- *      different whenever `equals` is `false`'''.
- * @param identifierToString A function that converts "an" identifier to a string. By
- *      default the given object's `toString` method is called. It is possible
- *      that a graph has two nodes with the same textual representation representation
- *      but a different identity.
+ *         the object for which this node object is created.
+ * @param  theIdentifier The underlying object. '''For all nodes of a graph the hashCode method
+ *         has to return a unique id unless the nodeId method is overridden.'''
+ *         '''The underlying object must correctly implement the equals/hashCode contract.
+ *         I.e., the `hashCode` of two object instances that are added to the same graph is
+ *         different whenever `equals` is `false`'''.
+ * @param  identifierToString A function that converts "an" identifier to a string. By
+ *         default the given object's `toString` method is called. It is possible
+ *         that a graph has two nodes with the same textual representation representation
+ *         but a different identity.
  * @author Michael Eichberg
  */
 class MutableNodeLike[I, N <: Node](
@@ -73,7 +74,7 @@ class MutableNodeLike[I, N <: Node](
 
     override def toHRR: Option[String] = Some(identifierToString(identifier))
 
-    override def nodeId: Long = identifier.hashCode().toLong
+    override def nodeId: Int = identifier.hashCode()
 
     def addChild(node: N): Unit = this.synchronized(theChildren = node :: children)
 

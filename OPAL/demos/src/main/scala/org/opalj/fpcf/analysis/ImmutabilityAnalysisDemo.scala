@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,17 +31,20 @@ package fpcf
 package analysis
 
 import java.net.URL
+
+import org.opalj.util.gc
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
+
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.ClassFile
+
 import org.opalj.fpcf.properties.ObjectImmutability
 import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.IsExtensible
-import org.opalj.util.PerformanceEvaluation
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Nanoseconds
+import org.opalj.fpcf.properties.ExtensibleType
 
 /**
  * Determines the immutability of the classes of a project.
@@ -78,7 +81,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
         List(1, 2, 4, 8, 16, 32, 64).foreach { parallelismLevel ⇒
             performanceData = Map.empty
-            PerformanceEvaluation.gc()
+            gc()
 
             println(s"\nRunning analysis with $parallelismLevel thread(s):")
             r = time[() ⇒ String](10, 50, 15, analyze(project, parallelismLevel))(handleResults)
@@ -90,7 +93,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
                     mkString("\n")
             )
 
-            PerformanceEvaluation.gc()
+            gc()
         }
         BasicReport(r())
     }
@@ -109,7 +112,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
         //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)
-        manager.runAll(ClassExtensibilityAnalysis, FieldMutabilityAnalysis)
+        manager.runAll(TypeExtensibilityAnalysis, FieldMutabilityAnalysis)
 
         time {
             manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
@@ -121,16 +124,9 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
             projectStore.validate(None)
 
             val extensibleClasses =
-                projectStore.entities(IsExtensible).
-                    groupBy(_._2).
-                    map { entry ⇒
-                        (
-                            entry._1,
-                            entry._2.
-                            map(_._1.thisType.toJava).toList.sorted.
-                            mkString("\n\t\t\t", "\n\t\t\t", "\n")
-                        )
-                    }
+                projectStore.entities(ExtensibleType).
+                    map(_.asInstanceOf[ClassFile].thisType.toJava).toList.sorted.
+                    mkString("\n\t\t\t", "\n\t\t\t", "\n")
 
             val immutableClasses =
                 projectStore.entities(ObjectImmutability.key).

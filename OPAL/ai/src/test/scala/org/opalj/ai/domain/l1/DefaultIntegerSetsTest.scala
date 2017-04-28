@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,9 +31,13 @@ package ai
 package domain
 package l1
 
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
 import scala.Iterable
 import scala.collection.immutable.SortedSet
-import org.junit.runner.RunWith
+
+import org.opalj.collection.immutable.Chain
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.domain.DefaultDomainValueBinding
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
@@ -46,8 +50,6 @@ import org.opalj.br.IntegerType
 import org.opalj.br.ObjectType
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
-import org.scalatest.junit.JUnitRunner
 
 /**
  * Tests the IntegerSets Domain.
@@ -62,7 +64,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
     final val SomePC = 100000
 
     class IntegerSetsTestDomain(
-        override val maxCardinalityOfIntegerSets: Int = Int.MaxValue
+        override val maxCardinalityOfIntegerSets: Int = 126 // <= MAX SUPPORTED VALUE
     ) extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -100,8 +102,8 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
             it("(join of two sets with positive values that exceed the cardinality); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
                 val v1 = IntegerSet(SortedSet[Int](0, 2, 4, 9))
                 val v2 = IntegerSet(SortedSet[Int](1, 3, 5, 6, 7))
-                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
-                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+                v1.join(-1, v2) should be(StructuralUpdate(U7BitSet()))
+                v2.join(-1, v1) should be(StructuralUpdate(U7BitSet()))
             }
 
             it("(join of two sets with positive values that do not exceed the cardinality); i1 join i2 => \"StructuralUpdate(IntegerSet(0, 1, 2, 3, 4, 5, 6, 9))\"") {
@@ -120,8 +122,8 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
             it("(join of two sets with positive and negative values that exceed the cardinality); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
                 val v1 = IntegerSet(SortedSet[Int](0, 2, 4, 9))
                 val v2 = IntegerSet(SortedSet[Int](1, 3, 5, 6, 7))
-                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
-                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+                v1.join(-1, v2) should be(StructuralUpdate(U7BitSet()))
+                v2.join(-1, v1) should be(StructuralUpdate(U7BitSet()))
             }
 
             it("(join of two sets with positive and negative values that do not exceed the cardinality); i1 join i2 => \"StructuralUpdate(IntegerSet(-10, -7, -3, -1, 0, 5, 6, 9))\"") {
@@ -1008,7 +1010,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
 
             it("(byte){0,...,129} => {-128,-127,0,...,+127}") {
                 val v1 = IntegerSet(SortedSet[Int](0 to 129: _*))
-                i2b(-1, v1) should be(IntegerSet(SortedSet[Int](-128, -127) ++ SortedSet[Int](0 to 127: _*)))
+                i2b(-1, v1) should be(ByteValue(IrrelevantPC))
             }
         }
 
@@ -1016,17 +1018,17 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
 
             it("(short)AnIntegerValue => AnIntegerValue") {
                 val v1 = AnIntegerValue
-                i2s(-1, v1) should be(AnIntegerValue)
+                i2s(-1, v1) should be(ShortValue(IrrelevantPC))
             }
 
-            it("(short){0,...,129} => {0,...,129}") {
-                val v1 = IntegerSet(SortedSet[Int](0 to 129: _*))
-                i2s(-1, v1) should be(IntegerSet(SortedSet[Int](0 to 129: _*)))
+            it("(short){-10,...,129} => {-10,...,60}") {
+                val v1 = IntegerSet(SortedSet[Int](-10 to 60: _*))
+                i2s(-1, v1) should be(IntegerSet(SortedSet[Int](-10 to 60: _*)))
             }
 
             it("(short){-128,...,+129000} => {-Short.MinValue,...,Short.MaxValue}") {
                 val v1 = IntegerSet(SortedSet[Int](-128 to 129000: _*))
-                i2s(-1, v1) should be(IntegerSet(SortedSet[Int](Short.MinValue to Short.MaxValue: _*)))
+                i2s(-1, v1) should be(ShortValue(IrrelevantPC))
             }
 
         }
@@ -1271,15 +1273,19 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                     val p = IntegerSet(SortedSet[Int](-10, 10))
                     intIsSomeValueInRange(IrrelevantPC, p, -100, -2) should be(Yes)
                 }
+
+                it("if the small values are too small and the large values are too large") {
+                    val p = IntegerSet(SortedSet[Int](-10, 10))
+                    intIsSomeValueInRange(IrrelevantPC, p, 0, 1) should be(No)
+                }
+
             }
         }
 
         describe("using IntegerSetValues") {
 
-            val testJAR = "classfiles/ai.jar"
-            val testFolder = org.opalj.bi.TestSupport.locateTestResources(testJAR, "ai")
-            val testProject = org.opalj.br.analyses.Project(testFolder)
-            val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
+            val aiProject = org.opalj.br.TestSupport.biProject("ai.jar")
+            val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
             describe("without constraint tracking between values") {
 
@@ -1302,7 +1308,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
 
                     // we don't know the size of the array
                     domain.allReturnedValues.head._2 abstractsOver (
-                        domain.InitializedArrayValue(2, ArrayType(IntegerType), List(10))
+                        domain.InitializedArrayValue(2, ArrayType(IntegerType), Chain(10))
                     ) should be(true)
 
                     // get the loop counter at the "icmple instruction" which controls the

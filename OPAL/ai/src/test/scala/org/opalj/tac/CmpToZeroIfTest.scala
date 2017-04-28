@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,8 +36,7 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 //import org.opalj.ai.BaseAI
 //import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -52,9 +51,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
     val ControlSequencesType = ObjectType("tactest/ControlSequences")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
+    val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val ControlSequencesClassFile = project.classFile(ControlSequencesType).get
 
@@ -94,7 +91,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect the not-equals case") {
-                val statements = AsQuadruples(method = IfNEMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfNEMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -106,7 +103,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the equals case") {
-                val statements = AsQuadruples(method = IfEQMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfEQMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -118,7 +115,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the greater-equals case") {
-                val statements = AsQuadruples(method = IfGEMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfGEMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -130,7 +127,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the less-then case") {
-                val statements = AsQuadruples(method = IfLTMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfLTMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -142,7 +139,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the less-equals case") {
-                val statements = AsQuadruples(method = IfLEMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfLEMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -154,7 +151,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the greater-then case") {
-                val statements = AsQuadruples(method = IfGTMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfGTMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

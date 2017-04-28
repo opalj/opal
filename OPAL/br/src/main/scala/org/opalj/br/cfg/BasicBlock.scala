@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -42,7 +42,7 @@ import org.opalj.br.Code
  * @author Michael Eichberg
  */
 class BasicBlock(
-        val startPC:             PC, // immutable, because it determines this basic blocks' hash value!
+        val startPC:             PC, // <= determines this basic blocks' hash value!
         private[cfg] var _endPC: PC = Int.MinValue
 ) extends CFGNode {
 
@@ -50,6 +50,8 @@ class BasicBlock(
         this(startPC, Int.MinValue)
         this.setSuccessors(successors)
     }
+
+    final override def nodeId: Int = startPC
 
     def copy(
         startPC:      Int          = this.startPC,
@@ -150,8 +152,6 @@ class BasicBlock(
     //
 
     override def toString: String = s"BasicBlock(startPC=$startPC, endPC=$endPC)"
-
-    override def nodeId: Long = startPC.toLong
 
     override def toHRR: Option[String] = Some(s"[$startPC,$endPC]#=${endPC - startPC + 1}")
 

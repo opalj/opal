@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,6 +31,7 @@ package ai
 package domain
 package l1
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 
@@ -48,7 +49,7 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
      * `DomainValue`. By creating an `DomainValue` that represents an initialized
      * (array/object) value.
      */
-    def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
+    override def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
         if (value eq null)
             return NullValue(pc);
 
@@ -59,7 +60,7 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
             InitializedArrayValue(
                 pc,
                 FieldType(fqnInBinaryNotation).asArrayType,
-                List(array.length)
+                Chain(array.length)
             )
         } else /*if (!clazz.isPrimitive()) */ {
             InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))

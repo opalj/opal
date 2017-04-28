@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,12 +29,17 @@
 package org.opalj
 package util
 
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsPath
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
+
 /**
  * Represents a time span of `n` milliseconds.
  *
  * @author Michael Eichberg
  */
-class Milliseconds(val timeSpan: Long) extends AnyVal {
+class Milliseconds(val timeSpan: Long) extends AnyVal with Serializable {
 
     final def +(other: Milliseconds): Milliseconds = {
         new Milliseconds(this.timeSpan + other.timeSpan)
@@ -62,6 +67,7 @@ class Milliseconds(val timeSpan: Long) extends AnyVal {
     override def toString: String = toString(withUnit = true)
 
 }
+
 /**
  * Defines factory methods and constants related to time spans in [[Milliseconds]].
  *
@@ -69,7 +75,15 @@ class Milliseconds(val timeSpan: Long) extends AnyVal {
  */
 object Milliseconds {
 
+    implicit val millisecondsWrites = new Writes[Milliseconds] {
+        def writes(millisecond: Milliseconds) = JsNumber(millisecond.timeSpan)
+    }
+
+    implicit val nanosecondsReads: Reads[Milliseconds] = JsPath.read[Long].map(Milliseconds.apply)
+
     final val None: Milliseconds = new Milliseconds(0L)
+
+    def apply(timeSpan: Long): Milliseconds = new Milliseconds(timeSpan)
 
     /**
      * Converts the specified time span and converts it into milliseconds.
@@ -77,7 +91,8 @@ object Milliseconds {
     final def TimeSpan(
         startTimeInMilliseconds: Long,
         endTimeInMilliseconds:   Long
-    ): Milliseconds =
+    ): Milliseconds = {
         new Milliseconds(startTimeInMilliseconds - endTimeInMilliseconds)
+    }
 
 }

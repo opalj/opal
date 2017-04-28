@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -187,7 +187,10 @@ object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
     ): FPCFAnalysis = {
 
         val analysis = new CallableFromClassesInOtherPackagesAnalysis(project)
-        propertyStore <<! (ClientCallable.Key, analysis.determineProperty)
+        propertyStore scheduleOnDemandComputation (
+            ClientCallable.Key,
+            analysis.determineProperty
+        )
         analysis
     }
 }

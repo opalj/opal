@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,8 +36,7 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 //import org.opalj.ai.BaseAI
 //import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -52,9 +51,7 @@ class ConstantsTest extends FunSpec with Matchers {
 
     val ConstantsType = ObjectType("tactest/Constants")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
+    val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val ConstantsClassFile = project.classFile(ConstantsType).get
 
@@ -70,7 +67,7 @@ class ConstantsTest extends FunSpec with Matchers {
         describe("using no AI results") {
 
             it("should correctly reflect the integer constants") {
-                val statements = AsQuadruples(method = IntConstsMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IntConstsMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -116,7 +113,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the long constants") {
-                val statements = AsQuadruples(method = LongConstsMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = LongConstsMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -142,7 +139,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the float constants") {
-                val statements = AsQuadruples(method = FloatConstsMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = FloatConstsMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -172,7 +169,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the double constants") {
-                val statements = AsQuadruples(method = DoubleConstsMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = DoubleConstsMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -198,7 +195,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the null reference constants") {
-                val statements = AsQuadruples(method = NullRefConstMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = NullRefConstMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -220,7 +217,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the other constant loading instructions") {
-                val statements = AsQuadruples(method = LoadConstsInstrMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = LoadConstsInstrMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

@@ -1,15 +1,20 @@
-import sbtunidoc.Plugin.UnidocKeys.unidoc
-
 name := "OPAL Library"
 
-version 		in ThisBuild := "0.9.0-SNAPSHOT"
+// SNAPSHOT
+// version 		in ThisBuild := "0.9.0-SNAPSHOT"
+// NEXT version 		in ThisBuild := "0.8.13"
+version 		in ThisBuild := "0.8.12" // April 28th, 2017
+// RELEASED version 		in ThisBuild := "0.8.11" // April 14th, 2017
+// RELEASED version 		in ThisBuild := "0.8.10"
+// RELEASED version 		in ThisBuild := "0.8.9"
+
 organization 	in ThisBuild := "de.opal-project"
 homepage 		in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
-scalaVersion 	in ThisBuild := "2.11.8"
+scalaVersion 	in ThisBuild := "2.11.11"
 //scalaVersion 	in ThisBuild := "2.12.0-M5"
 
 scalacOptions 	in ThisBuild ++= Seq(
@@ -29,6 +34,8 @@ resolvers in ThisBuild += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/
 // the tests/analysis are already parallelized
 parallelExecution in ThisBuild := false
 parallelExecution in Global := false
+
+logBuffered in ThisBuild := false
 
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
@@ -57,9 +64,11 @@ javaOptions in ThisBuild ++= Seq(
 
 addCommandAlias("compileAll","; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
 
+addCommandAlias("buildAll","; compileAll ; unidoc ;  publishLocal ")
+
 addCommandAlias("cleanAll","; clean ; test:clean ; it:clean ; cleanFiles ; cleanCache ; cleanLocal ")
 
-addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; compileAll ; unidoc ;  publishLocal ")
+addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; buildAll ")
 
 EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18)
 EclipseKeys.withSource := true

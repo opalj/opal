@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -55,7 +55,7 @@ trait Node {
      * node belongs. By default two nodes are considered equal if they have the same
      * unique id.
      */
-    def nodeId: Long
+    def nodeId: Int
 
     /**
      * Returns `true` if this node has successor nodes.
@@ -70,7 +70,7 @@ trait Node {
     /**
      * The hash code of this node. By default the hash code is the unique id.
      */
-    override def hashCode(): Int = java.lang.Long.hashCode(nodeId)
+    override def hashCode(): Int = nodeId
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -80,4 +80,3 @@ trait Node {
     }
 
 }
-

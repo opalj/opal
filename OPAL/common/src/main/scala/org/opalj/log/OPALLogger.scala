@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -38,9 +38,9 @@ import scala.annotation.elidable.ASSERTION
  * ==Usage==
  * To use OPAL's logging facility use the companion object ([[OPALLogger$]]).
  *
- * @note The OPALLogger framework is not intended to be used by developers to help
- *      debug analysis, but is intended to be used to inform (end)-users about the
- *      analysis progress.
+ * @note   The OPALLogger framework is not intended to be used by developers to help
+ *         debug analysis, but is intended to be used to inform (end)-users about the
+ *         analysis progress.
  *
  * @author Michael Eichberg
  */
@@ -171,9 +171,9 @@ object OPALLogger extends OPALLogger {
     }
 
     /**
-     * Debug message are only included in the code if assertions are turned on and the predicate `p`
-     * evaluates to `true`. If
-     * debug message are logged, then they are logged as Info-level messages.
+     * Debug message are only included in the code if assertions are turned on and the predicate
+     * `p` evaluates to `true`.
+     * If debug message are logged, then they are logged as Info-level messages.
      */
     @elidable(ASSERTION)
     final def debug(

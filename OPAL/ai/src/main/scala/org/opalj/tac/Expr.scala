@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,8 +29,8 @@
 package org.opalj
 package tac
 
-import org.opalj.ai.ValueOrigin
 import org.opalj.br._
+import org.opalj.ai.ValueOrigin
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.IsPrimitiveValue
 
@@ -54,13 +54,13 @@ trait ValueExpr extends Expr
  * and must perform the initial initialization of the register values.
  */
 case class Param(cTpe: ComputationalType, name: String) extends ValueExpr {
-    final def astID : Int = Param.ASTID
+    final def astID: Int = Param.ASTID
 }
 object Param { final val ASTID = -1 }
 
 case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
-    final def astID : Int = InstanceOf.ASTID
-    final def cTpe : ComputationalType = ComputationalTypeInt
+    final def astID: Int = InstanceOf.ASTID
+    final def cTpe: ComputationalType = ComputationalTypeInt
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
     }
@@ -68,8 +68,8 @@ case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
 object InstanceOf { final val ASTID = -2 }
 
 case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
-    final def astID : Int = Checkcast.ASTID
-    final def cTpe : ComputationalType = ComputationalTypeReference
+    final def astID: Int = Checkcast.ASTID
+    final def cTpe: ComputationalType = ComputationalTypeReference
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
     }
@@ -82,8 +82,8 @@ case class Compare(
         condition: RelationalOperator,
         right:     Expr
 ) extends Expr {
-    final def astID : Int = Compare.ASTID
-    final def cTpe : ComputationalType = ComputationalTypeInt
+    final def astID: Int = Compare.ASTID
+    final def cTpe: ComputationalType = ComputationalTypeInt
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
         right.remapIndexes(pcToIndex)
@@ -91,72 +91,72 @@ case class Compare(
 }
 object Compare { final val ASTID = -4 }
 
-sealed trait Const extends ValueExpr
+sealed abstract class Const extends ValueExpr
 
-sealed trait SimpleValueConst extends Const {
+sealed abstract class SimpleValueConst extends Const {
     def tpe: Type
 }
 
 case class IntConst(pc: PC, value: Int) extends SimpleValueConst {
-    final def astID : Int = IntConst.ASTID
+    final def astID: Int = IntConst.ASTID
     final def tpe = IntegerType
-    final def cTpe : ComputationalType = ComputationalTypeInt
+    final def cTpe: ComputationalType = ComputationalTypeInt
 }
 object IntConst { final val ASTID = -5 }
 
 case class LongConst(pc: PC, value: Long) extends SimpleValueConst {
-    final def astID : Int = LongConst.ASTID
+    final def astID: Int = LongConst.ASTID
     final def tpe = LongType
-    final def cTpe : ComputationalType = ComputationalTypeLong
+    final def cTpe: ComputationalType = ComputationalTypeLong
 }
 object LongConst { final val ASTID = -6 }
 
 case class FloatConst(pc: PC, value: Float) extends SimpleValueConst {
-    final def astID : Int = FloatConst.ASTID
+    final def astID: Int = FloatConst.ASTID
     final def tpe = FloatType
-    final def cTpe : ComputationalType = ComputationalTypeFloat
+    final def cTpe: ComputationalType = ComputationalTypeFloat
 }
 object FloatConst { final val ASTID = -7 }
 
 case class DoubleConst(pc: PC, value: Double) extends SimpleValueConst {
-    final def astID : Int = DoubleConst.ASTID
+    final def astID: Int = DoubleConst.ASTID
     final def tpe = DoubleType
-    final def cTpe : ComputationalType = ComputationalTypeDouble
+    final def cTpe: ComputationalType = ComputationalTypeDouble
 }
 object DoubleConst { final val ASTID = -8 }
 
 case class StringConst(pc: PC, value: String) extends SimpleValueConst {
-    final def astID : Int = StringConst.ASTID
+    final def astID: Int = StringConst.ASTID
     final def tpe = ObjectType.String
-    final def cTpe : ComputationalType = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 object StringConst { final val ASTID = -9 }
 
 case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
-    final def astID : Int = MethodTypeConst.ASTID
+    final def astID: Int = MethodTypeConst.ASTID
     final def tpe = ObjectType.MethodType
-    final def cTpe : ComputationalType = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 object MethodTypeConst { final val ASTID = -10 }
 
 case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
-    final def astID : Int = MethodHandleConst.ASTID
+    final def astID: Int = MethodHandleConst.ASTID
     final def tpe = ObjectType.MethodHandle
-    final def cTpe : ComputationalType = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 object MethodHandleConst { final val ASTID = -11 }
 
 case class ClassConst(pc: PC, value: ReferenceType) extends SimpleValueConst {
-    final def astID : Int = ClassConst.ASTID
+    final def astID: Int = ClassConst.ASTID
     final def tpe = ObjectType.Class
-    final def cTpe : ComputationalType = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 object ClassConst { final val ASTID = -12 }
 
 case class NullExpr(pc: PC) extends SimpleValueConst {
-    final def astID : Int = NullExpr.ASTID
+    final def astID: Int = NullExpr.ASTID
     final def tpe = ObjectType.Object // TODO Should we introduce a fake type such as "java.null"
-    final def cTpe : ComputationalType = ComputationalTypeReference
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 object NullExpr { final val ASTID = -13 }
 
@@ -169,7 +169,7 @@ case class BinaryExpr(
         op:   BinaryArithmeticOperator,
         left: Expr, right: Expr
 ) extends Expr {
-    final def astID : Int = BinaryExpr.ASTID
+    final def astID: Int = BinaryExpr.ASTID
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
         right.remapIndexes(pcToIndex)
@@ -186,7 +186,7 @@ case class PrefixExpr(
         op:      UnaryArithmeticOperator,
         operand: Expr
 ) extends Expr {
-    final def astID : Int = PrefixExpr.ASTID
+    final def astID: Int = PrefixExpr.ASTID
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
     }
@@ -194,8 +194,8 @@ case class PrefixExpr(
 object PrefixExpr { final val ASTID = -15 }
 
 case class PrimitiveTypecastExpr(pc: PC, targetTpe: BaseType, operand: Expr) extends Expr {
-    final def astID : Int = PrimitiveTypecastExpr.ASTID
-    final def cTpe : ComputationalType = targetTpe.computationalType
+    final def astID: Int = PrimitiveTypecastExpr.ASTID
+    final def cTpe: ComputationalType = targetTpe.computationalType
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
     }
@@ -203,14 +203,14 @@ case class PrimitiveTypecastExpr(pc: PC, targetTpe: BaseType, operand: Expr) ext
 object PrimitiveTypecastExpr { final val ASTID = -16 }
 
 case class New(pc: PC, tpe: ObjectType) extends Expr {
-    final def astID : Int = New.ASTID
-    final def cTpe : ComputationalType = ComputationalTypeReference
+    final def astID: Int = New.ASTID
+    final def cTpe: ComputationalType = ComputationalTypeReference
 }
 object New { final val ASTID = -17 }
 
 case class NewArray(pc: PC, counts: Seq[Expr], tpe: ArrayType) extends Expr {
-    final def astID : Int = NewArray.ASTID
-    final def cTpe : ComputationalType = ComputationalTypeReference
+    final def astID: Int = NewArray.ASTID
+    final def cTpe: ComputationalType = ComputationalTypeReference
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         counts.foreach { c ⇒ c.remapIndexes(pcToIndex) }
     }
@@ -218,8 +218,8 @@ case class NewArray(pc: PC, counts: Seq[Expr], tpe: ArrayType) extends Expr {
 object NewArray { final val ASTID = -18 }
 
 case class ArrayLoad(pc: PC, index: Var, arrayRef: Var) extends Expr {
-    final def astID : Int = ArrayLoad.ASTID
-    final def cTpe : ComputationalType = ComputationalTypeReference
+    final def astID: Int = ArrayLoad.ASTID
+    final def cTpe: ComputationalType = ComputationalTypeReference
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         index.remapIndexes(pcToIndex)
         arrayRef.remapIndexes(pcToIndex)
@@ -228,8 +228,8 @@ case class ArrayLoad(pc: PC, index: Var, arrayRef: Var) extends Expr {
 object ArrayLoad { final val ASTID = -19 }
 
 case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
-    final def astID : Int = ArrayLength.ASTID
-    final def cTpe : ComputationalType = ComputationalTypeInt
+    final def astID: Int = ArrayLength.ASTID
+    final def cTpe: ComputationalType = ComputationalTypeInt
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
     }
@@ -237,8 +237,8 @@ case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
 object ArrayLength { final val ASTID = -20 }
 
 case class GetField(pc: PC, declaringClass: ObjectType, name: String, objRef: Expr) extends Expr {
-    final def astID : Int = GetField.ASTID
-    final def cTpe : ComputationalType = ComputationalTypeInt
+    final def astID: Int = GetField.ASTID
+    final def cTpe: ComputationalType = ComputationalTypeInt
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         objRef.remapIndexes(pcToIndex)
     }
@@ -246,8 +246,8 @@ case class GetField(pc: PC, declaringClass: ObjectType, name: String, objRef: Ex
 object GetField { final val ASTID = -21 }
 
 case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr {
-    final def astID : Int = GetStatic.ASTID
-    final def cTpe : ComputationalType = ComputationalTypeInt
+    final def astID: Int = GetStatic.ASTID
+    final def cTpe: ComputationalType = ComputationalTypeInt
 }
 object GetStatic { final val ASTID = -22 }
 
@@ -258,19 +258,19 @@ case class Invokedynamic(
         descriptor:      MethodDescriptor,
         params:          Seq[Expr]
 ) extends Expr {
-    final def astID : Int = Invokedynamic.ASTID
-    final def cTpe : ComputationalType = descriptor.returnType.computationalType
+    final def astID: Int = Invokedynamic.ASTID
+    final def cTpe: ComputationalType = descriptor.returnType.computationalType
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
     }
 }
 object Invokedynamic { final val ASTID = -23 }
 
-sealed trait FunctionCall extends Call with Expr {
-    final def cTpe : ComputationalType = descriptor.returnType.computationalType
+sealed abstract class FunctionCall extends Expr with Call {
+    final def cTpe: ComputationalType = descriptor.returnType.computationalType
 }
 
-sealed trait InstanceFunctionCall extends FunctionCall {
+sealed abstract class InstanceFunctionCall extends FunctionCall {
     def receiver: Expr
 }
 
@@ -282,7 +282,7 @@ case class NonVirtualFunctionCall(
         receiver:       Expr,
         params:         Seq[Expr]
 ) extends InstanceFunctionCall {
-    final def astID : Int = NonVirtualFunctionCall.ASTID
+    final def astID: Int = NonVirtualFunctionCall.ASTID
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -298,7 +298,7 @@ case class VirtualFunctionCall(
         receiver:       Expr,
         params:         Seq[Expr]
 ) extends InstanceFunctionCall {
-    final def astID : Int = VirtualFunctionCall.ASTID
+    final def astID: Int = VirtualFunctionCall.ASTID
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -313,7 +313,7 @@ case class StaticFunctionCall(
         descriptor:     MethodDescriptor,
         params:         Seq[Expr]
 ) extends FunctionCall {
-    final def astID : Int = StaticFunctionCall.ASTID
+    final def astID: Int = StaticFunctionCall.ASTID
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
     }
@@ -322,7 +322,7 @@ object StaticFunctionCall { final val ASTID = -26 }
 
 trait Var extends ValueExpr {
 
-    final def astID : Int = Var.ASTID
+    final def astID: Int = Var.ASTID
 
     /**
      * Calling this method is only supported if the underlying representation is in
@@ -336,13 +336,13 @@ trait Var extends ValueExpr {
     }
 
     /**
-     * A human readable name of the local variable.
+     * A ''human readable'' name of the local variable.
      */
     def name: String
 
     /**
      * @return `true` if this variable and the given variable use the same location.
-     * 			Compared to `equals` this test does not consider the computational type.
+     *         Compared to `equals` this test does not consider the computational type.
      */
     def hasSameLocation(that: Var): Boolean
 

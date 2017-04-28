@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -40,9 +40,9 @@ import org.opalj.collection.immutable.Chain
  */
 trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstructionLike {
 
-    def operandCount: Int = 1
+    override def operandCount: Int = 1
 
-    final def stackSlotsChange: Int = -1
+    override final def stackSlotsChange: Int = -1
 
     /**
      * Returns all case values that are '''not related to the default branch'''.
@@ -56,7 +56,7 @@ trait CompoundConditionalBranchInstruction
 
     def defaultOffset: Int
 
-    def jumpOffsets: Seq[Int]
+    def jumpOffsets: Iterable[Int]
 
     /**
      * Returns the case value(s) that are associated with the given `jumpOffset`.

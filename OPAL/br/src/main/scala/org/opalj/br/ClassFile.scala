@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,6 +30,12 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
+
+import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
+import org.opalj.log.StandardLogMessage
+import org.opalj.log.Warn
+
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_ANNOTATION
 import org.opalj.bi.ACC_INTERFACE
@@ -41,7 +47,7 @@ import org.opalj.bi.VisibilityModifier
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.ACC_MODULE
-import org.opalj.log.OPALLogger
+
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -134,9 +140,11 @@ final class ClassFile private (
 
     import ClassFile._
 
-    final def minorVersion = version.minor
+    final def minorVersion: UShort = version.minor
 
-    final def majorVersion = version.major
+    final def majorVersion: UShort = version.major
+
+    final def jdkVersion: String = org.opalj.bi.jdkVersion(majorVersion)
 
     final override def isClass: Boolean = true
 
@@ -162,9 +170,13 @@ final class ClassFile private (
      * Returns `true` if the class is final or if it only defines private constructors and it
      * is therefore not possible to inherit from this class.
      *
-     * An interface is never effectively final.
+     * An abstract type (abstract classes and interfaces) is never effectively final.
      */
-    def isEffectivelyFinal: Boolean = isFinal || (constructors forall { _.isPrivate })
+    def isEffectivelyFinal: Boolean = {
+        isFinal || (
+            !isAbstract && (constructors forall { _.isPrivate })
+        )
+    }
 
     /**
      * `true` if the class file has public visibility. If `false` the method `isPackageVisible`
@@ -195,6 +207,9 @@ final class ClassFile private (
      * Returns true if this class file represents an interface.
      *
      * @note From the JVM point-of-view annotations are also interfaces!
+     *
+     * @see [[org.opalj.br.analyses.Project]] to determine if this interface declaration is a
+     *      functional interface.
      */
     def isInterfaceDeclaration: Boolean = (accessFlags & ACC_INTERFACE.mask) == ACC_INTERFACE.mask
 
@@ -257,14 +272,16 @@ final class ClassFile private (
      * classes.
      */
     def isAnonymousInnerClass: Boolean = {
-        isClassDeclaration &&
-            innerClasses.map { ics ⇒
-                ics.exists { i ⇒
+        /*
+        isClassDeclaration && innerClasses.isDefined &&  innerClasses.get.exists { i ⇒
                     i.innerClassType == thisType && {
                         if (i.innerName.isEmpty) true else return false;
                     }
-                }
-            }.getOrElse(false)
+            }
+        */
+        isClassDeclaration && innerClasses.isDefined && !innerClasses.get.forall { i ⇒
+            i.innerClassType != thisType || i.innerName.nonEmpty
+        }
     }
 
     /**
@@ -654,16 +671,29 @@ final class ClassFile private (
         visibility:  Option[VisibilityModifier],
         name:        String,
         descriptor:  MethodDescriptor
-    ): Option[Method] = {
-        findMethod(name, descriptor).flatMap { candidateMethod ⇒
-            if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName))
+    )(implicit logContext: LogContext): Option[Method] = {
+        findMethod(name, descriptor).filter(m ⇒ !m.isStatic).flatMap { candidateMethod ⇒
+            if (candidateMethod.isPrivate) {
+                val message =
+                    s"the private method ${candidateMethod.toJava(this)} "+
+                        "\"overrides\" a non-private one defined by a superclass"
+                val logMessage = StandardLogMessage(Warn, Some("project configuration"), message)
+                OPALLogger.logOnce(logMessage)
+                None
+            } else if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName))
                 Some(candidateMethod)
             else
                 None
         }
     }
 
-    final def findDirectlyOverridingMethod(packageName: String, method: Method): Option[Method] = {
+    final def findDirectlyOverridingMethod(
+        packageName: String,
+        method:      Method
+    )(
+        implicit
+        logContext: LogContext
+    ): Option[Method] = {
         findDirectlyOverridingMethod(
             packageName,
             method.visibilityModifier,

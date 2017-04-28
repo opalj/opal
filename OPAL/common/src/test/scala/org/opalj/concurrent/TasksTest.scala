@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -102,25 +102,42 @@ class TasksTest extends FunSpec with Matchers {
             for (i ← 0 until 100000) processedValues.get(i) should be(1)
         }
 
-        it("it should be possible to create thousands of tasks in multiple steps") {
+        it("it should be possible to submit tasks with a significant delay") {
             val processedValues = new AtomicInteger(0)
-            val subsequentlyScheduled = new AtomicInteger(0)
-            val nextValue = new AtomicInteger(100000)
             val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) ⇒
+                Thread.sleep(100)
                 processedValues.incrementAndGet()
-                if ((i % 1000) == 0) {
-                    for (i ← 1 until 10) {
-                        subsequentlyScheduled.incrementAndGet()
-                        tasks.submit(nextValue.incrementAndGet())
-                    }
-                } else {
-                    Thread.sleep(1)
-                }
             }
-            for (i ← 0 until 100000) tasks.submit(i)
-            val exceptions = tasks.join()
+            tasks.submit(1)
+            Thread.sleep(250) // ttask 1 is probably already long finished...
+            tasks.submit(2)
+            val exceptions = tasks.join() // task 2 is probably still running..
+            processedValues.get() should be(2)
             exceptions should be('empty)
-            processedValues.get() should be(100000 + subsequentlyScheduled.get)
+        }
+
+        it("it should be possible to create thousands of tasks in multiple steps multiple times") {
+            for { r ← 1 to 3 } {
+                val processedValues = new AtomicInteger(0)
+                val subsequentlyScheduled = new AtomicInteger(0)
+                val nextValue = new AtomicInteger(100000)
+                val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) ⇒
+                    processedValues.incrementAndGet()
+                    if ((i % 1000) == 0) {
+                        for (t ← 1 until 10) {
+                            subsequentlyScheduled.incrementAndGet()
+                            tasks.submit(nextValue.incrementAndGet())
+                        }
+                    } else {
+                        Thread.sleep(1)
+                    }
+                }
+                for (i ← 0 until 100000) tasks.submit(i)
+                val exceptions = tasks.join()
+                exceptions should be('empty)
+                processedValues.get() should be(100000 + subsequentlyScheduled.get)
+                info(s"run $r succeeded")
+            }
         }
 
         it("it should be possible to create thousands of tasks in multiple steps even if some exceptions are thrown") {

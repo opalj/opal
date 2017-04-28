@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,6 +30,10 @@ package org.opalj
 package br
 
 import java.net.URL
+
+import org.opalj.util.asMB
+import org.opalj.util.PerformanceEvaluation.memory
+
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -68,7 +72,6 @@ object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        import org.opalj.util.PerformanceEvaluation.{memory, asMB}
         var memoryUsage = ""
         val accessInformation = memory {
             project.get(FieldAccessInformationKey)

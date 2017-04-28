@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,8 +33,7 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 //import org.opalj.ai.BaseAI
 //import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -49,9 +48,7 @@ class SwitchTest extends TACTest {
 
     val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
+    val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val SwitchStatementsClassFile = project.classFile(SwitchStatementsType).get
 
@@ -61,7 +58,7 @@ class SwitchTest extends TACTest {
     describe("The quadruples representation of switch instructions") {
         describe("using no AI results") {
             it("should correctly reflect tableswitch case") {
-                val statements = AsQuadruples(method = TableSwitchMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = TableSwitchMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -100,7 +97,7 @@ class SwitchTest extends TACTest {
             }
 
             it("should correctly reflect lookupswitch case") {
-                val statements = AsQuadruples(method = LookupSwitchMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = LookupSwitchMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

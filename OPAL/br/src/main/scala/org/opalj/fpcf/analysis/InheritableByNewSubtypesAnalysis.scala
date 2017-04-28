@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -152,7 +152,10 @@ object InheritableByNewSubtypesAnalysis extends FPCFAnalysisRunner {
     ): FPCFAnalysis = {
         val analysis = new InheritableByNewSubtypesAnalysis(project)
         val isApplicationMode: Boolean = AnalysisModes.isApplicationLike(project.analysisMode)
-        propertyStore <<! (InheritableByNewTypes.Key, analysis.subtypeInheritability(isApplicationMode))
+        propertyStore scheduleOnDemandComputation (
+            InheritableByNewTypes.Key,
+            analysis.subtypeInheritability(isApplicationMode)
+        )
         analysis
     }
 }

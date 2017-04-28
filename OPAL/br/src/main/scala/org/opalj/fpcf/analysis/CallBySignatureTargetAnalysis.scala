@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -180,7 +180,10 @@ object CallBySignatureTargetAnalysis extends FPCFAnalysisRunner {
         val analysis = new CallBySignatureTargetAnalysis(project)
         val projectIndex = project.get(ProjectIndexKey)
         val isApplicationMode = AnalysisModes.isApplicationLike(project.analysisMode)
-        propertyStore <<! (CallBySignature.Key, analysis.determineCallBySignatureTargets(projectIndex, isApplicationMode))
+        propertyStore scheduleOnDemandComputation (
+            CallBySignature.Key,
+            analysis.determineCallBySignatureTargets(projectIndex, isApplicationMode)
+        )
         analysis
     }
 }

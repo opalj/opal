@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,6 +34,7 @@ import java.nio.file.Paths
 
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_ABSTRACT
+import org.opalj.bi.ACC_INTERFACE
 import org.opalj.da.ClassFile
 import org.opalj.da.Method_Info
 import org.opalj.da.Constant_Pool_Entry
@@ -44,7 +45,6 @@ import org.opalj.da.CONSTANT_Methodref_info
 import org.opalj.da.CONSTANT_String_info
 import org.opalj.da.Code_attribute
 import org.opalj.da.Code
-import org.opalj.bi.ACC_INTERFACE
 
 /**
  * Generates multiple interfaces with default methods and abstract

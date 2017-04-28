@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -46,13 +46,13 @@ import scala.collection.generic.FilterMonadic
  * makes this list far more efficient when use for storing lists of int values.
  *
  * @note    In most cases a `Chain` can be used as a drop-in replacement for a standard
- *             Scala List.
+ *          Scala List.
  *
- * @note     Some core methods, e.g. `drop` and `take`, have different
- *             semantics when compared to the methods with the same name defined
- *             by the Scala collections API. In this case these methods may
- *             fail arbitrarily if the list is not long enough.
- *             Therefore, `Chain` does not inherit from `scala...Seq`.
+ * @note    Some core methods, e.g. `drop` and `take`, have different
+ *          semantics when compared to the methods with the same name defined
+ *          by the Scala collections API. In this case these methods may
+ *          fail arbitrarily if the list is not long enough.
+ *          Therefore, `Chain` does not inherit from `scala...Seq`.
  *
  * @author Michael Eichberg
  */
@@ -125,6 +125,60 @@ sealed trait Chain[@specialized(Int) +T]
         }
     }
 
+    /**
+     * Executes the given function `f` for each element of this chain as long as
+     * it returns `true`.
+     */
+    def foreachWhile(f: T ⇒ Boolean): Boolean = {
+        var rest = this
+        while (rest.nonEmpty) {
+            if (!f(rest.head))
+                return false;
+
+            rest = rest.tail
+        }
+        return true;
+    }
+
+    def startsWith[X >: T](other: Chain[X]): Boolean = {
+        var thisRest = this
+        var otherRest = other
+        while (otherRest.nonEmpty) {
+            if (thisRest.isEmpty || thisRest.head != otherRest.head)
+                return false;
+            thisRest = thisRest.tail
+            otherRest = otherRest.tail
+        }
+        true
+    }
+
+    /**
+     *  Computes the shared prefix.
+     */
+    def sharedPrefix[X >: T](other: Chain[X]): Chain[T] = {
+        val Nil = Naught
+        var prefixHead: Chain[T] = Nil
+        var prefixLast: :&:[T] = null
+        var thisRest = this
+        var otherRest = other
+        while (thisRest.nonEmpty && otherRest.nonEmpty && thisRest.head == otherRest.head) {
+            if (prefixLast == null) {
+                prefixLast = new :&:[T](thisRest.head, Nil)
+                prefixHead = prefixLast
+            } else {
+                prefixLast.rest = new :&:[T](thisRest.head, Nil)
+            }
+            thisRest = thisRest.tail
+            otherRest = otherRest.tail
+        }
+        if (thisRest.isEmpty)
+            this
+        else if (otherRest.isEmpty)
+            other.asInstanceOf[Chain[T]]
+        else
+            prefixHead
+    }
+
     def forFirstN[U](n: Int)(f: (T) ⇒ U): Unit = {
         var rest = this
         var i = 0
@@ -179,6 +233,8 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     def isSingletonList: Boolean
+
+    def hasMultipleElements: Boolean
 
     override def nonEmpty: Boolean
 
@@ -295,16 +351,17 @@ sealed trait Chain[@specialized(Int) +T]
      * If this list is empty, the last element is null.
      */
     private[opalj] def copy[X >: T](): (Chain[X], :&:[X]) = {
+        val Nil = Naught
         if (isEmpty)
             return (this, null);
 
-        val result = new :&:[T](head, Naught)
+        val result = new :&:[T](head, Nil)
         var last = result
         var rest: Chain[T] = this.tail
         while (rest.nonEmpty) {
             val x = rest.head
             rest = rest.tail
-            val newLast = new :&:[T](x, Naught)
+            val newLast = new :&:[T](x, Nil)
             last.rest = newLast
             last = newLast
         }
@@ -343,6 +400,14 @@ sealed trait Chain[@specialized(Int) +T]
      * @return     A list consisting of the first n value.
      */
     def take(n: Int): Chain[T]
+
+    /**
+     * Takes up to the first n elements of this list. The returned list will contain at most
+     * `this.size` elements.
+     * @param n    An int value euqal or larger than 0.
+     * @return     A list consisting of the first n value.
+     */
+    def takeUpTo(n: Int): Chain[T]
 
     def takeWhile(f: T ⇒ Boolean): Chain[T]
 
@@ -489,42 +554,44 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     /**
-     * Merges this list with the given list by merging the values using the given function.
-     * If all results are the same (reference equality) as this list's elements then the result
+     * Merges this chain with the given chain by merging the values using the given function.
+     * If all results are the same (reference equality) as this chain's elements then the result
      * will be `this`. Otherwise, only the tail that is identical will be kept.
      *
-     * @param     other A list with the same number of elements as this list. If the size of
-     *             the lists it not equal, the result is undefined.
+     * @param     other A chain with the same number of elements as this chain. If the size of
+     *            the chains it not equal, the result is undefined.
      */
     def merge[X <: AnyRef, Z >: T <: AnyRef](that: Chain[X])(f: (T, X) ⇒ Z): Chain[Z]
 
     /**
-     * Fuses this list with the given list by fusing the values using the given function.
+     * Fuses this chain with the given chain by fusing the values using the given function.
      * The function `onDiff` is only called if the given list's element and this list's
      * element differ. Hence, when the tail of both lists is equal fusing both lists
      * will terminate immediately and the common tail is attached to the new heading.
      *
-     * @param     other A list with the same number of elements as this list. If the size of
-     *             the lists it not equal, the result is undefined.
+     * @param     other A chain with the same number of elements as this chain. If the size of
+     *            the chains it not equal, the result is undefined.
      */
     def fuse[X >: T <: AnyRef](that: Chain[X], onDiff: (T, X) ⇒ X): Chain[X]
 }
 
-trait ChainLowPriorityImplicits
+//trait ChainLowPriorityImplicits
 
 /**
  * Factory for [[Chain]]s.
  *
  * @author Michael Eichberg
  */
-object Chain extends ChainLowPriorityImplicits {
+object Chain /* extends ChainLowPriorityImplicits */ {
 
     /**
      * Builder for [[Chain]]s. The builder is specialized for the primitive
-     *         type `Int` to enable the creation of new instances of the correspondingly
-     *         specialized list.
+     * type `Int` to enable the creation of new instances of the correspondingly
+     * specialized list.
      *
-     * @tparam T    The type of the list's element.
+     * @note     The builder must not be used after a `result` call.
+     *
+     * @tparam T The type of the list's element.
      */
     class ChainBuilder[@specialized(Int) T] extends Builder[T, Chain[T]] {
         private var list: Chain[T] = Naught
@@ -540,6 +607,8 @@ object Chain extends ChainLowPriorityImplicits {
             this
         }
         def clear(): Unit = list = Naught
+
+        /** Returns the constructed list. The builder must not be used afterwards. */
         def result(): Chain[T] = list
     }
 
@@ -618,9 +687,11 @@ case object Naught extends Chain[Nothing] {
     def tail: Nothing = throw listIsEmpty
     def isEmpty: Boolean = true
     def isSingletonList: Boolean = false
+    def hasMultipleElements: Boolean = false
     override def nonEmpty: Boolean = false
     def :&::[X >: Nothing](x: Chain[X]): Chain[X] = x
     def take(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
+    def takeUpTo(n: Int): this.type = this
     def takeWhile(f: Nothing ⇒ Boolean): Chain[Nothing] = this
     def filter(f: Nothing ⇒ Boolean): Chain[Nothing] = this
     def drop(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
@@ -651,6 +722,8 @@ final case class :&:[@specialized(Int) T](
     def tail: Chain[T] = rest
 
     def isSingletonList: Boolean = rest eq Naught
+
+    def hasMultipleElements: Boolean = rest ne Naught
 
     def isEmpty: Boolean = false
 
@@ -685,6 +758,28 @@ final case class :&:[@specialized(Int) T](
             taken += 1
         }
         result
+    }
+
+    def takeUpTo(n: Int): Chain[T] = {
+        val Nil = Naught
+
+        if (n == 0)
+            return Nil;
+
+        var taken = 1
+        val result = new :&:[T](head, Nil)
+        var last = result
+        var rest: Chain[T] = this.rest
+        while (taken < n && rest.nonEmpty) {
+            val x = rest.head
+            rest = rest.tail
+            val newLast = new :&:[T](x, Nil)
+            last.rest = newLast
+            last = newLast
+            taken += 1
+        }
+        result
+
     }
 
     def takeWhile(f: T ⇒ Boolean): Chain[T] = {
@@ -913,5 +1008,8 @@ final case class :&:[@specialized(Int) T](
             newHead
     }
 
-    override def toString: String = s"$head :&: ${rest.toString}"
+    override def toString: String = {
+        //s"$head :&: ${rest.toString}" // cannot handle very long lists (uses recursion)...
+        mkString("", " :&: ", " :&: Naught")
+    }
 }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -171,12 +171,8 @@ object GetCallees {
                         ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>"))
                 val evaluationDump =
                     dump(
-                        Some(classFile), Some(method), method.body.get,
-                        header,
-                        ife.domain
-                    )(
-                            ife.operandsArray, ife.localsArray
-                        )
+                        Some(classFile), Some(method), method.body.get, header, ife.domain
+                    )(ife.cfJoins, ife.operandsArray, ife.localsArray)
                 org.opalj.io.writeAndOpen(
                     evaluationDump,
                     "StateOfFailedAbstractInterpretation",

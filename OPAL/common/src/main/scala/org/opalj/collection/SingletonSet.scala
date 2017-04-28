@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -39,6 +39,6 @@ import scala.collection.Set
 object SingletonSet {
 
     def unapply[T](s: Set[T]): Option[T] = {
-        if (s != null && s.size == 1) s.headOption else None
+        if ((s ne null) && s.size == 1) s.headOption else None
     }
 }

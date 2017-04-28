@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -88,7 +88,7 @@ object DeadEdgesAnalysis {
         val evaluatedInstructions = result.evaluatedInstructions
         implicit val body = result.code
         val instructions = body.instructions
-        import result.joinInstructions
+        import result.cfJoins
         import result.domain.regularSuccessorsOf
         import result.domain.hasMultiplePredecessors
         import result.domain.isRegularPredecessorOf
@@ -188,7 +188,7 @@ object DeadEdgesAnalysis {
             if opcode != ATHROW.opcode
 
             // Let's check if a path is never taken:
-            (nextPC: PC) ← instruction.nextInstructions(pc, regularSuccessorsOnly = true).iterator
+            (nextPC: PC) ← instruction.nextInstructions(pc, regularSuccessorsOnly = true).toIterator
             if !regularSuccessorsOf(pc).contains(nextPC)
 
             // If we are in a subroutine, we don't have sufficient information
@@ -263,7 +263,7 @@ object DeadEdgesAnalysis {
                 // this is the default branch of a switch instruction that is dead
                 body.alwaysResultsInException(
                     nextPC,
-                    joinInstructions,
+                    cfJoins,
                     (invocationPC) ⇒ {
                         isAlwaysExceptionThrowingMethodCall(invocationPC)
                     },
@@ -293,9 +293,9 @@ object DeadEdgesAnalysis {
                                     null
                             }
                         BaseAI.continueInterpretation(
-                            result.strictfp,
                             result.code,
-                            result.joinInstructions,
+                            result.cfJoins,
+                            result.liveVariables,
                             zDomain
                         )(
                             /*initialWorkList =*/ Chain(nextPC),

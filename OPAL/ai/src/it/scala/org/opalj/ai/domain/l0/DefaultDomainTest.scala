@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -53,14 +53,16 @@ class DefaultDomainTest extends DomainTestInfrastructure("l0.DefaultDomain") {
     type AnalyzedDomain = l0.BaseDomain[URL]
 
     override def analyzeAIResult(
+        project:   Project[URL],
         classFile: ClassFile,
         method:    Method,
         result:    AIResult { val domain: AnalyzedDomain }
     ): Unit = {
 
-        super.analyzeAIResult(classFile, method, result)
+        super.analyzeAIResult(project, classFile, method, result)
 
         implicit val code = result.code
+        implicit val classHierarchy = project.classHierarchy
         val operandsArray = result.operandsArray
         val evaluatedInstructions = result.evaluatedInstructions
         for {

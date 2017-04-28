@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,7 +36,7 @@ import org.opalj.da._
 import org.opalj.io.write
 
 /**
- * Writes out some class files where some methods are filtered.
+ * Command-line application which writes out some class files where some methods are filtered.
  *
  * @author Michael Eichberg
  */
@@ -61,22 +61,22 @@ object MethodFilter {
         val jarName = args(0)
         val className = args(1)
         val methodName = args(2).substring(1)
-        val keep = args(2).charAt(0) == '+'
+        val keepMethod = args(2).charAt(0) == '+'
         val classFiles = ClassFileReader.ClassFiles(new File(jarName)).map(_._1)
         if (classFiles.isEmpty) {
             OPALLogger.error("setup", s"no classfiles found in ${args(0)}")
         } else {
-            classFiles.filter(_.fqn == className).map { cf ⇒
+            classFiles.filter(_.thisType == className).map { cf ⇒
                 val filteredMethods = cf.methods.filter { m ⇒
                     implicit val cp = cf.constant_pool
                     val matches = m.name == methodName
-                    if (keep)
+                    if (keepMethod)
                         matches
                     else
                         !matches
                 }
                 val filteredCF = cf.copy(methods = filteredMethods)
-                val path = new File(cf.fqn+".class").toPath
+                val path = new File(cf.thisType+".class").toPath
                 write(Assembler(filteredCF), path)
                 OPALLogger.info("info", s"created new class file: $path")
             }

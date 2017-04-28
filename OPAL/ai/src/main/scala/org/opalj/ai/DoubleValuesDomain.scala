@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -47,39 +47,19 @@ trait DoubleValuesDomain extends DoubleValuesFactory { domain ⇒
     //
     // UNARY ARITHMETIC EXPRESSIONS
     //
-    def dneg(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue
+    def dneg(pc: PC, value: DomainValue): DomainValue
 
     //
     // BINARY ARITHMETIC EXPRESSIONS
     //
-    def dadd(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
+    def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def ddiv(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
+    def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def dmul(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
+    def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def drem(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
+    def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def dsub(
-        pc:       PC,
-        strictfp: Boolean,
-        value1:   DomainValue, value2: DomainValue
-    ): DomainValue
+    def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
 }

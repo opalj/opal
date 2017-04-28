@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,7 +36,6 @@ import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.collection.immutable.UIDSet0
 
 /**
  * Default implementation for handling reference values.
@@ -46,7 +45,7 @@ import org.opalj.collection.immutable.UIDSet0
 trait DefaultTypeLevelReferenceValues
         extends DefaultDomainValueBinding
         with TypeLevelReferenceValues {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -117,7 +116,7 @@ trait DefaultTypeLevelReferenceValues
                             primitiveType.computationalType
                     )
 
-                case elementValue @ IsAReferenceValue(UIDSet0) ⇒
+                case elementValue @ IsAReferenceValue(EmptyUpperTypeBound) ⇒
                     // the elementValue is "null"
                     assert(elementValue.isNull.isYes)
                     // e.g., it is possible to store null in the n-1 dimensions of
@@ -229,8 +228,9 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
             target.ReferenceValue(origin, theUpperTypeBound)
+        }
     }
 
     /**
@@ -246,8 +246,8 @@ trait DefaultTypeLevelReferenceValues
             pc:                PC,
             newUpperTypeBound: UIDSet[ObjectType]
         ): Update[DomainValue] = {
-            if (newUpperTypeBound.size == 1)
-                StructuralUpdate(ObjectValue(pc, newUpperTypeBound.first))
+            if (newUpperTypeBound.isSingletonSet)
+                StructuralUpdate(ObjectValue(pc, newUpperTypeBound.head))
             else
                 StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
         }
@@ -360,7 +360,10 @@ trait DefaultTypeLevelReferenceValues
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
                 case MObjectValue(thatUpperTypeBound) ⇒
-                    classHierarchy.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                    classHierarchy.isSubtypeOf(
+                        thatUpperTypeBound.asInstanceOf[UIDSet[ReferenceType]],
+                        this.theUpperTypeBound
+                    ).isYes
             }
         }
 
@@ -401,7 +404,7 @@ trait DefaultTypeLevelReferenceValues
             var isSubtypeOf: Answer = No
             upperTypeBound foreach { anUpperTypeBound ⇒
                 domain.isSubtypeOf(anUpperTypeBound, supertype) match {
-                    case Yes     ⇒ return Yes // <= Shortcut evaluation
+                    case Yes     ⇒ return Yes; // <= Shortcut evaluation
                     case Unknown ⇒ isSubtypeOf = Unknown
                     case No      ⇒ /*nothing to do*/
                 }

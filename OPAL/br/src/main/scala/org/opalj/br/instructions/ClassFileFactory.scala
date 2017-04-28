@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SYNTHETIC
@@ -644,7 +646,7 @@ object ClassFileFactory {
      * Generates an array of instructions that fill the operand stack with all parameters
      * required by `receiverMethodDescriptor` from the parameters of
      * `calledMethodDescriptor`. For that reason, it is expected that both method
-     * descriptors have compatible parameter and return types, i.e. that
+     * descriptors have compatible parameter and return types: i.e., that
      * `forwarderMethodDescriptor`'s parameters can be widened or (un)boxed to fit into
      * `receiverMethodDescriptor`'s parameters, and that `receiverMethodDescriptor`'s return
      * type can be widened or (un)boxed to fit into `forwarderMethodDescriptor`'s return type.
@@ -660,16 +662,16 @@ object ClassFileFactory {
         variableOffset:            Int,
         staticParameters:          Seq[Field],
         definingType:              ObjectType
-    ): Array[Instruction] = {
+    ): Array[Instruction] = try {
         val receiverParameters = receiverMethodDescriptor.parameterTypes
         val forwarderParameters = forwarderMethodDescriptor.parameterTypes
 
         var lvIndex = variableOffset
 
-        val receiverTakesObjectArray = receiverParameters.size == 1 &&
-            receiverParameters(0) == ArrayType(ObjectType.Object)
-        val callerDoesNotTakeObjectArray = forwarderParameters.isEmpty ||
-            forwarderParameters(0) != ArrayType(ObjectType.Object)
+        val receiverTakesObjectArray =
+            receiverParameters.size == 1 && receiverParameters(0) == ArrayType(ObjectType.Object)
+        val callerDoesNotTakeObjectArray =
+            forwarderParameters.isEmpty || forwarderParameters(0) != ArrayType(ObjectType.Object)
 
         if (receiverTakesObjectArray && callerDoesNotTakeObjectArray) {
 
@@ -760,19 +762,14 @@ object ClassFileFactory {
                         if (rt.isBaseType && ft.isBaseType) {
                             if (rt.isIntLikeType && ft.isIntLikeType &&
                                 rt.asIntLikeType.isWiderThan(ft.asIntLikeType)) {
-                                0
-                                // there's no need to convert from a smaller
-                                //integer type to a larger one
+                                0 // smaller int values can directly be stored in "wider" types
                             } else {
                                 1 // we only do safe conversions => 1 instruction
                             }
-                        } else if ((rt.isBaseType && ft.isObjectType) ||
-                            (ft.isBaseType && rt.isObjectType)) {
+                        } else if ((rt.isBaseType && ft.isObjectType) || (ft.isBaseType && rt.isObjectType)) {
                             // can (un)box to fit => invokestatic/invokevirtual
                             3
-                        } else if (rt.isReferenceType &&
-                            ft.isReferenceType &&
-                            rt != ObjectType.Object) {
+                        } else if (rt.isReferenceType && ft.isReferenceType && (rt ne ObjectType.Object)) {
                             3 // checkcast
                         } else 0
                     } else 0
@@ -816,9 +813,11 @@ object ClassFileFactory {
                                 currentIndex = instr.indexOfNextInstruction(currentIndex, false)
                             }
                         } else if (rt.isReferenceType && ft.isReferenceType) {
-                            val conversion = CHECKCAST(rt.asReferenceType)
-                            instructions(currentIndex) = conversion
-                            currentIndex = conversion.indexOfNextInstruction(currentIndex, false)
+                            if (rt ne ObjectType.Object) {
+                                val conversion = CHECKCAST(rt.asReferenceType)
+                                instructions(currentIndex) = conversion
+                                currentIndex = conversion.indexOfNextInstruction(currentIndex, false)
+                            }
                         } else if (rt.isBaseType && ft.isObjectType) {
                             val unboxInstructions = ft.asObjectType.unboxValue
                             val unboxInstruction = unboxInstructions(0)
@@ -829,14 +828,26 @@ object ClassFileFactory {
                             val boxInstruction = boxInstructions(0)
                             instructions(currentIndex) = boxInstruction
                             currentIndex = boxInstruction.indexOfNextInstruction(currentIndex, false)
-                        } else throw new UnknownError("Should not occur: "+ft+" → "+rt)
+                        } else {
+                            throw new UnknownError("Should not occur: "+ft+" → "+rt)
+                        }
                     }
                 }
                 receiverParameterIndex += 1
             }
-
             instructions
         }
+    } catch {
+        case t: Throwable ⇒
+            OPALLogger.error(
+                "internal error",
+                s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t"+
+                    s"fowarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t"+
+                    s"receiver descriptor = ${receiverMethodDescriptor} +\n\t "+
+                    s"static parameters   = $staticParameters (variableOffset=$variableOffset)",
+                t
+            )(GlobalLogContext)
+            throw t;
     }
 
     /**

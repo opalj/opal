@@ -30,20 +30,23 @@ package org.opalj.br
 package cfg
 
 import org.junit.runner.RunWith
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
+
 import java.io.File
 import java.io.FilenameFilter
+
 import scala.collection.JavaConverters._
-import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
+
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
-import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.analyses.MethodInfo
+
+import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 
 /**
@@ -54,7 +57,7 @@ import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class CFGFactoryTest extends FunSpec with Matchers {
+class CFGFactoryTest extends CFGTests {
 
     def analyzeProject(name: String, project: SomeProject): Unit = {
         time { doAnalyzeProject(name, project) } { t ⇒ info("the analysis took "+t.toSeconds) }
@@ -65,7 +68,9 @@ class CFGFactoryTest extends FunSpec with Matchers {
         val errors = new java.util.concurrent.ConcurrentLinkedQueue[String]
         val executionTime = new java.util.concurrent.atomic.AtomicLong(0l)
 
-        project.parForeachMethodWithBody(() ⇒ false) { m ⇒
+        implicit val classHierarchy = project.classHierarchy
+
+        project.parForeachMethodWithBody() { m ⇒
             val MethodInfo(_, classFile, method) = m
             implicit val code = method.body.get
             try {
@@ -76,7 +81,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
                     fail("not all instructions are associated with a basic block")
                 }
 
-                // check that allBBs returns the same as a manual iterator
+                // check that allBBs returns the same bbs as a manual iterator
                 assert(cfg.allBBs.toSet == code.programCounters.map(cfg.bb(_)).filter(_ ne null).toSet)
 
                 // check the boundaries
@@ -86,7 +91,10 @@ class CFGFactoryTest extends FunSpec with Matchers {
                     if (bb.startPC > bb.endPC)
                         fail(s"the startPC ${bb.startPC} is larger than the endPC ${bb.endPC}")
                     if (allStartPCs.contains(bb.startPC))
-                        fail(s"the startPC ${bb.startPC} is used by multiple basic blocks (${cfg.allBBs.mkString(", ")}")
+                        fail(
+                            s"the startPC ${bb.startPC} is used by multiple basic blocks "+
+                                s" (${cfg.allBBs.mkString(", ")}"
+                        )
                     else
                         allStartPCs += bb.startPC
 
@@ -95,6 +103,8 @@ class CFGFactoryTest extends FunSpec with Matchers {
                     else
                         allEndPCs += bb.endPC
                 }
+                cfgNodesCheck(method.toJava(classFile), code, cfg, classHierarchy)
+
                 // check the wiring
                 cfg.allBBs.foreach { bb ⇒
                     bb.successors.foreach { successorBB ⇒
@@ -107,11 +117,12 @@ class CFGFactoryTest extends FunSpec with Matchers {
                             fail(s"the predecessor $predecessorBB does not reference its successor $bb")
                     }
                 }
+                cfg.reachableBBs should not be (empty)
 
                 // check the correspondence of "instruction.nextInstruction" and the information
                 // contained in the cfg
                 code.iterate { (pc, instruction) ⇒
-                    val nextInstructions = instruction.nextInstructions(pc).iterable.toSet
+                    val nextInstructions = instruction.nextInstructions(pc).toSet
                     if (nextInstructions.isEmpty) {
                         if (!cfg.bb(pc).successors.forall { succBB ⇒ succBB.isCatchNode || succBB.isExitNode })
                             fail(
@@ -122,9 +133,10 @@ class CFGFactoryTest extends FunSpec with Matchers {
                         val cfgSuccessors = cfg.successors(pc)
                         if (nextInstructions != cfgSuccessors) {
                             fail(s"the instruction ($instruction) with pc $pc has the following "+
-                                s"instruction successors: $nextInstructions and "+
-                                s"the following cfg successors : $cfgSuccessors "+
-                                s"(${cfg.bb(pc)} => ${cfg.bb(pc).successors})")
+                                s"instruction successors:\n\t$nextInstructions and\n"+
+                                s"the following cfg successors:\n\t$cfgSuccessors\n"+
+                                s"the nodes are:\n\t${cfg.bb(pc)} =>\n\t\t"+
+                                cfg.bb(pc).successors.mkString("\n\t\t"))
                         }
                     }
                 }
@@ -160,13 +172,14 @@ class CFGFactoryTest extends FunSpec with Matchers {
             } catch {
                 case t: Throwable ⇒
                     val instructions = code.instructions.size
-                    errors.add(s"[$instructions]${method.toJava(classFile)}:${t.getMessage}")
+                    val message = s"instructions=$instructions; "+t.getMessage
+                    errors.add(method.toJava(classFile, message))
             }
         }
         if (!errors.isEmpty())
             fail(
                 s"analyzed ${methodsCount.get}/${project.methodsCount} methods; "+
-                    errors.asScala.toList.sorted.mkString(s"failed for ${errors.size} methods", "\n", "")
+                    errors.asScala.toList.sorted.mkString(s"failed for ${errors.size} methods\n", "\n", "")
             )
         else
             info(

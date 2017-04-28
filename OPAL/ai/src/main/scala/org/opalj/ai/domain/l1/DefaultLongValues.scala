@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -49,13 +49,13 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = NoUpdate
 
-        override def abstractsOver(other: DomainValue): Boolean =
-            other.isInstanceOf[IsLongValue]
+        override def abstractsOver(other: DomainValue): Boolean = other.isInstanceOf[IsLongValue]
 
         override def summarize(origin: ValueOrigin): DomainValue = this
 
-        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
             target.LongValue(origin)
+        }
 
     }
 
@@ -64,7 +64,7 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
      */
     class TheLongValue(override val value: Long) extends super.TheLongValue {
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
+        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             other match {
                 case ConcreteLongValue(thatValue) ⇒
                     if (this.value == thatValue) {
@@ -74,17 +74,20 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
                     }
                 case _ ⇒ StructuralUpdate(other)
             }
+        }
 
-        override def abstractsOver(other: DomainValue): Boolean =
+        override def abstractsOver(other: DomainValue): Boolean = {
             other match {
                 case ConcreteLongValue(`value`) ⇒ true
                 case _                          ⇒ false
             }
+        }
 
         override def summarize(origin: ValueOrigin): DomainValue = this
 
-        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
             target.LongValue(origin, value)
+        }
 
         override def equals(other: Any): Boolean = {
             other match {
@@ -95,17 +98,15 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
 
         override def hashCode: Int = (value ^ (value >>> 32)).toInt
 
-        override def toString: String = "LongValue(value="+value+")"
+        override def toString: String = "long ="+value
     }
 
     //
     // FACTORY METHODS
     //
 
-    override def LongValue(origin: ValueOrigin): DomainValue =
-        ALongValue
+    override def LongValue(origin: ValueOrigin): DomainValue = ALongValue
 
-    override def LongValue(origin: ValueOrigin, value: Long): DomainValue =
-        new TheLongValue(value)
+    override def LongValue(origin: ValueOrigin, value: Long): DomainValue = new TheLongValue(value)
 
 }

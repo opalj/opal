@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,7 +37,7 @@ import scala.reflect.ClassTag
  * @author Michael Eichberg
  */
 trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with StringValues {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainStringValue = StringValue
     final val DomainStringValue: ClassTag[DomainStringValue] = implicitly
@@ -50,7 +50,7 @@ trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with Stri
         origin: ValueOrigin,
         value:  String,
         t:      Timestamp
-    ): DomainStringValue =
+    ): DomainStringValue = {
         new StringValue(origin, value, t)
+    }
 }
-

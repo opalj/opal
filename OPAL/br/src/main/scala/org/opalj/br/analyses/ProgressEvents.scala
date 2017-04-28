@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -41,7 +41,8 @@ object ProgressEvents extends Enumeration {
 
     /**
      * Used to signal the start of a (longer-running) computation.
-     * Each computation that signals a start must also signal an end of the computation.
+     * Each computation that signals a start '''must''' also signal an end of the computation
+     * using `End` or `Killed`.
      */
     val Start = Value("start")
 

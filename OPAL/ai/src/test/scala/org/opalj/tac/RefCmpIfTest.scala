@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,8 +36,7 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 //import org.opalj.ai.BaseAI
 //import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -52,9 +51,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
 
     val ControlSequencesType = ObjectType("tactest/ControlSequences")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
+    val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val ControlSequencesClassFile = project.classFile(ControlSequencesType).get
 
@@ -117,7 +114,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect the equals case") {
-                val statements = AsQuadruples(method = IfACMPEQMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfACMPEQMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -129,7 +126,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the not-equals case") {
-                val statements = AsQuadruples(method = IfACMPNEMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfACMPNEMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -141,7 +138,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the non-null case") {
-                val statements = AsQuadruples(method = IfNonNullMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfNonNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -153,7 +150,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the is-null case") {
-                val statements = AsQuadruples(method = IfNullMethod, classHierarchy = Code.preDefinedClassHierarchy)._1
+                val statements = AsQuadruples(method = IfNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -200,9 +197,9 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 "4: op_1 = r_2;",
                 strg,
                 "6: op_0 = r_1;",
-                "7: return op_0 /*{_ <: java.lang.Object, null}[@-2;t=102]*/;",
+                "7: return op_0 /*{_ <: java.lang.Object, null}[↦-2;t=103]*/;",
                 "8: op_0 = r_2;",
-                "9: return op_0 /*{_ <: java.lang.Object, null}[@-3;t=103]*/;"
+                "9: return op_0 /*{_ <: java.lang.Object, null}[↦-3;t=104]*/;"
             )
 
             def unaryJLC(cmp: String, ret1: String) = Array(
@@ -213,7 +210,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 "4: op_0 = r_1;",
                 ret1,
                 "6: op_0 = null;",
-                "7: return op_0 /*null[@6;t=103]*/;"
+                "7: return op_0 /*null[↦6]*/;"
             )
 
             it("should correctly reflect the equals case") {
@@ -263,7 +260,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 ))
                 javaLikeCode.shouldEqual(unaryJLC(
                     "3: if(op_0 != null) goto 6;",
-                    "5: return op_0 /*null[@-2;t=102]*/;"
+                    "5: return op_0 /*null[↦-2]*/;"
                 ))
             }
 
@@ -282,7 +279,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 ))
                 javaLikeCode.shouldEqual(unaryJLC(
                     "3: if(op_0 == null) goto 6;",
-                    "5: return op_0 /*_ <: java.lang.Object[@-2;t=102]*/;"
+                    "5: return op_0 /*_ <: java.lang.Object[↦-2;t=103]*/;"
                 ))
             }
         }*/

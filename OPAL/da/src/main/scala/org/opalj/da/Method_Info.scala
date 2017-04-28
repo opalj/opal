@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,7 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import org.opalj.bi.VisibilityModifier
+
+import org.opalj.bi.AccessFlagsContexts.METHOD
 
 /**
  * @author Michael Eichberg
@@ -44,7 +45,7 @@ case class Method_Info(
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
         attributes:       Attributes          = IndexedSeq.empty
-) {
+) extends ClassMember {
 
     /**
      * The number of bytes required to store this method info object.
@@ -63,28 +64,18 @@ case class Method_Info(
     def descriptor(implicit cp: Constant_Pool): String = cp(descriptor_index).asString
 
     /**
-     * @param definingTypeFQN The FQN of the class defining this field.
+     * @param definingType The name of the class defining this field.
      */
-    def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
-        val flags = methodAccessFlagsToString(access_flags)
-        val filter_flags =
-            VisibilityModifier.get(access_flags) match {
-                case None ⇒
-                    val ac = flags
-                    if (ac.length() == 0)
-                        "default"
-                    else
-                        ac+" default"
-                case _ ⇒ flags
-            }
+    def toXHTML(definingType: String, methodIndex: Int)(implicit cp: Constant_Pool): Node = {
+        val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, METHOD)
 
         val name = this.name
         val jvmDescriptor = descriptor
-        val javaDescriptor = parseMethodDescriptor(name, jvmDescriptor)
+        val javaDescriptor = methodDescriptorAsJavaSignature(name, jvmDescriptor)
         val index = methodIndex.toString
-        <div class="method" name={ name } id={ name + jvmDescriptor } data-method-index={ index } data-method-flags={ filter_flags }>
+        <div class="method" id={ name + jvmDescriptor } data-name={ name } data-index={ index } data-access-flags={ explicitAccessFlags }>
             <div class="method_signature">
-                <span class="access_flags">{ flags }</span>
+                { accessFlags }
                 <span>{ javaDescriptor }</span>
             </div>
             { attributesToXHTML(methodIndex) }
@@ -94,7 +85,7 @@ case class Method_Info(
     private[this] def attributesToXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Seq[Node] = {
         attributes map {
             case codeAttribute: Code_attribute ⇒ codeAttribute.toXHTML(methodIndex)
-            case attribute                     ⇒ attribute.toXHTML(cp)
+            case attribute                     ⇒ attribute.toXHTML
         }
     }
 }

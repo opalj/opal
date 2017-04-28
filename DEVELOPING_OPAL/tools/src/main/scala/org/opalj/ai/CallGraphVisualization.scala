@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -46,7 +46,7 @@ import org.opalj.ai.analyses.cg.DefaultVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.ExtVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.CFACallGraphAlgorithmConfiguration
 import org.opalj.graphs.DefaultMutableNode
-import org.opalj.util.PerformanceEvaluation.asMB
+import org.opalj.util.asMB
 import org.opalj.util.PerformanceEvaluation.memory
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.io.writeAndOpen

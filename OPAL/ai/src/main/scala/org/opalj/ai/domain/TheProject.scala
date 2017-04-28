@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -61,14 +61,14 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
  *
  * @author Michael Eichberg
  */
-trait TheProject extends ClassHierarchy with LogContextProvider with ThePropertyStore {
+trait TheProject extends TheClassHierarchy with LogContextProvider with ThePropertyStore {
 
     /**
      * Returns the project that is currently analyzed.
      */
     implicit def project: SomeProject
 
-    final implicit def logContext: LogContext = project.logContext
+    final override implicit def logContext: LogContext = project.logContext
 
     /**
      * Returns the project's class hierarchy.

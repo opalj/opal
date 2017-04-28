@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -81,7 +81,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with RecordCFG // <=== the domain we are going to test!
 
-    def terminateAfter[T >: Null <: AnyRef](millis: Long)(f: ⇒ T): T = {
+    def terminateAfter[T >: Null <: AnyRef](millis: Long, msg: ⇒ String)(f: ⇒ T): T = {
         @volatile var result: T = null
         val t = new Thread(new Runnable { def run(): Unit = { result = f } })
         t.start
@@ -91,7 +91,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         if (t.isAlive()) {
             // this way it is no longer deprecated...
             t.getClass.getMethod("stop").invoke(t)
-            throw new InterruptedException(s"didn't terminate in $millis milliseconds")
+            throw new InterruptedException(s"$msg: didn't terminate in $millis milliseconds")
         }
         result
     }
@@ -167,7 +167,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                 val postDT = dTime('PostDominators) { domain.postDominatorTree }
 
                 val cdg =
-                    terminateAfter[ControlDependencies](1000l) {
+                    terminateAfter[ControlDependencies](1000l, { method.toJava(classFile) }) {
                         dTime('ControlDependencies) { domain.controlDependencies }
                     }
 

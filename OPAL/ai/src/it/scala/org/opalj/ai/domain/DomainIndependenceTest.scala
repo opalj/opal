@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -175,7 +175,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         for {
-            (classFile, source) ← org.opalj.br.TestSupport.readJREClassFiles().par
+            (classFile, source) ← org.opalj.br.reader.readJREClassFiles().par
             method @ MethodWithBody(body) ← classFile.methods
         } {
             def TheAI() = new InstructionCountBoundedAI[Domain](body)
@@ -211,8 +211,8 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                     failed.incrementAndGet()
                     info(
                         classFile.thisType.toJava+"{ "+
-                            method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
-                            Console.BLUE+"\t// the domain r1 is not deterministic (concurrency bug?)\n"+
+                            method.toJava+"(Instructions "+method.body.get.instructions.size+")}\n"+
+                            Console.BLUE+"\t// domain r1 is not deterministic (concurrency bug?)\n"+
                             Console.RESET
                     )
                 } else

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -648,7 +648,7 @@ object AsQuadruples {
      * @param   method A method with a body. I.e., a non-native, non-abstract method.
      * @param classHierarchy The class hierarchy of the project defining the given method.
      *          If the class hierarchy is not available, you can use:
-     *          `Code.preDefinedClassHierarchy`.
+     *          `Code.BasicClassHierarchy`.
      * @return The array with the generated statements.
      */
     def apply(

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -133,6 +133,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     ): AIResult { val domain: calledMethodDomain.type } = {
         val result = super.doInvoke(method, calledMethodDomain)(parameters)
         if (debug) {
+            import result._
             org.opalj.io.writeAndOpen(
                 org.opalj.ai.common.XHTML.dump(
                     Some(project.classFile(method)),
@@ -144,10 +145,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
                             XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain
-                )(
-                        result.operandsArray,
-                        result.localsArray
-                    ),
+                )(cfJoins, result.operandsArray, result.localsArray),
                 "AIResult",
                 ".html"
             )

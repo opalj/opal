@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,9 +36,7 @@ package l1
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerRangeValues
-        extends DefaultDomainValueBinding
-        with IntegerRangeValues {
+trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRangeValues {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     /**
@@ -115,22 +113,65 @@ trait DefaultIntegerRangeValues
                 case IntegerRange(otherLB, otherUB) ⇒
                     val thisLB = this.lowerBound
                     val thisUB = this.upperBound
-                    val newLowerBound = Math.min(thisLB, otherLB)
-                    val newUpperBound = Math.max(thisUB, otherUB)
+                    val newLB = Math.min(thisLB, otherLB)
+                    val newUB = Math.max(thisUB, otherUB)
 
-                    if (newLowerBound == newUpperBound) {
+                    if (newLB == newUB) {
                         // This is a "point-range" (a concrete value), hence there
                         // will be NO further constraints
                         NoUpdate
-                    } else if (newLowerBound == thisLB && newUpperBound == thisUB) {
+                    } else if (newLB == thisLB && newUB == thisUB) {
                         // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
                         // runtime values (they were not created at the same time!
-                        MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
-                    } else if ((newUpperBound.toLong - newLowerBound.toLong) > maxCardinalityOfIntegerRanges) {
-                        StructuralUpdate(AnIntegerValue())
+
+                        // The "CorrelationalDomain" will make sure that this udpate is
+                        // handled.
+                        MetaInformationUpdate(IntegerRange(newLB, newUB))
+                    } else if (thisLB == thisUB && otherLB == otherUB) {
+                        // We are joining two concrete values... in this case we always first
+                        // create a "true" range.
+                        StructuralUpdate(IntegerRange(newLB, newUB))
+                    } else if (newUB.toLong - newLB.toLong > maxCardinalityOfIntegerRanges) {
+                        // let's just use one of the default ranges..
+                        var adjustedNewLB =
+                            if (newLB < Short.MinValue) {
+                                Int.MinValue
+                            } else if (newLB < Byte.MinValue) {
+                                Short.MinValue
+                            } else if (newLB < 0) {
+                                Byte.MinValue
+                            } else {
+                                0
+                            }
+
+                        val adjustedNewUB =
+                            if (newUB > Char.MaxValue) {
+                                Int.MaxValue
+                            } else if (newUB > Short.MaxValue) {
+                                Char.MaxValue
+                            } else if (newUB > Byte.MaxValue) {
+                                Short.MaxValue
+                            } else if (newUB < 0) {
+                                -1
+                            } else {
+                                Byte.MaxValue
+                            }
+
+                        if (adjustedNewLB > adjustedNewUB)
+                            // we adjusted it too much... let's correct that
+                            adjustedNewLB = adjustedNewUB
+
+                        if (adjustedNewLB == Int.MinValue && adjustedNewUB == Int.MaxValue) {
+                            StructuralUpdate(AnIntegerValue())
+                        } else if (adjustedNewLB == thisLB && adjustedNewUB == thisUB) {
+                            // We have no idea about the concrete values, but the range is the same
+                            MetaInformationUpdate(IntegerRange(adjustedNewLB, adjustedNewUB))
+                        } else {
+                            StructuralUpdate(IntegerRange(adjustedNewLB, adjustedNewUB))
+                        }
                     } else {
-                        StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
+                        StructuralUpdate(IntegerRange(newLB, newUB))
                     }
             }
         }
@@ -139,8 +180,7 @@ trait DefaultIntegerRangeValues
             (this eq other) || (
                 other match {
                     case that: IntegerRange ⇒
-                        this.lowerBound <= that.lowerBound &&
-                            this.upperBound >= that.upperBound
+                        this.lowerBound <= that.lowerBound && this.upperBound >= that.upperBound
                     case _ ⇒ false
                 }
             )
@@ -164,8 +204,7 @@ trait DefaultIntegerRangeValues
             other match {
                 case that: IntegerRange ⇒
                     (this eq that) || (
-                        that.lowerBound == this.lowerBound &&
-                        that.upperBound == this.upperBound
+                        that.lowerBound == this.lowerBound && that.upperBound == this.upperBound
                     )
                 case _ ⇒
                     false
@@ -184,10 +223,10 @@ trait DefaultIntegerRangeValues
     @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange =
         new IntegerRange(lb, ub)
 
-    override def BooleanValue(origin: ValueOrigin): DomainValue =
-        IntegerRange(0, 1)
-    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue =
+    override def BooleanValue(origin: ValueOrigin): DomainValue = IntegerRange(0, 1)
+    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue = {
         if (value) IntegerValue(origin, 1) else IntegerValue(origin, 0)
+    }
 
     override def ByteValue(origin: ValueOrigin): DomainValue =
         IntegerRange(Byte.MinValue, Byte.MaxValue)
@@ -211,8 +250,7 @@ trait DefaultIntegerRangeValues
     }
 
     override def IntegerValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
-    override def IntegerValue(origin: ValueOrigin, value: Int) =
-        new IntegerRange(value, value)
+    override def IntegerValue(origin: ValueOrigin, value: Int) = new IntegerRange(value, value)
 
 }
 

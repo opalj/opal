@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,13 +29,16 @@
 package org.opalj
 package ai
 
-import scala.util.control.ControlThrowable
+import java.util.Date
+import java.net.URL
 
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.ai.domain.TheCode
 import org.opalj.ai.util.XHTML
 import org.opalj.ai.common.XHTML.dump
+import org.opalj.ai.common.XHTML.dumpAIState
 import org.opalj.io.writeAndOpen
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
@@ -49,7 +52,7 @@ import org.opalj.graphs.toDot
  */
 object InterpretMethod {
 
-    private object AI extends AI[Domain] {
+    private class IMAI(IdentifyDeadVariables: Boolean) extends AI[Domain](IdentifyDeadVariables) {
 
         override def isInterrupted: Boolean = Thread.interrupted()
 
@@ -83,6 +86,7 @@ object InterpretMethod {
             println("\t3: the simple name or signature of a method of the specified class.")
             println("\t4[Optional]: -domain=CLASS the name of the class of the configurable domain to use.")
             println("\t5[Optional]: -trace={true,false} default:true")
+            println("\t6[Optional]: -identifyDeadVariables={true,false} default:true")
         }
 
         if (args.size < 3 || args.size > 5) {
@@ -95,7 +99,8 @@ object InterpretMethod {
         val methodName = remainingArgs.head; remainingArgs = remainingArgs.tail
         val domainClass = {
             if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-domain=")) {
-                val clazz = Class.forName(remainingArgs.head.substring(8)).asInstanceOf[Class[_ <: Domain]]
+                val domainRawClass = Class.forName(remainingArgs.head.substring(8))
+                val clazz = domainRawClass.asInstanceOf[Class[_ <: Domain]]
                 remainingArgs = remainingArgs.tail
                 clazz
             } else // default domain
@@ -103,10 +108,24 @@ object InterpretMethod {
         }
         val doTrace = {
             if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-trace=")) {
-                val result = (remainingArgs.head == "-trace=true" || remainingArgs.head == "-trace=1")
+                val result = (
+                    remainingArgs.head == "-trace=true" ||
+                    remainingArgs.head == "-trace=1"
+                )
                 remainingArgs = remainingArgs.tail
                 result
-            } else // default domain
+            } else
+                true
+        }
+        val doIdentifyDeadVariables = {
+            if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-identifyDeadVariables=")) {
+                val result = (
+                    remainingArgs.head == "-identifyDeadVariables=true" ||
+                    remainingArgs.head == "-identifyDeadVariables=1"
+                )
+                remainingArgs = remainingArgs.tail
+                result
+            } else
                 true
         }
         if (remainingArgs.nonEmpty) {
@@ -122,15 +141,11 @@ object InterpretMethod {
 
             scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
                 val constructor = domainClass.getConstructor(classOf[Object])
-                return constructor.newInstance(classFile)
+                return constructor.newInstance(classFile);
             }
 
             val constructor =
-                domainClass.getConstructor(
-                    classOf[Project[java.net.URL]],
-                    classOf[ClassFile],
-                    classOf[Method]
-                )
+                domainClass.getConstructor(classOf[Project[URL]], classOf[ClassFile], classOf[Method])
 
             constructor.newInstance(project, classFile, method)
         }
@@ -151,11 +166,7 @@ object InterpretMethod {
             }
 
         val classFile = {
-            val fqn =
-                if (className.contains('.'))
-                    className.replace('.', '/')
-                else
-                    className
+            val fqn = className.replace('.', '/')
             project.allClassFiles.find(_.fqn == fqn).getOrElse {
                 println(RED+"[error] Cannot find the class: "+className+"."+RESET)
                 return ;
@@ -188,7 +199,9 @@ object InterpretMethod {
         try {
             val result =
                 if (doTrace)
-                    AI(classFile, method, createDomain(project, classFile, method))
+                    new IMAI(doIdentifyDeadVariables)(
+                        classFile, method, createDomain(project, classFile, method)
+                    )
                 else {
                     val body = method.body.get
                     println("Starting abstract interpretation of: ")
@@ -198,7 +211,10 @@ object InterpretMethod {
                         "; #max_stack="+body.maxStack+
                         "; #locals="+body.maxLocals+"]")
                     println("\t}")
-                    val result = BaseAI(classFile, method, createDomain(project, classFile, method))
+                    val result =
+                        new BaseAI(doIdentifyDeadVariables)(
+                            classFile, method, createDomain(project, classFile, method)
+                        )
                     println("Finished abstract interpretation.")
                     result
                 }
@@ -239,25 +255,27 @@ object InterpretMethod {
                     Some(method),
                     method.body.get,
                     Some(
-                        "Created: "+(new java.util.Date).toString+"<br>"+
-                            "Domain: "+domainClass.getName+"<br>"+
-                            XHTML.instructionsToXHTML("Join instructions", result.joinInstructions) +
+
+                        s"Analyzed: ${new Date}<br>Domain: ${domainClass.getName}<br>"+
                             (
-                                if (result.subroutineInstructions.nonEmpty)
-                                    XHTML.instructionsToXHTML(
-                                    "Subroutine instructions",
-                                    result.subroutineInstructions.iterable
-                                )
+                                if (doIdentifyDeadVariables)
+                                    "<b>Dead Variables Identification</b><br>"
                                 else
-                                    ""
+                                    "<u>Dead Variables are not filtered</u>.<br>"
                             ) +
-                                XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                                XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
+                                (
+                                    if (result.subroutineInstructions.nonEmpty)
+                                        XHTML.instructionsToXHTML(
+                                        "Subroutine instructions",
+                                        result.subroutineInstructions.iterable
+                                    )
+                                    else
+                                        ""
+                                ) + XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain
-                )(
-                        result.operandsArray,
-                        result.localsArray
-                    ),
+                )(result.cfJoins, result.operandsArray, result.localsArray),
                 "AIResult",
                 ".html"
             )
@@ -265,17 +283,17 @@ object InterpretMethod {
             case ife: InterpretationFailedException ⇒
 
                 def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
-                    val context =
+                    val parameters =
                         if (nested) {
-                            ife.localsArray(0).toSeq.
+                            ife.localsArray(0).toSeq.reverse.
                                 filter(_ != null).map(_.toString).
                                 mkString("Parameters:<i>", ", ", "</i><br>")
                         } else
                             ""
 
-                    val d =
-                        "<p><b>"+ife.domain.getClass.getName+"("+ife.domain.toString+")"+"</b></p>"+
-                            context+
+                    val aiState =
+                        "<p><i>"+ife.domain.getClass.getName+"</i><b>( "+ife.domain.toString+" )"+"</b></p>"+
+                            parameters+
                             "Current instruction: "+ife.pc+"<br>"+
                             XHTML.evaluatedInstructionsToXHTML(ife.evaluated) + {
                                 if (ife.worklist.nonEmpty)
@@ -284,20 +302,30 @@ object InterpretMethod {
                                     "Remaining worklist: <i>EMPTY</i><br>"
                             }
 
-                    ife.cause match {
-                        case ct: ControlThrowable ⇒ throw ct
+                    val metaInformation = ife.cause match {
                         case ife: InterpretationFailedException ⇒
-                            d + ife.cause.
+                            aiState + ife.cause.
                                 getStackTrace.
                                 mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                                 "<div style='margin-left:5em'>"+causeToString(ife, true)+"</div>"
                         case e: Throwable ⇒
-                            d+"<br>"+
-                                "Underlying cause: "+util.XHTML.htmlify(e.getMessage()) //+
-                        // e.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")
+                            val message = e.getMessage()
+                            if (message != null)
+                                aiState+"<br>Underlying cause: "+util.XHTML.htmlify(message)
+                            else
+                                aiState+"<br>Underlying cause: <NULL>"
                         case _ ⇒
-                            d
+                            aiState
                     }
+
+                    if (nested && ife.domain.isInstanceOf[TheCode])
+                        metaInformation +
+                            dumpAIState(
+                                ife.domain.asInstanceOf[TheCode].code,
+                                ife.domain
+                            )(ife.cfJoins, ife.operandsArray, ife.localsArray)
+                    else
+                        metaInformation
                 }
 
                 val resultHeader = Some(causeToString(ife, false))
@@ -305,7 +333,7 @@ object InterpretMethod {
                     dump(
                         Some(classFile), Some(method), method.body.get,
                         resultHeader, ife.domain
-                    )(ife.operandsArray, ife.localsArray)
+                    )(ife.cfJoins, ife.operandsArray, ife.localsArray)
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife
         }

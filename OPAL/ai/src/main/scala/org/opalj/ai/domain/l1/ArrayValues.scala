@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,11 +32,13 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
-import org.opalj.br.ObjectType
-import org.opalj.br.ArrayType
-import org.opalj.collection.commonPrefix
+
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
+import org.opalj.br.ObjectType
+import org.opalj.br.ArrayType
 
 /**
  * Enables the tracking of various properties related to arrays.
@@ -44,30 +46,29 @@ import org.opalj.log.Warn
  * This domain in particular enables the tracking of an array's concrete content
  * in some specific cases (e.g., the Strings stored in an array or some primitive values)
  * or the tracking of information about an array's elements at a higher
- * level. In both cases only arrays up to a specified size (cf. [[maxArraySize]]) are
- * tracked. The content of array's of mutable data-structures cannot be tracked since
+ * level. In both cases only arrays up to a specified size (cf. [[maxTrackedArraySize]]) are
+ * tracked. The content of arrays which track mutable data-structures cannot be tracked since
  * the infrastructure to "update the array's content if the referenced value is changed"
  * is not available!
  *
- * @note '''This domain does not require modeling the heap'''. This however, strictly limits
- *      the kind of arrays that can be tracked/the information about elements that
- *      can be tracked. Tracking the contents of arrays of mutable values is not possible;
- *      unless we only
- *      track abstract properties that do not depend on the concrete array element's value.
- *      For example, if we just want to know the upper type bounds of the values stored
- *      in the array, then it is perfectly possible. This property cannot change in an
- *      unsound fashion without directly accessing the array.
+ * @note    '''This domain does not require modeling the heap'''. This however, strictly limits
+ *          the kind of arrays that can be tracked/the information about elements that
+ *          can be tracked. Tracking the contents of arrays of mutable values is not possible;
+ *          unless we only track abstract properties that do not depend on the concrete array
+ *          element's value.
+ *          For example, if we just want to know the upper type bounds of the values stored
+ *          in the array, then it is perfectly possible. This property cannot change in an
+ *          unsound fashion without directly accessing the array.
  *
- * @note This domain requires that the instantiated domain is only used to analyze a
- *      one method.
+ * @note     This domain requires that the instantiated domain is only used to analyze one method.
  *
- * @author Michael Eichberg
+ * @author   Michael Eichberg
  */
 trait ArrayValues
         extends l1.ReferenceValues
         with PerInstructionPostProcessing
         with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy with LogContextProvider ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with TheClassHierarchy with LogContextProvider ⇒
 
     /**
      * Determines the maximum size of those arrays for which we track the content.
@@ -76,18 +77,22 @@ trait ArrayValues
      * This setting can dynamically be adapted at runtime and will be considered
      * for each new array that is created afterwards.
      */
-    def maxArraySize: Int = 16
+    def maxTrackedArraySize: Int = 16
 
     /**
      * Returns `true` if instances of the given type - including subtypes - are
      * always effectively immutable. For example, `java.lang.String` and `java.lang.Class`
      * objects are effectively immutable.
      *
-     * @note This method is used by the default implementation of [[reifyArray]] to
-     *      decide if we want to track the array's content.
+     * @note     This method is used by the default implementation of [[reifyArray]] to
+     *          decide if we want to track the array's content.
+     *          It can be overridden by subclasses to plug-in more advanced analyses.
      */
     protected def isEffectivelyImmutable(objectType: ObjectType): Boolean = {
-        (objectType eq ObjectType.String) || (objectType eq ObjectType.Class)
+        objectType.id match {
+            case ObjectType.ObjectId | ObjectType.StringId | ObjectType.ClassId ⇒ true
+            case _ ⇒ false
+        }
     }
 
     /**
@@ -100,20 +105,20 @@ trait ArrayValues
      * of reflectively called methods, it might be interesting to track arrays
      * that contain string values.
      *
-     * By default only arrays of known immutable values up to a size of [[maxArraySize]]
+     * By default only arrays of known immutable values up to a size of [[maxTrackedArraySize]]
      * are reified.
      *
-     * @note Tracking the content of arrays generally has a significant performance
-     *      impact and should be limited to cases where it is absolutely necessary.
-     *      "Just tracking the contents of arrays" to improve the overall precision
-     *      is in most cases not helpful.
+     * @note     Tracking the content of arrays generally has a significant performance
+     *          impact and should be limited to cases where it is absolutely necessary.
+     *          "Just tracking the contents of arrays" to improve the overall precision
+     *          is in most cases not helpful.
      *
-     * @note If we track information about the values of an array at a higher-level,
-     *      where the properties do not depend on the concrete values, then it is also
-     *      possible to track those arrays.
+     * @note    If we track information about the values of an array at a higher-level,
+     *          where the properties do not depend on the concrete values, then it is also
+     *          possible to track those arrays.
      */
     protected def reifyArray(pc: PC, count: Int, arrayType: ArrayType): Boolean = {
-        count <= maxArraySize && (
+        count <= maxTrackedArraySize && (
             arrayType.componentType.isBaseType ||
             (
                 arrayType.componentType.isObjectType &&
@@ -137,18 +142,17 @@ trait ArrayValues
      * Represents some (multi-dimensional) array where the (initialized) dimensions have
      * the given size.
      *
-     * @param lengths The list of the sizes of each initialized dimension.
-     *      Currently, at most two dimensions are supported.
+     * @param     lengths The list of the sizes of each initialized dimension.
+     *          Currently, at most two dimensions are supported.
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION ABOUT N-DIMENSIONAL ARRAYS WHERE N IS
     // LARGER THAN 2 DUE TO THE LACK OF THE MODELING OF THE HEAP
     protected class InitializedArrayValue(
-        origin:      ValueOrigin,
-        theType:     ArrayType,
-        val lengths: List[Int],
-        t:           Timestamp
-    )
-            extends ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
+            origin:      ValueOrigin,
+            theType:     ArrayType,
+            val lengths: Chain[Int],
+            t:           Timestamp
+    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
         this: DomainInitializedArrayValue ⇒
 
         def this(
@@ -157,10 +161,10 @@ trait ArrayValues
             length:  Int,
             t:       Timestamp
         ) = {
-            this(origin, theType, lengths = List(length), t)
+            this(origin, theType, lengths = Chain(length), t)
         }
 
-        assert(length.size > 0, "uninitialized arrays are not supported")
+        assert(lengths.size > 0, "uninitialized arrays are not supported")
         assert(
             lengths.size <= 2,
             s"tracking the concrete size of the ${lengths.size}th Dimension of arrays"+
@@ -174,7 +178,8 @@ trait ArrayValues
 
         override def updateT(
             t:      Timestamp,
-            origin: ValueOrigin, isNull: Answer
+            origin: ValueOrigin,
+            isNull: Answer
         ): DomainArrayValue = {
             InitializedArrayValue(origin, theUpperTypeBound, lengths, t)
         }
@@ -183,11 +188,11 @@ trait ArrayValues
          * Extends `super.doLoad` by returning an initialized array object value that
          * reflects the size of the array.
          *
-         * @note The returned array value always gets a new timestamp since the array
-         *      field may have been updated.
-         *      (It would be possible to use this array's timestamp if stores of
-         *      (sub-)arrays with a different timestamp would lead to an update of the
-         *      timestamp of this array.)
+         * @note    The returned array value always gets a new timestamp since the array
+         *          field may have been updated.
+         *          (It would be possible to use this array's timestamp if stores of
+         *          (sub-)arrays with a different timestamp would lead to an update of the
+         *          timestamp of this array.)
          */
         override def doLoad(
             pc:                  PC,
@@ -214,9 +219,7 @@ trait ArrayValues
             index:               DomainValue,
             potentialExceptions: ExceptionValues
         ): ArrayStoreResult = {
-
             //println(s"$pc - $value - $index - $potentialExceptions")
-
             if (lengths.size > 1) {
                 value match {
                     // We don't have to consider the timestamp since every subarray
@@ -235,7 +238,7 @@ trait ArrayValues
                         // an exception is raised - in this case the array remains
                         // unchanged; hence, we only have to schedule an update if no
                         // exception is raised!
-                        updateAfterEvaluation(this, InitializedArrayValue(origin, theType, lengths.take(1), t))
+                        updateAfterEvaluation(this, InitializedArrayValue(origin, theType, Chain(lengths.head), t))
                         super.doStore(pc, value, index, potentialExceptions)
                 }
             } else {
@@ -250,7 +253,7 @@ trait ArrayValues
 
             other match {
                 case DomainInitializedArrayValue(that) if (this.theUpperTypeBound eq that.theUpperTypeBound) ⇒
-                    val prefix = commonPrefix(this.lengths, that.lengths)
+                    val prefix = this.lengths.sharedPrefix(that.lengths)
                     if (prefix eq this.lengths) {
                         if (this.t == that.t)
                             NoUpdate
@@ -289,9 +292,7 @@ trait ArrayValues
                             //    abstract representation (w.r.t. the next abstraction level!)
                             //    but we still need to drop the concrete information
                             val newT = if (other.t == this.t) this.t else nextT()
-                            StructuralUpdate(
-                                ArrayValue(origin, No, true, theType, newT)
-                            )
+                            StructuralUpdate(ArrayValue(origin, No, true, theType, newT))
                         case answer ⇒ answer
                     }
             }
@@ -309,13 +310,15 @@ trait ArrayValues
                 case that: ConcreteArrayValue ⇒
                     (that.theUpperTypeBound eq this.theUpperTypeBound) && {
                         this.lengths.head == that.length.get && (
-                            this.lengths.tail.isEmpty || {
-                                val subArrayValue = InitializedArrayValue(origin, theType.componentType.asArrayType, this.lengths.tail)
-                                that.values.forall { v ⇒ subArrayValue.abstractsOver(v) }
+                            this.lengths.isSingletonList || {
+                                val componentArrayType = theType.componentType.asArrayType
+                                val subArraySize = this.lengths.tail
+                                val subArrayValue =
+                                    InitializedArrayValue(origin, componentArrayType, subArraySize)
+                                that.values forall { v ⇒ subArrayValue.abstractsOver(v) }
                             }
                         )
                     }
-
                 case _ ⇒ false
             }
         }
@@ -336,8 +339,9 @@ trait ArrayValues
                 false
         }
 
-        override protected def canEqual(other: ArrayValue): Boolean =
+        override protected def canEqual(other: ArrayValue): Boolean = {
             other.isInstanceOf[InitializedArrayValue]
+        }
 
         override def hashCode: Int = (origin * 31 + upperTypeBound.hashCode) * 31
 
@@ -412,8 +416,7 @@ trait ArrayValues
                 // However, if some exception may be thrown, then we certainly
                 // do not have enough information about the value/the index and
                 // we are no longer able to track the array's content.
-                val abstractValue =
-                    InitializedArrayValue(origin, theType, List(values.size), t)
+                val abstractValue = InitializedArrayValue(origin, theType, Chain(values.size), t)
                 updateAfterEvaluation(this, abstractValue)
                 return ComputationWithSideEffectOrException(potentialExceptions);
             }
@@ -423,8 +426,7 @@ trait ArrayValues
             intValue[ArrayStoreResult](index) { index ⇒
                 // let's check if we need to do anything
                 if (values(index) ne value) {
-                    val updatedValue =
-                        ArrayValue(origin, theType, values.updated(index, value), t)
+                    val updatedValue = ArrayValue(origin, theType, values.updated(index, value), t)
                     updateAfterEvaluation(this, updatedValue)
                 }
                 ComputationWithSideEffectOnly
@@ -432,8 +434,7 @@ trait ArrayValues
                 // This handles the case that the index is not precise, but is still
                 // known to be valid. In this case we have to resort to the
                 // abstract representation of the array.
-                val abstractValue =
-                    InitializedArrayValue(origin, theType, List(values.size), t)
+                val abstractValue = InitializedArrayValue(origin, theType, Chain(values.size), t)
                 updateAfterEvaluation(this, abstractValue)
                 ComputationWithSideEffectOnly
             }
@@ -445,7 +446,8 @@ trait ArrayValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainConcreteArrayValue(that) if this.values.size == that.values.size && this.t == that.t ⇒
+                case DomainConcreteArrayValue(that) if this.t == that.t &&
+                    this.values.size == that.values.size ⇒
                     var update: UpdateType = NoUpdateType
                     var isOther: Boolean = true
                     val allValues = this.values.view.zip(that.values)
@@ -472,8 +474,9 @@ trait ArrayValues
                         case _ ⇒
                             if (isOther) {
                                 update(other)
-                            } else
+                            } else {
                                 update(ArrayValue(origin, theType, newValues))
+                            }
                     }
 
                 // case DomainInitializedArrayValue(that) ⇒
@@ -489,31 +492,27 @@ trait ArrayValues
                     } else {
                         answer
                     }
-
             }
         }
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
-            target match {
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
+            val result = target match {
 
                 case thatDomain: l1.ArrayValues ⇒
                     val adaptedValues =
                         values.map(_.adapt(target, vo).asInstanceOf[thatDomain.DomainValue])
-                    thatDomain.ArrayValue(
-                        vo, theUpperTypeBound, adaptedValues
-                    ).
-                        asInstanceOf[target.DomainValue]
+                    thatDomain.ArrayValue(vo, theUpperTypeBound, adaptedValues)
 
                 case thatDomain: l1.ReferenceValues ⇒
-                    thatDomain.ArrayValue(vo, No, true, theUpperTypeBound, thatDomain.nextT()).
-                        asInstanceOf[target.DomainValue]
+                    thatDomain.ArrayValue(vo, No, true, theUpperTypeBound, thatDomain.nextT())
 
                 case thatDomain: l0.TypeLevelReferenceValues ⇒
-                    thatDomain.InitializedArrayValue(vo, theUpperTypeBound, List(values.size)).
-                        asInstanceOf[target.DomainValue]
+                    thatDomain.InitializedArrayValue(vo, theUpperTypeBound, Chain(values.size))
 
                 case _ ⇒ super.adapt(target, vo)
             }
+            result.asInstanceOf[target.DomainValue]
+        }
 
         override def equals(other: Any): Boolean = {
             other match {
@@ -554,23 +553,28 @@ trait ArrayValues
 
         val size: Int = sizeOption.get
         if (!reifyArray(pc, size, arrayType))
-            return InitializedArrayValue(pc, arrayType, List(size));
+            return InitializedArrayValue(pc, arrayType, Chain(size));
 
-        if (size >= 256)
-            OPALLogger.logOnce(
-                Warn(
-                    "analysis configuration",
-                    s"tracking very large arrays (${arrayType.toJava}) "+
-                        "usually incurrs significant overhead without increasing "+
-                        "the precision of the analysis."
-                )
-            )
-        val virtualOrigin = 0xFFFF + pc * 1024
+        assert(
+            size <= ArrayValues.MaxPossibleArraySize,
+            s"tracking arrays with $size elements is not supported by this domain"
+        )
 
+        if (size >= 256) {
+            val message = s"tracking very large arrays (${arrayType.toJava}) "+
+                "usually incurrs significant overhead without increasing "+
+                "the precision of the analysis"
+            OPALLogger.logOnce(Warn("analysis configuration", message))
+        }
+
+        val virtualOrigin = {
+            ArrayValues.FirstVirtualOriginAddressOfDefaultArrayValues +
+                pc * ArrayValues.MaxPossibleArraySize
+        }
         val array: Array[DomainValue] = new Array[DomainValue](size)
         var i = 0; while (i < size) {
-            // we initialize each element with a new instance and also
-            // assign each value with a unique PC
+            // We initialize each element with a new instance and also
+            // assign each value with a unique PC.
             array(i) = DefaultValue(virtualOrigin + i, arrayType.componentType)
             i += 1
         }
@@ -583,12 +587,12 @@ trait ArrayValues
         counts:    Operands,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        var intCounts: List[Int] = Nil
-        counts.takeWhile { c ⇒
-            intValue(c) { intCount ⇒ intCounts ::= intCount; true } { false }
+        var intCounts: Chain[Int] = Naught
+        counts.foreachWhile { c ⇒
+            intValue(c) { intCount ⇒ intCounts :&:= intCount; true } { false }
         }
         if (intCounts.nonEmpty) {
-            InitializedArrayValue(origin, arrayType, intCounts, nextT())
+            InitializedArrayValue(origin, arrayType, intCounts)
         } else {
             super.NewArray(origin, counts, arrayType)
         }
@@ -614,8 +618,22 @@ trait ArrayValues
     def InitializedArrayValue(
         origin:    ValueOrigin,
         arrayType: ArrayType,
-        counts:    List[Int],
+        counts:    Chain[Int],
         t:         Timestamp
     ): DomainArrayValue
+
+}
+
+object ArrayValues {
+
+    // The maximum size (~16,000) of an array that can be tracked is based on the "available"
+    // space for virtual origins. Basically, we reserve for each array up to MaxPossibleArraySize
+    // virtual origins. E.g., if we have a new array instruction with pc 1005, the area
+    // [
+    //        FirstVirtualOriginAddressOfDefaultArrayValues+pc*UShort.MaxValue,
+    //        FirstVirtualOriginAddressOfDefaultArrayValues+(pc+1)*UShort.MaxValue
+    // ]
+    final val FirstVirtualOriginAddressOfDefaultArrayValues = (Int.MaxValue / 2)
+    final val MaxPossibleArraySize = (Int.MaxValue / 2) / UShort.MaxValue /*<=> max PC per method*/
 
 }

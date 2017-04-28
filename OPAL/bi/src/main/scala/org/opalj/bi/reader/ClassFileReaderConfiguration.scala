@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,6 +37,18 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 
 /**
+ * Defines various settings related to reading/processing class files. To change
+ * the default confiration, override the respective `val` using '''early initializers'''!
+ *
+ * @example
+ * {{{
+ * class ConfiguredFramework extends {
+ *      override implicit val logContext: LogContext = theLogContext
+ *      override implicit val config: Config = theConfig
+ * } with Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+ * new ConfiguredFramework
+ * }}}
+ *
  * @author Michael Eichberg
  */
 trait ClassFileReaderConfiguration {
@@ -45,8 +57,7 @@ trait ClassFileReaderConfiguration {
      * The [[org.opalj.log.LogContext]] that should be used to log rewritings.
      *
      * @note    The [[org.opalj.log.LogContext]] is typically either the
-     *          [[org.opalj.log.GlobalLogContext]] or a project
-     *          specific log context.
+     *          [[org.opalj.log.GlobalLogContext]] or a project specific log context.
      */
     implicit val logContext: LogContext = GlobalLogContext
 
@@ -55,5 +66,10 @@ trait ClassFileReaderConfiguration {
      * reading in class files.
      */
     implicit val config: Config = ConfigFactory.load()
+
+    /**
+     * If `true` method bodies are never loaded.
+     */
+    def loadsInterfacesOnly: Boolean
 
 }

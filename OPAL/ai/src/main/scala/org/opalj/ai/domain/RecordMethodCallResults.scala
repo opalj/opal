@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,11 +30,11 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.Set
+
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet0
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ObjectType
-import scala.collection.Set
 
 /**
  * Records the results of the evaluation of the `current` method such that the results
@@ -47,7 +47,7 @@ trait RecordMethodCallResults
         extends MethodCallResults
         with RecordReturnedValues
         with RecordThrownExceptions {
-    this: Domain with ClassHierarchy ⇒
+    this: Domain with TheClassHierarchy ⇒
 
     type ThrownException <: Set[this.ExceptionValue]
 
@@ -108,7 +108,7 @@ trait RecordMethodCallResults
                 exceptionValueProperties: IsAReferenceValue
             ): Unit = {
                 exceptionValueProperties.upperTypeBound match {
-                    case UIDSet0 ⇒
+                    case EmptyUpperTypeBound ⇒
                         println("[info] [RecordMethodCallResults.thrownExceptions] Type of exception is unknown.")
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             ObjectType.Throwable,
@@ -168,4 +168,3 @@ trait RecordMethodCallResults
         }
     }
 }
-

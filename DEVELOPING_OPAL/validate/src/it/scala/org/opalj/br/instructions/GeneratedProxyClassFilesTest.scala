@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,11 +35,10 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
-import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.br.analyses.Project
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -51,7 +50,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
     describe("the generation of Proxy classes") {
 
-        val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
+        val testProject = biProject("proxy.jar")
 
         val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.allMethodsWithContext map { mc ⇒
             val (m, classFile) = mc

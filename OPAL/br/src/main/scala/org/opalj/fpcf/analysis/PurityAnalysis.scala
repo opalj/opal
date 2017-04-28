@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,6 +29,8 @@
 package org.opalj
 package fpcf
 package analysis
+
+import scala.util.control.ControlThrowable
 
 import org.opalj.br.PC
 import org.opalj.br.Method
@@ -82,7 +84,6 @@ import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.TypeImmutability
-import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 
 /**
@@ -100,19 +101,20 @@ import org.opalj.log.OPALLogger
  *      while program execution proceeds or between different executions of the program, nor can it
  *      depend on any external input from I/O devices.
  *
- *      '''[Hence, using true constants (e.g., Math.e) is not a problem as well as creating
- *      intermediate
- *      (mutable) data structures. Furthermore, instance method based calls can also be pure if
- *      the receiving object is (effectively final).'''
+ *      '''Hence, using true constants (e.g., Math.e) is not a problem as well as creating
+ *      intermediate (mutable) data structures.
+ *      Furthermore, instance method based calls can also be pure if
+ *      the receiving object is (effectively final) or was created as part of the evaluation
+ *      of the method.'''
  *
  *  -   Evaluation of the result does not cause any semantically observable side effect or output,
  *      such as mutation of mutable objects or output to I/O devices.
  *      The result value need not depend on all (or any) of the argument values. However, it must
  *      depend on nothing other than the argument values. The function may return multiple result
  *      values and these conditions must apply to all returned values for the function to be
- *      considered pure. If an argument is call by reference, any parameter mutation will alter
+ *      considered pure. If an argument is "call-by-reference", any parameter mutation will alter
  *      the value of the argument outside the function, which will render the function impure.
- *      '''However, if the referenced object is immutable it is object.'''
+ *      '''However, if the referenced object is immutable it is ok.'''
  *
  * @author Michael Eichberg
  */
@@ -279,7 +281,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
     def determinePurity(method: Method): PropertyComputationResult = {
 
         // Due to a lack of knowledge, we classify all native methods or methods that
-        // have no body because they are loaded using a library class file loader as Impure.
+        // have no body - because they are loaded using a library class file loader - as Impure.
         if (method.body.isEmpty /*HERE: method.isNative || "isLibraryMethod(method)"*/ )
             return ImmediateResult(method, Impure);
 
@@ -288,6 +290,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         if (!referenceTypeParameters.forall { p ⇒ propertyStore.isKnown(p) })
             return ImmediateResult(method, Impure);
 
+        // TODO Currently we are not able to interleave the purity analysis and the immutability analysis... which is, however, required!
         propertyStore.allHaveProperty(
             method, Purity.key, referenceTypeParameters, ImmutableType
         ) { areImmutable ⇒

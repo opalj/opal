@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,20 +31,23 @@ package bugpicker
 package core
 package analysis
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.{ClassFile, Method}
-import org.opalj.ai.Domain
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
 import org.opalj.br.PC
-import org.opalj.ai.collectPCWithOperands
-import org.opalj.br.instructions.BinaryArithmeticInstruction
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.StackBasedBinaryArithmeticInstruction
 import org.opalj.br.instructions.LNEG
 import org.opalj.br.instructions.INEG
 import org.opalj.br.instructions.IINC
 import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
+import org.opalj.br.instructions.IAND
+import org.opalj.br.instructions.IOR
+import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
+import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.ai.domain.l1.ReferenceValues
@@ -54,8 +57,6 @@ import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
 import org.opalj.issues.InstructionLocation
 import org.opalj.issues.Operands
-import org.opalj.br.instructions.IAND
-import org.opalj.br.instructions.IOR
 
 /**
  * Identifies computations that are useless (i.e., computations that could be done
@@ -107,7 +108,7 @@ object UselessComputationsAnalysis {
             //
             case (
                 pc,
-                instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
+                instr @ StackBasedBinaryArithmeticInstruction(ComputationalTypeInt),
                 Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                 ) ⇒
                 // The java "~" operator has no direct representation in bytecode.
@@ -159,7 +160,7 @@ object UselessComputationsAnalysis {
             //
             case (
                 pc,
-                instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
+                instr @ StackBasedBinaryArithmeticInstruction(ComputationalTypeLong),
                 Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
                 ) ⇒
                 val message = s"constant computation: ${b}l ${instr.operator} ${a}l."
@@ -193,4 +194,3 @@ object UselessComputationsAnalysis {
         }
     }
 }
-

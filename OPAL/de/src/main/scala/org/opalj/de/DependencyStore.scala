@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -41,7 +41,7 @@ import org.opalj.br._
  * Stores extracted dependencies.
  *
  * ==Thread Safety==
- * This class is thread safe, as this class does not have any mutable state.
+ * This class is thread safe.
  *
  * @author Michael Eichberg
  */

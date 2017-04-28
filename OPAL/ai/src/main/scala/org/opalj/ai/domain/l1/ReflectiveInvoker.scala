@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -39,7 +39,6 @@ import br._
  *
  * This greatly facilitates the implementation of methods that need to simulate
  * the logic of a specific object.
- *
  *
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg

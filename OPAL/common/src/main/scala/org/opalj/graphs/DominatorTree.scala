@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,8 +29,6 @@
 package org.opalj
 package graphs
 
-import play.api.libs.json.Json
-import play.api.libs.json.JsValue
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -125,26 +123,6 @@ final class DominatorTree private (
         g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
     }
 
-    /**
-     * Creates a graph using OPAL's Viz format.
-     */
-    def toViz(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): JsValue = {
-        val nodes = new Array[VizNode](idom.length)
-        for { (iDomNodeId, nodeId) ← idom.zipWithIndex if isIndexValid(nodeId) } {
-            if (nodes(nodeId) == null) {
-                nodes(nodeId) = VizNode(nodeId, nodeId.toString, nodeId, Nil)
-            }
-            if (nodeId != startNode) {
-                val iDomNode = nodes(iDomNodeId)
-                if (iDomNode == null)
-                    nodes(iDomNodeId) = VizNode(iDomNodeId, iDomNodeId.toString, iDomNodeId, nodeId :: Nil)
-                else
-                    nodes(iDomNodeId) = iDomNode.copy(children = nodeId :: iDomNode.children)
-            }
-        }
-        Json.toJson(nodes.filter(_ ne null))
-    }
-
     // THE FOLLOWING FUNCTION IS REALLY EXPENSIVE (DUE TO (UN)BOXING)
     // AND THEREFORE NO LONGER SUPPORTED
     // def toMap(nodes: Traversable[Int]): mutable.Map[Int, List[Int]] = {
@@ -195,10 +173,10 @@ object DominatorTree {
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
      * [0..maxNode], although not all ids need to be used.
      *
-     * @param   startNode The id of the unique root node of the graph. (E.g., (pc=)"0" for the CFG
+     * @param   startNode The id of the root node of the graph. (E.g., (pc=)"0" for the CFG
      *          computed for some method or the id of the artificial start node created when
      *          computing a reverse CFG.
-     * @param   hasStartNodePredecessors If `true` an artificial start node with the id `maxNode+1`
+     * @param   startNodeHasPredecessors If `true` an artificial start node with the id `maxNode+1`
      *          will be created and added to the graph.
      * @param   foreachSuccessorOf A function that given a node subsequently executes the given
      *          function for each direct successor of the given node.
@@ -301,7 +279,7 @@ object DominatorTree {
             }
         }
 
-        // // PAPER VERSION USING RECURSION  
+        // // PAPER VERSION USING RECURSION
         // def compress(v: Int): Unit = {
         //     var theAncestor = ancestor(v)
         //     if (ancestor(theAncestor) != 0) {

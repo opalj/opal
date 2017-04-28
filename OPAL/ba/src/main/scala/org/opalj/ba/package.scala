@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -202,6 +202,17 @@ package object ba { ba ⇒
         val data = new ByteArrayOutputStream(code.instructions.size)
         val instructions = new DataOutputStream(data)
 
+        def writeMethodRef(i: Instruction): MethodInvocationInstruction = {
+            val mi @ MethodInvocationInstruction(declaringClass, isInterface, name, descriptor) = i
+            val cpeRef =
+                if (isInterface)
+                    CPEInterfaceMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
+                else
+                    CPEMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
+            instructions.writeShort(cpeRef)
+            mi
+        }
+
         var modifiedByWide = false
         code foreach { e ⇒
             val (pc, i) = e
@@ -354,18 +365,15 @@ package object ba { ba ⇒
                     val cpeRef = CPEFieldRef(declaringClass, fieldName, jvmFieldType)
                     instructions.writeShort(cpeRef)
 
-                case INVOKEINTERFACE.opcode |
-                    INVOKESPECIAL.opcode |
+                case INVOKESPECIAL.opcode |
                     INVOKEVIRTUAL.opcode |
                     INVOKESTATIC.opcode ⇒
-                    val MethodInvocationInstruction(declaringClass, isInterface, name, descriptor) =
-                        i
-                    val cpeRef =
-                        if (isInterface)
-                            CPEInterfaceMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
-                        else
-                            CPEMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
-                    instructions.writeShort(cpeRef)
+                    writeMethodRef(i)
+
+                case INVOKEINTERFACE.opcode ⇒
+                    val invokeinterface = writeMethodRef(i)
+                    instructions.writeByte(invokeinterface.count)
+                    instructions.writeByte(0)
 
                 case NEWARRAY.opcode ⇒
                     instructions.writeByte(i.asInstanceOf[NEWARRAY].atype)

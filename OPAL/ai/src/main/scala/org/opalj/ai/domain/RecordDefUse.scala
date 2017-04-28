@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -38,7 +38,6 @@ import scala.collection.mutable
 
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
-import org.opalj.collection.mutable.UShortSet
 import org.opalj.collection.mutable.SmallValuesSet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
@@ -96,7 +95,6 @@ trait RecordDefUse extends RecordCFG {
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    type PCs = UShortSet
     type ValueOrigins = SmallValuesSet
 
     /**
@@ -131,9 +129,9 @@ trait RecordDefUse extends RecordCFG {
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        locals:           Locals
+        code:    Code,
+        cfJoins: BitSet,
+        locals:  Locals
     ): Unit = {
 
         instructions = code.instructions
@@ -165,7 +163,7 @@ trait RecordDefUse extends RecordCFG {
 
         this.used = new Array(codeSize + parametersOffset)
 
-        super.initProperties(code, joinInstructions, locals)
+        super.initProperties(code, cfJoins, locals)
     }
 
     /**
@@ -379,7 +377,7 @@ trait RecordDefUse extends RecordCFG {
         currentPC:                PC,
         successorPC:              PC,
         isExceptionalControlFlow: Boolean,
-        joinInstructions:         BitSet,
+        cfJoins:                  BitSet,
         isSubroutineInstruction:  (PC) ⇒ Boolean,
         operandsArray:            OperandsArray
     ): Boolean = {
@@ -410,7 +408,7 @@ trait RecordDefUse extends RecordCFG {
             newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
-            if (joinInstructions.contains(successorPC) && (defLocals(successorPC) ne null)) {
+            if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null)) {
 
                 // we now also have to perform a join...
                 @annotation.tailrec def joinDefOps(
@@ -897,7 +895,7 @@ trait RecordDefUse extends RecordCFG {
             return ;
 
         val operandsArray = aiResult.operandsArray
-        val joinInstructions = aiResult.joinInstructions
+        val cfJoins = aiResult.cfJoins
 
         var subroutinePCs: Set[PC] = Set.empty
         var retPCs: Set[PC] = Set.empty
@@ -944,7 +942,7 @@ trait RecordDefUse extends RecordCFG {
                 val scheduleNextPC = try {
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow,
-                        joinInstructions,
+                        cfJoins,
                         aiResult.subroutineInstructions.contains,
                         operandsArray
                     )

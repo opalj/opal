@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,6 +37,7 @@ import scala.collection.BitSet
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.LiveVariables
 import org.opalj.constraints.NumericConstraints
 
 /**
@@ -64,15 +65,18 @@ trait ConstraintsBetweenIntegerValues
     private[this] var constraints: Array[ConstraintsStore] = null
 
     abstract override def setCodeStructure(
-        theInstructions:     Array[Instruction],
-        theJoinInstructions: BitSet
+        theInstructions: Array[Instruction],
+        theCFJoins:      BitSet,
+        liveVariables:   LiveVariables
     ): Unit = {
-        super.setCodeStructure(theInstructions, theJoinInstructions)
+        super.setCodeStructure(theInstructions, theCFJoins, liveVariables)
 
         constraints = new Array[ConstraintsStore](theInstructions.size)
     }
 
-    private[this] var lastConstraint: Option[(IntegerLikeValue, IntegerLikeValue, Constraint)] = None
+    private[this] var lastConstraint: Option[(IntegerLikeValue, IntegerLikeValue, Constraint)] = {
+        None
+    }
 
     //
     //

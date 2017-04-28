@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -165,11 +165,11 @@ trait XHTMLTracer extends AITracer {
                     }
                 </td>
             }).toIterable
-        val joinInstructions = code.joinInstructions
+        val cfJoins = code.cfJoins
         val flowTable =
             for ((pc, rowIndex) ← pcsToRowIndex) yield {
                 <tr>
-                    <td>{ if (joinInstructions.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
+                    <td>{ if (cfJoins.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
                     { row(pc) }
                 </tr>
             }
@@ -275,10 +275,11 @@ trait XHTMLTracer extends AITracer {
 
     private var code: Code = null
 
-    def continuingInterpretation(
-        strictfp: Boolean,
-        code:     Code,
-        domain:   Domain
+    override def initialLocals(domain: Domain)(locals: domain.Locals): Unit = { /*EMPTY*/ }
+
+    override def continuingInterpretation(
+        code:   Code,
+        domain: Domain
     )(
         initialWorkList:                  List[PC],
         alreadyEvaluated:                 List[PC],
@@ -295,7 +296,7 @@ trait XHTMLTracer extends AITracer {
 
     private[this] var continuingWithBranch = true
 
-    def flow(
+    override def flow(
         domain: Domain
     )(
         currentPC:                PC,
@@ -305,19 +306,22 @@ trait XHTMLTracer extends AITracer {
         continuingWithBranch = currentPC < successorPC
     }
 
-    def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
+    override def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit = { /*EMPTY*/ }
 
-    def rescheduled(
+    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
+
+    override def rescheduled(
         domain: Domain
     )(
         sourcePC:                 PC,
         targetPC:                 PC,
-        isExceptionalControlFlow: Boolean
+        isExceptionalControlFlow: Boolean,
+        worklist:                 List[PC]
     ): Unit = {
         /*ignored for now*/
     }
 
-    def instructionEvalution(
+    override def instructionEvalution(
         domain: Domain
     )(
         pc:          PC,
@@ -334,7 +338,7 @@ trait XHTMLTracer extends AITracer {
         continuingWithBranch = false
     }
 
-    def join(
+    override def join(
         domain: Domain
     )(
         pc:            PC,
@@ -345,7 +349,7 @@ trait XHTMLTracer extends AITracer {
         result:        Update[(domain.Operands, domain.Locals)]
     ): Unit = { /*ignored*/ }
 
-    def establishedConstraint(
+    override def establishedConstraint(
         domain: Domain
     )(
         pc:          PC,
@@ -356,20 +360,20 @@ trait XHTMLTracer extends AITracer {
         newLocals:   domain.Locals
     ): Unit = { /*ignored*/ }
 
-    def abruptMethodExecution(
+    override def abruptMethodExecution(
         domain: Domain
     )(
         pc:        Int,
         exception: domain.ExceptionValue
     ): Unit = { /*ignored*/ }
 
-    def jumpToSubroutine(
+    override def jumpToSubroutine(
         domain: Domain
     )(
         pc: PC, target: PC, nestingLevel: Int
     ): Unit = { /* ignored */ }
 
-    def returnFromSubroutine(
+    override def returnFromSubroutine(
         domain: Domain
     )(
         pc:                     PC,
@@ -377,7 +381,7 @@ trait XHTMLTracer extends AITracer {
         subroutineInstructions: List[PC]
     ): Unit = { /*ignored*/ }
 
-    def abruptSubroutineTermination(
+    override def abruptSubroutineTermination(
         domain: Domain
     )(
         sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
@@ -389,7 +393,7 @@ trait XHTMLTracer extends AITracer {
     /**
      * Called when a ret instruction is encountered.
      */
-    def ret(
+    override def ret(
         domain: Domain
     )(
         pc:            PC,
@@ -398,7 +402,7 @@ trait XHTMLTracer extends AITracer {
         newWorklist:   List[PC]
     ): Unit = { /*ignored*/ }
 
-    def domainMessage(
+    override def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
         pc: Option[PC], message: ⇒ String

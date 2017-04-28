@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,7 +43,7 @@ import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.gc
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.
@@ -60,8 +60,9 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
     override def title: String = "determines those methods that are pure"
 
-    override def description: String =
+    override def description: String = {
         "identifies methods which are pure; i.e. which just operate on the passed parameters"
+    }
 
     private[this] var setupTime = Nanoseconds.None
     private[this] var analysisTime = Nanoseconds.None
@@ -82,7 +83,6 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
         List(1, 2, 4, 8, 16, 32, 64).foreach { parallelismLevel ⇒
             performanceData = Map.empty
-            PerformanceEvaluation.gc()
 
             println(s"\nRunning analysis with $parallelismLevel thread(s):")
             r = time[() ⇒ String](5, 10, 5, analyze(project, parallelismLevel))(handleResults)
@@ -94,7 +94,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
                     mkString("\n")
             )
 
-            PerformanceEvaluation.gc()
+            gc()
         }
 
         BasicReport(r())

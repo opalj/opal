@@ -1,0 +1,8 @@
+image: opalj/sbt_scala_javafx
+
+pipelines:
+  default:
+    - step:
+        script:
+          - sbt compileAll 
+          - sbt test

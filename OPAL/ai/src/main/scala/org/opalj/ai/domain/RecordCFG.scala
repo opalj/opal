@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -93,9 +93,9 @@ trait RecordCFG
     private[this] var theBBCFG: CFG = _
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        initialLocals:    Locals
+        code:          Code,
+        cfJoins:       BitSet,
+        initialLocals: Locals
     ): Unit = {
         val codeSize = code.instructions.size
         regularSuccessors = new Array[UShortSet](codeSize)
@@ -111,7 +111,7 @@ trait RecordCFG
         theControlDependencies = null
         theBBCFG = null
 
-        super.initProperties(code, joinInstructions, initialLocals)
+        super.initProperties(code, cfJoins, initialLocals)
     }
 
     /**
@@ -169,14 +169,12 @@ trait RecordCFG
     /**
      * Returns the dominator tree.
      *
-     *
      * @note
      * To get the list of all evaluated instructions and their dominators.
      * {{{
      *  val result = AI(...,...,...)
      *  val evaluated = result.evaluatedInstructions
      * }}}
-     *
      */
     def dominatorTree: DominatorTree = {
         var theDominatorTree = this.theDominatorTree
@@ -340,7 +338,7 @@ trait RecordCFG
 
     /**
      * Returns true if the exception handler may handle at least one exception thrown
-     * by an instruction in the catch block.
+     * by an instruction in the try block.
      */
     final def handlesException(exceptionHandler: ExceptionHandler): Boolean = {
         val endPC = exceptionHandler.endPC
@@ -348,7 +346,7 @@ trait RecordCFG
         var currentPC = exceptionHandler.startPC
         while (currentPC <= endPC) {
             if (exceptionHandlerSuccessorsOf(currentPC).exists(_ == handlerPC))
-                return true
+                return true;
             currentPC = code.pcOfNextInstruction(currentPC)
         }
         false
@@ -407,16 +405,17 @@ trait RecordCFG
 
         val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
         for {
-            exceptionHandler ← code.exceptionHandlers
+            (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
             // 1.1.    Let's check if the handler was executed at all.
             if unsafeWasExecuted(exceptionHandler.handlerPC)
-            // 1.2.    The handler may be shared by multiple catch blocks, hence, we have
+            // 1.2.    The handler may be shared by multiple try blocks, hence, we have
             //         to ensure the we have at least one instruction in the try block
             //         that jumps to the handler.
             if handlesException(exceptionHandler)
         } {
             val handlerPC = exceptionHandler.handlerPC
-            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, new CatchNode(exceptionHandler))
+            val catchNodeCandiate = new CatchNode(exceptionHandler, index)
+            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
             var handlerBB = bbs(handlerPC)
             if (handlerBB eq null) {
                 handlerBB = new BasicBlock(handlerPC)

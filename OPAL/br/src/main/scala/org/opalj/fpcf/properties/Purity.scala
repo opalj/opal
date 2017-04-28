@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -41,7 +41,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 /**
  * Common supertrait of all purity properties.
  */
-sealed trait Purity extends Property with PurityPropertyMetaInformation {
+sealed abstract class Purity extends Property with PurityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `Purity` properties.
@@ -61,7 +61,7 @@ object Purity extends PurityPropertyMetaInformation {
         // to (directly) compute the respective property.
         MaybePure,
         // When we have a cycle all properties are necessarily conditionally pure
-        // hence, we can leverage the "pureness" 
+        // hence, we can leverage the "pureness"
         Pure
     // NOTE
     // We DO NOT increase the pureness of all methods as this will happen automatically
@@ -97,4 +97,3 @@ case object Pure extends Purity { final val isRefineable = false }
  * The respective method is impure.
  */
 case object Impure extends Purity { final val isRefineable = false }
-

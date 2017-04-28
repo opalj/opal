@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -41,11 +41,10 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultSetValuesDomain[Source](
-    val project:   Project[Source],
-    val classFile: ClassFile,
-    val method:    Method
-)
-        extends CorrelationalDomain
+    override val project: Project[Source],
+    val classFile:        ClassFile,
+    override val method:  Method
+) extends CorrelationalDomain
         with TheProject
         with TheMethod
         with DefaultDomainValueBinding
@@ -56,9 +55,12 @@ class DefaultSetValuesDomain[Source](
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l0.DefaultReferenceValuesBinding
+        // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
+        // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding
+        with l1.DefaultClassValuesBinding
+        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
+        with l1.NullPropertyRefinement // OPTIONAL
         with l1.DefaultIntegerSetValues
         with l1.DefaultLongSetValues
         with l1.LongValuesShiftOperators
         with l1.ConcretePrimitiveValuesConversions
-

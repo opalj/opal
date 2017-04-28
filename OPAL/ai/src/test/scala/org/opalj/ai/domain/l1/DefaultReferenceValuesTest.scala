@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -36,15 +36,17 @@ import scala.collection.SortedSet
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8Framework.ClassFiles
+
 import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
+import org.opalj.collection.immutable.Chain
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.TestSupport.biProject
+import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
-import org.opalj.collection.immutable.Chain
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Tests the `ReferenceValues` domain.
@@ -153,7 +155,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             }
 
             it("a NullValue should be more precise than an ObjectValue but not vice versa") {
-                val v1 = NullValue(-1, 2)
+                val v1 = NullValue(-1)
                 val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 1)
                 v1.isMorePreciseThan(v2) should be(true)
                 v2.isMorePreciseThan(v1) should be(false)
@@ -205,9 +207,9 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                             Chain(theObjectValue),
                             Locals(IndexedSeq(theFileValue, theObjectValue))
                         )
-                    updatedOperands.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(Serializable)
-                    updatedLocals(0).asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
-                    updatedLocals(1).asInstanceOf[ReferenceValue].upperTypeBound.first should be(Serializable)
+                    updatedOperands.head.asInstanceOf[ReferenceValue].upperTypeBound.head should be(Serializable)
+                    updatedLocals(0).asInstanceOf[ReferenceValue].upperTypeBound.head should be(File)
+                    updatedLocals(1).asInstanceOf[ReferenceValue].upperTypeBound.head should be(Serializable)
                 }
 
                 {
@@ -220,7 +222,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
             it("should be able to correctly handle the refinement of the nullness property of a multiple reference value that has a more precise bound than any reference value to a single value") {
 
-                val v0 = NullValue(111, 1)
+                val v0 = NullValue(111)
                 val v1 = ObjectValue(222, Unknown, false, ObjectType("java/lang/Cloneable"), 2)
                 val v2 = ObjectValue(222, No, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")), 2)
 
@@ -406,7 +408,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             }
 
             it("should be able to rejoin a value") {
-                val v0 = NullValue(111, 1)
+                val v0 = NullValue(111)
                 val v1 = ArrayValue(222, Unknown, true, ArrayType(IntegerType), 2)
                 val v2 = ArrayValue(222, No, true, ArrayType(IntegerType), 2)
 
@@ -419,7 +421,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv2 =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v2),
-                        Unknown, true, UIDSet(ArrayType(IntegerType)),
+                        Unknown, true, UIDSet1(ArrayType(IntegerType)),
                         3
                     )
 
@@ -429,7 +431,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("should be able to rejoin a refined object value") {
                 val v0 = ObjectValue(222, No, false, ObjectType.Serializable, 2)
 
-                val v1 = NullValue(111, 1)
+                val v1 = NullValue(111)
                 val v2 = ObjectValue(222, Unknown, false, ObjectType.Serializable, 2)
                 val mv1 =
                     MultipleReferenceValues(
@@ -456,7 +458,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("should be able to rejoin a refined array value") {
                 val v0 = ArrayValue(222, No, false, ArrayType(ObjectType.Serializable), 2)
 
-                val v1 = NullValue(111, 1)
+                val v1 = NullValue(111)
                 val v2 = ArrayValue(222, Unknown, false, ArrayType(ObjectType.Serializable), 2)
                 val mv1 =
                     MultipleReferenceValues(
@@ -482,18 +484,38 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 }
             }
 
-            it("should handle an idempotent rejoin a value") {
+            it("should handle an idempotent rejoin of a nullvalue") {
                 val v1 = ObjectValue(111, Unknown, false, ObjectType.Object, 1)
-                val v2 = ObjectValue(222, Unknown, false, ObjectType.Object, 2)
-                val v3 = NullValue(222, 3)
+                val v2 = ObjectValue(222, No, false, ObjectType.Object, 2)
+                val v3 = NullValue(222)
 
-                val v2_join_v3 = ObjectValue(222, Unknown, false, ObjectType.Object, 3)
+                val v2_join_v3 = ObjectValue(222, Unknown, false, ObjectType.Object, 2)
 
-                assert(v2.join(-1, v3) == MetaInformationUpdate(v2_join_v3))
+                assert(v2.join(-1, v3) == StructuralUpdate(v2_join_v3))
 
                 val mv1 =
                     MultipleReferenceValues(
-                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2_join_v3),
+                        Unknown, false, UIDSet(ObjectType.Object),
+                        -1
+                    )
+                val mv1_join_v3 = mv1.join(-1, v3)
+                mv1_join_v3 should be(NoUpdate)
+            }
+
+            /*
+            it("should handle an idempotent rejoin of a value") {
+                val v1 = ObjectValue(111, Unknown, false, ObjectType.Object, 1)
+                val v2 = ObjectValue(222, No, false, ObjectType.Object, 2)
+                val v2alt = ObjectValue(222, Yes, false, ObjectType.Object, 3)
+
+                val v2_join_v2alt = ObjectValue(222, Unknown, false, ObjectType.Object, 2)
+
+                assert(v2.join(-1, v2alt) == StructuralUpdate(v2_join_v2alt))
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2_join_v3),
                         Unknown, false, UIDSet(ObjectType.Object),
                         -1
                     )
@@ -504,9 +526,16 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                         -1
                     )
 
+                println(mv1)
+                println(v3)
                 val mv1_join_v3 = mv1.join(-1, v3)
+                println(mv1_join_v3)
                 mv1_join_v3 should be(MetaInformationUpdate(expected_mv1_join_v3))
+
+                // StructuralUpdate        ({_ <: java.lang.Object, null}[t=-1;values=«{_ <: java.lang.Object, null}[↦111;t=1], {_ <: java.lang.Object, null}[↦222;t=2]»])
+                //MetaInformationUpdate   ({_ <: java.lang.Object, null}[t=-1;values=«{_ <: java.lang.Object, null}[↦111;t=1], {_ <: java.lang.Object, null}[↦222;t=2]»])
             }
+            */
 
             it("should handle a join of a refined ObjectValue with a MultipleReferenceValue that references the unrefined ObjectValue") {
 
@@ -590,7 +619,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 theDomain.refIsNull(-1, exception.head) should be(No)
             }
 
-            val theProject = Project(locateTestResources("classfiles/ai.jar", "ai"))
+            val theProject = biProject("ai.jar")
             val targetType = ObjectType("ai/domain/ReferenceValuesFrenzy")
             val ReferenceValuesFrenzy = theProject.classFile(targetType).get
 

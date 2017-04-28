@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -47,7 +47,7 @@ trait StringValues
         with DefaultJavaObjectToDomainValueConversion
         with MethodCallsDomain
         with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
     val DomainStringValue: ClassTag[DomainStringValue]
@@ -56,11 +56,10 @@ trait StringValues
      * @param value `null` if and only if the StringValue is not yet completely initialized!
      */
     protected class StringValue(
-        origin:    ValueOrigin,
-        val value: String,
-        t:         Timestamp
-    )
-            extends SObjectValue(origin, No, true, ObjectType.String, t) {
+            origin:    ValueOrigin,
+            val value: String,
+            t:         Timestamp
+    ) extends SObjectValue(origin, No, true, ObjectType.String, t) {
         this: DomainStringValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(
@@ -102,7 +101,7 @@ trait StringValues
 
         override def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
-                return true
+                return true;
 
             other match {
                 case that: StringValue ⇒ that.value == this.value
@@ -110,10 +109,11 @@ trait StringValues
             }
         }
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             // The following method is provided by `CoreDomain` and, hence,
             // all possible target domains are automatically supported.
             target.StringValue(vo, this.value)
+        }
 
         override def equals(other: Any): Boolean = {
             other match {
@@ -122,8 +122,9 @@ trait StringValues
             }
         }
 
-        override protected def canEqual(other: SObjectValue): Boolean =
+        override protected def canEqual(other: SObjectValue): Boolean = {
             other.isInstanceOf[StringValue]
+        }
 
         override def hashCode: Int = super.hashCode * 41 + value.hashCode()
 
@@ -137,7 +138,12 @@ trait StringValues
     }
 
     object StringValue {
-        def unapply(value: StringValue): Option[String] = Some(value.value)
+        def unapply(value: DomainValue): Option[String] = {
+            value match {
+                case s: StringValue ⇒ Some(s.value)
+                case _              ⇒ None
+            }
+        }
     }
 
     abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
@@ -158,7 +164,6 @@ trait StringValues
         origin:     ValueOrigin,
         objectType: ObjectType
     ): DomainObjectValue = {
-
         if (objectType eq ObjectType.String)
             StringValue(origin, null)
         else
@@ -197,7 +202,7 @@ trait StringValues
 
                 } else if (methodDescriptor == StringValues.ConstructorWithString) {
                     operands.head match {
-                        // Let's test if we know the parameter
+                        // Let's test if we know the parameter ...
                         case StringValue(s) ⇒
                             updateAfterEvaluation(
                                 newStringValue,
@@ -208,12 +213,9 @@ trait StringValues
                         case _ ⇒ /* we can do nothing special */
                     }
                 }
-                // we don't know the precise value, but we still assume that the value
-                // is correctly initialized
-                updateAfterEvaluation(
-                    newStringValue,
-                    newStringValue.update()
-                )
+                // We don't know the precise value, but we still assume that the value
+                // is correctly initialized.
+                updateAfterEvaluation(newStringValue, newStringValue.update())
             }
         }
         super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)

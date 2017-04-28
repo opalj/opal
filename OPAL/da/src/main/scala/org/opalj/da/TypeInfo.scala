@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,21 +30,40 @@ package org.opalj
 package da
 
 /**
+ * Encapsulates basic type information.
+ *
  * @author Michael Eichberg
  */
-sealed trait TypeInfo {
-    def javaTypeName: String
-    def elementTypeIsBaseType: Boolean
+sealed abstract class TypeInfo {
 
+    def asJavaType: String
+
+    /**
+     * `true` if the underlying type (in case of an array the element type) is a base type/
+     * primitive type; `false` in all other cases except if the "type" is void. In that case
+     * an exception is thrown.
+     */
+    def elementTypeIsBaseType: Boolean
+    def isVoid: Boolean
 }
 
 object TypeInfo {
     def unapply(ti: TypeInfo): Some[(String, Boolean)] = {
-        Some((ti.javaTypeName, ti.elementTypeIsBaseType))
+        Some((ti.asJavaType, ti.elementTypeIsBaseType))
     }
 }
 
-abstract class PrimitiveTypeInfo protected (val javaTypeName: String) extends TypeInfo {
+case object VoidTypeInfo extends TypeInfo {
+    final val asJavaType: String = "void"
+    def elementTypeIsBaseType: Boolean = throw new UnsupportedOperationException
+    def isVoid: Boolean = true
+}
+
+sealed abstract class FieldTypeInfo extends TypeInfo {
+    def isVoid: Boolean = false
+}
+
+sealed abstract class PrimitiveTypeInfo protected (val asJavaType: String) extends FieldTypeInfo {
     final def elementTypeIsBaseType: Boolean = true
 }
 
@@ -57,8 +76,17 @@ case object LongTypeInfo extends PrimitiveTypeInfo("long")
 case object FloatTypeInfo extends PrimitiveTypeInfo("float")
 case object DoubleTypeInfo extends PrimitiveTypeInfo("double")
 
-case class ObjectTypeInfo(javaTypeName: String) extends TypeInfo {
+case class ObjectTypeInfo(asJavaType: String) extends FieldTypeInfo {
     def elementTypeIsBaseType: Boolean = false
 }
 
-case class ArrayTypeInfo(javaTypeName: String, elementTypeIsBaseType: Boolean) extends TypeInfo
+case class ArrayTypeInfo(
+        elementTypeAsJavaType: String,
+        dimensions:            Int,
+        elementTypeIsBaseType: Boolean
+) extends FieldTypeInfo {
+
+    assert(dimensions > 0)
+
+    def asJavaType: String = elementTypeAsJavaType + ("[]" * dimensions)
+}

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -63,7 +63,7 @@ object Disassembler {
 
     def processClassFile(classFile: ClassFile): Unit = {
         try {
-            val file = writeAndOpen(classFile.toXHTML().toString, classFile.fqn, ".html")
+            val file = writeAndOpen(classFile.toXHTML().toString, classFile.thisType, ".html")
             OPALLogger.info("progress", s"generated the HTML documentation $file")
         } catch {
             case OpeningFileFailedException(file, cause) ⇒ {

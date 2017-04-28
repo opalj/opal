@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,6 +29,7 @@
 package org.opalj
 package ai
 
+import scala.collection.BitSet
 import org.opalj.collection.immutable.{Chain ⇒ List}
 
 /**
@@ -50,6 +51,7 @@ sealed trait InterpretationFailedException {
     val pc: PC
     val worklist: List[PC]
     val evaluated: List[PC]
+    val cfJoins: BitSet
     val operandsArray: domain.OperandsArray
     val localsArray: domain.LocalsArray
     val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
@@ -68,6 +70,7 @@ object InterpretationFailedException {
     )(
         theAI:                               AI[_ >: theDomain.type],
         thePc:                               PC,
+        theCFJoins:                          BitSet,
         theWorklist:                         List[PC],
         theEvaluated:                        List[PC],
         theOperandsArray:                    theDomain.OperandsArray,
@@ -80,8 +83,11 @@ object InterpretationFailedException {
             val ai: AI[_ >: theDomain.type] = theAI
             val domain: theDomain.type = theDomain
             val pc: PC = thePc
+            val cfJoins: BitSet = theCFJoins
+
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
+
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
             val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall

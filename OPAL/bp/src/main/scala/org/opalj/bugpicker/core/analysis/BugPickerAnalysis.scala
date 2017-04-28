@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,6 +34,7 @@ package analysis
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.Date
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import scala.collection.JavaConversions
 import scala.util.control.ControlThrowable
@@ -326,20 +327,20 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             }
 
             if (!result.wasAborted) {
-
                 if (debug) {
+                    import result._
+                    val domainName = domain.getClass.getName
                     org.opalj.io.writeAndOpen(
                         org.opalj.ai.common.XHTML.dump(
                             Some(classFile),
                             Some(method),
                             method.body.get,
                             Some(
-                                "Created: "+(new java.util.Date).toString+"<br>"+
-                                    "Domain: "+result.domain.getClass.getName+"<br>"+
+                                s"Created: ${new Date}<br>Domain: $domainName<br>"+
                                     XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                             ),
-                            result.domain
-                        )(result.operandsArray, result.localsArray),
+                            domain
+                        )(cfJoins, result.operandsArray, result.localsArray),
                         "AIResult",
                         ".html"
                     )

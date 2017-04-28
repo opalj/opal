@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -140,6 +140,7 @@ object DependencyTypes extends Enumeration(0 /* <= value of first enumeration va
             case ANNOTATION_ELEMENT_TYPE           ⇒ "have annotation element value type"
             case USES_ENUM_VALUE                   ⇒ "have enum value as annotation element value"
             case TYPE_IN_TYPE_PARAMETERS           ⇒ "be used in the declaration of a signature"
+
             case _ ⇒
                 throw new UnknownError(s"unknown dependency type: $dependencyType")
         }

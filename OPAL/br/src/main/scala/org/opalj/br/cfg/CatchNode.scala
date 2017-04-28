@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -28,25 +28,52 @@
  */
 package org.opalj.br.cfg
 
-import org.opalj.br.ExceptionHandler
 import org.opalj.br.PC
 import org.opalj.br.ObjectType
+import org.opalj.br.ExceptionHandler
 
 /**
  * This node represents an exception handler.
+ *
+ * @note   `CatchNode`s are made explicit to handle/identify situations where the same
+ *         exception handlers is responsible for handling multiple different exceptions.
+ *         This situation generally arises in case of Java`s multi-catch expressions.
+ *
+ * @param  index The index of the underlying exception handler in the exception table.
+ * @param  startPC The start pc of the try-block.
+ * @param  endPC The pc of the first instruction after the try-block (exclusive!).
+ * @param  handlerPC The first pc of the handler block.
+ * @param  catchType The type of the handled exception.
+ * @param  id A unique id that is not Long.MinValue (+1) and is not a value in the range[0..65535].
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
 class CatchNode(
+        val index:     Int, // primarily used to compute a unique id
         val startPC:   PC,
         val endPC:     PC,
         val handlerPC: PC,
         val catchType: Option[ObjectType]
 ) extends CFGNode {
 
-    def this(handler: ExceptionHandler) {
-        this(handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
+    def this(handler: ExceptionHandler, index: Int) {
+        this(index, handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
+    }
+
+    final override def nodeId: Int = {
+        // the index is required to avoid collusions with standard basic blocks
+        startPC | (index << 16)
+    }
+
+    def copy(
+        index:     Int                = this.index,
+        startPC:   PC                 = this.startPC,
+        endPC:     PC                 = this.endPC,
+        handlerPC: PC                 = this.handlerPC,
+        catchType: Option[ObjectType] = this.catchType
+    ): CatchNode = {
+        new CatchNode(index, startPC, endPC, handlerPC, catchType)
     }
 
     final override def isBasicBlock: Boolean = false
@@ -59,14 +86,6 @@ class CatchNode(
     //
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
-
-    override def nodeId: Long = {
-        startPC.toLong |
-            (endPC.toLong << 16) |
-            (handlerPC.toLong << 32) |
-            // ObjectTypes have positive ids; Any can hence be associated with -1
-            (catchType.map(_.hashCode()).getOrElse(-1).toLong << 48)
-    }
 
     override def toHRR: Option[String] = Some(
         s"try[$startPC,$endPC) ⇒ $handlerPC{${catchType.map(_.toJava).getOrElse("Any")}}"
@@ -81,8 +100,7 @@ class CatchNode(
     )
 
     override def toString: String = {
-        s"CatchNode([$startPC,$endPC)⇒$handlerPC,"+
-            s"${catchType.map(_.toJava).getOrElse("<none>")})"
+        s"CatchNode([$startPC,$endPC)⇒$handlerPC,${catchType.map(_.toJava).getOrElse("<none>")})"
     }
 
 }

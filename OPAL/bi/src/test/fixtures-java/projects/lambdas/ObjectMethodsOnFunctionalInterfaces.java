@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -49,6 +49,7 @@ import static annotations.target.TargetResolution.*;
  * @author Arne Lottmann
  */
 public class ObjectMethodsOnFunctionalInterfaces {
+  
 	@InvokedMethod(resolution = DEFAULT, receiverType = "java/lang/Object", name = "equals", parameterTypes = { Object.class }, returnType = boolean.class, isStatic = false, line = 54)
 	public void lambdaEquals() {
 		Runnable lambda = () -> System.out.println("Hello world!");

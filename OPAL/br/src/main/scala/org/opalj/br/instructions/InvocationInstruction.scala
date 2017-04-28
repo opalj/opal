@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction that "invokes" something. This can be, e.g., the invocation of a method
@@ -90,21 +90,28 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
 
     /**
      * Given that we have – without any sophisticated analysis – no idea which
-     * exceptions may be thrown by the called method we make the safe assumption that
+     * exceptions may be thrown by the called method, we make the safe assumption that
      * any handler is a potential successor!
+     *
+     * The result may contain duplicates iff multiple different exceptions are handled by
+     * the same handler. E.g., as generated in case of "Java's Multicatch instruction":
+     * {{{
+     * try {} catch(IOException | NullPointerException ex) {...}
+     * }}}
      */
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC))
+            Chain.singleton(indexOfNextInstruction(currentPC))
         else {
             val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
-            exceptionHandlerPCs + indexOfNextInstruction(currentPC)
+            indexOfNextInstruction(currentPC) :&: exceptionHandlerPCs
         }
     }
 }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -38,12 +38,12 @@ import com.typesafe.config.ConfigValueFactory
 import net.ceedubs.ficus.Ficus._
 
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.OPALLogger.info
 import org.opalj.br.instructions._
-import org.opalj.log.OPALLogger
 
 /**
- * Provides full support for rewriting Java 8 lambda or method reference expressions that
- * are translated to [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions.
+ * Provides support for rewriting Java 8 lambda or method reference expressions that
+ * werwe compiled to [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions.
  * This trait should be mixed in alongside a [[BytecodeReaderAndBinding]], which extracts
  * basic `invokedynamic` information from the [[BootstrapMethodTable]].
  *
@@ -67,9 +67,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
         val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (rewrite) {
-            OPALLogger.info("project configuration", "Java 8 lambda expressions are rewritten")
+            info("project configuration", "Java 8 lambda expressions are rewritten")
         } else {
-            OPALLogger.info("project configuration", "Java 8 lambda expressions are not rewritten")
+            info("project configuration", "Java 8 lambda expressions are not rewritten")
         }
         rewrite
     }
@@ -78,9 +78,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
         val logRewrites: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logRewrites) {
-            OPALLogger.info("project configuration", "Java 8 lambda expressions rewrites are logged")
+            info("project configuration", "Java 8 lambda expressions rewrites are logged")
         } else {
-            OPALLogger.info("project configuration", "Java 8 lambda expressions rewrites are not logged")
+            info("project configuration", "Java 8 lambda expressions rewrites are not logged")
         }
         logRewrites
     }
@@ -150,7 +150,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
             val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
             val typeDeclaration = TypeDeclaration(
-                ObjectType(newLambdaTypeName(targetMethodOwner)),
+                // ObjectType(newLambdaTypeName(targetMethodOwner)),
+                ObjectType(newLambdaTypeName(classFile.thisType)),
                 isInterfaceType = false,
                 Some(ObjectType.Object), // we basically create a "CallSiteObject"
                 superInterfaceTypes
@@ -223,10 +224,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             // --- DEBUG
 
             if (logJava8LambdaExpressionsRewrites) {
-                OPALLogger.info(
-                    "analysis",
-                    s"rewriting lambda expression: $invokedynamic ⇒ $newInvokestatic"
-                )
+                val message = s"rewriting lambda expression: $invokedynamic ⇒ $newInvokestatic"
+                info("analysis", message)
             }
 
             instructions(pc) = newInvokestatic
@@ -271,6 +270,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
 object Java8LambdaExpressionsRewriting {
 
+    final val FactoryNamesRegEx = "^Lambda\\$[0-9a-f]+:[0-9a-f]+$"
+
     final val Java8LambdaExpressionsConfigKeyPrefix = {
         org.opalj.br.reader.ClassFileReaderConfiguration.ConfigKeyPrefix+"Java8LambdaExpressions."
     }
@@ -283,6 +284,10 @@ object Java8LambdaExpressionsRewriting {
         Java8LambdaExpressionsConfigKeyPrefix+"logRewrites"
     }
 
+    /**
+     * Returns the default config where the settings for rewriting and logging rewrites are
+     * set to the specified values.
+     */
     def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {
         val baseConfig: Config = ConfigFactory.load()
         val rewritingConfigKey = Java8LambdaExpressionsRewritingConfigKey

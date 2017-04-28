@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,8 +30,8 @@ package org.opalj
 package ai
 
 import scala.collection.BitSet
-
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.LiveVariables
 
 /**
  * Mixin this trait if the domain needs information about the structure of the code.
@@ -48,22 +48,24 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
 
     private[this] var theInstructions: Array[Instruction] = null
 
-    private[this] var theJoinInstructions: BitSet = null
+    private[this] var theCFJoins: BitSet = null
+
+    def instructions: Array[Instruction] = theInstructions
+    /** @see [[org.opalj.br.Code.cfPCs]] */
+    def cfJoins: BitSet = theCFJoins
 
     /**
      * Sets the code structure.
      *
-     * This method is called by the AI framework.
+     * This method is called by the AI framework immediately before the interpretation (continues).
      */
     private[ai] def setCodeStructure(
-        theInstructions:     Array[Instruction],
-        theJoinInstructions: BitSet
+        theInstructions:  Array[Instruction],
+        theCFJoins:       BitSet,
+        theLiveVariables: LiveVariables
     ): Unit = {
-
         this.theInstructions = theInstructions
-        this.theJoinInstructions = theJoinInstructions
+        this.theCFJoins = theCFJoins
     }
 
-    def instructions: Array[Instruction] = theInstructions
-    def joinInstructions: BitSet = theJoinInstructions
 }

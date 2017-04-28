@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,13 +30,13 @@ package org.opalj
 
 import scala.language.existentials
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
-import org.opalj.collection.immutable.Chain
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -92,6 +92,7 @@ package object ai {
     type PC = org.opalj.br.PC
     type PCs = org.opalj.br.PCs
     final def NoPCs = org.opalj.br.NoPCs
+    type MutablePCs = org.opalj.collection.mutable.UShortSet
 
     /**
      * A value of type `ValueOrigin` identifies the origin of a value. In most cases the
@@ -206,9 +207,7 @@ package object ai {
 
     /**
      * Special value that is added to the list of `evaluated instructions`
-     * to mark the end of the evaluation of a subroutine. (I.e., this value
-     * is not directly used by the AI during the interpretation, but to record the
-     * progress.)
+     * to mark the end of the evaluation of a subroutine.
      */
     final val SUBROUTINE_END = -88888888
 

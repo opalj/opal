@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -136,7 +136,7 @@ class BaseFieldValuesAnalysisDomain(
                 // type bound is empty), because some of them
                 // are actually not null; they are initialized using native code
                 if upperTypeBound.nonEmpty
-                if (upperTypeBound.size != 1) || (upperTypeBound.first ne field.fieldType)
+                if (upperTypeBound.size != 1) || (upperTypeBound.head ne field.fieldType)
             } yield {
                 (field, fieldValue)
             }

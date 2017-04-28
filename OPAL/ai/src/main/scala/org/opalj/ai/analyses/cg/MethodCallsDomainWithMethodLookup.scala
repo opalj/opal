@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -73,10 +73,10 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         try {
             val receiver = operands.last.asInstanceOf[IsAReferenceValue]
             val receiverUTB = receiver.upperTypeBound
-            if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.first.isObjectType)
+            if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.head.isObjectType)
                 return fallback();
 
-            val receiverType = receiverUTB.first.asObjectType
+            val receiverType = receiverUTB.head.asObjectType
             // We can resolve (statically) all calls where the type information is precise
             // or where the declaring class is final or where the called method is final.
 

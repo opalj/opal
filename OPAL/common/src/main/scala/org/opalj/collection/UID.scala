@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,8 +34,8 @@ package collection
  * I.e., this trait is implemented by objects that have – by construction -
  * unique ids in a well-defined scope.
  *
- * @note    Two object that are not equal may have the same id, if both objects
- *          do not have the same context.
+ * @note   Two object that are not equal may have the same id, if both objects
+ *         do not have the same context.
  *
  * @author Michael Eichberg
  */
@@ -46,6 +46,10 @@ trait UID {
      */
     def id: Int
 
+    /**
+     * Two objects with a unique if are considered equal if they have the same unique id;
+     * all other properties will be ignored!
+     */
     final override def equals(other: Any): Boolean = {
         other match {
             case that: UID ⇒ UID.areEqual(this, that)
@@ -55,6 +59,9 @@ trait UID {
 
     final def ===(that: UID): Boolean = UID.areEqual(this, that)
 
+    /**
+     * The unique id.
+     */
     final override def hashCode: Int = id
 
 }

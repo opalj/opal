@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -174,7 +174,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
 
 private object PropertyTracingTest {
 
-    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("ai.jar", "bi"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/domain/Sanitization").get
 }

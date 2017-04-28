@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -47,26 +47,23 @@ object DependencyExtractorsHelper {
 
     val FIELD_AND_METHOD_SEPARATOR = "."
 
-    def sourceElementName(t: Type): String =
+    def sourceElementName(t: Type): String = {
         if (t.isArrayType) t.asArrayType.elementType.toJava else t.toJava
+    }
 
-    def sourceElementName(vClass: VirtualClass): String =
-        sourceElementName(vClass.thisType)
+    def sourceElementName(vClass: VirtualClass): String = sourceElementName(vClass.thisType)
 
-    def sourceElementName(vField: VirtualField): String =
-        sourceElementName(vField.declaringClassType) +
-            FIELD_AND_METHOD_SEPARATOR +
-            vField.name
+    def sourceElementName(vField: VirtualField): String = {
+        sourceElementName(vField.declaringClassType) + FIELD_AND_METHOD_SEPARATOR + vField.name
+    }
 
-    def sourceElementName(vMethod: VirtualMethod): String =
+    def sourceElementName(vMethod: VirtualMethod): String = {
         sourceElementName(vMethod.declaringClassType) +
             FIELD_AND_METHOD_SEPARATOR +
             methodDescriptorToString(vMethod.name, vMethod.descriptor)
+    }
 
-    def methodDescriptorToString(
-        name:       String,
-        descriptor: MethodDescriptor
-    ): String = {
+    def methodDescriptorToString(name: String, descriptor: MethodDescriptor): String = {
         descriptor.parameterTypes.map { sourceElementName(_) }.mkString(name+"(", ", ", ")")
     }
 

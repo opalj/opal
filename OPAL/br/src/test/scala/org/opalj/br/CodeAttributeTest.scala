@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,6 +34,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
+import org.opalj.collection.mutable.UShortSet
 import org.opalj.bi.TestSupport.locateTestResources
 
 import org.opalj.br.analyses.Project
@@ -54,9 +55,9 @@ class CodeAttributeTest extends FlatSpec with Matchers {
 
     it should "only report the most specific handler and not all handers" in {
 
-        nestedCatch.handlersFor(5) should be(Iterable(nestedCatch.exceptionHandlers(0)))
-        nestedCatch.handlersFor(14) should be(Iterable(nestedCatch.exceptionHandlers(1)))
-        nestedCatch.handlersFor(10) should be(Iterable(nestedCatch.exceptionHandlers(2)))
+        nestedCatch.handlersFor(5).toList should be(Iterable(nestedCatch.exceptionHandlers(0)))
+        nestedCatch.handlersFor(14).toList should be(Iterable(nestedCatch.exceptionHandlers(1)))
+        nestedCatch.handlersFor(10).toList should be(Iterable(nestedCatch.exceptionHandlers(2)))
 
         // the last instruction
         nestedCatch.handlersFor(37) should be(empty)
@@ -95,9 +96,7 @@ class CodeAttributeTest extends FlatSpec with Matchers {
     }
 
     it should "be able to handle the case where no instruction is found" in {
-        codeOfPut.collectWithIndex({
-            case (pc, IMUL) ⇒ (pc, IMUL)
-        }) should equal(Seq())
+        codeOfPut.collectWithIndex({ case (pc, IMUL) ⇒ (pc, IMUL) }) should equal(Seq())
     }
 
     behavior of "the \"Code\" attribute's collectFirstWithIndex method"
@@ -117,9 +116,7 @@ class CodeAttributeTest extends FlatSpec with Matchers {
     behavior of "the \"Code\" attribute's slidingCollect method"
 
     it should "be able to handle the case where the sliding window is too large compared to the number of instructions" in {
-        codeOfPut.slidingCollect(500)({
-            case (pc, instrs) ⇒ (pc, instrs)
-        }) should be(Seq())
+        codeOfPut.slidingCollect(500)({ case (pc, instrs) ⇒ (pc, instrs) }) should be(Seq())
     }
 
     it should "be able to find some consecutive instructions" in {
@@ -179,11 +176,21 @@ class CodeAttributeTest extends FlatSpec with Matchers {
         codeOfPut.firstLineNumber should be(Some(57))
     }
 
-    behavior of "the \"Code\" attribute's joinInstructions method"
+    behavior of "the \"Code\" attribute's cfJoins method"
 
-    it should "be able to correctly identify the join instructions" in {
-        codeOfPut.joinInstructions.size should be(1)
-        codeOfPut.joinInstructions should contain(15)
+    it should "be able to correctly identify the instructions where multiple paths join" in {
+        codeOfPut.cfJoins.size should be(1)
+        codeOfPut.cfJoins should contain(15)
+    }
+
+    it should "be able to correctly identify the instructions where multiple paths join or fork" in {
+        val (cfJoins, cfForks, forkTargetPCs) = codeOfPut.cfPCs()
+        cfJoins.size should be(1)
+        cfJoins should contain(15)
+        cfForks.size should be(1)
+        cfForks should contain(8)
+        forkTargetPCs.size should be(1)
+        forkTargetPCs(8) should be(UShortSet(15, 11))
     }
 
     behavior of "the \"Code\" attribute's localVariableTable method"
@@ -240,7 +247,7 @@ private object CodeAttributeTest {
     val project =
         Project(
             ClassFiles(locateTestResources("code.jar", "bi")) ++
-                ClassFiles(locateTestResources("classfiles/cfgtest8.jar", "br")),
+                ClassFiles(locateTestResources("controlflow.jar", "bi")),
             Traversable.empty,
             true
         )

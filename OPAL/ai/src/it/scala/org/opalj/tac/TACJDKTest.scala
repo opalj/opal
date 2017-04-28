@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -78,11 +78,11 @@ class TACJDKTest extends FunSpec with Matchers {
                 aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
             } {
                 try {
+                    // without using AIResults
                     val (tacCode, _) = AsQuadruples(
                         method = m,
                         classHierarchy = project.classHierarchy,
-                        optimizations = AllOptimizations,
-                        aiResult = aiResult
+                        optimizations = AllOptimizations
                     )
                     ToJavaLike(tacCode)
                 } catch {

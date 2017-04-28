@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -47,7 +47,7 @@ case class ElementValuePair(
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val en = cp(element_name_index).toString(cp)
-        <span class="element_value_pair"><span class="element_name">{ en }</span>={ element_value.toXHTML }</span>
+        <span class="element_value_pair"><span class="element_name">{ en }</span>: { element_value.toXHTML }</span>
     }
 
 }
