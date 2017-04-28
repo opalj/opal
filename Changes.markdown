@@ -2,6 +2,7 @@
 
 ## Upcomming
  - we are now using Scala 2.11.11 (this is probably the last release using Scala 2.11)
+ - fixed the creation of the XHTML view for several rarely used features
 
 ## 0.8.11
  - the AI now prevents simple, unnecessary joins if a variable is known to be dead when multiple control flow paths join
