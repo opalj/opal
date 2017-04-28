@@ -430,10 +430,10 @@ object Assembler {
 
                 case a: TypeAnnotations_attribute ⇒
                     // Handles:
-                    // RuntimeVisibleTypeAnnotations_attribute   
-                    // RuntimeInvisibleTypeAnnotations_attribute 
-                    writeShort(a.annotations.size)
-                    a.annotations.foreach { serialize(_) }
+                    // RuntimeVisibleTypeAnnotations_attribute
+                    // RuntimeInvisibleTypeAnnotations_attribute
+                    writeShort(a.typeAnnotations.size)
+                    a.typeAnnotations.foreach { serialize(_) }
 
                 case a: StackMapTable_attribute ⇒
                     writeShort(a.stack_map_frames.length)
@@ -477,7 +477,7 @@ object Assembler {
 
                 case a: ParametersAnnotations_attribute ⇒
                     // Handles:
-                    // RuntimeVisibleParameterAnnotations_attribute   
+                    // RuntimeVisibleParameterAnnotations_attribute
                     // RuntimeInvisibleParameterAnnotations_attribute
                     writeByte(a.parameters_annotations.length)
                     a.parameters_annotations.foreach { pas ⇒
@@ -502,9 +502,9 @@ object Assembler {
                     }
 
                 case as: Annotations_attribute ⇒
-                    // Handles: 
-                    // RuntimeVisibleAnnotations_attribute 
-                    // RuntimeInvisibleAnnotations_attribute         
+                    // Handles:
+                    // RuntimeVisibleAnnotations_attribute
+                    // RuntimeInvisibleAnnotations_attribute
                     writeShort(as.annotations.size)
                     as.annotations.foreach { serialize(_) }
 
@@ -717,4 +717,3 @@ object Assembler {
     }
 
 }
-
