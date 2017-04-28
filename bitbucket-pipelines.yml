@@ -4,6 +4,5 @@ pipelines:
   default:
     - step:
         script:
-          - sbt cleanAll 
-          - sbt compileAll
+          - sbt compileAll 
           - sbt test
