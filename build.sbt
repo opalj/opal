@@ -1,8 +1,9 @@
 name := "OPAL Library"
 
 // SNAPSHOT
-version 		in ThisBuild := "0.9.0-SNAPSHOT"
-// NEXT version 		in ThisBuild := "0.8.12"
+// version 		in ThisBuild := "0.9.0-SNAPSHOT"
+// NEXT version 		in ThisBuild := "0.8.13"
+version 		in ThisBuild := "0.8.12" - April 28th, 2017
 // RELEASED version 		in ThisBuild := "0.8.11" - April 14th, 2017
 // RELEASED version 		in ThisBuild := "0.8.10"
 // RELEASED version 		in ThisBuild := "0.8.9"
