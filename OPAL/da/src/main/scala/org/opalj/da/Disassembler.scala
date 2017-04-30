@@ -47,7 +47,7 @@ object Disassembler {
     private final val Usage =
         "Usage: java …Disassembler \n"+
             "(1) <JAR file containing class files> [<Name of classfile (incl. path) contained in the JAR file>+]\n"+
-            "(2) <class file>\n"+
+            "(2) <class file(s)>\n"+
             "Example:\n\tjava …Disassembler /Library/jre/lib/rt.jar java/util/ArrayList.class"
 
     def process(jarName: String, classFileName: String): Unit = {
