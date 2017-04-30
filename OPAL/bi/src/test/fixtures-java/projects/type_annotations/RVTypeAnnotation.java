@@ -46,7 +46,7 @@ import java.lang.annotation.Repeatable;
  */
 @Target({ ElementType.TYPE_USE })
 @Retention(RetentionPolicy.CLASS)
-@Repeatable(SomeTypeAnnotations.class)
-public @interface ATypeAnnotation {
+@Repeatable(RVTypeAnnotations.class)
+public @interface RVTypeAnnotation {
      String value() default "";
 }

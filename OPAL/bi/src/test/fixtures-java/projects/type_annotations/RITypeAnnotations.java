@@ -28,44 +28,23 @@
  */
 package type_annotations;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * This class tests some (corner) cases related to type annotations.
+ * This class was used to create a class file with some well defined signatures. The
+ * created class is subsequently used by several tests.
  *
  * NOTE<br />
  * This class is only meant to be (automatically) compiled by OPAL's build script.
+
  *
  * @author Michael Eichberg
  */
-public abstract class ATypeAnnotationUser<@ATypeAnnotation T extends @ATypeAnnotation Serializable & Cloneable>
-        implements List<@ATypeAnnotation Object>, @ATypeAnnotation Serializable {
-
-    private static final @ATypeAnnotation long serialVersionUID = 1L;
-
-    public List<@ATypeAnnotation("annotation of generic type parameter") T> ser;
-
-    public @ATypeAnnotation Object doSomething() throws Exception {
-
-        @ATypeAnnotation("local variable annotation")
-        List<@ATypeAnnotation("type parameter annotation") T> l = new @ATypeAnnotation ArrayList<>();
-
-        return l;
-    }
-
-    public <X extends @ATypeAnnotation Serializable & @ATypeAnnotation("annotation of second type of intersection type") Cloneable> void crazy(X x) {
-        // annotated type cast
-        if(x instanceof @ATypeAnnotation("annotated instanceof") List) {
-            List<?> l = (@ATypeAnnotation("annotated type cast") List<?>) x;
-            System.out.println(l);
-        }
-
-        // annotated type cast
-        if(x instanceof List) {
-            Object l = (Serializable & @ATypeAnnotation("annotation of second type of a case to an intersection type") Cloneable) x;
-            System.out.println(l);
-        }
-    }
+@Target({ ElementType.TYPE_USE /*Subsumes TYPE_PARAMETER and TYPE */ })
+@Retention(RetentionPolicy.CLASS)
+public @interface RITypeAnnotations { // RI = Runtime Invisible
+     RITypeAnnotation[] value();
 }

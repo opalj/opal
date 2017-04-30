@@ -43,8 +43,8 @@ import java.lang.annotation.Target;
  *
  * @author Michael Eichberg
  */
-@Target({ ElementType.TYPE_USE })
-@Retention(RetentionPolicy.CLASS)
-public @interface SomeTypeAnnotations {
-     ATypeAnnotation[] value();
+@Target({ ElementType.TYPE_USE /*Subsumes TYPE_PARAMETER and TYPE */ })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface RVTypeAnnotations { // RV = Runtime Visible
+     RVTypeAnnotation[] value();
 }

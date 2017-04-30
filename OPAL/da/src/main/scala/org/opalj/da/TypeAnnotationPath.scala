@@ -49,7 +49,7 @@ case object TypeAnnotationDirectlyOnType extends TypeAnnotationPath {
     final override def attribute_length: Int = 1
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path">DirectlyOnType</span>
+        <span class="type_annotation_path"><b>Path</b> DirectlyOnType</span>
     }
 }
 
@@ -69,7 +69,10 @@ case class TypeAnnotationPathElements(
     final override def attribute_length: Int = 1 + path.length * 2
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path">Path:{ path.map(_.toXHTML(cp)) }]</span>
+        val path = <ol>{ this.path.map(pe ⇒ <li>{ pe.toXHTML(cp) }</li>) }</ol>
+
+        // return node (this comment is a necessary technical artifact...)
+        <div class="type_annotation_path"><b>Path</b>{ path }</div>
     }
 }
 
@@ -83,7 +86,7 @@ case object TypeAnnotationDeeperInArrayType extends TypeAnnotationPathElement {
     final override def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path">DeeperInArrayType</span>
+        <span class="type_annotation_path_element">DeeperInArrayType</span>
     }
 }
 
@@ -94,7 +97,7 @@ case object TypeAnnotationDeeperInNestedType extends TypeAnnotationPathElement {
     final override def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path">DeeperInNestedType</span>
+        <span class="type_annotation_path_element">DeeperInNestedType</span>
     }
 }
 
@@ -105,7 +108,7 @@ case object TypeAnnotationOnBoundOfWildcardType extends TypeAnnotationPathElemen
     final override def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path">OnBoundOfWildcardType</span>
+        <span class="type_annotation_path_element">OnBoundOfWildcardType</span>
     }
 }
 
@@ -114,7 +117,6 @@ case class TypeAnnotationOnTypeArgument(type_argument_index: Int) extends TypeAn
     final override def type_path_kind: Int = 3
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path">OnTypeArgument: { type_argument_index }</span>
+        <span class="type_annotation_path_element">OnTypeArgument: { type_argument_index }</span>
     }
 }
-

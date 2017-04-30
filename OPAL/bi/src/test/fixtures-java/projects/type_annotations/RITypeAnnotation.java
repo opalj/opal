@@ -26,49 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package da
+package type_annotations;
 
-import scala.xml.Node
-import scala.xml.NodeSeq
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.annotation.Repeatable;
 
 /**
+ * This class was used to create a class file with some well defined signatures. The
+ * created class is subsequently used by several tests.
+ *
+ * NOTE<br />
+ * This class is only meant to be (automatically) compiled by OPAL's build script.
+
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
- * @author Andre Pacak
  */
-case class TypeAnnotation(
-        target_type:         TypeAnnotationTarget,
-        target_path:         TypeAnnotationPath,
-        type_index:          Constant_Pool_Index,
-        element_value_pairs: IndexedSeq[ElementValuePair]
-) {
-
-    final def attribute_length: Int = {
-        target_type.attribute_length +
-            target_path.attribute_length +
-            2 +
-            element_value_pairs.foldLeft(2 /*num_...*/ )(_ + _.attribute_length)
-    }
-
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        val evps =
-            if (element_value_pairs.nonEmpty)
-                <ul class="element_value_pairs">{ element_value_pairs.map(evp ⇒ <li>{ evp.toXHTML }</li>) }</ul>
-            else
-                NodeSeq.Empty
-
-        val at = parseFieldType(type_index).asJavaType /* TODO as xhtml node */
-
-        // main tag
-        <div class="type_annotation">
-            { target_type.toXHTML }<br/>
-            { target_path.toXHTML }<br/>
-            <b>Annotation Type</b>
-            { at }<br/>
-            { evps }
-        </div>
-    }
+@Target({ ElementType.TYPE_USE })
+@Retention(RetentionPolicy.CLASS)
+@Repeatable(RITypeAnnotations.class)
+public @interface RITypeAnnotation {
+     String value() default "";
 }
