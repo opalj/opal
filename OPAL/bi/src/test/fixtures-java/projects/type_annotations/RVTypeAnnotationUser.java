@@ -43,82 +43,77 @@ import java.util.Vector;
  *
  * @author Michael Eichberg
  */
-public abstract class RITypeAnnotationUser<@RITypeAnnotation T extends @RITypeAnnotation Serializable & Cloneable>
-        implements List<@RITypeAnnotation Object>, @RITypeAnnotation("superinterface") Serializable {
+public abstract class RVTypeAnnotationUser<@RVTypeAnnotation T extends @RVTypeAnnotation Serializable & Cloneable>
+        implements List<@RVTypeAnnotation Object>, @RVTypeAnnotation("superinterface") Serializable {
 
-    public   @RITypeAnnotation("on nested class declaration") class Nested {
-
-        public  @RITypeAnnotation("on nested class declaration") class SubNested {
-
-            public   @RITypeAnnotation("on nested class declaration") class SubSubNested {
-
+    public @RVTypeAnnotation("on nested class declaration") class Nested {
+        public @RVTypeAnnotation("on nested class declaration") class SubNested {
+            public @RVTypeAnnotation("on nested class declaration") class SubSubNested {
             }
-
         }
-
     }
 
     private static final Object process(Object o) {return o;} // just a helper method
 
-    private static final @RITypeAnnotation("field declaration") long serialVersionUID = 1L;
+    private static final @RVTypeAnnotation("field declaration") long serialVersionUID = 1L;
 
-    public List<@RITypeAnnotation("annotation of generic type parameter") T> ser;
+    public List<@RVTypeAnnotation("annotation of generic type parameter") T> ser;
 
     @SuppressWarnings("all")
     public Object onNestedTypeAnnotations() throws Exception {
-        Nested nested =  new RITypeAnnotationUser.@RITypeAnnotation("on nested class instantiation") Nested();
-        Nested.SubNested subNested = nested.new @RITypeAnnotation("on nested^2 class instantiation") SubNested();
-        Nested.SubNested.SubSubNested subSubNested = subNested.new @RITypeAnnotation("on nested^2 class instantiation") SubSubNested();
+        Nested nested =  new RVTypeAnnotationUser.@RVTypeAnnotation("on nested class instantiation") Nested();
+        Nested.SubNested subNested = nested.new @RVTypeAnnotation("on nested^2 class instantiation") SubNested();
+        Nested.SubNested.SubSubNested subSubNested = subNested.new @RVTypeAnnotation("on nested^2 class instantiation") SubSubNested();
 
         return subSubNested;
     }
 
     public Object localVariableDeclarationTypeAnnotations() throws Exception {
-        @RITypeAnnotation("local variable annotation")
-        List<@RITypeAnnotation("type parameter annotation") T> l = new ArrayList<>();
+        @RVTypeAnnotation("local variable annotation")
+        List<@RVTypeAnnotation("type parameter annotation") T> l = new ArrayList<>();
         return l;
     }
 
     public void wildcardsRelatedTypeAnnotation() throws Exception {
-        List<@RITypeAnnotation ? extends Cloneable> l = new ArrayList<>();
+        List<@RVTypeAnnotation ? extends Cloneable> l = new ArrayList<>();
         process(l);
     }
 
     @SuppressWarnings("unchecked")
     public void arrayRelatedTypeAnnotation() throws Exception {
-        @RITypeAnnotation("array as such") int[] @RITypeAnnotation("2nd dimension of array")[] ls = new int[10][1];
+        @RVTypeAnnotation("array as such") int[] @RVTypeAnnotation("2nd dimension of array")[] ls = new int[10][1];
         process(ls);
 
-        List<@RITypeAnnotation("type parameter annotation of array of generic type") Serializable>[] lgs = new List[10];
+        List<@RVTypeAnnotation("type parameter annotation of array of generic type") Serializable>[] lgs = new List[10];
         process(lgs);
     }
 
     public Supplier<Vector<?>> instanceCreationRelatedTypeAnnotation() throws Exception {
-        List<?> l = new @RITypeAnnotation ArrayList<>();
+        List<?> l = new @RVTypeAnnotation ArrayList<>();
         process(l);
-        return (@RITypeAnnotation Vector::new);
+        return (@RVTypeAnnotation Vector::new);
     }
 
     public Supplier<Object> methodCallRelatedTypeAnnotation() throws Exception {
-        return (@RITypeAnnotation("receiver class") System::lineSeparator);
+        return (@RVTypeAnnotation("receiver class") System::lineSeparator);
     }
 
-    public @RITypeAnnotation("return type") Function<@RITypeAnnotation("first parameter of generic type") Object,  @RITypeAnnotation("second parameter of generic type") Integer> methodSignatureRelatedTypeAnnotations() throws Exception {
+    public @RVTypeAnnotation("return type") Function<@RVTypeAnnotation("first parameter of generic type") Object,  @RVTypeAnnotation("second parameter of generic type") Integer> methodSignatureRelatedTypeAnnotations() throws Exception {
         List<Object> l = new ArrayList<>();
         return (l::indexOf);
     }
 
     @SuppressWarnings("all")
-    public <X extends @RITypeAnnotation Serializable & @RITypeAnnotation("annotation of second type of intersection type") Cloneable> void typeCheckRelatedTypeAnnotations(X x) {
+    public <X extends @RVTypeAnnotation Serializable & @RVTypeAnnotation("annotation of second type of intersection type") Cloneable> void typeCheckRelatedTypeAnnotations(X x) {
         // annotated type test
-        if(x instanceof @RITypeAnnotation("annotated instanceof") List) {
-            List<X> l = (@RITypeAnnotation("annotated type cast") List< @RITypeAnnotation("annotated generic type variable in (unsafe) type cast")X>) x;
+        if(x instanceof @RVTypeAnnotation("annotated instanceof") List) {
+            List<X> l = (@RVTypeAnnotation("annotated type cast") List< @RVTypeAnnotation("annotated generic type variable in (unsafe) type cast")X>) x;
             process(l);
         }
 
         // annotated type cast
         if(x instanceof List) {
-            Object l = (Serializable & @RITypeAnnotation("annotation of second type of a case to an intersection type") Cloneable) x;
+            Object l = (Serializable & @RVTypeAnnotation("annotation of second type of a case to an intersection type") Cloneable) x;
             process(l);
         }
     }
