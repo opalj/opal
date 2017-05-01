@@ -143,19 +143,27 @@ generateSite := {
                     case null => /*OK */
                     case c => log.error("unsupported resource configuration: "+c.getClass.getSimpleName)
                 }
-                (sourceFile, mdFile, pageConfig.get("title").toString, htmlContent.toString)
+                (
+                    sourceFile.substring(0,sourceFile.length-3),
+                    mdFile,
+                    pageConfig.get("title").toString,
+                    htmlContent.toString
+                )
 
             case _ =>
                 throw new RuntimeException("unsupported page configuration: "+page)
         }
     }
-    val links = pages.map{page => val (file, _, title, _) = page; (file,title) }
+    val links = pages.map{page =>
+        val (file, _, title, _) = page
+        (file,title)
+    }
 
     // 2.3 create HTML pages
     val engine = new TemplateEngine
     val defaultTemplate = sourceDirectory.value / "site" / "default.template.html.ssp"
-    for {(_, mdFile, title, html) <- pages} {
-        val targetFile = mdFile.getName() + ".html"
+    for {(sourceFile, mdFile, title, html) <- pages} {
+        val targetFile = sourceFile + ".html"
         val htmlFile = resourceManaged.value / "site" / targetFile
         val completePage = engine.layout(
             defaultTemplate.toString,
