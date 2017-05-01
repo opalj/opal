@@ -81,6 +81,102 @@ EclipseKeys.withJavadoc := true
 //
 //addCommandAlias("copyToEclipsePlugin", "; set publishTo in ThisBuild := Some(Resolver.file(\"file\", new File(\"TOOLS/ep/lib\"))) ; publish")
 
+val generateSite = taskKey[Seq[File]]("creates the OPAL Website")
+//unmanagedResourceDirectories in Package += (sourceDirectory in Package).value / "site"
+//resourceGenerators in Package += Def.task
+generateSite := {
+
+    // NOTE: Currently we keep all pages in memory during the transformation process... but, this
+    // should nevertheless work for a very long time!
+
+    val s: TaskStreams = streams.value
+    val log = s.log
+    log.info("Generating site using: "+sourceDirectory.value / "site" / "site.conf")
+
+    import java.io.File
+    import java.nio.charset.Charset
+    import java.nio.file.Files
+    import scala.collection.JavaConverters._
+    import scala.io.Source.fromFile
+    import com.typesafe.config.ConfigFactory
+    import com.vladsch.flexmark.ast.Node
+    import com.vladsch.flexmark.html.HtmlRenderer
+    import com.vladsch.flexmark.parser.Parser
+    import com.vladsch.flexmark.util.options.MutableDataSet
+    import org.fusesource.scalate.TemplateEngine
+
+    import java.util.Arrays;
+
+    // 1. read config
+    val config = ConfigFactory.parseFile(sourceDirectory.value / "site" / "site.conf")
+
+    // 2.1 copy folders
+    for {folder <- config.getStringList("folders").asScala} {
+        IO.copyDirectory(
+            sourceDirectory.value / "site" / folder,
+            resourceManaged.value / "site" / folder
+        )
+    }
+
+    // 2.2 pre-process pages
+    val mdParserOptions = new MutableDataSet();
+    val mdParser = Parser.builder(mdParserOptions).build();
+    val mdToHTMLRenderer = HtmlRenderer.builder(mdParserOptions).build();
+    val pages = for (page <- config.getAnyRefList("md-sources").asScala) yield {
+        page match {
+            case pageConfig : java.util.Map[_,_] =>
+                // 2.2.1 convert markdown files:
+                val sourceFile = pageConfig.get("source").toString
+                val mdFile = sourceDirectory.value / "site" / sourceFile
+                val mdDocument = mdParser.parse(fromFile(mdFile).getLines.mkString("\n"))
+                val htmlContent = mdToHTMLRenderer.render(mdDocument)
+
+                // 2.2.2 copy page specific page resources (optional):
+                pageConfig.get("resources") match {
+                    case resources : java.util.List[_]=>
+                        for{resource <- resources.asScala}
+                        IO.copyFile(
+                            sourceDirectory.value / "site" / resource.toString,
+                            resourceManaged.value / "site" / resource.toString
+                        )
+
+                    case null => /*OK */
+                    case c => log.error("unsupported resource configuration: "+c.getClass.getSimpleName)
+                }
+                (
+                    sourceFile.substring(0,sourceFile.length-3),
+                    mdFile,
+                    pageConfig.get("title").toString,
+                    htmlContent.toString
+                )
+
+            case _ =>
+                throw new RuntimeException("unsupported page configuration: "+page)
+        }
+    }
+    val links = pages.map{page =>
+        val (file, _, title, _) = page
+        (file,title)
+    }
+
+    // 2.3 create HTML pages
+    val engine = new TemplateEngine
+    val defaultTemplate = sourceDirectory.value / "site" / "default.template.html.ssp"
+    for {(sourceFile, mdFile, title, html) <- pages} {
+        val targetFile = sourceFile + ".html"
+        val htmlFile = resourceManaged.value / "site" / targetFile
+        val completePage = engine.layout(
+            defaultTemplate.toString,
+            Map("title" -> title, "content" -> html, "links" -> links)
+        )
+        Files.write(htmlFile.toPath,completePage.getBytes(Charset.forName("UTF8")))
+        log.info(s"converted $mdFile to $htmlFile usinng $defaultTemplate")
+    }
+
+    // (End) Return generated files
+    Seq.empty[File]
+}
+
 //
 //
 // SETTINGS REQUIRED TO PUBLISH OPAL ON MAVEN CENTRAL
