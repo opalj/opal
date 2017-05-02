@@ -36,3 +36,8 @@ Exploring the Abstract Interpretation Framework
 
 
 To get a good, first idea what the abstract interpretation framework can do you can use the *BugPicker*. It enables you to perform some local abstract interpretations. To get good results it is usually necessary to load the JDK and all related libraries.
+
+# OPAL based Tools
+
+## BugPicker
+Find bugs in your Java project using [BugPicker](tools/bugpicker/index.php).
