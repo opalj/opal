@@ -12,6 +12,10 @@
 		font-size: 12pt;
 	}
 
+    .medium > .hide-at-medium {
+		display: none;
+	}
+
 /* Wrapper */
 
 	.wrapper {
