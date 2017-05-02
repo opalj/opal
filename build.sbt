@@ -81,7 +81,7 @@ EclipseKeys.withJavadoc := true
 //
 //addCommandAlias("copyToEclipsePlugin", "; set publishTo in ThisBuild := Some(Resolver.file(\"file\", new File(\"TOOLS/ep/lib\"))) ; publish")
 
-val generateSite = taskKey[Seq[File]]("creates the OPAL Website")
+val generateSite = taskKey[Unit]("creates the OPAL Website")
 //unmanagedResourceDirectories in Package += (sourceDirectory in Package).value / "site"
 //resourceGenerators in Package += Def.task
 generateSite := {
@@ -118,7 +118,14 @@ generateSite := {
         )
     }
 
-    // 2.2 pre-process pages
+    for {resource <- config.getStringList("resources").asScala} {
+        IO.copyFile(
+            sourceDirectory.value / "site" / resource,
+            resourceManaged.value / "site" / resource
+        )
+    }
+
+    // 2.3 pre-process pages
     val mdParserOptions = new MutableDataSet();
     val mdParser = Parser.builder(mdParserOptions).build();
     val mdToHTMLRenderer = HtmlRenderer.builder(mdParserOptions).build();
@@ -163,32 +170,42 @@ generateSite := {
                     /* name without extension */ baseFileName,
                     /* the File object */ sourceFile,
                     /* the title */ pageConfig.get("title").toString,
-                    /* the content */ htmlContent.toString
+                    /* the content */ htmlContent.toString,
+                    /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false)
+                )
+
+            case sectionTitle : String =>
+                (
+                    null,
+                    null,
+                    sectionTitle,
+                    null,
+                    false
                 )
 
             case _ => throw new RuntimeException("unsupported page configuration: "+page)
         }
     }
     val links /*Traversable[(String,String)]*/ = pages.map{page =>
-        val (baseFileName, _, title, _) = page
+        val (baseFileName, _, title, _, _) = page
         (baseFileName,title)
     }
 
-    // 2.3 create HTML pages
+    // 2.4 create HTML pages
     val engine = new TemplateEngine
     val defaultTemplate = sourceDirectory.value / "site" / "default.template.html.ssp"
-    for {(baseFileName, sourceFile, title, html) <- pages} {
+    for {(baseFileName, sourceFile, title, html, useBanner) <- pages if baseFileName ne null} {
         val htmlFile = resourceManaged.value / "site" / (baseFileName + ".html")
         val completePage = engine.layout(
             defaultTemplate.toString,
-            Map("title" -> title, "content" -> html, "links" -> links)
+            Map("title" -> title, "content" -> html, "links" -> links, "useBanner" -> useBanner)
         )
         Files.write(htmlFile.toPath,completePage.getBytes(Charset.forName("UTF8")))
         log.info(s"converted $sourceFile to $htmlFile usinng $defaultTemplate")
     }
 
-    // (End) Return generated files
-    Seq.empty[File]
+    // (End)
+    ()
 }
 
 //

@@ -1,0 +1,45 @@
+<h1>Useless Boxing</h1>
+<p>
+OPAL's standard bytecode representation provides an API that offers extensive support for pattern matching on Java bytecode. This greatly facilitates writing analyses that identify typical code smells.
+</p>
+
+For example, let's write an analysis to find instances of the following issue:
+<pre><code class="java">double value = 1.0d;
+//...
+int i = (new Double(value)).intValue // &lt;&lt; the issue
+//Intended: int i = (int) value</code></pre>
+				I.e., let's find code where we wrap a primitive value and immediately unwrap it. (Such code generally hinders comprehensibility and wastes CPU cycles;
+         		a real instance can be found in the <a href="http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/8-b132/com/sun/org/apache/xalan/internal/lib/ExsltMath.java#ExsltMath">OpenJDK 8</a>.)<br />
+	           	<br />
+
+The complete(!) analysis to find the described bug pattern is shown next.
+
+<pre><code class="scala">import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.br.reader.Java8Framework.ClassFiles
+
+val project = ClassFiles(new java.io.File("/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/jre/lib"))
+
+val theMethods = Set(
+	"booleanValue","byteValue","charValue","shortValue",
+	"intValue","longValue","floatValue","doubleValue")
+for {
+    (classFile,_) ← project.par // for all classes (let's do it in parallel)
+    method @ MethodWithBody(body) ← classFile.methods // for all non-abstract, non-native methods
+    pc ← body.matchPair { // find a sequence of two instructions where...
+        case (
+            INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
+            INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
+            ) ⇒ { (receiver1 eq receiver2) &amp;&amp;
+                   receiver1.isPrimitiveTypeWrapper &amp;&amp;
+                   theMethods.contains(name) }
+        case _ ⇒ false
+    }
+} println (classFile.fqn +"{"+ method.toJava+"::"+ body.lineNumber(pc)+"}")</code></pre>
+You can paste the analysis in the Scala REPL to directly execute it. In this case, you'll get – for the OpenJDK 8 – the following result:
+<pre>
+com/sun/org/apache/xalan/internal/lib/ExsltMath{double constant(java.lang.String,double)::Some(379)}
+</pre>
+On a notebook (Core i7, 2,3 GHz, 8GB, SSD) loading the JDK takes 2 to 3 seconds, the analysis itself takes roughly 0.04 seconds for the entire JDK.
+<br />
+<br />
