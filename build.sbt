@@ -122,14 +122,28 @@ generateSite := {
     val mdParserOptions = new MutableDataSet();
     val mdParser = Parser.builder(mdParserOptions).build();
     val mdToHTMLRenderer = HtmlRenderer.builder(mdParserOptions).build();
-    val pages = for (page <- config.getAnyRefList("md-sources").asScala) yield {
+    val pages = for (page <- config.getAnyRefList("pages").asScala) yield {
         page match {
             case pageConfig : java.util.Map[_,_] =>
-                // 2.2.1 convert markdown files:
-                val sourceFile = pageConfig.get("source").toString
-                val mdFile = sourceDirectory.value / "site" / sourceFile
-                val mdDocument = mdParser.parse(fromFile(mdFile).getLines.mkString("\n"))
-                val htmlContent = mdToHTMLRenderer.render(mdDocument)
+                val sourceFileName = pageConfig.get("source").toString
+                val sourceFile = sourceDirectory.value / "site" / sourceFileName
+                val sourceContent = fromFile(sourceFile).getLines.mkString("\n")
+                // 2.2.1 convert files:
+                val (baseFileName,htmlContent) =
+                    if(sourceFileName.endsWith(".md")) {
+                        val mdDocument = mdParser.parse(sourceContent)
+                        (
+                            sourceFileName.substring(0,sourceFileName.length-3),
+                            mdToHTMLRenderer.render(mdDocument)
+                        )
+                    } else if(sourceFileName.endsWith(".snippet.html")) {
+                        (
+                            sourceFileName.substring(0,sourceFileName.length-13),
+                            sourceContent
+                        )
+                    } else {
+                        throw new RuntimeException("unsupported content file: "+sourceFileName)
+                    }
 
                 // 2.2.2 copy page specific page resources (optional):
                 pageConfig.get("resources") match {
@@ -141,12 +155,13 @@ generateSite := {
                             )
                         }
 
-                    case null => /* OK - it is optional */
-                    case c => log.error("unsupported resource configuration: "+c.getClass.getSimpleName)
+                    case null => /* OK - resources are optional */
+
+                    case c => throw new RuntimeException("unsupported resource configuration: "+c)
                 }
                 (
-                    /* name without extension */ sourceFile.substring(0,sourceFile.length-3),
-                    /* the File object */mdFile,
+                    /* name without extension */ baseFileName,
+                    /* the File object */ sourceFile,
                     /* the title */ pageConfig.get("title").toString,
                     /* the content */ htmlContent.toString
                 )
@@ -154,23 +169,22 @@ generateSite := {
             case _ => throw new RuntimeException("unsupported page configuration: "+page)
         }
     }
-    val links /*Traversable[(fileName:String,title:String)]*/ = pages.map{page =>
-        val (fileName, _, title, _) = page
-        (fileName,title)
+    val links /*Traversable[(String,String)]*/ = pages.map{page =>
+        val (baseFileName, _, title, _) = page
+        (baseFileName,title)
     }
 
     // 2.3 create HTML pages
     val engine = new TemplateEngine
     val defaultTemplate = sourceDirectory.value / "site" / "default.template.html.ssp"
-    for {(sourceFile, mdFile, title, html) <- pages} {
-        val targetFile = sourceFile + ".html"
-        val htmlFile = resourceManaged.value / "site" / targetFile
+    for {(baseFileName, sourceFile, title, html) <- pages} {
+        val htmlFile = resourceManaged.value / "site" / (baseFileName + ".html")
         val completePage = engine.layout(
             defaultTemplate.toString,
             Map("title" -> title, "content" -> html, "links" -> links)
         )
         Files.write(htmlFile.toPath,completePage.getBytes(Charset.forName("UTF8")))
-        log.info(s"converted $mdFile to $htmlFile usinng $defaultTemplate")
+        log.info(s"converted $sourceFile to $htmlFile usinng $defaultTemplate")
     }
 
     // (End) Return generated files
