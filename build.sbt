@@ -1,9 +1,9 @@
 name := "OPAL Library"
 
 // SNAPSHOT
-// version 		in ThisBuild := "0.9.0-SNAPSHOT"
+version 		in ThisBuild := "0.9.0-SNAPSHOT"
 // NEXT version 		in ThisBuild := "0.8.13"
-version 		in ThisBuild := "0.8.12" // April 28th, 2017
+// RELEASED version 		in ThisBuild := "0.8.12" // April 28th, 2017
 // RELEASED version 		in ThisBuild := "0.8.11" // April 14th, 2017
 // RELEASED version 		in ThisBuild := "0.8.10"
 // RELEASED version 		in ThisBuild := "0.8.9"
@@ -15,7 +15,7 @@ licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/lice
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
 scalaVersion 	in ThisBuild := "2.11.11"
-//scalaVersion 	in ThisBuild := "2.12.0-M5"
+//scalaVersion 	in ThisBuild := "2.12.2"
 
 scalacOptions 	in ThisBuild ++= Seq(
 		"-target:jvm-1.8",
@@ -134,29 +134,29 @@ generateSite := {
                 // 2.2.2 copy page specific page resources (optional):
                 pageConfig.get("resources") match {
                     case resources : java.util.List[_]=>
-                        for{resource <- resources.asScala}
-                        IO.copyFile(
-                            sourceDirectory.value / "site" / resource.toString,
-                            resourceManaged.value / "site" / resource.toString
-                        )
+                        for{resource <- resources.asScala} {
+                            IO.copyFile(
+                                sourceDirectory.value / "site" / resource.toString,
+                                resourceManaged.value / "site" / resource.toString
+                            )
+                        }
 
-                    case null => /*OK */
+                    case null => /* OK - it is optional */
                     case c => log.error("unsupported resource configuration: "+c.getClass.getSimpleName)
                 }
                 (
-                    sourceFile.substring(0,sourceFile.length-3),
-                    mdFile,
-                    pageConfig.get("title").toString,
-                    htmlContent.toString
+                    /* name without extension */ sourceFile.substring(0,sourceFile.length-3),
+                    /* the File object */mdFile,
+                    /* the title */ pageConfig.get("title").toString,
+                    /* the content */ htmlContent.toString
                 )
 
-            case _ =>
-                throw new RuntimeException("unsupported page configuration: "+page)
+            case _ => throw new RuntimeException("unsupported page configuration: "+page)
         }
     }
-    val links = pages.map{page =>
-        val (file, _, title, _) = page
-        (file,title)
+    val links /*Traversable[(fileName:String,title:String)]*/ = pages.map{page =>
+        val (fileName, _, title, _) = page
+        (fileName,title)
     }
 
     // 2.3 create HTML pages
