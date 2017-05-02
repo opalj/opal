@@ -24,7 +24,7 @@
             <h1><a href="http://www.opal-project.de">OPAL Project</a></h1>
             <nav id="nav">
                 <ul>
-                    <li><a href="index.md.html">Getting Started</a></li>
+                    <li><a href="index.html">Getting Started</a></li>
                     <li><a href="http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.package">ScalaDoc</a></li>
                     <li><a href="http://www.bitbucket.org/delors/opal">Repository</a></li>
                     <li><a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22de.opal-project%22">Maven Central</a></li>
@@ -64,7 +64,7 @@
                                     <li><a href="https://gitter.im/OPAL-Project/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link" class="icon fa-users"><span class="label">Gitter</span></a></li>
                                     <li><a href="https://trello.com/theopalproject" class="icon fa-trello"><span class="label">Trello</span></a></li>
                                     <li><a href="http://stackoverflow.com/questions/tagged/opal-framework" class="icon fa-stack-overflow"><span class="label">Stackoverflow</span></a></li>
-                                    <li><a href="https://hub.docker.com/r/opalj/sbt_scala_javafx/" class="icon fa-docker"><span class="label">Docker</span></a></li>
+                                    <li><a href="https://hub.docker.com/r/opalj/sbt_scala_javafx/" class="icon fa-ship"><span class="label">Docker</span></a></li>
                                 </ul>
                             </div>
                             <div class="6u">
