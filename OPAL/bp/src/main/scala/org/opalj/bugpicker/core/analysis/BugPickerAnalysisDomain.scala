@@ -178,6 +178,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
         val result =
             maxCallChainLength > currentCallChainLength &&
                 !(calledMethod.isPrivate && calledMethod.parametersCount == 1)
+                // TODO check me if the following makes sense:
         if (debug) {
             val i = if (result) " invokes " else " does not invoke "
             println(s"[$currentCallChainLength]"+
