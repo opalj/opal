@@ -98,15 +98,14 @@ generateSite := {
 
     val siteGenerationNecessary =
         !targetFolder.exists ||
-        (sourceFolder ** "*").get.exists{sourceFile =>
+        (sourceFolder ** "*").get.exists{ sourceFile =>
             if(sourceFile.newerThan(targetFolder) && !sourceFile.isHidden) {
-                log.debug(s"$sourceFile was updated: ${sourceFile.lastModified} > ${targetFolder.lastModified} (current time: ${System.currentTimeMillis})")
+                log.info(s"at least $sourceFile was updated: ${sourceFile.lastModified} > ${targetFolder.lastModified} (current time: ${System.currentTimeMillis})")
                 true
             } else {
                 false
             }
         }
-    println("is site generation necessary: "+siteGenerationNecessary)
 
     if(siteGenerationNecessary) {
         log.info("generating site using: "+sourceFolder / "site.conf")
@@ -224,7 +223,7 @@ generateSite := {
         }
     }
 
-    IO.touch(targetFolder, setModified = true)
+    targetFolder.setLastModified(System.currentTimeMillis())
 
     // (End)
     targetFolder
