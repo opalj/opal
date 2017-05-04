@@ -87,7 +87,7 @@ object UnusedMethodsAnalysis {
 
         def rateMethod(): Relevance = {
 
-            import method.{isConstructor, isPrivate, parametersCount, descriptor, name}
+            import method.{isConstructor, isPrivate, actualArgumentsCount, descriptor, name}
             import descriptor.{returnType, parametersCount ⇒ declaredParametersCount}
 
             //
@@ -127,8 +127,8 @@ object UnusedMethodsAnalysis {
             // Let's check if it is a default constructor
             // which was defined to avoid instantiations of the
             // class (e.g., java.lang.Math)
-            val isDefaultConstructor = isConstructor && isPrivate && parametersCount == 1 /*this*/
-            if (!isDefaultConstructor)
+            val isPrivateDefaultConstructor = isConstructor && isPrivate && actualArgumentsCount == 1 /*this*/
+            if (!isPrivateDefaultConstructor)
                 return Relevance.DefaultRelevance;
 
             val constructorsIterator = classFile.constructors
