@@ -1,10 +1,10 @@
 # OPAL
 
-Opal is an extensible, bytecode processing and analysis library written in Scala 2.11.11. The latest release is *0.8.12*, the latest snapshot version is *0.9.0-SNAPSHOT*. Both versions are found on Maven central. If you want to use the snapshot version do not forget to add the respective resolver:
+OPAL is an extensible, bytecode processing and analysis library written in Scala 2.11.11. The latest release is *0.8.12*, the latest snapshot version is *0.9.0-SNAPSHOT*. Both versions are found on Maven central. If you want to use the snapshot version do not forget to add the respective resolver:
 
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-OPAL contains of multiple sub projects which are described in the following.
+OPAL consists of multiple sub projects and tools which are described in the following.
 
 ## Common
 Contains general datastructure and algorithms particular useful in the context of static analyis. E.g., graph algorithms, such as
