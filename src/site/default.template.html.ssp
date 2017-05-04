@@ -1,6 +1,6 @@
 <%@ var title:String %>
 <%@ var content:String %>
-<%@ var links:Traversable[(String,String)] %>
+<%@ var toc:Traversable[(String,String)] %>
 <%@ var useBanner : Boolean = false %>
 <!DOCTYPE HTML>
 <html>
@@ -47,7 +47,7 @@
     			<div class="row">
                     <div class="3u">
                         <nav>
-                        #for ((href,title) <- links)
+                        #for ((href,title) <- toc)
                             #if (href != null)
                                 <a href="${href}.html">${title}</a><br>
                             #else
