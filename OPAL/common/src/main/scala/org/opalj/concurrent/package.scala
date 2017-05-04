@@ -212,8 +212,14 @@ package object concurrent {
                         false
                     }
                 } catch {
-                    case ct: ControlThrowable ⇒ exceptions.add(ct)
-                    case t: Throwable         ⇒ exceptions.add(t)
+                    case ct: ControlThrowable ⇒
+                        OPALLogger.error(
+                            "internal - severe - non-recoverable",
+                            "unsupported non-local return is used"
+                        )(GlobalLogContext)
+                        exceptions.add(ct)
+                    case t: Throwable ⇒
+                        exceptions.add(new RuntimeException("evaluation failed for "+e, t))
                 }
             }
             return exceptions.asScala
@@ -230,8 +236,9 @@ package object concurrent {
                 futures(t) = Future[Unit] {
                     var i: Int = -1
                     while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
+                        val e = data(i)
                         try {
-                            f(data(i))
+                            f(e)
                         } catch {
                             case ct: ControlThrowable ⇒
                                 OPALLogger.error(
@@ -240,7 +247,7 @@ package object concurrent {
                                 )(GlobalLogContext)
                                 exceptions.add(ct)
                             case t: Throwable ⇒
-                                exceptions.add(t)
+                                exceptions.add(new RuntimeException("evaluation failed for "+e, t))
                         }
                     }
                 }
