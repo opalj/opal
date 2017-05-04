@@ -166,9 +166,10 @@ case class Code(instructions: Array[Byte]) {
                 case 44 ⇒ <span class="instruction aload_2">aload_2</span>
                 case 45 ⇒ <span class="instruction aload_3">aload_3</span>
                 case 189 ⇒
+                    val t = asJavaObjectType(in.readUnsignedShort())
                     <span>
                         <span class="instruction anewarray">anewarray </span>
-                        <span class="type_parameter">{ asObjectType(in.readUnsignedShort()) }</span>
+                        <span class="type_parameter">{ t }</span>
                     </span>
                 case 176 ⇒ <span class="instruction areturn">areturn</span>
                 case 190 ⇒ <span class="instruction arraylength">arraylength</span>
@@ -192,9 +193,10 @@ case class Code(instructions: Array[Byte]) {
                 case 52 ⇒ <span class="instruction caload">caload</span>
                 case 85 ⇒ <span class="instruction castore">castore</span>
                 case 192 ⇒
+                    val t = asJavaReferenceType(in.readUnsignedShort())
                     <span>
                         <span class="instruction checkcast">checkcast </span>
-                        <span class="type_parameter">{ asReferenceType(in.readUnsignedShort()) }</span>
+                        <span class="type_parameter">{ t }</span>
                     </span>
                 case 144 ⇒ <span class="instruction d2f">d2f</span>
                 case 142 ⇒ <span class="instruction d2i">d2i</span>

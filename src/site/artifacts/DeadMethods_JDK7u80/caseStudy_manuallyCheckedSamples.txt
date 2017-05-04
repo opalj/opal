@@ -1,0 +1,95 @@
+CPA:
+
+id 		correct 	class															method
+------------------------------------------------------------------------------------------------------
+1		x 			java.nio.ByteBufferAsCharBufferB 											void <init>(ByteBuffer)
+2		x 			java.util.concurrent.locks.AbstractQueuedLongSynchronizer 					final boolean apparentlyFirstQueuedIsExclusive ()
+3		x 			java.util.Formatter$FormatSpecifier$BigDecimalLayout 						public char[] layoutChars()
+4		x 			java.util.ResourceBundle$CacheKey											java.util.ResourceBundle$CacheKey setName(String)
+5		x 			javax.swing.tree.VariableHeightLayoutCache									private Rectangle getBounds(int, Rectangle)
+6	 	x 			javax.xml.validation										 			    InputStream getResourceAsStream(ClassLoader,String)
+7		x 			java.awt.color.ICC_Profile													int getRenderingIntent ()
+8		x 			java.io.FilePermission														void <init> ( String , int)
+9		x 			java.lang.invoke.BoundMethodHandle											final double argD (int)
+10		x			java.lang.AbstractStringBuilder												append ( Object )
+11		x           java.beans.EventSetDescriptor												<init>(EventSetDescriptor)
+12		x    	 	javax.managmement.BinaryOpValueExp											public int getOperator()
+13		x 			javax.xml.crypto.dsigTransformService$MachanismMapEntry						public boolean equals(Object)
+14		x   		java.util.regex.Pattern														private int readEscape()
+15		x 		 	javax.swing.text.rtf.MockAtrributeSet										public boolean isEmpty()
+16		x           java.awt.geom.GeneralPath													<init>(int, byte[], int, float[], int) // comments hint to native, but we found no evidence.
+17		x 			java.security.AccessControlContext											boolean isPrivileged()
+18		x 			java.net.Inet6Address														int deriveNumericScope ( String )
+19		x           java.net.PlainSocketImpl													setFileDescriptor(FileDescriptor)											
+20		x           javax.xml.xpath.XPathFactoryFinder											private XPathFactory loadFromProperty(String, String, InputStream)
+21		x  			javax.swing.text.html.BlockView												boolean isPercentage(int, AttributeSet)
+22		x 			javax.swing.text.html.getColumnCount										public int getColumnCount() // class was public before, method is not used within the package
+23		x 			javax.swing.JEditorPane$HeaderParser										public int findInt ( String , int)
+24		x 			java.lang.invoke.MemberName													public boolean isNative()
+25		x 			java.util.GregorianCalendar	 												private final int yearLength(int)
+26		x 			java.util.concurrent.ConcurrentSkipListMap$Node								boolean isMarker ()
+27		x 			javax.swing.filechooser.FileSystemView$FileSystemRoot           			public void <init>(String)
+28		x 			java.lang.invoke.LambdaForm													void resolve()
+29		x 			java.lang.CharacterDataPrivateUse                               			int getProperties (int)
+30		x 			java.beans.MetaData$java_lang_reflect_Field_PersistenceDelegate				protected Expression instantiate ( Object , Encoder )
+31		x 			java.io.ObjectStreamClass													boolean isSerializable()
+32		x 			java.awt.PeerFixer															void <init> ( ScrollPane ) // pay attention there are two of these
+33		x 			java.swing.text.DefaultCaret												boolean isDotLeftToRight ()
+34		x 			java.swing.html.parser.NPrintWriter											public void <init> (int)											
+35		x 			java.swing.colorchooser.CenterLayout										public Dimension minimumLayoutSize ( Container )	
+36		x   		java.beans.MetaData$javax_swing_JFrame_PersistenceDelegate					void <init> ()
+37		x 			java.lang.String 															void <init> (int, int, char[])
+38		x 			java.math.MutableBigInteger 											    void copyValue(int[])
+39		x 			java.nio.MappedByteBuffer												    void <init> (int, int, int, int, FileDescriptor )
+40		 			javax.swing.text.GlyphPainter1 												public float getSpan ( GlyphView , int, int, TabExpander , float) // reflection
+
+39 out of 40 are true positives
+
+
+OPA:
+
+id 		correct 	class															method
+------------------------------------------------------------------------------------------------------
+1		x 		    java.awt.Container 												private void stopLWModal ()
+2		 			java.lang.invoke.InvokeGeneric 									private MethodHandle dispatch ( MethodType , MethodHandle ) // reflection usage.
+3		 			java.lang.management.ThreadInfo 								private void <init> ( Thread , int, Object , Thread , long, long, long, long, StackTraceElement [] ) // created by the JVM
+4		x 			java.math.BigDecimal 											private BigDecimal audit () // debug left over
+5		x  			java.net.URI$Parser 											private void failExpecting ( String , String , int)
+6		x 			java.text.SimpleDateFormat										private boolean matchDSTString ( String , int, int, int, String [][] )
+7		x 			java.util.regex.Pattern 										private static void printObjectTree ( Pattern$Node ) // debug left over
+8		x 			javax.swing.JComboBox$AccessibleJComboBox$AccessibleEditor 		private void <init> ( JComboBox$AccessibleJComboBox )
+9		            java.lang.ClassLoader 										    private void checkPackageAccess ( Class , ProtectionDomain ) // invoked by JVM after loading a class
+10		x 			java.net.InetAddress 											private static InetAddress [] getAllByName0 ( String )
+11		x 			java.util.TreeMap$SubMap 										private void <init> ( TreeMap )
+12		 			java.lang.invoke.MethodHandleImpl$GuardWithCatch				private Object invoke_L6 ( Object , Object , Object , Object , Object , Object ) // Reflection
+12		x 			javax.swing.text.html.CSS 										private boolean isFloater ( String ) // used in uncommented code
+14		x 			javax.swing.JTree$AccessibleJTree								private Component getCurrentComponent ()
+15		x 			java.util.GregorianCalendar 									private final int yearLength ()
+16		x 		    java.awt.TextComponent 											private boolean canAccessClipboard ()
+17		x 			javax.xml.xpath.XPathFactoryFinder 								private XPathFactory loadFromProperty ( String , String , InputStream )
+18		 			java.net.SocketSecrets  										private static void setOption ( Object , SocketOption , Object ) 			// accessed by reflection
+19	    x 			java.math.BigInteger 											private void <init> ( byte[] , int)
+20		x 			java.lang.invoke.LambdaForm 									private static long zeroJ ()
+21		x 			javax.sql.rowset.spi.SyncFactory 							    private static void showImpl ( ProviderImpl )	// debugging left over
+22		x 			javax.swing.text.html.parser.DocumentParser 					private void debug( String ) // debug leftOver
+23		x 			java.util.Formatter$FormatSpecifier 							private char conversion ()
+24		x 			javax.swing.text.SimpleAttributeSet								private void <init> ( Hashtable )
+25		 			java.io.FileNotFoundException 									private void <init> ( String , String ) 		// invoked by native method
+26		x 			java.awt.Cursor 												private void setPData (long)
+27		x       	java.awt.event.KeyEvent 										private void <init> ( Component , int, long, int, int, char, int, boolean)
+28		x 		    java.lang.invoke.LambdaForm 									private static double zeroD () // uncommented native code for smoke test
+29		x 			java.awt.TextLayout  											private float caretToPointDistance ( float[] , float, float) // test left over
+30		x 			javax.swing.MenuSelectionManager 								private void printMenuElementArray ( MenuElement [] , boolean) // debug left over
+31		x 			java.math.MutableBigInteger                                    	private final void ensureCapacity (int)
+32		x  			java.util.concurrent.Phaser 									private AtomicReference queueFor (int)
+33		 			java.lang.invoke.MethodHandleImpl$GuardWithCatch 				private [VARARGS] Object invoke_V ( Object [] ) // invoked by reflection
+34		x 			java.net.SocketPermission 										private void setDeny ()
+35		 			java.lang.System 												private static void setJavaLangAccess () // invoked by the VM after loading the System class
+36		x 			java.util.JarVerifier$VerifierCodeSource 						private Certificate [] getPrivateCertificates ()
+37		x 		 	java.net.HttpCookie  											private String header ()
+38		x			java.util.concurrent.ForkJoinWorkerThread						private static final boolean casSlotNull ( ForkJoinTask [] , int, ForkJoinTask )
+39		x   	  	java.nio.DirectByteBufferR 										private ByteBuffer putInt (long, int)
+40		x 			javax.swing.tree.VariableHeightLayoutCache 						private Rectangle getBounds (int, Rectangle )
+
+32 out of 40 are true positives
+

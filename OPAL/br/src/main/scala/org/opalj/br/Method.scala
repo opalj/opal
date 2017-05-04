@@ -236,7 +236,7 @@ final class Method private (
      * The number of explicit and implicit – that is, including `this` in case of a
      * non-static method – parameters of this method.
      */
-    def parametersCount: Int = (if (isStatic) 0 else 1) + descriptor.parametersCount
+    def actualArgumentsCount: Int = (if (isStatic) 0 else 1) + descriptor.parametersCount
 
     /**
      * Each method optionally defines a method type signature.

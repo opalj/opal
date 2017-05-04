@@ -71,7 +71,7 @@ case class Method_Info(
 
         val name = this.name
         val jvmDescriptor = descriptor
-        val javaDescriptor = parseMethodDescriptor(name, jvmDescriptor)
+        val javaDescriptor = methodDescriptorAsJavaSignature(name, jvmDescriptor)
         val index = methodIndex.toString
         <div class="method" id={ name + jvmDescriptor } data-name={ name } data-index={ index } data-access-flags={ explicitAccessFlags }>
             <div class="method_signature">

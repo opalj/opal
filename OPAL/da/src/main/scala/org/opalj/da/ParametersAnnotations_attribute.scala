@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -40,10 +40,11 @@ import scala.xml.Node
  */
 trait ParametersAnnotations_attribute extends Attribute {
 
-    final override def attribute_length =
+    final override def attribute_length = {
         parameters_annotations.foldLeft(1 /*num_parameters*/ ) { (c, n) ⇒
             c + n.foldLeft(2 /*num_annotations*/ )((c, n) ⇒ c + n.attribute_length)
         }
+    }
 
     type ParameterAnnotations = IndexedSeq[da.Annotation]
 
@@ -51,14 +52,14 @@ trait ParametersAnnotations_attribute extends Attribute {
 
     def parameters_annotations: ParametersAnnotations
 
-    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
+    def parametersAnnotationstoXHTML(implicit cp: Constant_Pool): Node = {
         val ans = {
             for { // TODO This doesn't make sense: it is no longer possible to distinguish parameters
-                perParameterAnnotations ← parameters_annotations
+                (perParameterAnnotations, parameterIndex) ← parameters_annotations.zipWithIndex
                 annotation ← perParameterAnnotations
             } yield annotation.toXHTML(cp)
         }
 
-        <span>{ ans }</span>
+        <div>{ ans }</div>
     }
 }

@@ -46,10 +46,13 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     final def tag: Int = Constant_Type_Value.id
 
+    def asConstantClass: CONSTANT_Class_info = throw new ClassCastException()
+    def asConstantUTF8: CONSTANT_Utf8_info = throw new ClassCastException()
+
     /**
      * Resolves this constant pool entry and creates a type name as used by Java.
      */
-    def asJavaType(implicit cp: Constant_Pool): String = throw new UnsupportedOperationException()
+    //def asJavaType(implicit cp: Constant_Pool): String = throw new UnsupportedOperationException()
 
     /**
      * Creates a one-to-one representation of this constant pool entry node. The

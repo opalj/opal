@@ -506,7 +506,7 @@ final class ClassFile private (
      *
      * @note The result is recomputed.
      */
-    def hasDefaultConstructor: Boolean = constructors exists { _.parametersCount == 0 }
+    def hasDefaultConstructor: Boolean = constructors exists { _.descriptor.parametersCount == 0 }
 
     /**
      * All defined instance methods. I.e., all methods that are not static,

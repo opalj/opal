@@ -122,7 +122,7 @@ case class ClassValue(class_info_index: Constant_Pool_Index) extends ElementValu
     final override def tag: Int = ClassValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="constant_value type">{ parseReturnType(class_info_index) }.class</span>
+        <span class="constant_value type">{ returnTypeAsJavaType(class_info_index) }.class</span>
     }
 
 }

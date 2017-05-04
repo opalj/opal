@@ -47,18 +47,17 @@ import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.analyses.BasicMethodInfo
 
 /**
- * Simple analysis that identifies those parameters that are directly returned by the
- * given method. Note that some (non-)usages are never a problem.
+ * Simple analysis that identifies unused and passed through parameters; i.e., those that are
+ * directly returned by the given method.
  *
  * @author Michael Eichberg
  */
 object ParameterUsageAnalysis extends DefaultOneStepAnalysis {
 
-    override def title: String = "Identifies unused parameters"
+    override def title: String = "Identifies methods which return a given parameter"
 
     override def description: String = {
-        "Identifies parameters that are not used by the current method (they may, however,"+
-            " be used by methods which override the current one)"
+        "Identifies parameters that are - at least on some paths - directly returned"
     }
 
     override def doAnalyze(
@@ -68,53 +67,68 @@ object ParameterUsageAnalysis extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         var analysisTime: Seconds = Seconds.None
-        val returnedParameters = time {
+        val (returnedParameters, unusedParameters) = time {
 
-            val results = new ConcurrentLinkedQueue[String]
+            val unusedParameters = new ConcurrentLinkedQueue[String]
+            val returnedParameters = new ConcurrentLinkedQueue[String]
             val ai = new InterruptableAI[Domain]
 
-            theProject.parForeachMethodWithBody() { m ⇒
+            val exceptions = theProject.parForeachMethodWithBody() { m ⇒
                 val BasicMethodInfo(classFile, method) = m
-                val parametersCount = method.parametersCount
-                if (parametersCount > 0) {
+                val psCount = method.actualArgumentsCount // includes "this" in case of instance methods
+                if (psCount > 0) {
                     val isStatic = method.isStatic
                     val descriptor = method.descriptor
                     val domain = new BaseDomainWithDefUse(theProject, classFile, method)
                     val result = ai(classFile, method, domain)
                     val instructions = result.domain.code.instructions
-
-                    var parameterIndex = parametersCount - 1
-                    while (parameterIndex >= 0) {
-                        val vo = parameterIndexToValueOrigin(isStatic, descriptor, parameterIndex)
-                        val usedBy = result.domain.usedBy(vo)
-                        usedBy.foreach { usage ⇒
-                            instructions(usage) match {
-                                case r: ReturnInstruction ⇒
-                                    val methodSignature = method.toJava(classFile)
-                                    results.add(
-                                        s"$methodSignature: the $parameterIndex. parameter is returned by instruction $usage"
-                                    )
-                                case _ ⇒ // we don't care about other usages..
+                    val methodSignature = method.toJava(classFile)
+                    def validateArgument(valueOrigin: ValueOrigin): Unit = {
+                        val usedBy = result.domain.usedBy(valueOrigin)
+                        if (usedBy eq null) {
+                            val use = s" the value with origin $valueOrigin is not used"
+                            unusedParameters.add(methodSignature + use)
+                        } else {
+                            usedBy.foreach { usage ⇒
+                                instructions(usage) match {
+                                    case r: ReturnInstruction ⇒
+                                        val use = s" the argument with origin $valueOrigin is returned by $usage"
+                                        returnedParameters.add(methodSignature + use)
+                                    case _ ⇒ // we don't care about other usages..
+                                }
                             }
                         }
-                        parameterIndex -= 1
+                    }
+
+                    var pIndex = method.descriptor.parametersCount - 1
+                    while (pIndex >= 0) {
+                        validateArgument(parameterIndexToValueOrigin(isStatic, descriptor, pIndex))
+                        pIndex -= 1
+                    }
+
+                    if (!isStatic) { // check implicit "this" parameter
+                        validateArgument(valueOrigin = -1)
                     }
                 }
             }
-            results.asScala.toList.sorted
+
+            exceptions.foreach { e ⇒
+                e.printStackTrace()
+                if (e.getCause() != null) e.getCause().printStackTrace()
+                println()
+            }
+
+            (returnedParameters.asScala.toList.sorted, unusedParameters.asScala.toList.sorted)
 
         } { t ⇒ analysisTime = t.toSeconds }
 
         val occurences = returnedParameters.size
         BasicReport(
-            returnedParameters.mkString(
-                "Methods which directly return a parameter:\n",
-                "\n",
+            returnedParameters.mkString("Directly returned parameters:\n", "\n", "\n\n") +
+                unusedParameters.mkString("Unused parameters:\n", "\n", "\n\n") +
                 s"\nThe analysis took $analysisTime and found $occurences direct returns"
-            )
 
         )
     }
 
 }
-
