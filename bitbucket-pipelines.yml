@@ -6,4 +6,3 @@ pipelines:
         script:
           - sbt compileAll
           - sbt test
-          - sbt generateSite
