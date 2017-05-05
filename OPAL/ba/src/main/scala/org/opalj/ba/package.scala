@@ -129,8 +129,8 @@ package object ba { ba ⇒
         val bootstrap_methods = bootstrapMethods map { bootstrapMethod ⇒
             new da.BootstrapMethod(
                 CPEMethodHandle(bootstrapMethod.handle, false),
-                bootstrapMethod.arguments map { arguement ⇒
-                    new da.BootstrapArgument(CPEntryForBootstrapArgument(arguement))
+                bootstrapMethod.arguments map { argument ⇒
+                    new da.BootstrapArgument(CPEntryForBootstrapArgument(argument))
                 }
             )
         }
