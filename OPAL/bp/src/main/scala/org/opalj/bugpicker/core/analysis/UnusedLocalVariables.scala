@@ -78,6 +78,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheCode
 import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.EP
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.ai.analyses.cg.CallGraphFactory
@@ -139,7 +140,7 @@ object UnusedLocalVariables {
         var issues = List.empty[Issue]
 
         // It may happen that a user defines a final local constant
-        // which is then used by the compiler whenever we have a 
+        // which is then used by the compiler whenever we have a
         // reference in the code; in this case we actually have an unused
         // local variable in the bytecode...
         // E.g., given the following code:
@@ -196,7 +197,7 @@ object UnusedLocalVariables {
                         try {
                             val resolvedMethod: Iterable[Method] = callGraph.calls(method, vo)
                             // IMPROVE Use a more precise method to determine if a method has a side effect "pureness" is actually too strong.
-                            if (resolvedMethod.exists(m ⇒ propertyStore(m, Purity.key) == Pure)) {
+                            if (resolvedMethod.exists(m ⇒ propertyStore(m, Purity.key) == EP(m, Pure))) {
                                 issue = "the return value of the call of "+invoke.declaringClass.toJava+
                                     "{ "+
                                     invoke.methodDescriptor.toJava(invoke.name)+
@@ -233,7 +234,7 @@ object UnusedLocalVariables {
                                     issue = s"the constant value ${instruction.toString(vo)} is not used"
                                     relevance = Relevance.Low
                                 }
-                            // else... we filter basically all issues unless we are sure that 
+                            // else... we filter basically all issues unless we are sure that
                             // this is a real issue; i.e.,
                             //  - it is not a default value
                             //  - it is not a final local variable
@@ -280,7 +281,7 @@ object UnusedLocalVariables {
                                         defaultUnusedValueHandling()
                                     }
                                 case None ⇒
-                                    // we were not able to find the class 
+                                    // we were not able to find the class
                                     issue = s"the field value $instr is not used"
                                     relevance = Relevance.DefaultRelevance
                             }
