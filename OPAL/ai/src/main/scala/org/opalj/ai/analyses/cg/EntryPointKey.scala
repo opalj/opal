@@ -189,7 +189,7 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
 }
 
 /* Needed by the `ArbitraryTypeReader` of ficus. */
-private case class EntryPointContainer private (
+case class EntryPointContainer(
     declaringClass: String,
     name:           String,
     descriptor:     Option[String]
