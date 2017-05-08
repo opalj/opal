@@ -148,6 +148,10 @@ package object concurrent {
         tp
     }
 
+    def ExecutionContextN(n: Int): ExecutionContext = {
+        ExecutionContext.fromExecutorService(ThreadPoolN(n))
+    }
+
     /**
      * Returns the singleton instance of the global `ThreadPool` used throughout OPAL.
      */
@@ -161,16 +165,18 @@ package object concurrent {
      *
      * This `ExecutionContext` must not be shutdown.
      */
-    implicit final val OPALExecutionContext: ExecutionContext =
+    implicit final val OPALExecutionContext: ExecutionContext = {
         ExecutionContext.fromExecutorService(ThreadPool)
+    }
 
     //
     // STEP 5
     //
-    final val OPALExecutionContextTaskSupport: ExecutionContextTaskSupport =
+    final val OPALExecutionContextTaskSupport: ExecutionContextTaskSupport = {
         new ExecutionContextTaskSupport(OPALExecutionContext) {
             override def parallelismLevel: Int = NumberOfThreadsForCPUBoundTasks
         }
+    }
 
     //
     // GENERAL HELPER METHODS
