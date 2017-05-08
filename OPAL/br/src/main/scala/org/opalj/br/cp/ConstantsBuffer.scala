@@ -126,8 +126,9 @@ class ConstantsBuffer private (
     }
 
     @throws[ConstantPoolException]
-    def CPEMethodType(descriptor: String, requiresUByteIndex: Boolean): Int = {
-        val cpEntry = CONSTANT_MethodType_info(getOrElseUpdate(CONSTANT_Utf8_info(descriptor), 1))
+    def CPEMethodType(descriptor: MethodDescriptor, requiresUByteIndex: Boolean): Int = {
+        val jvmDescriptor = descriptor.toJVMDescriptor
+        val cpEntry = CONSTANT_MethodType_info(getOrElseUpdate(CONSTANT_Utf8_info(jvmDescriptor), 1))
         validateIndex(getOrElseUpdate(cpEntry, 1), requiresUByteIndex)
     }
 
@@ -178,10 +179,11 @@ class ConstantsBuffer private (
     def CPEMethodRef(
         referenceType: ReferenceType,
         methodName:    String,
-        descriptor:    String
+        descriptor:    MethodDescriptor
     ): Int = {
+        val jvmDescriptor = descriptor.toJVMDescriptor
         val class_index = CPEClass(referenceType, requiresUByteIndex = false)
-        val name_and_type_index = CPENameAndType(methodName, descriptor)
+        val name_and_type_index = CPENameAndType(methodName, jvmDescriptor)
         val cpIndex = getOrElseUpdate(CONSTANT_Methodref_info(class_index, name_and_type_index), 1)
         validateUShortIndex(cpIndex)
     }
@@ -190,10 +192,11 @@ class ConstantsBuffer private (
     def CPEInterfaceMethodRef(
         objectType: ReferenceType,
         methodName: String,
-        descriptor: String
+        descriptor: MethodDescriptor
     ): Int = {
+        val jvmDescriptor = descriptor.toJVMDescriptor
         val class_index = CPEClass(objectType, requiresUByteIndex = false)
-        val name_and_type_index = CPENameAndType(methodName, descriptor)
+        val name_and_type_index = CPENameAndType(methodName, jvmDescriptor)
         val cpMethodRef = CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index)
         validateUShortIndex(getOrElseUpdate(cpMethodRef, 1))
     }
@@ -202,8 +205,10 @@ class ConstantsBuffer private (
     def CPEInvokeDynamic(
         bootstrapMethod: BootstrapMethod,
         name:            String,
-        descriptor:      String
+        descriptor:      MethodDescriptor
     ): Int = {
+        val jvmDescriptor = descriptor.toJVMDescriptor
+
         if (bootstrapMethodAttributeNameIndex == 0)
             bootstrapMethodAttributeNameIndex = CPEUtf8(bi.BootstrapMethodsAttribute.Name)
 
@@ -215,7 +220,7 @@ class ConstantsBuffer private (
             bootstrapMethod.arguments.foreach { CPEntryForBootstrapArgument }
             indexOfBootstrapMethod = bootstrapMethods.size - 1
         }
-        val cpNameAndTypeIndex = CPENameAndType(name, descriptor)
+        val cpNameAndTypeIndex = CPENameAndType(name, jvmDescriptor)
         getOrElseUpdate(CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, cpNameAndTypeIndex), 1)
     }
 
@@ -259,15 +264,13 @@ object ConstantsBuffer {
     def getOrCreateCPEntry(ldc: LDC[_])(implicit constantsBuffer: ConstantsBuffer): Int = {
         import constantsBuffer._
         ldc match {
-            case LoadInt(value)    ⇒ CPEInteger(value, requiresUByteIndex = true)
-            case LoadFloat(value)  ⇒ CPEFloat(value, requiresUByteIndex = true)
-            case LoadString(value) ⇒ CPEString(value, requiresUByteIndex = true)
-            case LoadClass(value)  ⇒ CPEClass(value, requiresUByteIndex = true)
+            case LoadInt(value)          ⇒ CPEInteger(value, requiresUByteIndex = true)
+            case LoadFloat(value)        ⇒ CPEFloat(value, requiresUByteIndex = true)
+            case LoadString(value)       ⇒ CPEString(value, requiresUByteIndex = true)
+            case LoadClass(value)        ⇒ CPEClass(value, requiresUByteIndex = true)
 
-            case LoadMethodHandle(value) ⇒
-                CPEMethodHandle(value, requiresUByteIndex = true)
-            case LoadMethodType(value) ⇒
-                CPEMethodType(value.toJVMDescriptor, requiresUByteIndex = true)
+            case LoadMethodHandle(value) ⇒ CPEMethodHandle(value, requiresUByteIndex = true)
+            case LoadMethodType(value)   ⇒ CPEMethodType(value, requiresUByteIndex = true)
         }
     }
 

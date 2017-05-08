@@ -204,9 +204,9 @@ package object ba { ba ⇒
             val mi @ MethodInvocationInstruction(declaringClass, isInterface, name, descriptor) = i
             val cpeRef =
                 if (isInterface)
-                    CPEInterfaceMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
+                    CPEInterfaceMethodRef(declaringClass, name, descriptor)
                 else
-                    CPEMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
+                    CPEMethodRef(declaringClass, name, descriptor)
             instructions.writeShort(cpeRef)
             mi
         }
@@ -391,15 +391,13 @@ package object ba { ba ⇒
                 case LDC_W.opcode ⇒
                     instructions.writeShort(
                         i match {
-                            case LoadInt_W(value)    ⇒ CPEInteger(value, false)
-                            case LoadFloat_W(value)  ⇒ CPEFloat(value, false)
-                            case LoadClass_W(value)  ⇒ CPEClass(value, false)
-                            case LoadString_W(value) ⇒ CPEString(value, false)
+                            case LoadInt_W(value)          ⇒ CPEInteger(value, false)
+                            case LoadFloat_W(value)        ⇒ CPEFloat(value, false)
+                            case LoadClass_W(value)        ⇒ CPEClass(value, false)
+                            case LoadString_W(value)       ⇒ CPEString(value, false)
 
-                            case LoadMethodHandle_W(value) ⇒
-                                CPEMethodHandle(value, false)
-                            case LoadMethodType_W(value) ⇒
-                                CPEMethodType(value.toJVMDescriptor, false)
+                            case LoadMethodHandle_W(value) ⇒ CPEMethodHandle(value, false)
+                            case LoadMethodType_W(value)   ⇒ CPEMethodType(value, false)
                         }
                     )
 
@@ -411,8 +409,7 @@ package object ba { ba ⇒
 
                 case INVOKEDYNAMIC.opcode ⇒
                     val INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = i
-                    val jvmDescriptor = descriptor.toJVMDescriptor
-                    val cpEntryIndex = CPEInvokeDynamic(bootstrapMethod, name, jvmDescriptor)
+                    val cpEntryIndex = CPEInvokeDynamic(bootstrapMethod, name, descriptor)
                     // CPEInvokeDynamic automatically creates all cp entries required to
                     // later on tranform the bootstrap method
                     instructions.writeShort(cpEntryIndex)
