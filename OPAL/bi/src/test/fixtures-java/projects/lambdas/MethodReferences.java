@@ -29,6 +29,10 @@
 package lambdas;
 
 import annotations.target.InvokedMethod;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import static annotations.target.TargetResolution.*;
 
 
@@ -41,7 +45,9 @@ import static annotations.target.TargetResolution.*;
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
  * 
- * 
+ *
+ *
+ *
  * -->
  *
  * @author Arne Lottmann
@@ -67,6 +73,100 @@ public class MethodReferences {
 	public Value newValue(String value) {
 		ValueCreator v = Value::new;
 		return v.newValue(value);
+	}
+
+	// @InvokedMethod(...)
+	public int instanceMethod() {
+		java.util.function.Function<String, Integer> i = String::length;
+    	return i.apply("instanceMethod");
+
+	}
+
+	// @InvokedMethod(...)
+	public long staticMethod() {
+		java.util.function.LongSupplier t = System::currentTimeMillis;
+		return t.getAsLong();
+	}
+
+	public int explicitTypeArgs() {
+		java.util.function.Function<java.util.List<String>, Integer> t =
+				java.util.List<String>::size;
+		java.util.ArrayList<String> stringArray = new java.util.ArrayList<>();
+		stringArray.add("1");
+		stringArray.add("2");
+		return t.apply(stringArray);
+	}
+
+	public void partialBound(java.util.List<Object> someList) {
+    	// add(int index, E element)
+		java.util.function.BiConsumer<Integer, Object> s = someList::add;
+		s.accept(0, new Object());
+
+		java.lang.Runnable r = someList::add(0, new Object());
+
+		// TODO: Method reference currying, one parameter bound ?
+		// TODO: Functions with 2-3 parameters including double and long and mixed
+	}
+
+	public int inferredTypeArgs() {
+    	//TODO: @SuppressWarnings()
+		java.util.function.Function<java.util.List, Integer> t = java.util.List::size;
+		java.util.ArrayList<String> stringArray = new java.util.ArrayList<>();
+		stringArray.add("1");
+		stringArray.add("2");
+		return t.apply(stringArray);
+	}
+
+	public int[] intArrayClone() {
+    	int[] intArray = {0, 1, 2, 42};
+    	java.util.function.Function<int[], int[]> t = int[]::clone;
+
+    	return t.apply(intArray);
+	}
+
+	public int[][] intArrayArrayClone() {
+		int[][] intArray = {{0, 1, 2, 42}};
+		java.util.function.Function<int[][], int[][]> t = int[][]::clone;
+
+		return t.apply(intArray);
+	}
+
+	public boolean objectMethod() {
+    	Value v = new Value("foo");
+    	java.util.function.BooleanSupplier t = v::isEmpty;
+    	return t.getAsBoolean();
+	}
+
+	public void referencePrintln() {
+    	java.util.function.Consumer<String> c = System.out::println;
+    	c.accept("Hello World!");
+	}
+
+	public int referenceLength() {
+    	java.util.function.Supplier<Integer> s = "foo"::length;
+    	return s.get();
+	}
+
+	public int arrayMethod() {
+		String[] stringArray = {"0", "1", "2", "42"};
+
+		java.util.function.IntSupplier s = stringArray[0]::length;
+
+		return s.getAsInt();
+	}
+
+	public Iterator<String> ternaryIterator(boolean t) {
+		java.util.ArrayList<String> stringArray1 = new java.util.ArrayList<>();
+		stringArray1.add("1");
+		stringArray1.add("2");
+		java.util.ArrayList<String> stringArray2 = new java.util.ArrayList<>();
+		stringArray2.add("foo");
+		stringArray2.add("bar");
+
+		java.util.function.Supplier<Iterator<String>> f =
+				(t ? stringArray1 : stringArray2) :: iterator;
+
+		return f.get();
 	}
 
 	public static class Value {
