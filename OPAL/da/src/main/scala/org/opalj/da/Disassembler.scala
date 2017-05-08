@@ -62,14 +62,18 @@ object Disassembler {
     }
 
     def processClassFile(classFile: ClassFile): Unit = {
+        val htmlRep = classFile.toXHTML().toString
         try {
-            val file = writeAndOpen(classFile.toXHTML().toString, classFile.thisType, ".html")
+            val file = writeAndOpen(htmlRep, classFile.thisType, ".html")
             OPALLogger.info("progress", s"generated the HTML documentation $file")
         } catch {
-            case OpeningFileFailedException(file, cause) ⇒ {
+            case OpeningFileFailedException(file, cause) ⇒
                 val message = s"Opening the html file $file failed: ${cause.getMessage()}"
                 OPALLogger.error("setup", message)
-            }
+            case t: Throwable ⇒
+                println(htmlRep)
+                throw t
+
         }
     }
 
