@@ -524,7 +524,6 @@ package object ba { ba ⇒
                     CPEUtf8(bi.ConstantValueAttribute.Name),
                     CPEString(value, false)
                 )
-
             case br.ConstantDouble(value) ⇒
                 val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
                 da.ConstantValue_attribute(attributeNameIndex, CPEDouble(value))
