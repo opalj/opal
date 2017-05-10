@@ -61,5 +61,8 @@ case class SynthesizedClassFiles(classFiles: List[(ClassFile, Option[AnyRef])]) 
 }
 
 object SynthesizedClassFiles {
+
     final val KindId = 1002
+
+    final val Name = "org.opalj.br.SynthesizedClassFiles"
 }
