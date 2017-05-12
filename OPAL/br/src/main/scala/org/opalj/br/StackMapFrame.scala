@@ -58,18 +58,6 @@ final case class SameLocals1StackItemFrameExtended(
     final def frameType: Int = 247
 
 }
-object SameLocals1StackItemFrameExtended {
-
-    def apply(
-        frameType:                     Int,
-        offsetDelta:                   Int,
-        verificationTypeInfoStackItem: VerificationTypeInfo
-    ): SameLocals1StackItemFrameExtended = {
-        assert(frameType == 247)
-        new SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStackItem)
-    }
-
-}
 
 sealed trait ChopFrame extends StackMapFrame {
     def offsetDelta: Int
