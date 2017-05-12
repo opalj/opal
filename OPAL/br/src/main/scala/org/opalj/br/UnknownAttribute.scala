@@ -34,7 +34,7 @@ package br
  *
  * @author Michael Eichberg
  */
-case class UnknownAttribute(  attributeName: String, info: Array[Byte]) extends Attribute {
+case class UnknownAttribute(attributeName: String, info: Array[Byte]) extends Attribute {
 
     override def kindId: Int = UnknownAttribute.KindId
 
