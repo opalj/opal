@@ -89,8 +89,11 @@ final case class AppendFrame(
 ) extends StackMapFrame
 
 final case class FullFrame(
-    frameType:                  Int,
-    offsetDelta:                Int,
-    verificationTypeInfoLocals: VerificationTypeInfoLocals,
-    verificationTypeInfoStack:  VerificationTypeInfoStack
-) extends StackMapFrame
+        offsetDelta:                Int,
+        verificationTypeInfoLocals: VerificationTypeInfoLocals,
+        verificationTypeInfoStack:  VerificationTypeInfoStack
+) extends StackMapFrame {
+
+    final def frameType: Int = 255
+
+}
