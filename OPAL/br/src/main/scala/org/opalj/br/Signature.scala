@@ -35,7 +35,7 @@ package br
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-trait SignatureElement {
+trait SignatureElement { // RECALL: Void and the BaseTypes are also subtypes!
 
     def accept[T](sv: SignatureVisitor[T]): T
 
@@ -233,7 +233,7 @@ sealed trait ThrowsSignature extends SignatureElement
  * res2: String = Col<List(ProperTypeArgument(variance=None,signature=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List())))>
  * }}}
  */
-sealed trait Signature extends SignatureElement with Attribute
+sealed abstract class Signature extends SignatureElement with Attribute
 
 object Signature {
 
@@ -371,11 +371,7 @@ case class ClassTypeSignature(
     override def kindId: Int = ClassTypeSignature.KindId
 
     override def toJVMSignature: String = {
-        val packageName =
-            if (packageIdentifier.isDefined)
-                packageIdentifier.get
-            else
-                ""
+        val packageName = packageIdentifier.getOrElse("")
 
         "L"+
             packageName +
