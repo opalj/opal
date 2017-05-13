@@ -235,15 +235,17 @@ sealed trait ThrowsSignature extends SignatureElement
  */
 sealed trait Signature extends SignatureElement with Attribute
 
-private[br] object Signature {
+object Signature {
 
-    def formalTypeParametersToJVMSignature(formalTypeParameters: List[FormalTypeParameter]): String = {
+    private[br] def formalTypeParametersToJVMSignature(formalTypeParameters: List[FormalTypeParameter]): String = {
         if (formalTypeParameters.isEmpty) {
             ""
         } else {
             formalTypeParameters.map(_.toJVMSignature).mkString("<", "", ">")
         }
     }
+
+    def unapply(s: Signature): Some[String] = Some(s.toJVMSignature)
 
 }
 import Signature.formalTypeParametersToJVMSignature
