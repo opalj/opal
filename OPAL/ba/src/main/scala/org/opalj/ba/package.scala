@@ -600,6 +600,23 @@ package object ba { ba ⇒
                     )
                 )
 
+            case br.LocalVariableTypeTable.KindId ⇒
+                val br.LocalVariableTypeTable(localVariableTypes) = attribute
+                Some(
+                    da.LocalVariableTypeTable_attribute(
+                        CPEUtf8(bi.LocalVariableTypeTableAttribute.Name),
+                        localVariableTypes.map { l ⇒
+                            da.LocalVariableTypeTableEntry(
+                                start_pc = l.startPC,
+                                length = l.length,
+                                name_index = CPEUtf8(l.name),
+                                signature_index = CPEUtf8(l.signature.toJVMSignature),
+                                index = l.index
+                            )
+                        }
+                    )
+                )
+
             case br.MethodParameterTable.KindId ⇒
                 val br.MethodParameterTable(parameters) = attribute
                 Some(
