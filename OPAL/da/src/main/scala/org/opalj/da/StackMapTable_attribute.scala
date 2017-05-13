@@ -59,12 +59,12 @@ case class StackMapTable_attribute(
 
     def stack_map_framestoXHTML(implicit cp: Constant_Pool): Node = {
         var offset: Int = -1
-        val frames = for (stack_map_frame ← stack_map_frames) yield {
-            val Nodehtml = stack_map_frame.toXHTML(cp, offset)
-            offset = stack_map_frame.initial_offset
-            Nodehtml
+        val framesAsXHTML = for (stack_map_frame ← stack_map_frames) yield {
+            val (frameAsXHTML, newOffset) = stack_map_frame.toXHTML(cp, offset)
+            offset = newOffset
+            frameAsXHTML
         }
-        <div> { frames } </div>
+        <div> { framesAsXHTML } </div>
     }
 
 }

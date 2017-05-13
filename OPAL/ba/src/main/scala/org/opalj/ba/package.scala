@@ -688,31 +688,19 @@ package object ba { ba ⇒
                         throw new Error(s"unexpected/unsupported stack map frame type: $frameType")
                     } else if (frameType == 247) {
                         val br.SameLocals1StackItemFrameExtended(offsetDelta, vti) = f
-                        da.SameLocals1StackItemFrameExtended(
-                            frameType,
-                            offsetDelta,
-                            toDA(vti)
-                        )
+                        da.SameLocals1StackItemFrameExtended(frameType, offsetDelta, toDA(vti))
                     } else if (frameType < 251) {
-
-                        // ChopFrame(frame_type, in.readUnsignedShort)
-                        ???
+                        val br.ChopFrame(frameType, offsetDelta) = f
+                        da.ChopFrame(frameType, offsetDelta)
                     } else if (frameType == 251) {
-                        // SameFrameExtended(251, in.readUnsignedShort)
-                        ???
+                        val br.SameFrameExtended(offsetDelta) = f
+                        da.SameFrameExtended(frameType, offsetDelta)
                     } else if (frameType < 255) {
-                        /*AppendFrame(
-                            frame_type,
-                            in.readUnsignedShort,
-                            repeat(frame_type - 251 /*number of entries*/ ) { VerificationTypeInfo(cp, in) }
-                        )*/
-                        ???
+                        val br.AppendFrame(_, offsetDelta, vtis) = f
+                        da.AppendFrame(frameType, offsetDelta, vtis.map(toDA))
                     } else if (frameType == 255) {
-                        //FullFrame(
-                        //    255
-                        // ...
-                        //)
-                        ???
+                        val br.FullFrame(offsetDelta, vtiLocals, vtiStack) = f
+                        da.FullFrame(255, offsetDelta, vtiLocals.map(toDA), vtiStack.map(toDA))
                     } else {
                         throw new Error(s"frame type out of range[0..255] $frameType")
                     }
