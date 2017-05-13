@@ -724,11 +724,14 @@ package object ba { ba ⇒
             /*
              *  - 12-16 The Signature Attribute
              */
-            case br.ClassSignature.KindId /* == 12 */        ⇒ ???
-            case br.MethodTypeSignature.KindId /* == 13 */   ⇒ ???
-            case br.ArrayTypeSignature.KindId /* == 14 */    ⇒ ???
-            case br.ClassTypeSignature.KindId /* == 15 */    ⇒ ???
-            case br.TypeVariableSignature.KindId /* == 16 */ ⇒ ???
+            case br.ClassSignature.KindId |
+                br.MethodTypeSignature.KindId |
+                br.ClassTypeSignature.KindId |
+                br.ArrayTypeSignature.KindId |
+                br.TypeVariableSignature.KindId ⇒
+                val attributeNameIndex = CPEUtf8(bi.SignatureAttribute.Name)
+                val br.Signature(jvmSignature) = attribute
+                Some(da.Signature_attribute(attributeNameIndex, CPEUtf8(jvmSignature)))
 
             /*
              *  - 21 The LocalVariableTypeTable Attribute
