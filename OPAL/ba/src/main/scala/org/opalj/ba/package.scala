@@ -496,6 +496,84 @@ package object ba { ba ⇒
         )
     }
 
+    def toDA(
+        elementValue: br.ElementValue
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.ElementValue = {
+        import constantsBuffer._
+        (elementValue.kindId: @switch) match {
+            case br.ByteValue.KindId ⇒
+                val br.ByteValue(value) = elementValue
+                da.ByteValue(CPEInteger(value.toInt, false))
+
+            case br.CharValue.KindId ⇒
+                val br.CharValue(value) = elementValue
+                da.CharValue(CPEInteger(value.toInt, false))
+
+            case br.DoubleValue.KindId ⇒
+                val br.DoubleValue(value) = elementValue
+                da.DoubleValue(CPEDouble(value))
+
+            case br.FloatValue.KindId ⇒
+                val br.FloatValue(value) = elementValue
+                da.FloatValue(CPEFloat(value, false))
+
+            case br.IntValue.KindId ⇒
+                val br.IntValue(value) = elementValue
+                da.IntValue(CPEInteger(value, false))
+
+            case br.LongValue.KindId ⇒
+                val br.LongValue(value) = elementValue
+                da.LongValue(CPELong(value))
+
+            case br.ShortValue.KindId ⇒
+                val br.ShortValue(value) = elementValue
+                da.ShortValue(CPEInteger(value.toInt, false))
+
+            case br.BooleanValue.KindId ⇒
+                val br.BooleanValue(value) = elementValue
+                da.BooleanValue(CPEInteger(if (value) 1 else 0, false))
+
+            case br.StringValue.KindId ⇒
+                val br.StringValue(value) = elementValue
+                da.StringValue(CPEUtf8(value))
+
+            case br.ClassValue.KindId ⇒
+                val br.ClassValue(value) = elementValue
+                da.StringValue(CPEUtf8(value.toJVMTypeName))
+
+            case br.EnumValue.KindId ⇒
+                val br.EnumValue(enumType, enumName) = elementValue
+                da.EnumValue(CPEUtf8(enumType.toJVMTypeName), CPEUtf8(enumName))
+
+            case br.ArrayValue.KindId ⇒
+                val br.ArrayValue(values) = elementValue
+                val daElementValues = values.map { ev: br.ElementValue ⇒ toDA(ev) }
+                da.ArrayValue(daElementValues)
+
+            case br.AnnotationValue.KindId ⇒
+                val br.AnnotationValue(annotation) = elementValue
+                da.AnnotationValue(toDA(annotation))
+        }
+    }
+
+    def toDA(
+        annotation: br.Annotation
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.Annotation = {
+        val br.Annotation(t, evps) = annotation
+        val daEVPs = evps.map { evp ⇒
+            da.ElementValuePair(constantsBuffer.CPEUtf8(evp.name), toDA(evp.value))
+        }
+        da.Annotation(constantsBuffer.CPEUtf8(t.toJVMTypeName), daEVPs)
+    }
+
     /**
      * Converts the given [[org.opalj.br.Attribute]] to a [[org.opalj.da.Attribute]] using
      * the given configuration.
@@ -709,27 +787,65 @@ package object ba { ba ⇒
                     da.StackMapTable_attribute(CPEUtf8(bi.StackMapTableAttribute.Name), daFrames)
                 )
 
-            /*
-             *  - 12-16 The Signature Attribute
-             */
+            /* 12-16 The Signature Attribute */
             case br.ClassSignature.KindId |
                 br.MethodTypeSignature.KindId |
                 br.ClassTypeSignature.KindId |
                 br.ArrayTypeSignature.KindId |
                 br.TypeVariableSignature.KindId ⇒
-                val attributeNameIndex = CPEUtf8(bi.SignatureAttribute.Name)
                 val br.Signature(jvmSignature) = attribute
+                val attributeNameIndex = CPEUtf8(bi.SignatureAttribute.Name)
+
                 Some(da.Signature_attribute(attributeNameIndex, CPEUtf8(jvmSignature)))
 
+            /* 29-41 The AnnotationDefault Attribute */
+            case br.ByteValue.KindId |
+                br.CharValue.KindId |
+                br.DoubleValue.KindId |
+                br.FloatValue.KindId |
+                br.IntValue.KindId |
+                br.LongValue.KindId |
+                br.ShortValue.KindId |
+                br.BooleanValue.KindId |
+                br.StringValue.KindId |
+                br.ClassValue.KindId |
+                br.EnumValue.KindId |
+                br.ArrayValue.KindId |
+                br.AnnotationValue.KindId ⇒
+                val ev = attribute.asInstanceOf[br.ElementValue]
+                val attributeNameIndex = CPEUtf8(bi.AnnotationDefaultAttribute.Name)
+                val elementValue = toDA(ev: br.ElementValue)
+                Some(da.AnnotationDefault_attribute(attributeNameIndex, elementValue))
+
+            case br.RuntimeVisibleAnnotationTable.KindId ⇒
+                val br.RuntimeVisibleAnnotationTable(annotations) = attribute
+                val attributeNameIndex = CPEUtf8(bi.RuntimeVisibleAnnotationsAttribute.Name)
+                val daAnnotations = annotations.map(toDA)
+                Some(da.RuntimeVisibleAnnotations_attribute(attributeNameIndex, daAnnotations))
+
+            case br.RuntimeInvisibleAnnotationTable.KindId ⇒
+                val br.RuntimeInvisibleAnnotationTable(annotations) = attribute
+                val attributeNameIndex = CPEUtf8(bi.RuntimeInvisibleAnnotationsAttribute.Name)
+                val daAnnotations = annotations.map(toDA)
+                Some(da.RuntimeInvisibleAnnotations_attribute(attributeNameIndex, daAnnotations))
+
+            case br.RuntimeVisibleParameterAnnotationTable.KindId ⇒
+                val br.RuntimeVisibleParameterAnnotationTable(parameterAnnotations) = attribute
+                val attributeName = bi.RuntimeVisibleParameterAnnotationsAttribute.Name
+                val attributeNameIndex = CPEUtf8(attributeName)
+                val daPAs = parameterAnnotations.map(as ⇒ as.map(toDA))
+                Some(da.RuntimeVisibleParameterAnnotations_attribute(attributeNameIndex, daPAs))
+
+            case br.RuntimeInvisibleParameterAnnotationTable.KindId ⇒
+                val br.RuntimeInvisibleParameterAnnotationTable(parameterAnnotations) = attribute
+                val attributeName = bi.RuntimeInvisibleParameterAnnotationsAttribute.Name
+                val attributeNameIndex = CPEUtf8(attributeName)
+                val daPAs = parameterAnnotations.map(as ⇒ as.map(toDA))
+                Some(da.RuntimeInvisibleParameterAnnotations_attribute(attributeNameIndex, daPAs))
+
             /*
-             *  - 21 The LocalVariableTypeTable Attribute
-             *  - 23 The RuntimeVisibleAnnotations Attribute
-             *  - 24 The RuntimeInvisibleAnnotations Attribute
-             *  - 25 The RuntimeVisibleParameterAnnotations Attribute
-             *  - 26 The RuntimeInvisibleParameterAnnotations Attribute
              *  - 27 The RuntimeVisibleTypeAnnotations Attribute
              *  - 28 The RuntimeInvisibleTypeAnnotations Attribute
-             *  - 29-41 The AnnotationDefault Attribute
              */
 
             case br.VirtualTypeFlag.KindId ⇒

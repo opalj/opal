@@ -50,6 +50,13 @@ sealed trait ElementValue extends Attribute {
 object ElementValue {
     final val minKindId = ByteValue.KindId
     final val maxKindId = AnnotationValue.KindId
+
+    def unapply(attribute: Attribute): Boolean = {
+        attribute match {
+            case _: ElementValue ⇒ true
+            case _               ⇒ false
+        }
+    }
 }
 
 /**
@@ -260,4 +267,3 @@ object AnnotationValue {
     final val KindId = 41
 
 }
-
