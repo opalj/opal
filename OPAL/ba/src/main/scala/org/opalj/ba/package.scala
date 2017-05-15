@@ -577,7 +577,7 @@ package object ba { ba ⇒
     /**
      * Converts the given [[org.opalj.br.Attribute]] to a [[org.opalj.da.Attribute]] using
      * the given configuration.
-     * @see [[org.opalj.Attribute.kindId]] for the list of all supported attributes.
+     * @see [[org.opalj.br.Attribute#kindId]] for the list of all supported attributes.
      */
     def toDA(
         attribute: Attribute
