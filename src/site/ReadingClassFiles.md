@@ -32,5 +32,5 @@ In most cases, an explicit representation of the constant pool actually complica
     val classFileName = "OPAL/ai/target/scala-2.11/classes/org/opalj/ai/AI.class"
     val cfs : List[ClassFile] =
         process(new DataInputStream(new FileInputStream(classFileName))){ in =>
-            org.opalj.br.ClassFileReader.ClassFile(in)
+            org.opalj.br.reader.Java8Framework.ClassFile(in)
         }
