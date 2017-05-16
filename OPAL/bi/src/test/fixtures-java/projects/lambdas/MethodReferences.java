@@ -236,14 +236,14 @@ public class MethodReferences {
 		}
 	}
 
-	public class GenericConstructor {
+	public static class GenericConstructor {
     	Object p;
     	<T> GenericConstructor(T param) {
     		p = param;
 		}
 	}
 
-	public class GenericClass<T> {
+	public static class GenericClass<T> {
     	Object p;
     	T q;
     	<U> GenericClass(U param) {
@@ -251,14 +251,14 @@ public class MethodReferences {
 		}
 	}
 
-	public class Parent {
+	public static class Parent {
     	@Override
     	public String toString() {
     		return "Parent";
 		}
 	}
 
-	public class Child extends Parent {
+	public static class Child extends Parent {
     	public java.util.function.Supplier<String> getSuperToString() {
     		return super::toString;
 		}
