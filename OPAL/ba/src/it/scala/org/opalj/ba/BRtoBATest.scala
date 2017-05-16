@@ -89,7 +89,7 @@ class BRtoBATest extends FlatSpec with Matchers {
 
                 // PART 2... recreate the class file from the serialized file
                 val rawClassFileIn = new DataInputStream(new ByteArrayInputStream(rawClassFile1))
-                /*val brClassFile2 =*/ Java8Framework.ClassFile(rawClassFileIn).head
+                val brClassFile2 = Java8Framework.ClassFile(rawClassFileIn).head
 
                 // PART 3... compare the class files...
                 brClassFile1.findStructuralInequality(brClassFile2) should be(None)

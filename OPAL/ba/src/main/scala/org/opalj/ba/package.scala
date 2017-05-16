@@ -649,10 +649,11 @@ package object ba { ba ⇒
                         Some(da.LineNumberTable_attribute(attributeNameIndex, lnt))
 
                     case c: br.CompactLineNumberTable ⇒
+                        val lineNumbers = c.rawLineNumbers
                         val lnt =
-                            for (i ← 0 until c.lineNumbers.size / 4) yield da.LineNumberTableEntry(
-                                c.asUnsignedShort(c.lineNumbers(i), c.lineNumbers(i + 1)),
-                                c.asUnsignedShort(c.lineNumbers(i + 2), c.lineNumbers(i + 3))
+                            for (i ← 0 until lineNumbers.size / 4) yield da.LineNumberTableEntry(
+                                c.asUnsignedShort(lineNumbers(i), lineNumbers(i + 1)),
+                                c.asUnsignedShort(lineNumbers(i + 2), lineNumbers(i + 3))
                             )
                         Some(da.LineNumberTable_attribute(attributeNameIndex, lnt))
 
