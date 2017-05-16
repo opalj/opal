@@ -65,6 +65,14 @@ trait Instruction extends InstructionLike {
         code:           Code,
         classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Chain[PC]
+
+    /**
+     * Checks for structural equality of two instructions.
+     *
+     * @note   Implemted by using the underlying (compiler generated) equals methods.
+     */
+    def structurallyEquals(other: Instruction): Boolean = this == other
+
 }
 
 /**
