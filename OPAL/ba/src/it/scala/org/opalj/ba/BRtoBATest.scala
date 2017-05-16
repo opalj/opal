@@ -68,25 +68,39 @@ class BRtoBATest extends FlatSpec with Matchers {
 
         zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze ⇒
 
-            val classFile = {
+            val brClassFile1 = {
                 val file = zipFile.getInputStream(ze)
                 val classFileSize = ze.getSize.toInt
                 val raw = new Array[Byte](classFileSize)
                 val bin = new BufferedInputStream(file, classFileSize)
                 val bytesRead = bin.read(raw, 0, classFileSize)
-                assert(bytesRead == classFileSize, "the class file was not successfully read")
+                assert(bytesRead == classFileSize, "reading the zip file failed")
                 Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(raw))).head
             }
 
             try {
-                toDA(classFile)
+                // PART 1... just serialize the file...
+                // this may have - in comparison with the original class file:
+                //  - a new (optimal) constant pool,
+                //  - reordered fiels,
+                //  - reordered methods
+                val daClassFile1 = toDA(brClassFile1)
+                val rawClassFile1 = org.opalj.bc.Assembler(daClassFile1)
+
+                // PART 2... recreate the class file from the serialized file
+                val rawClassFileIn = new DataInputStream(new ByteArrayInputStream(rawClassFile1))
+                /*val brClassFile2 =*/ Java8Framework.ClassFile(rawClassFileIn).head
+
+                // PART 3... compare the class files...
+                // TODO....
+
                 entriesCount.incrementAndGet()
             } catch {
                 case e: Exception ⇒
                     println(" -> failed: "+e.getMessage)
                     Lock.synchronized {
                         val details = e.getMessage + e.getClass.getSimpleName
-                        val message = s"failed: $ze(${classFile.thisType}); message:"+details
+                        val message = s"failed: $ze(${brClassFile1.thisType}); message:"+details
                         val newException = new RuntimeException(message, e)
                         exceptions = newException :: exceptions
                     }
