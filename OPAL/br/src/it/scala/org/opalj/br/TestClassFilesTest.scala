@@ -41,6 +41,8 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.io.process
 import org.opalj.br.reader._
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bytecode.JRELibraryFolder
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
@@ -52,17 +54,15 @@ import org.opalj.br.reader._
 @RunWith(classOf[JUnitRunner])
 class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARALLELIZED*/ {
 
-    behavior of "OPAL"
+    behavior of "OPAL's ClassFiles"
 
-    val jreLibFolder: File = org.opalj.bytecode.JRELibraryFolder
+    val jreLibFolder: File = JRELibraryFolder
+    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
     var count = 0
     for {
-        file ← jreLibFolder.listFiles
-        if file.isFile
-        if file.canRead
-        if file.getName.endsWith(".jar")
-        if file.length() > 0
+        file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
+        if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
     } {
         count += 1
         it should ("be able to parse the class files in "+file) in {
