@@ -1,8 +1,14 @@
 image: opalj/sbt_scala_javafx
+clone:
+    depth: 1
 
 pipelines:
-  default:
+    default:
     - step:
         script:
-          - sbt compileAll
-          - sbt test
+            - sbt it:compile test:compile
+
+    branches:
+        '*':
+            - sbt compileAll
+            - sbt test
