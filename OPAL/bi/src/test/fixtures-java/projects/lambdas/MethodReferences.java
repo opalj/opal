@@ -30,7 +30,7 @@ package lambdas;
 
 import annotations.target.InvokedMethod;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import static annotations.target.TargetResolution.*;
@@ -102,7 +102,7 @@ public class MethodReferences {
 		java.util.function.BiConsumer<Integer, Object> s = someList::add;
 		s.accept(0, new Object());
 
-		java.lang.Runnable r = someList::add(0, new Object());
+		//java.lang.Runnable r = someList::add(0, new Object());
 
 		// TODO: Method reference currying, one parameter bound ?
 		// TODO: Functions with 2-3 parameters including double and long and mixed
@@ -167,6 +167,106 @@ public class MethodReferences {
 				(t ? stringArray1 : stringArray2) :: iterator;
 
 		return f.get();
+	}
+
+	public String superToString() {
+    	java.util.function.Supplier<String> s = new Child().getSuperToString();
+    	return s.get();
+	}
+
+	public String overloadResolution() {
+    	java.util.function.Function<Double, String> f = String::valueOf;
+    	return f.apply(3.14);
+	}
+
+	public int[] typeArgsFromContext() {
+		java.util.function.Consumer<int[]> c = Arrays::sort;
+
+		int[] someInts = {3, 2, 9, 14, 7};
+
+		c.accept(someInts);
+		return someInts;
+	}
+
+	public int[] typeArgsExplicit() {
+		java.util.function.Consumer<int[]> c = Arrays::<int[]>sort;
+
+		int[] someInts = {3, 2, 9, 14, 7};
+
+		c.accept(someInts);
+		return someInts;
+	}
+
+	public java.util.ArrayList<String> parameterizedConstructor() {
+    	java.util.function.Supplier<java.util.ArrayList<String>> s =
+				java.util.ArrayList<String>::new;
+    	return s.get();
+	}
+
+	public java.util.ArrayList inferredConstructor() {
+		java.util.function.Supplier<java.util.ArrayList> s =
+				java.util.ArrayList::new;
+		return s.get();
+	}
+
+	public GenericConstructor genericConstructor() {
+    	java.util.function.Function<String, GenericConstructor> f = GenericConstructor::<String>new;
+    	return f.apply("42");
+	}
+
+	public GenericClass<String> genericClass() {
+		java.util.function.Function<String, GenericClass<String>> f =
+				GenericClass<String>::<String>new;
+		return f.apply("42");
+	}
+
+	public Outer.Inner nestedClass() {
+    	java.util.function.Supplier<Outer.Inner> s = Outer.Inner::new;
+    	return s.get();
+	}
+
+	public int[] arrayNew() {
+    	java.util.function.Function<Integer, int[]> f = int[]::new;
+    	return f.apply(42);
+	}
+
+	public static class Outer {
+    	public static class Inner {
+
+		}
+	}
+
+	public class GenericConstructor {
+    	Object p;
+    	<T> GenericConstructor(T param) {
+    		p = param;
+		}
+	}
+
+	public class GenericClass<T> {
+    	Object p;
+    	T q;
+    	<U> GenericClass(U param) {
+    		p = param;
+		}
+	}
+
+	public class Parent {
+    	@Override
+    	public String toString() {
+    		return "Parent";
+		}
+	}
+
+	public class Child extends Parent {
+    	public java.util.function.Supplier<String> getSuperToString() {
+    		return super::toString;
+		}
+
+		@Override
+		public String toString() {
+    		return "Child";
+		}
 	}
 
 	public static class Value {
