@@ -38,6 +38,8 @@ case class StackMapTable(stackMapFrames: StackMapFrames) extends Attribute {
 
     override def kindId: Int = StackMapTable.KindId
 
+    override def structurallyEquals(other: Attribute): Boolean = this == other
+
 }
 object StackMapTable {
 

@@ -233,7 +233,11 @@ sealed trait ThrowsSignature extends SignatureElement
  * res2: String = Col<List(ProperTypeArgument(variance=None,signature=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List())))>
  * }}}
  */
-sealed abstract class Signature extends SignatureElement with Attribute
+sealed abstract class Signature extends SignatureElement with Attribute {
+
+    override def structurallyEquals(other: Attribute): Boolean = this == other
+
+}
 
 object Signature {
 

@@ -42,6 +42,8 @@ case class SourceFile(sourceFile: String) extends Attribute {
 
     override def kindId: Int = SourceFile.KindId
 
+    override def structurallyEquals(other: Attribute): Boolean = this == other
+
 }
 object SourceFile {
 

@@ -100,7 +100,7 @@ import org.opalj.collection.immutable.Naught
  * @note    Equality of `ClassFile` objects is reference based and a class file's hash code
  *          is the same as the underlying [[ObjectType]]'s hash code; i.e., ' `thisType`'s hash code.
  *
- * @author Michael Eichberg
+ * @author  Michael Eichberg
  */
 final class ClassFile private (
         val version:        UShortPair,
@@ -112,6 +112,54 @@ final class ClassFile private (
         val methods:        Methods,
         val attributes:     Attributes
 ) extends ConcreteSourceElement {
+
+    /**
+     * Compares this class file with the given one to identify (the first) structural inequality.
+     *
+     * @return `None` if this class file and the other are structural equal - i.e., if both
+     *          effectively implement the same class.
+     */
+    final def findStructuralInequality(
+        other: ClassFile
+    ): Option[(ConcreteSourceElement, ConcreteSourceElement)] = {
+        if (this.version != other.version ||
+            this.accessFlags != other.accessFlags ||
+            this.thisType != other.thisType ||
+            this.superclassType != other.superclassType ||
+            this.interfaceTypes != other.interfaceTypes ||
+            this.fields.size != other.fields.size ||
+            this.methods.size != other.methods.size ||
+            this.attributes.size != other.attributes.size) {
+            return Some((this, other));
+        }
+        if (!this.attributes.forall(thisA ⇒ other.attributes.find(_ == thisA).isDefined)) {
+            return Some((this, other));
+        }
+
+        val thisFieldIt = this.fields.iterator
+        val otherFieldIt = other.fields.iterator
+        while (thisFieldIt.hasNext) {
+            val thisField = thisFieldIt.next
+            val otherField = otherFieldIt.next
+            if (!thisField.structurallyEquals(otherField)) {
+                return Some((thisField, otherField));
+            }
+        }
+
+        val thisMethodIt = this.methods.iterator
+        val otherMethodIt = other.methods.iterator
+        while (thisMethodIt.hasNext) {
+            val thisMethod = thisMethodIt.next
+            val otherMethod = otherMethodIt.next
+            if (!thisMethod.structurallyEquals(otherMethod)) {
+                return Some((thisMethod, otherMethod));
+            }
+        }
+
+        None
+    }
+
+    def structurallyEquals(other: ClassFile): Boolean = findStructuralInequality(other).isEmpty
 
     /**
      * Creates a shallow copy of this class file object.

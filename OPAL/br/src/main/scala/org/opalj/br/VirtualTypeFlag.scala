@@ -52,4 +52,6 @@ case object VirtualTypeFlag extends Attribute {
 
     override def kindId = KindId
 
+    override def structurallyEquals(other: Attribute): Boolean = this == other
+
 }

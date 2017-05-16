@@ -44,19 +44,33 @@ package br
  *
  * @author Michael Eichberg
  */
-case class CompactLineNumberTable(lineNumbers: Array[Byte]) extends LineNumberTable {
+case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumberTable {
+
+    def lineNumbers: LineNumbers = {
+        val lineNumbersBuilder = List.newBuilder[LineNumber]
+        var e = 0
+        val entries = rawLineNumbers.size / 4
+        while (e < entries) {
+            val index = e * 4
+            val startPC = asUnsignedShort(rawLineNumbers(index), rawLineNumbers(index + 1))
+            val lineNumber = asUnsignedShort(rawLineNumbers(index + 2), rawLineNumbers(index + 3))
+            lineNumbersBuilder += LineNumber(startPC, lineNumber)
+            e += 1
+        }
+        lineNumbersBuilder.result
+    }
 
     def asUnsignedShort(hb: Byte, lb: Byte): Int = ((hb & 0xFF) << 8) + (lb & 0xFF)
 
     def lookupLineNumber(pc: PC): Option[Int] = {
         var lastLineNumber = -1
         var e = 0
-        val entries = lineNumbers.size / 4
+        val entries = rawLineNumbers.size / 4
         while (e < entries) {
             val index = e * 4
-            val startPC = asUnsignedShort(lineNumbers(index), lineNumbers(index + 1))
+            val startPC = asUnsignedShort(rawLineNumbers(index), rawLineNumbers(index + 1))
             if (startPC <= pc) {
-                lastLineNumber = asUnsignedShort(lineNumbers(index + 2), lineNumbers(index + 3))
+                lastLineNumber = asUnsignedShort(rawLineNumbers(index + 2), rawLineNumbers(index + 3))
             } else if (lastLineNumber == -1) {
                 return None;
             } else {
@@ -68,16 +82,20 @@ case class CompactLineNumberTable(lineNumbers: Array[Byte]) extends LineNumberTa
     }
 
     def firstLineNumber(): Option[Int] = {
-        if (lineNumbers.length == 0)
+        if (rawLineNumbers.length == 0)
             return None;
 
-        val raw_pc_lns = lineNumbers.grouped(2).zipWithIndex.filter(_._2 % 2 == 1)
+        val raw_pc_lns = rawLineNumbers.grouped(2).zipWithIndex.filter(_._2 % 2 == 1)
         val raw_lns = raw_pc_lns.map(_._1)
         val lns =
             raw_lns map { bytes ⇒
                 val hb = bytes(0); val lb = bytes(1); asUnsignedShort(hb, lb)
             }
         Some(lns.min)
+    }
+
+    override def toString: String = {
+        lineNumbers.mkString("CompactLineNumber({ ", ", ", " })")
     }
 
 }

@@ -38,29 +38,31 @@ import org.opalj.bi.AccessFlags
 /**
  * Represents a single field declaration/definition.
  *
- * @note Fields have – by default – no link to their defining [[ClassFile]]. However,
- *      if a [[analyses.Project]] is available then it is possible to get a `Field`'s
- *      [[ClassFile]] by using `Project`'s `classFile(Field)` method.
- * @note Identity (w.r.t. `equals`/`hashCode`) is intentionally by reference (default
- *      behavior).
- * @param accessFlags This field's access flags. To analyze the access flags
- *      bit vector use [[org.opalj.bi.AccessFlag]] or
- *      [[org.opalj.bi.AccessFlagsIterator]] or use pattern matching.
- * @param name The name of this field. The name is interned (see `String.intern()` for
- *     details.)
- *     Note, that this name is not required to be a valid Java programming
- *     language identifier.
- * @param fieldType The (erased) type of this field.
- * @param attributes The defined attributes. The JVM 8 specification defines
- *     the following attributes for fields:
- *     * [[ConstantValue]],
- *     * [[Synthetic]],
- *     * [[Signature]],
- *     * [[Deprecated]],
- *     * [[RuntimeVisibleAnnotationTable]],
- *     * [[RuntimeInvisibleAnnotationTable]],
- *     * [[RuntimeVisibleTypeAnnotationTable]] and
- *     * [[RuntimeInvisibleTypeAnnotationTable]].
+ * @note   Fields have – by default – no link to their defining [[ClassFile]]. However,
+ *         if a [[analyses.Project]] is available then it is possible to get a `Field`'s
+ *         [[ClassFile]] by using `Project`'s `classFile(Field)` method.
+ *
+ * @note   '''Identity (w.r.t. `equals`/`hashCode`) is intentionally by reference (default
+ *         behavior).'''
+ *
+ * @param  accessFlags This field's access flags. To analyze the access flags
+ *         bit vector use [[org.opalj.bi.AccessFlag]] or
+ *         [[org.opalj.bi.AccessFlagsIterator]] or use pattern matching.
+ * @param  name The name of this field. The name is interned (see `String.intern()` for
+ *         details.)
+ *         Note, that this name is not required to be a valid Java programming
+ *         language identifier.
+ * @param  fieldType The (erased) type of this field.
+ * @param  attributes The defined attributes. The JVM 8 specification defines
+ *         the following attributes for fields:
+ *          * [[ConstantValue]],
+ *          * [[Synthetic]],
+ *          * [[Signature]],
+ *          * [[Deprecated]],
+ *          * [[RuntimeVisibleAnnotationTable]],
+ *          * [[RuntimeInvisibleAnnotationTable]],
+ *          * [[RuntimeVisibleTypeAnnotationTable]] and
+ *          * [[RuntimeInvisibleTypeAnnotationTable]].
  *
  * @author Michael Eichberg
  */
@@ -70,6 +72,19 @@ final class Field private (
         val fieldType:   FieldType,
         val attributes:  Attributes
 ) extends ClassMember with Ordered[Field] {
+
+    /**
+     * Compares this class file with the given one to identify (the first) structural inequality.
+     *
+     * @return `None` if this class file and the other are structural equal - i.e., if both
+     *          effectively implement the same class.
+     */
+    def structurallyEquals(other: Field): Boolean = {
+        this.accessFlags == other.accessFlags && (this.fieldType eq other.fieldType) &&
+            this.name == other.name &&
+            this.attributes.size == other.attributes.size &&
+            this.attributes.forall { a ⇒ other.attributes.find(a.structurallyEquals).isDefined }
+    }
 
     def copy(
         accessFlags: Int        = this.accessFlags,
