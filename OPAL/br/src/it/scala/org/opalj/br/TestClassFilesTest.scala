@@ -70,8 +70,17 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
             val testedForBeingNotIsomorphicCount = new java.util.concurrent.atomic.AtomicInteger(0)
             val testedMethods = new java.util.concurrent.atomic.AtomicBoolean(false)
 
-            def simpleValidator(classFile: ClassFile): Unit = {
+            def simpleValidator(classFilePair: (ClassFile, ClassFile)): Unit = {
+                val (classFile, classFileTwin) = classFilePair
                 assert(!(classFile.thisType.fqn eq null))
+
+                val selfDiff = classFile.findStructuralInequality(classFile)
+                if (selfDiff.nonEmpty)
+                    fail(s"the $classFile is not structurally equal to itself: "+selfDiff.get)
+
+                val twinDiff = classFile.findStructuralInequality(classFileTwin)
+                if (twinDiff.nonEmpty)
+                    fail(s"the $classFile is not structurally equal to its twin: "+twinDiff.get)
 
                 for (MethodWithBody(body) ← classFile.methods.par) {
                     body.belongsToSubroutine() should not be (null)
@@ -115,9 +124,10 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
                     val data = new Array[Byte](jarEntry.getSize().toInt)
                     process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
                     import Java8Framework.ClassFile
-                    val classFiles = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
+                    val classFiles1 = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
+                    val classFiles2 = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
                     classFilesCount += 1
-                    classFiles foreach simpleValidator
+                    classFiles1.zip(classFiles2) foreach simpleValidator
                 }
             }
             info(s"loaded $classFilesCount class files")
