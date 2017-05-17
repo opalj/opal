@@ -80,7 +80,6 @@ final class Code private (
         with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
     override def structurallyEquals(other: Attribute): Boolean = {
-        println(s"meta information differs: $other")
         other match {
             case that: Code ⇒ this.structurallyEquals(that)
             case _          ⇒ false
@@ -89,11 +88,9 @@ final class Code private (
 
     def structurallyEquals(other: Code): Boolean = {
         if (!(this.maxStack == other.maxStack && this.maxLocals == other.maxLocals)) {
-            println("meta information differs")
             return false;
         }
         if (this.exceptionHandlers != other.exceptionHandlers) {
-            println("exception handlers differ")
             return false;
         }
 
@@ -107,25 +104,19 @@ final class Code private (
                     val otherI = other.instructions(i)
                     areEqual = (thisI == null && otherI == null) ||
                         (thisI != null && otherI != null && thisI.structurallyEquals(otherI))
-                    if (!areEqual) println(s"not equal instructions - $i: $thisI vs. $otherI")
                     i += 1
                 }
                 areEqual
             }
         )) {
-            println("instructions are not equal")
             return false;
         }
 
         if (this.attributes.size != other.attributes.size) {
-            println("number of attributes differ")
             return false;
         }
 
         if (!this.attributes.forall(a ⇒ other.attributes.find(a.structurallyEquals).isDefined)) {
-            println("attributes are not equal:"+
-                this.attributes.find(a ⇒ other.attributes.find(a.structurallyEquals).isEmpty).get+" - other attributes: "+
-                other.attributes.mkString("; "))
             return false;
         }
 

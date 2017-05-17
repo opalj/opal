@@ -156,27 +156,29 @@ final class ClassFile private (
         }
 
         if (!this.attributes.forall(a ⇒ other.attributes.find(a.structurallyEquals).isDefined)) {
-            // this.attributes.find{ a =>    !other.attributes.exists(a.structurallyEquals)       }
+            // this.attributes.find{ a => !other.attributes.exists(a.structurallyEquals) }
             return Some(("different attributes", this.attributes, other.attributes));
         }
 
+        // RECALL The fields are always strictly ordered in the same way!
         val thisFieldIt = this.fields.iterator
         val otherFieldIt = other.fields.iterator
         while (thisFieldIt.hasNext) {
             val thisField = thisFieldIt.next
             val otherField = otherFieldIt.next
             if (!thisField.structurallyEquals(otherField)) {
-                return Some((thisField, otherField));
+                return Some(("different fields", thisField, otherField));
             }
         }
 
+        // RECALL The methods are always strictly ordered in the same way!
         val thisMethodIt = this.methods.iterator
         val otherMethodIt = other.methods.iterator
         while (thisMethodIt.hasNext) {
             val thisMethod = thisMethodIt.next
             val otherMethod = otherMethodIt.next
             if (!thisMethod.structurallyEquals(otherMethod)) {
-                return Some((thisMethod, otherMethod));
+                return Some(("different methods", thisMethod, otherMethod));
             }
         }
 

@@ -82,19 +82,28 @@ final class Method private (
         val attributes:  Attributes
 ) extends ClassMember with Ordered[Method] with InstructionsContainer {
 
+    /**
+     * Compares this method with the given one for structural equality.
+     *
+     * Two methods are structurlly equaly if they have the same names, flags, desccriptor, body and
+     * attributes. In case of the attributes, the order doesn't matter!
+     */
     def structurallyEquals(other: Method): Boolean = {
-        if (!(this.accessFlags == other.accessFlags &&
+        if (!(
+            this.accessFlags == other.accessFlags &&
             this.name == other.name &&
-            this.descriptor == other.descriptor)) {
-            println("signatures are different")
+            this.descriptor == other.descriptor
+        )) {
             return false;
         }
 
         if (!(
             (this.body.isEmpty && other.body.isEmpty) ||
-            (this.body.nonEmpty && other.body.nonEmpty && this.body.get.structurallyEquals(other.body.get))
+            (
+                this.body.nonEmpty && other.body.nonEmpty &&
+                this.body.get.structurallyEquals(other.body.get)
+            )
         )) {
-            println("bodies are different")
             return false;
         }
 
@@ -102,7 +111,6 @@ final class Method private (
             this.attributes.size == other.attributes.size &&
             this.attributes.forall { a ⇒ other.attributes.find(a.structurallyEquals).isDefined }
         )) {
-            println("attributes are different")
             return false;
         }
 
