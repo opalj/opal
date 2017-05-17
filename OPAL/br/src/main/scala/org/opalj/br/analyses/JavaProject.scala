@@ -26,54 +26,66 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.analyses
+package org.opalj
+package br
+package analyses
 
-import org.opalj.br.ObjectType
-import org.opalj.log.{ConsoleOPALLogger, DefaultLogContext, Error, GlobalLogContext, OPALLogger}
-
-import scala.collection.JavaConversions
 import scala.collection.JavaConverters._
 
+import org.opalj.log.{ConsoleOPALLogger, DefaultLogContext, Error, GlobalLogContext, OPALLogger}
+
 /**
- * Helper object for getting Project information.
+ * Enables the querying of a project.
+ *
+ * @note '''The interface of this class was designed with Java interoperability in mind!'''
  *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-object ProjectHelper {
+class JavaProject( final val project: Project[java.net.URL]) {
+
     /**
-     * Helper class to get a list of all classes that derive from objectType.
+     * @param classPath A list of files and jars, where to look for classes.
+     */
+    def this(classPath: java.util.List[java.io.File]) {
+        this({
+            implicit val logContext = new DefaultLogContext()
+            OPALLogger.register(logContext, JavaProject.Logger)
+
+            Project(
+                Project.JavaClassFileReader(theLogContext = logContext).AllClassFiles(classPath.asScala),
+                Traversable.empty, true, /*true or false... doesn't matter when we have no lib. */
+                Traversable.empty,
+                Project.defaultHandlerForInconsistentProjects,
+                Project.GlobalConfig,
+                logContext
+            )
+
+        })
+    }
+
+    /**
+     * Returns the list of all classes that derive from `objectType`.
      *
-     * @note To be independent of any scala version, the parameter and return types are
-     *       java compliant. This way, this method can be called using an instance of a class
-     *       loader.
-     *
-     * @param classPathListJava A list of classpaths, where to look for classes.
      * @param objectType The object type in jvm annotation (using "/" instead of ".", e.g.
      *                   "java/util/List")
      * @return A list of classes that derive from objectType.
      */
-    def getAllSubclassesOfObjectType(
-        classPathListJava: java.util.List[java.io.File],
-        objectType:        String
-    ): java.util.List[String] = {
-        // Supress all opal related log messages and show only errors.
-        implicit val logContext = new DefaultLogContext()
-        OPALLogger.register(logContext, new ConsoleOPALLogger(true))
-        OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Error))
-
-        val classPathList = JavaConversions.asScalaBuffer(classPathListJava)
-        val opalObjectType = ObjectType(objectType)
-
-        var project = Project(classPathList.head)
-        classPathList.slice(1, classPathList.length).foreach { cp ⇒
-            project = Project.extend(project, cp)
-        }
-
+    def getAllSubclassesOfObjectType(objectType: String): java.util.List[String] = {
         project
             .classHierarchy
-            .allSubtypes(opalObjectType, reflexive = false)
+            .allSubtypes(ObjectType(objectType), reflexive = false)
             .map(ot ⇒ ot.toJava)
             .toList
             .asJava
     }
+}
+
+object JavaProject {
+
+    // Supress all opal info related log messages and show only errors.
+    private final val Logger = new ConsoleOPALLogger(true, Error)
+
+    OPALLogger.updateLogger(GlobalLogContext, Logger)
+
 }
