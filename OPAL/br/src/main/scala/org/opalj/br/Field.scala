@@ -74,10 +74,10 @@ final class Field private (
 ) extends ClassMember with Ordered[Field] {
 
     /**
-     * Compares this class file with the given one to identify (the first) structural inequality.
+     * Compares this field with the given one for structural equality.
      *
-     * @return `None` if this class file and the other are structural equal - i.e., if both
-     *          effectively implement the same class.
+     * Two fields are structurlly equaly if they have the same names, flags, type and attributes.
+     * In the latter case, the order doesn't matter!
      */
     def structurallyEquals(other: Field): Boolean = {
         this.accessFlags == other.accessFlags && (this.fieldType eq other.fieldType) &&

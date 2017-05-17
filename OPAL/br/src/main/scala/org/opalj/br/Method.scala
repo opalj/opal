@@ -85,8 +85,9 @@ final class Method private (
     /**
      * Compares this method with the given one for structural equality.
      *
-     * Two methods are structurlly equaly if they have the same names, flags, desccriptor, body and
-     * attributes. In case of the attributes, the order doesn't matter!
+     * Two methods are structurlly equaly if they have the same names, flags and descriptor.
+     * The bodies and attributes are recursively checked for structural equality. In case of the
+     * attributes, the order doesn't matter!
      */
     def structurallyEquals(other: Method): Boolean = {
         if (!(
