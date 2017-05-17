@@ -49,18 +49,17 @@ class JavaProject( final val project: Project[java.net.URL]) {
      */
     def this(classPath: java.util.List[java.io.File]) {
         this({
-            implicit val logContext = new DefaultLogContext()
-            OPALLogger.register(logContext, JavaProject.Logger)
-
+            implicit val logCtx = new DefaultLogContext()
+            OPALLogger.register(logCtx, JavaProject.Logger)
+            val cp = classPath.asScala
             Project(
-                Project.JavaClassFileReader(theLogContext = logContext).AllClassFiles(classPath.asScala),
+                Project.JavaClassFileReader(theLogContext = logCtx).AllClassFiles(cp),
                 Traversable.empty, true, /*true or false... doesn't matter when we have no lib. */
                 Traversable.empty,
                 Project.defaultHandlerForInconsistentProjects,
                 Project.GlobalConfig,
                 logContext
             )
-
         })
     }
 
