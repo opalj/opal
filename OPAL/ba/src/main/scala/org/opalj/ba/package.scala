@@ -648,14 +648,18 @@ package object ba { ba ⇒
                             lineNumbers.map(l ⇒ da.LineNumberTableEntry(l.startPC, l.lineNumber))
                         Some(da.LineNumberTable_attribute(attributeNameIndex, lnt))
 
-                    case c: br.CompactLineNumberTable ⇒
-                        val lineNumbers = c.rawLineNumbers
-                        val lnt =
-                            for (i ← 0 until lineNumbers.size / 4) yield da.LineNumberTableEntry(
-                                c.asUnsignedShort(lineNumbers(i), lineNumbers(i + 1)),
-                                c.asUnsignedShort(lineNumbers(i + 2), lineNumbers(i + 3))
-                            )
-                        Some(da.LineNumberTable_attribute(attributeNameIndex, lnt))
+                    case c @ br.CompactLineNumberTable(rawLNs: Array[Byte]) ⇒
+                        val lntBuilder = List.newBuilder[da.LineNumberTableEntry]
+                        var e = 0
+                        val entries = rawLNs.length / 4
+                        while (e < entries) {
+                            val index = e * 4
+                            val startPC = c.asUnsignedShort(rawLNs(index), rawLNs(index + 1))
+                            val lineNumber = c.asUnsignedShort(rawLNs(index + 2), rawLNs(index + 3))
+                            lntBuilder += da.LineNumberTableEntry(startPC, lineNumber)
+                            e += 1
+                        }
+                        Some(da.LineNumberTable_attribute(attributeNameIndex, lntBuilder.result))
 
                     case _ ⇒
                         val m = s"unsupported line number attribute: ${attribute.getClass.getName}"
