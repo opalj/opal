@@ -124,7 +124,7 @@ final class Code private (
 
         if (!this.attributes.forall(a ⇒ other.attributes.find(a.structurallyEquals).isDefined)) {
             println("attributes are not equal:"+
-                this.attributes.find(a ⇒ other.attributes.find(a.structurallyEquals).isEmpty)+" - other attributes: "+
+                this.attributes.find(a ⇒ other.attributes.find(a.structurallyEquals).isEmpty).get+" - other attributes: "+
                 other.attributes.mkString("; "))
             return false;
         }
