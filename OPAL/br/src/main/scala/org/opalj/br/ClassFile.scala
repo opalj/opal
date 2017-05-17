@@ -120,19 +120,44 @@ final class ClassFile private (
      *          effectively implement the same class.
      */
     final def findStructuralInequality(other: ClassFile): Option[AnyRef] = {
-        if (this.version != other.version ||
-            this.accessFlags != other.accessFlags ||
-            this.thisType != other.thisType ||
-            this.superclassType != other.superclassType ||
-            this.interfaceTypes != other.interfaceTypes ||
-            this.fields.size != other.fields.size ||
-            this.methods.size != other.methods.size ||
-            this.attributes.size != other.attributes.size) {
-            return Some((this, other));
+        if (this.version != other.version) {
+            return Some(("class file version", this.version, other.version));
         }
-        // this.attributes.find{ a =>    !other.attributes.exists(a.structurallyEquals)       } 
+
+        if (this.accessFlags != other.accessFlags) {
+            return Some(("class file access flags", this.accessFlags, other.accessFlags));
+        }
+
+        if (this.thisType != other.thisType) {
+            return Some(("declared type", this.thisType.toJava, other.thisType.toJava));
+        }
+
+        if (this.superclassType != other.superclassType) {
+            return Some(("declared supertype", this.superclassType, other.superclassType));
+        }
+
+        if (this.interfaceTypes != other.interfaceTypes) {
+            return Some(("inherited interfaces", this.interfaceTypes, other.interfaceTypes));
+        }
+
+        if (this.fields.size != other.fields.size) {
+            return Some(("declared number of fields", this.fields.size, other.fields.size));
+        }
+
+        if (this.methods.size != other.methods.size) {
+            return Some(("declared number of methods", this.methods.size, other.methods.size));
+        }
+
+        if (this.attributes.size != other.attributes.size) {
+            return Some((
+                "declared number of attributes",
+                this.attributes.size, other.attributes.size
+            ));
+        }
+
         if (!this.attributes.forall(a ⇒ other.attributes.find(a.structurallyEquals).isDefined)) {
-            return Some((this, other));
+            // this.attributes.find{ a =>    !other.attributes.exists(a.structurallyEquals)       }
+            return Some(("different attributes", this.attributes, other.attributes));
         }
 
         val thisFieldIt = this.fields.iterator
