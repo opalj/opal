@@ -43,8 +43,8 @@ case class Module(
 
     final override def kindId: Int = Module.KindId
 
-    // TODO Determine if the order is relevant or not and if not correct structurallyEquals
-    override def structurallyEquals(other: Attribute): Boolean = this == other
+    // TODO Determine if the order is relevant or not and if not correct jvmEquals
+    override def jvmEquals(other: Attribute): Boolean = this == other
 }
 
 object Module {

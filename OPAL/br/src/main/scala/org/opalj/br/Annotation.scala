@@ -48,7 +48,7 @@ case class Annotation(
         elementValuePairs: ElementValuePairs = IndexedSeq.empty
 ) {
 
-    def structurallyEquals(other: Annotation): Boolean = {
+    def jvmEquals(other: Annotation): Boolean = {
         (this.annotationType eq other.annotationType) &&
             this.elementValuePairs.size == other.elementValuePairs.size &&
             this.elementValuePairs.forall(other.elementValuePairs.contains)

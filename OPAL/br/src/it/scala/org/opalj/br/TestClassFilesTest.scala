@@ -76,11 +76,11 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
 
                 val selfDiff = classFile.findStructuralInequality(classFile)
                 if (selfDiff.nonEmpty)
-                    fail(s"the $classFile is not structurally equal to itself: "+selfDiff.get)
+                    fail(s"the $classFile is not jvm equal to itself: "+selfDiff.get)
 
                 val twinDiff = classFile.findStructuralInequality(classFileTwin)
                 if (twinDiff.nonEmpty)
-                    fail(s"the $classFile is not structurally equal to its twin: "+twinDiff.get)
+                    fail(s"the $classFile is not jvm equal to its twin: "+twinDiff.get)
 
                 for (MethodWithBody(body) ← classFile.methods.par) {
                     body.belongsToSubroutine() should not be (null)

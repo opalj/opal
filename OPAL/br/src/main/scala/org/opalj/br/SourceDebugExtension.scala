@@ -40,14 +40,14 @@ case class SourceDebugExtension(debug_extension: Array[Byte]) extends Attribute 
 
     override def kindId: Int = SourceDebugExtension.KindId
 
-    override def structurallyEquals(other: Attribute): Boolean = {
+    override def jvmEquals(other: Attribute): Boolean = {
         other match {
-            case that: SourceDebugExtension ⇒ this.structurallyEquals(that)
+            case that: SourceDebugExtension ⇒ this.jvmEquals(that)
             case _                          ⇒ false
         }
     }
 
-    def structurallyEquals(other: SourceDebugExtension): Boolean = {
+    def jvmEquals(other: SourceDebugExtension): Boolean = {
         // Since we have no further knowledge of the content, we make the assumption
         // that the order is relevant.
         java.util.Arrays.equals(this.debug_extension, other.debug_extension)

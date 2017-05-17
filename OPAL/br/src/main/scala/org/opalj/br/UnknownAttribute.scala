@@ -38,14 +38,14 @@ case class UnknownAttribute(attributeName: String, info: Array[Byte]) extends At
 
     override def kindId: Int = UnknownAttribute.KindId
 
-    def structurallyEquals(other: Attribute): Boolean = {
+    def jvmEquals(other: Attribute): Boolean = {
         other match {
-            case that: UnknownAttribute ⇒ this.structurallyEquals(that)
+            case that: UnknownAttribute ⇒ this.jvmEquals(that)
             case _                      ⇒ false
         }
     }
 
-    def structurallyEquals(other: UnknownAttribute): Boolean = {
+    def jvmEquals(other: UnknownAttribute): Boolean = {
         this.attributeName.size == other.attributeName.size &&
             java.util.Arrays.equals(this.info, other.info)
     }

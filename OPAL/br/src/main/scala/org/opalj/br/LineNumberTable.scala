@@ -44,14 +44,14 @@ trait LineNumberTable extends Attribute {
 
     override def kindId: Int = LineNumberTable.KindId
 
-    override def structurallyEquals(other: Attribute): Boolean = {
+    override def jvmEquals(other: Attribute): Boolean = {
         other match {
-            case that: LineNumberTable ⇒ this.structurallyEquals(that)
+            case that: LineNumberTable ⇒ this.jvmEquals(that)
             case _                     ⇒ false
         }
     }
 
-    def structurallyEquals(other: LineNumberTable): Boolean = {
+    def jvmEquals(other: LineNumberTable): Boolean = {
         val thisLineNumbers = this.lineNumbers
         val otherLineNumbers = other.lineNumbers
         // the order of two line number tables need to be identical

@@ -86,10 +86,10 @@ trait Attribute {
     def kindId: Int
 
     /**
-     * Returns true if this attribute and the given one are structurally equal.
+     * Returns true if this attribute and the given one are jvm equal.
      *
      * @note   If this class is implemented as a proper `case class`, this method can often be
      *         implemented by forwarding to the default `equals` method.
      */
-    def structurallyEquals(other: Attribute): Boolean
+    def jvmEquals(other: Attribute): Boolean
 }

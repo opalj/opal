@@ -89,7 +89,7 @@ final class Method private (
      * The bodies and attributes are recursively checked for structural equality. In case of the
      * attributes, the order doesn't matter!
      */
-    def structurallyEquals(other: Method): Boolean = {
+    def jvmEquals(other: Method): Boolean = {
         if (!(
             this.accessFlags == other.accessFlags &&
             this.name == other.name &&
@@ -102,7 +102,7 @@ final class Method private (
             (this.body.isEmpty && other.body.isEmpty) ||
             (
                 this.body.nonEmpty && other.body.nonEmpty &&
-                this.body.get.structurallyEquals(other.body.get)
+                this.body.get.jvmEquals(other.body.get)
             )
         )) {
             return false;
@@ -110,7 +110,7 @@ final class Method private (
 
         if (!(
             this.attributes.size == other.attributes.size &&
-            this.attributes.forall { a ⇒ other.attributes.find(a.structurallyEquals).isDefined }
+            this.attributes.forall { a ⇒ other.attributes.find(a.jvmEquals).isDefined }
         )) {
             return false;
         }

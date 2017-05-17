@@ -39,14 +39,14 @@ case class ExceptionTable(exceptions: Exceptions) extends Attribute {
 
     override def kindId: Int = ExceptionTable.KindId
 
-    override def structurallyEquals(other: Attribute): Boolean = {
+    override def jvmEquals(other: Attribute): Boolean = {
         other match {
-            case that: ExceptionTable ⇒ this.structurallyEquals(that)
+            case that: ExceptionTable ⇒ this.jvmEquals(that)
             case _                    ⇒ false
         }
     }
 
-    def structurallyEquals(other: ExceptionTable): Boolean = {
+    def jvmEquals(other: ExceptionTable): Boolean = {
         // the order does not have to be identical "... throws IOException, Throwable"
         // is the same as "... throws Throwable, IOException"
         this.exceptions.size == other.exceptions.size &&

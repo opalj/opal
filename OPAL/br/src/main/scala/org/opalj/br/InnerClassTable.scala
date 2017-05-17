@@ -41,14 +41,14 @@ case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
 
     override def kindId: Int = InnerClassTable.KindId
 
-    override def structurallyEquals(other: Attribute): Boolean = {
+    override def jvmEquals(other: Attribute): Boolean = {
         other match {
-            case that: InnerClassTable ⇒ this.structurallyEquals(that)
+            case that: InnerClassTable ⇒ this.jvmEquals(that)
             case _                     ⇒ false
         }
     }
 
-    def structurallyEquals(other: InnerClassTable): Boolean = {
+    def jvmEquals(other: InnerClassTable): Boolean = {
         // the order of two inner classes tables does not need to be identical
         this.innerClasses.size == other.innerClasses.size &&
             this.innerClasses.forall(other.innerClasses.contains)

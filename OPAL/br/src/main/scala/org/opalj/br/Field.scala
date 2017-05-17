@@ -79,11 +79,11 @@ final class Field private (
      * Two fields are structurlly equaly if they have the same names, flags, type and attributes.
      * In the latter case, the order doesn't matter!
      */
-    def structurallyEquals(other: Field): Boolean = {
+    def jvmEquals(other: Field): Boolean = {
         this.accessFlags == other.accessFlags && (this.fieldType eq other.fieldType) &&
             this.name == other.name &&
             this.attributes.size == other.attributes.size &&
-            this.attributes.forall { a ⇒ other.attributes.find(a.structurallyEquals).isDefined }
+            this.attributes.forall { a ⇒ other.attributes.find(a.jvmEquals).isDefined }
     }
 
     def copy(

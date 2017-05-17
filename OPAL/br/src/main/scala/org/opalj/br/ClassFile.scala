@@ -114,12 +114,16 @@ final class ClassFile private (
 ) extends ConcreteSourceElement {
 
     /**
-     * Compares this class file with the given one to identify (the first) structural inequality.
+     * Compares this class file with the given one to find (the first) differences which may lead
+     * to a different '''load or runtime behavior'''.
+     * I.e., differences between this class and the given class which
+     * are irrelevant at load / runtime, such as the order in which the attributes are defined,
+     * are ignored.
      *
      * @return `None` if this class file and the other are structural equal - i.e., if both
      *          effectively implement the same class.
      */
-    final def findStructuralInequality(other: ClassFile): Option[AnyRef] = {
+    final def findJVMInequality(other: ClassFile): Option[AnyRef] = {
         if (this.version != other.version) {
             return Some(("class file version", this.version, other.version));
         }
@@ -155,8 +159,8 @@ final class ClassFile private (
             ));
         }
 
-        if (!this.attributes.forall(a ⇒ other.attributes.find(a.structurallyEquals).isDefined)) {
-            // this.attributes.find{ a => !other.attributes.exists(a.structurallyEquals) }
+        if (!this.attributes.forall(a ⇒ other.attributes.find(a.jvmEquals).isDefined)) {
+            // this.attributes.find{ a => !other.attributes.exists(a.jvmEquals) }
             return Some(("different attributes", this.attributes, other.attributes));
         }
 
@@ -166,7 +170,7 @@ final class ClassFile private (
         while (thisFieldIt.hasNext) {
             val thisField = thisFieldIt.next
             val otherField = otherFieldIt.next
-            if (!thisField.structurallyEquals(otherField)) {
+            if (!thisField.jvmEquals(otherField)) {
                 return Some(("different fields", thisField, otherField));
             }
         }
@@ -177,7 +181,7 @@ final class ClassFile private (
         while (thisMethodIt.hasNext) {
             val thisMethod = thisMethodIt.next
             val otherMethod = otherMethodIt.next
-            if (!thisMethod.structurallyEquals(otherMethod)) {
+            if (!thisMethod.jvmEquals(otherMethod)) {
                 return Some(("different methods", thisMethod, otherMethod));
             }
         }
@@ -185,7 +189,14 @@ final class ClassFile private (
         None
     }
 
-    def structurallyEquals(other: ClassFile): Boolean = findStructuralInequality(other).isEmpty
+    /**
+     * Compares this class file with the given one to check for differences which may lead to a
+     * different '''load or runtime behavior'''.
+     * I.e., differences between this class and the given class which
+     * are irrelevant at load-/runtime, such as the order in which the attributes are defined,
+     * are ignored.
+     */
+    def jvmEquals(other: ClassFile): Boolean = findJVMInequality(other).isEmpty
 
     /**
      * Creates a shallow copy of this class file object.

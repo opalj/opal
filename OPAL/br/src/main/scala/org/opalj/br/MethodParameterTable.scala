@@ -38,7 +38,7 @@ case class MethodParameterTable(parameters: MethodParameters) extends Attribute 
 
     override def kindId: Int = MethodParameterTable.KindId
 
-    override def structurallyEquals(other: Attribute): Boolean = this == other
+    override def jvmEquals(other: Attribute): Boolean = this == other
 
 }
 

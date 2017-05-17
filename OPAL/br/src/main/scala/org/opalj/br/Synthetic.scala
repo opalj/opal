@@ -40,5 +40,5 @@ case object Synthetic extends Attribute {
 
     override def kindId = KindId
 
-    override def structurallyEquals(other: Attribute): Boolean = this == other
+    override def jvmEquals(other: Attribute): Boolean = this == other
 }

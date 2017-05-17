@@ -79,8 +79,8 @@ class CodeAttributeBuilder private[ba] (
             instructions
         )
 
-        val warnMessage = s"you defined %s of method '${descriptor.toJava(name)}' too small;"+
-            "explicitly configured value is nevertheless kept"
+        val warnMessage = s"${descriptor.toJava(name)}: %s is too small; "+
+            "the configured value is – nevertheless – kept"
 
         if (maxLocals.isDefined) {
             if (maxLocals.get < _maxLocals) {

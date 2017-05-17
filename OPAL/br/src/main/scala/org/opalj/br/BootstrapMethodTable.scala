@@ -38,14 +38,14 @@ case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute {
 
     override def kindId: Int = BootstrapMethodTable.KindId
 
-    override def structurallyEquals(other: Attribute): Boolean = {
+    override def jvmEquals(other: Attribute): Boolean = {
         other match {
-            case that: BootstrapMethodTable ⇒ this.structurallyEquals(that)
+            case that: BootstrapMethodTable ⇒ this.jvmEquals(that)
             case _                          ⇒ false
         }
     }
 
-    def structurallyEquals(other: BootstrapMethodTable): Boolean = {
+    def jvmEquals(other: BootstrapMethodTable): Boolean = {
         // the order does not have to be stable!
         this.methods.size == other.methods.size && this.methods.forall(other.methods.contains)
     }
