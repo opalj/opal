@@ -119,9 +119,7 @@ final class ClassFile private (
      * @return `None` if this class file and the other are structural equal - i.e., if both
      *          effectively implement the same class.
      */
-    final def findStructuralInequality(
-        other: ClassFile
-    ): Option[(ConcreteSourceElement, ConcreteSourceElement)] = {
+    final def findStructuralInequality(other: ClassFile): Option[AnyRef] = {
         if (this.version != other.version ||
             this.accessFlags != other.accessFlags ||
             this.thisType != other.thisType ||
@@ -132,7 +130,8 @@ final class ClassFile private (
             this.attributes.size != other.attributes.size) {
             return Some((this, other));
         }
-        if (!this.attributes.forall(thisA ⇒ other.attributes.find(_ == thisA).isDefined)) {
+        // this.attributes.find{ a =>    !other.attributes.exists(a.structurallyEquals)       } 
+        if (!this.attributes.forall(a ⇒ other.attributes.find(a.structurallyEquals).isDefined)) {
             return Some((this, other));
         }
 
