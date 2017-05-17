@@ -49,7 +49,7 @@ case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumbe
     def lineNumbers: LineNumbers = {
         val lineNumbersBuilder = List.newBuilder[LineNumber]
         var e = 0
-        val entries = rawLineNumbers.size / 4
+        val entries = rawLineNumbers.length / 4
         while (e < entries) {
             val index = e * 4
             val startPC = asUnsignedShort(rawLineNumbers(index), rawLineNumbers(index + 1))
@@ -60,12 +60,15 @@ case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumbe
         lineNumbersBuilder.result
     }
 
-    def asUnsignedShort(hb: Byte, lb: Byte): Int = ((hb & 0xFF) << 8) + (lb & 0xFF)
+    def asUnsignedShort(hb: Byte, lb: Byte): Int = {
+        // see DataInpu.readUnsignedShort
+        (((hb & 0xFF) << 8) | (lb & 0xFF))
+    }
 
     def lookupLineNumber(pc: PC): Option[Int] = {
         var lastLineNumber = -1
         var e = 0
-        val entries = rawLineNumbers.size / 4
+        val entries = rawLineNumbers.length / 4
         while (e < entries) {
             val index = e * 4
             val startPC = asUnsignedShort(rawLineNumbers(index), rawLineNumbers(index + 1))
