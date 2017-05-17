@@ -58,7 +58,7 @@ class JavaProject( final val project: Project[java.net.URL]) {
                 Traversable.empty,
                 Project.defaultHandlerForInconsistentProjects,
                 Project.GlobalConfig,
-                logContext
+                logCtx
             )
         })
     }
