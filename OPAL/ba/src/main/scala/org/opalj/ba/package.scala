@@ -543,7 +543,7 @@ package object ba { ba ⇒
 
             case br.ClassValue.KindId ⇒
                 val br.ClassValue(value) = elementValue
-                da.StringValue(CPEUtf8(value.toJVMTypeName))
+                da.ClassValue(CPEUtf8(value.toJVMTypeName))
 
             case br.EnumValue.KindId ⇒
                 val br.EnumValue(enumType, enumName) = elementValue
