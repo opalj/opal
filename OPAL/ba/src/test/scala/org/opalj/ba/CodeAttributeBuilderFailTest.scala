@@ -33,6 +33,8 @@ import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions.IFGE
 import org.opalj.br.instructions.ILOAD_2
 import org.opalj.br.instructions.IRETURN
@@ -46,59 +48,34 @@ import org.opalj.br.instructions.RETURN
  */
 @RunWith(classOf[JUnitRunner])
 class CodeAttributeBuilderFailTest extends FlatSpec {
-    behavior of "CodeAttributeBuilder requires"
 
-    val stream = new java.io.ByteArrayOutputStream()
-    Console.withOut(stream) {
-        val failMethod = PUBLIC("test", "(II)", "I")(
-            CODE(
-                ILOAD_2,
-                IRETURN
-            ) MAXSTACK 0 MAXLOCALS 0
-        ).buildMethod._1
+    behavior of "CodeAttributeBuilder"
 
-        val warnMessage = s"you defined %s of method "+
-            s"'${failMethod.descriptor.toJava(failMethod.name)}' too small;"+
-            "explicitly configured value is nevertheless kept"
+    "the CodeAttributeBuilder" should "warn about a too small defined max_locals/max_stack values" in {
+        val (_, (_, warnings)) =
+            (
+                CODE(ILOAD_2, IRETURN) MAXSTACK 0 MAXLOCALS 0
+            )(ACC_PUBLIC.mask, "test", MethodDescriptor("(II)I"))
 
-        "the CodeAttributeBuilder" should "warn about a too small defined max_locals value" in {
-            assert(stream.toString.contains(warnMessage.format("max_locals")))
-        }
-
-        it should "warn about a too small defined max_stack value" in {
-            assert(stream.toString.contains(warnMessage.format("max_stack")))
-        }
+        assert(warnings.size == 2)
     }
 
-    it should "fail with no instructions added" in {
+    it should "fail when there are no instructions" in {
         assertThrows[IllegalArgumentException](CODE())
         assertThrows[IllegalArgumentException](CODE('notAnInstruction))
     }
 
     it should "fail with duplicated labels" in {
-        assertThrows[IllegalArgumentException](
-            CODE(
-                'label,
-                'label,
-                RETURN
-            )
-        )
+        assertThrows[IllegalArgumentException](CODE('label, 'label, RETURN))
     }
 
     it should "fail with unresolvable labels in branch instructions" in {
         assertThrows[IllegalArgumentException](CODE(IFGE('label)))
         assertThrows[IllegalArgumentException](
-            CODE(
-                'default,
-                LOOKUPSWITCH('default, IndexedSeq((0, 'label)))
-            )
+            CODE('default, LOOKUPSWITCH('default, IndexedSeq((0, 'label))))
         )
         assertThrows[IllegalArgumentException](
-            CODE(
-                'default,
-                'label1,
-                LOOKUPSWITCH('default, IndexedSeq((0, 'label1), (0, 'label2)))
-            )
+            CODE('default, 'label1, LOOKUPSWITCH('default, IndexedSeq((0, 'label1), (0, 'label2))))
         )
     }
 }
