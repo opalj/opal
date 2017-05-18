@@ -54,7 +54,7 @@ class AnnotatedInstructionsTest extends FlatSpec {
     val (daClassFile, methodAnnotations: Map[br.Method, Seq[(Map[br.PC, AnyRef], List[String])]]) = CLASS(
         accessModifiers = PUBLIC SUPER,
         thisType = "Test",
-        methods = METHODS {
+        methods = METHODS(
             METHOD(PUBLIC, "<init>", "()V", CODE(
                 'UnUsedLabel1,
                 ALOAD_0 → "MarkerAnnotation1",
@@ -62,8 +62,8 @@ class AnnotatedInstructionsTest extends FlatSpec {
                 INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
                 RETURN → "MarkerAnnotation2"
             ))
-        }
-    ).toDA
+        )
+    ).toDA()
     val (pcAnnotations: List[Map[br.PC, AnyRef]], warnings) = methodAnnotations.values.head.unzip
 
     "the class generation" should "have no warnings" in {
