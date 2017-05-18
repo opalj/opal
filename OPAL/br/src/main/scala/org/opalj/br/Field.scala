@@ -31,6 +31,7 @@ package br
 
 import scala.math.Ordered
 import org.opalj.bi.ACC_TRANSIENT
+import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_VOLATILE
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
@@ -177,10 +178,10 @@ final class Field private (
 object Field {
 
     def apply(
-        accessFlags: Int,
+        accessFlags: Int        = ACC_PUBLIC.mask,
         name:        String,
         fieldType:   FieldType,
-        attributes:  Attributes
+        attributes:  Attributes = Seq.empty[Attribute]
     ): Field = {
         new Field(accessFlags, name.intern(), fieldType, attributes)
     }

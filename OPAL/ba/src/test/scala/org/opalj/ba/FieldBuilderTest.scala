@@ -29,17 +29,26 @@
 package org.opalj
 package ba
 
+import scala.language.postfixOps
+
 import java.io.ByteArrayInputStream
 
-import reflect.runtime.universe._
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
+
+import scala.reflect.runtime.universe._
 
 import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.br.ClassFile
+import org.opalj.br.ObjectType
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.BooleanType
+import org.opalj.br.IntegerType
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework
 import org.opalj.util.InMemoryClassLoader
@@ -56,46 +65,54 @@ class FieldBuilderTest extends FlatSpec {
 
     behavior of "Fields"
 
-    val cf = (PUBLIC CLASS "org/opalj/ba/FieldClass" EXTENDS "java/lang/Object")(
-        FINAL + PUBLIC("publicField", "I"),
-        PRIVATE("privateField", "Z"),
-        PUBLIC("<init>", "()", "V")(
-            CODE(
-                ALOAD_0,
-                INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                ALOAD_0,
-                ICONST_3,
-                PUTFIELD("org/opalj/ba/FieldClass", "publicField", "I"),
-                ALOAD_0,
-                ICONST_1,
-                PUTFIELD("org/opalj/ba/FieldClass", "privateField", "Z"),
-                RETURN
-            )
+    val cf = ClassFile(
+        thisType = ObjectType("org/example/FieldClass"),
+        fields = IndexedSeq(
+            Field((FINAL PUBLIC).accessFlags, "publicField", IntegerType),
+            Field(PRIVATE.accessFlags, "privateField", BooleanType)
         ),
-        PUBLIC("packageField", "()", "Z")(
-            CODE(
-                ALOAD_0,
-                GETFIELD("org/opalj/ba/FieldClass", "privateField", "Z"),
-                IRETURN
-            )
-        ),
-        PUBLIC("publicField", "()", "I")(
-            CODE(
-                ALOAD_0,
-                GETFIELD("org/opalj/ba/FieldClass", "publicField", "I"),
-                IRETURN
+        methods = MethodsSeq(
+            Method(
+                PUBLIC.accessFlags, "<init>", br.MethodDescriptor("()V"),
+                CODE(
+                    ALOAD_0,
+                    INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                    ALOAD_0,
+                    ICONST_3,
+                    PUTFIELD("org/example/FieldClass", "publicField", "I"),
+                    ALOAD_0,
+                    ICONST_1,
+                    PUTFIELD("org/example/FieldClass", "privateField", "Z"),
+                    RETURN
+                )
+            ),
+            Method(
+                PUBLIC.accessFlags, "packageField", br.MethodDescriptor("()Z"),
+                CODE(
+                    ALOAD_0,
+                    GETFIELD("org/example/FieldClass", "privateField", "Z"),
+                    IRETURN
+                )
+            ),
+            Method(
+                PUBLIC.accessFlags, "publicField", br.MethodDescriptor("()I"),
+                CODE(
+                    ALOAD_0,
+                    GETFIELD("org/example/FieldClass", "publicField", "I"),
+                    IRETURN
+                )
             )
         )
-    )
 
-    val assembledCF = Assembler(cf.buildDAClassFile._1)
+    )
+    val assembledCF = Assembler(toDA(cf))
 
     val loader = new InMemoryClassLoader(
-        Map("org.opalj.ba.FieldClass" → assembledCF),
+        Map("org.example.FieldClass" → assembledCF),
         this.getClass.getClassLoader
     )
 
-    val fieldInstance = loader.loadClass("org.opalj.ba.FieldClass").newInstance()
+    val fieldInstance = loader.loadClass("org.example.FieldClass").newInstance()
     val mirror = runtimeMirror(loader).reflect(fieldInstance)
 
     val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(assembledCF)).head

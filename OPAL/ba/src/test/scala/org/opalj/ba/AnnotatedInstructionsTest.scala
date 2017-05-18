@@ -29,21 +29,17 @@
 package org.opalj
 package ba
 
+import scala.language.postfixOps
+
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-import scala.collection.mutable
 
 import org.opalj.bc.Assembler
 import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
 import org.opalj.util.InMemoryClassLoader
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 
 /**
  * Tests annotating instructions in the BytecodeAssembler DSL.
@@ -55,28 +51,24 @@ class AnnotatedInstructionsTest extends FlatSpec {
 
     behavior of "Annotated Instructions"
 
-    val methodAnnotationsStore: mutable.Map[Method, Map[br.PC, AnyRef]] = mutable.Map.empty
-    val daClassFile = toDA(
-        ClassFile(
-            thisType = ObjectType("Test"),
-            methods = Methods.collectMetaInformation(methodAnnotationsStore) {
-                Method(
-                    ACC_PUBLIC.mask, "<init>", MethodDescriptor("()V"),
-                    CODE(
-                        'UnUsedLabel1,
-                        ALOAD_0 → "MarkerAnnotation1",
-                        'UnUsedLabel2,
-                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                        RETURN → "MarkerAnnotation2"
-                    )
-                )
-            } { e: (Map[br.PC, AnyRef], List[String]) ⇒
-                val (annotations, warnings) = e
-                assert(warnings.isEmpty) // check that there are no warnings
-                annotations
-            }
-        )
-    )
+    val (daClassFile, methodAnnotations: Map[br.Method, Seq[(Map[br.PC, AnyRef], List[String])]]) = CLASS(
+        accessModifiers = PUBLIC SUPER,
+        thisType = "Test",
+        methods = METHODS {
+            METHOD(PUBLIC, "<init>", "()V", CODE(
+                'UnUsedLabel1,
+                ALOAD_0 → "MarkerAnnotation1",
+                'UnUsedLabel2,
+                INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                RETURN → "MarkerAnnotation2"
+            ))
+        }
+    ).toDA
+    val (pcAnnotations: List[Map[br.PC, AnyRef]], warnings) = methodAnnotations.values.head.unzip
+
+    "the class generation" should "have no warnings" in {
+        assert(methodAnnotations.values.forall /*methods*/ (_.forall /*attributes*/ (_._2.isEmpty /* <=> no warnings*/ )))
+    }
 
     "the generated class" should "load correctly" in {
         val loader = new InMemoryClassLoader(
@@ -86,8 +78,9 @@ class AnnotatedInstructionsTest extends FlatSpec {
     }
 
     "the method '<init>()V'" should "have the correct annotations" in {
-        assert(methodAnnotationsStore.head._2(0).toString == "MarkerAnnotation1")
-        assert(methodAnnotationsStore.head._2(4).toString == "MarkerAnnotation2")
+
+        assert(pcAnnotations.head(0).toString == "MarkerAnnotation1")
+        assert(pcAnnotations.head(4).toString == "MarkerAnnotation2")
     }
 
 }

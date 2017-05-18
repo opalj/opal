@@ -78,13 +78,13 @@ class JumpLabelsTest extends FlatSpec {
             )
         )
     )
-    val assembledCF = Assembler(testClass.buildDAClassFile._1)
+    val rawClassFile = Assembler(testClass.buildDAClassFile._1)
 
-    val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(assembledCF)).head
+    val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(rawClassFile)).head
 
     "the method returnInt" should "execute as expected" in {
         val loader = new InMemoryClassLoader(
-            Map("TestJump" → assembledCF),
+            Map("TestJump" → rawClassFile),
             this.getClass.getClassLoader
         )
 

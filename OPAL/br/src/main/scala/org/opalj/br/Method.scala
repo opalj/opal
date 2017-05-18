@@ -484,11 +484,7 @@ object Method {
         methodAttributeBuilder: MethodAttributeBuilder[T]
     ): (Method, T) = {
         val (newAttribute, t) = methodAttributeBuilder(accessFlags, name, descriptor)
-
-        (
-            this(accessFlags, name, descriptor, IndexedSeq(newAttribute)),
-            t
-        )
+        (this(accessFlags, name, descriptor, IndexedSeq(newAttribute)), t)
     }
 
     /**
@@ -514,7 +510,7 @@ object Method {
         Some((method.accessFlags, method.name, method.descriptor))
     }
 
-    def defaultConstructor(superclassType: ObjectType = ObjectType.Object) = {
+    def defaultConstructor(superclassType: ObjectType = ObjectType.Object): Method = {
         import MethodDescriptor.NoArgsAndReturnVoid
         val theBody = Code(
             maxStack = 1,

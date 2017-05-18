@@ -101,7 +101,12 @@ package object ba { ba ⇒
         }
     }
 
-    final val PACKAGEVISIBLE = new AccessModifier(0)
+    implicit def methodAttributeBuilderToSeq[T](
+        b: br.MethodAttributeBuilder[T]
+    ): Seq[br.MethodAttributeBuilder[T]] = {
+        Seq(b)
+    }
+
     final val PUBLIC = new AccessModifier(ACC_PUBLIC.mask)
     final val FINAL = new AccessModifier(ACC_FINAL.mask)
     final val SUPER = new AccessModifier(ACC_SUPER.mask)

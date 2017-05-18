@@ -29,39 +29,41 @@
 package org.opalj
 package ba
 
-import org.opalj.br.Method
-
 /**
- * Provides helper methods to easily collect the results annotations methods.
+ * Builder for a [[org.opalj.br.Method]]. A [[CodeAttributeBuilder]] can be added with the
+ * apply method.
  *
+ * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-object Methods {
-
-    def collectAnnotations[T](
-        metaInformationStore: scala.collection.mutable.Map[Method, T]
-    )(
-        methods: (Method, T)*
-    ): IndexedSeq[Method] = {
-        metaInformationStore ++= methods.toMap
-        methods.map(_._1).toIndexedSeq
-    }
-
-    def collectMetaInformation[T, X](
-        metaInformationStore: scala.collection.mutable.Map[Method, X]
-    )(
-        methods: (Method, T)*
-    )(
-        implicit
-        f: T ⇒ X
-    ): IndexedSeq[Method] = {
-        metaInformationStore ++= methods.toMap.mapValues(f)
-        methods.map(_._1).toIndexedSeq
-    }
+case class METHOD[T](
+        val accessModifiers:    AccessModifier,
+        val name:               String,
+        val descriptor:         String,
+        val attributesBuilders: Seq[br.MethodAttributeBuilder[T]] = Seq.empty
+) {
 
     /**
-     * Collects the methods and throws away any potential meta information.
+     * Returns the build [[org.opalj.br.Method]] and its annotations.
      */
-    def apply[T](methods: (Method, T)*): IndexedSeq[Method] = methods.map(_._1).toIndexedSeq
+    def buildBRMethod(): (br.Method, Seq[T]) = {
+        val methodDescriptor = br.MethodDescriptor(descriptor)
+        val accessFlags = accessModifiers.accessFlags
+        val (attributes, codeAnnotations) = attributesBuilders.map(attributeBuilder ⇒
+            attributeBuilder(accessFlags, name, methodDescriptor)).unzip
+
+        val method = br.Method(accessFlags, name, methodDescriptor, attributes)
+
+        (method, codeAnnotations)
+    }
+
+}
+
+case class METHODS[T](methods: METHOD[T]*) {
+
+    /**
+     * Returns the build [[org.opalj.br.Method]] and its code annotations.
+     */
+    def buildBRMethods(): Seq[(br.Method, Seq[T])] = methods.map(m ⇒ m.buildBRMethod())
 
 }

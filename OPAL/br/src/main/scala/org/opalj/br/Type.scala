@@ -1348,12 +1348,12 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     /**
      * Returns the component type of this array type after dropping the given number
      * of dimensions. E.g., if dimensions is `0`
-     * `this` is returned; if it is `1` then this arraytype's component type is returned.
+     * `this` is returned; if it is `1` then this array type's component type is returned.
      * If the value is larger than `1` then the `componentType` has to be an array type
      * and `drop(dimensions-1)` will be called on that type.
      *
-     * @param dimensions The number of dimensions to drop. This values has be equal or
-     *      smaller than the number of dimensions of this array.
+     * @param  dimensions The number of dimensions to drop. This values has be equal or
+     *         smaller than the number of dimensions of this array.
      */
     def drop(dimensions: Int): FieldType = {
         dimensions match {
@@ -1448,8 +1448,16 @@ object ArrayElementType {
 }
 
 /**
- * Defines an extractor to match a type against any `ObjectType`
- * except `java.lang.Object`.
+ * Defines an extractor to match a type against any `ObjectType` except `java.lang.Object`.
+ *
+ * @example
+ * {{{
+ * val t : Type = ...
+ * t match {
+ *  case ot @ NotJavaLangObject() => ot
+ *  case _ =>
+ * }
+ * }}}
  *
  * @author Michael Eichberg
  */

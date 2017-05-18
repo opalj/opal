@@ -60,7 +60,10 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement
  * Pseudo instruction marking the handler of a [[org.opalj.br.ExceptionHandler]].
  * @see [[ExceptionHandlerElement]]
  */
-class CATCH private (val id: Symbol, val handlerType: Option[br.ObjectType]) extends ExceptionHandlerElement
+class CATCH private (
+    val id:          Symbol,
+    val handlerType: Option[br.ObjectType]
+) extends ExceptionHandlerElement
 
 /**
  * Factory methods to create an [[CATCH]] pseudo instruction.
@@ -73,7 +76,9 @@ object CATCH {
      * @see [[ExceptionHandlerElement]]
      * @param handlerType the fqn of the caught exception class
      */
-    def apply(id: Symbol, handlerType: String): CATCH = new CATCH(id, Some(br.ObjectType(handlerType)))
+    def apply(id: Symbol, handlerType: String): CATCH = {
+        new CATCH(id, Some(br.ObjectType(handlerType)))
+    }
 
     /**
      * Creates a [[CATCH]] pseudo instruction marking the handler of a
@@ -82,7 +87,9 @@ object CATCH {
      */
     def apply(id: Symbol): CATCH = new CATCH(id, None)
 
-    def unapply(arg: CATCH): Option[(Symbol, Option[br.ObjectType])] = Some((arg.id, arg.handlerType))
+    def unapply(arg: CATCH): Option[(Symbol, Option[br.ObjectType])] = {
+        Some((arg.id, arg.handlerType))
+    }
 }
 
 /**
@@ -92,7 +99,14 @@ object CATCH {
  * @author Malte Limmeroth
  */
 class ExceptionHandlerGenerator {
-    private class TempExceptionHandler(var startPC: br.PC, var endPC: br.PC, var handlerPC: br.PC, var catchType: Option[br.ObjectType])
+
+    private class TempExceptionHandler(
+        var startPC:   br.PC,
+        var endPC:     br.PC,
+        var handlerPC: br.PC,
+        var catchType: Option[br.ObjectType]
+    )
+
     private var map: Map[Symbol, TempExceptionHandler] = Map.empty
 
     private def getTempHandler(id: Symbol): TempExceptionHandler = {
@@ -124,7 +138,7 @@ class ExceptionHandlerGenerator {
         } else if (rId.isEmpty) {
             true
         } else {
-            lId.toInt < rId.toInt
+            Integer.parseInt(lId) < Integer.parseInt(rId)
         }
     }
 

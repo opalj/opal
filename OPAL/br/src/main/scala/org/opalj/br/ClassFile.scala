@@ -858,7 +858,7 @@ object ClassFile {
         superclassType: Option[ObjectType] = Some(ObjectType.Object),
         interfaceTypes: Seq[ObjectType]    = IndexedSeq.empty,
         fields:         Fields             = IndexedSeq.empty,
-        methods:        Methods,
+        methods:        Methods            = IndexedSeq.empty,
         attributes:     Attributes         = IndexedSeq.empty
     ): ClassFile = {
         new ClassFile(
