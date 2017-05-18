@@ -596,85 +596,86 @@ package object ba { ba ⇒
 
             case 0x00 ⇒
                 val br.TAOfParameterDeclarationOfClassOrInterface(index) = typeAnnotationTarget
-                da.ParameterDeclarationOfClassOrInterface(index)
+                da.TATParameterDeclarationOfClassOrInterface(index)
             case 0x01 ⇒
                 val br.TAOfParameterDeclarationOfMethodOrConstructor(index) = typeAnnotationTarget
-                da.ParameterDeclarationOfMethodOrConstructor(index)
+                da.TATParameterDeclarationOfMethodOrConstructor(index)
             case 0x10 ⇒
                 val br.TAOfSupertype(index) = typeAnnotationTarget
-                da.Supertype_Target(index)
+                da.TATSupertype(index)
 
             case 0x11 ⇒
                 val br.TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
                     typeIndex,
                     boundIndex
                     ) = typeAnnotationTarget
-                da.TypeBoundOfParameterDeclarationOfClassOrInterface(typeIndex, boundIndex)
+                da.TATTypeBoundOfParameterDeclarationOfClassOrInterface(typeIndex, boundIndex)
             case 0x12 ⇒
                 val br.TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
                     typeIndex,
                     boundIndex
                     ) = typeAnnotationTarget
-                da.TypeBoundOfParameterDeclarationOfMethodOrConstructor(typeIndex, boundIndex)
+                da.TATTypeBoundOfParameterDeclarationOfMethodOrConstructor(typeIndex, boundIndex)
 
-            case 0x13 ⇒ da.FieldDeclaration
-            case 0x14 ⇒ da.ReturnType
-            case 0x15 ⇒ da.ReceiverType
+            case 0x13 ⇒ da.TATFieldDeclaration
+            case 0x14 ⇒ da.TATReturnType
+            case 0x15 ⇒ da.TATReceiverType
 
             case 0x16 ⇒
                 val br.TAOfFormalParameter(index) = typeAnnotationTarget
-                da.Formal_Parameter_Target(index)
+                da.TATFormalParameter(index)
 
             case 0x17 ⇒
                 val br.TAOfThrows(index) = typeAnnotationTarget
-                da.Throws_Target(index)
+                da.TATThrows(index)
 
             case 0x40 ⇒
                 val br.TAOfLocalvarDecl(lvtes) = typeAnnotationTarget
-                da.LocalvarDecl(lvtes.map(toDA))
+                da.TATLocalvarDecl(lvtes.map(toDA))
             case 0x41 ⇒
                 val br.TAOfResourcevarDecl(lvtes) = typeAnnotationTarget
-                da.ResourcevarDecl(lvtes.map(toDA))
+                da.TATResourcevarDecl(lvtes.map(toDA))
 
             case 0x42 ⇒
                 val br.TAOfCatch(index) = typeAnnotationTarget
-                da.Catch_Target(index)
+                da.TATCatch(index)
 
             case 0x43 ⇒
                 val br.TAOfInstanceOf(offset) = typeAnnotationTarget
-                da.InstanceOf(offset)
+                da.TATInstanceOf(offset)
 
             case 0x44 ⇒
                 val br.TAOfNew(offset) = typeAnnotationTarget
-                da.New(offset)
+                da.TATNew(offset)
 
             case 0x45 ⇒
                 val br.TAOfMethodReferenceExpressionNew(offset) = typeAnnotationTarget
-                da.MethodReferenceExpressionNew(offset)
+                da.TATMethodReferenceExpressionNew(offset)
 
             case 0x46 ⇒
                 val br.TAOfMethodReferenceExpressionIdentifier(offset) = typeAnnotationTarget
-                da.MethodReferenceExpressionIdentifier(offset)
+                da.TATMethodReferenceExpressionIdentifier(offset)
 
             case 0x47 ⇒
                 val br.TAOfCastExpression(offset, index) = typeAnnotationTarget
-                da.CastExpression(offset, index)
+                da.TATCastExpression(offset, index)
 
             case 0x48 ⇒
                 val br.TAOfConstructorInvocation(offset, index) = typeAnnotationTarget
-                da.ConstructorInvocation(offset, index)
+                da.TATConstructorInvocation(offset, index)
 
             case 0x49 ⇒
                 val br.TAOfMethodInvocation(offset, index) = typeAnnotationTarget
-                da.MethodInvocation(offset, index)
+                da.TATMethodInvocation(offset, index)
 
             case 0x4A ⇒
-                val br.TAOfConstructorInMethodReferenceExpression(offset, index) = typeAnnotationTarget
-                da.ConstructorInMethodReferenceExpression(offset, index)
+                val br.TAOfConstructorInMethodReferenceExpression(offset, index) =
+                    typeAnnotationTarget
+                da.TATConstructorInMethodReferenceExpression(offset, index)
 
             case 0x4B ⇒
                 val br.TAOfMethodInMethodReferenceExpression(offset, index) = typeAnnotationTarget
-                da.MethodInMethodReferenceExpression(offset, index)
+                da.TATMethodInMethodReferenceExpression(offset, index)
         }
     }
 
