@@ -42,6 +42,7 @@ import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_ENUM
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.VisibilityModifier
 import org.opalj.bi.AccessFlags
@@ -841,16 +842,24 @@ object ClassFile {
 
     val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 
+    /**
+     * @note   The default version is equivalent to Java 5, i.e.,
+     *         no StackMapTable attribute is required.
+     * @param  accessFlags This class' access flags, by default: PUBLIC and SUPER
+     *         (always need to be set)
+     * @param  superclassType The class from which this class/interface inherits from. By default
+     *         `java.lang.Object`.
+     */
     def apply(
-        minorVersion:   Int,
-        majorVersion:   Int,
-        accessFlags:    Int,
+        minorVersion:   Int                = 0,
+        majorVersion:   Int                = 50,
+        accessFlags:    Int                = { ACC_PUBLIC.mask | ACC_SUPER.mask },
         thisType:       ObjectType,
-        superclassType: Option[ObjectType],
-        interfaceTypes: Seq[ObjectType],
-        fields:         Fields,
+        superclassType: Option[ObjectType] = Some(ObjectType.Object),
+        interfaceTypes: Seq[ObjectType]    = IndexedSeq.empty,
+        fields:         Fields             = IndexedSeq.empty,
         methods:        Methods,
-        attributes:     Attributes
+        attributes:     Attributes         = IndexedSeq.empty
     ): ClassFile = {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),
