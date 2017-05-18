@@ -68,7 +68,7 @@ class MethodBuilder(
      * @see [[CodeAttributeBuilder]]
      */
     def apply(codeBuilder: CodeAttributeBuilder): this.type = {
-        val (code, tempAnnotations) = codeBuilder.buildCodeAndAnnotations(accessFlags, name, descriptor)
+        val (code, (tempAnnotations, _)) = codeBuilder(accessFlags, name, descriptor)
         body = Some(code)
         annotations = tempAnnotations
         this

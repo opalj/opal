@@ -33,6 +33,7 @@ import org.opalj.bi.ACC_STATIC
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LabeledInstruction
 import org.opalj.br.instructions.WIDE
+import org.opalj.br.MethodAttributeBuilder
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. Instantiation is only
@@ -48,14 +49,13 @@ class CodeAttributeBuilder private[ba] (
         private var maxLocals:         Option[Int],
         private var exceptionHandlers: br.ExceptionHandlers,
         private var attributes:        br.Attributes
-) {
+) extends MethodAttributeBuilder[(Map[br.PC, AnyRef], List[String])] {
 
     /**
      * Defines the max_stack value.
      */
     def MAXSTACK(value: Int): this.type = {
         maxStack = Some(value)
-
         this
     }
 
@@ -64,51 +64,70 @@ class CodeAttributeBuilder private[ba] (
      */
     def MAXLOCALS(value: Int): this.type = {
         maxLocals = Some(value)
-
         this
     }
 
-    def buildCodeAndAnnotations(
+    /**
+     * @param  accessFlags The declaring method's access flags, required during code validation or
+     *         when MAXSTACK/MAXLOCALS should be computed.
+     * @param  descriptor The declaring method's descriptor; required during code valiation or
+     *         when MAXSTACK/MAXLOCALS should be computed.
+     *
+     * @return (The code attribute, (the extracted meta information, and the list of warnings)).
+     */
+    def apply(
         accessFlags: Int,
         name:        String,
         descriptor:  br.MethodDescriptor
-    ): (br.Code, Map[br.PC, AnyRef]) = {
-        val _maxLocals = br.Code.computeMaxLocals(
-            (ACC_STATIC.mask & accessFlags) == 0,
+    ): (br.Code, (Map[br.PC, AnyRef], List[String])) = {
+
+        import CodeAttributeBuilder.warnMessage
+        var warnings = List.empty[String]
+
+        val computedMaxLocals = br.Code.computeMaxLocals(
+            ACC_STATIC.isSet(accessFlags),
             descriptor,
             instructions
         )
-
-        val warnMessage = s"${descriptor.toJava(name)}: %s is too small; "+
-            "the configured value is – nevertheless – kept"
-
-        if (maxLocals.isDefined) {
-            if (maxLocals.get < _maxLocals) {
-                println(warnMessage.format("max_locals"))
-            }
+        if (maxLocals.isDefined && maxLocals.get < computedMaxLocals) {
+            warnings ::=
+                warnMessage.format(
+                    descriptor.toJVMDescriptor,
+                    "max_locals",
+                    maxLocals.get,
+                    computedMaxLocals
+                )
         }
 
-        val _maxStack = br.Code.computeMaxStack(
+        val computedMaxStack = br.Code.computeMaxStack(
             instructions = instructions,
             exceptionHandlers = exceptionHandlers
         )
 
-        if (maxStack.isDefined) {
-            if (maxStack.get < _maxStack) {
-                println(warnMessage.format("max_stack"))
-            }
+        if (maxStack.isDefined && maxStack.get < computedMaxStack) {
+            warnings ::= warnMessage.format(
+                descriptor.toJVMDescriptor,
+                "max_stack",
+                maxStack.get,
+                computedMaxStack
+            )
         }
 
         val code = br.Code(
-            maxStack = maxStack.getOrElse(_maxStack),
-            maxLocals = maxLocals.getOrElse(_maxLocals),
+            maxStack = maxStack.getOrElse(computedMaxStack),
+            maxLocals = maxLocals.getOrElse(computedMaxLocals),
             instructions = instructions,
             exceptionHandlers = exceptionHandlers,
             attributes = attributes
         )
 
-        (code, annotations)
+        (code, (annotations, warnings))
     }
+}
+
+object CodeAttributeBuilder {
+
+    val warnMessage = s"%s: %s is too small %d < %d"
 }
 
 /**
@@ -126,9 +145,14 @@ object CODE {
      * @see [[CodeElement]] for possible arguments.
      */
     def apply(codeElements: CodeElement*): CodeAttributeBuilder = {
+        this(codeElements.toIndexedSeq)
+    }
+
+    def apply(codeElements: IndexedSeq[CodeElement]): CodeAttributeBuilder = {
+
         require(
             codeElements.exists(_.isInstanceOf[InstructionElement]),
-            "a Code attribute has to have at least one instruction"
+            "a code attribute has to have at least one instruction"
         )
 
         val labelSymbols = codeElements.collect { case LabelElement(r) ⇒ r }
@@ -138,21 +162,17 @@ object CODE {
                 labelSymbols.groupBy(identity).collect { case (x, ys) if ys.size > 1 ⇒ x }.mkString
         )
 
-        codeElements.collect { case InstructionElement(inst) ⇒ inst }.collect {
+        codeElements.collect { case InstructionElement(i) ⇒ i }.collect {
             case bi: LabeledInstruction ⇒ {
                 bi.branchTargets foreach { target ⇒
                     require(
                         labelSymbols.contains(target),
-                        s"each branch instruction has to reference existing labels."+
-                            s"Instruction: $bi, missing label: $target"
+                        s"branch target label $target of $bi undefined"
                     )
                 }
             }
         }
-        buildCodeAttributeBuilder(codeElements.toIndexedSeq)
-    }
 
-    private def buildCodeAttributeBuilder(codeElements: IndexedSeq[CodeElement]): CodeAttributeBuilder = {
         val instructionsWithPlaceholders = scala.collection.mutable.ArrayBuffer.empty[CodeElement]
 
         //fill the array with `null` for PCs representing instruction arguments
@@ -197,8 +217,7 @@ object CODE {
 
         val exceptionHandlers = exceptionHandlerGenerator.finalizeHandlers
 
-        var attributes = Seq.empty[br.Attribute]
-        attributes ++:= lineNumberTableGenerator.finalizeLineNumberTable.to[Seq] //TODO: add more code attributes
+        val attributes: IndexedSeq[br.Attribute] = lineNumberTableGenerator.finalizeLineNumberTable.toIndexedSeq
 
         val annotations = instructionsWithPlaceholders.zipWithIndex.collect {
             case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)
