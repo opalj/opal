@@ -74,11 +74,11 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
                 val (classFile, classFileTwin) = classFilePair
                 assert(!(classFile.thisType.fqn eq null))
 
-                val selfDiff = classFile.findStructuralInequality(classFile)
+                val selfDiff = classFile.findJVMInequality(classFile)
                 if (selfDiff.nonEmpty)
                     fail(s"the $classFile is not jvm equal to itself: "+selfDiff.get)
 
-                val twinDiff = classFile.findStructuralInequality(classFileTwin)
+                val twinDiff = classFile.findJVMInequality(classFileTwin)
                 if (twinDiff.nonEmpty)
                     fail(s"the $classFile is not jvm equal to its twin: "+twinDiff.get)
 
