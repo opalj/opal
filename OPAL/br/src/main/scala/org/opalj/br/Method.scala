@@ -335,6 +335,23 @@ final class Method private (
         descriptor.toJava(declaringClassType.toJava+"."+name)
     }
 
+    //
+    //
+    // DSL
+    //
+    //
+
+    def +[T](methodAttributeBuilder: MethodAttributeBuilder[T]): (Method, T) = {
+        val (newAttribute, t) = methodAttributeBuilder(accessFlags, name, descriptor)
+        (copy(attributes = attributes :+ newAttribute), t)
+    }
+
+    //
+    //
+    // DEBUGGING PURPOSES
+    //
+    //
+
     override def toString(): String = {
         import AccessFlagsContexts.METHOD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
@@ -457,6 +474,20 @@ object Method {
             descriptor,
             theBody,
             remainingAttributes
+        )
+    }
+
+    def apply[T](
+        accessFlags:            Int,
+        name:                   String,
+        descriptor:             MethodDescriptor,
+        methodAttributeBuilder: MethodAttributeBuilder[T]
+    ): (Method, T) = {
+        val (newAttribute, t) = methodAttributeBuilder(accessFlags, name, descriptor)
+
+        (
+            this(accessFlags, name, descriptor, IndexedSeq(newAttribute)),
+            t
         )
     }
 
