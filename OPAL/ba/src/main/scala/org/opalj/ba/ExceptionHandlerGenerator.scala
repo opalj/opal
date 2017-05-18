@@ -29,6 +29,8 @@
 package org.opalj
 package ba
 
+import scala.collection.mutable
+
 /**
  * Pseudo instructions which generate the [[org.opalj.br.ExceptionHandler]] of the
  * [[org.opalj.br.Code]] attribute. An ExceptionHandler is composed of the three pseudo instructions
@@ -46,18 +48,21 @@ trait ExceptionHandlerElement extends PseudoInstruction {
 
 /**
  * Pseudo instruction marking the start of a [[org.opalj.br.ExceptionHandler]].
+ *
  * @see [[ExceptionHandlerElement]]
  */
 case class TRY(id: Symbol) extends ExceptionHandlerElement
 
 /**
  * Pseudo instruction marking the end of a [[org.opalj.br.ExceptionHandler]].
+ *
  * @see [[ExceptionHandlerElement]]
  */
 case class TRYEND(id: Symbol) extends ExceptionHandlerElement
 
 /**
  * Pseudo instruction marking the handler of a [[org.opalj.br.ExceptionHandler]].
+ *
  * @see [[ExceptionHandlerElement]]
  */
 class CATCH private (
@@ -67,9 +72,11 @@ class CATCH private (
 
 /**
  * Factory methods to create an [[CATCH]] pseudo instruction.
+ *
  * @author Malte Limmeroth
  */
 object CATCH {
+
     /**
      * Creates a [[CATCH]] pseudo instruction marking the handler of a
      * [[org.opalj.br.ExceptionHandler]] catching the given `handlerTpye`.
@@ -92,6 +99,13 @@ object CATCH {
     }
 }
 
+private[ba] class ExceptionHandlerBuilder(
+    var startPC:   br.PC                 = -1,
+    var endPC:     br.PC                 = -1,
+    var handlerPC: br.PC                 = -1,
+    var catchType: Option[br.ObjectType] = None
+)
+
 /**
  * Incrementally builds the [[org.opalj.br.ExceptionHandlers]] from the added pseudo instructions
  * ([[ExceptionHandlerElement]]) representing an [[org.opalj.br.ExceptionHandler]].
@@ -100,24 +114,14 @@ object CATCH {
  */
 class ExceptionHandlerGenerator {
 
-    private class TempExceptionHandler(
-        var startPC:   br.PC,
-        var endPC:     br.PC,
-        var handlerPC: br.PC,
-        var catchType: Option[br.ObjectType]
-    )
+    private[this] val map: mutable.Map[Symbol, ExceptionHandlerBuilder] = mutable.Map.empty
 
-    private var map: Map[Symbol, TempExceptionHandler] = Map.empty
-
-    private def getTempHandler(id: Symbol): TempExceptionHandler = {
-        if (map.get(id).isEmpty) {
-            map += (id → new TempExceptionHandler(-1, -1, -1, None))
-        }
-        map(id)
+    private[this] def getExceptionHandlerBuilder(id: Symbol): ExceptionHandlerBuilder = {
+        map.getOrElseUpdate(id, new ExceptionHandlerBuilder())
     }
 
     def add(element: ExceptionHandlerElement, pc: br.PC): Unit = {
-        val handler = getTempHandler(element.id)
+        val handler = getExceptionHandlerBuilder(element.id)
         element match {
             case TRY(_)    ⇒ handler.startPC = pc
             case TRYEND(_) ⇒ handler.endPC = pc
@@ -149,14 +153,16 @@ class ExceptionHandlerGenerator {
      * @return
      */
     def finalizeHandlers: br.ExceptionHandlers = {
-        map.toIndexedSeq.sortWith((left, right) ⇒ sortByLastNumber(left._1, right._1))
-            .map { p ⇒
-                val (id, th) = p
-                val errorMsg = s"no %s defined for the exception handler $id"
-                require(th.startPC >= 0, errorMsg.format("starting point"))
-                require(th.endPC >= 0, errorMsg.format("end point"))
-                require(th.handlerPC >= 0, errorMsg.format("handler point"))
-                br.ExceptionHandler(th.startPC, th.endPC, th.handlerPC, th.catchType)
-            }
+        map.toIndexedSeq.sortWith((left, right) ⇒ sortByLastNumber(left._1, right._1)).map { e ⇒
+            val (id, ehBuilder) = e
+            val errorMsg = s"no %s defined for the exception handler $id"
+            require(ehBuilder.startPC >= 0, errorMsg.format("starting point"))
+            require(ehBuilder.endPC >= 0, errorMsg.format("end point"))
+            require(ehBuilder.handlerPC >= 0, errorMsg.format("handler point"))
+            br.ExceptionHandler(
+                ehBuilder.startPC, ehBuilder.endPC, ehBuilder.handlerPC,
+                ehBuilder.catchType
+            )
+        }
     }
 }
