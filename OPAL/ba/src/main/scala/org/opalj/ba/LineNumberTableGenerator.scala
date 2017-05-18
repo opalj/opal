@@ -43,6 +43,7 @@ case class LINENUMBER(lineNumber: Int) extends PseudoInstruction
  * @author Malte Limmeroth
  */
 class LineNumberTableGenerator {
+
     private var lineNumbers: br.LineNumbers = Seq.empty
 
     def add(element: LINENUMBER, pc: br.PC) = {
