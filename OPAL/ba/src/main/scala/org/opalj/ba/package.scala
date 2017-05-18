@@ -101,10 +101,16 @@ package object ba { ba ⇒
         }
     }
 
-    implicit def methodAttributeBuilderToSeq[T](
-        b: br.MethodAttributeBuilder[T]
-    ): Seq[br.MethodAttributeBuilder[T]] = {
+    implicit def methodAttributeBuilderToSeq(
+        b: br.MethodAttributeBuilder
+    ): Seq[br.MethodAttributeBuilder] = {
         Seq(b)
+    }
+
+    implicit def codeAttributeBuilderToSome[T](
+        b: br.CodeAttributeBuilder[T]
+    ): Some[br.CodeAttributeBuilder[T]] = {
+        Some(b)
     }
 
     final val PUBLIC = new AccessModifier(ACC_PUBLIC.mask)

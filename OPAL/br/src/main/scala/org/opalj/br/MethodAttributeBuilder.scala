@@ -35,12 +35,12 @@ package br
  *
  * @author Michael Eichberg
  */
-trait MethodAttributeBuilder[T] {
+trait MethodAttributeBuilder {
 
     def apply(
         accessFlags: Int,
         name:        String,
         descriptor:  MethodDescriptor
-    ): (Attribute, T)
+    ): Attribute
 
 }

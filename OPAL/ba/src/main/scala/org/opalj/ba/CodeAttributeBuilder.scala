@@ -33,7 +33,6 @@ import org.opalj.bi.ACC_STATIC
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LabeledInstruction
 import org.opalj.br.instructions.WIDE
-import org.opalj.br.MethodAttributeBuilder
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. Instantiation is only
@@ -49,7 +48,7 @@ class CodeAttributeBuilder private[ba] (
         private var maxLocals:         Option[Int],
         private var exceptionHandlers: br.ExceptionHandlers,
         private var attributes:        br.Attributes
-) extends MethodAttributeBuilder[(Map[br.PC, AnyRef], List[String])] {
+) extends br.CodeAttributeBuilder[(Map[br.PC, AnyRef], List[String])] {
 
     /**
      * Defines the max_stack value.

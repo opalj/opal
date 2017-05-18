@@ -29,10 +29,13 @@
 package org.opalj
 package ba
 
-import reflect.runtime.universe._
+import scala.language.postfixOps
+
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
+import reflect.runtime.universe._
 
 import org.opalj.bc.Assembler
 import org.opalj.bi._
@@ -52,20 +55,24 @@ import org.opalj.util.InMemoryClassLoader
 class MethodBuilderTest extends FlatSpec {
     behavior of "the MethodBuilder"
 
-    val simpleMethodClass = (PUBLIC CLASS "SimpleMethodClass" EXTENDS "java/lang/Object")(
-        FINAL + SYNTHETIC + PUBLIC("testMethod", "(Ljava/lang/String;)", "Ljava/lang/String;")(
-            CODE(
-                ACONST_NULL,
-                ARETURN
+    val (simpleMethodClass, _) =
+        CLASS(
+            accessModifiers = PUBLIC SUPER,
+            thisType = "SimpleMethodClass",
+            methods = METHODS(
+                METHOD(
+                    FINAL.SYNTHETIC.PUBLIC, "testMethod", "(Ljava/lang/String;)Ljava/lang/String;",
+                    CODE(ACONST_NULL, ARETURN),
+                    EXCEPTIONS("java/lang/Exception")
+                )
             )
-        ) EXCEPTIONS "java/lang/Exception"
-    )
+        ).toDA()
 
-    val assembledCF = Assembler(simpleMethodClass.buildDAClassFile._1)
+    val rawClassFile = Assembler(simpleMethodClass)
 
     "the generated method 'SimpleMethodClass.testMethod'" should "execute correctly" in {
         val loader = new InMemoryClassLoader(
-            Map("SimpleMethodClass" → assembledCF),
+            Map("SimpleMethodClass" → rawClassFile),
             this.getClass.getClassLoader
         )
 
@@ -77,7 +84,7 @@ class MethodBuilderTest extends FlatSpec {
         assert(mirror.reflectMethod(method)("test") == null)
     }
 
-    val brClassFile = Java8Framework.ClassFile(() ⇒ new java.io.ByteArrayInputStream(assembledCF)).head
+    val brClassFile = Java8Framework.ClassFile(() ⇒ new java.io.ByteArrayInputStream(rawClassFile)).head
 
     val testMethod = brClassFile.methods.find { m ⇒
         m.name == "testMethod" &&
@@ -107,60 +114,62 @@ class MethodBuilderTest extends FlatSpec {
         assert(testMethod.get.body.get.maxStack == 1)
     }
 
-    val attributeMethodClass = (PUBLIC CLASS "AttributeMethodClass" EXTENDS "java/lang/Object")(
-        PUBLIC("<init>", "()", "V")(
-            CODE(
-                ALOAD_0,
-                INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                'return,
-                LINENUMBER(1),
-                RETURN
-            ) MAXSTACK 2 MAXLOCALS 3
-        ),
-        //if parameter <0 => catch-Block defines return value       => 0
-        //if parameter =0 => try-Block defines return value         => 1
-        //if parameter >0 => finally-Block  defines return value    => 2
-        PUBLIC("tryCatchFinallyTest", "(I)", "I")(
-            CODE(
-                ICONST_1,
-                ISTORE_2,
-                TRY('Try1),
-                TRY('FinallyTry2),
-                TRY('LastPCTry3),
-                ILOAD_1,
-                IFGE('tryEnd),
-                NEW("java/lang/Exception"),
-                DUP,
-                INVOKESPECIAL("java/lang/Exception", false, "<init>", "()V"),
-                ATHROW,
-                'tryEnd,
-                TRYEND('Try1),
-                GOTO('finally),
-                CATCH('Try1, "java/lang/Exception"),
-                POP,
-                ICONST_0,
-                ISTORE_2,
-                TRYEND('FinallyTry2),
-                GOTO('finally),
-                CATCH('FinallyTry2),
-                CATCH('LastPCTry3),
-                POP,
-                'finally,
-                ILOAD_1,
-                IFLE('return),
-                ICONST_2,
-                ISTORE_2,
-                'return,
-                ILOAD_2,
-                IRETURN,
-                TRYEND('LastPCTry3)
-            ) MAXLOCALS 3
-        )
-    )
+    val (attributeMethodClass, _) =
+        CLASS(
+            accessModifiers = PUBLIC,
+            thisType = "AttributeMethodClass",
+            methods = METHODS(
+                METHOD(
+                    PUBLIC, "<init>", "()V", CODE(
+                    ALOAD_0,
+                    INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                    'return,
+                    LINENUMBER(1),
+                    RETURN
+                ) MAXSTACK 2 MAXLOCALS 3
+                ),
+                METHOD(
+                    PUBLIC, "tryCatchFinallyTest", "(I)I", CODE(
+                    ICONST_1,
+                    ISTORE_2,
+                    TRY('Try1),
+                    TRY('FinallyTry2),
+                    TRY('LastPCTry3),
+                    ILOAD_1,
+                    IFGE('tryEnd),
+                    NEW("java/lang/Exception"),
+                    DUP,
+                    INVOKESPECIAL("java/lang/Exception", false, "<init>", "()V"),
+                    ATHROW,
+                    'tryEnd,
+                    TRYEND('Try1),
+                    GOTO('finally),
+                    CATCH('Try1, "java/lang/Exception"),
+                    POP,
+                    ICONST_0,
+                    ISTORE_2,
+                    TRYEND('FinallyTry2),
+                    GOTO('finally),
+                    CATCH('FinallyTry2),
+                    CATCH('LastPCTry3),
+                    POP,
+                    'finally,
+                    ILOAD_1,
+                    IFLE('return),
+                    ICONST_2,
+                    ISTORE_2,
+                    'return,
+                    ILOAD_2,
+                    IRETURN,
+                    TRYEND('LastPCTry3)
+                ) MAXLOCALS 3
+                )
+            )
+        ).toDA()
 
-    val assembledAttributeCF = Assembler(attributeMethodClass.buildDAClassFile._1)
+    val rawAttributeCF = Assembler(attributeMethodClass)
     val attributeBrClassFile = Java8Framework.ClassFile(
-        () ⇒ new java.io.ByteArrayInputStream(assembledAttributeCF)
+        () ⇒ new java.io.ByteArrayInputStream(rawAttributeCF)
     ).head
 
     val attributeTestMethod = attributeBrClassFile.methods.find { m ⇒
@@ -168,7 +177,7 @@ class MethodBuilderTest extends FlatSpec {
     }.get
 
     val loader = new InMemoryClassLoader(
-        Map("AttributeMethodClass" → assembledAttributeCF),
+        Map("AttributeMethodClass" → rawAttributeCF),
         this.getClass.getClassLoader
     )
 

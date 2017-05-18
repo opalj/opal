@@ -29,20 +29,14 @@
 package org.opalj
 package ba
 
-/**
- * Factory for the [[org.opalj.br.ExceptionTable]] attribute.
- *
- * @author Malte Limmeroth
- *
- */
-trait ExceptionsAttributeBuilder { this: AttributesContainer ⇒
+case class EXCEPTIONS(exceptionTypes: String*) extends br.MethodAttributeBuilder {
 
-    /**
-     * Defines the [[org.opalj.br.ExceptionTable]] attribute.
-     *
-     * @param fqn the Exception(s) as fully qualified names in JVM notation.
-     */
-    def EXCEPTIONS(fqn: String*): this.type = {
-        addAttribute(br.ExceptionTable(fqn.map(br.ObjectType.apply)))
+    def apply(
+        accessFlags: Int,
+        name:        String,
+        descriptor:  br.MethodDescriptor
+    ): br.ExceptionTable = {
+        br.ExceptionTable(exceptionTypes.map(br.ObjectType.apply))
     }
+
 }

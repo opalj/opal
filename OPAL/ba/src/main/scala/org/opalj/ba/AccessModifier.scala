@@ -29,10 +29,6 @@
 package org.opalj
 package ba
 
-import org.opalj.bi.ACC_INTERFACE
-import org.opalj.bi.ACC_ANNOTATION
-import org.opalj.br.ObjectType
-
 /**
  * Represents the access flags of a class, method or field declaration.
  *
@@ -62,81 +58,4 @@ final class AccessModifier(private[ba] val accessFlags: Int) extends AnyVal {
     final def VOLATILE: AccessModifier = new AccessModifier(this.accessFlags | ba.VOLATILE.accessFlags)
     final def TRANSIENT: AccessModifier = new AccessModifier(this.accessFlags | ba.TRANSIENT.accessFlags)
 
-    /**
-     * Returns a new [[AccessModifier]] with both [[AccessModifier]]s `accessFlag`s set.
-     */
-    def +(that: AccessModifier): AccessModifier = {
-        new AccessModifier(this.accessFlags | that.accessFlags)
-    }
-
-    /**
-     * Creates a new [[ClassFileBuilder]] with the given name and previously defined
-     * AccessModifiers. The `minorVersion` is initialized using
-     * [[ClassFileBuilder.DefaultMinorVersion]] and the `majorVersion` using
-     * [[ClassFileBuilder.DefaultMajorVersion]].
-     *
-     * @param fqn The fully qualified class name in JVM notation, e.g. "MyClass" for a
-     *            class in the default package or "my/package/MyClass" for a class in "my.package".
-     */
-    def CLASS(fqn: String): ClassFileBuilder = {
-        var accessFlags = this.accessFlags
-
-        val superclassType: Option[ObjectType] =
-            if (ACC_INTERFACE.isSet(accessFlags))
-                Some(ObjectType.Object)
-            else
-                None
-
-        if (ACC_ANNOTATION.isSet(accessFlags))
-            accessFlags |= ACC_INTERFACE.mask
-
-        new ClassFileBuilder(
-            accessFlags = accessFlags,
-            thisType = ObjectType(fqn),
-            superclassType = superclassType
-        )
-    }
-
-    /**
-     * Creates a new [[MethodBuilder]] with the previously defined [[AccessModifier]]s.
-     *
-     * @param name The method name
-     * @param parameters The method parameters in JVM notation, e.g. "()" for no parameters,
-     *                   "(IB)" for one integer and one boolean argument or
-     *                   "(Ljava/lang/String;)" for one String argument.
-     * @param returnType The returnType of this method in JVM notation, e.g. "I" for integer.
-     */
-    def apply(
-        name:       String,
-        parameters: String,
-        returnType: String
-    ): MethodBuilder = {
-        new MethodBuilder(
-            accessFlags = accessFlags,
-            name = name,
-            descriptor = br.MethodDescriptor(parameters + returnType)
-        )
-    }
-
-    /**
-     * Creates a new FieldBuilder with the previously defined AccessModifiers.
-     *
-     * @param name the fields name
-     * @param fieldType the fieldType in JVM notation, e.g. "I" for integer
-     */
-    def apply(name: String, fieldType: String): FieldBuilder = {
-        new FieldBuilder(
-            accessFlags = accessFlags,
-            name = name,
-            fieldType = br.FieldType(fieldType)
-        )
-    }
-
-    /**
-     * Adds this [[AccessModifier]]s AccessFlag to the AccessFlags of the given
-     * [[ClassFileMemberBuilder]].
-     */
-    def +(cfmBuilder: ClassFileMemberBuilder): cfmBuilder.type = {
-        cfmBuilder.addAccessFlags(accessFlags)
-    }
 }

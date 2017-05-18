@@ -134,10 +134,10 @@ class ClassFileBuilderTest extends FlatSpec {
     }
 
     "the generated class 'AbstractClass'" should "have the default minor version" in {
-        assert(abstractBRClassFile.minorVersion == ClassFileBuilder.DefaultMinorVersion)
+        assert(abstractBRClassFile.minorVersion == CLASS.DefaultMinorVersion)
     }
 
     it should "have the default major version" in {
-        assert(abstractBRClassFile.majorVersion == ClassFileBuilder.DefaultMajorVersion)
+        assert(abstractBRClassFile.majorVersion == CLASS.DefaultMajorVersion)
     }
 }

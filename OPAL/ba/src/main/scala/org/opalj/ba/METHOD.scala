@@ -36,24 +36,31 @@ package ba
  * @author Michael Eichberg
  */
 case class METHOD[T](
-        val accessModifiers:    AccessModifier,
-        val name:               String,
-        val descriptor:         String,
-        val attributesBuilders: Seq[br.MethodAttributeBuilder[T]] = Seq.empty
+        val accessModifiers: AccessModifier,
+        val name:            String,
+        val descriptor:      String,
+        val code:            Option[br.CodeAttributeBuilder[T]],
+        val attributes:      Seq[br.MethodAttributeBuilder]     = Seq.empty
 ) {
 
     /**
      * Returns the build [[org.opalj.br.Method]] and its annotations.
      */
-    def buildBRMethod(): (br.Method, Seq[T]) = {
+    def buildBRMethod(): (br.Method, Option[T]) = {
         val methodDescriptor = br.MethodDescriptor(descriptor)
         val accessFlags = accessModifiers.accessFlags
-        val (attributes, codeAnnotations) = attributesBuilders.map(attributeBuilder ⇒
-            attributeBuilder(accessFlags, name, methodDescriptor)).unzip
 
-        val method = br.Method(accessFlags, name, methodDescriptor, attributes)
+        val attributes = this.attributes.map(attributeBuilder ⇒
+            attributeBuilder(accessFlags, name, methodDescriptor))
 
-        (method, codeAnnotations)
+        if (code.isDefined) {
+            val (codeAttribute, codeAnnotations) = code.get(accessFlags, name, methodDescriptor)
+            val method = br.Method(accessFlags, name, methodDescriptor, attributes :+ codeAttribute)
+            (method, Some(codeAnnotations))
+        } else {
+            val method = br.Method(accessFlags, name, methodDescriptor, attributes)
+            (method, None)
+        }
     }
 
 }
@@ -63,6 +70,6 @@ case class METHODS[T](methods: METHOD[T]*) {
     /**
      * Returns the build [[org.opalj.br.Method]] and its code annotations.
      */
-    def buildBRMethods(): Seq[(br.Method, Seq[T])] = methods.map(m ⇒ m.buildBRMethod())
+    def buildBRMethods(): Seq[(br.Method, Option[T])] = methods.map(m ⇒ m.buildBRMethod())
 
 }

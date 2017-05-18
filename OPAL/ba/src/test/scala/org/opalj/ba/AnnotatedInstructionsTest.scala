@@ -51,7 +51,10 @@ class AnnotatedInstructionsTest extends FlatSpec {
 
     behavior of "Annotated Instructions"
 
-    val (daClassFile, methodAnnotations: Map[br.Method, Seq[(Map[br.PC, AnyRef], List[String])]]) =
+    val (
+        daClassFile,
+        methodAnnotations: Map[br.Method, Option[(Map[br.PC, AnyRef], List[String])]]
+        ) =
         CLASS(
             accessModifiers = PUBLIC SUPER,
             thisType = "Test",
@@ -68,7 +71,13 @@ class AnnotatedInstructionsTest extends FlatSpec {
     val (pcAnnotations: List[Map[br.PC, AnyRef]], warnings) = methodAnnotations.values.head.unzip
 
     "the class generation" should "have no warnings" in {
-        assert(methodAnnotations.values.forall /*methods*/ (_.forall /*attributes*/ (_._2.isEmpty /* <=> no warnings*/ )))
+        assert(
+            methodAnnotations.values.forall /*methods*/ (
+                _.forall /*attributes*/ (
+                    _._2.isEmpty /* <=> no warnings*/
+                )
+            )
+        )
     }
 
     "the generated class" should "load correctly" in {

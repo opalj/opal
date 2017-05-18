@@ -27,39 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ba
-import org.opalj.br.Attribute
+package br
 
 /**
- * Builder for creating Fields and specifying their attributes.
+ * Given a method's definining information the method attribute is build
+ * and some arbitrary meta information is collected.
  *
- * @author Malte Limmeroth
+ * @author Michael Eichberg
  */
-class FieldBuilder(
-        private var accessFlags: Int,
-        private var name:        String,
-        private var fieldType:   br.FieldType,
-        private var attributes:  br.Attributes = IndexedSeq.empty
-) extends AttributesContainer with ClassFileMemberBuilder {
-
-    def addAccessFlags(accessFlags: Int) = {
-        this.accessFlags = this.accessFlags | accessFlags
-
-        this
-    }
-
-    def addAttribute(attribute: Attribute) = {
-        attributes :+= attribute
-
-        this
-    }
-
-    def buildField: br.Field = {
-        br.Field(
-            accessFlags = accessFlags,
-            name = name,
-            fieldType = fieldType,
-            attributes = attributes
-        )
-    }
+trait CodeAttributeBuilder[T] {
+    def apply(
+        accessFlags: Int,
+        name:        String,
+        descriptor:  MethodDescriptor
+    ): (Attribute, T)
 }

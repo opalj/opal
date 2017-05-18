@@ -55,12 +55,12 @@ case class CLASS[T](
      *  - For regular classes (not interface types) a default constructor will be generated
      * if no constructor was defined and the superclass type information is available.
      */
-    def toBR(): (br.ClassFile, Map[br.Method, Seq[T]]) = {
+    def toBR(): (br.ClassFile, Map[br.Method, Option[T]]) = {
 
         val accessFlags = accessModifiers.accessFlags
         val brFields = fields.buildBRFields().toIndexedSeq
 
-        val brAnnotatedMethods: Seq[(br.Method, Seq[T])] = methods.buildBRMethods()
+        val brAnnotatedMethods: Seq[(br.Method, Option[T])] = methods.buildBRMethods()
         var brMethods = brAnnotatedMethods.map(m ⇒ m._1).toIndexedSeq
         if (!(
             bi.ACC_INTERFACE.isSet(accessFlags) ||
@@ -95,7 +95,7 @@ case class CLASS[T](
      *
      * @see [[buildBRClassFile]]
      */
-    def toDA(): (da.ClassFile, Map[br.Method, Seq[T]]) = {
+    def toDA(): (da.ClassFile, Map[br.Method, Option[T]]) = {
         val (brClassFile, annotations) = toBR()
         (ba.toDA(brClassFile), annotations)
     }
