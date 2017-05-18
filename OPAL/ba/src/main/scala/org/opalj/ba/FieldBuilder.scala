@@ -36,15 +36,11 @@ import org.opalj.br.Attribute
  * @author Malte Limmeroth
  */
 class FieldBuilder(
-    private var accessFlags: Int,
-    private var name:        String,
-    private var fieldType:   br.FieldType,
-    private var attributes:  br.Attributes = IndexedSeq.empty
-) extends AttributesContainer
-        with ClassFileMemberBuilder
-        with DeprecatedAttributeBuilder
-        with SyntheticAttributeBuilder
-        with ConstantValueAttributeBuilder {
+        private var accessFlags: Int,
+        private var name:        String,
+        private var fieldType:   br.FieldType,
+        private var attributes:  br.Attributes = IndexedSeq.empty
+) extends AttributesContainer with ClassFileMemberBuilder {
 
     def addAccessFlags(accessFlags: Int) = {
         this.accessFlags = this.accessFlags | accessFlags

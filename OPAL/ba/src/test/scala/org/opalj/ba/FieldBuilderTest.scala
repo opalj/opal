@@ -57,8 +57,8 @@ class FieldBuilderTest extends FlatSpec {
     behavior of "Fields"
 
     val cf = (PUBLIC CLASS "org/opalj/ba/FieldClass" EXTENDS "java/lang/Object")(
-        FINAL + PUBLIC("publicField", "I") CONSTANTVALUE 3,
-        PRIVATE("privateField", "Z") DEPRECATED () SYNTHETIC (),
+        FINAL + PUBLIC("publicField", "I"),
+        PRIVATE("privateField", "Z"),
         PUBLIC("<init>", "()", "V")(
             CODE(
                 ALOAD_0,
@@ -107,22 +107,9 @@ class FieldBuilderTest extends FlatSpec {
         assert(getField("publicField").accessFlags == (ACC_PUBLIC.mask | ACC_FINAL.mask))
     }
 
-    it should "have the ConstantValue attribute set to: 3" in {
-        val constant = getField("publicField").attributes.collect { case c: br.ConstantInteger ⇒ c }
-        assert(constant.head.value == 3)
-    }
-
     "the field `FieldClass.privateField`" should "be initialized as true" in {
         val field = mirror.symbol.typeSignature.member(TermName("privateField")).asTerm
         assert(mirror.reflectField(field).get == true)
-    }
-
-    it should "have the Deprecated Attribute set" in {
-        assert(getField("privateField").attributes.exists(a ⇒ a.kindId == 22))
-    }
-
-    it should "have the Synthetic attribute" in {
-        assert(getField("privateField").attributes.exists(a ⇒ a.kindId == 11))
     }
 
     "FieldClass.publicField" should "be initialized as 3" in {

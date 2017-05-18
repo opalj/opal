@@ -45,9 +45,7 @@ class MethodBuilder(
     private var annotations: Map[br.PC, AnyRef]  = Map.empty
 ) extends AttributesContainer
         with ClassFileMemberBuilder
-        with DeprecatedAttributeBuilder
-        with ExceptionsAttributeBuilder
-        with SyntheticAttributeBuilder {
+        with ExceptionsAttributeBuilder {
 
     override def addAccessFlags(accessFlags: Int): this.type = {
         this.accessFlags = this.accessFlags | accessFlags

@@ -58,7 +58,7 @@ class MethodBuilderTest extends FlatSpec {
                 ACONST_NULL,
                 ARETURN
             )
-        ) DEPRECATED () SYNTHETIC () EXCEPTIONS "java/lang/Exception"
+        ) EXCEPTIONS "java/lang/Exception"
     )
 
     val assembledCF = Assembler(simpleMethodClass.buildDAClassFile._1)
@@ -92,14 +92,6 @@ class MethodBuilderTest extends FlatSpec {
         assert(
             testMethod.get.accessFlags == (ACC_PUBLIC.mask | ACC_FINAL.mask | ACC_SYNTHETIC.mask)
         )
-    }
-
-    it should "have the Deprecated Attribute set" in {
-        assert(testMethod.get.attributes.exists(a ⇒ a.kindId == 22))
-    }
-
-    it should "have the Synthetic attribute" in {
-        assert(testMethod.get.attributes.exists(a ⇒ a.kindId == 11))
     }
 
     it should "have the Exception Attribute set: 'java/lang/Exception" in {

@@ -85,7 +85,7 @@ class CodeAttributeBuilder private[ba] (
         var warnings = List.empty[String]
 
         val computedMaxLocals = br.Code.computeMaxLocals(
-            ACC_STATIC.isSet(accessFlags),
+            !ACC_STATIC.isSet(accessFlags),
             descriptor,
             instructions
         )
