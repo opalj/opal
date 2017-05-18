@@ -31,6 +31,7 @@ package br
 
 import scala.math.Ordered
 import org.opalj.bi.ACC_TRANSIENT
+import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_VOLATILE
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
@@ -38,29 +39,31 @@ import org.opalj.bi.AccessFlags
 /**
  * Represents a single field declaration/definition.
  *
- * @note Fields have – by default – no link to their defining [[ClassFile]]. However,
- *      if a [[analyses.Project]] is available then it is possible to get a `Field`'s
- *      [[ClassFile]] by using `Project`'s `classFile(Field)` method.
- * @note Identity (w.r.t. `equals`/`hashCode`) is intentionally by reference (default
- *      behavior).
- * @param accessFlags This field's access flags. To analyze the access flags
- *      bit vector use [[org.opalj.bi.AccessFlag]] or
- *      [[org.opalj.bi.AccessFlagsIterator]] or use pattern matching.
- * @param name The name of this field. The name is interned (see `String.intern()` for
- *     details.)
- *     Note, that this name is not required to be a valid Java programming
- *     language identifier.
- * @param fieldType The (erased) type of this field.
- * @param attributes The defined attributes. The JVM 8 specification defines
- *     the following attributes for fields:
- *     * [[ConstantValue]],
- *     * [[Synthetic]],
- *     * [[Signature]],
- *     * [[Deprecated]],
- *     * [[RuntimeVisibleAnnotationTable]],
- *     * [[RuntimeInvisibleAnnotationTable]],
- *     * [[RuntimeVisibleTypeAnnotationTable]] and
- *     * [[RuntimeInvisibleTypeAnnotationTable]].
+ * @note   Fields have – by default – no link to their defining [[ClassFile]]. However,
+ *         if a [[analyses.Project]] is available then it is possible to get a `Field`'s
+ *         [[ClassFile]] by using `Project`'s `classFile(Field)` method.
+ *
+ * @note   '''Identity (w.r.t. `equals`/`hashCode`) is intentionally by reference (default
+ *         behavior).'''
+ *
+ * @param  accessFlags This field's access flags. To analyze the access flags
+ *         bit vector use [[org.opalj.bi.AccessFlag]] or
+ *         [[org.opalj.bi.AccessFlagsIterator]] or use pattern matching.
+ * @param  name The name of this field. The name is interned (see `String.intern()` for
+ *         details.)
+ *         Note, that this name is not required to be a valid Java programming
+ *         language identifier.
+ * @param  fieldType The (erased) type of this field.
+ * @param  attributes The defined attributes. The JVM 8 specification defines
+ *         the following attributes for fields:
+ *          * [[ConstantValue]],
+ *          * [[Synthetic]],
+ *          * [[Signature]],
+ *          * [[Deprecated]],
+ *          * [[RuntimeVisibleAnnotationTable]],
+ *          * [[RuntimeInvisibleAnnotationTable]],
+ *          * [[RuntimeVisibleTypeAnnotationTable]] and
+ *          * [[RuntimeInvisibleTypeAnnotationTable]].
  *
  * @author Michael Eichberg
  */
@@ -70,6 +73,19 @@ final class Field private (
         val fieldType:   FieldType,
         val attributes:  Attributes
 ) extends ClassMember with Ordered[Field] {
+
+    /**
+     * Compares this field with the given one for structural equality.
+     *
+     * Two fields are structurlly equaly if they have the same names, flags, type and attributes.
+     * In the latter case, the order doesn't matter!
+     */
+    def jvmEquals(other: Field): Boolean = {
+        this.accessFlags == other.accessFlags && (this.fieldType eq other.fieldType) &&
+            this.name == other.name &&
+            this.attributes.size == other.attributes.size &&
+            this.attributes.forall { a ⇒ other.attributes.find(a.jvmEquals).isDefined }
+    }
 
     def copy(
         accessFlags: Int        = this.accessFlags,
@@ -162,10 +178,22 @@ final class Field private (
 object Field {
 
     def apply(
-        accessFlags: Int,
+        accessFlags:           Int,
+        name:                  String,
+        fieldType:             FieldType,
+        fieldAttributeBuilder: FieldAttributeBuilder
+    ): Field = {
+        this(
+            accessFlags, name, fieldType,
+            IndexedSeq(fieldAttributeBuilder(accessFlags, name, fieldType))
+        )
+    }
+
+    def apply(
+        accessFlags: Int        = ACC_PUBLIC.mask,
         name:        String,
         fieldType:   FieldType,
-        attributes:  Attributes
+        attributes:  Attributes = Seq.empty[Attribute]
     ): Field = {
         new Field(accessFlags, name.intern(), fieldType, attributes)
     }

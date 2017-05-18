@@ -35,7 +35,7 @@ package br
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-trait SignatureElement {
+trait SignatureElement { // RECALL: Void and the BaseTypes are also subtypes!
 
     def accept[T](sv: SignatureVisitor[T]): T
 
@@ -233,17 +233,23 @@ sealed trait ThrowsSignature extends SignatureElement
  * res2: String = Col<List(ProperTypeArgument(variance=None,signature=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List())))>
  * }}}
  */
-sealed trait Signature extends SignatureElement with Attribute
+sealed abstract class Signature extends SignatureElement with Attribute {
 
-private[br] object Signature {
+    override def jvmEquals(other: Attribute): Boolean = this == other
 
-    def formalTypeParametersToJVMSignature(formalTypeParameters: List[FormalTypeParameter]): String = {
+}
+
+object Signature {
+
+    private[br] def formalTypeParametersToJVMSignature(formalTypeParameters: List[FormalTypeParameter]): String = {
         if (formalTypeParameters.isEmpty) {
             ""
         } else {
             formalTypeParameters.map(_.toJVMSignature).mkString("<", "", ">")
         }
     }
+
+    def unapply(s: Signature): Some[String] = Some(s.toJVMSignature)
 
 }
 import Signature.formalTypeParametersToJVMSignature
@@ -369,11 +375,7 @@ case class ClassTypeSignature(
     override def kindId: Int = ClassTypeSignature.KindId
 
     override def toJVMSignature: String = {
-        val packageName =
-            if (packageIdentifier.isDefined)
-                packageIdentifier.get
-            else
-                ""
+        val packageName = packageIdentifier.getOrElse("")
 
         "L"+
             packageName +

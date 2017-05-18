@@ -79,6 +79,50 @@ final class Code private (
         with InstructionsContainer
         with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
+    override def jvmEquals(other: Attribute): Boolean = {
+        other match {
+            case that: Code ⇒ this.jvmEquals(that)
+            case _          ⇒ false
+        }
+    }
+
+    def jvmEquals(other: Code): Boolean = {
+        if (!(this.maxStack == other.maxStack && this.maxLocals == other.maxLocals)) {
+            return false;
+        }
+        if (this.exceptionHandlers != other.exceptionHandlers) {
+            return false;
+        }
+
+        if (!(
+            this.instructions.length == other.instructions.length && {
+                var areEqual = true
+                val max = instructions.length
+                var i = 0
+                while (i < max && areEqual) {
+                    val thisI = this.instructions(i)
+                    val otherI = other.instructions(i)
+                    areEqual = (thisI == null && otherI == null) ||
+                        (thisI != null && otherI != null && thisI.jvmEquals(otherI))
+                    i += 1
+                }
+                areEqual
+            }
+        )) {
+            return false;
+        }
+
+        if (this.attributes.size != other.attributes.size) {
+            return false;
+        }
+
+        if (!this.attributes.forall(a ⇒ other.attributes.find(a.jvmEquals).isDefined)) {
+            return false;
+        }
+
+        true
+    }
+
     import Code.BasicClassHierarchy
 
     def codeSize: Int = instructions.length

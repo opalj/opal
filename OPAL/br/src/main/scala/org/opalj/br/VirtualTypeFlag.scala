@@ -46,8 +46,12 @@ package br
  */
 case object VirtualTypeFlag extends Attribute {
 
+    final val Name = "org.opalj.br.VirtualTypeFlag"
+
     final val KindId = 1001
 
     override def kindId = KindId
+
+    override def jvmEquals(other: Attribute): Boolean = this == other
 
 }

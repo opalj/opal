@@ -50,6 +50,13 @@ sealed trait ElementValue extends Attribute {
 object ElementValue {
     final val minKindId = ByteValue.KindId
     final val maxKindId = AnnotationValue.KindId
+
+    def unapply(attribute: Attribute): Boolean = {
+        attribute match {
+            case _: ElementValue ⇒ true
+            case _               ⇒ false
+        }
+    }
 }
 
 /**
@@ -62,6 +69,8 @@ sealed trait BaseTypeElementValue extends ElementValue {
     final override def valueType = baseType
 
     def baseType: BaseType
+
+    override def jvmEquals(other: Attribute): Boolean = this == other
 }
 
 case class ByteValue(value: Byte) extends BaseTypeElementValue {
@@ -169,8 +178,7 @@ object ShortValue {
 
 }
 
-case class BooleanValue(value: Boolean)
-        extends BaseTypeElementValue {
+case class BooleanValue(value: Boolean) extends BaseTypeElementValue {
 
     override def baseType: BaseType = BooleanType
 
@@ -193,6 +201,8 @@ case class StringValue(value: String) extends ElementValue {
 
     override def kindId: Int = StringValue.KindId
 
+    override def jvmEquals(other: Attribute): Boolean = this == other
+
 }
 object StringValue {
 
@@ -208,6 +218,8 @@ case class ClassValue(value: Type) extends ElementValue {
 
     override def kindId: Int = ClassValue.KindId
 
+    override def jvmEquals(other: Attribute): Boolean = this == other
+
 }
 object ClassValue {
 
@@ -222,6 +234,8 @@ case class EnumValue(enumType: ObjectType, constName: String) extends ElementVal
     override def toJava: String = enumType.toJava+"."+constName
 
     override def kindId: Int = EnumValue.KindId
+
+    override def jvmEquals(other: Attribute): Boolean = this == other
 
 }
 object EnumValue {
@@ -239,6 +253,8 @@ case class ArrayValue(values: IndexedSeq[ElementValue]) extends ElementValue {
 
     override def kindId: Int = ArrayValue.KindId
 
+    override def jvmEquals(other: Attribute): Boolean = this == other
+
 }
 object ArrayValue {
 
@@ -254,10 +270,18 @@ case class AnnotationValue(annotation: Annotation) extends ElementValue {
 
     override def kindId: Int = AnnotationValue.KindId
 
+    override def jvmEquals(other: Attribute): Boolean = {
+        other match {
+            case AnnotationValue(thatAnnotation) ⇒
+                this.annotation.jvmEquals(thatAnnotation)
+            case _ ⇒
+                false
+        }
+    }
+
 }
 object AnnotationValue {
 
     final val KindId = 41
 
 }
-

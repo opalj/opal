@@ -35,7 +35,7 @@ import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 
 /**
- * A collection of up to `org.opalj.hermes.Globals.MaxLocations` locations where a specific
+ * A collection of up to [[org.opalj.hermes.Globals.MaxLocations]] locations where a specific
  * feature was found.
  *
  * Using a `LocationsContainer` has the advantage that we do not store unwanted locations.

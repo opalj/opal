@@ -48,9 +48,14 @@ package br
  * @author  Arne Lottmann
  * @author  Michael Eichberg
  */
-case class SynthesizedClassFiles(classFiles: List[(ClassFile, Option[AnyRef])]) extends Attribute {
+case class SynthesizedClassFiles(
+        classFiles: List[( /*generated*/ ClassFile, /*reason*/ Option[AnyRef])]
+) extends Attribute {
 
     final override val kindId = SynthesizedClassFiles.KindId
+
+    // TODO needs to be reconsidered when we serialize this attribute!
+    override def jvmEquals(other: Attribute): Boolean = this == other
 
     override def toString: String = {
         classFiles.map { cfAndReason ⇒
@@ -61,5 +66,8 @@ case class SynthesizedClassFiles(classFiles: List[(ClassFile, Option[AnyRef])]) 
 }
 
 object SynthesizedClassFiles {
+
     final val KindId = 1002
+
+    final val Name = "org.opalj.br.SynthesizedClassFiles"
 }

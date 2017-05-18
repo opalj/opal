@@ -72,6 +72,10 @@ final case class LoadFloat(value: Float) extends LDC[Float] {
 
     override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
+        this.jvmEquals(other)
+    }
+
+    override def jvmEquals(other: Instruction): Boolean = {
         LDC.opcode == other.opcode && other.isInstanceOf[LoadFloat] && {
             val otherLoadFloat = other.asInstanceOf[LoadFloat]
             (this.value.isNaN && otherLoadFloat.value.isNaN) ||

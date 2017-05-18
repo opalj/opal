@@ -2362,6 +2362,15 @@ class ClassHierarchy private (
  */
 object ClassHierarchy {
 
+    private[this] implicit val classHierarchyEC: scala.concurrent.ExecutionContext = {
+        // BOTH:
+        //  - scala.concurrent.ExecutionContext.Implicits.global
+        //  - OPALThreadPoolExecutor
+        // Cannot be used here - in both cases it may happen that we run out of threads when
+        // we (implicitly have to initialize the "DefaultClassHierarchy")
+        org.opalj.concurrent.ExecutionContextN(4)
+    }
+
     final val JustObject: UIDSet[ObjectType] = UIDSet(ObjectType.Object)
 
     /**
@@ -2372,7 +2381,7 @@ object ClassHierarchy {
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
-    def preInitializedClassHierarchy: ClassHierarchy = {
+    def preInitializedClassHierarchy: ClassHierarchy = scala.concurrent.blocking {
         apply(classFiles = Traversable.empty)(logContext = GlobalLogContext)
     }
 
@@ -2415,6 +2424,9 @@ object ClassHierarchy {
         implicit
         logContext: LogContext
     ): ClassHierarchy = {
+
+        import Duration.Inf
+        import Await.{result ⇒ await}
 
         def parseTypeHierarchyDefinition(
             createInputStream: () ⇒ InputStream
@@ -2604,9 +2616,6 @@ object ClassHierarchy {
         // LET'S DERIVE SOME FURTHER INFORMATION WHICH IS FREQUENTLY USED!
         // _____________________________________________________________________________________
         //
-        import scala.concurrent.ExecutionContext.Implicits.global
-        import Duration.Inf
-        import Await.{result ⇒ await}
 
         val rootTypesFuture = Future[UIDSet[ObjectType]] {
             knownTypesMap.foldLeft(UIDSet.empty[ObjectType]) { (rootTypes, objectType) ⇒
@@ -2777,7 +2786,7 @@ object ClassHierarchy {
             }
 
             // 2. process all class types
-            val rootTypes = scala.concurrent.blocking { await(rootTypesFuture, Inf) } // we may have to wait...
+            val rootTypes = await(rootTypesFuture, Inf) // we may have to wait...
             typesToProcess ++= rootTypes.iterator filter { t ⇒ !interfaceTypesMap(t.id) }
             while (typesToProcess.nonEmpty) {
                 val t = typesToProcess.dequeue
@@ -2828,71 +2837,63 @@ object ClassHierarchy {
             val isSupertypeInformationCompleteMap = new Array[Boolean](knownTypesMap.length)
             java.util.Arrays.fill(isSupertypeInformationCompleteMap, true)
 
-            val (_, subtypes) = scala.concurrent.blocking { await(subtypesFuture, Inf) }
+            val (_, subtypes) = await(subtypesFuture, Inf)
             // NOTE: The supertype information for each type that directly inherits from
             // java.lang.Object is still not necessarily complete as the type may implement an
             // unknown interface.
             for {
-                rootType ← scala.concurrent.blocking { await(rootTypesFuture, Inf) } // we may have to wait...
+                rootType ← await(rootTypesFuture, Inf) // we may have to wait...
                 if rootType ne ObjectType.Object
             } {
-                subtypes(rootType).foreach { t ⇒ isSupertypeInformationCompleteMap(t.id) = false }
+                subtypes(rootType).foreach(t ⇒ isSupertypeInformationCompleteMap(t.id) = false)
             }
             isSupertypeInformationCompleteMap
         }
 
+        val rootTypes = await(rootTypesFuture, Inf)
+
         /* Validate the class hierarchy... ensure concurrent execution! */
         Future[Unit] {
-            scala.concurrent.blocking {
-                rootTypesFuture onSuccess {
-                    case rootTypes ⇒
-                        // Checks if the class hierarchy is self-consistent and fixes related issues
-                        // if possible. All issues and fixes are logged.
-                        val unexpectedRootTypes = rootTypes.iterator filter (_ ne ObjectType.Object)
-                        if (unexpectedRootTypes.hasNext) {
-                            OPALLogger.warn(
-                                "project configuration - class hierarchy",
-                                "supertype information incomplete:\n\t"+
-                                    unexpectedRootTypes.
-                                    map { rt ⇒
-                                        (
-                                            if (interfaceTypesMap(rt.id))
-                                                "interface " else "class "
-                                        ) + rt.toJava
-                                    }.
-                                    toList.sorted.mkString("\n\t")
-                            )
-                        }
+            // Checks if the class hierarchy is self-consistent and fixes related issues
+            // if possible. All issues and fixes are logged.
+            val unexpectedRootTypes = rootTypes.iterator filter (_ ne ObjectType.Object)
+            if (unexpectedRootTypes.hasNext) {
+                OPALLogger.warn(
+                    "project configuration - class hierarchy",
+                    "supertype information incomplete:\n\t"+
+                        unexpectedRootTypes.
+                        map { t ⇒
+                            (if (interfaceTypesMap(t.id)) "interface " else "class ") + t.toJava
+                        }.
+                        toList.sorted.mkString("\n\t")
+                )
+            }
 
-                        isKnownToBeFinalMap.iterator.zipWithIndex foreach { e ⇒
-                            val (isFinal, oid) = e
-                            if (isFinal) {
-                                if (subclassTypesMap(oid).nonEmpty) {
-                                    OPALLogger.warn(
-                                        "project configuration - class hierarchy",
-                                        s"the final type ${knownTypesMap(oid).toJava} "+
-                                            "has subclasses: "+subclassTypesMap(oid)+
-                                            "; resetting the \"is final\" property."
-                                    )
-                                    isKnownToBeFinalMap(oid) = false
-                                }
+            isKnownToBeFinalMap.iterator.zipWithIndex foreach { e ⇒
+                val (isFinal, oid) = e
+                if (isFinal) {
+                    if (subclassTypesMap(oid).nonEmpty) {
+                        OPALLogger.warn(
+                            "project configuration - class hierarchy",
+                            s"the final type ${knownTypesMap(oid).toJava} "+
+                                "has subclasses: "+subclassTypesMap(oid)+
+                                "; resetting the \"is final\" property."
+                        )
+                        isKnownToBeFinalMap(oid) = false
+                    }
 
-                                if (subinterfaceTypesMap(oid).nonEmpty) {
-                                    OPALLogger.warn(
-                                        "project configuration - class hierarchy",
-                                        s"the final type ${knownTypesMap(oid).toJava} "+
-                                            "has subinterfaces: "+subclassTypesMap(oid)+
-                                            "; resetting the \"is final\" property."
-                                    )
-                                    isKnownToBeFinalMap(oid) = false
-                                }
-                            }
-                        }
+                    if (subinterfaceTypesMap(oid).nonEmpty) {
+                        OPALLogger.warn(
+                            "project configuration - class hierarchy",
+                            s"the final type ${knownTypesMap(oid).toJava} "+
+                                "has subinterfaces: "+subclassTypesMap(oid)+
+                                "; resetting the \"is final\" property."
+                        )
+                        isKnownToBeFinalMap(oid) = false
+                    }
                 }
             }
         }
-
-        val rootTypes = await(rootTypesFuture, Inf)
 
         val isSupertypeInformationCompleteMap = await(isSupertypeInformationCompleteFuture, Inf)
 
