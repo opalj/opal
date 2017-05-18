@@ -120,7 +120,7 @@ final class ClassFile private (
      * are irrelevant at load / runtime, such as the order in which the attributes are defined,
      * are ignored.
      *
-     * @return `None` if this class file and the other are structural equal - i.e., if both
+     * @return `None` if this class file and the other are equal - i.e., if both
      *          effectively implement the same class.
      */
     final def findJVMInequality(other: ClassFile): Option[AnyRef] = {
