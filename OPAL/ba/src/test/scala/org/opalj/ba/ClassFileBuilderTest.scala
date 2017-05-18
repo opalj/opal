@@ -29,11 +29,15 @@
 package org.opalj
 package ba
 
+import scala.language.postfixOps
+
 import java.io.ByteArrayInputStream
 
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.junit.runner.RunWith
+
+import org.opalj.collection.immutable.UShortPair
 
 import org.opalj.util.InMemoryClassLoader
 import org.opalj.bi.ACC_FINAL
@@ -56,26 +60,32 @@ class ClassFileBuilderTest extends FlatSpec {
 
     behavior of "the ClassFileBuilder"
 
-    val markerInterface1 = ABSTRACT + INTERFACE CLASS "MarkerInterface1"
-    val markerInterface2 = ABSTRACT + INTERFACE CLASS "MarkerInterface2"
+    val (markerInterface1, _) =
+        CLASS[Nothing](accessModifiers = ABSTRACT INTERFACE, thisType = "MarkerInterface1").toDA()
+    val (markerInterface2, _) =
+        CLASS[Nothing](accessModifiers = ABSTRACT INTERFACE, thisType = "MarkerInterface2").toDA()
 
-    val abstractClass = ABSTRACT + PUBLIC CLASS "org/opalj/bc/AbstractClass" EXTENDS "java/lang/Object"
+    val (abstractClass, _) =
+        CLASS[Nothing](accessModifiers = ABSTRACT PUBLIC, thisType = "org/opalj/bc/AbstractClass").toDA()
 
-    val simpleConcreteClass = (
-        PUBLIC + SUPER + FINAL + SYNTHETIC CLASS "ConcreteClass"
-        EXTENDS "org/opalj/bc/AbstractClass"
-        IMPLEMENTS ("MarkerInterface1", "MarkerInterface2")
-    ) VERSION (minorVersion = 2, majorVersion = 49)
+    val (simpleConcreteClass, _) =
+        CLASS[Nothing](
+            version = UShortPair(2, 49),
+            accessModifiers = PUBLIC.SUPER.FINAL.SYNTHETIC,
+            thisType = "ConcreteClass",
+            superclassType = Some("org/opalj/bc/AbstractClass"),
+            interfaceTypes = Seq("MarkerInterface1", "MarkerInterface2")
+        ).toDA()
 
-    val abstractAsm = Assembler(abstractClass.buildDAClassFile._1)
-    val concreteAsm = Assembler(simpleConcreteClass.buildDAClassFile._1)
+    val abstractAsm = Assembler(abstractClass)
+    val concreteAsm = Assembler(simpleConcreteClass)
     val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
     val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
-            "MarkerInterface1" → Assembler(markerInterface1.buildDAClassFile._1),
-            "MarkerInterface2" → Assembler(markerInterface2.buildDAClassFile._1),
+            "MarkerInterface1" → Assembler(markerInterface1),
+            "MarkerInterface2" → Assembler(markerInterface2),
             "org.opalj.bc.AbstractClass" → abstractAsm,
             "ConcreteClass" → concreteAsm
         ),

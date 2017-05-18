@@ -52,35 +52,36 @@ import org.opalj.util.InMemoryClassLoader
 @RunWith(classOf[JUnitRunner])
 class JumpLabelsTest extends FlatSpec {
 
-    val (daClassFile, _) = CLASS(
-        accessModifiers = PUBLIC SUPER,
-        thisType = "TestJump",
-        methods = METHODS(
-            METHOD(PUBLIC, "returnInt", "(I)I", CODE(
-                GOTO('IsZero_?),
-                'Else,
-                ILOAD_1,
-                IRETURN,
-                'IsTwo_?,
-                ILOAD_1,
-                ICONST_2,
-                IF_ICMPNE('Else),
-                ICONST_2,
-                IRETURN,
-                'IsOne_?,
-                ILOAD_1,
-                ICONST_1,
-                IF_ICMPNE('IsTwo_?),
-                ICONST_1,
-                IRETURN,
-                'IsZero_?,
-                ILOAD_1,
-                IFNE('IsOne_?),
-                ICONST_0,
-                IRETURN
-            ))
-        )
-    ).toDA()
+    val (daClassFile, _) =
+        CLASS(
+            accessModifiers = PUBLIC SUPER,
+            thisType = "TestJump",
+            methods = METHODS(
+                METHOD(PUBLIC, "returnInt", "(I)I", CODE(
+                    GOTO('IsZero_?),
+                    'Else,
+                    ILOAD_1,
+                    IRETURN,
+                    'IsTwo_?,
+                    ILOAD_1,
+                    ICONST_2,
+                    IF_ICMPNE('Else),
+                    ICONST_2,
+                    IRETURN,
+                    'IsOne_?,
+                    ILOAD_1,
+                    ICONST_1,
+                    IF_ICMPNE('IsTwo_?),
+                    ICONST_1,
+                    IRETURN,
+                    'IsZero_?,
+                    ILOAD_1,
+                    IFNE('IsOne_?),
+                    ICONST_0,
+                    IRETURN
+                ))
+            )
+        ).toDA()
     val rawClassFile = Assembler(daClassFile)
 
     val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(rawClassFile)).head

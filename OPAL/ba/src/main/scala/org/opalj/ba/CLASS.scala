@@ -43,8 +43,8 @@ case class CLASS[T](
         val thisType:        String,
         val superclassType:  Option[String] = Some("java/lang/Object"),
         val interfaceTypes:  Seq[String]    = Seq.empty,
-        val fields:          br.Fields      = IndexedSeq.empty,
-        val methods:         METHODS[T]     = METHODS(),
+        val fields:          FIELDS         = FIELDS(),
+        val methods:         METHODS[T]     = METHODS[Nothing](),
         val attributes:      br.Attributes  = IndexedSeq.empty
 ) {
 
@@ -57,10 +57,11 @@ case class CLASS[T](
      */
     def toBR(): (br.ClassFile, Map[br.Method, Seq[T]]) = {
 
+        val accessFlags = accessModifiers.accessFlags
+        val brFields = fields.buildBRFields().toIndexedSeq
+
         val brAnnotatedMethods: Seq[(br.Method, Seq[T])] = methods.buildBRMethods()
         var brMethods = brAnnotatedMethods.map(m ⇒ m._1).toIndexedSeq
-        val accessFlags = accessModifiers.accessFlags
-
         if (!(
             bi.ACC_INTERFACE.isSet(accessFlags) ||
             brMethods.exists(_.isConstructor) ||
@@ -82,7 +83,7 @@ case class CLASS[T](
             br.ObjectType(thisType),
             superclassType.map(br.ObjectType.apply),
             interfaceTypes.map(br.ObjectType.apply),
-            fields,
+            brFields,
             brMethods,
             attributes
         )

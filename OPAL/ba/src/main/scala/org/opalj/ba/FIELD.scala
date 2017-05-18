@@ -27,20 +27,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package ba
 
 /**
- * Given a method's definining information a (final) attribute related to the method is build
- * and some arbitrary meta information is collected.
+ * Builder for a [[org.opalj.br.Field]].
  *
+ * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-trait MethodAttributeBuilder[T] {
+case class FIELD(
+        val accessModifiers:    AccessModifier,
+        val name:               String,
+        val descriptor:         String,
+        val attributesBuilders: Seq[br.FieldAttributeBuilder] = Seq.empty
+) {
 
-    def apply(
-        accessFlags: Int,
-        name:        String,
-        descriptor:  MethodDescriptor
-    ): (Attribute, T)
+    /**
+     * Returns the build [[org.opalj.br.Method]] and its annotations.
+     */
+    def buildBRField(): br.Field = {
+        val fieldType = br.FieldType(descriptor)
+        val accessFlags = accessModifiers.accessFlags
+        val attributes = attributesBuilders map { attributeBuilder ⇒
+            attributeBuilder(accessFlags, name, fieldType)
+        }
+
+        br.Field(accessFlags, name, fieldType, attributes)
+    }
+
+}
+
+case class FIELDS(fields: FIELD*) {
+
+    /**
+     * Returns the build [[org.opalj.br.Method]] and its code annotations.
+     */
+    def buildBRFields(): Seq[br.Field] = fields.map(f ⇒ f.buildBRField())
 
 }

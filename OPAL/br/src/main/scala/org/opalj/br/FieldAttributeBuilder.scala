@@ -27,41 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ba
-
-import org.opalj.br.Method
+package br
 
 /**
- * Provides helper methods to easily collect the results annotations methods.
+ * Given a field's information a (final) attribute related to the field is build.
  *
  * @author Michael Eichberg
  */
-object MethodsSeq {
+trait FieldAttributeBuilder {
 
-    def collectAnnotations[T](
-        metaInformationStore: scala.collection.mutable.Map[Method, T]
-    )(
-        methods: (Method, T)*
-    ): IndexedSeq[Method] = {
-        metaInformationStore ++= methods.toMap
-        methods.map(_._1).toIndexedSeq
-    }
-
-    def collectMetaInformation[T, X](
-        metaInformationStore: scala.collection.mutable.Map[Method, X]
-    )(
-        methods: (Method, T)*
-    )(
-        implicit
-        f: T ⇒ X
-    ): IndexedSeq[Method] = {
-        metaInformationStore ++= methods.toMap.mapValues(f)
-        methods.map(_._1).toIndexedSeq
-    }
-
-    /**
-     * Collects the methods and throws away any potential meta information.
-     */
-    def apply[T](methods: (Method, T)*): IndexedSeq[Method] = methods.map(_._1).toIndexedSeq
+    def apply(
+        accessFlags: Int,
+        name:        String,
+        fieldType:   FieldType
+    ): Attribute
 
 }

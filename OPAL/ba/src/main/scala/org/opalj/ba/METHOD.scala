@@ -30,8 +30,7 @@ package org.opalj
 package ba
 
 /**
- * Builder for a [[org.opalj.br.Method]]. A [[CodeAttributeBuilder]] can be added with the
- * apply method.
+ * Builder for a [[org.opalj.br.Method]].
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg

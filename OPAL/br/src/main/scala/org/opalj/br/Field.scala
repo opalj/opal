@@ -178,6 +178,18 @@ final class Field private (
 object Field {
 
     def apply(
+        accessFlags:           Int,
+        name:                  String,
+        fieldType:             FieldType,
+        fieldAttributeBuilder: FieldAttributeBuilder
+    ): Field = {
+        this(
+            accessFlags, name, fieldType,
+            IndexedSeq(fieldAttributeBuilder(accessFlags, name, fieldType))
+        )
+    }
+
+    def apply(
         accessFlags: Int        = ACC_PUBLIC.mask,
         name:        String,
         fieldType:   FieldType,
