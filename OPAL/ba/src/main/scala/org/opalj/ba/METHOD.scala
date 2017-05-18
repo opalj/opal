@@ -39,7 +39,7 @@ case class METHOD[T](
         val accessModifiers: AccessModifier,
         val name:            String,
         val descriptor:      String,
-        val code:            Option[br.CodeAttributeBuilder[T]],
+        val code:            Option[br.CodeAttributeBuilder[T]] = None,
         val attributes:      Seq[br.MethodAttributeBuilder]     = Seq.empty
 ) {
 
