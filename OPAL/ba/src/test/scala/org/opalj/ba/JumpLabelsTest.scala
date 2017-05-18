@@ -48,6 +48,7 @@ import org.opalj.util.InMemoryClassLoader
  */
 @RunWith(classOf[JUnitRunner])
 class JumpLabelsTest extends FlatSpec {
+
     val testClass = (PUBLIC CLASS "TestJump" EXTENDS "java/lang/Object")(
         //returns the given int
         //includes forward and backward jumps

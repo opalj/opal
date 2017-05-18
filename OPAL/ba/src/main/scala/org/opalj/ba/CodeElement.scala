@@ -59,7 +59,9 @@ object CodeElement {
     /**
      * Converts [[org.opalj.br.instructions.InstructionLike]]s to [[InstructionElement]].
      */
-    implicit def instructionToInstructionElement(instruction: InstructionLike): InstructionElement = {
+    implicit def instructionToInstructionElement(
+        instruction: InstructionLike
+    ): InstructionElement = {
         InstructionElement(instruction)
     }
 
@@ -67,7 +69,11 @@ object CodeElement {
      * Converts a tuple of [[org.opalj.br.instructions.InstructionLike]] and `scala.AnyRef`
      * (an annotated instruction) to [[AnnotatedInstructionElement]].
      */
-    implicit def annotatedInstToMethodElement(ai: (InstructionLike, AnyRef)): AnnotatedInstructionElement = new AnnotatedInstructionElement(ai)
+    implicit def annotatedInstructionToAnnotatedInstructionElement(
+        ai: (InstructionLike, AnyRef)
+    ): AnnotatedInstructionElement = {
+        new AnnotatedInstructionElement(ai)
+    }
 
     /**
      * Converts a `Symbol` (label) to [[LabelElement]].

@@ -53,7 +53,9 @@ import org.opalj.util.InMemoryClassLoader
  */
 @RunWith(classOf[JUnitRunner])
 class FieldBuilderTest extends FlatSpec {
+
     behavior of "Fields"
+
     val cf = (PUBLIC CLASS "org/opalj/ba/FieldClass" EXTENDS "java/lang/Object")(
         FINAL + PUBLIC("publicField", "I") CONSTANTVALUE 3,
         PRIVATE("privateField", "Z") DEPRECATED () SYNTHETIC (),

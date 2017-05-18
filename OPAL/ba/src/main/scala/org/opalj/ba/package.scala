@@ -96,7 +96,8 @@ package object ba { ba ⇒
             scala.Predef.assert(false)
             info("OPAL", s"$name - Production Build")
         } catch {
-            case ae: AssertionError ⇒ info("OPAL", s"$name - Development Build (with Assertions)")
+            case ae: AssertionError ⇒
+                info("OPAL", s"$name - Development Build (Assertions are enabled)")
         }
     }
 
