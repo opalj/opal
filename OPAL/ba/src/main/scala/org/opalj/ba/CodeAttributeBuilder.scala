@@ -136,6 +136,7 @@ object CodeAttributeBuilder {
  * @author Malte Limmeroth
  */
 object CODE {
+
     /**
      * Creates a new [[CodeAttributeBuilder]] with the given [[CodeElement]]s converted to
      * [[org.opalj.br.instructions.Instruction]]. In case of
@@ -217,7 +218,8 @@ object CODE {
 
         val exceptionHandlers = exceptionHandlerGenerator.finalizeHandlers
 
-        val attributes: IndexedSeq[br.Attribute] = lineNumberTableGenerator.finalizeLineNumberTable.toIndexedSeq
+        val attributes: IndexedSeq[br.Attribute] =
+            lineNumberTableGenerator.finalizeLineNumberTable.toIndexedSeq
 
         val annotations = instructionsWithPlaceholders.zipWithIndex.collect {
             case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)

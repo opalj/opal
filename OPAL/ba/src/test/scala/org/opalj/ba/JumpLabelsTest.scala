@@ -29,12 +29,15 @@
 package org.opalj
 package ba
 
-import java.io.ByteArrayInputStream
+import scala.language.postfixOps
 
-import reflect.runtime.universe._
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
+
+import java.io.ByteArrayInputStream
+
+import scala.reflect.runtime.universe._
 
 import org.opalj.bc.Assembler
 import org.opalj.br.instructions._
@@ -49,11 +52,11 @@ import org.opalj.util.InMemoryClassLoader
 @RunWith(classOf[JUnitRunner])
 class JumpLabelsTest extends FlatSpec {
 
-    val testClass = (PUBLIC CLASS "TestJump" EXTENDS "java/lang/Object")(
-        //returns the given int
-        //includes forward and backward jumps
-        PUBLIC("returnInt", "(I)", "I")(
-            CODE(
+    val (daClassFile, _) = CLASS(
+        accessModifiers = PUBLIC SUPER,
+        thisType = "TestJump",
+        methods = METHODS(
+            METHOD(PUBLIC, "returnInt", "(I)I", CODE(
                 GOTO('IsZero_?),
                 'Else,
                 ILOAD_1,
@@ -75,10 +78,10 @@ class JumpLabelsTest extends FlatSpec {
                 IFNE('IsOne_?),
                 ICONST_0,
                 IRETURN
-            )
+            ))
         )
-    )
-    val rawClassFile = Assembler(testClass.buildDAClassFile._1)
+    ).toDA()
+    val rawClassFile = Assembler(daClassFile)
 
     val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(rawClassFile)).head
 
