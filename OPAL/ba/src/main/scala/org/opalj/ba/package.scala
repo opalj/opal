@@ -574,6 +574,157 @@ package object ba { ba ⇒
         da.Annotation(constantsBuffer.CPEUtf8(t.toJVMTypeName), daEVPs)
     }
 
+    def toDA(
+        localvarTableEntry: br.LocalvarTableEntry
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.LocalvarTableEntry = {
+        val br.LocalvarTableEntry(startPC, length, index) = localvarTableEntry
+        da.LocalvarTableEntry(startPC, length, index)
+    }
+
+    def toDA(
+        typeAnnotationTarget: br.TypeAnnotationTarget
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.TypeAnnotationTarget = {
+        (typeAnnotationTarget.typeId: @switch) match {
+
+            case 0x00 ⇒
+                val br.TAOfParameterDeclarationOfClassOrInterface(index) = typeAnnotationTarget
+                da.ParameterDeclarationOfClassOrInterface(index)
+            case 0x01 ⇒
+                val br.TAOfParameterDeclarationOfMethodOrConstructor(index) = typeAnnotationTarget
+                da.ParameterDeclarationOfMethodOrConstructor(index)
+            case 0x10 ⇒
+                val br.TAOfSupertype(index) = typeAnnotationTarget
+                da.Supertype_Target(index)
+
+            case 0x11 ⇒
+                val br.TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
+                    typeIndex,
+                    boundIndex
+                    ) = typeAnnotationTarget
+                da.TypeBoundOfParameterDeclarationOfClassOrInterface(typeIndex, boundIndex)
+            case 0x12 ⇒
+                val br.TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
+                    typeIndex,
+                    boundIndex
+                    ) = typeAnnotationTarget
+                da.TypeBoundOfParameterDeclarationOfMethodOrConstructor(typeIndex, boundIndex)
+
+            case 0x13 ⇒ da.FieldDeclaration
+            case 0x14 ⇒ da.ReturnType
+            case 0x15 ⇒ da.ReceiverType
+
+            case 0x16 ⇒
+                val br.TAOfFormalParameter(index) = typeAnnotationTarget
+                da.Formal_Parameter_Target(index)
+
+            case 0x17 ⇒
+                val br.TAOfThrows(index) = typeAnnotationTarget
+                da.Throws_Target(index)
+
+            case 0x40 ⇒
+                val br.TAOfLocalvarDecl(lvtes) = typeAnnotationTarget
+                da.LocalvarDecl(lvtes.map(toDA))
+            case 0x41 ⇒
+                val br.TAOfResourcevarDecl(lvtes) = typeAnnotationTarget
+                da.ResourcevarDecl(lvtes.map(toDA))
+
+            case 0x42 ⇒
+                val br.TAOfCatch(index) = typeAnnotationTarget
+                da.Catch_Target(index)
+
+            case 0x43 ⇒
+                val br.TAOfInstanceOf(offset) = typeAnnotationTarget
+                da.InstanceOf(offset)
+
+            case 0x44 ⇒
+                val br.TAOfNew(offset) = typeAnnotationTarget
+                da.New(offset)
+
+            case 0x45 ⇒
+                val br.TAOfMethodReferenceExpressionNew(offset) = typeAnnotationTarget
+                da.MethodReferenceExpressionNew(offset)
+
+            case 0x46 ⇒
+                val br.TAOfMethodReferenceExpressionIdentifier(offset) = typeAnnotationTarget
+                da.MethodReferenceExpressionIdentifier(offset)
+
+            case 0x47 ⇒
+                val br.TAOfCastExpression(offset, index) = typeAnnotationTarget
+                da.CastExpression(offset, index)
+
+            case 0x48 ⇒
+                val br.TAOfConstructorInvocation(offset, index) = typeAnnotationTarget
+                da.ConstructorInvocation(offset, index)
+
+            case 0x49 ⇒
+                val br.TAOfMethodInvocation(offset, index) = typeAnnotationTarget
+                da.MethodInvocation(offset, index)
+
+            case 0x4A ⇒
+                val br.TAOfConstructorInMethodReferenceExpression(offset, index) = typeAnnotationTarget
+                da.ConstructorInMethodReferenceExpression(offset, index)
+
+            case 0x4B ⇒
+                val br.TAOfMethodInMethodReferenceExpression(offset, index) = typeAnnotationTarget
+                da.MethodInMethodReferenceExpression(offset, index)
+        }
+    }
+
+    def toDA(
+        typeAnnotationPathElement: br.TypeAnnotationPathElement
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.TypeAnnotationPathElement = {
+        (typeAnnotationPathElement.kindId: @switch) match {
+            case br.TADeeperInArrayType.KindId     ⇒ da.TypeAnnotationDeeperInArrayType
+            case br.TADeeperInNestedType.KindId    ⇒ da.TypeAnnotationDeeperInNestedType
+            case br.TAOnBoundOfWildcardType.KindId ⇒ da.TypeAnnotationOnBoundOfWildcardType
+            case br.TAOnTypeArgument.KindId ⇒
+                val br.TAOnTypeArgument(index) = typeAnnotationPathElement
+                da.TypeAnnotationOnTypeArgument(index)
+        }
+    }
+
+    def toDA(
+        typeAnnotationPath: br.TypeAnnotationPath
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.TypeAnnotationPath = {
+        typeAnnotationPath match {
+            case br.TADirectlyOnType     ⇒ da.TypeAnnotationDirectlyOnType
+            case br.TAOnNestedType(path) ⇒ da.TypeAnnotationPathElements(path.map(toDA))
+        }
+    }
+
+    def toDA(
+        typeAnnotation: br.TypeAnnotation
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.TypeAnnotation = {
+        da.TypeAnnotation(
+            toDA(typeAnnotation.target),
+            toDA(typeAnnotation.path),
+            constantsBuffer.CPEUtf8(typeAnnotation.annotationType.toJVMTypeName),
+            typeAnnotation.elementValuePairs.map { evp ⇒
+                da.ElementValuePair(constantsBuffer.CPEUtf8(evp.name), toDA(evp.value))
+            }
+        )
+    }
+
     /**
      * Converts the given [[org.opalj.br.Attribute]] to a [[org.opalj.da.Attribute]] using
      * the given configuration.
@@ -848,10 +999,19 @@ package object ba { ba ⇒
                 val daPAs = parameterAnnotations.map(as ⇒ as.map(toDA))
                 Some(da.RuntimeInvisibleParameterAnnotations_attribute(attributeNameIndex, daPAs))
 
-            /*
-             *  - 27 The RuntimeVisibleTypeAnnotations Attribute
-             *  - 28 The RuntimeInvisibleTypeAnnotations Attribute
-             */
+            case br.RuntimeInvisibleTypeAnnotationTable.KindId ⇒
+                val br.RuntimeInvisibleTypeAnnotationTable(typeAnnotations) = attribute
+                val attributeName = bi.RuntimeInvisibleTypeAnnotationsAttribute.Name
+                val attributeNameIndex = CPEUtf8(attributeName)
+                val daPAs = typeAnnotations.map(toDA)
+                Some(da.RuntimeInvisibleTypeAnnotations_attribute(attributeNameIndex, daPAs))
+
+            case br.RuntimeVisibleTypeAnnotationTable.KindId ⇒
+                val br.RuntimeVisibleTypeAnnotationTable(typeAnnotations) = attribute
+                val attributeName = bi.RuntimeVisibleTypeAnnotationsAttribute.Name
+                val attributeNameIndex = CPEUtf8(attributeName)
+                val daPAs = typeAnnotations.map(toDA)
+                Some(da.RuntimeVisibleTypeAnnotations_attribute(attributeNameIndex, daPAs))
 
             case br.VirtualTypeFlag.KindId ⇒
                 if (config.retainOPALAttributes) {
