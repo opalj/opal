@@ -46,7 +46,7 @@ object Disassembler {
 
     private final val Usage =
         "Usage: java …Disassembler \n"+
-            "(1) <JAR file containing class files> [<Name of classfile (incl. path) contained in the JAR file>+]\n"+
+            "(1) <JAR file containing class files> [<path to .class file in the JAR file>+]\n"+
             "(2) <class file>\n"+
             "Example:\n\tjava …Disassembler /Library/jre/lib/rt.jar java/util/ArrayList.class"
 
@@ -64,7 +64,8 @@ object Disassembler {
     def processClassFile(classFile: ClassFile): Unit = {
         val htmlRep = classFile.toXHTML().toString
         try {
-            val file = writeAndOpen(htmlRep, classFile.thisType, ".html")
+            val prefix = classFile.thisType.replace('.', '/')
+            val file = writeAndOpen(classFile.toXHTML().toString, prefix, ".html")
             OPALLogger.info("progress", s"generated the HTML documentation $file")
         } catch {
             case OpeningFileFailedException(file, cause) ⇒

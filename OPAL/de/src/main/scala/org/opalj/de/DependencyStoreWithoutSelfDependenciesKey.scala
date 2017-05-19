@@ -51,11 +51,6 @@ object DependencyStoreWithoutSelfDependenciesKey extends ProjectInformationKey[D
             new DependencyExtractor(baseProcessor)
         }
 
-        DependencyStore(
-            project.allClassFiles,
-            createDependencyProcessor
-        )(
-            project.logContext
-        )
+        DependencyStore(project.allClassFiles, createDependencyProcessor)(project.logContext)
     }
 }

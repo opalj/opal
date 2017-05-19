@@ -545,45 +545,45 @@ object ClassFileReader
     def ParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int
     ): TypeAnnotationTarget =
-        new ParameterDeclarationOfClassOrInterface(type_parameter_index)
+        new TATParameterDeclarationOfClassOrInterface(type_parameter_index)
 
     def ParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Constant_Pool_Index
     ): TypeAnnotationTarget =
-        new ParameterDeclarationOfMethodOrConstructor(type_parameter_index)
+        new TATParameterDeclarationOfMethodOrConstructor(type_parameter_index)
 
     def SupertypeTarget(supertype_index: Int): TypeAnnotationTarget = {
-        new Supertype_Target(supertype_index)
+        new TATSupertype(supertype_index)
     }
 
     def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Constant_Pool_Index,
         bound_index:          Constant_Pool_Index
     ): TypeAnnotationTarget = {
-        new TypeBoundOfParameterDeclarationOfClassOrInterface(type_parameter_index, bound_index)
+        new TATTypeBoundOfParameterDeclarationOfClassOrInterface(type_parameter_index, bound_index)
     }
 
     def TypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Constant_Pool_Index,
         bound_index:          Constant_Pool_Index
     ): TypeAnnotationTarget = {
-        new TypeBoundOfParameterDeclarationOfMethodOrConstructor(type_parameter_index, bound_index)
+        new TATTypeBoundOfParameterDeclarationOfMethodOrConstructor(type_parameter_index, bound_index)
     }
 
-    def FieldDeclaration: TypeAnnotationTarget = da.FieldDeclaration
-    def ReturnType: TypeAnnotationTarget = da.ReturnType
-    def ReceiverType: TypeAnnotationTarget = da.ReceiverType
+    def FieldDeclaration: TypeAnnotationTarget = da.TATFieldDeclaration
+    def ReturnType: TypeAnnotationTarget = da.TATReturnType
+    def ReceiverType: TypeAnnotationTarget = da.TATReceiverType
 
     def FormalParameter(formal_parameter_index: Int): TypeAnnotationTarget = {
-        new Formal_Parameter_Target(formal_parameter_index)
+        new TATFormalParameter(formal_parameter_index)
     }
 
     def Throws(throws_type_index: Constant_Pool_Index): TypeAnnotationTarget = {
-        new Throws_Target(throws_type_index)
+        new TATThrows(throws_type_index)
     }
 
     def Catch(exception_table_index: Int): TypeAnnotationTarget = {
-        new Catch_Target(exception_table_index)
+        new TATCatch(exception_table_index)
     }
 
     type LocalvarTableEntry = da.LocalvarTableEntry
@@ -596,49 +596,49 @@ object ClassFileReader
     }
 
     def LocalvarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget = {
-        new LocalvarDecl(localVarTable)
+        new TATLocalvarDecl(localVarTable)
     }
 
     def ResourcevarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget = {
-        new ResourcevarDecl(localVarTable)
+        new TATResourcevarDecl(localVarTable)
     }
 
-    def InstanceOf(offset: Int): TypeAnnotationTarget = new InstanceOf(offset)
+    def InstanceOf(offset: Int): TypeAnnotationTarget = new TATInstanceOf(offset)
 
-    def New(offset: Int): TypeAnnotationTarget = new New(offset)
+    def New(offset: Int): TypeAnnotationTarget = new TATNew(offset)
 
     def MethodReferenceExpressionNew /*::New*/ (offset: Int): TypeAnnotationTarget = {
-        new MethodReferenceExpressionNew(offset)
+        new TATMethodReferenceExpressionNew(offset)
     }
 
     def MethodReferenceExpressionIdentifier /*::Identifier*/ (offset: Int): TypeAnnotationTarget = {
-        new MethodReferenceExpressionIdentifier(offset)
+        new TATMethodReferenceExpressionIdentifier(offset)
     }
 
     def CastExpression(offset: Int, type_argument_index: Int): TypeAnnotationTarget = {
-        new CastExpression(offset, type_argument_index)
+        new TATCastExpression(offset, type_argument_index)
     }
 
     def ConstructorInvocation(offset: Int, type_argument_index: Int): TypeAnnotationTarget = {
-        new ConstructorInvocation(offset, type_argument_index)
+        new TATConstructorInvocation(offset, type_argument_index)
     }
 
     def MethodInvocation(offset: Int, type_argument_index: Int): TypeAnnotationTarget = {
-        new MethodInvocation(offset, type_argument_index)
+        new TATMethodInvocation(offset, type_argument_index)
     }
 
     def ConstructorInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
     ): TypeAnnotationTarget = {
-        new ConstructorInMethodReferenceExpression(offset, type_argument_index)
+        new TATConstructorInMethodReferenceExpression(offset, type_argument_index)
     }
 
     def MethodInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
     ): TypeAnnotationTarget = {
-        new MethodInMethodReferenceExpression(offset, type_argument_index)
+        new TATMethodInMethodReferenceExpression(offset, type_argument_index)
     }
 
     type TypeAnnotationPath = da.TypeAnnotationPath

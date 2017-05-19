@@ -58,18 +58,6 @@ final case class SameLocals1StackItemFrameExtended(
     final def frameType: Int = 247
 
 }
-object SameLocals1StackItemFrameExtended {
-
-    def apply(
-        frameType:                     Int,
-        offsetDelta:                   Int,
-        verificationTypeInfoStackItem: VerificationTypeInfo
-    ): SameLocals1StackItemFrameExtended = {
-        assert(frameType == 247)
-        new SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStackItem)
-    }
-
-}
 
 sealed trait ChopFrame extends StackMapFrame {
     def offsetDelta: Int
@@ -101,8 +89,11 @@ final case class AppendFrame(
 ) extends StackMapFrame
 
 final case class FullFrame(
-    frameType:                  Int,
-    offsetDelta:                Int,
-    verificationTypeInfoLocals: VerificationTypeInfoLocals,
-    verificationTypeInfoStack:  VerificationTypeInfoStack
-) extends StackMapFrame
+        offsetDelta:                Int,
+        verificationTypeInfoLocals: VerificationTypeInfoLocals,
+        verificationTypeInfoStack:  VerificationTypeInfoStack
+) extends StackMapFrame {
+
+    final def frameType: Int = 255
+
+}

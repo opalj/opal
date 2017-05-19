@@ -100,7 +100,7 @@ case class ClassFile(
      * The fully qualified name of this class in Java notation (i.e., using dots
      * to seperate packages.)
      */
-    final val thisType: String = cp(this_class).asJavaType
+    final val thisType: String = cp(this_class).asConstantClass.asJavaClassOrInterfaceType
 
     final val superTypes = {
         {

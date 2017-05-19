@@ -32,6 +32,14 @@ package da
 import scala.xml.Node
 
 /**
+ * Identifies the target of a type annotation.
+ *
+ * @example
+ *      {{{
+ *      Object o = ...;
+ *      List<?> l = (Serializable & @MyTypeAnnotation Cloneable) o;
+ *      }}}
+ *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
@@ -43,6 +51,9 @@ trait TypeAnnotationTarget {
 
     def tag: Int
 
+    /** Description of the target kind. */
+    def description: String
+
     def toXHTML(implicit cp: Constant_Pool): Node
 
 }
@@ -50,299 +61,349 @@ trait TypeAnnotationTarget {
 //______________________________
 // type_parameter_target
 
-trait Type_Parameter_Target extends TypeAnnotationTarget {
+sealed abstract class TATTypeParameter extends TypeAnnotationTarget {
+
     def type_parameter_index: Int
 
     final override def attribute_length: Int = 1 + 1
+
+    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(type parameter index: { type_parameter_index })</span>
+    }
 }
 
-case class ParameterDeclarationOfClassOrInterface(
+case class TATParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int
-) extends Type_Parameter_Target {
+) extends TATTypeParameter {
 
     final override def tag: Int = 0x00
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp) }</span>
+    final override def description: String = {
+        "type parameter declaration of generic class or interface"
     }
 }
 
-case class ParameterDeclarationOfMethodOrConstructor(
+case class TATParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int
-) extends Type_Parameter_Target {
+) extends TATTypeParameter {
 
     final override def tag: Int = 0x01
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp) }</span>
+    final override def description: String = {
+        "type parameter declaration of generic method or constructor"
     }
+
 }
 
 //______________________________
 // supertype_target
-case class Supertype_Target(supertype_index: Constant_Pool_Index) extends TypeAnnotationTarget {
+case class TATSupertype(supertype_index: Constant_Pool_Index) extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1 + 2
 
     final override def tag: Int = 0x10
 
+    final override def description: String = {
+        "type in extends clause of class or interface declaration "+
+            "(including the direct superclass of an anonymous class declaration), "+
+            "or in implements clause of interface declaration"
+    }
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">{ cp(supertype_index).toString(cp) }</span>
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(supertype index: { supertype_index })</span>
     }
 }
 
 //______________________________
 // type_parameter_bound_target
 
-trait Type_Parameter_Bound_Target extends TypeAnnotationTarget {
+sealed abstract class TATTypeParameterBound extends TypeAnnotationTarget {
+
     def type_parameter_index: Int
+
     def bound_index: Int
 
+    def description: String
+
     final override def attribute_length: Int = 1 + 1 + 1
+
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(type_parameter_index: { type_parameter_index }, bound index: { bound_index })</span>
+    }
 }
-case class TypeBoundOfParameterDeclarationOfClassOrInterface(
+
+case class TATTypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
         bound_index:          Int
-) extends Type_Parameter_Bound_Target {
+) extends TATTypeParameterBound {
 
     final override def tag: Int = 0x11
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp)+"-"+cp(bound_index).toString(cp) }</span>
+    final override def description: String = {
+        "type in bound of type parameter declaration of generic class or interface"
     }
 }
-case class TypeBoundOfParameterDeclarationOfMethodOrConstructor(
+
+case class TATTypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int,
         bound_index:          Int
-) extends Type_Parameter_Bound_Target {
+) extends TATTypeParameterBound {
 
     final override def tag: Int = 0x12
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp)+"-"+cp(bound_index).toString(cp) }</span>
+    final override def description: String = {
+        "type in bound of type parameter declaration of generic method or constructor"
     }
+
 }
 
 //______________________________
 // empty_target
-trait Empty_Target extends TypeAnnotationTarget {
+sealed abstract class TATEmpty extends TypeAnnotationTarget {
+
     final override def attribute_length: Int = 1
+
+    /** Description of the kind of target of the annotation. (See JVM.) */
+    def description: String
+
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i></span>
+    }
 }
 
-case object FieldDeclaration extends Empty_Target {
+case object TATFieldDeclaration extends TATEmpty {
 
     final override def tag: Int = 0x13
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">Field Decleration</span>
-    }
+    final override def description: String = "type in field declaration"
+
 }
-case object ReturnType extends Empty_Target {
+case object TATReturnType extends TATEmpty {
 
     final override def tag: Int = 0x14
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">Return Type</span>
+    final override def description: String = {
+        "return type of method, or type of newly constructed object"
     }
+
 }
-case object ReceiverType extends Empty_Target {
+case object TATReceiverType extends TATEmpty {
 
     final override def tag: Int = 0x15
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">Receiver Type</span>
-    }
+    final override def description: String = "receiver type of method or constructor"
 }
 
 //______________________________
 // formal_parameter_target
-case class Formal_Parameter_Target(formal_parameter_index: Int) extends TypeAnnotationTarget {
+case class TATFormalParameter(formal_parameter_index: Int) extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1 + 1
 
     final override def tag: Int = 0x16
 
+    def description: String = {
+        "type in formal parameter declaration of method, constructor, or lambda expression"
+    }
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">{ cp(formal_parameter_index).toString(cp) }</span>
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(formal parameter index: { formal_parameter_index })</span>
     }
 }
 
 //______________________________
 // throws_target
-case class Throws_Target(throws_type_index: Int) extends TypeAnnotationTarget {
+case class TATThrows(throws_type_index: Int) extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1 + 2
 
     final override def tag: Int = 0x17
 
+    def description: String = "type in throws clause of method or throws_target constructor"
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">{ cp(throws_type_index).toString(cp) }</span>
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(throws type index: { throws_type_index })</span>
     }
 }
 
 //_______________________________
 // localvar_target
 
-trait Localvar_Target extends TypeAnnotationTarget {
-
-    def localvarTable: IndexedSeq[LocalvarTableEntry]
-
-    final override def attribute_length: Int =
-        1 + 2 + localvarTable.size * 6
-
-}
-
-case class LocalvarTableEntry(
-        start_pc: Int,
-        length:   Int,
-        index:    Int
-) {
+case class LocalvarTableEntry(start_pc: Int, length: Int, index: Int) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[pc: { start_pc }, local variable table:{ cp(index).toString(cp) }]</span>
+        <span>(start pc: { start_pc }, length: { length }, variable index: { index })</span>
     }
+
 }
 
-case class LocalvarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends Localvar_Target {
+trait TATLocalvar extends TypeAnnotationTarget {
 
-    type LocalvarTable = IndexedSeq[LocalvarTableEntry]
+    /**
+     * From the JVM (8) Specification:
+     * '''"A table is needed to fully specify the local variable whose type
+     * is annotated, because a single local variable may be represented with different local
+     * variable indices over multiple live ranges. The start_pc, length, and index items in
+     * each table entry specify the same information as a LocalVariableTable attribute."'''
+     */
+    def localvarTable: IndexedSeq[LocalvarTableEntry]
+
+    final override def attribute_length: Int = 1 + 2 + localvarTable.size * 6
+
+    def description: String
+
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(local variable occurences: { localvarTable.map(_.toXHTML(cp)) })</span>
+    }
+
+}
+
+case class TATLocalvarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends TATLocalvar {
 
     final override def tag: Int = 0x40
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[LocalvarDecl:{ localvarTable.map(_.toXHTML(cp)) }]</span>
-    }
-}
-case class ResourcevarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends Localvar_Target {
+    final def description: String = "type in local variable declaration"
 
-    type LocalvarTable = IndexedSeq[LocalvarTableEntry]
+}
+
+case class TATResourcevarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends TATLocalvar {
 
     final override def tag: Int = 0x41
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[ResourcevarDecl:{ localvarTable.map(_.toXHTML(cp)) }]</span>
-    }
+    final def description: String = "type in resource variable declaration (try-with-resources)"
+
 }
 
 //______________________________
 // catch_target
-case class Catch_Target(exception_table_index: Int) extends TypeAnnotationTarget {
+case class TATCatch(exception_table_index: Int) extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1 + 2
 
     final override def tag: Int = 0x42
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">{ cp(exception_table_index).toString(cp) }</span>
+    def description: String = "type in exception parameter declaration"
+
+    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(exception table index: { exception_table_index })</span>
     }
 }
 
 //______________________________
 // offset_target
 
-trait Offset_Target extends TypeAnnotationTarget {
+trait TATWithOffset extends TypeAnnotationTarget {
+
     def offset: Int
+
+    def description: String
 
     final override def attribute_length: Int = 1 + 2
 
+    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(bytecode offset: { offset })</span>
+    }
 }
 
-case class InstanceOf(offset: Int) extends Offset_Target {
+case class TATInstanceOf(offset: Int) extends TATWithOffset {
 
     final override def tag: Int = 0x43
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }]</span>
-    }
+    final def description: String = "type in instanceof expression"
+
 }
-case class New(offset: Int) extends Offset_Target {
+case class TATNew(offset: Int) extends TATWithOffset {
 
     final override def tag: Int = 0x44
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }]</span>
-    }
+    final def description: String = "type in new expression"
 }
-case class MethodReferenceExpressionNew /*::New*/ (offset: Int) extends Offset_Target {
+/** A `::New` expression. */
+case class TATMethodReferenceExpressionNew(offset: Int) extends TATWithOffset {
 
     final override def tag: Int = 0x45
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }]</span>
-    }
+    final def description: String = "type in method reference expression using ::new"
+
 }
-case class MethodReferenceExpressionIdentifier /*::Identifier*/ (offset: Int) extends Offset_Target {
+/** A `::Identifier` expression. */
+case class TATMethodReferenceExpressionIdentifier(offset: Int) extends TATWithOffset {
 
     final override def tag: Int = 0x46
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }]</span>
-    }
+    final def description: String = "type in method reference expression using ::Identifier"
 }
 
 //______________________________
 // type_argument_target
 
-trait Type_Argument_Target extends TypeAnnotationTarget {
+trait TATTypeArgument extends TypeAnnotationTarget {
+
     def offset: Int
+
     def type_argument_index: Int
+
+    /** The description of the annotated type argument as given in the JVM spec.*/
+    def description: String
 
     final override def attribute_length: Int = 1 /*tag*/ + 2 + 1
 
+    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(bytecode offset: { offset }, type argument index: { type_argument_index })</span>
+    }
 }
 
-case class CastExpression(
-        offset:              Int,
-        type_argument_index: Int
-) extends Type_Argument_Target {
+case class TATCastExpression(offset: Int, type_argument_index: Int) extends TATTypeArgument {
 
     final override def tag: Int = 0x47
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
-    }
+    final def description: String = "type in cast expression"
+
 }
-case class ConstructorInvocation(
+case class TATConstructorInvocation(
         offset:              Int,
         type_argument_index: Int
-) extends Type_Argument_Target {
+) extends TATTypeArgument {
 
     final override def tag: Int = 0x48
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
+    final def description: String = {
+        "type argument for generic constructor in new expression or "+
+            "explicit constructor invocation statement"
     }
+
 }
-case class MethodInvocation(
+case class TATMethodInvocation(
         offset:              Int,
         type_argument_index: Int
-) extends Type_Argument_Target {
+) extends TATTypeArgument {
 
     final override def tag: Int = 0x49
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
+    final def description: String = {
+        "type argument for generic method in method invocation expression"
     }
+
 }
-case class ConstructorInMethodReferenceExpression(
+case class TATConstructorInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
-) extends Type_Argument_Target {
+) extends TATTypeArgument {
 
     final override def tag: Int = 0x4a
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
+    final def description: String = {
+        "type argument for generic constructor in method reference expression using ::new"
     }
 }
-case class MethodInMethodReferenceExpression(
+case class TATMethodInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
-) extends Type_Argument_Target {
+) extends TATTypeArgument {
 
     final override def tag: Int = 0x4b
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
+    final def description: String = {
+        "type argument for generic method in method reference expression using ::Identifier"
     }
 }

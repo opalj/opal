@@ -1,21 +1,21 @@
 # Metrics
-Extracts basic metric information of a given project. Each given metric is repesented in different feature categories.
+Computes basic metrics for a given project. Each given metric is represented in different feature categories.
 
 <table>
   <tr>
-    <th>name</th>
-    <th>description</th>
+    <th>Name</th>
+    <th>Description</th>
   </tr>
   <tr>
-    <td>fields per class (FPC)</td>
+    <td>Fields Per Class (FPC)</td>
     <td>Extracts how often a class has 0, between 1 and 3, between 4 and 10, or more than 10 fields.</td>
   </tr>
   <tr>
-    <td> methods per class (MPC)</td>
+    <td>Methods Per Class (MPC)</td>
     <td>Extracts how often a class has 0, between 1 and 3, between 4 and 10, or more than 10 methods.</td>
   </tr>
   <tr>
-    <td>classes per package (CPP)</td>
+    <td>Classes Per Package (CPP)</td>
     <td>Extracts how often a package has between 1 and 3, between 4 and 10, or more than 10 classes.</td>
   </tr>
   <tr>
@@ -26,11 +26,7 @@ Extracts basic metric information of a given project. Each given metric is repes
   <tr>
       <td>number of children (NOC)</td>
       <td>Extracts how often a class has 0, between 1 and 3, between 4 and 10, or more than 10 children. 
-      This metric is the number of direct descendants (subclasses) for each class. Classes with large number of children are
-       considered to be difficult to modify and usually require more testing because of the effects 
-       on changes on all the children. They are also considered more complex and fault-prone because
-        a class with numerous children may have to provide services in a larger number of contexts
-        and therefore must be more flexible [1].</td>
+      This metric is the number of direct descendants (subclasses) for each class. Classes with large number of children are considered to be difficult to modify and usually require more testing because of the effects on changes on all the children. They are also considered more complex and fault-prone because a class with numerous children may have to provide services in a larger number of contexts and therefore must be more flexible [1].</td>
     </tr>
 </table>
 

@@ -31,6 +31,7 @@ package de
 
 import java.util.concurrent.{ConcurrentHashMap ⇒ CMap}
 import scala.collection.mutable.Set
+
 import org.opalj.collection.{asScala, putIfAbsentAndGet}
 import org.opalj.br._
 
@@ -53,10 +54,11 @@ class DependencyCollectingDependencyProcessor(
         val virtualSourceElementsCountHint: Option[Int]
 ) extends DependencyProcessor {
 
-    private[this] val deps = new CMap[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]](
-        // we assume that every source element has roughly ten dependencies on other source elements
-        virtualSourceElementsCountHint.getOrElse(16000) * 10
-    )
+    private[this] val deps =
+        new CMap[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]](
+            // assumption: every source element has ~ten dependencies on other source elements
+            virtualSourceElementsCountHint.getOrElse(16000) * 10
+        )
 
     private[this] val depsOnArrayTypes =
         new CMap[VirtualSourceElement, CMap[ArrayType, Set[DependencyType]]](
@@ -81,8 +83,7 @@ class DependencyCollectingDependencyProcessor(
                 new CMap[VirtualSourceElement, Set[DependencyType]](16)
             )
 
-        val dependencyTypes =
-            putIfAbsentAndGet(targets, target, Set.empty[DependencyType])
+        val dependencyTypes = putIfAbsentAndGet(targets, target, Set.empty[DependencyType])
 
         if (!dependencyTypes.contains(dType)) {
             dependencyTypes.synchronized {
@@ -127,10 +128,7 @@ class DependencyCollectingDependencyProcessor(
                 new CMap[BaseType, Set[DependencyType]](16)
             )
 
-        val dependencyTypes =
-            putIfAbsentAndGet(
-                baseTypes, baseType, Set.empty[DependencyType]
-            )
+        val dependencyTypes = putIfAbsentAndGet(baseTypes, baseType, Set.empty[DependencyType])
 
         if (!dependencyTypes.contains(dType)) {
             dependencyTypes.synchronized {
@@ -150,4 +148,3 @@ class DependencyCollectingDependencyProcessor(
         new DependencyStore(theDeps, theDepsOnArrayTypes, theDepsOnBaseTypes)
     }
 }
-

@@ -32,6 +32,10 @@ package da
 import scala.xml.Node
 import org.opalj.bi.ConstantPoolTag
 
+/**
+ *
+ * @author Michael Eichberg
+ */
 case class CONSTANT_NameAndType_info(
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index
@@ -78,7 +82,7 @@ case class CONSTANT_NameAndType_info(
         if (descriptor.charAt(0) != '(')
             parseFieldType(cp(descriptor_index).asString).asJavaType+" "+cp(name_index).toString(cp)
         else
-            parseMethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString)
+            methodDescriptorAsJavaSignature(cp(name_index).asString, cp(descriptor_index).asString)
     }
 
 }

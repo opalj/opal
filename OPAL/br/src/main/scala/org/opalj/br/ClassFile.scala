@@ -42,6 +42,7 @@ import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_ENUM
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.VisibilityModifier
 import org.opalj.bi.AccessFlags
@@ -100,7 +101,7 @@ import org.opalj.collection.immutable.Naught
  * @note    Equality of `ClassFile` objects is reference based and a class file's hash code
  *          is the same as the underlying [[ObjectType]]'s hash code; i.e., ' `thisType`'s hash code.
  *
- * @author Michael Eichberg
+ * @author  Michael Eichberg
  */
 final class ClassFile private (
         val version:        UShortPair,
@@ -112,6 +113,91 @@ final class ClassFile private (
         val methods:        Methods,
         val attributes:     Attributes
 ) extends ConcreteSourceElement {
+
+    /**
+     * Compares this class file with the given one to find (the first) differences which may lead
+     * to a different '''load or runtime behavior'''.
+     * I.e., differences between this class and the given class which
+     * are irrelevant at load / runtime, such as the order in which the attributes are defined,
+     * are ignored.
+     *
+     * @return `None` if this class file and the other are equal - i.e., if both
+     *          effectively implement the same class.
+     */
+    final def findDissimilarity(other: ClassFile): Option[AnyRef] = {
+        if (this.version != other.version) {
+            return Some(("class file version", this.version, other.version));
+        }
+
+        if (this.accessFlags != other.accessFlags) {
+            return Some(("class file access flags", this.accessFlags, other.accessFlags));
+        }
+
+        if (this.thisType != other.thisType) {
+            return Some(("declared type", this.thisType.toJava, other.thisType.toJava));
+        }
+
+        if (this.superclassType != other.superclassType) {
+            return Some(("declared supertype", this.superclassType, other.superclassType));
+        }
+
+        if (this.interfaceTypes != other.interfaceTypes) {
+            return Some(("inherited interfaces", this.interfaceTypes, other.interfaceTypes));
+        }
+
+        if (this.fields.size != other.fields.size) {
+            return Some(("declared number of fields", this.fields.size, other.fields.size));
+        }
+
+        if (this.methods.size != other.methods.size) {
+            return Some(("declared number of methods", this.methods.size, other.methods.size));
+        }
+
+        if (this.attributes.size != other.attributes.size) {
+            return Some((
+                "declared number of attributes",
+                this.attributes.size, other.attributes.size
+            ));
+        }
+
+        if (!this.attributes.forall(a ⇒ other.attributes.find(a.similar).isDefined)) {
+            // this.attributes.find{ a => !other.attributes.exists(a.similar) }
+            return Some(("different attributes", this.attributes, other.attributes));
+        }
+
+        // RECALL The fields are always strictly ordered in the same way!
+        val thisFieldIt = this.fields.iterator
+        val otherFieldIt = other.fields.iterator
+        while (thisFieldIt.hasNext) {
+            val thisField = thisFieldIt.next
+            val otherField = otherFieldIt.next
+            if (!thisField.similar(otherField)) {
+                return Some(("different fields", thisField, otherField));
+            }
+        }
+
+        // RECALL The methods are always strictly ordered in the same way!
+        val thisMethodIt = this.methods.iterator
+        val otherMethodIt = other.methods.iterator
+        while (thisMethodIt.hasNext) {
+            val thisMethod = thisMethodIt.next
+            val otherMethod = otherMethodIt.next
+            if (!thisMethod.similar(otherMethod)) {
+                return Some(("different methods", thisMethod, otherMethod));
+            }
+        }
+
+        None
+    }
+
+    /**
+     * Compares this class file with the given one to check for differences which may lead to a
+     * different '''load or runtime behavior'''.
+     * I.e., differences between this class and the given class which
+     * are irrelevant at load-/runtime, such as the order in which the attributes are defined,
+     * are ignored.
+     */
+    def similar(other: ClassFile): Boolean = findDissimilarity(other).isEmpty
 
     /**
      * Creates a shallow copy of this class file object.
@@ -506,7 +592,7 @@ final class ClassFile private (
      *
      * @note The result is recomputed.
      */
-    def hasDefaultConstructor: Boolean = constructors exists { _.parametersCount == 0 }
+    def hasDefaultConstructor: Boolean = constructors exists { _.descriptor.parametersCount == 0 }
 
     /**
      * All defined instance methods. I.e., all methods that are not static,
@@ -756,16 +842,24 @@ object ClassFile {
 
     val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 
+    /**
+     * @note   The default version is equivalent to Java 5, i.e.,
+     *         no StackMapTable attribute is required.
+     * @param  accessFlags This class' access flags, by default: PUBLIC and SUPER
+     *         (always need to be set)
+     * @param  superclassType The class from which this class/interface inherits from. By default
+     *         `java.lang.Object`.
+     */
     def apply(
-        minorVersion:   Int,
-        majorVersion:   Int,
-        accessFlags:    Int,
+        minorVersion:   Int                = 0,
+        majorVersion:   Int                = 50,
+        accessFlags:    Int                = { ACC_PUBLIC.mask | ACC_SUPER.mask },
         thisType:       ObjectType,
-        superclassType: Option[ObjectType],
-        interfaceTypes: Seq[ObjectType],
-        fields:         Fields,
-        methods:        Methods,
-        attributes:     Attributes
+        superclassType: Option[ObjectType] = Some(ObjectType.Object),
+        interfaceTypes: Seq[ObjectType]    = IndexedSeq.empty,
+        fields:         Fields             = IndexedSeq.empty,
+        methods:        Methods            = IndexedSeq.empty,
+        attributes:     Attributes         = IndexedSeq.empty
     ): ClassFile = {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),

@@ -50,6 +50,21 @@ import scala.util.control.ControlThrowable
 package object io {
 
     /**
+     * Replaces characters in the given file name (segment) that are (potentially) problematic
+     * on some file system.
+     *
+     * @see For more information visit https://en.wikipedia.org/wiki/Filename
+     *
+     * @param fileName The filename or a suffix/prefix thereof which should be sanitized.
+     *
+     * @return The sanitized file name.
+     *
+     */
+    def sanitizeFileName(fileName: String): String = {
+        fileName.replaceAll("[\\/:*?\"<>|\\[\\]=!@,]", "_")
+    }
+
+    /**
      * Writes the XML document to a temporary file and opens the file in the
      * OS's default application.
      *
@@ -120,9 +135,10 @@ package object io {
         filenamePrefix: String,
         filenameSuffix: String
     ): Path = {
+
         val path = Files.createTempFile(
-            normalizeFix(filenamePrefix),
-            normalizeFix(filenameSuffix)
+            sanitizeFileName(filenamePrefix),
+            sanitizeFileName(filenameSuffix)
         )
         write(data.getBytes("UTF-8"), path)
         path

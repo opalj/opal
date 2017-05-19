@@ -126,7 +126,9 @@ trait StringValues
             other.isInstanceOf[StringValue]
         }
 
-        override def hashCode: Int = super.hashCode * 41 + value.hashCode()
+        override def hashCode: Int = {
+            super.hashCode * 41 + (if (value eq null) 0 else value.hashCode())
+        }
 
         override def toString(): String = {
             if (value eq null)

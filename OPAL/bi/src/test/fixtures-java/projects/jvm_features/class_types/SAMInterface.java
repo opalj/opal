@@ -85,6 +85,7 @@ interface ExtExtSAMInterface extends ExtSAMInterface, SignatureCompatibleGeneric
 
     static int max(int a,int b){ return a>b ? a : b; }
 
+    @SuppressWarnings("all")
     boolean apply(List o);
 
 }
