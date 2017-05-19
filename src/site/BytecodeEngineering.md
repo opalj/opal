@@ -62,7 +62,7 @@ Fields are simply created using `FIELD` as shown next. The type of a field is de
 
 Jump targets are specified using labels directly before the instruction which is the jump target. These labels are then used in branch instructions to identify the branch target.
 
-    val (daClassFile, _) =       CLASS(
+    val cb = CLASS(
         accessModifiers = PUBLIC SUPER,   thisType = "TestJump",
         methods = METHODS(
             METHOD(PUBLIC, "returnInt", "(I)I", CODE(
@@ -89,7 +89,16 @@ Jump targets are specified using labels directly before the instruction which is
                 IRETURN
             ))
         )
-    ).toDA()
+    )
+
+> Making the control-flow graph explicit is possible using the CFGFactory to create the CFG and to then to transform it to an SVG.
+>
+>     val (br,_) = cb.toBR
+>     val cfg = org.opalj.br.cfg.CFGFactory(br.methods.tail.head.body.get)
+>     val svg = org.opalj.graphs.dotToSVG(cfg.toDot)
+>     org.opalj.io.writeAndOpen(svg,"CFG",".svg")
+>
+> ![CFG](BytecodeEngineeringCFG.svg)
 
 ### Exception Handling
 
