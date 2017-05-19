@@ -189,14 +189,4 @@ package object io {
             if (source != null) source.close()
         }
     }
-
-    /**
-     * This method fixes path prefix and suffix by replacing invalid characters.
-     *
-     * @note For more information visit https://en.wikipedia.org/wiki/Filename
-     *
-     * @param fix The prefix / suffix to fix
-     * @return The fixed string
-     */
-    private def normalizeFix(fix: String): String = fix.replaceAll("[\\/:*?\"<>|\\[\\]=!@,]", "_")
 }
