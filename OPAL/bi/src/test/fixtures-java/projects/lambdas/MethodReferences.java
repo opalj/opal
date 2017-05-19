@@ -40,14 +40,8 @@ import static annotations.target.TargetResolution.*;
  * This class contains a few simple examples for method references introduced in Java 8.
  *
  * <!--
- * 
- * 
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
- * 
- *
- *
- *
  * -->
  *
  * @author Arne Lottmann
