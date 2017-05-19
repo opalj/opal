@@ -15,9 +15,7 @@ The *Native Libraries* feature reflects the usage of native libraries loaded usi
 Counts usages of the `java.lang.SecurityManager` in a project. This includes getting as well as setting an instance of `java.lang.SecurityManager`.
 
 ## Sound
-
-The Sound group counts how often a sound is played. This group fully relies on the classes
-in the two packages `javax.sound.sampled` and `javax.scene.media`
+The Sound group counts how often the sound API to play songs is used. This group only considers the classes in the two packages `javax.sound.sampled` and `javax.scene.media`
 
 ## Environment
 Any access or query to the system's environment variables is captured by the `Information` group.

@@ -29,10 +29,6 @@
 package org.opalj
 package ba
 
-import org.opalj.bi.ACC_INTERFACE
-import org.opalj.bi.ACC_ANNOTATION
-import org.opalj.br.ObjectType
-
 /**
  * Represents the access flags of a class, method or field declaration.
  *
@@ -41,40 +37,25 @@ import org.opalj.br.ObjectType
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-final class AccessModifier private[ba] (val accessFlags: Int) extends AnyVal {
+final class AccessModifier(private[ba] val accessFlags: Int) extends AnyVal {
 
-    /**
-     * Returns a new [[AccessModifier]] with both [[AccessModifier]]s `accessFlag`s set.
-     */
-    def +(that: AccessModifier): AccessModifier = {
-        new AccessModifier(this.accessFlags | that.accessFlags)
-    }
+    final def PUBLIC: AccessModifier = new AccessModifier(this.accessFlags | ba.PUBLIC.accessFlags)
+    final def FINAL: AccessModifier = new AccessModifier(this.accessFlags | ba.FINAL.accessFlags)
+    final def SUPER: AccessModifier = new AccessModifier(this.accessFlags | ba.SUPER.accessFlags)
+    final def INTERFACE: AccessModifier = new AccessModifier(this.accessFlags | ba.INTERFACE.accessFlags)
+    final def ABSTRACT: AccessModifier = new AccessModifier(this.accessFlags | ba.ABSTRACT.accessFlags)
+    final def SYNTHETIC: AccessModifier = new AccessModifier(this.accessFlags | ba.SYNTHETIC.accessFlags)
+    final def ANNOTATION: AccessModifier = new AccessModifier(this.accessFlags | ba.ANNOTATION.accessFlags)
+    final def ENUM: AccessModifier = new AccessModifier(this.accessFlags | ba.ENUM.accessFlags)
+    final def PRIVATE: AccessModifier = new AccessModifier(this.accessFlags | ba.PRIVATE.accessFlags)
+    final def PROTECTED: AccessModifier = new AccessModifier(this.accessFlags | ba.PROTECTED.accessFlags)
+    final def STATIC: AccessModifier = new AccessModifier(this.accessFlags | ba.STATIC.accessFlags)
+    final def SYNCHRONIZED: AccessModifier = new AccessModifier(this.accessFlags | ba.SYNCHRONIZED.accessFlags)
+    final def BRIDGE: AccessModifier = new AccessModifier(this.accessFlags | ba.BRIDGE.accessFlags)
+    final def VARARGS: AccessModifier = new AccessModifier(this.accessFlags | ba.VARARGS.accessFlags)
+    final def NATIVE: AccessModifier = new AccessModifier(this.accessFlags | ba.NATIVE.accessFlags)
+    final def STRICT: AccessModifier = new AccessModifier(this.accessFlags | ba.STRICT.accessFlags)
+    final def VOLATILE: AccessModifier = new AccessModifier(this.accessFlags | ba.VOLATILE.accessFlags)
+    final def TRANSIENT: AccessModifier = new AccessModifier(this.accessFlags | ba.TRANSIENT.accessFlags)
 
-    /**
-     * Creates a new [[ClassFileBuilder]] with the given name and previously defined
-     * AccessModifiers. The minorVersion is initialized as
-     * [[ClassFileBuilder.DefaultMinorVersion]] and the majorVersion as
-     * [[ClassFileBuilder.DefaultMajorVersion]].
-     *
-     * @param fqn The fully qualified class name in JVM notation, e.g. "MyClass" for a
-     *            class in the default package or "my/package/MyClass" for a class in "my.package".
-     */
-    def CLASS(fqn: String): ClassFileBuilder = {
-        var accessFlags = this.accessFlags
-
-        val superclassType: Option[ObjectType] =
-            if (ACC_INTERFACE.isSet(accessFlags))
-                Some(ObjectType.Object)
-            else
-                None
-
-        if (ACC_ANNOTATION.isSet(accessFlags))
-            accessFlags |= ACC_INTERFACE.mask
-
-        new ClassFileBuilder(
-            accessFlags = accessFlags,
-            thisType = ObjectType(fqn),
-            superclassType = superclassType
-        )
-    }
 }

@@ -34,7 +34,10 @@ package br
  *
  * @author Michael Eichberg
  */
-sealed trait ConstantFieldValue[T >: Nothing] extends Attribute with ConstantValue[T]
+sealed abstract class ConstantFieldValue[T >: Nothing] extends Attribute with ConstantValue[T] {
+
+    override def similar(other: Attribute): Boolean = this == other
+}
 
 final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] {
 
@@ -160,4 +163,3 @@ object ConstantString {
     final val KindId = 5
 
 }
-

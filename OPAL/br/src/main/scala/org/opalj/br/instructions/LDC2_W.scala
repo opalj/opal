@@ -68,6 +68,10 @@ final case class LoadDouble(value: Double) extends LDC2_W[Double] {
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
+        this.similar(other)
+    }
+
+    override def similar(other: Instruction): Boolean = {
         (this eq other) || (
             LDC2_W.opcode == other.opcode && other.isInstanceOf[LoadDouble] && {
                 val otherLoadDouble = other.asInstanceOf[LoadDouble]

@@ -34,6 +34,7 @@ package util
  *
  * @param   classes a `Map` of classes where the key is the class name – using `.` as the package
  *          separator – and the value is the serialized class file.
+ *
  * @author  Malte Limmeroth
  * @author  Michael Eichberg
  */

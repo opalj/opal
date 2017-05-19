@@ -53,22 +53,23 @@ import org.opalj.br.instructions.Instruction
  *
  * Method objects are constructed using the companion object's factory methods.
  *
- * @note Methods have – by default – no link to their defining [[ClassFile]]. However,
- *      if a [[analyses.Project]] is available then it is possible to get a `Method`'s
- *      [[ClassFile]] by using `Project`'s `classFile(Method)` method.
- * @note Equality of methods is – by purpose – reference based.
+ * @note   Methods have – by default – no link to their defining [[ClassFile]]. However,
+ *         if a [[analyses.Project]] is available then it is possible to get a `Method`'s
+ *         [[ClassFile]] by using `Project`'s `classFile(Method)` method.
  *
- * @param accessFlags The ''access flags'' of this method. Though it is possible to
- *     directly work with the `accessFlags` field, it may be more convenient to use
- *     the respective methods (`isNative`, `isAbstract`,...) to query the access flags.
- * @param name The name of the method. The name is interned (see `String.intern()`
- *      for details) to enable reference comparisons.
- * @param descriptor This method's descriptor.
- * @param body The body of the method if any.
- * @param attributes This method's defined attributes. (Which attributes are available
- *      generally depends on the configuration of the class file reader. However,
- *      the `Code_Attribute` is – if it was loaded – always directly accessible by
- *      means of the `body` attribute.).
+ * @note   Equality of methods is – by purpose – reference based.
+ *
+ * @param  accessFlags The ''access flags'' of this method. Though it is possible to
+ *         directly work with the `accessFlags` field, it may be more convenient to use
+ *         the respective methods (`isNative`, `isAbstract`,...) to query the access flags.
+ * @param  name The name of the method. The name is interned (see `String.intern()`
+ *         for details) to enable reference comparisons.
+ * @param  descriptor This method's descriptor.
+ * @param  body The body of the method if any.
+ * @param  attributes This method's defined attributes. (Which attributes are available
+ *         generally depends on the configuration of the class file reader. However,
+ *         the `Code_Attribute` is – if it was loaded – always directly accessible by
+ *         means of the `body` attribute.).
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -80,6 +81,42 @@ final class Method private (
         val body:        Option[Code],
         val attributes:  Attributes
 ) extends ClassMember with Ordered[Method] with InstructionsContainer {
+
+    /**
+     * Compares this method with the given one for structural equality.
+     *
+     * Two methods are structurlly equaly if they have the same names, flags and descriptor.
+     * The bodies and attributes are recursively checked for structural equality. In case of the
+     * attributes, the order doesn't matter!
+     */
+    def similar(other: Method): Boolean = {
+        if (!(
+            this.accessFlags == other.accessFlags &&
+            this.name == other.name &&
+            this.descriptor == other.descriptor
+        )) {
+            return false;
+        }
+
+        if (!(
+            (this.body.isEmpty && other.body.isEmpty) ||
+            (
+                this.body.nonEmpty && other.body.nonEmpty &&
+                this.body.get.similar(other.body.get)
+            )
+        )) {
+            return false;
+        }
+
+        if (!(
+            this.attributes.size == other.attributes.size &&
+            this.attributes.forall { a ⇒ other.attributes.find(a.similar).isDefined }
+        )) {
+            return false;
+        }
+
+        true
+    }
 
     def copy(
         accessFlags: Int              = this.accessFlags,
@@ -298,6 +335,12 @@ final class Method private (
         descriptor.toJava(declaringClassType.toJava+"."+name)
     }
 
+    //
+    //
+    // DEBUGGING PURPOSES
+    //
+    //
+
     override def toString(): String = {
         import AccessFlagsContexts.METHOD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
@@ -446,7 +489,7 @@ object Method {
         Some((method.accessFlags, method.name, method.descriptor))
     }
 
-    def defaultConstructor(superclassType: ObjectType = ObjectType.Object) = {
+    def defaultConstructor(superclassType: ObjectType = ObjectType.Object): Method = {
         import MethodDescriptor.NoArgsAndReturnVoid
         val theBody = Code(
             maxStack = 1,
