@@ -125,10 +125,12 @@ class MethodBuilderTest extends FlatSpec {
             methods = METHODS(
                 METHOD(
                     PUBLIC, "<init>", "()V", CODE(
+                    LINENUMBER(0),
                     ALOAD_0,
+                    LINENUMBER(1),
                     INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
                     'return,
-                    LINENUMBER(1),
+                    LINENUMBER(2),
                     RETURN
                 ) MAXSTACK 2 MAXLOCALS 3
                 ),
@@ -198,7 +200,9 @@ class MethodBuilderTest extends FlatSpec {
         val lineNumberTable = attributeTestMethod.body.get.attributes.collect {
             case l: br.LineNumberTable ⇒ l
         }.head
-        assert(lineNumberTable.lookupLineNumber(4).get == 1)
+        assert(lineNumberTable.lookupLineNumber(0).get == 0)
+        assert(lineNumberTable.lookupLineNumber(1).get == 1)
+        assert(lineNumberTable.lookupLineNumber(4).get == 2)
     }
 
     "the generated method `tryCatchFinallyTest`" should "have the correct exceptionTable set" in {
