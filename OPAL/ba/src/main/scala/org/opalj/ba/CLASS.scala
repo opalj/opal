@@ -32,7 +32,7 @@ package ba
 import org.opalj.collection.immutable.UShortPair
 
 /**
- * Builder for [[ClassFile]] objects.
+ * Builder for [[org.opalj.br.ClassFile]] objects.
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
@@ -93,7 +93,7 @@ case class CLASS[T](
     /**
      * Returns the build [[org.opalj.da.ClassFile]].
      *
-     * @see [[buildBRClassFile]]
+     * @see [[toBR]]
      */
     def toDA(): (da.ClassFile, Map[br.Method, Option[T]]) = {
         val (brClassFile, annotations) = toBR()
