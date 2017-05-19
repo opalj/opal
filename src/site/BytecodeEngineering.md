@@ -68,3 +68,39 @@ Using this representation is primarily useful for performing simple method and f
 ## Creating Class Files Using OPAL's Default Representation
 
 TODO
+
+
+## Creating Class Files using OPAL eDSL
+
+### Overview
+
+The bytecode assembler framework provides a lightweight eDSL to engineer Java class files. It still requires some understanding of Java bytecode (e.g., the name of the constructor is always `<init>`), but makes the writing of a method's implementation much more trivial since it is no longer necessary to explicitly think about the precise program counters and the precise layout of the code array. Instead of program counters, labels – i.e., Scala `Symbol`s are used – to mark jump targets. Additionally, the code can be annotated and that information is automatically extracted and can later be used.
+
+The following is a first example, where we create a class called `Test` which defines a default constructor.
+
+    import org.opalj.ba._; import org.opalj.br._ ; import org.opalj.br.instructions._;
+    val cb = CLASS(
+        accessModifiers = PUBLIC SUPER,
+        thisType = "Test",
+        methods = METHODS(
+            METHOD(PUBLIC, "<init>", "()V", CODE(
+                'UnUsedLabel1,
+                // The following instruction is annotated with some meta information
+                // which can later be used; e.g., to check that some static analyis
+                // produced an expected result when this instruction is reached.
+                ALOAD_0 → "MarkerAnnotation1",
+                'UnUsedLabel2,
+                INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                RETURN → "MarkerAnnotation2"
+            ))
+        )
+    )
+
+`cb` is a (reusable) builder for a class file. To actually create the ".class" file, the `da.ClassFile` object has to be built and then serialized.
+
+    val (daClassFile,codeAnnotations) = cb.toDA()
+    val rawClassFile : Array[Byte] = org.opalj.bc.Assembler(daClassFile)
+
+The raw class file can then be written to the disk or (e.g., for testing purposes) can be passed to a class loader and immediately be instantiated and executed. The code annotations can then be further processed arbitrarily.
+
+> If your class file doesn't define a default constructor, the DSL will automatically add it when required. I.e., the default constructor is created, when you define a regular class - not an interface –, the supertype is specified and no other constructor exists.
