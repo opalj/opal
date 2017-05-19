@@ -63,7 +63,7 @@ class MethodBuilderTest extends FlatSpec {
                 METHOD(
                     FINAL.SYNTHETIC.PUBLIC, "testMethod", "(Ljava/lang/String;)Ljava/lang/String;",
                     CODE(ACONST_NULL, ARETURN),
-                    EXCEPTIONS("java/lang/Exception")
+                    Seq(EXCEPTIONS("java/lang/Exception"), br.Deprecated)
                 )
             )
         ).toDA()
@@ -87,8 +87,8 @@ class MethodBuilderTest extends FlatSpec {
     val brClassFile = Java8Framework.ClassFile(() ⇒ new java.io.ByteArrayInputStream(rawClassFile)).head
 
     val testMethod = brClassFile.methods.find { m ⇒
-        m.name == "testMethod" &&
-            m.descriptor == MethodDescriptor("(Ljava/lang/String;)Ljava/lang/String;")
+        val expectedMethodDescritor = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/String;")
+        m.name == "testMethod" && m.descriptor == expectedMethodDescritor
     }
 
     it should "have the correct signature: (Ljava/lang/String;)Ljava/lang/String;" in {
@@ -101,9 +101,13 @@ class MethodBuilderTest extends FlatSpec {
         )
     }
 
-    it should "have the Exception Attribute set: 'java/lang/Exception" in {
+    it should "have the Exception attribute set: 'java/lang/Exception" in {
         val attribute = testMethod.get.attributes.collect { case e: br.ExceptionTable ⇒ e }
         assert(attribute.head.exceptions.head.fqn == "java/lang/Exception")
+    }
+
+    it should "be Deprecated" in {
+        assert(testMethod.get.isDeprecated)
     }
 
     "maxLocals of method SimpleMethodClass.testMethod" should "be set automatically to: 2" in {
@@ -121,10 +125,12 @@ class MethodBuilderTest extends FlatSpec {
             methods = METHODS(
                 METHOD(
                     PUBLIC, "<init>", "()V", CODE(
+                    LINENUMBER(0),
                     ALOAD_0,
+                    LINENUMBER(1),
                     INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
                     'return,
-                    LINENUMBER(1),
+                    LINENUMBER(2),
                     RETURN
                 ) MAXSTACK 2 MAXLOCALS 3
                 ),
@@ -194,7 +200,9 @@ class MethodBuilderTest extends FlatSpec {
         val lineNumberTable = attributeTestMethod.body.get.attributes.collect {
             case l: br.LineNumberTable ⇒ l
         }.head
-        assert(lineNumberTable.lookupLineNumber(4).get == 1)
+        assert(lineNumberTable.lookupLineNumber(0).get == 0)
+        assert(lineNumberTable.lookupLineNumber(1).get == 1)
+        assert(lineNumberTable.lookupLineNumber(4).get == 2)
     }
 
     "the generated method `tryCatchFinallyTest`" should "have the correct exceptionTable set" in {

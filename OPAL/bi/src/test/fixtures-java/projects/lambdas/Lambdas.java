@@ -76,4 +76,6 @@ public class Lambdas {
 		Runnable localAndInstanceClosure = () -> System.out.println(x + y);
 		localAndInstanceClosure.run();
 	}
+
+	// TODO : Check scope of lambdas
 }

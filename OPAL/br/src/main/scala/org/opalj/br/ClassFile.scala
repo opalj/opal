@@ -124,7 +124,7 @@ final class ClassFile private (
      * @return `None` if this class file and the other are equal - i.e., if both
      *          effectively implement the same class.
      */
-    final def findJVMInequality(other: ClassFile): Option[AnyRef] = {
+    final def findDissimilarity(other: ClassFile): Option[AnyRef] = {
         if (this.version != other.version) {
             return Some(("class file version", this.version, other.version));
         }
@@ -160,8 +160,8 @@ final class ClassFile private (
             ));
         }
 
-        if (!this.attributes.forall(a ⇒ other.attributes.find(a.jvmEquals).isDefined)) {
-            // this.attributes.find{ a => !other.attributes.exists(a.jvmEquals) }
+        if (!this.attributes.forall(a ⇒ other.attributes.find(a.similar).isDefined)) {
+            // this.attributes.find{ a => !other.attributes.exists(a.similar) }
             return Some(("different attributes", this.attributes, other.attributes));
         }
 
@@ -171,7 +171,7 @@ final class ClassFile private (
         while (thisFieldIt.hasNext) {
             val thisField = thisFieldIt.next
             val otherField = otherFieldIt.next
-            if (!thisField.jvmEquals(otherField)) {
+            if (!thisField.similar(otherField)) {
                 return Some(("different fields", thisField, otherField));
             }
         }
@@ -182,7 +182,7 @@ final class ClassFile private (
         while (thisMethodIt.hasNext) {
             val thisMethod = thisMethodIt.next
             val otherMethod = otherMethodIt.next
-            if (!thisMethod.jvmEquals(otherMethod)) {
+            if (!thisMethod.similar(otherMethod)) {
                 return Some(("different methods", thisMethod, otherMethod));
             }
         }
@@ -197,7 +197,7 @@ final class ClassFile private (
      * are irrelevant at load-/runtime, such as the order in which the attributes are defined,
      * are ignored.
      */
-    def jvmEquals(other: ClassFile): Boolean = findJVMInequality(other).isEmpty
+    def similar(other: ClassFile): Boolean = findDissimilarity(other).isEmpty
 
     /**
      * Creates a shallow copy of this class file object.

@@ -30,8 +30,9 @@ package org.opalj
 package br
 
 /**
- * Given a method's definining information a (final) attribute related to the method is build
- * and some arbitrary meta information is collected.
+ * Given a method's signature and access flags the attribute related to the method is build.
+ *
+ * @see The BytecodeAssember framework for an example usage.
  *
  * @author Michael Eichberg
  */

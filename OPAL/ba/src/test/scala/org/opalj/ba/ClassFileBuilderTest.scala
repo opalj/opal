@@ -74,7 +74,8 @@ class ClassFileBuilderTest extends FlatSpec {
             accessModifiers = PUBLIC.SUPER.FINAL.SYNTHETIC,
             thisType = "ConcreteClass",
             superclassType = Some("org/opalj/bc/AbstractClass"),
-            interfaceTypes = Seq("MarkerInterface1", "MarkerInterface2")
+            interfaceTypes = Seq("MarkerInterface1", "MarkerInterface2"),
+            attributes = Seq(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
         ).toDA()
 
     val abstractAsm = Assembler(abstractClass)

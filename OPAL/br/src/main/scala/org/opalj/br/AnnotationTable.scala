@@ -50,14 +50,14 @@ trait AnnotationTable extends Attribute {
      */
     def annotations: Annotations
 
-    override def jvmEquals(other: Attribute): Boolean = {
+    override def similar(other: Attribute): Boolean = {
         other match {
-            case that: AnnotationTable ⇒ this.jvmEquals(that)
+            case that: AnnotationTable ⇒ this.similar(that)
             case _                     ⇒ false
         }
     }
 
-    def jvmEquals(other: AnnotationTable): Boolean = {
+    def similar(other: AnnotationTable): Boolean = {
         this.isRuntimeVisible == other.isRuntimeVisible &&
             // the order of two annotation tables does not need to be identical
             this.annotations.size == other.annotations.size &&

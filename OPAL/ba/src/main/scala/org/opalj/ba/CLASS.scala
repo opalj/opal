@@ -32,20 +32,20 @@ package ba
 import org.opalj.collection.immutable.UShortPair
 
 /**
- * Builder for [[ClassFile]] objects.
+ * Builder for [[org.opalj.br.ClassFile]] objects.
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
 case class CLASS[T](
-        val version:         UShortPair     = CLASS.DefaultVersion,
-        val accessModifiers: AccessModifier = SUPER,
+        val version:         UShortPair                        = CLASS.DefaultVersion,
+        val accessModifiers: AccessModifier                    = SUPER,
         val thisType:        String,
-        val superclassType:  Option[String] = Some("java/lang/Object"),
-        val interfaceTypes:  Seq[String]    = Seq.empty,
-        val fields:          FIELDS         = FIELDS(),
-        val methods:         METHODS[T]     = METHODS[Nothing](),
-        val attributes:      br.Attributes  = IndexedSeq.empty
+        val superclassType:  Option[String]                    = Some("java/lang/Object"),
+        val interfaceTypes:  Seq[String]                       = Seq.empty,
+        val fields:          FIELDS                            = FIELDS(),
+        val methods:         METHODS[T]                        = METHODS[Nothing](),
+        val attributes:      Seq[br.ClassFileAttributeBuilder] = Seq.empty
 ) {
 
     /**
@@ -58,6 +58,9 @@ case class CLASS[T](
     def toBR(): (br.ClassFile, Map[br.Method, Option[T]]) = {
 
         val accessFlags = accessModifiers.accessFlags
+        val thisType = br.ObjectType(this.thisType)
+        val superclassType = this.superclassType.map(br.ObjectType.apply)
+        val interfaceTypes = this.interfaceTypes.map(br.ObjectType.apply)
         val brFields = fields.buildBRFields().toIndexedSeq
 
         val brAnnotatedMethods: Seq[(br.Method, Option[T])] = methods.buildBRMethods()
@@ -73,16 +76,25 @@ case class CLASS[T](
         )) {
             brMethods =
                 brMethods :+
-                    br.Method.defaultConstructor(superclassType.map(br.ObjectType.apply).get)
+                    br.Method.defaultConstructor(superclassType.get)
+        }
+
+        val attributes = this.attributes map { attributeBuilder ⇒
+            attributeBuilder(
+                version,
+                accessFlags, thisType, superclassType, interfaceTypes,
+                brFields,
+                brMethods
+            )
         }
 
         val classFile = br.ClassFile( // <= THE FACTORY METHOD ENSURES THAT THE MEMBERS ARE SORTED
             version.minor,
             version.major,
             accessFlags,
-            br.ObjectType(thisType),
-            superclassType.map(br.ObjectType.apply),
-            interfaceTypes.map(br.ObjectType.apply),
+            thisType,
+            superclassType,
+            interfaceTypes,
             brFields,
             brMethods,
             attributes
@@ -93,7 +105,7 @@ case class CLASS[T](
     /**
      * Returns the build [[org.opalj.da.ClassFile]].
      *
-     * @see [[buildBRClassFile]]
+     * @see [[toBR]]
      */
     def toDA(): (da.ClassFile, Map[br.Method, Option[T]]) = {
         val (brClassFile, annotations) = toBR()

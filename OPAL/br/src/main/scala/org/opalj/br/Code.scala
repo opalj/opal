@@ -79,14 +79,14 @@ final class Code private (
         with InstructionsContainer
         with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
-    override def jvmEquals(other: Attribute): Boolean = {
+    override def similar(other: Attribute): Boolean = {
         other match {
-            case that: Code ⇒ this.jvmEquals(that)
+            case that: Code ⇒ this.similar(that)
             case _          ⇒ false
         }
     }
 
-    def jvmEquals(other: Code): Boolean = {
+    def similar(other: Code): Boolean = {
         if (!(this.maxStack == other.maxStack && this.maxLocals == other.maxLocals)) {
             return false;
         }
@@ -103,7 +103,7 @@ final class Code private (
                     val thisI = this.instructions(i)
                     val otherI = other.instructions(i)
                     areEqual = (thisI == null && otherI == null) ||
-                        (thisI != null && otherI != null && thisI.jvmEquals(otherI))
+                        (thisI != null && otherI != null && thisI.similar(otherI))
                     i += 1
                 }
                 areEqual
@@ -116,7 +116,7 @@ final class Code private (
             return false;
         }
 
-        if (!this.attributes.forall(a ⇒ other.attributes.find(a.jvmEquals).isDefined)) {
+        if (!this.attributes.forall(a ⇒ other.attributes.find(a.similar).isDefined)) {
             return false;
         }
 
