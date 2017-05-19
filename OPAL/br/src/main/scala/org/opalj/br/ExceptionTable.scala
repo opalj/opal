@@ -39,14 +39,14 @@ case class ExceptionTable(exceptions: Exceptions) extends Attribute {
 
     override def kindId: Int = ExceptionTable.KindId
 
-    override def jvmEquals(other: Attribute): Boolean = {
+    override def similar(other: Attribute): Boolean = {
         other match {
-            case that: ExceptionTable ⇒ this.jvmEquals(that)
+            case that: ExceptionTable ⇒ this.similar(that)
             case _                    ⇒ false
         }
     }
 
-    def jvmEquals(other: ExceptionTable): Boolean = {
+    def similar(other: ExceptionTable): Boolean = {
         // the order does not have to be identical "... throws IOException, Throwable"
         // is the same as "... throws Throwable, IOException"
         this.exceptions.size == other.exceptions.size &&

@@ -40,7 +40,7 @@ trait ParameterAnnotationTable extends Attribute {
 
     def isRuntimeVisible: Boolean
 
-    override def jvmEquals(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute): Boolean = this == other
 
 }
 

@@ -55,7 +55,7 @@ case class SynthesizedClassFiles(
     final override val kindId = SynthesizedClassFiles.KindId
 
     // TODO needs to be reconsidered when we serialize this attribute!
-    override def jvmEquals(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute): Boolean = this == other
 
     override def toString: String = {
         classFiles.map { cfAndReason ⇒

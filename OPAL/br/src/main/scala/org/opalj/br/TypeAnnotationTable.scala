@@ -49,14 +49,14 @@ trait TypeAnnotationTable extends Attribute {
      */
     def typeAnnotations: TypeAnnotations
 
-    override def jvmEquals(other: Attribute): Boolean = {
+    override def similar(other: Attribute): Boolean = {
         other match {
-            case that: TypeAnnotationTable ⇒ this.jvmEquals(that)
+            case that: TypeAnnotationTable ⇒ this.similar(that)
             case _                         ⇒ false
         }
     }
 
-    def jvmEquals(other: TypeAnnotationTable): Boolean = {
+    def similar(other: TypeAnnotationTable): Boolean = {
         this.isRuntimeVisible == other.isRuntimeVisible &&
             // the order of two annotation tables does not need to be identical
             this.typeAnnotations.size == other.typeAnnotations.size &&

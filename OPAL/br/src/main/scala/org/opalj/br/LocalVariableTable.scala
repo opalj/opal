@@ -38,14 +38,14 @@ case class LocalVariableTable(localVariables: LocalVariables) extends Attribute 
 
     override def kindId: Int = LocalVariableTable.KindId
 
-    override def jvmEquals(other: Attribute): Boolean = {
+    override def similar(other: Attribute): Boolean = {
         other match {
-            case that: LocalVariableTable ⇒ this.jvmEquals(that)
+            case that: LocalVariableTable ⇒ this.similar(that)
             case _                        ⇒ false
         }
     }
 
-    def jvmEquals(other: LocalVariableTable): Boolean = {
+    def similar(other: LocalVariableTable): Boolean = {
         // the order of two local variable tables does not need to be identical
         this.localVariables.size == other.localVariables.size &&
             this.localVariables.forall(other.localVariables.contains)

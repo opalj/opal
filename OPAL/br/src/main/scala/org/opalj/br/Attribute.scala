@@ -91,5 +91,5 @@ trait Attribute {
      * @note   If this class is implemented as a proper `case class`, this method can often be
      *         implemented by forwarding to the default `equals` method.
      */
-    def jvmEquals(other: Attribute): Boolean
+    def similar(other: Attribute): Boolean
 }

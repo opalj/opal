@@ -71,7 +71,7 @@ trait Instruction extends InstructionLike {
      *
      * @note   Implemted by using the underlying (compiler generated) equals methods.
      */
-    def jvmEquals(other: Instruction): Boolean = this == other
+    def similar(other: Instruction): Boolean = this == other
 
 }
 

@@ -40,6 +40,6 @@ case object Deprecated extends Attribute {
 
     override def kindId: Int = KindId
 
-    override def jvmEquals(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute): Boolean = this == other
 
 }

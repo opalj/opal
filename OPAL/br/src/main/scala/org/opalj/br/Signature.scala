@@ -235,7 +235,7 @@ sealed trait ThrowsSignature extends SignatureElement
  */
 sealed abstract class Signature extends SignatureElement with Attribute {
 
-    override def jvmEquals(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute): Boolean = this == other
 
 }
 
