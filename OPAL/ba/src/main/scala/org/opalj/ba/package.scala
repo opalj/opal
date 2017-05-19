@@ -34,6 +34,7 @@ import scala.annotation.switch
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
+import org.opalj.collection.immutable.UShortPair
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.bi.ACC_PUBLIC
@@ -70,6 +71,7 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
+import org.opalj.br.ObjectType
 import org.opalj.br.cp._ // we need ALL of them...
 import org.opalj.br.instructions._ // we need ALL of them...
 
@@ -111,6 +113,42 @@ package object ba { ba ⇒
         b: br.CodeAttributeBuilder[T]
     ): Some[br.CodeAttributeBuilder[T]] = {
         Some(b)
+    }
+
+    implicit def attributeToMethodAttributeBuilder(a: br.Attribute): br.MethodAttributeBuilder = {
+        new br.MethodAttributeBuilder {
+            def apply(
+                accessFlags: Int,
+                name:        String,
+                descriptor:  br.MethodDescriptor
+            ): Attribute = {
+                a
+            }
+        }
+    }
+
+    implicit def attributeToClassFileAttributeBuilder(
+        a: br.Attribute
+    ): br.ClassFileAttributeBuilder = {
+        new br.ClassFileAttributeBuilder {
+            def apply(
+                version:        UShortPair,
+                accessFlags:    Int,
+                thisType:       ObjectType,
+                superclassType: Option[ObjectType],
+                interfaceTypes: Seq[ObjectType], // TODO Use a UIDSet here ...
+                fields:         br.Fields,
+                methods:        br.Methods
+            ): Attribute = {
+                a
+            }
+        }
+    }
+
+    implicit def attributeToFieldAttributeBuilder(a: br.Attribute): br.FieldAttributeBuilder = {
+        new br.FieldAttributeBuilder {
+            def apply(accessFlags: Int, name: String, fieldType: br.FieldType): Attribute = a
+        }
     }
 
     final val PUBLIC = new AccessModifier(ACC_PUBLIC.mask)
