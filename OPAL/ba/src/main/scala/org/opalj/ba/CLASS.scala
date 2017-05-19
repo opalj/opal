@@ -45,7 +45,7 @@ case class CLASS[T](
         val interfaceTypes:  Seq[String]    = Seq.empty,
         val fields:          FIELDS         = FIELDS(),
         val methods:         METHODS[T]     = METHODS[Nothing](),
-        val attributes:      br.Attributes  = IndexedSeq.empty
+        val attributesBuilders: Seq[br.ClassFileAttributeBuilder] = Seq.empty
 ) {
 
     /**
@@ -74,6 +74,15 @@ case class CLASS[T](
             brMethods =
                 brMethods :+
                     br.Method.defaultConstructor(superclassType.map(br.ObjectType.apply).get)
+        }
+
+        val attributes = attributesBuilders map { attributeBuilder ⇒
+            attributeBuilder(
+                version,
+                accessFlags,                 thisType, superclassType,interfaceTypes,
+                fields,
+                methods
+            )
         }
 
         val classFile = br.ClassFile( // <= THE FACTORY METHOD ENSURES THAT THE MEMBERS ARE SORTED
