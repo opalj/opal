@@ -76,7 +76,7 @@ import org.opalj.br.cp._ // we need ALL of them...
 import org.opalj.br.instructions._ // we need ALL of them...
 
 /**
- * Implementation of an EDSL for creating Java bytecode. The EDSL is designed to facilitate
+ * Implementation of an eDSL for creating Java bytecode. The eDSL is designed to facilitate
  * the creation of correct class files; i.e., whenever possible it tries to fill wholes. For
  * example, when an interface is specified the library automatically ensures that the super
  * class type is (initially) set to `java.lang.Object` as required by the JVM specification.
@@ -96,6 +96,7 @@ package object ba { ba ⇒
         import OPALLogger.info
         try {
             scala.Predef.assert(false)
+            // when we reach this point assertions are off...
             info("OPAL", s"$name - Production Build")
         } catch {
             case ae: AssertionError ⇒
@@ -127,6 +128,12 @@ package object ba { ba ⇒
         }
     }
 
+    implicit def attributeToFieldAttributeBuilder(a: br.Attribute): br.FieldAttributeBuilder = {
+        new br.FieldAttributeBuilder {
+            def apply(accessFlags: Int, name: String, fieldType: br.FieldType): Attribute = a
+        }
+    }
+
     implicit def attributeToClassFileAttributeBuilder(
         a: br.Attribute
     ): br.ClassFileAttributeBuilder = {
@@ -142,12 +149,6 @@ package object ba { ba ⇒
             ): Attribute = {
                 a
             }
-        }
-    }
-
-    implicit def attributeToFieldAttributeBuilder(a: br.Attribute): br.FieldAttributeBuilder = {
-        new br.FieldAttributeBuilder {
-            def apply(accessFlags: Int, name: String, fieldType: br.FieldType): Attribute = a
         }
     }
 
