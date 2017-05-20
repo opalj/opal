@@ -2364,9 +2364,9 @@ object ClassHierarchy {
 
     private[this] implicit val classHierarchyEC: scala.concurrent.ExecutionContext = {
         // BOTH:
-        //  - scala.concurrent.ExecutionContext.Implicits.global
+        //  - scala.concurrent.ExecutionContext.Implicits.global, and
         //  - OPALThreadPoolExecutor
-        // Cannot be used here - in both cases it may happen that we run out of threads when
+        // cannot be used here - in both cases it may happen that we run out of threads when
         // we (implicitly have to initialize the "DefaultClassHierarchy")
         org.opalj.concurrent.ExecutionContextN(4)
     }
