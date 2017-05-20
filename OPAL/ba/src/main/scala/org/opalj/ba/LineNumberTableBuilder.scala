@@ -30,29 +30,23 @@ package org.opalj
 package ba
 
 /**
- * Builder for a [[org.opalj.br.Field]]; a `FIELD` object is intended to be stored in a
- * [[org.opalj.ba.FIELDS]] collection.
+ * Used to incrementally build the [[org.opalj.br.UnpackedLineNumberTable]].
  *
  * @author Malte Limmeroth
- * @author Michael Eichberg
  */
-case class FIELD(
-        accessModifiers:    AccessModifier,
-        name:               String,
-        descriptor:         String,
-        attributesBuilders: Seq[br.FieldAttributeBuilder] = Seq.empty
-) {
+class LineNumberTableBuilder {
 
-    /**
-     * Returns the build [[org.opalj.br.Method]] and its annotations.
-     */
-    def result(): br.Field = {
-        val fieldType = br.FieldType(descriptor)
-        val accessFlags = accessModifiers.accessFlags
-        val attributes = attributesBuilders map { attributeBuilder ⇒
-            attributeBuilder(accessFlags, name, fieldType)
+    private[this] var lineNumbers: br.LineNumbers = IndexedSeq.empty
+
+    def add(element: LINENUMBER, pc: br.PC) = {
+        lineNumbers :+= br.LineNumber(pc, element.lineNumber)
+    }
+
+    def result(): IndexedSeq[br.UnpackedLineNumberTable] = {
+        if (lineNumbers.nonEmpty) {
+            IndexedSeq(br.UnpackedLineNumberTable(lineNumbers))
+        } else {
+            IndexedSeq.empty
         }
-
-        br.Field(accessFlags, name, fieldType, attributes)
     }
 }

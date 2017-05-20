@@ -61,10 +61,10 @@ case class CLASS[T](
         val thisType = br.ObjectType(this.thisType)
         val superclassType = this.superclassType.map(br.ObjectType.apply)
         val interfaceTypes = this.interfaceTypes.map(br.ObjectType.apply)
-        val brFields = fields.buildBRFields().toIndexedSeq
+        val brFields = fields.result()
 
-        val brAnnotatedMethods: Seq[(br.Method, Option[T])] = methods.buildBRMethods()
-        var brMethods = brAnnotatedMethods.map(m ⇒ m._1).toIndexedSeq
+        val brAnnotatedMethods: IndexedSeq[(br.Method, Option[T])] = methods.result()
+        var brMethods = brAnnotatedMethods.map(m ⇒ m._1)
         if (!(
             bi.ACC_INTERFACE.isSet(accessFlags) ||
             brMethods.exists(_.isConstructor) ||

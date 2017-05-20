@@ -36,26 +36,3 @@ package ba
  * @author Malte Limmeroth
  */
 case class LINENUMBER(lineNumber: Int) extends PseudoInstruction
-
-/**
- * Incrementally builds a [[org.opalj.br.UnpackedLineNumberTable]].
- *
- * @author Malte Limmeroth
- */
-class LineNumberTableGenerator {
-
-    private var lineNumbers: br.LineNumbers = Seq.empty
-
-    def add(element: LINENUMBER, pc: br.PC) = {
-        lineNumbers :+= br.LineNumber(pc, element.lineNumber)
-    }
-
-    def finalizeLineNumberTable: Option[br.UnpackedLineNumberTable] = {
-        if (lineNumbers.size > 0) {
-            Some(br.UnpackedLineNumberTable(lineNumbers))
-        } else {
-            None
-        }
-
-    }
-}

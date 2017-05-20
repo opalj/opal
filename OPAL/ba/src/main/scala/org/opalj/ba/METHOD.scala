@@ -36,17 +36,17 @@ package ba
  * @author Michael Eichberg
  */
 case class METHOD[T](
-        val accessModifiers: AccessModifier,
-        val name:            String,
-        val descriptor:      String,
-        val code:            Option[br.CodeAttributeBuilder[T]] = None,
-        val attributes:      Seq[br.MethodAttributeBuilder]     = Seq.empty
+        accessModifiers: AccessModifier,
+        name:            String,
+        descriptor:      String,
+        code:            Option[br.CodeAttributeBuilder[T]] = None,
+        attributes:      Seq[br.MethodAttributeBuilder]     = Seq.empty
 ) {
 
     /**
      * Returns the build [[org.opalj.br.Method]] and its annotations.
      */
-    def buildBRMethod(): (br.Method, Option[T]) = {
+    def result(): (br.Method, Option[T]) = {
         val methodDescriptor = br.MethodDescriptor(descriptor)
         val accessFlags = accessModifiers.accessFlags
 
@@ -62,14 +62,5 @@ case class METHOD[T](
             (method, None)
         }
     }
-
-}
-
-case class METHODS[T](methods: METHOD[T]*) {
-
-    /**
-     * Returns the build [[org.opalj.br.Method]] and its code annotations.
-     */
-    def buildBRMethods(): Seq[(br.Method, Option[T])] = methods.map(m ⇒ m.buildBRMethod())
 
 }

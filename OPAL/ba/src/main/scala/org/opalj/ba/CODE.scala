@@ -199,8 +199,8 @@ object CODE {
 
         //calculate the PCs of all PseudoInstructions
         var labels: Map[Symbol, br.PC] = Map.empty
-        val exceptionHandlerGenerator = new ExceptionHandlerGenerator
-        val lineNumberTableGenerator = new LineNumberTableGenerator
+        val exceptionHandlerBuilder = new ExceptionHandlerGenerator
+        val lineNumberTableBuilder = new LineNumberTableBuilder()
         var count: Int = 0
         for ((inst, index) ← instructionsWithPlaceholders.zipWithIndex) {
             if (inst.isInstanceOf[PseudoInstruction]) {
@@ -208,17 +208,16 @@ object CODE {
                 instructionsWithPlaceholders.remove(pc)
                 inst match {
                     case LabelElement(label)        ⇒ labels += (label → (pc))
-                    case e: ExceptionHandlerElement ⇒ exceptionHandlerGenerator.add(e, pc)
-                    case l: LINENUMBER              ⇒ lineNumberTableGenerator.add(l, pc)
+                    case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, pc)
+                    case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, pc)
                 }
                 count += 1
             }
         }
 
-        val exceptionHandlers = exceptionHandlerGenerator.finalizeHandlers
+        val exceptionHandlers = exceptionHandlerBuilder.result()
 
-        val attributes: IndexedSeq[br.Attribute] =
-            lineNumberTableGenerator.finalizeLineNumberTable.toIndexedSeq
+        val attributes: IndexedSeq[br.Attribute] = lineNumberTableBuilder.result()
 
         val annotations = instructionsWithPlaceholders.zipWithIndex.collect {
             case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)

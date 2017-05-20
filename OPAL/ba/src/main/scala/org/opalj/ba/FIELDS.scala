@@ -30,29 +30,16 @@ package org.opalj
 package ba
 
 /**
- * Builder for a [[org.opalj.br.Field]]; a `FIELD` object is intended to be stored in a
- * [[org.opalj.ba.FIELDS]] collection.
+ * Builder for a sequence of [[org.opalj.br.Field]]s.
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-case class FIELD(
-        accessModifiers:    AccessModifier,
-        name:               String,
-        descriptor:         String,
-        attributesBuilders: Seq[br.FieldAttributeBuilder] = Seq.empty
-) {
+case class FIELDS(fields: FIELD*) {
 
     /**
-     * Returns the build [[org.opalj.br.Method]] and its annotations.
+     * Returns the collection of [[org.opalj.br.Field]] objects.
      */
-    def result(): br.Field = {
-        val fieldType = br.FieldType(descriptor)
-        val accessFlags = accessModifiers.accessFlags
-        val attributes = attributesBuilders map { attributeBuilder ⇒
-            attributeBuilder(accessFlags, name, fieldType)
-        }
+    def result(): IndexedSeq[br.Field] = IndexedSeq.empty ++ fields.iterator.map(f ⇒ f.result())
 
-        br.Field(accessFlags, name, fieldType, attributes)
-    }
 }
