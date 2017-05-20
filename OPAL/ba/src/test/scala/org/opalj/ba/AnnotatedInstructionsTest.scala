@@ -49,48 +49,87 @@ import org.opalj.util.InMemoryClassLoader
 @RunWith(classOf[JUnitRunner])
 class AnnotatedInstructionsTest extends FlatSpec {
 
-    behavior of "Annotated Instructions"
+    {
+        behavior of "Instructions annotated with Strings"
 
-    val (
-        daClassFile,
-        methodAnnotations: Map[br.Method, Option[(Map[br.PC, AnyRef], List[String])]]
-        ) =
-        CLASS(
-            accessModifiers = PUBLIC SUPER,
-            thisType = "Test",
-            methods = METHODS(
-                METHOD(PUBLIC, "<init>", "()V", CODE(
-                    'UnUsedLabel1,
-                    ALOAD_0 → "MarkerAnnotation1",
-                    'UnUsedLabel2,
-                    INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                    RETURN → "MarkerAnnotation2"
-                ))
-            )
-        ).toDA()
-    val (pcAnnotations: List[Map[br.PC, AnyRef]], warnings) = methodAnnotations.values.head.unzip
-
-    "the class generation" should "have no warnings" in {
-        assert(
-            methodAnnotations.values.forall /*methods*/ (
-                _.forall /*attributes*/ (
-                    _._2.isEmpty /* <=> no warnings*/
+        val (
+            daClassFile,
+            methodAnnotations: Map[br.Method, Option[(Map[br.PC, String], List[String])]]
+            ) =
+            CLASS(
+                accessModifiers = PUBLIC SUPER,
+                thisType = "Test",
+                methods = METHODS(
+                    METHOD(PUBLIC, "<init>", "()V", CODE(
+                        'UnUsedLabel1,
+                        ALOAD_0 → "MarkerAnnotation1",
+                        'UnUsedLabel2,
+                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                        RETURN → "MarkerAnnotation2"
+                    ))
                 )
+            ).toDA()
+        val (pcAnnotations: List[Map[br.PC, String]], warnings) =
+            methodAnnotations.values.head.unzip
+
+        "[String Annotated Instructions] the class generation" should "have no warnings" in {
+            assert(warnings.flatten.isEmpty)
+        }
+
+        "[String Annotated Instructions] the generated class" should "load correctly" in {
+            val loader = new InMemoryClassLoader(
+                Map("Test" → Assembler(daClassFile)), this.getClass.getClassLoader
             )
-        )
+            assert("Test" == loader.loadClass("Test").getSimpleName)
+        }
+
+        "[String Annotated Instructions] the method " should "have the correct annotations" in {
+
+            assert(pcAnnotations.head(0) == "MarkerAnnotation1")
+            assert(pcAnnotations.head(4) == "MarkerAnnotation2")
+        }
     }
 
-    "the generated class" should "load correctly" in {
-        val loader = new InMemoryClassLoader(
-            Map("Test" → Assembler(daClassFile)), this.getClass.getClassLoader
-        )
-        assert("Test" == loader.loadClass("Test").getSimpleName)
+    {
+        behavior of "Instructions annotated with Tuples"
+
+        val (
+            daClassFile,
+            methodAnnotations: Map[br.Method, Option[(Map[br.PC, (Symbol, String)], List[String])]]
+            ) =
+            CLASS(
+                accessModifiers = PUBLIC SUPER,
+                thisType = "Test",
+                methods = METHODS(
+                    METHOD(PUBLIC, "<init>", "()V", CODE(
+                        'UnUsedLabel1,
+                        ALOAD_0 → (('L1, "MarkerAnnotation1")),
+                        'UnUsedLabel2,
+                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                        RETURN → (('L2, "MarkerAnnotation2"))
+                    ))
+                )
+            ).toDA()
+        val (pcAnnotations: List[Map[br.PC, (Symbol, String)]], warnings) =
+            methodAnnotations.values.head.unzip
+
+        "[Tuple Annotated Instructions] the class generation" should "have no warnings" in {
+            assert(
+                warnings.flatten.isEmpty
+            )
+        }
+
+        "[Tuple Annotated Instructions] the generated class" should "load correctly" in {
+            val loader = new InMemoryClassLoader(
+                Map("Test" → Assembler(daClassFile)), this.getClass.getClassLoader
+            )
+            assert("Test" == loader.loadClass("Test").getSimpleName)
+        }
+
+        "[Tuple Annotated Instructions] the method " should "have the correct annotations" in {
+
+            assert(pcAnnotations.head(0) == (('L1, "MarkerAnnotation1")))
+            assert(pcAnnotations.head(4) == (('L2, "MarkerAnnotation2")))
+        }
     }
-
-    "the method '<init>()V'" should "have the correct annotations" in {
-
-        assert(pcAnnotations.head(0).toString == "MarkerAnnotation1")
-        assert(pcAnnotations.head(4).toString == "MarkerAnnotation2")
-    }
-
 }

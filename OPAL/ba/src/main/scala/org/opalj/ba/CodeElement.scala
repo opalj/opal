@@ -40,16 +40,11 @@ import org.opalj.br.instructions.InstructionLike
  * @see [[InstructionElement]]
  * @see [[AnnotatedInstructionElement]]
  * @see [[PseudoInstruction]]
+ * @tparam T The type of the annotations of instructions.
  *
  * @author Malte Limmeroth
  */
-trait CodeElement
-
-/**
- * Marker trait for labels (`scala.Symbol`) and pseudo instructions generating `Code` attributes.
- * @author Malte Limmeroth
- */
-trait PseudoInstruction extends CodeElement
+trait CodeElement[+T]
 
 /**
  * Implicit conversions to [[CodeElement]].
@@ -62,44 +57,62 @@ object CodeElement {
     implicit def instructionToInstructionElement(
         instruction: InstructionLike
     ): InstructionElement = {
-        InstructionElement(instruction)
+        new InstructionElement(instruction)
     }
 
     /**
      * Converts a tuple of [[org.opalj.br.instructions.InstructionLike]] and `scala.AnyRef`
      * (an annotated instruction) to [[AnnotatedInstructionElement]].
      */
-    implicit def annotatedInstructionToAnnotatedInstructionElement(
-        ai: (InstructionLike, AnyRef)
-    ): AnnotatedInstructionElement = {
+    implicit def annotatedInstructionToAnnotatedInstructionElement[T](
+        ai: (InstructionLike, T)
+    ): AnnotatedInstructionElement[T] = {
         new AnnotatedInstructionElement(ai)
     }
 
     /**
      * Converts a `Symbol` (label) to [[LabelElement]].
      */
-    implicit def labelToCodeElement(label: Symbol): LabelElement = LabelElement(label)
+    implicit def symbolToLabelElement(label: Symbol): LabelElement = new LabelElement(label)
+}
+
+sealed abstract class InstructionLikeElement[T] extends CodeElement[T] {
+    def instruction: InstructionLike
+}
+
+object InstructionLikeElement {
+
+    def unapply(ile: InstructionLikeElement[_]): Some[InstructionLike] = {
+        Some(ile.instruction)
+    }
 }
 
 /**
  * Wrapper for [[org.opalj.br.instructions.InstructionLike]]s.
  */
-case class InstructionElement(instruction: InstructionLike) extends CodeElement
-
-/**
- * Wrapper for `Symbols` (labels) representing branch targets.
- */
-case class LabelElement(label: Symbol) extends PseudoInstruction
+private[ba] case class InstructionElement(
+    instruction: InstructionLike
+) extends InstructionLikeElement[Nothing]
 
 /**
  * Wrapper for annotated [[org.opalj.br.instructions.InstructionLike]]s.
  */
-class AnnotatedInstructionElement(ai: (InstructionLike, AnyRef)) extends InstructionElement(ai._1) {
-    def getAnnotation: AnyRef = ai._2
+private[ba] case class AnnotatedInstructionElement[T](
+        instruction: InstructionLike,
+        annotation:  T
+) extends InstructionLikeElement[T] {
+
+    def this(ai: (InstructionLike, T)) { this(ai._1, ai._2) }
 }
 
-object AnnotatedInstructionElement {
-    def unapply(a: AnnotatedInstructionElement): Option[(InstructionLike, AnyRef)] = {
-        Some((a.instruction, a.getAnnotation))
-    }
-}
+/**
+ * Marker trait for labels (`scala.Symbol`) and pseudo instructions generating `Code` attributes.
+ *
+ * @author Malte Limmeroth
+ */
+private[ba] abstract class PseudoInstruction extends CodeElement[Nothing]
+
+/**
+ * Wrapper for `Symbols` (labels) representing branch targets.
+ */
+private[ba] case class LabelElement(label: Symbol) extends PseudoInstruction

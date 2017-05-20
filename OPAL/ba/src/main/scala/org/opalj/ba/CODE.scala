@@ -29,6 +29,8 @@
 package org.opalj
 package ba
 
+import scala.collection.mutable
+
 import org.opalj.bi.ACC_STATIC
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LabeledInstruction
@@ -41,14 +43,14 @@ import org.opalj.br.instructions.WIDE
  *
  * @author Malte Limmeroth
  */
-class CodeAttributeBuilder private[ba] (
+class CodeAttributeBuilder[T] private[ba] (
         private val instructions:      Array[Instruction],
-        private val annotations:       Map[br.PC, AnyRef],
+        private val annotations:       Map[br.PC, T],
         private var maxStack:          Option[Int],
         private var maxLocals:         Option[Int],
         private var exceptionHandlers: br.ExceptionHandlers,
         private var attributes:        br.Attributes
-) extends br.CodeAttributeBuilder[(Map[br.PC, AnyRef], List[String])] {
+) extends br.CodeAttributeBuilder[(Map[br.PC, T], List[String])] {
 
     /**
      * Defines the max_stack value.
@@ -78,7 +80,7 @@ class CodeAttributeBuilder private[ba] (
         accessFlags: Int,
         name:        String,
         descriptor:  br.MethodDescriptor
-    ): (br.Code, (Map[br.PC, AnyRef], List[String])) = {
+    ): (br.Code, (Map[br.PC, T], List[String])) = {
 
         import CodeAttributeBuilder.warnMessage
         var warnings = List.empty[String]
@@ -144,11 +146,11 @@ object CODE {
      *
      * @see [[CodeElement]] for possible arguments.
      */
-    def apply(codeElements: CodeElement*): CodeAttributeBuilder = {
+    def apply[T](codeElements: CodeElement[T]*): CodeAttributeBuilder[T] = {
         this(codeElements.toIndexedSeq)
     }
 
-    def apply(codeElements: IndexedSeq[CodeElement]): CodeAttributeBuilder = {
+    def apply[T](codeElements: IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
 
         require(
             codeElements.exists(_.isInstanceOf[InstructionElement]),
@@ -162,20 +164,20 @@ object CODE {
                 labelSymbols.groupBy(identity).collect { case (x, ys) if ys.size > 1 ⇒ x }.mkString
         )
 
-        codeElements.collect { case InstructionElement(i) ⇒ i }.collect {
-            case bi: LabeledInstruction ⇒ {
+        codeElements.collect { case InstructionElement(i) ⇒ i }.foreach {
+            case bi: LabeledInstruction ⇒
                 bi.branchTargets foreach { target ⇒
                     require(
                         labelSymbols.contains(target),
                         s"branch target label $target of $bi undefined"
                     )
                 }
-            }
+            case _ ⇒ // we don't care
         }
 
-        val instructionsWithPlaceholders = scala.collection.mutable.ArrayBuffer.empty[CodeElement]
+        val instructionsWithPlaceholders = mutable.ArrayBuffer.empty[CodeElement[T]]
 
-        //fill the array with `null` for PCs representing instruction arguments
+        //fill the array with `null`s for PCs representing instruction arguments
         var nextPC = 0
         var currentPC = 0
         var modifiedByWide = false
@@ -183,10 +185,10 @@ object CODE {
             instructionsWithPlaceholders.append(e)
 
             e match {
-                case InstructionElement(inst) ⇒
+                case InstructionLikeElement(inst) ⇒
                     currentPC = nextPC
                     nextPC = inst.indexOfNextInstruction(currentPC, modifiedByWide)
-                    for (j ← 1 until nextPC - currentPC) {
+                    for (j ← 1 until nextPC - currentPC) { // IMPROVE use while loop
                         instructionsWithPlaceholders.append(null)
                     }
                     modifiedByWide = false
@@ -202,7 +204,7 @@ object CODE {
         val exceptionHandlerBuilder = new ExceptionHandlerGenerator
         val lineNumberTableBuilder = new LineNumberTableBuilder()
         var count: Int = 0
-        for ((inst, index) ← instructionsWithPlaceholders.zipWithIndex) {
+        for ((inst, index) ← instructionsWithPlaceholders.zipWithIndex) { // IMPROVE use while loop
             if (inst.isInstanceOf[PseudoInstruction]) {
                 val pc = index - count
                 instructionsWithPlaceholders.remove(pc)
@@ -219,13 +221,14 @@ object CODE {
 
         val attributes: IndexedSeq[br.Attribute] = lineNumberTableBuilder.result()
 
-        val annotations = instructionsWithPlaceholders.zipWithIndex.collect {
+        val annotations = instructionsWithPlaceholders.zipWithIndex.collect { // IMPROVE use iterator?
             case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)
         }.toMap
 
         val instructionLikesOnly = instructionsWithPlaceholders.collect {
-            case InstructionElement(i) ⇒ i
-            case null                  ⇒ null
+            case InstructionLikeElement(i) ⇒ i
+            case null                      ⇒ null
+            // ... filter pseudo instructions
         }
 
         val instructions = instructionLikesOnly.zipWithIndex.map { tuple ⇒
