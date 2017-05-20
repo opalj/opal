@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -58,11 +58,11 @@ public class MethodReferences {
 		java.util.Comparator<Value> comparator = Value::compare;
 		System.out.println(comparator.compare(new Value("a"), new Value("b")));
 	}
-	
+
 	public interface ValueCreator {
 		Value newValue(String value);
 	}
-	
+
 	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/MethodReferences$Value", name = "<init>", line = 68)
 	public Value newValue(String value) {
 		ValueCreator v = Value::new;
@@ -103,7 +103,7 @@ public class MethodReferences {
 	}
 
 	public int inferredTypeArgs() {
-    	//TODO: @SuppressWarnings()
+    	@SuppressWarnings("rawtypes")
 		java.util.function.Function<java.util.List, Integer> t = java.util.List::size;
 		java.util.ArrayList<String> stringArray = new java.util.ArrayList<>();
 		stringArray.add("1");
@@ -183,7 +183,7 @@ public class MethodReferences {
 	}
 
 	public int[] typeArgsExplicit() {
-		java.util.function.Consumer<int[]> c = Arrays::<int[]>sort;
+		java.util.function.Consumer<int[]> c = Arrays::<int[]>asList;
 
 		int[] someInts = {3, 2, 9, 14, 7};
 
@@ -197,9 +197,9 @@ public class MethodReferences {
     	return s.get();
 	}
 
+    @SuppressWarnings("rawtypes")
 	public java.util.ArrayList inferredConstructor() {
-		java.util.function.Supplier<java.util.ArrayList> s =
-				java.util.ArrayList::new;
+		java.util.function.Supplier<java.util.ArrayList> s = java.util.ArrayList::new;
 		return s.get();
 	}
 
@@ -278,4 +278,4 @@ public class MethodReferences {
 			return a.value.compareTo(b.value);
 		}
 	}
-}	
+}
