@@ -130,5 +130,5 @@ public abstract class RVTypeAnnotationUser<@RVTypeAnnotation T extends @RVTypeAn
         }
     }
 
-    // TODO Arrays and nested
+    // TODO Arrays
 }

@@ -136,5 +136,5 @@ public abstract class RITypeAnnotationUser<@RITypeAnnotation T extends @RITypeAn
     }
 
 
-    // TODO Arrays and nested
+    // TODO Arrays
 }
