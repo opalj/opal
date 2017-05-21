@@ -61,7 +61,7 @@ trait TypeAnnotationTarget {
 //______________________________
 // type_parameter_target
 
-trait Type_Parameter_Target extends TypeAnnotationTarget {
+sealed abstract class TATTypeParameter extends TypeAnnotationTarget {
 
     def type_parameter_index: Int
 
@@ -77,9 +77,9 @@ trait Type_Parameter_Target extends TypeAnnotationTarget {
     }
 }
 
-case class ParameterDeclarationOfClassOrInterface(
+case class TATParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int
-) extends Type_Parameter_Target {
+) extends TATTypeParameter {
 
     final override def tag: Int = 0x00
 
@@ -88,9 +88,9 @@ case class ParameterDeclarationOfClassOrInterface(
     }
 }
 
-case class ParameterDeclarationOfMethodOrConstructor(
+case class TATParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int
-) extends Type_Parameter_Target {
+) extends TATTypeParameter {
 
     final override def tag: Int = 0x01
 
@@ -102,7 +102,7 @@ case class ParameterDeclarationOfMethodOrConstructor(
 
 //______________________________
 // supertype_target
-case class Supertype_Target(supertype_index: Constant_Pool_Index) extends TypeAnnotationTarget {
+case class TATSupertype(supertype_index: Constant_Pool_Index) extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1 + 2
 
@@ -122,7 +122,7 @@ case class Supertype_Target(supertype_index: Constant_Pool_Index) extends TypeAn
 //______________________________
 // type_parameter_bound_target
 
-trait Type_Parameter_Bound_Target extends TypeAnnotationTarget {
+sealed abstract class TATTypeParameterBound extends TypeAnnotationTarget {
 
     def type_parameter_index: Int
 
@@ -137,10 +137,10 @@ trait Type_Parameter_Bound_Target extends TypeAnnotationTarget {
     }
 }
 
-case class TypeBoundOfParameterDeclarationOfClassOrInterface(
+case class TATTypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
         bound_index:          Int
-) extends Type_Parameter_Bound_Target {
+) extends TATTypeParameterBound {
 
     final override def tag: Int = 0x11
 
@@ -149,10 +149,10 @@ case class TypeBoundOfParameterDeclarationOfClassOrInterface(
     }
 }
 
-case class TypeBoundOfParameterDeclarationOfMethodOrConstructor(
+case class TATTypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int,
         bound_index:          Int
-) extends Type_Parameter_Bound_Target {
+) extends TATTypeParameterBound {
 
     final override def tag: Int = 0x12
 
@@ -164,7 +164,7 @@ case class TypeBoundOfParameterDeclarationOfMethodOrConstructor(
 
 //______________________________
 // empty_target
-trait Empty_Target extends TypeAnnotationTarget {
+sealed abstract class TATEmpty extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1
 
@@ -176,14 +176,14 @@ trait Empty_Target extends TypeAnnotationTarget {
     }
 }
 
-case object FieldDeclaration extends Empty_Target {
+case object TATFieldDeclaration extends TATEmpty {
 
     final override def tag: Int = 0x13
 
     final override def description: String = "type in field declaration"
 
 }
-case object ReturnType extends Empty_Target {
+case object TATReturnType extends TATEmpty {
 
     final override def tag: Int = 0x14
 
@@ -192,7 +192,7 @@ case object ReturnType extends Empty_Target {
     }
 
 }
-case object ReceiverType extends Empty_Target {
+case object TATReceiverType extends TATEmpty {
 
     final override def tag: Int = 0x15
 
@@ -201,7 +201,7 @@ case object ReceiverType extends Empty_Target {
 
 //______________________________
 // formal_parameter_target
-case class Formal_Parameter_Target(formal_parameter_index: Int) extends TypeAnnotationTarget {
+case class TATFormalParameter(formal_parameter_index: Int) extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1 + 1
 
@@ -218,7 +218,7 @@ case class Formal_Parameter_Target(formal_parameter_index: Int) extends TypeAnno
 
 //______________________________
 // throws_target
-case class Throws_Target(throws_type_index: Int) extends TypeAnnotationTarget {
+case class TATThrows(throws_type_index: Int) extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1 + 2
 
@@ -242,7 +242,7 @@ case class LocalvarTableEntry(start_pc: Int, length: Int, index: Int) {
 
 }
 
-trait Localvar_Target extends TypeAnnotationTarget {
+trait TATLocalvar extends TypeAnnotationTarget {
 
     /**
      * From the JVM (8) Specification:
@@ -263,7 +263,7 @@ trait Localvar_Target extends TypeAnnotationTarget {
 
 }
 
-case class LocalvarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends Localvar_Target {
+case class TATLocalvarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends TATLocalvar {
 
     final override def tag: Int = 0x40
 
@@ -271,7 +271,7 @@ case class LocalvarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends L
 
 }
 
-case class ResourcevarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends Localvar_Target {
+case class TATResourcevarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends TATLocalvar {
 
     final override def tag: Int = 0x41
 
@@ -281,7 +281,7 @@ case class ResourcevarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extend
 
 //______________________________
 // catch_target
-case class Catch_Target(exception_table_index: Int) extends TypeAnnotationTarget {
+case class TATCatch(exception_table_index: Int) extends TypeAnnotationTarget {
 
     final override def attribute_length: Int = 1 + 2
 
@@ -297,7 +297,7 @@ case class Catch_Target(exception_table_index: Int) extends TypeAnnotationTarget
 //______________________________
 // offset_target
 
-trait Offset_Target extends TypeAnnotationTarget {
+trait TATWithOffset extends TypeAnnotationTarget {
 
     def offset: Int
 
@@ -310,21 +310,21 @@ trait Offset_Target extends TypeAnnotationTarget {
     }
 }
 
-case class InstanceOf(offset: Int) extends Offset_Target {
+case class TATInstanceOf(offset: Int) extends TATWithOffset {
 
     final override def tag: Int = 0x43
 
     final def description: String = "type in instanceof expression"
 
 }
-case class New(offset: Int) extends Offset_Target {
+case class TATNew(offset: Int) extends TATWithOffset {
 
     final override def tag: Int = 0x44
 
     final def description: String = "type in new expression"
 }
 /** A `::New` expression. */
-case class MethodReferenceExpressionNew(offset: Int) extends Offset_Target {
+case class TATMethodReferenceExpressionNew(offset: Int) extends TATWithOffset {
 
     final override def tag: Int = 0x45
 
@@ -332,7 +332,7 @@ case class MethodReferenceExpressionNew(offset: Int) extends Offset_Target {
 
 }
 /** A `::Identifier` expression. */
-case class MethodReferenceExpressionIdentifier(offset: Int) extends Offset_Target {
+case class TATMethodReferenceExpressionIdentifier(offset: Int) extends TATWithOffset {
 
     final override def tag: Int = 0x46
 
@@ -342,7 +342,7 @@ case class MethodReferenceExpressionIdentifier(offset: Int) extends Offset_Targe
 //______________________________
 // type_argument_target
 
-trait Type_Argument_Target extends TypeAnnotationTarget {
+trait TATTypeArgument extends TypeAnnotationTarget {
 
     def offset: Int
 
@@ -358,17 +358,17 @@ trait Type_Argument_Target extends TypeAnnotationTarget {
     }
 }
 
-case class CastExpression(offset: Int, type_argument_index: Int) extends Type_Argument_Target {
+case class TATCastExpression(offset: Int, type_argument_index: Int) extends TATTypeArgument {
 
     final override def tag: Int = 0x47
 
     final def description: String = "type in cast expression"
 
 }
-case class ConstructorInvocation(
+case class TATConstructorInvocation(
         offset:              Int,
         type_argument_index: Int
-) extends Type_Argument_Target {
+) extends TATTypeArgument {
 
     final override def tag: Int = 0x48
 
@@ -378,10 +378,10 @@ case class ConstructorInvocation(
     }
 
 }
-case class MethodInvocation(
+case class TATMethodInvocation(
         offset:              Int,
         type_argument_index: Int
-) extends Type_Argument_Target {
+) extends TATTypeArgument {
 
     final override def tag: Int = 0x49
 
@@ -390,10 +390,10 @@ case class MethodInvocation(
     }
 
 }
-case class ConstructorInMethodReferenceExpression(
+case class TATConstructorInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
-) extends Type_Argument_Target {
+) extends TATTypeArgument {
 
     final override def tag: Int = 0x4a
 
@@ -401,10 +401,10 @@ case class ConstructorInMethodReferenceExpression(
         "type argument for generic constructor in method reference expression using ::new"
     }
 }
-case class MethodInMethodReferenceExpression(
+case class TATMethodInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
-) extends Type_Argument_Target {
+) extends TATTypeArgument {
 
     final override def tag: Int = 0x4b
 

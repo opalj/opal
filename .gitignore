@@ -1,4 +1,10 @@
+# We ignore all target folder except of ../annotations/target as it contains annotations that
+# describe a target... it was probably not a wise choice to name the package "target", but this
+# is how it is.
 target
+!OPAL/bi/src/test/fixtures-java/support/annotations/target
+
+# OTHER PATTERNS
 build
 .DS_Store
 .cache

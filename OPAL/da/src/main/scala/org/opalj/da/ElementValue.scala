@@ -40,7 +40,7 @@ import scala.xml.Node
 trait ElementValue {
 
     /**
-     * The number of byte required to store this element value
+     * The number of bytes required to store this element value
      * in a class file.
      */
     def attribute_length: Int
@@ -163,8 +163,9 @@ object AnnotationValue { final val tag: Int = '@' }
 
 case class ArrayValue(val values: Seq[ElementValue]) extends StructuredElementValue {
 
-    final override def attribute_length: Int =
+    final override def attribute_length: Int = {
         1 + values.foldLeft(2 /*num_values*/ )((c, n) ⇒ c + n.attribute_length)
+    }
 
     final override def tag: Int = ArrayValue.tag.toInt
 

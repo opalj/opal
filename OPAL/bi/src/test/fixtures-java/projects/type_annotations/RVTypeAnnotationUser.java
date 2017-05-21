@@ -29,6 +29,9 @@
 package type_annotations;
 
 import java.io.Serializable;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.File;
 import java.util.function.Supplier;
 import java.util.function.Function;
 import java.util.ArrayList;
@@ -115,6 +118,15 @@ public abstract class RVTypeAnnotationUser<@RVTypeAnnotation T extends @RVTypeAn
         if(x instanceof List) {
             Object l = (Serializable & @RVTypeAnnotation("annotation of second type of a case to an intersection type") Cloneable) x;
             process(l);
+        }
+    }
+
+    public String doIt(File file) throws Exception{
+        try (
+            @RVTypeAnnotation("resource variable") BufferedReader br =
+                new BufferedReader(new FileReader(file))
+        ) {
+            return br.readLine();
         }
     }
 

@@ -27,3 +27,4 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
 // FOR THE DEPLOYMENT TO MAVEN CENTRAL
 //
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "1.1")
+

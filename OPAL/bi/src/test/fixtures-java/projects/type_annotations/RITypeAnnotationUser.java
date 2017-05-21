@@ -29,6 +29,9 @@
 package type_annotations;
 
 import java.io.Serializable;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.File;
 import java.util.function.Supplier;
 import java.util.function.Function;
 import java.util.ArrayList;
@@ -122,6 +125,16 @@ public abstract class RITypeAnnotationUser<@RITypeAnnotation T extends @RITypeAn
             process(l);
         }
     }
+
+    public String doIt(File file) throws Exception{
+        try (
+            @RITypeAnnotation("resource variable") BufferedReader br =
+                new BufferedReader(new FileReader(file))
+        ) {
+            return br.readLine();
+        }
+    }
+
 
     // TODO Arrays and nested
 }

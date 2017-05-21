@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -90,33 +90,30 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
 
     def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame = {
         val frame_type = in.readUnsignedByte
-        /*Same_Frame*/
         if (frame_type < 64) {
             SameFrame(frame_type)
-        } /*Same_Locals_1_Stack_Item_Frame*/ else if (frame_type < 128) {
+        } else if (frame_type < 128) {
             SameLocals1StackItemFrame(
                 frame_type,
                 VerificationTypeInfo(cp, in)
             )
-        } /*RESERVED FOR FUTURE USE*/ else if (frame_type < 247) { sys.error("Unknonwn frame type.") }
-        /*Same_Locals_1_Stack_Item_Frame_Extended*/
-        else if (frame_type == 247) {
+        } /*RESERVED FOR FUTURE USE*/ else if (frame_type < 247) {
+            throw new Error(s"unsupported frame type: $frame_type")
+        } else if (frame_type == 247) {
             SameLocals1StackItemFrameExtended(
                 247,
                 in.readUnsignedShort,
                 VerificationTypeInfo(cp, in)
             )
-        } /*Chop_Frame*/ else if (frame_type < 251) ChopFrame(frame_type, in.readUnsignedShort)
-        /*Same_Frame_Extended*/
+        } else if (frame_type < 251) ChopFrame(frame_type, in.readUnsignedShort)
         else if (frame_type == 251) SameFrameExtended(251, in.readUnsignedShort)
-        /*Append_Frame*/
         else if (frame_type < 255) {
             AppendFrame(
                 frame_type,
                 in.readUnsignedShort,
                 repeat(frame_type - 251 /*number of entries*/ ) { VerificationTypeInfo(cp, in) }
             )
-        } /*Full_Frame*/ else /*if (frame_type == 255)*/ {
+        } else {
             FullFrame(
                 255,
                 in.readUnsignedShort,

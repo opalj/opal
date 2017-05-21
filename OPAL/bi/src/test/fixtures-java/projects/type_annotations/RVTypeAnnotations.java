@@ -39,7 +39,6 @@ import java.lang.annotation.Target;
  *
  * NOTE<br />
  * This class is only meant to be (automatically) compiled by OPAL's build script.
-
  *
  * @author Michael Eichberg
  */
