@@ -1,6 +1,7 @@
 <%@ var title:String %>
 <%@ var content:String %>
-<%@ var links:Traversable[(String,String)] %>
+<%@ var toc:Traversable[(String,String)] %>
+<%@ var useBanner : Boolean = false %>
 <!DOCTYPE HTML>
 <html>
     <head>
@@ -21,31 +22,45 @@
     </head>
     <body id="top">
         <header id="header" class="skel-layers-fixed">
-            <h1><a href="http://www.opal-project.de">OPAL Project</a></h1>
+            <h1><a href="http://www.opal-project.de"><img src="OPALLogo.png" width="13", height="13">&nbsp;OPAL Project</a></h1>
             <nav id="nav">
                 <ul>
-                    <li><a href="index.md.html">Getting Started</a></li>
+                    <li><a href="index.html">Getting Started</a></li>
                     <li><a href="http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.package">ScalaDoc</a></li>
                     <li><a href="http://www.bitbucket.org/delors/opal">Repository</a></li>
                     <li><a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22de.opal-project%22">Maven Central</a></li>
-              </ul>
+                </ul>
             </nav>
         </header>
+
+        #if (useBanner)
+        <section id="banner">
+            <div class="inner">
+                <h2>The OPAL Project</h2>
+                <p>Be Relaxed - Static Analysis Is Easy</p>
+            </div>
+        </section>
+        #end
 
         <section id="one" class="wrapper style1">
             <div class="container">
     			<div class="row">
-                    <div class="4u">
-                        <ul>
-                        #for ((href,title) <- links)
-                            <li><a href="${href}.html">${title}</a></li>
+                    <div class="3u">
+                        <nav>
+                        #for ((href,title) <- toc)
+                            #if (href != null)
+                                <a href="${href}.html">${title}</a><br>
+                            #else
+                                <br><b>${title}</b><br>
+                            #end
                         #end
-                        </ul>
-                        <p>
+                        </nav>
+                        <hr/>
+                        <div class="hide-at-medium">
                             Please, report issues or problems in the documentation using <a href="https://bitbucket.org/delors/opal/issues?status=new&status=open">OPAL's issue tracker</a>, by going to the <a href="https://gitter.im/OPAL-Project/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link">OPAL gitter chat room</a> or by writing an email to <a href="mailto:eichberg_at_informatik.tu-darmstadt.de">eichberg(at)informatik.tu-darmstadt.de</a>.
-                        </p>
+                        </div>
                     </div>
-    				<div class="8u">
+    				<div class="9u">
                         ${unescape(content)}
                     </div>
                 </div>
@@ -64,7 +79,7 @@
                                     <li><a href="https://gitter.im/OPAL-Project/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link" class="icon fa-users"><span class="label">Gitter</span></a></li>
                                     <li><a href="https://trello.com/theopalproject" class="icon fa-trello"><span class="label">Trello</span></a></li>
                                     <li><a href="http://stackoverflow.com/questions/tagged/opal-framework" class="icon fa-stack-overflow"><span class="label">Stackoverflow</span></a></li>
-                                    <li><a href="https://hub.docker.com/r/opalj/sbt_scala_javafx/" class="icon fa-docker"><span class="label">Docker</span></a></li>
+                                    <li><a href="https://hub.docker.com/r/opalj/sbt_scala_javafx/" class="icon fa-cloud"><span class="label">Docker</span></a></li>
                                 </ul>
                             </div>
                             <div class="6u">
@@ -77,13 +92,14 @@
                         </div>
                     </div>
                     <div class="6u">
-                        <h3>OPAL Related Scientific Papers</h3>
+                        <h3>OPAL Related Papers / Presentations</h3>
                         <ul class="alt">
-                            <li>Hermes: Assessment and Creation of Effective Test Corpora (To be published @ Soap 2017)</li>
+                            <li><a href="articles/Hermes@PLDI.pdf">Assessment and Creation of Effective Test Corpora</a></li>
                             <li><a href="http://doi.acm.org/10.1145/2950290.2950312">Call Graph Construction for Java Libraries</a></li>
                             <li><a href="http://doi.acm.org/10.1145/2786805.2786865">Hidden Truths in Dead Software Paths</a></li>
                             <li><a href="http://doi.acm.org/10.1145/2786805.2786829">Getting to know you. . . Towards a Capability Model for Java</a></li>
                             <li><a href="http://doi.acm.org/10.1145/2614628.2614630">A software product line for static analyses: the OPAL framework</a></li>
+                            <li><a href="articles/Your_JDK-Entwicklertag2015.pdf">Your JDK 8</a></li>
                         </ul>
                     </div>
     			</div>

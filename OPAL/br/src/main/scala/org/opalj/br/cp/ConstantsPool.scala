@@ -52,29 +52,29 @@ class ConstantsPool(
     }
 
     @throws[ConstantPoolException]
-    def CPEClass(referenceType: ReferenceType, requiresUByteIndex: Boolean): Int = {
+    override def CPEClass(referenceType: ReferenceType, requiresUByteIndex: Boolean): Int = {
         val cpeUtf8 = CPEUtf8OfCPEClass(referenceType)
         validateIndex(constantPool(CONSTANT_Class_info(cpeUtf8)), requiresUByteIndex)
     }
 
     @throws[ConstantPoolException]
-    def CPEFloat(value: Float, requiresUByteIndex: Boolean): Int = {
+    override def CPEFloat(value: Float, requiresUByteIndex: Boolean): Int = {
         validateIndex(constantPool(CONSTANT_Float_info(ConstantFloat(value))), requiresUByteIndex)
     }
 
     @throws[ConstantPoolException]
-    def CPEInteger(value: Int, requiresUByteIndex: Boolean): Int = {
+    override def CPEInteger(value: Int, requiresUByteIndex: Boolean): Int = {
         val cpEntry = CONSTANT_Integer_info(ConstantInteger(value))
         validateIndex(constantPool(cpEntry), requiresUByteIndex)
     }
 
     @throws[ConstantPoolException]
-    def CPEString(value: String, requiresUByteIndex: Boolean): Int = {
+    override def CPEString(value: String, requiresUByteIndex: Boolean): Int = {
         validateIndex(constantPool(CONSTANT_String_info(CPEUtf8(value))), requiresUByteIndex)
     }
 
     @throws[ConstantPoolException]
-    def CPEMethodHandle(methodHandle: MethodHandle, requiresUByteIndex: Boolean): Int = {
+    override def CPEMethodHandle(methodHandle: MethodHandle, requiresUByteIndex: Boolean): Int = {
         val (tag, cpRefIndex) = CPERefOfCPEMethodHandle(methodHandle)
         validateIndex(constantPool(CONSTANT_MethodHandle_info(tag, cpRefIndex)), requiresUByteIndex)
     }
@@ -85,23 +85,27 @@ class ConstantsPool(
         validateIndex(constantPool(cpEntry), requiresUByteIndex)
     }
 
-    def CPEDouble(value: Double): Int = {
+    override def CPEMethodType(descriptor: MethodDescriptor, requiresUByteIndex: Boolean): Int = {
+        CPEMethodType(descriptor.toJVMDescriptor, requiresUByteIndex)
+    }
+
+    override def CPEDouble(value: Double): Int = {
         constantPool(CONSTANT_Double_info(ConstantDouble(value)))
     }
 
-    def CPELong(value: Long): Int = {
+    override def CPELong(value: Long): Int = {
         constantPool(CONSTANT_Long_info(ConstantLong(value)))
     }
 
-    def CPEUtf8(value: String): Int = constantPool(CONSTANT_Utf8_info(value))
+    override def CPEUtf8(value: String): Int = constantPool(CONSTANT_Utf8_info(value))
 
-    def CPENameAndType(name: String, tpe: String): Int = {
+    override def CPENameAndType(name: String, tpe: String): Int = {
         val nameIndex = CPEUtf8(name)
         val typeIndex = CPEUtf8(tpe)
         constantPool(CONSTANT_NameAndType_info(nameIndex, typeIndex))
     }
 
-    def CPEFieldRef(
+    override def CPEFieldRef(
         objectType: ObjectType,
         fieldName:  String,
         fieldType:  String
@@ -121,6 +125,14 @@ class ConstantsPool(
         constantPool(CONSTANT_Methodref_info(class_index, name_and_type_index))
     }
 
+    override def CPEMethodRef(
+        objectType: ReferenceType,
+        name:       String,
+        descriptor: MethodDescriptor
+    ): Int = {
+        CPEMethodRef(objectType, name, descriptor.toJVMDescriptor)
+    }
+
     def CPEInterfaceMethodRef(
         objectType: ReferenceType,
         methodName: String,
@@ -129,6 +141,14 @@ class ConstantsPool(
         val class_index = CPEClass(objectType, false)
         val name_and_type_index = CPENameAndType(methodName, descriptor)
         constantPool(CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index))
+    }
+
+    override def CPEInterfaceMethodRef(
+        objectType: ReferenceType,
+        name:       String,
+        descriptor: MethodDescriptor
+    ): Int = {
+        CPEInterfaceMethodRef(objectType, name, descriptor.toJVMDescriptor)
     }
 
     def CPEInvokeDynamic(
@@ -143,4 +163,13 @@ class ConstantsPool(
         val cpNameAndTypeIndex = CPENameAndType(name, descriptor)
         constantPool(CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, cpNameAndTypeIndex))
     }
+
+    override def CPEInvokeDynamic(
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        descriptor:      MethodDescriptor
+    ): Int = {
+        CPEInvokeDynamic(bootstrapMethod, name, descriptor.toJVMDescriptor)
+    }
+
 }

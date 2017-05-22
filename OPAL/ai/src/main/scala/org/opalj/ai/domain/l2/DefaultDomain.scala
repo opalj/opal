@@ -128,8 +128,9 @@ class DefaultDomain[Source](
             maxCallChainLength - 1
         )
 
-    def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean =
+    def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean = {
         maxCallChainLength > 0 && !method.returnType.isVoidType
+    }
 
     // (HERE)
     // It has to be lazy, because we need the "MemoryLayout" which is set by the
@@ -162,8 +163,9 @@ class ChildDefaultDomain[Source](
 
     final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI
 
-    def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean =
+    def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean = {
         maxCallChainLength > 0 && !method.returnType.isVoidType
+    }
 
     def calledMethodDomain(classFile: ClassFile, method: Method) =
         new ChildDefaultDomain(

@@ -56,14 +56,17 @@ trait ClassFileBinding extends ClassFileReader {
         val delete: Boolean = deleteConfiguration match {
             case Some(x) ⇒ x
             case None ⇒
-                OPALLogger.warn("project configuration", s"the configruation key $Key is not set")
+                OPALLogger.warn("project configuration", s"the configuration key $Key is not set")
                 false
         }
-        if (delete) {
-            OPALLogger.info("project configuration", "information about synthesized class files is removed")
-        } else {
-            OPALLogger.info("project configuration", "information about synthesized class files is kept")
-        }
+        OPALLogger.info(
+            "project configuration",
+            if (delete) {
+                "information about class files synthesized at parsing time is removed"
+            } else {
+                "information about class files synthesized at parsing time is kept"
+            }
+        )
         delete
     }
 

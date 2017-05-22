@@ -31,6 +31,10 @@ package type_annotations;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
 
 /**
  * This class tests some (corner) cases related to type annotations.
@@ -56,7 +60,7 @@ public abstract class ATypeAnnotationUser<@ATypeAnnotation T extends @ATypeAnnot
     }
 
     public <X extends @ATypeAnnotation Serializable & @ATypeAnnotation("annotation of second type of intersection type") Cloneable> void crazy(X x) {
-        // annotated type cast
+        // annotated type test and cast
         if(x instanceof @ATypeAnnotation("annotated instanceof") List) {
             List<?> l = (@ATypeAnnotation("annotated type cast") List<?>) x;
             System.out.println(l);
@@ -66,6 +70,15 @@ public abstract class ATypeAnnotationUser<@ATypeAnnotation T extends @ATypeAnnot
         if(x instanceof List) {
             Object l = (Serializable & @ATypeAnnotation("annotation of second type of a case to an intersection type") Cloneable) x;
             System.out.println(l);
+        }
+    }
+
+    public String doIt(File file) throws Exception{
+        try (
+            @ATypeAnnotation("resource variable") BufferedReader br =
+                new BufferedReader(new FileReader(file))
+        ) {
+            return br.readLine();
         }
     }
 }

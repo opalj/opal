@@ -30,7 +30,7 @@ OPAL consists of several projects which are found in the folder OPAL:
 The following applies to the "Master" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have Java 8, Scala 2.11.8 and SBT 0.13.x installed and running. Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have Java 8, Scala 2.11.11 and SBT 0.13.15 installed and running and that SBT can use at least 3GB of ram (-Xmx3G). Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder.
 
 * Call `sbt cleanBuild`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.

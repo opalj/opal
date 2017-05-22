@@ -265,9 +265,9 @@ package object ai {
     }
 
     /**
-     * Calculates the initial "ValueOrigin" associated with a method's parameter.
-     * The index of the first parameter is 0 (which contains the implicit `this`
-     * reference in case of instance methods).
+     * Calculates the initial `ValueOrigin` associated with a method's explicit parameter.
+     * The index of the first parameter is 0. If the method is not static the this reference
+     * stored in local variable `0` has the origin `-1`.
      *
      * @param   isStatic `true` if method is static and, hence, has no implicit
      *          parameter for `this`.
@@ -277,21 +277,17 @@ package object ai {
         isStatic:       Boolean,
         descriptor:     MethodDescriptor,
         parameterIndex: Int
-    ): Int = {
-        def origin(localVariableIndex: Int) = -localVariableIndex - 1
+    ): ValueOrigin = {
+        assert(descriptor.parametersCount > 0)
 
-        var localVariableIndex = 0
-
-        if (!isStatic) {
-            localVariableIndex += 1 /*=="this".computationalType.operandSize*/
-        }
+        var origin = if (isStatic) -1 else -2 // this handles the case parameterIndex == 0
         val parameterTypes = descriptor.parameterTypes
         var currentIndex = 0
         while (currentIndex < parameterIndex) {
-            localVariableIndex += parameterTypes(currentIndex).computationalType.operandSize
+            origin -= parameterTypes(currentIndex).computationalType.operandSize
             currentIndex += 1
         }
-        origin(localVariableIndex)
+        origin
     }
 
     /**
@@ -326,9 +322,9 @@ package object ai {
     ): Locals[targetDomain.DomainValue] = {
 
         assert(
-            operands.size == calledMethod.parametersCount,
-            { if (calledMethod.isStatic) "static" else "/*virtual*/" } +
-                s" ${calledMethod.toJava()}(Declared Parameters: ${calledMethod.parametersCount}) "+
+            operands.size == calledMethod.actualArgumentsCount,
+            (if (calledMethod.isStatic) "static" else "/*virtual*/") +
+                s" ${calledMethod.toJava()}(Arguments: ${calledMethod.actualArgumentsCount}) "+
                 s"${operands.mkString("Operands(", ",", ")")}"
         )
 
