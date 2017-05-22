@@ -29,16 +29,17 @@
 package org.opalj
 package ba
 
+import org.opalj.br.instructions.InstructionLike
 /**
  * @author Malte Limmeroth
  */
 sealed abstract class InstructionLikeElement[T] extends CodeElement[T] {
-    def instruction: br.InstructionLike
+    def instruction: InstructionLike
 }
 
 object InstructionLikeElement {
 
-    def unapply(ile: InstructionLikeElement[_]): Some[br.InstructionLike] = {
+    def unapply(ile: InstructionLikeElement[_]): Some[InstructionLike] = {
         Some(ile.instruction)
     }
 }
@@ -47,16 +48,16 @@ object InstructionLikeElement {
  * Wrapper for [[org.opalj.br.instructions.InstructionLike]]s.
  */
 private[ba] case class InstructionElement(
-    instruction: br.InstructionLike
+    instruction: InstructionLike
 ) extends InstructionLikeElement[Nothing]
 
 /**
  * Wrapper for annotated [[org.opalj.br.instructions.InstructionLike]]s.
  */
 private[ba] case class AnnotatedInstructionElement[T](
-        instruction: br.InstructionLike,
+        instruction: InstructionLike,
         annotation:  T
 ) extends InstructionLikeElement[T] {
 
-    def this(ai: (br.InstructionLike, T)) { this(ai._1, ai._2) }
+    def this(ai: (InstructionLike, T)) { this(ai._1, ai._2) }
 }
