@@ -29,49 +29,34 @@
 package org.opalj
 package ba
 
-import scala.language.implicitConversions
-
-import org.opalj.br.instructions.InstructionLike
-
 /**
- * Wrapper for elements that will generate the instructions and attributes of a
- * [[org.opalj.br.Code]] and the annotations of the bytecode.
- *
- * @see [[InstructionElement]]
- * @see [[AnnotatedInstructionElement]]
- * @see [[PseudoInstruction]]
- * @tparam T The type of the annotations of instructions.
- *
  * @author Malte Limmeroth
  */
-trait CodeElement[+T]
+sealed abstract class InstructionLikeElement[T] extends CodeElement[T] {
+    def instruction: br.InstructionLike
+}
+
+object InstructionLikeElement {
+
+    def unapply(ile: InstructionLikeElement[_]): Some[br.InstructionLike] = {
+        Some(ile.instruction)
+    }
+}
 
 /**
- * Implicit conversions to [[CodeElement]].
+ * Wrapper for [[org.opalj.br.instructions.InstructionLike]]s.
  */
-object CodeElement {
+private[ba] case class InstructionElement(
+    instruction: br.InstructionLike
+) extends InstructionLikeElement[Nothing]
 
-    /**
-     * Converts [[org.opalj.br.instructions.InstructionLike]]s to [[InstructionElement]].
-     */
-    implicit def instructionToInstructionElement(
-        instruction: InstructionLike
-    ): InstructionElement = {
-        new InstructionElement(instruction)
-    }
+/**
+ * Wrapper for annotated [[org.opalj.br.instructions.InstructionLike]]s.
+ */
+private[ba] case class AnnotatedInstructionElement[T](
+        instruction: br.InstructionLike,
+        annotation:  T
+) extends InstructionLikeElement[T] {
 
-    /**
-     * Converts a tuple of [[org.opalj.br.instructions.InstructionLike]] and `scala.AnyRef`
-     * (an annotated instruction) to [[AnnotatedInstructionElement]].
-     */
-    implicit def annotatedInstructionToAnnotatedInstructionElement[T](
-        ai: (InstructionLike, T)
-    ): AnnotatedInstructionElement[T] = {
-        new AnnotatedInstructionElement(ai)
-    }
-
-    /**
-     * Converts a `Symbol` (label) to [[LabelElement]].
-     */
-    implicit def symbolToLabelElement(label: Symbol): LabelElement = new LabelElement(label)
+    def this(ai: (br.InstructionLike, T)) { this(ai._1, ai._2) }
 }
