@@ -34,6 +34,16 @@ package ba
  *
  * All standard access flags are predefined.
  *
+ * @example
+ *         To create a class file's, a field's or a method's access modifier, you can chain them
+ *         using post fix notation, e.g.:
+ *         {{{
+ *         PUBLIC FINAL
+ *         }}}
+ *         or you just append the using '.', e.g.:
+ *         {{{
+ *         PUBLIC.FINAL.SYNTHETIC.VARARGS
+ *         }}}
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
