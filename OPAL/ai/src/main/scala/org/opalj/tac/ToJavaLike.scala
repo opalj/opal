@@ -245,9 +245,9 @@ object ToJavaLike {
         val optimizations = List(SimplePropagation)
         val quadruples =
             aiResult map { aiResult ⇒
-                AsQuadruples(method, classHierarchy, aiResult, optimizations)._1
+                TACAI(method, classHierarchy, aiResult, optimizations)._1
             } getOrElse {
-                AsQuadruples(method, classHierarchy, optimizations, false)._1
+                TACNaive(method, classHierarchy, optimizations, false)._1
             }
         ToJavaLike(quadruples)
     }

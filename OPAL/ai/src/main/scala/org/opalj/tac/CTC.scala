@@ -29,33 +29,22 @@
 package org.opalj
 package tac
 
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
+/**
+ * Facilitates matching against values of computational type category 1.
+ *
+ * @example
+ * {{{
+ * case v @ CTC1() => ...
+ * }}}
+ */
+private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 1 }
 
 /**
- * Defines nodes used by statements and expressions.
+ * Facilitates matching against values of computational type category 2.
+ *
+ * @example
+ * {{{
+ * case v @ CTC2() => ...
+ * }}}
  */
-
-trait ASTNode {
-
-    /**
-     * Each type of node is assigned a different id to make it easily possible
-     * to do a switch over all nodes.
-     */
-    def astID: Int
-
-}
-
-trait Call {
-    def declaringClass: ReferenceType
-    def name: String
-    def descriptor: MethodDescriptor
-    def params: Seq[Expr]
-}
-
-object Call {
-
-    def unapply(call: Call): Some[(ReferenceType, String, MethodDescriptor)] = {
-        Some((call.declaringClass, call.name, call.descriptor))
-    }
-}
+private[tac] object CTC2 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 2 }
