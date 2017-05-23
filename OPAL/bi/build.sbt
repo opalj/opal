@@ -14,6 +14,7 @@ libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
 unmanagedResourceDirectories in Test += (sourceDirectory in Test).value / "fixtures-java"
 resourceGenerators in Test += Def.task {
 	import org.eclipse.jdt.core.compiler.batch.BatchCompiler
+    // TODO USE import org.eclipse.jdt.internal.formatter.DefaultCodeFormatter;
 	import java.io.File
 	import java.io.Writer
 	import java.io.PrintWriter
