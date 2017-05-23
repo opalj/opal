@@ -95,11 +95,6 @@ public class MethodReferences {
     	// add(int index, E element)
 		java.util.function.BiConsumer<Integer, Object> s = someList::add;
 		s.accept(0, new Object());
-
-		//java.lang.Runnable r = someList::add(0, new Object());
-
-		// TODO: Method reference currying, one parameter bound ?
-		// TODO: Functions with 2-3 parameters including double and long and mixed
 	}
 
 	public int inferredTypeArgs() {
@@ -224,6 +219,63 @@ public class MethodReferences {
     	return f.apply(42);
 	}
 
+	public Double sumDoubleDouble() {
+    	java.util.function.BiFunction<Double, Double, Double> bf = MixedDoubleFloat::sum;
+    	return bf.apply(2d, 2d);
+	}
+
+	public Double sumDoubleFloat() {
+		java.util.function.BiFunction<Double, Float, Double> bf = MixedDoubleFloat::sum;
+		return bf.apply(2d, 3.14f);
+	}
+
+	public Double sumFloatDouble() {
+		java.util.function.BiFunction<Float, Double, Double> bf = MixedDoubleFloat::sum;
+		return bf.apply(4.2f, 2d);
+	}
+
+	public Float sumFloatFloat() {
+		java.util.function.BiFunction<Float, Float, Float> bf = MixedDoubleFloat::sum;
+		return bf.apply(2.7f, 2.5f);
+	}
+
+	public Double sumFloatDoubleFloat() {
+		TriFunction<Float, Double, Float, Double> tf = MixedDoubleFloat::sum;
+		return tf.apply(3.14f, 42d, 2.5f);
+	}
+
+	public Double sumDoubleInt() {
+		java.util.function.BiFunction<Integer, Double, Double> bf = MixedDoubleFloat::sum;
+		return bf.apply(42, 42d);
+	}
+
+	public static class MixedDoubleFloat {
+    	public static double sum(double a, double b) {
+    		return a+b;
+		}
+
+		public static double sum(double a, float b) {
+    		return a+b;
+		}
+
+		public static double sum(float a, double b) {
+			return a+b;
+		}
+
+		public static float sum(float a, float b) {
+    		return a+b;
+		}
+
+		public static double sum(float a, double b, float c) {
+    		return a+b+c;
+		}
+
+		public static double sum(int a, double b) {
+    		return a+b;
+		}
+
+	}
+
 	public static class Outer {
     	public static class Inner {
 
@@ -277,5 +329,10 @@ public class MethodReferences {
 		public static int compare(Value a, Value b) {
 			return a.value.compareTo(b.value);
 		}
+	}
+
+	@FunctionalInterface
+	interface TriFunction<A,B,C,R> {
+		R apply(A a, B b, C c);
 	}
 }
