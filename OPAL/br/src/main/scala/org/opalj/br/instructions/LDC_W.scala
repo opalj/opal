@@ -37,7 +37,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC_W[@specialized(Int, Float) T] extends LoadConstantInstruction[T] {
+sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] {
 
     final def opcode: Opcode = LDC_W.opcode
 
@@ -113,9 +113,7 @@ object LDC_W {
             case mh: MethodHandle     ⇒ LoadMethodHandle_W(mh)
             case md: MethodDescriptor ⇒ LoadMethodType_W(md)
             case _ ⇒
-                throw new BytecodeProcessingFailedException(
-                    "unsupported constant value: "+constantValue
-                )
+                throw new BytecodeProcessingFailedException("unsupported value: "+constantValue)
         }
     }
 
