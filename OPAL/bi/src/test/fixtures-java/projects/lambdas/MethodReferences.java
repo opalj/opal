@@ -220,36 +220,78 @@ public class MethodReferences {
 	}
 
 	public Double sumDoubleDouble() {
-    	java.util.function.BiFunction<Double, Double, Double> bf = MixedDoubleFloat::sum;
+    	java.util.function.BiFunction<Double, Double, Double> bf =
+                lambdas.MethodReferences.MixedDoubleParamters::sum;
     	return bf.apply(2d, 2d);
 	}
 
 	public Double sumDoubleFloat() {
-		java.util.function.BiFunction<Double, Float, Double> bf = MixedDoubleFloat::sum;
+		java.util.function.BiFunction<Double, Float, Double> bf =
+                lambdas.MethodReferences.MixedDoubleParamters::sum;
 		return bf.apply(2d, 3.14f);
 	}
 
 	public Double sumFloatDouble() {
-		java.util.function.BiFunction<Float, Double, Double> bf = MixedDoubleFloat::sum;
+		java.util.function.BiFunction<Float, Double, Double> bf =
+                lambdas.MethodReferences.MixedDoubleParamters::sum;
 		return bf.apply(4.2f, 2d);
 	}
 
 	public Float sumFloatFloat() {
-		java.util.function.BiFunction<Float, Float, Float> bf = MixedDoubleFloat::sum;
+		java.util.function.BiFunction<Float, Float, Float> bf =
+                lambdas.MethodReferences.MixedDoubleParamters::sum;
 		return bf.apply(2.7f, 2.5f);
 	}
 
 	public Double sumFloatDoubleFloat() {
-		TriFunction<Float, Double, Float, Double> tf = MixedDoubleFloat::sum;
+		TriFunction<Float, Double, Float, Double> tf =
+                lambdas.MethodReferences.MixedDoubleParamters::sum;
 		return tf.apply(3.14f, 42d, 2.5f);
 	}
 
 	public Double sumDoubleInt() {
-		java.util.function.BiFunction<Integer, Double, Double> bf = MixedDoubleFloat::sum;
+		java.util.function.BiFunction<Integer, Double, Double> bf =
+                lambdas.MethodReferences.MixedDoubleParamters::sum;
 		return bf.apply(42, 42d);
 	}
 
-	public static class MixedDoubleFloat {
+	public Double sumLongDouble() {
+        java.util.function.BiFunction<Long, Double, Double> bf =
+                lambdas.MethodReferences.MixedDoubleParamters::sum;
+        return bf.apply(42l, 42.3d);
+    }
+
+    public Long sumLongLong() {
+        java.util.function.BiFunction<Long, Long, Long> bf =
+                lambdas.MethodReferences.MixedLongParamters::sum;
+        return bf.apply(42l, 42l);
+    }
+
+    public Long sumLongInt() {
+        java.util.function.BiFunction<Long, Integer, Long> bf =
+                lambdas.MethodReferences.MixedLongParamters::sum;
+        return bf.apply(42l, 24);
+    }
+
+    public Long sumIntInt() {
+        java.util.function.BiFunction<Integer, Integer, Long> bf =
+                lambdas.MethodReferences.MixedLongParamters::sum;
+        return bf.apply(42, 314);
+    }
+
+    public Double sumDoubleLong() {
+        java.util.function.BiFunction<Double, Long, Double> bf =
+                lambdas.MethodReferences.MixedLongParamters::sum;
+        return bf.apply(5.5d, 42l);
+    }
+
+    public Long sumIntLongLong() {
+        TriFunction<Integer, Long, Long, Long> tf =
+                lambdas.MethodReferences.MixedLongParamters::sum;
+        return tf.apply(3, 4l, 5l);
+    }
+
+	public static class MixedDoubleParamters {
     	public static double sum(double a, double b) {
     		return a+b;
 		}
@@ -274,7 +316,32 @@ public class MethodReferences {
     		return a+b;
 		}
 
+		public static double sum(long a, double b) {
+    	    return a+b;
+        }
 	}
+
+    public static class MixedLongParamters {
+        public static long sum(long a, long b) {
+            return a+b;
+        }
+
+        public static long sum(long a, int b) {
+            return a+b;
+        }
+
+        public static long sum(int a, int b) {
+            return a+b;
+        }
+
+        public static double sum(double a, long b) {
+            return a+b;
+        }
+
+        public static long sum(int a, long b, long c) {
+            return a+b+c;
+        }
+    }
 
 	public static class Outer {
     	public static class Inner {
