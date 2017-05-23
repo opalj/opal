@@ -37,12 +37,8 @@ import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-//import org.opalj.ai.BaseAI
-//import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
- * Tests the conversion of parsed methods to a quadruple representation
- *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
@@ -66,9 +62,8 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
     val DoubleSubMethod = ArithmeticExpressionsClassFile.findMethod("doubleSub").head
     //            val DoubleCmpMethod = ArithmeticExpressionsClassFile.findMethod("doubleCmp").get
 
-    describe("The quadruples representation of double operations") {
+    describe("the naive TAC of double operations") {
 
-        describe("using no AI results") {
             def binaryJLC(strg: String) = Array(
                 "0: r_0 = this;",
                 "1: r_1 = p_1;",
@@ -178,136 +173,5 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
                 ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
             }
-        }
-        /*
-        describe("using AI results") {
-            def binaryJLC(strg: String) = Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: r_3 = p_2;",
-                "3: op_0 = r_1;",
-                "4: op_2 = r_3;",
-                strg,
-                "6: return op_0 /*ADoubleValue*/;"
-            )
-
-            def binaryAST(stmt1: Stmt, stmt2: Stmt): Array[Stmt] = Array(
-                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                Assignment(-1, SimpleVar(-2, ComputationalTypeDouble), Param(ComputationalTypeDouble, "p_1")),
-                Assignment(-1, SimpleVar(-4, ComputationalTypeDouble), Param(ComputationalTypeDouble, "p_2")),
-                Assignment(0, SimpleVar(0, ComputationalTypeDouble), SimpleVar(-2, ComputationalTypeDouble)),
-                Assignment(1, SimpleVar(2, ComputationalTypeDouble), SimpleVar(-4, ComputationalTypeDouble)),
-                stmt1,
-                stmt2
-            )
-
-            it("should correctly reflect addition") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, DoubleAddMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, DoubleAddMethod, domain)
-                val statements = AsQuadruples(method = DoubleAddMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                        BinaryExpr(2, ComputationalTypeDouble, Add, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ADoubleValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_2;"))
             }
-
-            it("should correctly reflect division") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, DoubleDivMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, DoubleDivMethod, domain)
-                val statements = AsQuadruples(method = DoubleDivMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                        BinaryExpr(2, ComputationalTypeDouble, Divide, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ADoubleValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_2;"))
-            }
-
-            it("should correctly reflect negation") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, DoubleNegMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, DoubleNegMethod, domain)
-                val statements = AsQuadruples(method = DoubleNegMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array(
-                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                    Assignment(-1, SimpleVar(-2, ComputationalTypeDouble), Param(ComputationalTypeDouble, "p_1")),
-                    Assignment(0, SimpleVar(0, ComputationalTypeDouble), SimpleVar(-2, ComputationalTypeDouble)),
-                    Assignment(1, SimpleVar(0, ComputationalTypeDouble),
-                        PrefixExpr(1, ComputationalTypeDouble, Negate, SimpleVar(0, ComputationalTypeDouble))),
-                    ReturnValue(2, DomainValueBasedVar(0, domain.ADoubleValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(
-                    Array(
-                        "0: r_0 = this;",
-                        "1: r_1 = p_1;",
-                        "2: op_0 = r_1;",
-                        "3: op_0 = - op_0;",
-                        "4: return op_0 /*ADoubleValue*/;"
-                    )
-                )
-            }
-
-            it("should correctly reflect multiplication") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, DoubleMulMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, DoubleMulMethod, domain)
-                val statements = AsQuadruples(method = DoubleMulMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                        BinaryExpr(2, ComputationalTypeDouble, Multiply, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ADoubleValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_2;"))
-            }
-
-            it("should correctly reflect modulo") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, DoubleRemMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, DoubleRemMethod, domain)
-                val statements = AsQuadruples(method = DoubleRemMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                        BinaryExpr(2, ComputationalTypeDouble, Modulo, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ADoubleValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_2;"))
-            }
-
-            it("should correctly reflect subtraction") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, DoubleSubMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, DoubleSubMethod, domain)
-                val statements = AsQuadruples(method = DoubleSubMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeDouble),
-                        BinaryExpr(2, ComputationalTypeDouble, Subtract, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ADoubleValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
-            }
-        }
-        */
-    }
 }

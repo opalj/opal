@@ -41,8 +41,6 @@ import org.opalj.br.TestSupport.biProject
 //import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
- * Tests the conversion of parsed methods to a quadruple representation
- *
  * @author Roberts Kolosovs
  * @author Michael Eichberg
  */
@@ -64,107 +62,12 @@ class TACAICmpToZeroIfTest extends FunSpec with Matchers {
     val IfLEMethod = ControlSequencesClassFile.findMethod("ifle").head
     val IfGTMethod = ControlSequencesClassFile.findMethod("ifgt").head
 
-    describe("tha TAC of compare to zero if instructions") {
+    describe("the AI based TAC of compare to zero if instructions") {
 
-        describe("using no AI results") {
 
-            def resultJLC(strg: String) = Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: op_0 = r_1;",
-                strg,
-                "4: op_0 = r_1;",
-                "5: return op_0;",
-                "6: op_0 = 0;",
-                "7: return op_0;"
-            )
-
-            def resultAST(stmt: Stmt): Array[Stmt] = Array(
-                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
-                Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                stmt,
-                Assignment(4, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                ReturnValue(5, SimpleVar(0, ComputationalTypeInt)),
-                Assignment(6, SimpleVar(0, ComputationalTypeInt), IntConst(6, 0)),
-                ReturnValue(7, SimpleVar(0, ComputationalTypeInt))
-            )
-
-            it("should correctly reflect the not-equals case") {
-                val statements = AsQuadruples(method = IfNEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), NE, IntConst(-1, 0), 6)
-                ))
-                javaLikeCode.shouldEqual(resultJLC("3: if(op_0 != 0) goto 6;"))
-            }
-
-            it("should correctly reflect the equals case") {
-                val statements = AsQuadruples(method = IfEQMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), EQ, IntConst(-1, 0), 6)
-                ))
-                javaLikeCode.shouldEqual(resultJLC("3: if(op_0 == 0) goto 6;"))
-            }
-
-            it("should correctly reflect the greater-equals case") {
-                val statements = AsQuadruples(method = IfGEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-1, 0), 6)
-                ))
-                javaLikeCode.shouldEqual(resultJLC("3: if(op_0 >= 0) goto 6;"))
-            }
-
-            it("should correctly reflect the less-then case") {
-                val statements = AsQuadruples(method = IfLTMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), LT, IntConst(-1, 0), 6)
-                ))
-                javaLikeCode.shouldEqual(resultJLC("3: if(op_0 < 0) goto 6;"))
-            }
-
-            it("should correctly reflect the less-equals case") {
-                val statements = AsQuadruples(method = IfLEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), LE, IntConst(-1, 0), 6)
-                ))
-                javaLikeCode.shouldEqual(resultJLC("3: if(op_0 <= 0) goto 6;"))
-            }
-
-            it("should correctly reflect the greater-then case") {
-                val statements = AsQuadruples(method = IfGTMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), GT, IntConst(-1, 0), 6)
-                ))
-                javaLikeCode.shouldEqual(resultJLC("3: if(op_0 > 0) goto 6;"))
-            }
-        }
 
         /*
-        describe("using AI results") {
+
 
             def resultJLC(strg1: String, strg2: String, strg3: String) = Array(
                 "0: r_0 = this;",
@@ -319,7 +222,7 @@ class TACAICmpToZeroIfTest extends FunSpec with Matchers {
                     "7: return op_0 /*int = 0*/;"
                 ))
             }
-        }
+
 */
     }
 }

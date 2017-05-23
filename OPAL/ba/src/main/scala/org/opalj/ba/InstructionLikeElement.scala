@@ -30,6 +30,7 @@ package org.opalj
 package ba
 
 import org.opalj.br.instructions.InstructionLike
+
 /**
  * @author Malte Limmeroth
  */

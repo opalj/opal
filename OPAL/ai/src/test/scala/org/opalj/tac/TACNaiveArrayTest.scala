@@ -36,8 +36,6 @@ import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
 
 /**
- * Tests the conversion of parsed methods to a quadruple representation
- *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
