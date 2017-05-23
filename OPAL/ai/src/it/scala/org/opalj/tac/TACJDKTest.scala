@@ -79,7 +79,7 @@ class TACJDKTest extends FunSpec with Matchers {
             } {
                 try {
                     // without using AIResults
-                    val (tacCode, _) = AsQuadruples(
+                    val (tacCode, _) = TACNaive(
                         method = m,
                         classHierarchy = project.classHierarchy,
                         optimizations = AllOptimizations

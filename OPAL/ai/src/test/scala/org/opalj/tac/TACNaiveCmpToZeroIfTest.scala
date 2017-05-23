@@ -47,7 +47,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class CmpToZeroIfTest extends FunSpec with Matchers {
+class TACNaiveCmpToZeroIfTest extends FunSpec with Matchers {
 
     val ControlSequencesType = ObjectType("tactest/ControlSequences")
 
@@ -64,7 +64,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
     val IfLEMethod = ControlSequencesClassFile.findMethod("ifle").head
     val IfGTMethod = ControlSequencesClassFile.findMethod("ifgt").head
 
-    describe("The quadruples representation of compare to zero if instructions") {
+    describe("tha TAC of compare to zero if instructions") {
 
         describe("using no AI results") {
 

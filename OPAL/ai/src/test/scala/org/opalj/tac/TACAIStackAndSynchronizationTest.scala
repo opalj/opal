@@ -47,7 +47,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class StackAndSynchronizationTest extends FunSpec with Matchers {
+class TACAIStackAndSynchronizationTest extends FunSpec with Matchers {
 
     val StackAndSynchronizeType = ObjectType("tactest/StackManipulationAndSynchronization")
 

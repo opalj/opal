@@ -47,9 +47,9 @@ import org.opalj.br.TestSupport.biProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class CastTest extends FunSpec with Matchers {
+class TACNaiveCastTest extends FunSpec with Matchers {
 
-    describe("The quadruples representation of cast instructions") {
+    describe("the TAC of cast instructions") {
 
         val CastInstructionsType = ObjectType("tactest/CastInstructions")
 

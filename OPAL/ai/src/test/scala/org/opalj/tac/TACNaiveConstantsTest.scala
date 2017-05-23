@@ -47,7 +47,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ConstantsTest extends FunSpec with Matchers {
+class TACNaiveConstantsTest extends FunSpec with Matchers {
 
     val ConstantsType = ObjectType("tactest/Constants")
 

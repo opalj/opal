@@ -47,7 +47,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class FloatArithmeticTest extends FunSpec with Matchers {
+class TACAIFloatArithmeticTest extends FunSpec with Matchers {
 
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
 

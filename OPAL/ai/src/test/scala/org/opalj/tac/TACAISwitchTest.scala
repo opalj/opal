@@ -44,7 +44,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class SwitchTest extends TACTest {
+class TACAISwitchTest extends TACTest {
 
     val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
 

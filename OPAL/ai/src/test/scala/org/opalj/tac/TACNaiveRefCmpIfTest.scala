@@ -47,7 +47,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class RefCmpIfTest extends FunSpec with Matchers {
+class TACNaiveRefCmpIfTest extends FunSpec with Matchers {
 
     val ControlSequencesType = ObjectType("tactest/ControlSequences")
 
