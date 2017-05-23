@@ -1,3 +1,12 @@
+import com.typesafe.sbt.SbtScalariform
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import scalariform.formatter.preferences._
+
+import no.vedaadata.sbtjavafx.JavaFXPlugin
+import no.vedaadata.sbtjavafx.JavaFXPlugin.JFX
+
+import sbtassembly.AssemblyPlugin.autoImport._
+
 name := "BugPicker"
 
 organization	in ThisBuild := "de.opal-project"
@@ -9,7 +18,7 @@ scalaVersion 	in ThisBuild := "2.11.8"
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
 scalacOptions in ThisBuild ++= Seq(
-	"-deprecation", "-feature", "-unchecked", "-Xlint", "-Xfuture", 
+	"-deprecation", "-feature", "-unchecked", "-Xlint", "-Xfuture",
 	"-Ywarn-numeric-widen", "-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-nullary-unit", "-Ywarn-nullary-override", "-Ywarn-dead-code", "-Xfatal-warnings" )
 
 
@@ -22,6 +31,47 @@ javaOptions in run += "-Xms4G"
 
 mainClass in LocalProject("bp") in Compile := (mainClass in LocalProject("BugPickerUI") in Compile).value
 fullClasspath in LocalProject("bp") in Runtime ++= (fullClasspath in LocalProject("BugPickerUI") in Runtime).value
+
+def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPreferences(
+	(file("./../../Scalariform Formatter Preferences.properties").getPath))
+
+lazy val buildSettings = Defaults.defaultSettings ++
+	SbtScalariform.scalariformSettingsWithIt ++
+	Seq(ScalariformKeys.preferences <<= baseDirectory.apply(getScalariformPreferences)) ++
+	Seq(Defaults.itSettings : _*) ++
+	Seq(
+		EclipseKeys.configurations := Set(Compile, Test, IntegrationTest),
+		EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18),
+		EclipseKeys.withSource := true
+	) ++
+	Seq(libraryDependencies ++= Seq(
+		"de.opal-project" %% "bugpicker-core" % "0.9.0-SNAPSHOT",
+		"de.opal-project" %% "bytecode-disassembler" % "0.9.0-SNAPSHOT"
+	)) ++
+	Seq(resolvers ++= Seq(
+		"Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+	))
+
+lazy val ui = Project(
+	id = "BugPickerUI",
+	base = file("ui"),
+	settings = buildSettings ++
+		JavaFXPlugin.jfxSettings ++
+		Seq(
+			JFX.mainClass := Option("org.opalj.bugpicker.BugPicker"),
+			JFX.addJfxrtToClasspath := true
+		) ++
+		Seq(mainClass in (Compile, run) := Some("org.opalj.bugpicker.ui.BugPicker")) ++
+		Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "8.0.102-R11") ++
+		Seq(
+			resourceGenerators in Compile <+= Def.task {
+				val versionFile = (baseDirectory in Compile).value / "target" / "scala-2.11" / "classes" / "org" / "opalj" / "bugpicker" / "version.txt"
+				versionFile.getParentFile.mkdirs()
+				IO.write(versionFile, (version in Compile).value)
+				Seq(versionFile)
+			}
+		)
+)
 
 val zipAllSrc = taskKey[Unit]("Creates a zip file of all source files (including the build script etc.).")
 
