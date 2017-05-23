@@ -77,5 +77,76 @@ public class Lambdas {
 		localAndInstanceClosure.run();
 	}
 
-	// TODO : Check scope of lambdas
+	public void noParametersVoidResult() {
+	    Runnable l = () -> {};
+	    l.run();
+    }
+
+    public Integer noParametersExpressionBody1() throws Exception {
+	    java.util.concurrent.Callable<Integer> l = () -> 42;
+	    return l.call();
+    }
+
+    public Object noParametersExpressionBody2() throws Exception {
+        java.util.concurrent.Callable<Object> l = () -> null;
+        return l.call();
+    }
+
+    public Integer noParametersBlockWithReturn() throws Exception {
+        java.util.concurrent.Callable<Integer> l = () -> { return 42; };
+        return l.call();
+    }
+
+    public void noParametersVoidBlockBody() {
+        Runnable l = () -> { System.gc(); };
+        l.run();
+    }
+
+    public Integer complexBodyWithReturns() throws Exception {
+	    boolean b = true;
+        java.util.concurrent.Callable<Integer> l = () -> {
+            if (b)
+                return 42;
+            else
+                return -1;
+        };
+        return l.call();
+    }
+
+    public Integer singleParameterExpressionBody() {
+        java.util.function.Function<Integer, Integer> l = (Integer x) -> x+1;
+        return l.apply(3);
+    }
+
+    public Integer singleParameterBlockBody() {
+        java.util.function.Function<Integer, Integer> l = (Integer x) -> { return x+1; };
+        return l.apply(3);
+    }
+
+    public Integer singleParameterExpressionBodyInferredTypeParameter() {
+        java.util.function.Function<Integer, Integer> l = (x) -> x+1;
+        return l.apply(3);
+    }
+
+    public Integer singleParameterBlockBodyInferredTypeParameter() {
+        java.util.function.Function<Integer, Integer> l = (x) -> { return x+1; };
+        return l.apply(3);
+    }
+
+    public Integer singleParameterExpressionBodyInferredTypeParameterWithoutParentheses() {
+        java.util.function.Function<Integer, Integer> l = x -> x+1;
+        return l.apply(3);
+    }
+
+    public Integer multipleParametersDeclared() {
+        java.util.function.BiFunction<Integer, Integer, Integer> l
+                = (Integer x, Integer y) -> x+y;
+        return l.apply(3, 2);
+    }
+
+    public Integer multipleParametersInferred() {
+        java.util.function.BiFunction<Integer, Integer, Integer> l
+                = (x, y) -> x+y;
+        return l.apply(3, 2);
+    }
 }
