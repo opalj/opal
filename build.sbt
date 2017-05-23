@@ -48,6 +48,8 @@ testOptions in ThisBuild := {
 
 testOptions in ThisBuild += Tests.Argument("-o")
 
+javaFormattingSettingsFilename := "Eclipse Java Formatter Preferences.xml"
+
 // Required to get relative links in the generated source code documentation.
 scalacOptions in (ScalaUnidoc, unidoc) :=  {
 		baseDirectory.map(bd => Seq ("-sourcepath", bd.getAbsolutePath)).value
