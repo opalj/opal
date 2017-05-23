@@ -197,7 +197,10 @@ package object ba { ba ⇒
      */
     def toDA(
         classFile: br.ClassFile
-    )(implicit toDAConfig: ToDAConfig = ToDAConfig.RetainAllAttributes): da.ClassFile = {
+    )(
+        implicit
+        toDAConfig: ToDAConfig = ToDAConfig.RetainAllAttributes
+    ): da.ClassFile = {
         implicit val constantsBuffer = ConstantsBuffer(ConstantsBuffer.collectLDCs(classFile))
         val thisTypeCPRef = constantsBuffer.CPEClass(classFile.thisType, false)
         val superClassCPRef = classFile.superclassType match {

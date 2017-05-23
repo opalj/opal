@@ -29,49 +29,9 @@
 package org.opalj
 package ba
 
-import scala.language.implicitConversions
-
-import org.opalj.br.instructions.InstructionLike
-
 /**
- * Wrapper for elements that will generate the instructions and attributes of a
- * [[org.opalj.br.Code]] and the annotations of the bytecode.
- *
- * @see [[InstructionElement]]
- * @see [[AnnotatedInstructionElement]]
- * @see [[PseudoInstruction]]
- * @tparam T The type of the annotations of instructions.
+ * Marker trait for labels (`scala.Symbol`) and pseudo instructions generating `Code` attributes.
  *
  * @author Malte Limmeroth
  */
-trait CodeElement[+T]
-
-/**
- * Implicit conversions to [[CodeElement]].
- */
-object CodeElement {
-
-    /**
-     * Converts [[org.opalj.br.instructions.InstructionLike]]s to [[InstructionElement]].
-     */
-    implicit def instructionToInstructionElement(
-        instruction: InstructionLike
-    ): InstructionElement = {
-        new InstructionElement(instruction)
-    }
-
-    /**
-     * Converts a tuple of [[org.opalj.br.instructions.InstructionLike]] and `scala.AnyRef`
-     * (an annotated instruction) to [[AnnotatedInstructionElement]].
-     */
-    implicit def annotatedInstructionToAnnotatedInstructionElement[T](
-        ai: (InstructionLike, T)
-    ): AnnotatedInstructionElement[T] = {
-        new AnnotatedInstructionElement(ai)
-    }
-
-    /**
-     * Converts a `Symbol` (label) to [[LabelElement]].
-     */
-    implicit def symbolToLabelElement(label: Symbol): LabelElement = new LabelElement(label)
-}
+private[ba] abstract class PseudoInstruction extends CodeElement[Nothing]
