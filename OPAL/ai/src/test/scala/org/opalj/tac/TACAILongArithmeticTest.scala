@@ -53,9 +53,6 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
-    import BinaryArithmeticOperators._
-    import UnaryArithmeticOperators._
-
     val LongAddMethod = ArithmeticExpressionsClassFile.findMethod("longAdd").head
     val LongAndMethod = ArithmeticExpressionsClassFile.findMethod("longAnd").head
     val LongDivMethod = ArithmeticExpressionsClassFile.findMethod("longDiv").head
@@ -70,8 +67,11 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
     val LongXOrMethod = ArithmeticExpressionsClassFile.findMethod("longXOr").head
 
     describe("the AI based TAC of long operations") {
-
         /*
+
+        import BinaryArithmeticOperators._
+        import UnaryArithmeticOperators._
+
 
             def binaryJLC(strg: String) = Array(
                 "0: r_0 = this;",

@@ -46,14 +46,11 @@ import org.opalj.br.TestSupport.biProject
  */
 @RunWith(classOf[JUnitRunner])
 class TACAIIntegerIfTest extends FunSpec with Matchers {
-
     val ControlSequencesType = ObjectType("tactest/ControlSequences")
 
     val project = biProject("tactest-8-preserveAllLocals.jar")
 
     val ControlSequencesClassFile = project.classFile(ControlSequencesType).get
-
-    import RelationalOperators._
 
     val ICMPNEMethod = ControlSequencesClassFile.findMethod("icmpne").head
     val ICMPEQMethod = ControlSequencesClassFile.findMethod("icmpeq").head
@@ -65,7 +62,7 @@ class TACAIIntegerIfTest extends FunSpec with Matchers {
     describe("the AI based TAC of integer if instructions") {
 
         /*
-
+    import RelationalOperators._
             def resultJLC(strg1: String, strg2: String, strg3: String) = Array(
                 "0: r_0 = this;",
                 "1: r_1 = p_1;",

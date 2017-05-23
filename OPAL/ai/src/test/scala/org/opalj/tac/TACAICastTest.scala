@@ -35,8 +35,8 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
-import org.opalj.br._
-import org.opalj.br.TestSupport.biProject
+//import org.opalj.br._
+//import org.opalj.br.TestSupport.biProject
 //import org.opalj.ai.BaseAI
 //import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -48,7 +48,7 @@ import org.opalj.br.TestSupport.biProject
 class TACAICastTest extends FunSpec with Matchers {
 
     describe("the AI based TAC of cast instructions") {
-
+        /*
         val CastInstructionsType = ObjectType("tactest/CastInstructions")
 
         val project = biProject("tactest-8-preserveAllLocals.jar")
@@ -78,7 +78,7 @@ class TACAICastTest extends FunSpec with Matchers {
         val I2BMethod = CastInstructionsClassFile.findMethod("i2b").head
         val I2CMethod = CastInstructionsClassFile.findMethod("i2c").head
 
-    /*
+
 
 
             def longResultJLC(strg: String) = Array(

@@ -62,7 +62,6 @@ class TACAIConstantsTest extends FunSpec with Matchers {
 
     describe("the AI based TAC of instructions loading constants") {
 
-
         /*
 
             it("should correctly reflect the integer constants") {

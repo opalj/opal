@@ -35,8 +35,9 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
-import org.opalj.br._
-import org.opalj.br.TestSupport.biProject
+//import org.opalj.br._
+//import org.opalj.br.TestSupport.biProject
+
 //import org.opalj.ai.BaseAI
 //import org.opalj.ai.domain.l1.DefaultDomain
 
@@ -46,7 +47,7 @@ import org.opalj.br.TestSupport.biProject
  */
 @RunWith(classOf[JUnitRunner])
 class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
-
+    /*
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
 
     val project = biProject("tactest-8-preserveAllLocals.jar")
@@ -69,9 +70,8 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
     val IntegerSubMethod = ArithmeticExpressionsClassFile.findMethod("integerSub").head
     val IntegerAShMethod = ArithmeticExpressionsClassFile.findMethod("integerASh").head
     val IntegerXOrMethod = ArithmeticExpressionsClassFile.findMethod("integerXOr").head
-
+*/
     describe("the AI based TAC of integer operations") {
-
 
         /*
 

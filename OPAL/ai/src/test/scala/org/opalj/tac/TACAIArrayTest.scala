@@ -62,7 +62,6 @@ class TACAIArrayTest extends TACTest {
 
     describe("the AI based TAC of array creation and manipulation instructions using AI results") {
 
-
         /*
 
             def expectedAST(cTpe: ComputationalType, arrayType: ArrayType, const: Expr) = Array[Stmt](

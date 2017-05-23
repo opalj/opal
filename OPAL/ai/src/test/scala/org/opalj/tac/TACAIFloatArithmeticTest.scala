@@ -53,10 +53,6 @@ class TACAIFloatArithmeticTest extends FunSpec with Matchers {
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
-    import BinaryArithmeticOperators._
-    import RelationalOperators._
-    import UnaryArithmeticOperators._
-
     val FloatAddMethod = ArithmeticExpressionsClassFile.findMethod("floatAdd").head
     val FloatDivMethod = ArithmeticExpressionsClassFile.findMethod("floatDiv").head
     val FloatNegMethod = ArithmeticExpressionsClassFile.findMethod("floatNeg").head
@@ -68,6 +64,9 @@ class TACAIFloatArithmeticTest extends FunSpec with Matchers {
     describe("the AI based TAC of float operations") {
 
         /*
+        import BinaryArithmeticOperators._
+        import RelationalOperators._
+        import UnaryArithmeticOperators._
 
             def binaryJLC(strg: String) = Array(
                 "0: r_0 = this;",

@@ -53,9 +53,6 @@ class TACAIDoubleArithmeticTest extends FunSpec with Matchers {
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
-    import BinaryArithmeticOperators._
-    import UnaryArithmeticOperators._
-
     val DoubleAddMethod = ArithmeticExpressionsClassFile.findMethod("doubleAdd").head
     val DoubleDivMethod = ArithmeticExpressionsClassFile.findMethod("doubleDiv").head
     val DoubleNegMethod = ArithmeticExpressionsClassFile.findMethod("doubleNeg").head
@@ -67,6 +64,9 @@ class TACAIDoubleArithmeticTest extends FunSpec with Matchers {
     describe("the AI based TAC of double operations") {
 
         /*
+        import BinaryArithmeticOperators._
+        import UnaryArithmeticOperators._
+
             def binaryJLC(strg: String) = Array(
                 "0: r_0 = this;",
                 "1: r_1 = p_1;",

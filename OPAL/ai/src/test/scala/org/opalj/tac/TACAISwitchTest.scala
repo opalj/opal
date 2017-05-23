@@ -55,7 +55,6 @@ class TACAISwitchTest extends TACTest {
 
     describe("the AI based TAC of switch instructions") {
 
-
         /*
 
             it("should correctly reflect tableswitch case") {

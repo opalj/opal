@@ -53,17 +53,14 @@ class TACAIRefCmpIfTest extends FunSpec with Matchers {
 
     val ControlSequencesClassFile = project.classFile(ControlSequencesType).get
 
-    import RelationalOperators._
-
     val IfACMPEQMethod = ControlSequencesClassFile.findMethod("ifacmpeq").head
     val IfACMPNEMethod = ControlSequencesClassFile.findMethod("ifacmpne").head
     val IfNonNullMethod = ControlSequencesClassFile.findMethod("ifnonnull").head
     val IfNullMethod = ControlSequencesClassFile.findMethod("ifnull").head
 
     describe("the AI based TAC of reference comparison if instructions") {
-
         /*
-
+import RelationalOperators._
             def binaryResultAST(stmt: Stmt, expr1: Expr, expr2: Expr): Array[Stmt] = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
