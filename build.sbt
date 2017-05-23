@@ -269,14 +269,21 @@ generateSite := {
     // NOTE: Currently we keep all pages in memory during the transformation process... but, this
     // should nevertheless work for a very long time!
 
+    val s: TaskStreams = streams.value
+    val log = s.log
+
     val sourceFolder = sourceDirectory.value / "site"
     val targetFolder = resourceManaged.value / "site"
+
+    // generate OPALDisassembler.jar
+    val disassemblerJAR = (assembly in da).value
+    val disassemblerJARTarget = targetFolder / "artifacts" / disassemblerJAR.getName()
+    IO.copyFile(disassemblerJAR, disassemblerJARTarget)
+    log.info("copy bytecode disassembler to: "+disassemblerJARTarget)
 
     // 0. generate Scaladoc
     val runUnidoc = (unidoc in Compile).value
 
-    val s: TaskStreams = streams.value
-    val log = s.log
 
     val siteGenerationNecessary =
         !targetFolder.exists ||
