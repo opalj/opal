@@ -10,8 +10,6 @@ addSbtPlugin("com.eed3si9n" % "sbt-dirty-money" % "0.1.0")
 // to build fat-jars
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.4")
 
-addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter" % "0.2.0")
-
 resolvers += "Sonatype OSS Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.6.0")
 
