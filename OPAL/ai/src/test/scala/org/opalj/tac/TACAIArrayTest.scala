@@ -38,8 +38,6 @@ import org.opalj.br.TestSupport.biProject
 //import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
- * Tests the conversion of parsed methods to a quadruple representation
- *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
@@ -62,8 +60,7 @@ class TACAIArrayTest extends TACTest {
     val ByteArrayMethod = ArrayInstructionsClassFile.findMethod("byteArray").head
     val CharArrayMethod = ArrayInstructionsClassFile.findMethod("charArray").head
 
-    describe("the generated TAC of array creation and manipulation instructions using AI results") {
-
+    describe("the AI based TAC of array creation and manipulation instructions using AI results") {
 
         /*
 

@@ -37,12 +37,8 @@ import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-//import org.opalj.ai.BaseAI
-//import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
- * Tests the conversion of parsed methods to a quadruple representation
- *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
@@ -72,460 +68,212 @@ class TACNaiveIntegerArithmeticTest extends FunSpec with Matchers {
     val IntegerAShMethod = ArithmeticExpressionsClassFile.findMethod("integerASh").head
     val IntegerXOrMethod = ArithmeticExpressionsClassFile.findMethod("integerXOr").head
 
-    describe("The quadruples representation of integer operations") {
+    describe("the naive TAC of integer operations") {
 
-        describe("using no AI results") {
+        def binaryJLC(strg: String): Array[String] = Array(
+            "0: r_0 = this;",
+            "1: r_1 = p_1;",
+            "2: r_2 = p_2;",
+            "3: op_0 = r_1;",
+            "4: op_1 = r_2;",
+            strg,
+            "6: return op_0;"
+        )
 
-            def binaryJLC(strg: String): Array[String] = Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: r_2 = p_2;",
-                "3: op_0 = r_1;",
-                "4: op_1 = r_2;",
-                strg,
-                "6: return op_0;"
-            )
+        def unaryJLC(strg: String): Array[String] = Array(
+            "0: r_0 = this;",
+            "1: r_1 = p_1;",
+            "2: op_0 = r_1;",
+            strg,
+            "4: return op_0;"
+        )
 
-            def unaryJLC(strg: String): Array[String] = Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: op_0 = r_1;",
-                strg,
-                "4: return op_0;"
-            )
+        def binaryAST(stmt: Stmt): Array[Stmt] = Array(
+            Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+            Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
+            Assignment(-1, SimpleVar(-3, ComputationalTypeInt), Param(ComputationalTypeInt, "p_2")),
+            Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+            Assignment(1, SimpleVar(1, ComputationalTypeInt), SimpleVar(-3, ComputationalTypeInt)),
+            stmt,
+            ReturnValue(3, SimpleVar(0, ComputationalTypeInt))
+        )
 
-            def binaryAST(stmt: Stmt): Array[Stmt] = Array(
-                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
-                Assignment(-1, SimpleVar(-3, ComputationalTypeInt), Param(ComputationalTypeInt, "p_2")),
-                Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                Assignment(1, SimpleVar(1, ComputationalTypeInt), SimpleVar(-3, ComputationalTypeInt)),
-                stmt,
-                ReturnValue(3, SimpleVar(0, ComputationalTypeInt))
-            )
+        it("should correctly reflect addition") {
+            val statements = TACNaive(method = IntegerAddMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
 
-            it("should correctly reflect addition") {
-                val statements = AsQuadruples(method = IntegerAddMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Add, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_1;"))
-            }
-
-            it("should correctly reflect logical and") {
-                val statements = AsQuadruples(method = IntegerAndMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, And, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 & op_1;"))
-            }
-
-            it("should correctly reflect division") {
-                val statements = AsQuadruples(method = IntegerDivMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Divide, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_1;"))
-            }
-
-            it("should correctly reflect incrementation by a constant") {
-                val statements = AsQuadruples(method = IntegerIncMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array(
-                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                    Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
-                    Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Assignment(1, SimpleVar(-2, ComputationalTypeInt),
-                        BinaryExpr(1, ComputationalTypeInt, Add, SimpleVar(-2, ComputationalTypeInt), IntConst(1, 1))),
-                    ReturnValue(4, SimpleVar(0, ComputationalTypeInt))
-                ))
-                javaLikeCode.shouldEqual(unaryJLC("3: r_1 = r_1 + 1;"))
-            }
-
-            it("should correctly reflect negation") {
-                val statements = AsQuadruples(method = IntegerNegMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array(
-                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                    Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
-                    Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Assignment(1, SimpleVar(0, ComputationalTypeInt),
-                        PrefixExpr(1, ComputationalTypeInt, Negate, SimpleVar(0, ComputationalTypeInt))),
-                    ReturnValue(2, SimpleVar(0, ComputationalTypeInt))
-                ))
-                javaLikeCode.shouldEqual(unaryJLC("3: op_0 = - op_0;"))
-            }
-
-            it("should correctly reflect multiplication") {
-                val statements = AsQuadruples(method = IntegerMulMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Multiply, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_1;"))
-            }
-
-            it("should correctly reflect logical or") {
-                val statements = AsQuadruples(method = IntegerOrMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Or, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 | op_1;"))
-            }
-
-            it("should correctly reflect modulo") {
-                val statements = AsQuadruples(method = IntegerRemMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Modulo, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_1;"))
-            }
-
-            it("should correctly reflect shift right") {
-                val statements = AsQuadruples(method = IntegerShRMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, ShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >> op_1;"))
-            }
-
-            it("should correctly reflect shift left") {
-                val statements = AsQuadruples(method = IntegerShLMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, ShiftLeft, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 << op_1;"))
-            }
-
-            it("should correctly reflect subtraction") {
-                val statements = AsQuadruples(method = IntegerSubMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Subtract, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
-            }
-
-            it("should correctly reflect arithmetic shift right") {
-                val statements = AsQuadruples(method = IntegerAShMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, UnsignedShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >>> op_1;"))
-            }
-
-            it("should correctly reflect logical xor") {
-                val statements = AsQuadruples(method = IntegerXOrMethod, classHierarchy = Code.BasicClassHierarchy)._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, XOr, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 ^ op_1;"))
-            }
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, Add, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_1;"))
         }
 
-        /*        describe("using AI results") {
+        it("should correctly reflect logical and") {
+            val statements = TACNaive(method = IntegerAndMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
 
-            def binaryJLC(strg: String) = Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: r_2 = p_2;",
-                "3: op_0 = r_1;",
-                "4: op_1 = r_2;",
-                strg,
-                "6: return op_0 /*an int*/;"
-            )
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, And, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 & op_1;"))
+        }
 
-            def unaryJLC(strg: String) = Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: op_0 = r_1;",
-                strg,
-                "4: return op_0 /*an int*/;"
-            )
+        it("should correctly reflect division") {
+            val statements = TACNaive(method = IntegerDivMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
 
-            def binaryAST(stmt1: Stmt, stmt2: Stmt): Array[Stmt] = Array(
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, Divide, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_1;"))
+        }
+
+        it("should correctly reflect incrementation by a constant") {
+            val statements = TACNaive(method = IntegerIncMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
-                Assignment(-1, SimpleVar(-3, ComputationalTypeInt), Param(ComputationalTypeInt, "p_2")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                Assignment(1, SimpleVar(1, ComputationalTypeInt), SimpleVar(-3, ComputationalTypeInt)),
-                stmt1,
-                stmt2
-            )
-
-            it("should correctly reflect addition") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerAddMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAddMethod, domain)
-                val statements = AsQuadruples(method = IntegerAddMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Add, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_1;"))
-            }
-
-            it("should correctly reflect logical and") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerAndMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAndMethod, domain)
-                val statements = AsQuadruples(method = IntegerAndMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, And, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 & op_1;"))
-            }
-
-            it("should correctly reflect division") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerDivMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerDivMethod, domain)
-                val statements = AsQuadruples(method = IntegerDivMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Divide, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_1;"))
-            }
-
-            it("should correctly reflect incrementation by a constant") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerIncMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerIncMethod, domain)
-                val statements = AsQuadruples(method = IntegerIncMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array(
-                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                    Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
-                    Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Assignment(1, SimpleVar(-2, ComputationalTypeInt),
-                        BinaryExpr(1, ComputationalTypeInt, Add, SimpleVar(-2, ComputationalTypeInt), IntConst(1, 1))),
-                    ReturnValue(4, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(unaryJLC("3: r_1 = r_1 + 1;"))
-            }
-
-            it("should correctly reflect negation") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerNegMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerNegMethod, domain)
-                val statements = AsQuadruples(method = IntegerNegMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array(
-                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                    Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
-                    Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Assignment(1, SimpleVar(0, ComputationalTypeInt),
-                        PrefixExpr(1, ComputationalTypeInt, Negate, SimpleVar(0, ComputationalTypeInt))),
-                    ReturnValue(2, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(unaryJLC("3: op_0 = - op_0;"))
-            }
-
-            it("should correctly reflect multiplication") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerMulMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerMulMethod, domain)
-                val statements = AsQuadruples(method = IntegerMulMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Multiply, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_1;"))
-            }
-
-            it("should correctly reflect logical or") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerOrMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerOrMethod, domain)
-                val statements = AsQuadruples(method = IntegerOrMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Or, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 | op_1;"))
-            }
-
-            it("should correctly reflect modulo") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerRemMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerRemMethod, domain)
-                val statements = AsQuadruples(method = IntegerRemMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Modulo, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_1;"))
-            }
-
-            it("should correctly reflect shift right") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerShRMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerShRMethod, domain)
-                val statements = AsQuadruples(method = IntegerShRMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, ShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >> op_1;"))
-            }
-
-            it("should correctly reflect shift left") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerShLMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerShLMethod, domain)
-                val statements = AsQuadruples(method = IntegerShLMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, ShiftLeft, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 << op_1;"))
-            }
-
-            it("should correctly reflect subtraction") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerSubMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerSubMethod, domain)
-                val statements = AsQuadruples(method = IntegerSubMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Subtract, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
-            }
-
-            it("should correctly reflect arithmetic shift right") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerAShMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAShMethod, domain)
-                val statements = AsQuadruples(method = IntegerAShMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, UnsignedShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >>> op_1;"))
-            }
-
-            it("should correctly reflect logical xor") {
-                val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerXOrMethod)
-                val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerXOrMethod, domain)
-                val statements = AsQuadruples(method = IntegerXOrMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
-
-                assert(statements.nonEmpty)
-                assert(javaLikeCode.length > 0)
-                statements.shouldEqual(binaryAST(
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, XOr, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
-                ))
-                javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 ^ op_1;"))
-            }
+                Assignment(1, SimpleVar(-2, ComputationalTypeInt),
+                    BinaryExpr(1, ComputationalTypeInt, Add, SimpleVar(-2, ComputationalTypeInt), IntConst(1, 1))),
+                ReturnValue(4, SimpleVar(0, ComputationalTypeInt))
+            ))
+            javaLikeCode.shouldEqual(unaryJLC("3: r_1 = r_1 + 1;"))
         }
-        */
+
+        it("should correctly reflect negation") {
+            val statements = TACNaive(method = IntegerNegMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(Array(
+                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
+                Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+                Assignment(1, SimpleVar(0, ComputationalTypeInt),
+                    PrefixExpr(1, ComputationalTypeInt, Negate, SimpleVar(0, ComputationalTypeInt))),
+                ReturnValue(2, SimpleVar(0, ComputationalTypeInt))
+            ))
+            javaLikeCode.shouldEqual(unaryJLC("3: op_0 = - op_0;"))
+        }
+
+        it("should correctly reflect multiplication") {
+            val statements = TACNaive(method = IntegerMulMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, Multiply, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_1;"))
+        }
+
+        it("should correctly reflect logical or") {
+            val statements = TACNaive(method = IntegerOrMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, Or, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 | op_1;"))
+        }
+
+        it("should correctly reflect modulo") {
+            val statements = TACNaive(method = IntegerRemMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, Modulo, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_1;"))
+        }
+
+        it("should correctly reflect shift right") {
+            val statements = TACNaive(method = IntegerShRMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, ShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >> op_1;"))
+        }
+
+        it("should correctly reflect shift left") {
+            val statements = TACNaive(method = IntegerShLMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, ShiftLeft, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 << op_1;"))
+        }
+
+        it("should correctly reflect subtraction") {
+            val statements = TACNaive(method = IntegerSubMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, Subtract, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
+        }
+
+        it("should correctly reflect arithmetic shift right") {
+            val statements = TACNaive(method = IntegerAShMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, UnsignedShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >>> op_1;"))
+        }
+
+        it("should correctly reflect logical xor") {
+            val statements = TACNaive(method = IntegerXOrMethod, classHierarchy = Code.BasicClassHierarchy)._1
+            val javaLikeCode = ToJavaLike(statements, false)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length > 0)
+            statements.shouldEqual(binaryAST(
+                Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                    BinaryExpr(2, ComputationalTypeInt, XOr, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+            ))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 ^ op_1;"))
+        }
+
     }
 }
