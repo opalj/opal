@@ -275,26 +275,29 @@ generateSite := {
     val sourceFolder = sourceDirectory.value / "site"
     val targetFolder = resourceManaged.value / "site"
 
-    // generate OPALDisassembler.jar
-    val disassemblerJAR = (assembly in da).value
-    val disassemblerJARTarget = targetFolder / "artifacts" / disassemblerJAR.getName()
-    IO.copyFile(disassemblerJAR, disassemblerJARTarget)
-    log.info("copy bytecode disassembler to: "+disassemblerJARTarget)
-
-    // 0. generate Scaladoc
-    val runUnidoc = (unidoc in Compile).value
-
-
     val siteGenerationNecessary =
         !targetFolder.exists ||
         (sourceFolder ** "*").get.exists{ sourceFile =>
             if(sourceFile.newerThan(targetFolder) && !sourceFile.isHidden) {
-                log.info(s"at least $sourceFile was updated: ${sourceFile.lastModified} > ${targetFolder.lastModified} (current time: ${System.currentTimeMillis})")
+                val currentTimeMillis = System.currentTimeMillis
+                log.info(
+                    s"at least $sourceFile was updated: ${sourceFile.lastModified} "+
+                        s"> ${targetFolder.lastModified} (current time: $currentTimeMillis)"
+                )
                 true
             } else {
                 false
             }
         }
+
+    // 0.1. generate OPALDisassembler.jar
+    val disassemblerJAR = (assembly in da).value
+    val disassemblerJARTarget = targetFolder / "artifacts" / disassemblerJAR.getName()
+    IO.copyFile(disassemblerJAR, disassemblerJARTarget)
+    log.info("copied bytecode disassembler to: "+disassemblerJARTarget)
+
+    // 0.2. generate Scaladoc
+    val runUnidoc = (unidoc in Compile).value
 
     if(siteGenerationNecessary) {
         log.info("generating site using: "+sourceFolder / "site.conf")
