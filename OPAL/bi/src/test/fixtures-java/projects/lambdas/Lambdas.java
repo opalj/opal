@@ -168,6 +168,12 @@ public class Lambdas {
         return l.apply(3d, 3);
     }
 
+    public Double intDoubleParamter() {
+        java.util.function.BiFunction<Integer, Double, Double> l
+                = (x, y) -> x+y;
+        return l.apply(3, 3d);
+    }
+
     public Double doubleFloatParamter() {
         java.util.function.BiFunction<Double, Float, Double> l
                 = (x, y) -> x+y;
@@ -190,6 +196,12 @@ public class Lambdas {
         java.util.function.BiFunction<Long, Integer, Long> l
                 = (x, y) -> x+y;
         return l.apply(3l, 3);
+    }
+
+    public Long intLongParamter() {
+        java.util.function.BiFunction<Integer, Long, Long> l
+                = (x, y) -> x+y;
+        return l.apply(3, 3l);
     }
 
     public Float longFloatParamter() {
