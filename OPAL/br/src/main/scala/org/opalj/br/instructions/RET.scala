@@ -75,7 +75,7 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
 
                     case RET.opcode ⇒
                         // we have found another RET ... hence, we have at least two subroutines
-                        return Chain(cfg().successors(currentPC).toSeq: _*);
+                        return cfg().successors(currentPC).toChain;
 
                     case _ ⇒
                     // we don't care

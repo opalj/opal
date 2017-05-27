@@ -29,12 +29,12 @@
 package org.opalj
 package tac
 
-/*
+
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.bytecode.BytecodeProcessingFailedException
-*/ import org.opalj.br._
+import org.opalj.br._
 /*import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CatchNode
@@ -61,11 +61,11 @@ import org.opalj.ai.domain.RecordDefUse
 object TACAI {
 
     /**
-     * Converts the bytecode of a method into a quadruples based three address representation using
-     * the result of a bytecode based abstract interpretation of the method.
+     * Converts the bytecode of a method into a three address representation using
+     * the result of an abstract interpretation.
      *
      * @param   method A method with a body. I.e., a non-native, non-abstract method.
-     * @param   aiResult The result of an abstract interpretation of the respective method.
+     * @param   aiResult The result of the abstract interpretation of the respective method.
      * @param   optimizations The transformations that should be executed (NoOptimizations
      *          is always possible).
      * @return  The array with the generated statements.
@@ -76,8 +76,8 @@ object TACAI {
         aiResult:       AIResult { val domain: RecordDefUse },
         optimizations:  List[TACOptimization]
     ): (Array[Stmt], CFG) = {
-        ???
-        /*
+
+        type ValueType = aiResult.domain.DomainValue
         import BinaryArithmeticOperators._
         import RelationalOperators._
         import UnaryArithmeticOperators._
@@ -116,16 +116,15 @@ object TACAI {
             val opcode = instruction.opcode
             val operands = operandsArray(pc)
 
-            def operandUse(index: Int): SSAVar = {
+
+            def operandUse(index: Int): UVar[ValueType] = {
                 // 1. get the definition site
                 // Recall: if the defSite is negative, we are using a parameter
-                val defSite = domain.operandOrigin(pc, index)
-                operands(defSite)
-                // 2. get more precise information about the type etc.
-                ???
+                val defSites = domain.operandOrigin(pc, index).
+                new UVar[ValueType](operands(index),defSites)
             }
 
-            def registerUse(index: Int): SSAVar = {
+            def registerUse(index: Int): DVar = {
                 // 1. get the definition site
                 // Recall: if the defSite is negative, we are using a parameter
                 val defSite = domain.localOrigin(pc, index)
@@ -134,6 +133,7 @@ object TACAI {
                 ???
             }
 
+/*
             def VarUse(vos: ValueOrigins, v: aiResult.domain.DomainValue): VarUse = {
                 aiResult.domain.typeOfValue(v) match {
                     case refVal: IsAReferenceValue ⇒
@@ -146,7 +146,7 @@ object TACAI {
                     case TypeUnknown ⇒
                         throw new BytecodeProcessingFailedException(s"the type of $v is unknown")
                 }
-            }
+            }*/
 
             /**
              * Creates a local var using the current pc and the type
@@ -156,7 +156,7 @@ object TACAI {
                 aiResult.domain.typeOfValue(v) match {
                     case refVal: IsAReferenceValue ⇒
                         val tpe = computeLeastCommonSuperType(refVal.upperTypeBound)
-                        SSARefVar(pc, tpe, Some(refVal))
+                        DUVar(pc, tpe, Some(refVal))
 
                     case primVal @ IsPrimitiveValue(tpe) ⇒
                         SSAPrimVar(pc, tpe, Some(primVal))
@@ -637,7 +637,7 @@ object TACAI {
         }
 
         (tacCode, tacCFG)
-*/
+
     }
 
 }

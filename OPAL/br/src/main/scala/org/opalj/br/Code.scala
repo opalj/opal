@@ -43,9 +43,12 @@ import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
 import org.opalj.collection.mutable.IntQueue
+import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntSet1
+import org.opalj.collection.immutable.IntSetBuilder
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
-import org.opalj.collection.mutable.UShortSet
+
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 
@@ -474,8 +477,8 @@ final class Code private (
         val instructionsLength = instructions.length
 
         val allPredecessorPCs = new Array[PCs](instructionsLength)
-        allPredecessorPCs(0) = UShortSet.empty // initialization for the start node
-        var exitPCs = UShortSet.empty
+        allPredecessorPCs(0) = IntSet.empty // initialization for the start node
+        var exitPCs = IntSet.empty
 
         val cfJoins = new mutable.BitSet(instructionsLength)
         val isReached = new mutable.BitSet(instructionsLength)
@@ -504,7 +507,7 @@ final class Code private (
                     // compute predecessors
                     val predecessorPCs = allPredecessorPCs(nextPC)
                     if (predecessorPCs eq null) {
-                        allPredecessorPCs(nextPC) = UShortSet(pc)
+                        allPredecessorPCs(nextPC) = new IntSet1(pc)
                     } else {
                         allPredecessorPCs(nextPC) = predecessorPCs + pc
                     }
@@ -623,7 +626,7 @@ final class Code private (
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers may be reached on multiple paths.
      *
-     * @return A triple which contains (1) the set of pcs of those instruction where multiple
+     * @return A triple which contains (1) the set of pcs of those instructions where multiple
      *         control-flow paths join; (2) the pcs of the instructions which may result in
      *         multiple different control-flow paths and (3) for each of the later instructions
      *         the set of all potential targets.
@@ -631,13 +634,13 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = BasicClassHierarchy
-    ): (BitSet /*joins*/ , BitSet /*forks*/ , IntMap[UShortSet] /*forkTargetPCs*/ ) = {
+    ): (BitSet /*joins*/ , BitSet /*forks*/ , IntMap[IntSet] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
         val cfJoins = new mutable.BitSet(instructionsLength)
         val cfForks = new mutable.BitSet(instructionsLength)
-        var cfForkTargets = IntMap.empty[UShortSet]
+        var cfForkTargets = IntMap.empty[IntSet]
 
         val isReached = new mutable.BitSet(instructionsLength)
         isReached += 0 // the first instruction is always reached!
@@ -661,7 +664,7 @@ final class Code private (
                     // The ret may return to different sites;
                     // the potential path joins are determined when we process the JSR.
                     cfForks += pc
-                    cfForkTargets += ((pc, UShortSet.create(cfg.successors(pc))))
+                    cfForkTargets += ((pc, cfg.successors(pc)))
 
                 case JSR.opcode | JSR_W.opcode ⇒
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
@@ -673,7 +676,7 @@ final class Code private (
                     nextInstructions.foreach(runtimeSuccessor)
                     if (nextInstructions.hasMultipleElements) {
                         cfForks += pc
-                        cfForkTargets += ((pc, UShortSet.create(nextInstructions)))
+                        cfForkTargets += ((pc, IntSetBuilder(nextInstructions).result()))
                     }
             }
 
@@ -1721,7 +1724,7 @@ object Code {
         // Basic idea: follow all paths
         var maxStackDepth: Int = 0;
 
-        var paths: Chain[(PC, Int /*stackdepth before executing the instruction with pc*/ )] = Naught
+        var paths: Chain[(PC, Int /*stackdepth before executing the instruction*/ )] = Naught
         val visitedPCs = new mutable.BitSet(instructions.length)
 
         // We start with the first instruction and an empty stack.

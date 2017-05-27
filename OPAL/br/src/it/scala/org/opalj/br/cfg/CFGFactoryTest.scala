@@ -39,6 +39,7 @@ import scala.collection.JavaConverters._
 
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
+import org.opalj.collection.immutable.IntSet
 
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestSupport.locateTestResources
@@ -122,7 +123,7 @@ class CFGFactoryTest extends CFGTests {
                 // check the correspondence of "instruction.nextInstruction" and the information
                 // contained in the cfg
                 code.iterate { (pc, instruction) ⇒
-                    val nextInstructions = instruction.nextInstructions(pc).toSet
+                    val nextInstructions = instruction.nextInstructions(pc).toIntSet
                     if (nextInstructions.isEmpty) {
                         if (!cfg.bb(pc).successors.forall { succBB ⇒ succBB.isCatchNode || succBB.isExitNode })
                             fail(
@@ -145,7 +146,7 @@ class CFGFactoryTest extends CFGTests {
                 code.iterate { (pc, instruction) ⇒
                     {
                         val cfgSuccessors = cfg.successors(pc)
-                        var cfgForeachSuccessors = Set.empty[PC]
+                        var cfgForeachSuccessors = IntSet.empty
                         var cfgForeachSuccessorCount = 0
                         cfg.foreachSuccessor(pc) { cfgForeachSuccessor ⇒
                             cfgForeachSuccessors += cfgForeachSuccessor
@@ -157,7 +158,7 @@ class CFGFactoryTest extends CFGTests {
 
                     {
                         val cfgPredecessors = cfg.predecessors(pc)
-                        var cfgForeachPredecessors = Set.empty[PC]
+                        var cfgForeachPredecessors = IntSet.empty
                         var cfgForeachPredecessorCount = 0
                         cfg.foreachPredecessor(pc) { cfgForeachPredecessor ⇒
                             cfgForeachPredecessors += cfgForeachPredecessor
