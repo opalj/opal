@@ -28,20 +28,21 @@
  */
 package org.opalj
 package tac
-
 /*
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
-/*import org.opalj.br.instructions._
+import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 */
+import org.opalj.br.Method
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.cfg.CFG
 import org.opalj.ai.AIResult
 /*import org.opalj.ai.IsAReferenceValue
@@ -76,7 +77,7 @@ object TACAI {
         aiResult:       AIResult { val domain: RecordDefUse },
         optimizations:  List[TACOptimization]
     ): (Array[Stmt], CFG) = {
-
+        /*
         type ValueType = aiResult.domain.DomainValue
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -116,12 +117,11 @@ object TACAI {
             val opcode = instruction.opcode
             val operands = operandsArray(pc)
 
-
             def operandUse(index: Int): UVar[ValueType] = {
                 // 1. get the definition site
                 // Recall: if the defSite is negative, we are using a parameter
-                val defSites = domain.operandOrigin(pc, index).
-                new UVar[ValueType](operands(index),defSites)
+                val defSites = domain.operandOrigin(pc, index)
+                new UVar[ValueType](operands(index), defSites)
             }
 
             def registerUse(index: Int): DVar = {
@@ -133,7 +133,7 @@ object TACAI {
                 ???
             }
 
-/*
+            /*
             def VarUse(vos: ValueOrigins, v: aiResult.domain.DomainValue): VarUse = {
                 aiResult.domain.typeOfValue(v) match {
                     case refVal: IsAReferenceValue ⇒
@@ -637,8 +637,8 @@ object TACAI {
         }
 
         (tacCode, tacCFG)
-
+*/
+        ???
     }
 
 }
-*/

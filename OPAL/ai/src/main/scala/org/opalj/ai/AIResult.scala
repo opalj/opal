@@ -29,11 +29,12 @@
 package org.opalj
 package ai
 
+import scala.annotation.switch
 import scala.collection.mutable
 import scala.collection.BitSet
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.IntSet
 import org.opalj.br.Code
 import org.opalj.br.LiveVariables
 
@@ -96,16 +97,16 @@ sealed abstract class AIResult {
     /**
      * Returns all instructions that belong to a subroutine.
      */
-    lazy val subroutineInstructions: org.opalj.collection.UShortSet = {
-        var instructions = UShortSet.empty
+    lazy val subroutineInstructions: IntSet = {
+        var instructions = IntSet.empty
         var subroutineLevel = 0
         // It is possible to have a method with just JSRs and no RETs...
         // Hence, we have to iterate from the beginning.
-        evaluated.reverse.foreach { pc ⇒
-            (pc: @scala.annotation.switch) match {
+        evaluated.reverse foreach { pc ⇒
+            (pc: @switch) match {
                 case SUBROUTINE_START          ⇒ subroutineLevel += 1
                 case SUBROUTINE_END            ⇒ subroutineLevel -= 1
-                case pc if subroutineLevel > 0 ⇒ instructions = pc +≈: instructions
+                case pc if subroutineLevel > 0 ⇒ instructions += pc
                 case _                         ⇒ // we don't care
             }
         }
@@ -317,15 +318,14 @@ object AIResultBuilder {
             def restartInterpretation(ai: AI[_ >: theDomain.type]): AIResult = {
 
                 // We have to extract the information about the subroutines... if we have any...
-                var subroutinePCs = UShortSet.empty
+                var subroutinePCs = IntSet.empty
                 var subroutineCount = 0
                 var evaluated = theEvaluated
                 while (evaluated.nonEmpty) {
                     evaluated.head match {
                         case SUBROUTINE_START ⇒ subroutineCount += 1
                         case SUBROUTINE_END   ⇒ subroutineCount -= 1
-                        case pc ⇒
-                            if (subroutineCount > 0) subroutinePCs = pc +≈: subroutinePCs
+                        case pc               ⇒ if (subroutineCount > 0) subroutinePCs += pc
                     }
                     evaluated = evaluated.tail
                 }

@@ -92,7 +92,6 @@ package object ai {
     type PC = org.opalj.br.PC
     type PCs = org.opalj.br.PCs
     final def NoPCs = org.opalj.br.NoPCs
-    type MutablePCs = org.opalj.collection.mutable.UShortSet
 
     /**
      * A value of type `ValueOrigin` identifies the origin of a value. In most cases the

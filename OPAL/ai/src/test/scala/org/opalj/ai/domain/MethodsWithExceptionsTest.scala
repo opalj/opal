@@ -34,10 +34,12 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
+
 import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.br._
+import org.opalj.collection.immutable.IntSet
 import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br._
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -49,9 +51,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class MethodsWithExceptionsTest extends FlatSpec with Matchers {
 
-    import domain.l1
     import MethodsWithExceptionsTest._
-    import org.opalj.collection.mutable.UShortSet
 
     class DefaultRecordingDomain(val id: String)
             extends CorrelationalDomain
@@ -104,7 +104,7 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that catches everything" in {
         evaluateMethod("alwaysCatch") { domain ⇒
             import domain._
-            allReturnVoidInstructions should be(UShortSet(7)) // <= void return
+            allReturnVoidInstructions should be(IntSet(7)) // <= void return
         }
     }
 
@@ -124,14 +124,14 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
         evaluateMethod("throwsNoException") { domain ⇒
             import domain._
             allThrownExceptions should be(Map.empty)
-            allReturnVoidInstructions should be(UShortSet(39)) // <= void return
+            allReturnVoidInstructions should be(IntSet(39)) // <= void return
         }
     }
 
     it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
         evaluateMethod("leverageException") { domain ⇒
             import domain._
-            allReturnVoidInstructions should be(UShortSet(38)) // <= void return
+            allReturnVoidInstructions should be(IntSet(38)) // <= void return
             allThrownExceptions should be(Map())
             // Due to the simplicity of the domain (the exceptions of called methods are
             // not yet analyze) we cannot determine that the following exception

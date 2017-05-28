@@ -36,7 +36,8 @@ import java.util.Arrays
 import scala.collection.mutable.Builder
 
 /**
- * All sets are sorted.
+ * A sorted set of integer values. Conceptually, an ordered array is used to store the values which
+ * guarantees log(n) lookup.
  */
 abstract class IntSet {
 
@@ -58,10 +59,15 @@ abstract class IntSet {
     def max: Int
 
     final def head: Int = min
+
     final def last: Int = max
 
     def foreach[U](f: Int ⇒ U): Unit
 
+    /**
+     * Returns a lazily filtered set. However, all operations other operations except of
+     * `withFilter` and `iterator` will force the evaluation.
+     */
     def withFilter(p: (Int) ⇒ Boolean): IntSet
 
     def map(f: Int ⇒ Int): IntSet
@@ -98,7 +104,12 @@ abstract class IntSet {
 
     def forall(f: Int ⇒ Boolean): Boolean = iterator.forall(f)
 
-    def ++(is: IntSet): IntSet = is.foldLeft(this)(_ + _)
+    def ++(that: IntSet): IntSet = {
+        if (this.size > that.size)
+            that.foldLeft(this)(_ + _) // we expand `this` since `this` is larger
+        else
+            this.foldLeft(that)(_ + _) // we expand that
+    }
 
     def mkString(pre: String, in: String, post: String): String = {
         val sb = new StringBuilder(pre)
@@ -134,6 +145,10 @@ case object EmptyIntSet extends IntSet {
     override def subsetOf(other: IntSet): Boolean = true
     def +(i: Int): IntSet1 = new IntSet1(i)
     def iterator: Iterator[Int] = Iterator.empty
+    override def contains(value: Int): Boolean = false
+    override def exists(p: Int ⇒ Boolean): Boolean = false
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = z
+    override def forall(f: Int ⇒ Boolean): Boolean = true
 
     def toChain: Chain[Int] = Naught
 
@@ -164,6 +179,11 @@ case class IntSet1(i: Int) extends IntSet {
     }
     def iterator: Iterator[Int] = Iterator(i)
     def size: Int = 1
+
+    override def contains(value: Int): Boolean = value == i
+    override def exists(p: Int ⇒ Boolean): Boolean = p(i)
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = f(z, i)
+    override def forall(f: Int ⇒ Boolean): Boolean = f(i)
 
     def toChain: Chain[Int] = Chain[Int](i)
 
@@ -224,6 +244,10 @@ case class IntSet2(i1: Int, i2: Int) extends IntSet {
             new IntArraySet(Array[Int](i1, i2, i))
         }
     }
+    override def contains(value: Int): Boolean = value == i1 || value == i2
+    override def exists(p: Int ⇒ Boolean): Boolean = p(i1) || p(i2)
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = f(f(z, i1), i2)
+    override def forall(f: Int ⇒ Boolean): Boolean = f(i1) && f(i2)
 
     def toChain: Chain[Int] = i1 :&: i2 :&: Naught
 
@@ -364,10 +388,18 @@ private[immutable] class FilteredIntArraySet(
     }
 
     def withFilter(p: (Int) ⇒ Boolean): IntSet = {
-        if (filteredS != null) {
+        if (filteredS ne null) {
             filteredS.withFilter(p)
         } else {
             new FilteredIntArraySet((i: Int) ⇒ this.p(i) && p(i), origS)
+        }
+    }
+
+    def iterator: Iterator[Int] = {
+        if (filteredS ne null) {
+            filteredS.iterator
+        } else {
+            origS.iterator.filter(p)
         }
     }
 
@@ -381,7 +413,6 @@ private[immutable] class FilteredIntArraySet(
     def map(f: Int ⇒ Int): IntSet = getFiltered.map(f)
     def -(i: Int): IntSet = getFiltered - i
     def +(i: Int): IntSet = getFiltered + 1
-    def iterator: Iterator[Int] = getFiltered.iterator
     def toChain: Chain[Int] = getFiltered.toChain
     override def equals(other: Any): Boolean = getFiltered.equals(other)
     override def hashCode: Int = getFiltered.hashCode
