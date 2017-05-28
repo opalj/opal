@@ -38,7 +38,7 @@ import scala.annotation.tailrec
 import scala.math.Ordered
 import scala.collection.SortedSet
 
-import org.opalj.collection.UID
+import org.opalj.collection.UIDValue
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet2
 
@@ -77,7 +77,7 @@ import org.opalj.collection.immutable.UIDSet2
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-sealed abstract class Type extends UID with Ordered[Type] {
+sealed abstract class Type extends UIDValue with Ordered[Type] {
 
     /**
      * Returns `true` if this type can be used by fields. Returns `true` unless
