@@ -403,13 +403,27 @@ private[immutable] class FilteredIntArraySet(
         }
     }
 
+    def foreach[U](f: Int ⇒ U): Unit = {
+        if (filteredS ne null) {
+            filteredS.foreach(f)
+        } else {
+            val is = origS.is
+            val max = is.length
+            var j = 0
+            while (j < max) {
+                val i = is(j)
+                if (p(i)) f(i)
+                j += 1
+            }
+        }
+    }
+
     def size: Int = getFiltered.size
     def isSingletonSet: Boolean = getFiltered.isSingletonSet
     def hasMultipleElements: Boolean = getFiltered.hasMultipleElements
     def isEmpty: Boolean = getFiltered.isEmpty
     def min: Int = getFiltered.min
     def max: Int = getFiltered.max
-    def foreach[U](f: Int ⇒ U): Unit = getFiltered.foreach(f)
     def map(f: Int ⇒ Int): IntSet = getFiltered.map(f)
     def -(i: Int): IntSet = getFiltered - i
     def +(i: Int): IntSet = getFiltered + 1
