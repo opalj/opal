@@ -31,7 +31,6 @@ package ai
 package domain
 package l1
 
-import scala.collection.SortedSet
 import scala.reflect.ClassTag
 
 import org.opalj.collection.immutable.UIDSet
@@ -118,13 +117,13 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
     }
 
     override protected[domain] def MultipleReferenceValues(
-        values: SortedSet[DomainSingleOriginReferenceValue]
+        values: UIDSet[DomainSingleOriginReferenceValue]
     ): DomainMultipleReferenceValues = {
         new MultipleReferenceValues(values)
     }
 
     override protected[domain] def MultipleReferenceValues(
-        values:            SortedSet[DomainSingleOriginReferenceValue],
+        values:            UIDSet[DomainSingleOriginReferenceValue],
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: UIDSet[_ <: ReferenceType],

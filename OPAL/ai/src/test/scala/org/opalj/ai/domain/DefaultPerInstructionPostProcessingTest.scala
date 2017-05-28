@@ -130,7 +130,7 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
             import domain._
             allReturnVoidInstructions should be(IntSet(38)) // <= void return
             allThrownExceptions should be(Map.empty)
-            // Due to the simplicity of the domain (the exceptions of called methods are
+            // Due to the simplicity of the domain I(the exceptions of called methods are
             // not yet analyze) we cannot determine that the following exception
             // (among others?) may also be thrown:
             // ("throws", SomeReferenceValue(...,ObjectType("java/lang/RuntimeException"),No))
