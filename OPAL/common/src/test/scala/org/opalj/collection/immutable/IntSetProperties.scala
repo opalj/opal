@@ -35,8 +35,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll //, classify,
 import org.scalacheck.Prop.BooleanOperators
-//import org.scalacheck.Gen
-//import org.scalacheck.Arbitrary
 
 /**
  * Tests `IntSet` by creating standard Scala Set and comparing
@@ -46,41 +44,6 @@ import org.scalacheck.Prop.BooleanOperators
  */
 @RunWith(classOf[JUnitRunner])
 object IntSetProperties extends Properties("IntSet") {
-
-    /*    /**
-     * Generates a list and an int value in the range [0,length of list ].
-     */
-    val listAndIndexGen = for {
-        n ← Gen.choose(0, 20)
-        m ← Gen.listOfN(n, Arbitrary.arbitrary[String])
-        i ← Gen.choose(0, n)
-    } yield (m, i)
-
-    val listOfListGen = for {
-        n ← Gen.choose(0, 20)
-        m ← Gen.listOfN(n, Arbitrary.arbitrary[List[String]])
-    } yield m
-
-    val smallListsGen = for {
-        m ← Gen.listOfN(5, Arbitrary.arbitrary[String])
-    } yield (m)
-
-    /**
-     * Generates a list and an int value in the range [0,length of list +2 ].
-     */
-    val listAndIntGen = for {
-        n ← Gen.choose(0, 20)
-        m ← Gen.listOfN(n, Arbitrary.arbitrary[String])
-        i ← Gen.choose(0, n + 2)
-    } yield (m, i)
-
-    val listsOfSingleCharStringsGen = for {
-        n ← Gen.choose(0, 3)
-        m ← Gen.choose(0, 3)
-        l1 ← Gen.listOfN(n, Gen.oneOf("a", "b", "c"))
-        l2 ← Gen.listOfN(m, Gen.oneOf("a", "b", "c"))
-    } yield (l1, l2)
-*/
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
@@ -113,11 +76,31 @@ object IntSetProperties extends Properties("IntSet") {
         s == newS
     }
 
-    property("withFilter") = forAll { s: Set[Int] ⇒
+    property("withFilter -> iterator (does not force evaluation)") = forAll { s: Set[Int] ⇒
         val fl1 = IntSetBuilder(s).result
         var newS = Set.empty[Int]
         s.withFilter(_ >= 0).withFilter(_ <= 1000).foreach(newS += _)
         fl1.withFilter(_ >= 0).withFilter(_ <= 1000).iterator.toList == newS.toList.sorted
+    }
+
+    property("withFilter -> foreach (does not force evaluation)") = forAll { s: Set[Int] ⇒
+        val fl1 = IntSetBuilder(s).result
+        var newS = Set.empty[Int]
+        var newFLS = Set.empty[Int]
+        s.withFilter(_ >= 0).withFilter(_ <= 1000).foreach(newS += _)
+        fl1.withFilter(_ >= 0).withFilter(_ <= 1000).foreach(newFLS += _)
+        newS == newFLS
+    }
+
+    property("withFilter -> size|empty|hasMultipleElements (does not force evaluation)") = forAll { s: Set[Int] ⇒
+        val fl1 = IntSetBuilder(s).result
+        var newS = Set.empty[Int]
+        s.withFilter(_ >= 0).withFilter(_ <= 1000).foreach(newS += _)
+        val newFLS = fl1.withFilter(_ >= 0).withFilter(_ <= 1000)
+        newS.size == newFLS.size &&
+            newS.isEmpty == newFLS.isEmpty &&
+            (newS.size >= 2) == newFLS.hasMultipleElements &&
+            (newFLS.isEmpty || newS.min == newFLS.min && newS.max == newFLS.max)
     }
 
     property("map") = forAll { s: Set[Int] ⇒
