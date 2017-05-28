@@ -30,6 +30,8 @@ package org.opalj
 package ai
 package util
 
+import scala.language.reflectiveCalls
+
 import scala.xml.Node
 import scala.xml.NodeSeq
 
@@ -134,7 +136,10 @@ object XHTML {
         }
     }
 
-    def instructionsToXHTML(title: String, instructions: Traversable[PC]): Node = {
+    def instructionsToXHTML(
+        title:        String,
+        instructions: { def mkString(sep: String): String }
+    ): Node = {
         <p>
             <span>{ title }: { instructions.mkString(", ") }</span>
         </p>
