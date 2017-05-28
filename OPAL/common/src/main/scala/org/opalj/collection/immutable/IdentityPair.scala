@@ -58,6 +58,8 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
         _2: T2
 ) extends Product2[T1, T2] {
 
+    @volatile private[this] var hash: Int = 0
+
     override def canEqual(other: Any): Boolean = other.isInstanceOf[IdentityPair[_, _]]
 
     override def equals(other: Any): Boolean = {
@@ -68,5 +70,10 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
         }
     }
 
-    override def hashCode: Int = identityHashCode(_1) * 113 + identityHashCode(_2)
+    override def hashCode: Int = {
+        if (hash == 0) {
+            hash = identityHashCode(_1) * 113 + identityHashCode(_2)
+        }
+        hash
+    }
 }
