@@ -36,8 +36,10 @@ import java.util.Arrays
 import scala.collection.mutable.Builder
 
 /**
- * A sorted set of integer values. Conceptually, an ordered array is used to store the values which
+ * A sorted set of integer values. Conceptually, an ordered array is used to store the values; this
  * guarantees log(n) lookup.
+ *
+ * @author Michael Eichberg
  */
 abstract class IntSet {
 
@@ -185,7 +187,7 @@ case class IntSet1(i: Int) extends IntSet {
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = f(z, i)
     override def forall(f: Int ⇒ Boolean): Boolean = f(i)
 
-    def toChain: Chain[Int] = Chain[Int](i)
+    def toChain: Chain[Int] = new :&:[Int](i)
 
     override def equals(other: Any): Boolean = {
         other match {
