@@ -34,19 +34,16 @@ import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.prefs.Preferences;
+import java.util.prefs.Preferences
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.fasterxml.jackson.dataformat.csv.CsvFactory
-
 import javafx.scene.control.TableColumn
 import javafx.scene.control.SelectionMode
 import javafx.scene.layout.Priority
@@ -57,7 +54,6 @@ import scalafx.application.JFXApp
 import scalafx.application.Platform
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.collections.ObservableBuffer
-
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
 import scalafx.stage.Stage
@@ -93,16 +89,15 @@ import scalafx.scene.layout.StackPane
 import scalafx.scene.chart.CategoryAxis
 import scalafx.scene.chart.NumberAxis
 import scalafx.scene.chart.BarChart
-
+import scalafx.scene.chart.PieChart
 import org.controlsfx.control.PopOver
 import org.controlsfx.control.HiddenSidesPane
 import org.controlsfx.control.PopOver.ArrowLocation
-
 import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
-
 import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFileReader
+
 import scalafx.scene.chart.XYChart
 import org.opalj.util.Nanoseconds
 
@@ -736,6 +731,11 @@ object Hermes extends JFXApp {
                 analysisTimesStage.show()
             }
         }
+        val showPieChart = new MenuItem("Show Pie Chart...") {
+            onAction = handle {
+                pieChartStage.show()
+            }
+        }
         val csvExport = new MenuItem("Export As CVS...") {
             disable <== analysesFinished.not
             accelerator = KeyCombination.keyCombination("Ctrl +Alt +S")
@@ -755,7 +755,7 @@ object Hermes extends JFXApp {
             disable <== analysesFinished.not
             onAction = handle { computeCorpus() }
         }
-        List(showConfig, showAnalysisTimes, csvExport, computeProjectsForCorpus)
+        List(showConfig, showAnalysisTimes, showPieChart, csvExport, computeProjectsForCorpus)
     }
 
     val rootPane = new BorderPane {
@@ -831,4 +831,36 @@ object Hermes extends JFXApp {
         initOwner(stage)
     }
 
+    val pieChartStage = new Stage {
+        title = "Pie Chart"
+        scene = new Scene(900, 600) {
+            root = new StackPane {
+                val pieChartDataBuffer = ObservableBuffer(
+                    PieChart.Data("", 0)
+                )
+                pieChartDataBuffer.clear()
+
+                analysesFinished onChange { (_, _, isFinished) ⇒
+                    if (isFinished) {
+                        featureMatrix.foreach { pf ⇒
+                            val numberOfMethods = pf.projectConfiguration.statistics.get("ProjectMethods")
+                            if (!numberOfMethods.isEmpty) {
+                                pieChartDataBuffer.add(PieChart.Data(pf.id.value, numberOfMethods.get))
+                            }
+                        }
+                    }
+                }
+
+                val pieChart = new PieChart {
+                    data = pieChartDataBuffer
+                    title = "Pie Chart"
+                }
+                pieChart.legendVisible = true
+
+                children = pieChart
+
+            }
+        }
+        initOwner(stage)
+    }
 }
