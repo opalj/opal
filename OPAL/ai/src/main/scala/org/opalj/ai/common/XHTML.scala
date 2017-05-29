@@ -381,16 +381,16 @@ object XHTML {
 
         def mapLocal(local: AnyRef): Node = {
             if (local eq null)
-                <span class="unused">{ "UNUSED" }</span>
+                <li><span class="unused">{ "UNUSED" }</span></li>
             else
-                <span>{ valueToString(local) }</span>
+                <li><span>{ valueToString(local) }</span></li>
         }
 
         if (locals eq null)
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-                { locals.map { mapLocal(_) }.map(l ⇒ <li>{ l }</li>).iterator }
+                { locals.map { mapLocal(_) }.toSeq }
             </ol>
         }
     }

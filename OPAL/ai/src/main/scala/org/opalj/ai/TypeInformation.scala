@@ -142,7 +142,7 @@ trait IsDoubleValue extends IsPrimitiveValue {
 }
 
 /**
- * Characterizes a single reference value. Captures the information about one of the values
+ * Characterizes a  reference value. Captures the information about one of the values
  * a domain value may refer to. For example, in the following:
  * {{{
  * val o = If(...) new Object() else "STRING"

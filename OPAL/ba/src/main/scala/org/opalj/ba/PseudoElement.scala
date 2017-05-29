@@ -27,26 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package tac
-
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
+package ba
 
 /**
- * Defines nodes used by statements and expressions.
+ * Marker trait for labels (`scala.Symbol`) and pseudo instructions generating `Code` attributes.
+ *
+ * @author Malte Limmeroth
  */
-
-trait Call {
-    def declaringClass: ReferenceType
-    def name: String
-    def descriptor: MethodDescriptor
-    def params: List[Expr]
-}
-
-object Call {
-
-    def unapply(call: Call): Some[(ReferenceType, String, MethodDescriptor)] = {
-        Some((call.declaringClass, call.name, call.descriptor))
-    }
-}
-
+private[ba] abstract class PseudoInstruction extends CodeElement[Nothing]

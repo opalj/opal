@@ -69,14 +69,21 @@ import org.opalj.br.cfg.CFGFactory
  */
 object TAC {
 
-    private final val Usage =
+    private final val Usage = {
         "Usage: java …TAC \n"+
             "(1) <JAR file containing class files>\n"+
             "(2) <class file name>\n"+
             "(3) <method name>\n"+
+            "[(4) ai|naive (default: naive)]"+
             "Example:\n\tjava …TAC /Library/jre/lib/rt.jar java.util.ArrayList toString"
+    }
 
-    def processMethod(project: SomeProject, classFile: ClassFile, method: Method): Unit = {
+    def processMethod(
+        project:   SomeProject,
+        classFile: ClassFile,
+        method:    Method,
+        useAI:     Boolean
+    ): Unit = {
         val naiveCFGFile = writeAndOpen(
             CFGFactory(method.body.get, project.classHierarchy).toDot,
             "NaiveCFG-"+method.name, ".br.cfg.gv"
@@ -86,30 +93,26 @@ object TAC {
         try {
             val ch = project.classHierarchy
 
-            { // USING AI
+            if (useAI) { // USING AI
                 val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
-                val aiResult = Some(BaseAI(classFile, method, domain))
+                val aiResult = BaseAI(classFile, method, domain)
                 val aiCFGFile = writeAndOpen(
-                    toDot(Set(aiResult.get.domain.cfgAsGraph())),
+                    toDot(Set(aiResult.domain.cfgAsGraph())),
                     "AICFG-"+method.name, ".ai.cfg.gv"
                 )
                 println(s"Generated ai CFG (input) $aiCFGFile.")
-                val aiBRCFGFile = writeAndOpen(aiResult.get.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
+                val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
                 println(s"Generated the reified ai CFG $aiBRCFGFile.")
-                val (code, cfg) =
-                    AsQuadruples(method, ch, aiResult, AllOptimizations, forceCFGCreation = true)
-                val graph = cfg.get.toDot
+                val (code, cfg) = TACAI(method, project.classHierarchy, aiResult, AllOptimizations)
+                val graph = cfg.toDot
                 val tacCFGFile = writeAndOpen(graph, "TACCFG-"+method.name, ".tac.cfg.gv")
                 println(s"Generated the tac cfg file $tacCFGFile.")
                 val tac = ToJavaLike(code)
                 val fileNamePrefix = classFile.thisType.toJava+"."+method.name
                 val file = writeAndOpen(tac, fileNamePrefix, ".ai.tac.txt")
                 println(s"Generated the ai tac file $file.")
-            }
-
-            { // USING NO AI
-                val (code, _) =
-                    AsQuadruples(method, ch, None, AllOptimizations, forceCFGCreation = true)
+            } else { // USING NO AI
+                val (code, _) = TACNaive(method, ch, AllOptimizations, forceCFGCreation = true)
 
                 val tac = ToJavaLike(code)
                 val fileNamePrefix = classFile.thisType.toJava+"."+method.name
@@ -125,12 +128,12 @@ object TAC {
 
     def main(args: Array[String]): Unit = {
 
-        if (args.length != 3) {
+        if (args.length < 3 || args.length > 4) {
             println(Usage)
             sys.exit(-1)
         }
         /*
-        println("Sleeping for five seconds");         Thread.sleep(5000)
+        println("Sleeping for five seconds"); Thread.sleep(5000)
         */
 
         val jarName = args(0)
@@ -139,8 +142,9 @@ object TAC {
         if (classFiles.isEmpty) {
             println(s"No classfiles found in ${args(0)}")
         } else {
-            val clazzName = args.drop(1).head
-            val methodName = args.drop(2).head
+            val clazzName = args(1)
+            val methodName = args(2)
+            val useAI = args.length == 4 && args(3).toLowerCase == "ai"
 
             val classFile = classFiles.find(e ⇒ e._1.thisType.toJava == clazzName).map(_._1).get
             val methods = classFile.findMethod(methodName)
@@ -149,7 +153,7 @@ object TAC {
                 val messageHead = s"cannot find the method: $methodName (Available: "
                 println(methodNames.mkString(messageHead, ",", ")"))
             } else {
-                methods.foreach { method ⇒ processMethod(project, classFile, method) }
+                methods.foreach { method ⇒ processMethod(project, classFile, method, useAI) }
             }
         }
     }

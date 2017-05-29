@@ -27,51 +27,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package collection
-package immutable
+package tac
 
 /**
- * An empty [[SmallValuesSet]].
+ * Facilitates matching against values of computational type category 1.
  *
- * @author Michael Eichberg
+ * @example
+ * {{{
+ * case v @ CTC1() => ...
+ * }}}
  */
-final object EmptySmallValuesSet extends SmallValuesSet {
+private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 1 }
 
-    def mutableCopy: MutableSmallValuesSet = mutable.SmallValuesSet.empty(Int.MaxValue)
-
-    override def ++(values: SmallValuesSet): MutableSmallValuesSet = values.mutableCopy
-
-    def -(value: Int): this.type = this
-
-    def contains(value: Int): Boolean = false
-
-    def exists(f: Int ⇒ Boolean): Boolean = false
-
-    def subsetOf(other: SmallValuesSet): Boolean = true
-
-    def foreach[U](f: Int ⇒ U): Unit = {}
-
-    def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = z
-
-    def forall(f: Int ⇒ Boolean): Boolean = true
-
-    def size: Int = 0
-
-    def isSingletonSet: Boolean = false
-
-    def isEmpty: Boolean = true
-
-    def max: Int = throw new IllegalStateException("the set is empty")
-    def min: Int = throw new IllegalStateException("the set is empty")
-
-    protected[collection] def mkString(
-        start:  String,
-        sep:    String,
-        end:    String,
-        offset: Int
-    ): String = start + end
-
-    def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
-
-}
-
+/**
+ * Facilitates matching against values of computational type category 2.
+ *
+ * @example
+ * {{{
+ * case v @ CTC2() => ...
+ * }}}
+ */
+private[tac] object CTC2 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 2 }

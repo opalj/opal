@@ -41,8 +41,6 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CFG
-import org.opalj.ai.AIResult
-import org.opalj.ai.domain.RecordCFG
 
 /**
  * Converts the bytecode of a method into a three address representation using quadruples.
@@ -52,21 +50,24 @@ import org.opalj.ai.domain.RecordCFG
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
-object AsQuadruples {
+object TACNaive {
 
     /**
-     * Converts the bytecode of a method into a quadruples based three address representation using
-     * the result of a bytecode based abstract interpretation of the method.
+     * Converts the plain bytecode of a method into a quadruples based three address
+     * representation. Compared to the previous method, no data- and control-flow information is
+     * used and a very general tranformation mechanism is used to do the transformation.
+     * Therefore the representation is very verbose. However, both leverage the same
+     * AST nodes.
      *
      * @param   method A method with a body. I.e., a non-native, non-abstract method.
-     * @param   aiResult The result of an abstract interpretation of the respective method.
-     *
+     * @param classHierarchy The class hierarchy of the project defining the given method.
+     *          If the class hierarchy is not available, you can use:
+     *          `Code.BasicClassHierarchy`.
      * @return The array with the generated statements.
      */
     def apply(
         method:           Method,
-        classHierarchy:   ClassHierarchy        = Code.BasicClassHierarchy,
-        aiResult:         Option[AIResult]      = None,
+        classHierarchy:   ClassHierarchy,
         optimizations:    List[TACOptimization] = NoOptimizations,
         forceCFGCreation: Boolean               = false
     ): (Array[Stmt], Option[CFG]) = {
@@ -83,13 +84,7 @@ object AsQuadruples {
         // used if we find jsr/ret instructions or want to do optimizations
         var theCFG: CFG = null
         def cfg: CFG = {
-            if (theCFG eq null) {
-                if (aiResult.isDefined && aiResult.get.domain.isInstanceOf[RecordCFG]) {
-                    theCFG = aiResult.get.domain.asInstanceOf[RecordCFG].bbCFG
-                } else {
-                    theCFG = CFGFactory(code, classHierarchy)
-                }
-            }
+            if (theCFG eq null) theCFG = CFGFactory(code, classHierarchy)
             theCFG
         }
 
@@ -181,13 +176,7 @@ object AsQuadruples {
                 schedule(pcOfNextInstruction(pc), result :: rest)
             }
 
-            def returnInstruction(fallback: SimpleVar): Unit = {
-                val returnedValue =
-                    aiResult.flatMap { r ⇒
-                        // We have to be able to handle the case that the operands
-                        // array is empty (i.e., the instruction is dead).
-                        Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
-                    }.getOrElse(fallback)
+            def returnInstruction(returnedValue: SimpleVar): Unit = {
                 statements(pc) = List(ReturnValue(pc, returnedValue))
             }
 
@@ -560,14 +549,18 @@ object AsQuadruples {
 
                 case INVOKEDYNAMIC.opcode ⇒
                     val invoke = as[INVOKEDYNAMIC](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.category }
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒
+                        stack.drop(x).head.cTpe.category
+                    }
                     val (operands, rest) = stack.splitAt(numOps)
                     val returnType = invoke.methodDescriptor.returnType
-                    val target: Var = OperandVar(returnType.computationalType, rest)
-                    val expr = Invokedynamic(pc, invoke.bootstrapMethod, invoke.name, invoke.methodDescriptor, operands)
+                    val name = invoke.name
+                    val methodDescriptor = invoke.methodDescriptor
+                    val bootstrapMethod = invoke.bootstrapMethod
+                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, operands)
                     val newVar = OperandVar(returnType.computationalType, rest)
                     statements(pc) = List(Assignment(pc, newVar, expr))
-                    schedule(pcOfNextInstruction(pc), target :: rest)
+                    schedule(pcOfNextInstruction(pc), newVar :: rest)
 
                 case PUTSTATIC.opcode ⇒
                     val value :: rest = stack
@@ -843,23 +836,3 @@ object AsQuadruples {
     }
 
 }
-
-/**
- * Facilitates matching against values of computational type category 1.
- *
- * @example
- * {{{
- * case v @ CTC1() => ...
- * }}}
- */
-private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 1 }
-
-/**
- * Facilitates matching against values of computational type category 2.
- *
- * @example
- * {{{
- * case v @ CTC2() => ...
- * }}}
- */
-private[tac] object CTC2 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 2 }

@@ -36,7 +36,8 @@ import java.util.IdentityHashMap
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.JavaConverters._
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntSet1
 
 /**
  * Represents the control flow graph of a method.
@@ -215,17 +216,20 @@ case class CFG(
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
-    def successors(pc: PC): Set[PC] /* IMPROVE Use (refactored) UShortSet */ = {
+    def successors(pc: PC): IntSet = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            Set(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            IntSet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
-            bb.successors.collect {
-                case bb: BasicBlock ⇒ bb.startPC
-                case cb: CatchNode  ⇒ cb.handlerPC
+            var successorPCs = IntSet.empty
+            bb.successors foreach {
+                case bb: BasicBlock ⇒ successorPCs += bb.startPC
+                case cb: CatchNode  ⇒ successorPCs += cb.handlerPC
+                case _              ⇒
             }
+            successorPCs
         }
     }
 
@@ -242,14 +246,14 @@ case class CFG(
             f(code.instructions(pc).indexOfNextInstruction(pc)(code))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
-            var visited = UShortSet.empty
+            var visited = IntSet.empty
             bb.successors foreach { bb ⇒
                 val nextPC =
                     if (bb.isBasicBlock) bb.asBasicBlock.startPC
                     else if (bb.isCatchNode) bb.asCatchNode.handlerPC
                     else -1
                 if (nextPC != -1 && !visited.contains(nextPC)) {
-                    visited = nextPC +≈: visited
+                    visited += nextPC
                     f(nextPC)
                 }
                 // else if (bb.isExitNode)... is not relevant
@@ -257,18 +261,24 @@ case class CFG(
         }
     }
 
-    def predecessors(pc: PC): Set[PC] /* IMPROVE Use (refactored) UShortSet */ = {
+    def predecessors(pc: PC): IntSet = {
         if (pc == 0)
-            return Set.empty;
+            return IntSet.empty;
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
-            bb.predecessors flatMap {
-                case bb: BasicBlock ⇒ Set(bb.endPC)
-                case cn: CatchNode  ⇒ cn.predecessors.map(_.asBasicBlock.endPC)
+            var predecessorPCs = IntSet.empty
+            bb.predecessors foreach {
+                case bb: BasicBlock ⇒
+                    predecessorPCs += bb.endPC
+                case cn: CatchNode ⇒
+                    cn.predecessors.foreach { bb ⇒
+                        predecessorPCs += bb.asBasicBlock.endPC
+                    }
             }
+            predecessorPCs
         } else {
-            Set(code.pcOfPreviousInstruction(pc))
+            IntSet(code.pcOfPreviousInstruction(pc))
         }
     }
 
@@ -278,7 +288,7 @@ case class CFG(
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
-            var visited = UShortSet.empty
+            var visited = IntSet.empty
             bb.predecessors foreach { bb ⇒
                 if (bb.isBasicBlock) {
                     f(bb.asBasicBlock.endPC)
@@ -286,7 +296,7 @@ case class CFG(
                     bb.asCatchNode.predecessors foreach { predBB ⇒
                         val nextPC = predBB.asBasicBlock.endPC
                         if (!visited.contains(nextPC)) {
-                            visited = nextPC +≈: visited
+                            visited += nextPC
                             f(nextPC)
                         }
                     }

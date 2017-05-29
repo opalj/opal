@@ -78,11 +78,11 @@ class TACJDKTest extends FunSpec with Matchers {
                 aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
             } {
                 try {
-                    val (tacCode, _) = AsQuadruples(
+                    // without using AIResults
+                    val (tacCode, _) = TACNaive(
                         method = m,
                         classHierarchy = project.classHierarchy,
-                        optimizations = AllOptimizations,
-                        aiResult = aiResult
+                        optimizations = AllOptimizations
                     )
                     ToJavaLike(tacCode)
                 } catch {
@@ -123,13 +123,13 @@ class TACJDKTest extends FunSpec with Matchers {
                 new DefaultDomainWithCFGAndDefUse(p, cf, m)
             })
 
-            it("it should be able to create a fully typed three address representation for the JDK") {
+            it("it should be able to create fully typed TAC for the JDK") {
                 time {
                     checkFolder(jreLibFolder, domainFactory)
                 } { t ⇒ info(s"conversion took ${t.toSeconds}") }
             }
 
-            it("it should be able to convert all methods of the set of collected class files") {
+            it("it should be able to create fully typed TAC for the set of collected class files") {
                 time {
                     checkFolder(biClassfilesFolder, domainFactory)
                 } { t ⇒ info(s"conversion took ${t.toSeconds}") }
@@ -140,11 +140,15 @@ class TACJDKTest extends FunSpec with Matchers {
         describe("plain transformation") {
 
             it("it should be able to convert all methods of the JDK") {
-                time { checkFolder(jreLibFolder) } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+                time {
+                    checkFolder(jreLibFolder)
+                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
             }
 
             it("it should be able to convert all methods of the set of collected class files") {
-                time { checkFolder(biClassfilesFolder) } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+                time {
+                    checkFolder(biClassfilesFolder)
+                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
             }
 
         }

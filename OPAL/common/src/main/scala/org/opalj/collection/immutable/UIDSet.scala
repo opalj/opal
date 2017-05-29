@@ -43,6 +43,9 @@ import scala.collection.mutable.ArrayStack
  * right or left branch.
  *
  * Small sets are represented using a UIDSet0...2.
+ *
+ * Compared to Scala's `Set` implementations in particular the tail and filter methods are much
+ * faster.
  */
 sealed abstract class UIDSet[T <: UID]
         //extends scala.collection.AbstractSet[T]
@@ -253,7 +256,7 @@ case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
         es.size match {
             case 0 ⇒ this
             case 1 ⇒ this + es.head
-            case _ ⇒ es.foldLeft(this: UIDSet[T])(_ + _)
+            case _ ⇒ this.foldLeft(es)(_ + _) // es is expanded... which should be less work
         }
     }
 }

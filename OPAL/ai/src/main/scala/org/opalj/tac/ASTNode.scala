@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,37 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
+package tac
 
-import bi._
-import br._
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ReferenceType
 
 /**
- * Demonstrates how to select fields that have certain access flags (public, static,...)
+ * Defines nodes used by statements and expressions.
  */
-object MatchingAccessFlags {
 
-    val resource = () ⇒ this.getClass.getResourceAsStream("br/analyses/Project.class")
-    val classFile = br.reader.Java8Framework.ClassFile(resource)
-    val fields = classFile.fields
+trait ASTNode {
 
-    val publicFinalStaticFields = fields.collectFirst(
-        { case f @ Field(AccessFlagsMatcher.PUBLIC_STATIC_FINAL(), _, _) ⇒ f }
-    )
+    /**
+     * Each type of node is assigned a different id to make it easily possible
+     * to do a switch over all nodes.
+     */
+    def astID: Int
 
-    val nonStaticFields = fields.collectFirst(
-        { case f @ Field(AccessFlagsMatcher.NOT_STATIC(), _, _) ⇒ f }
-    )
+}
 
-    val methods = classFile.methods.collect(
-        { case m @ Method(AccessFlagsMatcher.PUBLIC___OR___PROTECTED_AND_NOT_FINAL(), _, _) ⇒ m.name }
-    )
+trait Call {
+    def declaringClass: ReferenceType
+    def name: String
+    def descriptor: MethodDescriptor
+    def params: Seq[Expr] // TODO IndexedSeq
+}
 
-    // create a new matcher
-    val PRIVATE_FINAL = ACC_PRIVATE && ACC_FINAL
-    val privateFinalFields =
-        fields.collectFirst({ case f @ Field(PRIVATE_FINAL(), _, _) ⇒ f })
+object Call {
 
-    val NOT___PRIVATE_FINAL = !(ACC_PRIVATE && ACC_FINAL)
-    val not___PrivateFinalFields =
-        fields.collectFirst({ case f @ Field(NOT___PRIVATE_FINAL(), _, _) ⇒ f })
+    def unapply(call: Call): Some[(ReferenceType, String, MethodDescriptor)] = {
+        Some((call.declaringClass, call.name, call.descriptor))
+    }
 }

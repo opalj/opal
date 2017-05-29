@@ -110,7 +110,7 @@ object UnusedLocalVariables {
 
         val operandsArray = result.operandsArray
         val allUnused = result.domain.unused()
-        val unused = allUnused.filter { vo ⇒
+        val unused = allUnused.withFilter { vo ⇒
             // IMPROVE Improve the identification of unused method parameters... check if future overridings are possible; if it already overrides a method where the parameter is used...
             (vo < 0 && (
                 (
@@ -159,7 +159,7 @@ object UnusedLocalVariables {
             constantValuesOnlyUsedOnces.toSet
         }
 
-        unused.foreach { vo ⇒
+        unused foreach { vo ⇒
             var issue: String = null
             var relevance: Relevance = Relevance.Undetermined
             if (vo < 0) {

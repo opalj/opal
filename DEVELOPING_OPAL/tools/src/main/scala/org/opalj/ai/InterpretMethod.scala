@@ -265,13 +265,13 @@ object InterpretMethod {
                             ) +
                                 XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
                                 (
-                                    if (result.subroutineInstructions.nonEmpty)
+                                    if (result.subroutineInstructions.nonEmpty) {
                                         XHTML.instructionsToXHTML(
-                                        "Subroutine instructions",
-                                        result.subroutineInstructions.iterable
-                                    )
-                                    else
+                                            "Subroutine instructions", result.subroutineInstructions
+                                        )
+                                    } else {
                                         ""
+                                    }
                                 ) + XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain

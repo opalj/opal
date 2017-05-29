@@ -752,8 +752,6 @@ class ClassHierarchy private (
      * Calls the given function `f` for each of the given type's supertypes.
      * It is possible that the same super interface type `I` is passed multiple
      * times to `f` when `I` is implemented multiple times by the given type's supertypes.
-     *
-     * This method will
      */
     def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
         if (isUnknown(objectType))
@@ -2289,7 +2287,7 @@ class ClassHierarchy private (
      * of the given types is determined.
      *
      * @see `joinObjectTypesUntilSingleUpperBound(upperTypeBoundA: ObjectType,
-     *       upperTypeBoundB: ObjectType,reflexive: Boolean)` for further details.
+     *       upperTypeBoundB: ObjectType, reflexive: Boolean)` for further details.
      */
     def joinObjectTypesUntilSingleUpperBound(
         upperTypeBound: UIDSet[ObjectType]
@@ -2298,6 +2296,17 @@ class ClassHierarchy private (
             upperTypeBound.head
         else
             upperTypeBound reduce { (c, n) ⇒ joinObjectTypesUntilSingleUpperBound(c, n, true) }
+    }
+
+    def joinReferenceTypesUntilSingleUpperBound(
+        upperTypeBound: UIDSet[ReferenceType]
+    ): ReferenceType = {
+        if (upperTypeBound.isSingletonSet)
+            return upperTypeBound.head;
+
+        // Note that the upper type bound must never consist of more than one array type.
+        // The type hierarchy related to arrays is "hard coded"
+        joinObjectTypesUntilSingleUpperBound(upperTypeBound.asInstanceOf[UIDSet[ObjectType]]) // type erasure also has its benefits...
     }
 
     def joinUpperTypeBounds(
@@ -2323,20 +2332,14 @@ class ClassHierarchy private (
                         case Right(upperTypeBound) ⇒ upperTypeBound
                     }
                 } else {
-                    joinAnyArrayTypeWithObjectType(
-                        utbB.head.asInstanceOf[ObjectType]
-                    ).asInstanceOf[UpperTypeBound]
+                    joinAnyArrayTypeWithObjectType(utbB.head.asInstanceOf[ObjectType])
                 }
             } else {
-                joinAnyArrayTypeWithMultipleTypesBound(
-                    utbB.asInstanceOf[UIDSet[ObjectType]]
-                ).asInstanceOf[UpperTypeBound]
+                joinAnyArrayTypeWithMultipleTypesBound(utbB.asInstanceOf[UIDSet[ObjectType]])
             }
         } else if (utbB.isSingletonSet) {
             if (utbB.head.isArrayType) {
-                joinAnyArrayTypeWithMultipleTypesBound(
-                    utbA.asInstanceOf[UIDSet[ObjectType]]
-                ).asInstanceOf[UpperTypeBound]
+                joinAnyArrayTypeWithMultipleTypesBound(utbA.asInstanceOf[UIDSet[ObjectType]])
             } else {
                 joinObjectTypes(
                     utbB.head.asObjectType,
@@ -2364,9 +2367,9 @@ object ClassHierarchy {
 
     private[this] implicit val classHierarchyEC: scala.concurrent.ExecutionContext = {
         // BOTH:
-        //  - scala.concurrent.ExecutionContext.Implicits.global
+        //  - scala.concurrent.ExecutionContext.Implicits.global, and
         //  - OPALThreadPoolExecutor
-        // Cannot be used here - in both cases it may happen that we run out of threads when
+        // cannot be used here - in both cases it may happen that we run out of threads when
         // we (implicitly have to initialize the "DefaultClassHierarchy")
         org.opalj.concurrent.ExecutionContextN(4)
     }
