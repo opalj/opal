@@ -980,7 +980,7 @@ case No ⇒
                                 newUTB += theSupertype
                     }
                 }
-                if (newUTB.size == 1) {
+                if (newUTB.isSingletonSet) {
                     ObjectValue(origin, isNull, false, newUTB.head, t)
                 } else {
                     ObjectValue(origin, isNull, newUTB + theSupertype, t)
