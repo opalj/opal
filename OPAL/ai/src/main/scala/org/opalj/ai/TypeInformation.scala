@@ -71,7 +71,7 @@ sealed trait TypeInformation {
  *
  * @author Michael Eichberg
  */
-case object TypeUnknown extends TypeInformation {
+case object UnknownType extends TypeInformation {
 
     def unknown: Boolean = true
 
@@ -84,10 +84,12 @@ case object TypeUnknown extends TypeInformation {
     def isPrimitiveValue: Boolean = throw DomainException("the type is unknown")
 }
 
+sealed trait KnownType extends TypeInformation
+
 /**
  * The value has the primitive type.
  */
-sealed trait IsPrimitiveValue extends TypeInformation {
+sealed trait IsPrimitiveValue extends KnownType {
 
     final def unknown: Boolean = false
 
@@ -278,7 +280,7 @@ object IsAReferenceValue {
  *
  * @author Michael Eichberg
  */
-trait IsReferenceValue extends TypeInformation with IsAReferenceValue {
+trait IsReferenceValue extends KnownType with IsAReferenceValue {
 
     /**
      * In general a domain value can represent several distinct values (depending

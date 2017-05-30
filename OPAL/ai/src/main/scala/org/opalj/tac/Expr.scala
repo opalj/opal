@@ -29,10 +29,27 @@
 package org.opalj
 package tac
 
-import org.opalj.br._
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.ComputationalTypeLong
+import org.opalj.br.ComputationalTypeFloat
+import org.opalj.br.ComputationalTypeDouble
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.Type
+import org.opalj.br.IntegerType
+import org.opalj.br.BaseType
+import org.opalj.br.LongType
+import org.opalj.br.FloatType
+import org.opalj.br.DoubleType
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.ArrayType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.BootstrapMethod
+import org.opalj.br.MethodHandle
+import org.opalj.br.PC
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.IsPrimitiveValue
+
 
 trait Expr extends ASTNode {
 
@@ -325,34 +342,10 @@ trait Var extends ValueExpr {
     final def astID: Int = Var.ASTID
 
     /**
-     * Calling this method is only supported if the underlying representation is in
-     * SSA like form. I.e., each local variable has a single static definition site!
-     *
-     * @note    Calling this method is generally safe if the quadruples representation was
-     *           created using the result of an abstract interpretation.
-     */
-    def asSSAVar: SSAVar = {
-        throw new ClassCastException(this.getClass().getName+" cannot be cast to SSAVar")
-    }
-
-    /**
      * A ''human readable'' name of the local variable.
      */
     def name: String
 
-    /**
-     * @return `true` if this variable and the given variable use the same location.
-     *         Compared to `equals` this test does not consider the computational type.
-     */
-    def hasSameLocation(that: Var): Boolean
-
-    /**
-     * Creates a new variable that has the same identifier etc. but an updated
-     * computational type.
-     *
-     * This operation is not supported for local variables!
-     */
-    def updated(cTpe: ComputationalType): Var
 }
 
 object Var {
@@ -360,70 +353,70 @@ object Var {
     def unapply(variable: Var): Some[String] = Some(variable.name)
 }
 
+//
+//
+// VAR DEFINITIONS USED BY THE AI BASED TAC
+//
+//
+
 /**
  * Identifies a variable which has a single static definition/initialization site.
  *
- * @param origin Identifies the single index(pc) of the instruction which initialized
- *          the variable. I.e., per method there must be at most one SSA variable which
- *          has the given origin.
- *          Initially, the pc of the underlying bytecode instruction is used.
  */
-abstract class SSAVar(private[tac] var origin: ValueOrigin) extends Var {
+abstract class DUVar[ValueType <: org.opalj.ai.Domain#DomainValue] extends Var {
 
-    def tpe: Type
+    def value : ValueType
 
-    def cTpe: ComputationalType = tpe.computationalType
-
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        origin = pcToIndex(origin)
-    }
-
-    /**
-     * This variable's definition site. Only defined after the transformation is complete!
-     */
-    final def defSite: ValueOrigin = origin
-
-    final override def asSSAVar: this.type = this
-
-    def name: String = "l"+origin
-
-    def hasSameLocation(other: Var): Boolean = {
-        val thisOrigin = this.origin
-        other match { case that: SSAVar ⇒ thisOrigin == that.origin; case _ ⇒ false }
-    }
+    final def cTpe: ComputationalType = value.computationalType
 
     def updated(cTpe: ComputationalType): Var = throw new UnsupportedOperationException()
 
 }
-class SSAPrimVar(
-    private[tac]origin:  ValueOrigin,
-    val tpe:             BaseType,
-    val primValue:       Option[IsPrimitiveValue]
-) extends SSAVar(origin)
-object SSAPrimVar {
-    def apply(
-        origin:    ValueOrigin,
-        tpe:       BaseType,
-        primValue: Option[IsPrimitiveValue] = None
-    ): SSAPrimVar = {
-        new SSAPrimVar(origin, tpe, primValue)
+
+/** Identifies the single index(pc) of the instruction which initialized
+  * the variable. I.e., per method there must be at most one DU variable which
+  * has the given origin.
+  * Initially, the pc of the underlying bytecode instruction is used.
+*/
+
+class DVar[ValueType <: org.opalj.ai.Domain#DomainValue](
+    val value:       ValueType,
+    private[tac] var origin:  ValueOrigin,
+    private[tac] var useSites :  Set[Int] // TODO Use SmallValuesSet
+) extends DUVar[ValueType]{
+
+    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        origin = pcToIndex(origin)
+        useSites = useSites.map(pcToIndex.apply)
+    }
+
+    def name: String = "l"+origin
+
+}
+
+class UVar[ValueType <: org.opalj.ai.Domain#DomainValue](
+            val value:       ValueType,
+            private[tac] var defSites : Set[Int]// TODO Use SmallValuesSet
+          ) extends DUVar[ValueType] {
+
+    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        defSites = defSites.map(pcToIndex.apply)
+    }
+
+    def name: String = {
+                if(defSites.size == 1) {
+                "l"+defSites.head
+        } else {
+            defSites.mkString("l{",", ","}")
+        }
     }
 }
 
-class SSARefVar(
-    private[tac]origin:  ValueOrigin,
-    val tpe:             ReferenceType,
-    val refValue:        Option[IsAReferenceValue] = None
-) extends SSAVar(origin)
-object SSARefVar {
-    def apply(
-        origin:   ValueOrigin,
-        tpe:      ReferenceType,
-        refValue: Option[IsAReferenceValue] = None
-    ): SSARefVar = {
-        new SSARefVar(origin, tpe, refValue)
-    }
-}
+//
+//
+// VAR DEFINITIONS USED BY THE NAIVE TAC
+//
+//
 
 /**
  * Id based variables are named based on the position of the stack/register they were
@@ -433,6 +426,10 @@ sealed trait IdBasedVar extends Var {
 
     def id: Int
 
+    /**
+     * @return `true` if this variable and the given variable use the same location.
+     *         Compared to `equals` this test does not consider the computational type.
+     */
     final def hasSameLocation(that: Var): Boolean = {
         that match {
             case that: IdBasedVar ⇒ this.id == that.id
@@ -445,7 +442,14 @@ sealed trait IdBasedVar extends Var {
         else if (id >= 0) "op_"+id.toString
         else "r_"+(-(id + 1))
 
-    def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
+
+        /**
+         * Creates a new variable that has the same identifier etc. but an updated
+         * computational type.
+         *
+         * This operation is not supported for local variables!
+         */
+            def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
 }
 
 /**

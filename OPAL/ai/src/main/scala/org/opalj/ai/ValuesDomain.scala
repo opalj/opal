@@ -611,7 +611,7 @@ trait ValuesDomain {
     def typeOfValue(value: DomainValue): TypeInformation = {
         value match {
             case ta: TypeInformation ⇒ ta
-            case _                   ⇒ TypeUnknown
+            case _                   ⇒ UnknownType
         }
     }
 
