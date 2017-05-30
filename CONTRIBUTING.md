@@ -8,7 +8,7 @@ ___The pull request consists of the **implementation of a single feature** and e
 If you have problems creating a pull-request that has only one commit, create the pull request w.r.t. some new (articial) branch. However, you always have to ensure that the pull request is minimal!
 
 ## Do not create pull requests w.r.t. the master branch
-A pull request w.r.t. the master branch will directly be rejected. Integration with the master branch is always only done aber thourough testing.
+A pull request w.r.t. the master branch will directly be rejected. Integration with the master branch is always only done afer thourough testing by the main developer.
 
 ## Copyright Information
 The copyright information (BSD License) was added to the file. This is an open-source project and we have to make sure that no one adds non open-source code. If you add other resources (icons etc.) to the project make sure that a license file is also found in the commit!
