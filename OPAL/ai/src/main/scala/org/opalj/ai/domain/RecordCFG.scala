@@ -35,7 +35,8 @@ import scala.collection.mutable
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntSet1
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.instructions.ReturnInstruction
@@ -82,26 +83,26 @@ trait RecordCFG
         with ai.ReturnInstructionsDomain {
     domain: ValuesDomain with TheCode ⇒
 
-    private[this] var regularSuccessors: Array[UShortSet] = _
-    private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
-    private[this] var predecessors: Array[UShortSet] = _
+    private[this] var regularSuccessors: Array[IntSet] = _
+    private[this] var exceptionHandlerSuccessors: Array[IntSet] = _
+    private[this] var predecessors: Array[IntSet] = _
     private[this] var exitPCs: mutable.BitSet = _
-    private[this] var subroutineStartPCs: UShortSet = _
+    private[this] var subroutineStartPCs: IntSet = _
     private[this] var theDominatorTree: DominatorTree = _
     private[this] var thePostDominatorTree: DominatorTreeFactory = _
     private[this] var theControlDependencies: ControlDependencies = _
     private[this] var theBBCFG: CFG = _
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        initialLocals:    Locals
+        code:          Code,
+        cfJoins:       BitSet,
+        initialLocals: Locals
     ): Unit = {
         val codeSize = code.instructions.size
-        regularSuccessors = new Array[UShortSet](codeSize)
-        exceptionHandlerSuccessors = new Array[UShortSet](codeSize)
+        regularSuccessors = new Array[IntSet](codeSize)
+        exceptionHandlerSuccessors = new Array[IntSet](codeSize)
         exitPCs = new mutable.BitSet(codeSize)
-        subroutineStartPCs = UShortSet.empty
+        subroutineStartPCs = IntSet.empty
 
         // The following values are initialized lazily (when required); after the abstract
         // interpretation was (successfully) performed!
@@ -111,7 +112,7 @@ trait RecordCFG
         theControlDependencies = null
         theBBCFG = null
 
-        super.initProperties(code, joinInstructions, initialLocals)
+        super.initProperties(code, cfJoins, initialLocals)
     }
 
     /**
@@ -127,7 +128,7 @@ trait RecordCFG
     /**
      * Returns the PCs of the first instruction of all subroutines.
      */
-    def allSubroutineStartPCs: UShortSet = subroutineStartPCs
+    def allSubroutineStartPCs: IntSet = subroutineStartPCs
 
     /**
      * Returns the program counter(s) of the instruction(s) that is(are) executed
@@ -145,7 +146,7 @@ trait RecordCFG
             predecessors = this.predecessors
             if (predecessors eq null) {
                 // => this.regularPredecessors == null
-                predecessors = new Array[UShortSet](regularSuccessors.length)
+                predecessors = new Array[IntSet](regularSuccessors.length)
                 for {
                     pc ← code.programCounters
                     successorPC ← allSuccessorsOf(pc)
@@ -153,9 +154,9 @@ trait RecordCFG
                     val oldPredecessorsOfSuccessor = predecessors(successorPC)
                     predecessors(successorPC) =
                         if (oldPredecessorsOfSuccessor eq null) {
-                            UShortSet(pc)
+                            new IntSet1(pc)
                         } else {
-                            pc +≈: oldPredecessorsOfSuccessor
+                            oldPredecessorsOfSuccessor + pc
                         }
 
                 }
@@ -270,17 +271,17 @@ trait RecordCFG
         regularSuccessorsOnly: Boolean,
         p:                     PC ⇒ Boolean
     ): Boolean = {
-        var visitedSuccessors = UShortSet(pc)
+        var visitedSuccessors: IntSet = new IntSet1(pc) // IMPROVE Use IntSetBuilder?
         var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
         while (successorsToVisit.nonEmpty) {
             if (successorsToVisit.exists { succPC ⇒ p(succPC) })
                 return true;
 
-            visitedSuccessors = visitedSuccessors ++ successorsToVisit
+            visitedSuccessors ++= successorsToVisit
             successorsToVisit =
-                successorsToVisit.foldLeft(UShortSet.empty) { (l, r) ⇒
+                successorsToVisit.foldLeft(IntSet.empty) { (l, r) ⇒
                     l ++ (
-                        successorsOf(r, regularSuccessorsOnly).filter { pc ⇒
+                        successorsOf(r, regularSuccessorsOnly).withFilter { pc ⇒
                             !visitedSuccessors.contains(pc)
                         }
                     )
@@ -338,7 +339,7 @@ trait RecordCFG
 
     /**
      * Returns true if the exception handler may handle at least one exception thrown
-     * by an instruction in the catch block.
+     * by an instruction in the try block.
      */
     final def handlesException(exceptionHandler: ExceptionHandler): Boolean = {
         val endPC = exceptionHandler.endPC
@@ -346,7 +347,7 @@ trait RecordCFG
         var currentPC = exceptionHandler.startPC
         while (currentPC <= endPC) {
             if (exceptionHandlerSuccessorsOf(currentPC).exists(_ == handlerPC))
-                return true
+                return true;
             currentPC = code.pcOfNextInstruction(currentPC)
         }
         false
@@ -357,17 +358,16 @@ trait RecordCFG
      * indirect predecessor of the given successor instruction.
      */
     def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
-        var visitedSuccessors = UShortSet(pc)
+        var visitedSuccessors: IntSet = new IntSet1(pc)
         var successorsToVisit = regularSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
             if (successorsToVisit.contains(successorPC))
                 return true;
 
-            visitedSuccessors = visitedSuccessors ++ successorsToVisit
-            successorsToVisit =
-                successorsToVisit.foldLeft(UShortSet.empty) { (l, r) ⇒
-                    l ++ (regularSuccessorsOf(r).filter { pc ⇒ !visitedSuccessors.contains(pc) })
-                }
+            visitedSuccessors ++= successorsToVisit
+            successorsToVisit = successorsToVisit.foldLeft(IntSet.empty) { (l, r) ⇒
+                l ++ (regularSuccessorsOf(r) withFilter { pc ⇒ !visitedSuccessors.contains(pc) })
+            }
         }
         false
     }
@@ -405,16 +405,17 @@ trait RecordCFG
 
         val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
         for {
-            exceptionHandler ← code.exceptionHandlers
+            (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
             // 1.1.    Let's check if the handler was executed at all.
             if unsafeWasExecuted(exceptionHandler.handlerPC)
-            // 1.2.    The handler may be shared by multiple catch blocks, hence, we have
+            // 1.2.    The handler may be shared by multiple try blocks, hence, we have
             //         to ensure the we have at least one instruction in the try block
             //         that jumps to the handler.
             if handlesException(exceptionHandler)
         } {
             val handlerPC = exceptionHandler.handlerPC
-            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, new CatchNode(exceptionHandler))
+            val catchNodeCandiate = new CatchNode(exceptionHandler, index)
+            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
             var handlerBB = bbs(handlerPC)
             if (handlerBB eq null) {
                 handlerBB = new BasicBlock(handlerPC)
@@ -479,7 +480,7 @@ trait RecordCFG
                 if (theRegularSuccessors.isEmpty) {
                     endRunningBB = true
                 } else {
-                    // the following also handles the case where the last instruction is, e.g., a goto
+                    // ... also handles the case where the last instruction is, e.g., a goto
                     if (endRunningBB || theRegularSuccessors.exists(_ != nextInstructionPC)) {
                         theRegularSuccessors.foreach { targetPC ⇒ connect(runningBB, targetPC) }
                         endRunningBB = true
@@ -557,11 +558,10 @@ trait RecordCFG
 
         val successorsOfPC = successors(currentPC)
         if (successorsOfPC eq null)
-            successors(currentPC) = UShortSet(successorPC)
+            successors(currentPC) = new IntSet1(successorPC)
         else {
-            val newSuccessorsOfPC = successorPC +≈: successorsOfPC
-            if (newSuccessorsOfPC ne successorsOfPC)
-                successors(currentPC) = newSuccessorsOfPC
+            val newSuccessorsOfPC = successorsOfPC + successorPC
+            if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
         }
 
         super.flow(
@@ -576,7 +576,7 @@ trait RecordCFG
     }
 
     abstract override def jumpToSubroutine(pc: PC, branchTarget: PC, returnTarget: PC): Unit = {
-        subroutineStartPCs = branchTarget +≈: subroutineStartPCs
+        subroutineStartPCs += branchTarget
         super.jumpToSubroutine(pc, branchTarget, returnTarget)
     }
 
@@ -688,7 +688,12 @@ trait RecordCFG
         val exitNode = new DefaultMutableNode[List[PC]](
             Nil,
             (n) ⇒ "Exit",
-            Map("shape" → "doubleoctagon", "fillcolor" → "black", "color" → "white", "labelloc" → "l"),
+            Map(
+                "shape" → "doubleoctagon",
+                "fillcolor" → "black",
+                "color" → "white",
+                "labelloc" → "l"
+            ),
             ScalaList.empty[DefaultMutableNode[List[PC]]]
         )
         for (pc ← code.programCounters) {

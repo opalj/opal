@@ -38,8 +38,8 @@ import scala.collection.mutable
 
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
-import org.opalj.collection.mutable.UShortSet
-import org.opalj.collection.mutable.SmallValuesSet
+import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntSet1
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -83,8 +83,7 @@ import org.opalj.ai.util.XHTML
  *
  * @author Michael Eichberg
  */
-trait RecordDefUse extends RecordCFG {
-    defUseDomain: Domain with TheCode ⇒
+trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
     // IDEA:
     // EACH LOCAL VARIABLE IS NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.
@@ -96,22 +95,8 @@ trait RecordDefUse extends RecordCFG {
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    type PCs = UShortSet
-    type ValueOrigins = SmallValuesSet
-
-    /**
-     * Creates a new set for storing value origins that contains the given origin value.
-     */
-    @inline private[this] final def ValueOrigins(
-        min:    Int = this.min,
-        max:    Int = this.max,
-        origin: Int
-    ): SmallValuesSet = {
-        SmallValuesSet.create(min, max, origin)
-    }
-
-    private[this] var min: Int = _ // initialized by initProperties
-    private[this] var max: Int = _ // initialized by initProperties
+    type ValueOrigins = IntSet
+    def ValueOrigins(vo: Int): IntSet = new IntSet1(vo)
 
     private[this] var instructions: Array[Instruction] = _ // initialized by initProperties
 
@@ -131,15 +116,13 @@ trait RecordDefUse extends RecordCFG {
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        locals:           Locals
+        code:    Code,
+        cfJoins: BitSet,
+        locals:  Locals
     ): Unit = {
 
         instructions = code.instructions
         val codeSize = instructions.size
-        // The following value for min is a conservative approx.!
-        val absoluteMin = -code.maxLocals
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
         defOps(0) = Naught // the operand stack is empty...
         this.defOps = defOps
@@ -153,19 +136,17 @@ trait RecordDefUse extends RecordCFG {
                 // used by the AI for parameters
                 parameterIndex -= 1
                 if (v ne null) {
-                    ValueOrigins(absoluteMin, /*max*/ codeSize, parameterIndex)
+                    new IntSet1(parameterIndex)
                 } else {
                     null
                 }
             }
         this.defLocals = defLocals
-        this.min = parameterIndex
-        this.max = codeSize
         this.parametersOffset = -parameterIndex
 
         this.used = new Array(codeSize + parametersOffset)
 
-        super.initProperties(code, joinInstructions, locals)
+        super.initProperties(code, cfJoins, locals)
     }
 
     /**
@@ -198,7 +179,7 @@ trait RecordDefUse extends RecordCFG {
      * compute a value that is not used in the following.
      */
     def unused(): ValueOrigins = {
-        var unused = SmallValuesSet.empty(min, max)
+        var unused = IntSet.empty
 
         // 1. check if the parameters are used...
         val parametersOffset = this.parametersOffset
@@ -209,7 +190,7 @@ trait RecordDefUse extends RecordCFG {
             if (defLocals0(parameterIndex) ne null) /*we may have parameters with comp. type 2*/ {
                 val unusedParameter = -parameterIndex - 1
                 val usedBy = this.usedBy(unusedParameter)
-                if (usedBy eq null) { unused = unusedParameter +≈: unused }
+                if (usedBy eq null) { unused += unusedParameter }
             }
             parameterIndex += 1
         }
@@ -220,7 +201,7 @@ trait RecordDefUse extends RecordCFG {
                 // a checkcast instruction is already a use
                 instruction.expressionResult match {
                     case NoExpression        ⇒ // nothing to do
-                    case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused = pc +≈: unused }
+                    case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused += pc }
                 }
             }
         }
@@ -379,7 +360,7 @@ trait RecordDefUse extends RecordCFG {
         currentPC:                PC,
         successorPC:              PC,
         isExceptionalControlFlow: Boolean,
-        joinInstructions:         BitSet,
+        cfJoins:                  BitSet,
         isSubroutineInstruction:  (PC) ⇒ Boolean,
         operandsArray:            OperandsArray
     ): Boolean = {
@@ -397,9 +378,9 @@ trait RecordDefUse extends RecordCFG {
 
                 val oldUsedInfo: ValueOrigins = used(usedIndex)
                 if (oldUsedInfo eq null) {
-                    used(usedIndex) = SmallValuesSet.create(max, useSite)
+                    used(usedIndex) = new IntSet1(useSite)
                 } else {
-                    val newUsedInfo = useSite +≈: oldUsedInfo
+                    val newUsedInfo = oldUsedInfo + useSite
                     if (newUsedInfo ne oldUsedInfo)
                         used(usedIndex) = newUsedInfo
                 }
@@ -410,7 +391,7 @@ trait RecordDefUse extends RecordCFG {
             newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
-            if (joinInstructions.contains(successorPC) && (defLocals(successorPC) ne null)) {
+            if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null)) {
 
                 // we now also have to perform a join...
                 @annotation.tailrec def joinDefOps(
@@ -567,14 +548,14 @@ trait RecordDefUse extends RecordCFG {
                     // (Whether we had a join or not is irrelevant.)
                     val successorDefOps = defOps(successorPC)
                     if (successorDefOps eq null)
-                        Chain.singleton(ValueOrigins(origin = successorPC))
+                        Chain.singleton(ValueOrigins(successorPC))
                     else {
                         // assert(successorDefOps.tail.isEmpty)
                         successorDefOps
                     }
                 } else {
                     if (pushesValue)
-                        ValueOrigins(origin = currentPC) :&: currentDefOps.drop(usedValues)
+                        ValueOrigins(currentPC) :&: currentDefOps.drop(usedValues)
                     else
                         currentDefOps.drop(usedValues)
                 }
@@ -750,7 +731,7 @@ trait RecordDefUse extends RecordCFG {
                 val IINC(index, _) = instruction
                 val currentDefLocals = defLocals(currentPC)
                 updateUsageInformation(currentDefLocals(index), currentPC)
-                val newOrigin = ValueOrigins(origin = currentPC)
+                val newOrigin = ValueOrigins(currentPC)
                 val newDefLocals = currentDefLocals.updated(index, newOrigin)
                 propagate(defOps(currentPC), newDefLocals)
 
@@ -848,7 +829,7 @@ trait RecordDefUse extends RecordCFG {
                     if (isExceptionalControlFlow) {
                         val successorDefOps = defOps(successorPC)
                         if (successorDefOps eq null)
-                            Chain.singleton(ValueOrigins(origin = successorPC))
+                            Chain.singleton(ValueOrigins(successorPC))
                         else
                             successorDefOps
                     } else {
@@ -897,7 +878,7 @@ trait RecordDefUse extends RecordCFG {
             return ;
 
         val operandsArray = aiResult.operandsArray
-        val joinInstructions = aiResult.joinInstructions
+        val cfJoins = aiResult.cfJoins
 
         var subroutinePCs: Set[PC] = Set.empty
         var retPCs: Set[PC] = Set.empty
@@ -944,7 +925,7 @@ trait RecordDefUse extends RecordCFG {
                 val scheduleNextPC = try {
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow,
-                        joinInstructions,
+                        cfJoins,
                         aiResult.subroutineInstructions.contains,
                         operandsArray
                     )

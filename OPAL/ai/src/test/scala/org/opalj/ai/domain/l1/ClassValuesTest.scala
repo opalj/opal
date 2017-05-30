@@ -169,7 +169,6 @@ object PlainClassesTest {
         }
     }
 
-    val testClassFileName = "classfiles/ai.jar"
-    val testClassFile = locateTestResources(testClassFileName, "ai")
+    val testClassFile = locateTestResources("ai.jar", "bi")
     val classFile = ClassFiles(testClassFile).map(_._1).find(_.thisType.fqn == "ai/domain/PlainClassesJava").get
 }

@@ -28,10 +28,13 @@
  */
 package org.opalj
 
+import scala.language.implicitConversions
+
 import scala.annotation.switch
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
+import org.opalj.collection.immutable.UShortPair
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.bi.ACC_PUBLIC
@@ -68,12 +71,12 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
-import org.opalj.br.ExceptionHandler
+import org.opalj.br.ObjectType
 import org.opalj.br.cp._ // we need ALL of them...
 import org.opalj.br.instructions._ // we need ALL of them...
 
 /**
- * Implementation of an EDSL for creating Java bytecode. The EDSL is designed to facilitate
+ * Implementation of an eDSL for creating Java bytecode. The eDSL is designed to facilitate
  * the creation of correct class files; i.e., whenever possible it tries to fill wholes. For
  * example, when an interface is specified the library automatically ensures that the super
  * class type is (initially) set to `java.lang.Object` as required by the JVM specification.
@@ -87,15 +90,65 @@ import org.opalj.br.instructions._ // we need ALL of them...
 package object ba { ba ⇒
 
     {
+        val name = "Bytecode Assembler"
         // Log the information whether a production build or a development build is used.
         implicit val logContext = GlobalLogContext
         import OPALLogger.info
         try {
             scala.Predef.assert(false)
-            info("OPAL", "Bytecode Assembler - Production Build")
+            // when we reach this point assertions are off...
+            info("OPAL", s"$name - Production Build")
         } catch {
             case ae: AssertionError ⇒
-                info("OPAL", "Bytecode Assembler - Development Build (Assertions are enabled)")
+                info("OPAL", s"$name - Development Build (Assertions are enabled)")
+        }
+    }
+
+    implicit def methodAttributeBuilderToSeq(
+        b: br.MethodAttributeBuilder
+    ): Seq[br.MethodAttributeBuilder] = {
+        Seq(b)
+    }
+
+    implicit def codeAttributeBuilderToSome[T](
+        b: br.CodeAttributeBuilder[T]
+    ): Some[br.CodeAttributeBuilder[T]] = {
+        Some(b)
+    }
+
+    implicit def attributeToMethodAttributeBuilder(a: br.Attribute): br.MethodAttributeBuilder = {
+        new br.MethodAttributeBuilder {
+            def apply(
+                accessFlags: Int,
+                name:        String,
+                descriptor:  br.MethodDescriptor
+            ): Attribute = {
+                a
+            }
+        }
+    }
+
+    implicit def attributeToFieldAttributeBuilder(a: br.Attribute): br.FieldAttributeBuilder = {
+        new br.FieldAttributeBuilder {
+            def apply(accessFlags: Int, name: String, fieldType: br.FieldType): Attribute = a
+        }
+    }
+
+    implicit def attributeToClassFileAttributeBuilder(
+        a: br.Attribute
+    ): br.ClassFileAttributeBuilder = {
+        new br.ClassFileAttributeBuilder {
+            def apply(
+                version:        UShortPair,
+                accessFlags:    Int,
+                thisType:       ObjectType,
+                superclassType: Option[ObjectType],
+                interfaceTypes: Seq[ObjectType], // TODO Use a UIDSet here ...
+                fields:         br.Fields,
+                methods:        br.Methods
+            ): Attribute = {
+                a
+            }
         }
     }
 
@@ -120,7 +173,7 @@ package object ba { ba ⇒
 
     // *********************************************************************************************
     //
-    //          F U N C T I O N A L I T Y   T O  C R E A T E    "br." C L A S S F I L E S
+    //          F U N C T I O N A L I T Y   T O   C R E A T E   "br."   C L A S S F I L E S
     //
     // *********************************************************************************************
 
@@ -129,10 +182,8 @@ package object ba { ba ⇒
         val bootstrap_methods = bootstrapMethods map { bootstrapMethod ⇒
             new da.BootstrapMethod(
                 CPEMethodHandle(bootstrapMethod.handle, false),
-                bootstrapMethod.arguments map { arguement ⇒
-                    new da.BootstrapArgument(
-                        CPEntryForBootstrapArgument(arguement)
-                    )
+                bootstrapMethod.arguments map { argument ⇒
+                    new da.BootstrapArgument(CPEntryForBootstrapArgument(argument))
                 }
             )
         }
@@ -144,7 +195,12 @@ package object ba { ba ⇒
      * Converts a [[org.opalj.br.ClassFile]] to a [[org.opalj.da.ClassFile]] and all its attributes
      * to the attributes in [[org.opalj.da]].
      */
-    def toDA(classFile: br.ClassFile): da.ClassFile = {
+    def toDA(
+        classFile: br.ClassFile
+    )(
+        implicit
+        toDAConfig: ToDAConfig = ToDAConfig.RetainAllAttributes
+    ): da.ClassFile = {
         implicit val constantsBuffer = ConstantsBuffer(ConstantsBuffer.collectLDCs(classFile))
         val thisTypeCPRef = constantsBuffer.CPEClass(classFile.thisType, false)
         val superClassCPRef = classFile.superclassType match {
@@ -155,7 +211,7 @@ package object ba { ba ⇒
         val interfaces = classFile.interfaceTypes.map(i ⇒ constantsBuffer.CPEClass(i, false))
         val fields = classFile.fields.map(toDA)
         val methods = classFile.methods.map(toDA)
-        var attributes = classFile.attributes.map(toDA)
+        var attributes = classFile.attributes.flatMap(a ⇒ toDA(a))
         val (constantPoolEntries, constantsPool) = constantsBuffer.build
         if (constantsPool.bootstrapMethods.nonEmpty) {
             attributes :+= createBoostrapMethodTableAttribute(constantsPool)
@@ -175,17 +231,29 @@ package object ba { ba ⇒
         )
     }
 
-    def toDA(field: br.Field)(implicit constantsBuffer: ConstantsBuffer): da.Field_Info = {
+    def toDA(
+        field: br.Field
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.Field_Info = {
         da.Field_Info(
             access_flags = field.accessFlags,
             name_index = constantsBuffer.CPEUtf8(field.name),
             descriptor_index = constantsBuffer.CPEUtf8(field.fieldType.toJVMTypeName),
-            attributes = field.attributes.map(toDA)
+            attributes = field.attributes.flatMap(a ⇒ toDA(a))
         )
     }
 
-    def toDA(method: br.Method)(implicit constantsBuffer: ConstantsBuffer): da.Method_Info = {
-        var attributes = method.attributes.map(toDA)
+    def toDA(
+        method: br.Method
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.Method_Info = {
+        var attributes: Seq[da.Attribute] = method.attributes.flatMap(a ⇒ toDA(a))
         if (method.body.isDefined) {
             attributes = toDA(method.body.get) +: attributes
         }
@@ -197,10 +265,27 @@ package object ba { ba ⇒
         )
     }
 
-    def toDA(code: Code)(implicit constantsBuffer: ConstantsBuffer): da.Code_attribute = {
+    def toDA(
+        code: Code
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.Code_attribute = {
         import constantsBuffer._
         val data = new ByteArrayOutputStream(code.instructions.size)
         val instructions = new DataOutputStream(data)
+
+        def writeMethodRef(i: Instruction): MethodInvocationInstruction = {
+            val mi @ MethodInvocationInstruction(declaringClass, isInterface, name, descriptor) = i
+            val cpeRef =
+                if (isInterface)
+                    CPEInterfaceMethodRef(declaringClass, name, descriptor)
+                else
+                    CPEMethodRef(declaringClass, name, descriptor)
+            instructions.writeShort(cpeRef)
+            mi
+        }
 
         var modifiedByWide = false
         code foreach { e ⇒
@@ -208,8 +293,7 @@ package object ba { ba ⇒
             val opcode = i.opcode
             instructions.writeByte(opcode)
 
-            i.opcode match {
-                // the
+            (i.opcode: @switch) match {
 
                 case ALOAD_0.opcode | ALOAD_1.opcode | ALOAD_2.opcode | ALOAD_3.opcode |
                     ASTORE_0.opcode | ASTORE_1.opcode | ASTORE_2.opcode | ASTORE_3.opcode |
@@ -271,7 +355,9 @@ package object ba { ba ⇒
                     D2L.opcode | I2L.opcode | F2L.opcode |
                     F2D.opcode | I2D.opcode | L2D.opcode |
                     I2C.opcode | I2B.opcode | I2S.opcode |
+
                     MONITORENTER.opcode | MONITOREXIT.opcode |
+
                     ATHROW.opcode ⇒
                 // Nothing to do; the opcode is already written!
 
@@ -354,18 +440,13 @@ package object ba { ba ⇒
                     val cpeRef = CPEFieldRef(declaringClass, fieldName, jvmFieldType)
                     instructions.writeShort(cpeRef)
 
-                case INVOKEINTERFACE.opcode |
-                    INVOKESPECIAL.opcode |
-                    INVOKEVIRTUAL.opcode |
-                    INVOKESTATIC.opcode ⇒
-                    val MethodInvocationInstruction(declaringClass, isInterface, name, descriptor) =
-                        i
-                    val cpeRef =
-                        if (isInterface)
-                            CPEInterfaceMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
-                        else
-                            CPEMethodRef(declaringClass, name, descriptor.toJVMDescriptor)
-                    instructions.writeShort(cpeRef)
+                case INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode | INVOKESTATIC.opcode ⇒
+                    writeMethodRef(i)
+
+                case INVOKEINTERFACE.opcode ⇒
+                    val invokeinterface = writeMethodRef(i)
+                    instructions.writeByte(invokeinterface.count)
+                    instructions.writeByte(0)
 
                 case NEWARRAY.opcode ⇒
                     instructions.writeByte(i.asInstanceOf[NEWARRAY].atype)
@@ -390,9 +471,9 @@ package object ba { ba ⇒
                             case LoadFloat_W(value)        ⇒ CPEFloat(value, false)
                             case LoadClass_W(value)        ⇒ CPEClass(value, false)
                             case LoadString_W(value)       ⇒ CPEString(value, false)
+
                             case LoadMethodHandle_W(value) ⇒ CPEMethodHandle(value, false)
-                            case LoadMethodType_W(value) ⇒
-                                CPEMethodType(value.toJVMDescriptor, false)
+                            case LoadMethodType_W(value)   ⇒ CPEMethodType(value, false)
                         }
                     )
 
@@ -404,10 +485,9 @@ package object ba { ba ⇒
 
                 case INVOKEDYNAMIC.opcode ⇒
                     val INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = i
-                    val jvmDescriptor = descriptor.toJVMDescriptor
-                    val cpEntryIndex = CPEInvokeDynamic(bootstrapMethod, name, jvmDescriptor)
-                    // CPEInvokeDynamic automatically creates all cp entries required to
-                    // later on tranform the bootstrap method
+                    val cpEntryIndex = CPEInvokeDynamic(bootstrapMethod, name, descriptor)
+                    // CPEInvokeDynamic automatically creates all cp entries required when we
+                    // later on transform the bootstrap method
                     instructions.writeShort(cpEntryIndex)
                     instructions.writeByte(0)
                     instructions.writeByte(0)
@@ -419,9 +499,8 @@ package object ba { ba ⇒
                     instructions.writeInt(defaultOffset)
                     instructions.writeInt(low)
                     instructions.writeInt(high)
-                    jumpOffsets.foreach { offset ⇒
-                        instructions.writeInt(offset)
-                    }
+                    jumpOffsets.foreach { instructions.writeInt }
+
                 case LOOKUPSWITCH.opcode ⇒
                     val LOOKUPSWITCH(defaultOffset, npairs) = i
                     var padding = 3 - (pc % 4)
@@ -435,8 +514,7 @@ package object ba { ba ⇒
                     }
 
                 case WIDE.opcode ⇒
-                    if (modifiedByWide)
-                        throw new IllegalArgumentException(s"the wide at $pc follows a wide")
+                    if (modifiedByWide) throw new IllegalArgumentException(s"$pc: wide after wide")
                     // modifiedByWide will be set to false by the subsequent instruction
                     modifiedByWide = true
             }
@@ -450,15 +528,16 @@ package object ba { ba ⇒
             max_locals = code.maxLocals,
             code = da.Code(data.toByteArray),
             exceptionTable = code.exceptionHandlers.map(toDA),
-            attributes = code.attributes.map(toDA)
+            attributes = code.attributes.flatMap(a ⇒ toDA(a))
         )
     }
 
     def toDA(
-        exceptionHandler: ExceptionHandler
+        exceptionHandler: br.ExceptionHandler
     )(
         implicit
-        constantsBuffer: ConstantsBuffer
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
     ): da.ExceptionTableEntry = {
         val index = if (exceptionHandler.catchType.isDefined) {
             constantsBuffer.CPEClass(exceptionHandler.catchType.get, false)
@@ -472,64 +551,550 @@ package object ba { ba ⇒
     }
 
     def toDA(
+        elementValue: br.ElementValue
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.ElementValue = {
+        import constantsBuffer._
+        (elementValue.kindId: @switch) match {
+            case br.ByteValue.KindId ⇒
+                val br.ByteValue(value) = elementValue
+                da.ByteValue(CPEInteger(value.toInt, false))
+
+            case br.CharValue.KindId ⇒
+                val br.CharValue(value) = elementValue
+                da.CharValue(CPEInteger(value.toInt, false))
+
+            case br.DoubleValue.KindId ⇒
+                val br.DoubleValue(value) = elementValue
+                da.DoubleValue(CPEDouble(value))
+
+            case br.FloatValue.KindId ⇒
+                val br.FloatValue(value) = elementValue
+                da.FloatValue(CPEFloat(value, false))
+
+            case br.IntValue.KindId ⇒
+                val br.IntValue(value) = elementValue
+                da.IntValue(CPEInteger(value, false))
+
+            case br.LongValue.KindId ⇒
+                val br.LongValue(value) = elementValue
+                da.LongValue(CPELong(value))
+
+            case br.ShortValue.KindId ⇒
+                val br.ShortValue(value) = elementValue
+                da.ShortValue(CPEInteger(value.toInt, false))
+
+            case br.BooleanValue.KindId ⇒
+                val br.BooleanValue(value) = elementValue
+                da.BooleanValue(CPEInteger(if (value) 1 else 0, false))
+
+            case br.StringValue.KindId ⇒
+                val br.StringValue(value) = elementValue
+                da.StringValue(CPEUtf8(value))
+
+            case br.ClassValue.KindId ⇒
+                val br.ClassValue(value) = elementValue
+                da.ClassValue(CPEUtf8(value.toJVMTypeName))
+
+            case br.EnumValue.KindId ⇒
+                val br.EnumValue(enumType, enumName) = elementValue
+                da.EnumValue(CPEUtf8(enumType.toJVMTypeName), CPEUtf8(enumName))
+
+            case br.ArrayValue.KindId ⇒
+                val br.ArrayValue(values) = elementValue
+                val daElementValues = values.map { ev: br.ElementValue ⇒ toDA(ev) }
+                da.ArrayValue(daElementValues)
+
+            case br.AnnotationValue.KindId ⇒
+                val br.AnnotationValue(annotation) = elementValue
+                da.AnnotationValue(toDA(annotation))
+        }
+    }
+
+    def toDA(
+        annotation: br.Annotation
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.Annotation = {
+        val br.Annotation(t, evps) = annotation
+        val daEVPs = evps.map { evp ⇒
+            da.ElementValuePair(constantsBuffer.CPEUtf8(evp.name), toDA(evp.value))
+        }
+        da.Annotation(constantsBuffer.CPEUtf8(t.toJVMTypeName), daEVPs)
+    }
+
+    def toDA(
+        localvarTableEntry: br.LocalvarTableEntry
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.LocalvarTableEntry = {
+        val br.LocalvarTableEntry(startPC, length, index) = localvarTableEntry
+        da.LocalvarTableEntry(startPC, length, index)
+    }
+
+    def toDA(
+        typeAnnotationTarget: br.TypeAnnotationTarget
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.TypeAnnotationTarget = {
+        (typeAnnotationTarget.typeId: @switch) match {
+
+            case 0x00 ⇒
+                val br.TAOfParameterDeclarationOfClassOrInterface(index) = typeAnnotationTarget
+                da.TATParameterDeclarationOfClassOrInterface(index)
+            case 0x01 ⇒
+                val br.TAOfParameterDeclarationOfMethodOrConstructor(index) = typeAnnotationTarget
+                da.TATParameterDeclarationOfMethodOrConstructor(index)
+            case 0x10 ⇒
+                val br.TAOfSupertype(index) = typeAnnotationTarget
+                da.TATSupertype(index)
+
+            case 0x11 ⇒
+                val br.TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
+                    typeIndex,
+                    boundIndex
+                    ) = typeAnnotationTarget
+                da.TATTypeBoundOfParameterDeclarationOfClassOrInterface(typeIndex, boundIndex)
+            case 0x12 ⇒
+                val br.TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
+                    typeIndex,
+                    boundIndex
+                    ) = typeAnnotationTarget
+                da.TATTypeBoundOfParameterDeclarationOfMethodOrConstructor(typeIndex, boundIndex)
+
+            case 0x13 ⇒ da.TATFieldDeclaration
+            case 0x14 ⇒ da.TATReturnType
+            case 0x15 ⇒ da.TATReceiverType
+
+            case 0x16 ⇒
+                val br.TAOfFormalParameter(index) = typeAnnotationTarget
+                da.TATFormalParameter(index)
+
+            case 0x17 ⇒
+                val br.TAOfThrows(index) = typeAnnotationTarget
+                da.TATThrows(index)
+
+            case 0x40 ⇒
+                val br.TAOfLocalvarDecl(lvtes) = typeAnnotationTarget
+                da.TATLocalvarDecl(lvtes.map(toDA))
+            case 0x41 ⇒
+                val br.TAOfResourcevarDecl(lvtes) = typeAnnotationTarget
+                da.TATResourcevarDecl(lvtes.map(toDA))
+
+            case 0x42 ⇒
+                val br.TAOfCatch(index) = typeAnnotationTarget
+                da.TATCatch(index)
+
+            case 0x43 ⇒
+                val br.TAOfInstanceOf(offset) = typeAnnotationTarget
+                da.TATInstanceOf(offset)
+
+            case 0x44 ⇒
+                val br.TAOfNew(offset) = typeAnnotationTarget
+                da.TATNew(offset)
+
+            case 0x45 ⇒
+                val br.TAOfMethodReferenceExpressionNew(offset) = typeAnnotationTarget
+                da.TATMethodReferenceExpressionNew(offset)
+
+            case 0x46 ⇒
+                val br.TAOfMethodReferenceExpressionIdentifier(offset) = typeAnnotationTarget
+                da.TATMethodReferenceExpressionIdentifier(offset)
+
+            case 0x47 ⇒
+                val br.TAOfCastExpression(offset, index) = typeAnnotationTarget
+                da.TATCastExpression(offset, index)
+
+            case 0x48 ⇒
+                val br.TAOfConstructorInvocation(offset, index) = typeAnnotationTarget
+                da.TATConstructorInvocation(offset, index)
+
+            case 0x49 ⇒
+                val br.TAOfMethodInvocation(offset, index) = typeAnnotationTarget
+                da.TATMethodInvocation(offset, index)
+
+            case 0x4A ⇒
+                val br.TAOfConstructorInMethodReferenceExpression(offset, index) =
+                    typeAnnotationTarget
+                da.TATConstructorInMethodReferenceExpression(offset, index)
+
+            case 0x4B ⇒
+                val br.TAOfMethodInMethodReferenceExpression(offset, index) = typeAnnotationTarget
+                da.TATMethodInMethodReferenceExpression(offset, index)
+        }
+    }
+
+    def toDA(
+        typeAnnotationPathElement: br.TypeAnnotationPathElement
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.TypeAnnotationPathElement = {
+        (typeAnnotationPathElement.kindId: @switch) match {
+            case br.TADeeperInArrayType.KindId     ⇒ da.TypeAnnotationDeeperInArrayType
+            case br.TADeeperInNestedType.KindId    ⇒ da.TypeAnnotationDeeperInNestedType
+            case br.TAOnBoundOfWildcardType.KindId ⇒ da.TypeAnnotationOnBoundOfWildcardType
+            case br.TAOnTypeArgument.KindId ⇒
+                val br.TAOnTypeArgument(index) = typeAnnotationPathElement
+                da.TypeAnnotationOnTypeArgument(index)
+        }
+    }
+
+    def toDA(
+        typeAnnotationPath: br.TypeAnnotationPath
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.TypeAnnotationPath = {
+        typeAnnotationPath match {
+            case br.TADirectlyOnType     ⇒ da.TypeAnnotationDirectlyOnType
+            case br.TAOnNestedType(path) ⇒ da.TypeAnnotationPathElements(path.map(toDA))
+        }
+    }
+
+    def toDA(
+        typeAnnotation: br.TypeAnnotation
+    )(
+        implicit
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): da.TypeAnnotation = {
+        da.TypeAnnotation(
+            toDA(typeAnnotation.target),
+            toDA(typeAnnotation.path),
+            constantsBuffer.CPEUtf8(typeAnnotation.annotationType.toJVMTypeName),
+            typeAnnotation.elementValuePairs.map { evp ⇒
+                da.ElementValuePair(constantsBuffer.CPEUtf8(evp.name), toDA(evp.value))
+            }
+        )
+    }
+
+    /**
+     * Converts the given [[org.opalj.br.Attribute]] to a [[org.opalj.da.Attribute]] using
+     * the given configuration.
+     * @see [[org.opalj.br.Attribute#kindId]] for the list of all supported attributes.
+     */
+    def toDA(
         attribute: Attribute
     )(
         implicit
-        constantsBuffer: ConstantsBuffer
-    ): da.Attribute = {
+        constantsBuffer: ConstantsBuffer,
+        config:          ToDAConfig
+    ): Option[da.Attribute] = {
         import constantsBuffer._
-        attribute match {
-            case code: Code ⇒ toDA(code)
+        (attribute.kindId: @switch) match {
+            case br.Code.KindId ⇒ toDA(attribute.asInstanceOf[br.Code])
 
             // direct conversions
-            case br.SourceFile(s) ⇒
-                da.SourceFile_attribute(CPEUtf8(bi.SourceFileAttribute.Name), CPEUtf8(s))
+            case br.SourceFile.KindId ⇒
+                val br.SourceFile(s) = attribute
+                Some(da.SourceFile_attribute(CPEUtf8(bi.SourceFileAttribute.Name), CPEUtf8(s)))
 
-            case br.Deprecated ⇒
-                da.Deprecated_attribute(CPEUtf8(bi.DeprecatedAttribute.Name))
+            case br.Deprecated.KindId ⇒
+                Some(da.Deprecated_attribute(CPEUtf8(bi.DeprecatedAttribute.Name)))
 
-            case br.Synthetic ⇒
-                da.Synthetic_attribute(CPEUtf8(bi.SyntheticAttribute.Name))
+            case br.Synthetic.KindId ⇒
+                Some(da.Synthetic_attribute(CPEUtf8(bi.SyntheticAttribute.Name)))
 
-            case br.SourceDebugExtension(data) ⇒
+            case br.SourceDebugExtension.KindId ⇒
+                val br.SourceDebugExtension(data) = attribute
                 val attributeName = bi.SourceDebugExtensionAttribute.Name
-                da.SourceDebugExtension_attribute(CPEUtf8(attributeName), data)
+                Some(da.SourceDebugExtension_attribute(CPEUtf8(attributeName), data))
 
-            case br.EnclosingMethod(classType, nameOption, descriptorOption) ⇒
+            case br.EnclosingMethod.KindId ⇒
+                val br.EnclosingMethod(classType, nameOption, descriptorOption) = attribute
                 val classIndex = CPEClass(classType, false)
                 val nameAndTypeIndex = nameOption match {
                     case Some(name) ⇒ CPENameAndType(name, descriptorOption.get.toJVMDescriptor)
                     case None       ⇒ 0
                 }
-                val attributeName = bi.EnclosingMethodAttribute.Name
-                da.EnclosingMethod_attribute(
-                    CPEUtf8(attributeName), classIndex, nameAndTypeIndex
-                )
+                val attributeNameIndex = CPEUtf8(bi.EnclosingMethodAttribute.Name)
+                Some(da.EnclosingMethod_attribute(attributeNameIndex, classIndex, nameAndTypeIndex))
 
             // ALL CONSTANT FIELD VALUES
-            case br.ConstantFloat(value) ⇒
-                da.ConstantValue_attribute(
-                    CPEUtf8(bi.ConstantValueAttribute.Name),
-                    CPEFloat(value, false)
-                )
-            case br.ConstantInteger(value) ⇒
-                da.ConstantValue_attribute(
-                    CPEUtf8(bi.ConstantValueAttribute.Name),
-                    CPEInteger(value, false)
-                )
-            case br.ConstantString(value) ⇒
-                da.ConstantValue_attribute(
-                    CPEUtf8(bi.ConstantValueAttribute.Name),
-                    CPEString(value, false)
+            case br.ConstantFloat.KindId ⇒
+                val br.ConstantFloat(value) = attribute
+                val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
+                Some(da.ConstantValue_attribute(attributeNameIndex, CPEFloat(value, false)))
+            case br.ConstantInteger.KindId ⇒
+                val br.ConstantInteger(value) = attribute
+                val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
+                Some(da.ConstantValue_attribute(attributeNameIndex, CPEInteger(value, false)))
+            case br.ConstantString.KindId ⇒
+                val br.ConstantString(value) = attribute
+                val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
+                Some(da.ConstantValue_attribute(attributeNameIndex, CPEString(value, false)))
+            case br.ConstantDouble.KindId ⇒
+                val br.ConstantDouble(value) = attribute
+                val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
+                Some(da.ConstantValue_attribute(attributeNameIndex, CPEDouble(value)))
+            case br.ConstantLong.KindId ⇒
+                val br.ConstantLong(value) = attribute
+                val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
+                Some(da.ConstantValue_attribute(attributeNameIndex, CPELong(value)))
+
+            //code attribute conversions
+            case br.LineNumberTable.KindId ⇒
+                val attributeNameIndex = CPEUtf8(bi.LineNumberTableAttribute.Name)
+                attribute match {
+
+                    case br.UnpackedLineNumberTable(lineNumbers) ⇒
+                        val lnt =
+                            lineNumbers.map(l ⇒ da.LineNumberTableEntry(l.startPC, l.lineNumber))
+                        Some(da.LineNumberTable_attribute(attributeNameIndex, lnt))
+
+                    case c @ br.CompactLineNumberTable(rawLNs: Array[Byte]) ⇒
+                        val lntBuilder = List.newBuilder[da.LineNumberTableEntry]
+                        var e = 0
+                        val entries = rawLNs.length / 4
+                        while (e < entries) {
+                            val index = e * 4
+                            val startPC = c.asUnsignedShort(rawLNs(index), rawLNs(index + 1))
+                            val lineNumber = c.asUnsignedShort(rawLNs(index + 2), rawLNs(index + 3))
+                            lntBuilder += da.LineNumberTableEntry(startPC, lineNumber)
+                            e += 1
+                        }
+                        Some(da.LineNumberTable_attribute(attributeNameIndex, lntBuilder.result))
+
+                    case _ ⇒
+                        val m = s"unsupported line number attribute: ${attribute.getClass.getName}"
+                        throw new Error(m)
+                }
+
+            case br.LocalVariableTable.KindId ⇒
+                val br.LocalVariableTable(localVariables) = attribute
+                Some(
+                    da.LocalVariableTable_attribute(
+                        CPEUtf8(bi.LocalVariableTableAttribute.Name),
+                        localVariables.map { l ⇒
+                            da.LocalVariableTableEntry(
+                                start_pc = l.startPC,
+                                length = l.length,
+                                name_index = CPEUtf8(l.name),
+                                descriptor_index = CPEUtf8(l.fieldType.toJVMTypeName),
+                                index = l.index
+                            )
+                        }
+                    )
                 )
 
-            case br.ConstantDouble(value) ⇒
-                val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
-                da.ConstantValue_attribute(attributeNameIndex, CPEDouble(value))
-            case br.ConstantLong(value) ⇒
-                val attributeNameIndex = CPEUtf8(bi.ConstantValueAttribute.Name)
-                da.ConstantValue_attribute(attributeNameIndex, CPELong(value))
+            case br.LocalVariableTypeTable.KindId ⇒
+                val br.LocalVariableTypeTable(localVariableTypes) = attribute
+                Some(
+                    da.LocalVariableTypeTable_attribute(
+                        CPEUtf8(bi.LocalVariableTypeTableAttribute.Name),
+                        localVariableTypes.map { l ⇒
+                            da.LocalVariableTypeTableEntry(
+                                start_pc = l.startPC,
+                                length = l.length,
+                                name_index = CPEUtf8(l.name),
+                                signature_index = CPEUtf8(l.signature.toJVMSignature),
+                                index = l.index
+                            )
+                        }
+                    )
+                )
 
+            case br.MethodParameterTable.KindId ⇒
+                val br.MethodParameterTable(parameters) = attribute
+                Some(
+                    da.MethodParameters_attribute(
+                        CPEUtf8(bi.MethodParametersAttribute.Name),
+                        parameters.map { p ⇒
+                            da.MethodParameter(
+                                if (p.name.isDefined) CPEUtf8(p.name.get) else 0,
+                                p.access_flags
+                            )
+                        }
+                    )
+                )
+
+            case br.ExceptionTable.KindId ⇒
+                val br.ExceptionTable(exceptions) = attribute
+                Some(
+                    da.Exceptions_attribute(
+                        CPEUtf8(bi.ExceptionsAttribute.Name),
+                        exceptions.map(CPEClass(_, false)).toIndexedSeq
+                    )
+                )
+
+            case br.InnerClassTable.KindId ⇒
+                val br.InnerClassTable(innerClasses) = attribute
+                Some(
+                    da.InnerClasses_attribute(
+                        CPEUtf8(bi.InnerClassesAttribute.Name),
+                        innerClasses.map { ic ⇒
+                            da.InnerClassesEntry(
+                                CPEClass(ic.innerClassType, false),
+                                ic.outerClassType.map(CPEClass(_, false)).getOrElse(0),
+                                if (ic.innerName.isDefined) CPEUtf8(ic.innerName.get) else 0,
+                                ic.innerClassAccessFlags
+                            )
+                        }
+                    )
+                )
+
+            case br.StackMapTable.KindId ⇒
+                val br.StackMapTable(brFrames) = attribute
+
+                implicit def toDA(vti: br.VerificationTypeInfo): da.VerificationTypeInfo = {
+                    (vti.tag: @switch) match {
+                        case 0 ⇒ da.TopVariableInfo
+                        case 1 ⇒ da.IntegerVariableInfo
+                        case 2 ⇒ da.FloatVariableInfo
+                        case 3 ⇒ da.DoubleVariableInfo
+                        case 4 ⇒ da.LongVariableInfo
+                        case 5 ⇒ da.NullVariableInfo
+                        case 6 ⇒ da.UninitializedThisVariableInfo
+                        case 7 ⇒
+                            val br.ObjectVariableInfo(referenceType) = vti
+                            da.ObjectVariableInfo(CPEClass(referenceType, false))
+                        case 8 ⇒
+                            val br.UninitializedVariableInfo(offset) = vti
+                            da.UninitializedVariableInfo(offset)
+                    }
+                }
+
+                val daFrames = brFrames map { f ⇒
+                    val frameType = f.frameType
+                    if (frameType < 64) {
+                        da.SameFrame(frameType)
+                    } else if (frameType < 128) {
+                        val br.SameLocals1StackItemFrame(_, vti) = f
+                        da.SameLocals1StackItemFrame(frameType, toDA(vti))
+                    } else if (frameType < 247) {
+                        throw new Error(s"unexpected/unsupported stack map frame type: $frameType")
+                    } else if (frameType == 247) {
+                        val br.SameLocals1StackItemFrameExtended(offsetDelta, vti) = f
+                        da.SameLocals1StackItemFrameExtended(frameType, offsetDelta, toDA(vti))
+                    } else if (frameType < 251) {
+                        val br.ChopFrame(frameType, offsetDelta) = f
+                        da.ChopFrame(frameType, offsetDelta)
+                    } else if (frameType == 251) {
+                        val br.SameFrameExtended(offsetDelta) = f
+                        da.SameFrameExtended(frameType, offsetDelta)
+                    } else if (frameType < 255) {
+                        val br.AppendFrame(_, offsetDelta, vtis) = f
+                        da.AppendFrame(frameType, offsetDelta, vtis.map(toDA))
+                    } else if (frameType == 255) {
+                        val br.FullFrame(offsetDelta, vtiLocals, vtiStack) = f
+                        da.FullFrame(255, offsetDelta, vtiLocals.map(toDA), vtiStack.map(toDA))
+                    } else {
+                        throw new Error(s"frame type out of range[0..255] $frameType")
+                    }
+                }
+                Some(
+                    da.StackMapTable_attribute(CPEUtf8(bi.StackMapTableAttribute.Name), daFrames)
+                )
+
+            /* 12-16 The Signature Attribute */
+            case br.ClassSignature.KindId |
+                br.MethodTypeSignature.KindId |
+                br.ClassTypeSignature.KindId |
+                br.ArrayTypeSignature.KindId |
+                br.TypeVariableSignature.KindId ⇒
+                val br.Signature(jvmSignature) = attribute
+                val attributeNameIndex = CPEUtf8(bi.SignatureAttribute.Name)
+
+                Some(da.Signature_attribute(attributeNameIndex, CPEUtf8(jvmSignature)))
+
+            /* 29-41 The AnnotationDefault Attribute */
+            case br.ByteValue.KindId |
+                br.CharValue.KindId |
+                br.DoubleValue.KindId |
+                br.FloatValue.KindId |
+                br.IntValue.KindId |
+                br.LongValue.KindId |
+                br.ShortValue.KindId |
+                br.BooleanValue.KindId |
+                br.StringValue.KindId |
+                br.ClassValue.KindId |
+                br.EnumValue.KindId |
+                br.ArrayValue.KindId |
+                br.AnnotationValue.KindId ⇒
+                val ev = attribute.asInstanceOf[br.ElementValue]
+                val attributeNameIndex = CPEUtf8(bi.AnnotationDefaultAttribute.Name)
+                val elementValue = toDA(ev: br.ElementValue)
+                Some(da.AnnotationDefault_attribute(attributeNameIndex, elementValue))
+
+            case br.RuntimeVisibleAnnotationTable.KindId ⇒
+                val br.RuntimeVisibleAnnotationTable(annotations) = attribute
+                val attributeNameIndex = CPEUtf8(bi.RuntimeVisibleAnnotationsAttribute.Name)
+                val daAnnotations = annotations.map(toDA)
+                Some(da.RuntimeVisibleAnnotations_attribute(attributeNameIndex, daAnnotations))
+
+            case br.RuntimeInvisibleAnnotationTable.KindId ⇒
+                val br.RuntimeInvisibleAnnotationTable(annotations) = attribute
+                val attributeNameIndex = CPEUtf8(bi.RuntimeInvisibleAnnotationsAttribute.Name)
+                val daAnnotations = annotations.map(toDA)
+                Some(da.RuntimeInvisibleAnnotations_attribute(attributeNameIndex, daAnnotations))
+
+            case br.RuntimeVisibleParameterAnnotationTable.KindId ⇒
+                val br.RuntimeVisibleParameterAnnotationTable(parameterAnnotations) = attribute
+                val attributeName = bi.RuntimeVisibleParameterAnnotationsAttribute.Name
+                val attributeNameIndex = CPEUtf8(attributeName)
+                val daPAs = parameterAnnotations.map(as ⇒ as.map(toDA))
+                Some(da.RuntimeVisibleParameterAnnotations_attribute(attributeNameIndex, daPAs))
+
+            case br.RuntimeInvisibleParameterAnnotationTable.KindId ⇒
+                val br.RuntimeInvisibleParameterAnnotationTable(parameterAnnotations) = attribute
+                val attributeName = bi.RuntimeInvisibleParameterAnnotationsAttribute.Name
+                val attributeNameIndex = CPEUtf8(attributeName)
+                val daPAs = parameterAnnotations.map(as ⇒ as.map(toDA))
+                Some(da.RuntimeInvisibleParameterAnnotations_attribute(attributeNameIndex, daPAs))
+
+            case br.RuntimeInvisibleTypeAnnotationTable.KindId ⇒
+                val br.RuntimeInvisibleTypeAnnotationTable(typeAnnotations) = attribute
+                val attributeName = bi.RuntimeInvisibleTypeAnnotationsAttribute.Name
+                val attributeNameIndex = CPEUtf8(attributeName)
+                val daPAs = typeAnnotations.map(toDA)
+                Some(da.RuntimeInvisibleTypeAnnotations_attribute(attributeNameIndex, daPAs))
+
+            case br.RuntimeVisibleTypeAnnotationTable.KindId ⇒
+                val br.RuntimeVisibleTypeAnnotationTable(typeAnnotations) = attribute
+                val attributeName = bi.RuntimeVisibleTypeAnnotationsAttribute.Name
+                val attributeNameIndex = CPEUtf8(attributeName)
+                val daPAs = typeAnnotations.map(toDA)
+                Some(da.RuntimeVisibleTypeAnnotations_attribute(attributeNameIndex, daPAs))
+
+            case br.VirtualTypeFlag.KindId ⇒
+                if (config.retainOPALAttributes) {
+                    val attributeNameIndex = CPEUtf8(br.VirtualTypeFlag.Name)
+                    Some(da.Unknown_attribute(attributeNameIndex, Array()))
+                } else {
+                    None
+                }
+
+            case br.SynthesizedClassFiles.KindId ⇒
+                if (config.retainOPALAttributes) {
+                    ???
+                } else {
+                    None
+                }
+
+            case br.UnknownAttribute.KindId ⇒
+                if (config.retainUnknownAttributes) {
+                    val br.UnknownAttribute(attributeName, info) = attribute
+                    val attributeNameIndex = CPEUtf8(attributeName)
+                    Some(da.Unknown_attribute(attributeNameIndex, info))
+                } else {
+                    None
+                }
+
+            case _ ⇒
+                // e.g.  - 44 The Module Attribute (Java 9)
+                throw new Error(s"unsupported attribute: ${attribute.getClass.getName}")
         }
     }
 

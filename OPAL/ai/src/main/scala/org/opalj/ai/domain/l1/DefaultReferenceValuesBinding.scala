@@ -31,20 +31,19 @@ package ai
 package domain
 package l1
 
-import scala.collection.SortedSet
 import scala.reflect.ClassTag
 
 import org.opalj.collection.immutable.UIDSet
 
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
-import org.opalj.br.UpperTypeBound
+import org.opalj.br.ReferenceType
 
 /**
  * @author Michael Eichberg
  */
 trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExceptionsFactory {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     // Let's fix the type hierarchy
 
@@ -96,7 +95,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         t:              Timestamp
     ): DomainObjectValue = {
         if (upperTypeBound.isSingletonSet) {
-            ObjectValue(origin, isNull, false, upperTypeBound.first, t)
+            ObjectValue(origin, isNull, false, upperTypeBound.head, t)
         } else
             new MObjectValue(origin, isNull, upperTypeBound, t)
     }
@@ -118,16 +117,16 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
     }
 
     override protected[domain] def MultipleReferenceValues(
-        values: SortedSet[DomainSingleOriginReferenceValue]
+        values: UIDSet[DomainSingleOriginReferenceValue]
     ): DomainMultipleReferenceValues = {
         new MultipleReferenceValues(values)
     }
 
     override protected[domain] def MultipleReferenceValues(
-        values:            SortedSet[DomainSingleOriginReferenceValue],
+        values:            UIDSet[DomainSingleOriginReferenceValue],
         isNull:            Answer,
         isPrecise:         Boolean,
-        theUpperTypeBound: UpperTypeBound,
+        theUpperTypeBound: UIDSet[_ <: ReferenceType],
         t:                 Timestamp
     ): DomainMultipleReferenceValues = {
         new MultipleReferenceValues(values, isNull, isPrecise, theUpperTypeBound, t)

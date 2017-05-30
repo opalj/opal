@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,28 +31,54 @@ package type_annotations;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
 
 /**
- * This class was used to create a class file with some well defined signatures. The
- * created class is subsequently used by several tests.
+ * This class tests some (corner) cases related to type annotations.
  *
  * NOTE<br />
  * This class is only meant to be (automatically) compiled by OPAL's build script.
-
  *
  * @author Michael Eichberg
  */
-public abstract class ATypeAnnotationUser<@ATypeAnnotation T extends @ATypeAnnotation Serializable>
+public abstract class ATypeAnnotationUser<@ATypeAnnotation T extends @ATypeAnnotation Serializable & Cloneable>
         implements List<@ATypeAnnotation Object>, @ATypeAnnotation Serializable {
 
     private static final @ATypeAnnotation long serialVersionUID = 1L;
 
-    public List<@ATypeAnnotation T> ser;
+    public List<@ATypeAnnotation("annotation of generic type parameter") T> ser;
 
     public @ATypeAnnotation Object doSomething() throws Exception {
-        @ATypeAnnotation
-        List<@ATypeAnnotation T> l = new @ATypeAnnotation ArrayList<>();
+
+        @ATypeAnnotation("local variable annotation")
+        List<@ATypeAnnotation("type parameter annotation") T> l = new @ATypeAnnotation ArrayList<>();
 
         return l;
+    }
+
+    public <X extends @ATypeAnnotation Serializable & @ATypeAnnotation("annotation of second type of intersection type") Cloneable> void crazy(X x) {
+        // annotated type test and cast
+        if(x instanceof @ATypeAnnotation("annotated instanceof") List) {
+            List<?> l = (@ATypeAnnotation("annotated type cast") List<?>) x;
+            System.out.println(l);
+        }
+
+        // annotated type cast
+        if(x instanceof List) {
+            Object l = (Serializable & @ATypeAnnotation("annotation of second type of a case to an intersection type") Cloneable) x;
+            System.out.println(l);
+        }
+    }
+
+    public String doIt(File file) throws Exception{
+        try (
+            @ATypeAnnotation("resource variable") BufferedReader br =
+                new BufferedReader(new FileReader(file))
+        ) {
+            return br.readLine();
+        }
     }
 }

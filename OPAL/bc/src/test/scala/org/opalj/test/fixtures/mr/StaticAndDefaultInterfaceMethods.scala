@@ -60,7 +60,7 @@ object StaticAndDefaultInterfaceMethods extends App {
 
     val superIntfCF = ClassFile(
         Array[Constant_Pool_Entry](
-            /*  0 */ null,
+            /*  0 */ null, // must be null due to the specification
             /*  1 */ CONSTANT_Class_info(2),
             /*  2 */ CONSTANT_Utf8("mr/SuperIntf"),
             /*  3 */ CONSTANT_Class_info(4),

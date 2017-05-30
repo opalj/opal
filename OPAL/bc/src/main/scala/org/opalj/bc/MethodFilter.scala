@@ -66,7 +66,7 @@ object MethodFilter {
         if (classFiles.isEmpty) {
             OPALLogger.error("setup", s"no classfiles found in ${args(0)}")
         } else {
-            classFiles.filter(_.fqn == className).map { cf ⇒
+            classFiles.filter(_.thisType == className).map { cf ⇒
                 val filteredMethods = cf.methods.filter { m ⇒
                     implicit val cp = cf.constant_pool
                     val matches = m.name == methodName
@@ -76,7 +76,7 @@ object MethodFilter {
                         !matches
                 }
                 val filteredCF = cf.copy(methods = filteredMethods)
-                val path = new File(cf.fqn+".class").toPath
+                val path = new File(cf.thisType+".class").toPath
                 write(Assembler(filteredCF), path)
                 OPALLogger.info("info", s"created new class file: $path")
             }

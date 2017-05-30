@@ -153,9 +153,7 @@ object DefaultPreciseIntegerValuesTest {
         override def maxUpdatesForIntegerValues: Long = 5
     }
 
-    val testClassFileName = "classfiles/ai.jar"
-    val testClassFile = org.opalj.bi.TestSupport.locateTestResources(testClassFileName, "ai")
-    val project = org.opalj.br.analyses.Project(testClassFile)
-    val ConditionalMath = project.classFile(ObjectType("ai/domain/ConditionalMath")).get
+    val aiProject = org.opalj.br.TestSupport.biProject("ai.jar")
+    val ConditionalMath = aiProject.classFile(ObjectType("ai/domain/ConditionalMath")).get
 
 }

@@ -30,31 +30,17 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
-
 /**
  * An instruction that performs a manipulation of a value's bits.
  *
  * @author Michael Eichberg
  */
-abstract class BitwiseInstruction
-        extends StackBasedArithmeticInstruction
-        with BinaryArithmeticInstruction {
+abstract class BitwiseInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final override def jvmExceptions: List[ObjectType] = Nil
 
-    final def stackSlotsChange: Int = -computationalType.operandSize
+    final override def stackSlotsChange: Int = -computationalType.operandSize
 
-    final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code: Code
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
-    }
-
-    final def isShiftInstruction: Boolean = false
+    final override def isShiftInstruction: Boolean = false
 
 }

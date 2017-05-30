@@ -41,7 +41,8 @@ object ProgressEvents extends Enumeration {
 
     /**
      * Used to signal the start of a (longer-running) computation.
-     * Each computation that signals a start must also signal an end of the computation.
+     * Each computation that signals a start '''must''' also signal an end of the computation
+     * using `End` or `Killed`.
      */
     val Start = Value("start")
 

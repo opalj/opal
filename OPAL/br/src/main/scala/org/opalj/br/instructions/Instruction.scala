@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * Common superclass of all instructions which are in their final form.
@@ -42,14 +42,15 @@ trait Instruction extends InstructionLike {
     /**
      * @return  `this`.
      */
-    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): this.type = this
+    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): this.type = this
 
     /**
      * Returns the pcs of the instructions that may be executed next at runtime. This
      * method takes potentially thrown exceptions into account. I.e., every instruction
      * that may throw an exception checks if it is handled locally and
      * – if so – checks if an appropriate handler exists and – if so – also returns
-     * the first instruction of the handler.
+     * the first instruction of the handler. The chain may contain duplicates, iff the state
+     * is potentially different when the target instruction is reached.
      *
      * @param   regularSuccessorsOnly If `true` only those instructions are returned
      *          which are not related to an exception thrown by this instruction.
@@ -61,8 +62,17 @@ trait Instruction extends InstructionLike {
         regularSuccessorsOnly: Boolean = false
     )(
         implicit
-        code: Code
-    ): PCs
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC]
+
+    /**
+     * Checks for structural equality of two instructions.
+     *
+     * @note   Implemted by using the underlying (compiler generated) equals methods.
+     */
+    def similar(other: Instruction): Boolean = this == other
+
 }
 
 /**
@@ -72,7 +82,7 @@ trait Instruction extends InstructionLike {
  */
 object Instruction {
 
-    final val IllegalIndex = -1
+    final val IllegalIndex: Int = 1
 
     /**
      * Facilitates the matching of [[Instruction]] objects.
@@ -100,24 +110,13 @@ object Instruction {
         exceptions:  List[ObjectType]
     )(
         implicit
-        code: Code
-    ): UShortSet /* <= mutable by purpose! */ = {
-
-        var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC))
-
-        def processException(exception: ObjectType): Unit = {
-            import Code.preDefinedClassHierarchy.isSubtypeOf
-            code.handlersFor(currentPC) find { handler ⇒
-                val catchType = handler.catchType
-                catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYes
-            } match {
-                case Some(handler) ⇒ pcs = handler.handlerPC +≈: pcs
-                case _             ⇒ /* exception is not handled */
-            }
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
+        var pcs = Chain.singleton(instruction.indexOfNextInstruction(currentPC))
+        exceptions foreach { exception ⇒
+            pcs = (code.handlersForException(currentPC, exception).map(_.handlerPC)) ++!: pcs
         }
-
-        exceptions foreach processException
-
         pcs
     }
 
@@ -127,20 +126,14 @@ object Instruction {
         exception:   ObjectType
     )(
         implicit
-        code: Code
-    ): UShortSet /* <= mutable by purpose! */ = {
-
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
-
-        code.handlersFor(currentPC) find { handler ⇒
-            import Code.preDefinedClassHierarchy.isSubtypeOf
-            val catchType = handler.catchType
-            catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYes
-        } match {
-            case Some(handler) ⇒ UShortSet(nextInstruction, handler.handlerPC)
-            case None          ⇒ UShortSet(nextInstruction)
-        }
+        nextInstruction :&: (code.handlersForException(currentPC, exception).map(_.handlerPC))
     }
 
-    final val justNullPointerException = List(ObjectType.NullPointerException)
+    final val justNullPointerException: List[org.opalj.br.ObjectType] = {
+        List(ObjectType.NullPointerException)
+    }
 }

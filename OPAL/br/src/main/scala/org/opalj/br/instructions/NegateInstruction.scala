@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
 
 /**
  * An instruction that negates a primitive value.
@@ -40,18 +40,6 @@ import org.opalj.collection.mutable.UShortSet
 abstract class NegateInstruction
         extends StackBasedArithmeticInstruction
         with UnaryArithmeticInstruction {
-
-    final def jvmExceptions: List[ObjectType] = Nil
-
-    final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code: Code
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
-    }
 
     final def operator: String = "-"
 
@@ -65,11 +53,16 @@ abstract class NegateInstruction
 
     final def stackSlotsChange: Int = 0
 
-    final def readsLocal: Boolean = false
+    final def jvmExceptions: List[ObjectType] = Nil
 
-    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
-
-    final def writesLocal: Boolean = false
-
-    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    final def nextInstructions(
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
+        Chain.singleton(indexOfNextInstruction(currentPC))
+    }
 }

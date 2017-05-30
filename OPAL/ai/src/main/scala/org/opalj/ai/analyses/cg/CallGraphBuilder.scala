@@ -31,9 +31,10 @@ package ai
 package analyses.cg
 
 import scala.collection.{Set, Map}
-import org.opalj.collection.mutable.UShortSet
-import org.opalj.br._
+
+import org.opalj.collection.immutable.IntSet1
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br._
 
 /**
  * Builds a call graph by first collecting all call graph edges before the final
@@ -49,8 +50,6 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 class CallGraphBuilder(val project: SomeProject) {
-
-    type PCs = UShortSet
 
     private[this] var allCallEdges = List.empty[(Method, Map[PC, Set[Method]])]
 
@@ -94,17 +93,16 @@ class CallGraphBuilder(val project: SomeProject) {
                     )
                 callers.get(caller) match {
                     case Some(pcs) ⇒
-                        val newPCs = pc +≈: pcs
-                        if (pcs ne newPCs)
-                            callers.update(caller, newPCs)
+                        val newPCs = pcs + pc
+                        if (pcs ne newPCs) callers.update(caller, newPCs)
                     case None ⇒
-                        val newPCs = UShortSet(pc)
+                        val newPCs = IntSet1(pc)
                         callers.put(caller, newPCs)
                 }
                 // USING AN IMMUTABLE MAP - ROUGHLY 5% SLOWER AND 10% MEMORY OVERHEAD
                 // val callers = calledByMap(callee.id)
                 // if (callers eq null) {
-                //  calledByMap(callee.id) = new Map.Map1(caller, UShortSet(pc))
+                //  calledByMap(callee.id) = new Map.Map1(caller, IntSet1(pc))
                 // } else {
                 //  callers.get(caller) match {
                 //      case Some(pcs) ⇒
@@ -112,7 +110,7 @@ class CallGraphBuilder(val project: SomeProject) {
                 //          if (pcs ne newPCs)
                 //              calledByMap(callee.id) = callers.updated(caller, newPCs)
                 //      case None ⇒
-                //          val newPCs = UShortSet(pc)
+                //          val newPCs = IntSet1(pc)
                 //          calledByMap(callee.id) = callers.updated(caller, newPCs)
                 //      }
                 // }

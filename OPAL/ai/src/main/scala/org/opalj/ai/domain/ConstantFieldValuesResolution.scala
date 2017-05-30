@@ -41,7 +41,7 @@ import org.opalj.br.{ObjectType, FieldType}
  *
  * @author Michael Eichberg
  */
-trait ConstantFieldValuesResolution extends Domain { domain: TheProject with ClassHierarchy ⇒
+trait ConstantFieldValuesResolution extends Domain { domain: TheProject with TheClassHierarchy ⇒
 
     abstract override def getstatic(
         pc:        PC,

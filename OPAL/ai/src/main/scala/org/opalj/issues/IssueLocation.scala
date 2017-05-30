@@ -29,6 +29,8 @@
 package org.opalj
 package issues
 
+import java.lang.Comparable
+
 import scala.xml.Node
 import scala.xml.Text
 import scala.xml.Group
@@ -57,7 +59,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-sealed trait IssueLocation extends IssueRepresentations with java.lang.Comparable[IssueLocation] {
+sealed abstract class IssueLocation extends IssueRepresentations with Comparable[IssueLocation] {
 
     /**
      * The description of the issue with respect to the given location.

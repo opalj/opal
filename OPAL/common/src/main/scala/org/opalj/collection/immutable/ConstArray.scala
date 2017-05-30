@@ -40,9 +40,10 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayBuffer
 import org.opalj.control.{find ⇒ findInArray}
+
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
- * therefore also no longer mutable if ConstArray is the soler owner.
+ * therefore also no longer mutable if `ConstArray` is the sole owner.
  *
  * @author Michael Eichberg
  */
@@ -80,7 +81,7 @@ class ConstArray[T <: AnyRef] private (
 }
 
 /**
- * Low leve implicits to; e.g., enable a mapping of an ''arbitrary'' data structure to
+ * Low level implicits to; e.g., enable a mapping of an ''arbitrary'' data structure to
  * a [[ConstArray]].
  *
  * @example {{{ val c : ConstArray[List[String]] = List("a","b").map(List(_))}}}

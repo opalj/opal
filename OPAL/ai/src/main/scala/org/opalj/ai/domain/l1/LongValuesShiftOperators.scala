@@ -40,28 +40,27 @@ package l1
 trait LongValuesShiftOperators extends LongValuesDomain {
     this: ConcreteLongValues with ConcreteIntegerValues ⇒
 
-    override def lshl(pc: PC, longValue: DomainValue, shift: DomainValue): DomainValue = {
+    override def lshl(pc: PC, longValue: DomainValue, shiftValue: DomainValue): DomainValue = {
         this.longValue(longValue) { v ⇒
-            this.intValue(shift)(s ⇒ LongValue(pc, v << s)) { LongValue(pc) }
+            this.intValue(shiftValue)(s ⇒ LongValue(pc, v << s)) { LongValue(pc) }
         } {
             LongValue(pc)
         }
     }
 
-    override def lshr(pc: PC, longValue: DomainValue, shift: DomainValue): DomainValue = {
+    override def lshr(pc: PC, longValue: DomainValue, shiftValue: DomainValue): DomainValue = {
         this.longValue(longValue) { v ⇒
-            this.intValue(shift)(s ⇒ LongValue(pc, v >> s)) { LongValue(pc) }
+            this.intValue(shiftValue)(s ⇒ LongValue(pc, v >> s)) { LongValue(pc) }
         } {
             LongValue(pc)
         }
     }
 
-    override def lushr(pc: PC, longValue: DomainValue, shift: DomainValue): DomainValue = {
+    override def lushr(pc: PC, longValue: DomainValue, shiftValue: DomainValue): DomainValue = {
         this.longValue(longValue) { v ⇒
-            this.intValue(shift)(s ⇒ LongValue(pc, v >>> s)) { LongValue(pc) }
+            this.intValue(shiftValue)(s ⇒ LongValue(pc, v >>> s)) { LongValue(pc) }
         } {
             LongValue(pc)
         }
     }
 }
-

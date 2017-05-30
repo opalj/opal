@@ -39,7 +39,6 @@ import scala.collection.{Set ⇒ SomeSet}
 import org.opalj.collection.immutable.ConstArray.find
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet0
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEINTERFACE
@@ -169,14 +168,14 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
     /**
      * Stores for each non-private, non-initializer method the set of methods which override
-     * the specific method. If the given method is a concrete method, this method is also
+     * a specific method. If the given method is a concrete method, this method is also
      * included in the set of `overridingMethods`.
      */
     protected[this] val overridingMethods: SomeMap[Method, Set[Method]]
 
     /**
      * Returns the set of methods which directly override the given method. Note that
-     * `overriddenBy` is not context aware. I.e., if a given method `m` is an inteface
+     * `overriddenBy` is not context aware. I.e., if a given method `m` is an interface
      * method, then it may happen that we have an implementation of that method
      * in a class which is inherited from a superclass which is not a subtype of the
      * interface. That method - since it is not defined by a subtype of the interface -
@@ -258,7 +257,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * The `callingContextType` is only relevant in case the target method has default visibility;
      * in this case it is checked whether the caller belongs to the same context.
      *
-     * @note    This method uses the precomputed information about instance methods and,
+     * @note    This method uses the pre-computed information about instance methods and,
      *          therefore, does not require a type hierarchy based lookup.
      *
      * @note    It supports the lookup of polymorphic methods.
@@ -385,7 +384,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 val (_, methods) =
                     findMaximallySpecificSuperinterfaceMethods(
                         superinterfaceTypes, name, descriptor,
-                        analyzedSuperinterfaceTypes = UIDSet0
+                        analyzedSuperinterfaceTypes = UIDSet.empty[ObjectType]
                     )
                 methods.headOption // either it is THE max. specific method or some ...
         }
@@ -412,7 +411,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 lookupInObject() orElse {
                     classHierarchy.superinterfaceTypes(receiverType) flatMap { superinterfaceTypes ⇒
                         val (_, methods) = findMaximallySpecificSuperinterfaceMethods(
-                            superinterfaceTypes, name, descriptor, UIDSet0
+                            superinterfaceTypes, name, descriptor, UIDSet.empty[ObjectType]
                         )
                         methods.headOption
                     }
@@ -438,14 +437,14 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         superinterfaceType:          ObjectType,
         name:                        String,
         descriptor:                  MethodDescriptor,
-        analyzedSuperinterfaceTypes: UIDSet[ObjectType] = UIDSet0
+        analyzedSuperinterfaceTypes: UIDSet[ObjectType] = UIDSet.empty
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
 
         val newAnalyzedSuperinterfaceTypes = analyzedSuperinterfaceTypes + superinterfaceType
 
         // the superinterfaceTypes in which it is potentially relevant to search for methods
         val superinterfaceTypes: UIDSet[ObjectType] =
-            classHierarchy.superinterfaceTypes(superinterfaceType).getOrElse(UIDSet0) --
+            classHierarchy.superinterfaceTypes(superinterfaceType).getOrElse(UIDSet.empty) --
                 analyzedSuperinterfaceTypes
 
         project.classFile(superinterfaceType) match {

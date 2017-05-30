@@ -35,7 +35,7 @@ package br
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-trait SignatureElement {
+trait SignatureElement { // RECALL: Void and the BaseTypes are also subtypes!
 
     def accept[T](sv: SignatureVisitor[T]): T
 
@@ -233,17 +233,23 @@ sealed trait ThrowsSignature extends SignatureElement
  * res2: String = Col<List(ProperTypeArgument(variance=None,signature=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List())))>
  * }}}
  */
-sealed trait Signature extends SignatureElement with Attribute
+sealed abstract class Signature extends SignatureElement with Attribute {
 
-private[br] object Signature {
+    override def similar(other: Attribute): Boolean = this == other
 
-    def formalTypeParametersToJVMSignature(formalTypeParameters: List[FormalTypeParameter]): String = {
+}
+
+object Signature {
+
+    private[br] def formalTypeParametersToJVMSignature(formalTypeParameters: List[FormalTypeParameter]): String = {
         if (formalTypeParameters.isEmpty) {
             ""
         } else {
             formalTypeParameters.map(_.toJVMSignature).mkString("<", "", ">")
         }
     }
+
+    def unapply(s: Signature): Some[String] = Some(s.toJVMSignature)
 
 }
 import Signature.formalTypeParametersToJVMSignature
@@ -309,7 +315,7 @@ object MethodTypeSignature {
 /**
  * @see For matching signatures see [[Signature]].
  */
-trait FieldTypeSignature extends Signature with TypeSignature
+sealed abstract trait FieldTypeSignature extends Signature with TypeSignature
 
 object FieldTypeSignature {
 
@@ -369,11 +375,7 @@ case class ClassTypeSignature(
     override def kindId: Int = ClassTypeSignature.KindId
 
     override def toJVMSignature: String = {
-        val packageName =
-            if (packageIdentifier.isDefined)
-                packageIdentifier.get
-            else
-                ""
+        val packageName = packageIdentifier.getOrElse("")
 
         "L"+
             packageName +
@@ -458,7 +460,7 @@ case class FormalTypeParameter(
 /**
  * @see For matching signatures see [[Signature]].
  */
-sealed trait TypeArgument extends SignatureElement
+sealed abstract class TypeArgument extends SignatureElement
 
 /**
  * @see For matching signatures see [[Signature]].
@@ -489,7 +491,7 @@ case class ProperTypeArgument(
 /**
  * Indicates a TypeArgument's variance.
  */
-sealed trait VarianceIndicator extends SignatureElement
+sealed abstract class VarianceIndicator extends SignatureElement
 
 /**
  * If you have a declaration such as &lt;? extends Entry&gt; then the "? extends" part
@@ -497,7 +499,7 @@ sealed trait VarianceIndicator extends SignatureElement
  *
  * @see For matching signatures see [[Signature]].
  */
-sealed trait CovariantIndicator extends VarianceIndicator {
+sealed abstract class CovariantIndicator extends VarianceIndicator {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
@@ -512,7 +514,7 @@ case object CovariantIndicator extends CovariantIndicator
  *
  * @see For matching signatures see [[Signature]].
  */
-sealed trait ContravariantIndicator extends VarianceIndicator {
+sealed abstract class ContravariantIndicator extends VarianceIndicator {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
@@ -528,7 +530,7 @@ case object ContravariantIndicator extends ContravariantIndicator
  *
  * @see For matching signatures see [[Signature]].
  */
-sealed trait Wildcard extends TypeArgument {
+sealed abstract class Wildcard extends TypeArgument {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
@@ -661,7 +663,9 @@ object LowerTypeBound {
  */
 object GenericTypeArgument {
 
-    def unapply(pta: ProperTypeArgument): Option[(Option[VarianceIndicator], ClassTypeSignature)] = {
+    def unapply(
+        pta: ProperTypeArgument
+    ): Option[(Option[VarianceIndicator], ClassTypeSignature)] = {
         pta match {
             case ProperTypeArgument(variance, cts: ClassTypeSignature) ⇒
                 Some((variance, cts))
@@ -707,7 +711,9 @@ object GenericType {
  */
 object GenericTypeWithClassSuffix {
 
-    def unapply(cts: ClassTypeSignature): Option[(ObjectType, List[TypeArgument], List[SimpleClassTypeSignature])] = {
+    def unapply(
+        cts: ClassTypeSignature
+    ): Option[(ObjectType, List[TypeArgument], List[SimpleClassTypeSignature])] = {
         cts match {
 
             case ClassTypeSignature(

@@ -30,7 +30,8 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
  * Common superclass of all instructions that perform a conditional jump.
@@ -61,24 +62,43 @@ trait SimpleConditionalBranchInstruction
 
     def branchoffset: Int
 
+    /**
+     * @inheritdoc
+     *
+     * A simple conditional branch instruction has two targets unless both targets point
+     * to the same instruction. In that case the jump has only one target, because the state
+     * - independent of the taken path - always has to be the same.
+     */
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC), currentPC + branchoffset)
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
+        val nextInstruction = indexOfNextInstruction(currentPC)
+        val jumpInstruction = currentPC + branchoffset
+        if (nextInstruction == jumpInstruction)
+            Chain.singleton(nextInstruction)
+        else
+            nextInstruction :&: jumpInstruction :&: Naught
     }
 
-    override def toString(currentPC: Int) = {
-        getClass.getSimpleName +
-            s"(true=${currentPC + branchoffset}${if (branchoffset >= 0) "↓" else "↑"}, false=↓)"
+    override def toString(currentPC: Int): String = {
+        val jumpDirection = if (branchoffset >= 0) "↓" else "↑"
+        s"${getClass.getSimpleName}(true=${currentPC + branchoffset}$jumpDirection, false=↓)"
     }
 
 }
+/**
+ * Extractor for [[SimpleConditionalBranchInstruction]]s.
+ */
 object SimpleConditionalBranchInstruction {
 
+    /**
+     * Extracts the instructions branchoffset.
+     */
     def unapply(i: SimpleConditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
 
 }

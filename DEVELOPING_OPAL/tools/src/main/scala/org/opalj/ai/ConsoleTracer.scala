@@ -49,6 +49,29 @@ trait ConsoleTracer extends AITracer { tracer ⇒
 
     def toStringWithOID(value: Object): String = s"$value ${oidString(value)}"
 
+    private def localsToString(domain: Domain)(locals: domain.Locals): String = {
+        if (locals eq null)
+            "\tlocals: not available (null);\n"
+        else
+            locals.zipWithIndex.map { vi ⇒
+                val (v, i) = vi
+                i+":"+(
+                    if (v == null)
+                        correctIndent("-", false)
+                    else
+                        correctIndent(v, printOIDs)
+                )
+            }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")
+    }
+
+    def initialLocals(
+        domain: Domain
+    )(
+        locals: domain.Locals
+    ): Unit = {
+        println(localsToString(domain)(locals))
+    }
+
     private def correctIndent(value: Object, printOIDs: Boolean): String = {
         if (value eq null)
             "<EMPTY>"
@@ -80,13 +103,14 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         }
     }
 
-    private def line(domain: Domain, pc: PC): String =
+    private def line(domain: Domain, pc: PC): String = {
         if (domain.isInstanceOf[TheCode]) {
             val code = domain.asInstanceOf[TheCode].code
             code.lineNumber(pc).map("[line="+_+"]").getOrElse("")
         } else {
             ""
         }
+    }
 
     override def instructionEvalution(
         domain: Domain
@@ -110,19 +134,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                     os.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n")
             }
 
-        val ls =
-            if (locals eq null)
-                "\tlocals: not available (null);\n"
-            else
-                locals.zipWithIndex.map { vi ⇒
-                    val (v, i) = vi
-                    i+":"+(
-                        if (v == null)
-                            correctIndent("-", false)
-                        else
-                            correctIndent(v, printOIDs)
-                    )
-                }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")
+        val ls = localsToString(domain)(locals)
 
         val ps = {
             val ps = domain.properties(pc)
@@ -140,9 +152,8 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     }
 
     override def continuingInterpretation(
-        strictfp: Boolean,
-        code:     Code,
-        domain:   Domain
+        code:   Code,
+        domain: Domain
     )(
         initialWorkList:                  List[PC],
         alreadyEvaluated:                 List[PC],
@@ -154,7 +165,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         println(BLACK_B + WHITE+"Starting Code Analysis"+RESET)
         println("Number of registers:      "+code.maxLocals)
         println("Size of operand stack:    "+code.maxStack)
-        println("Join instructions:        "+code.joinInstructions.mkString(", "))
+        println("PCs where paths join:     "+code.cfJoins.mkString(", "))
         //println("Program counters:         "+code.programCounters.mkString(", "))
     }
 
@@ -163,11 +174,14 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     )(
         sourcePC:                 PC,
         targetPC:                 PC,
-        isExceptionalControlFlow: Boolean
+        isExceptionalControlFlow: Boolean,
+        worklist:                 List[PC]
     ): Unit = {
-        println(CYAN_B + RED+
-            "rescheduled the evaluation of the instruction with the program counter: "+
-            targetPC + line(domain, targetPC) + RESET)
+        println(
+            CYAN_B + RED+"rescheduled the evaluation of instruction: "+
+                targetPC + line(domain, targetPC) + RESET+
+                "; new worklist: "+worklist.mkString(", ")
+        )
     }
 
     override def flow(
@@ -177,6 +191,13 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         targetPC:                 PC,
         isExceptionalControlFlow: Boolean
     ): Unit = { /* ignored */ }
+
+    override def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit = {
+        println(
+            pc.toString + line(domain, pc).toString+":"+
+                Console.BLACK_B + Console.WHITE + s"local variable $lvIndex is dead"
+        )
+    }
 
     override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = {
         println(Console.RED_B + Console.YELLOW+

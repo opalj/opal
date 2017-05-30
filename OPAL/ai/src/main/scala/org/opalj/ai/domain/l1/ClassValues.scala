@@ -31,6 +31,8 @@ package ai
 package domain
 package l1
 
+import scala.reflect.ClassTag
+
 import org.opalj.br.Type
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
@@ -44,7 +46,6 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
-import scala.reflect.ClassTag
 
 /**
  * Enables the tracking of concrete `Class` values.
@@ -64,7 +65,7 @@ import scala.reflect.ClassTag
  * @author Arne Lottmann
  */
 trait ClassValues extends StringValues with FieldAccessesDomain with MethodCallsDomain {
-    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
     val DomainClassValue: ClassTag[DomainClassValue]
@@ -130,8 +131,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
-        override def toString(): String =
-            s"Class<${value.toJava}>[@$origin;t=$t]"
+        override def toString(): String = s"Class<${value.toJava}>[↦$origin;t=$t]"
     }
 
     // Needs to be implemented since the default implementation does not make sense here
@@ -152,14 +152,11 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
         if (classValue.isObjectType) {
             val objectType = classValue.asObjectType
-            if (classHierarchy.isKnown(objectType) ||
-                !throwClassNotFoundException) {
+            if (classHierarchy.isKnown(objectType) || !throwClassNotFoundException) {
                 ComputedValue(ClassValue(pc, classValue))
             } else {
-                ComputedValueOrException(
-                    ClassValue(pc, classValue),
-                    Iterable(ClassNotFoundException(pc))
-                )
+                val exception = Iterable(ClassNotFoundException(pc))
+                ComputedValueOrException(ClassValue(pc, classValue), exception)
             }
         } else {
             val elementType = classValue.asArrayType.elementType
@@ -186,23 +183,17 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
         import ClassValues._
 
-        if ((declaringClass eq ObjectType.Class) &&
-            (name == "forName") &&
-            operands.nonEmpty) {
+        if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
 
             operands.last match {
                 case sv: StringValue ⇒
                     val value = sv.value
                     methodDescriptor match {
-                        case `forName_String` ⇒
-                            simpleClassForNameCall(pc, value)
-                        case `forName_String_boolean_ClassLoader` ⇒
-                            simpleClassForNameCall(pc, value)
+                        case `forName_String`                     ⇒ simpleClassForNameCall(pc, value)
+                        case `forName_String_boolean_ClassLoader` ⇒ simpleClassForNameCall(pc, value)
                         case _ ⇒
                             throw new DomainException(
-                                "unsupported Class { "+
-                                    methodDescriptor.toJava("forName")+
-                                    "}"
+                                s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
 
@@ -223,7 +214,6 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         name:           String,
         fieldType:      FieldType
     ) = {
-
         if (name == "TYPE") {
             declaringClass match {
                 case ObjectType.Boolean   ⇒ ComputedValue(ClassValue(pc, BooleanType))
@@ -241,16 +231,25 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             super.getstatic(pc, declaringClass, name, fieldType)
         }
     }
+
+    object ClassValue {
+        def unapply(value: DomainValue): Option[Type] = {
+            value match {
+                case classValue: ClassValue ⇒ Some(classValue.value)
+                case _                      ⇒ None
+            }
+        }
+    }
 }
 
 private object ClassValues {
 
-    final val forName_String =
-        MethodDescriptor(ObjectType.String, ObjectType.Class)
+    final val forName_String = MethodDescriptor(ObjectType.String, ObjectType.Class)
 
-    final val forName_String_boolean_ClassLoader =
+    final val forName_String_boolean_ClassLoader = {
         MethodDescriptor(
             IndexedSeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
             ObjectType.Class
         )
+    }
 }

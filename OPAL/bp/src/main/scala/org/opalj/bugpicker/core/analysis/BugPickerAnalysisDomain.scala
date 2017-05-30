@@ -133,6 +133,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     ): AIResult { val domain: calledMethodDomain.type } = {
         val result = super.doInvoke(method, calledMethodDomain)(parameters)
         if (debug) {
+            import result._
             org.opalj.io.writeAndOpen(
                 org.opalj.ai.common.XHTML.dump(
                     Some(project.classFile(method)),
@@ -144,10 +145,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
                             XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain
-                )(
-                        result.operandsArray,
-                        result.localsArray
-                    ),
+                )(cfJoins, result.operandsArray, result.localsArray),
                 "AIResult",
                 ".html"
             )
@@ -179,7 +177,8 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     ): Boolean = {
         val result =
             maxCallChainLength > currentCallChainLength &&
-                !(calledMethod.isPrivate && calledMethod.parametersCount == 1)
+                // TODO check me if the following makes sense:
+                calledMethod.isPrivate && calledMethod.actualArgumentsCount != 1
         if (debug) {
             val i = if (result) " invokes " else " does not invoke "
             println(s"[$currentCallChainLength]"+

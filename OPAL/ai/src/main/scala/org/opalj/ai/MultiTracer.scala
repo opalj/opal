@@ -40,10 +40,13 @@ import org.opalj.br.instructions.Instruction
  */
 class MultiTracer(val tracers: AITracer*) extends AITracer {
 
+    override def initialLocals(domain: Domain)(locals: domain.Locals): Unit = {
+        tracers foreach { tracer ⇒ tracer.initialLocals(domain)(locals) }
+    }
+
     override def continuingInterpretation(
-        strictfp: Boolean,
-        code:     Code,
-        domain:   Domain
+        code:   Code,
+        domain: Domain
     )(
         initialWorkList:                  List[PC],
         alreadyEvaluated:                 List[PC],
@@ -52,7 +55,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
         tracers foreach { tracer ⇒
-            tracer.continuingInterpretation(strictfp, code, domain)(
+            tracer.continuingInterpretation(code, domain)(
                 initialWorkList, alreadyEvaluated,
                 operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
             )
@@ -82,6 +85,10 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         tracers foreach { _.flow(domain)(currentPC, targetPC, isExceptionalControlFlow) }
     }
 
+    override def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit = {
+        tracers foreach { _.deadLocalVariable(domain)(pc, lvIndex) }
+    }
+
     override def noFlow(
         domain: Domain
     )(
@@ -93,10 +100,10 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     override def rescheduled(
         domain: Domain
     )(
-        sourcePC: PC, targetPC: PC, isExceptionalControlFlow: Boolean
+        sourcePC: PC, targetPC: PC, isExceptionalControlFlow: Boolean, worklist: List[PC]
     ): Unit = {
         tracers foreach { tracer ⇒
-            tracer.rescheduled(domain)(sourcePC, targetPC, isExceptionalControlFlow)
+            tracer.rescheduled(domain)(sourcePC, targetPC, isExceptionalControlFlow, worklist)
         }
     }
 

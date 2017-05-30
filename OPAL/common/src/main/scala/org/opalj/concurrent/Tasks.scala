@@ -29,11 +29,10 @@
 package org.opalj.concurrent
 
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
-import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.JavaConverters._
 
 /**
@@ -62,7 +61,7 @@ class Tasks[T](
         val executionContext: ExecutionContext
 ) {
 
-    private[this] val latch = new CountDownLatch(1)
+    private[this] final val tasksLock = new Object
     private[this] val tasksCount = new AtomicInteger(0)
     private[this] var exceptions: ConcurrentLinkedQueue[Throwable] = null
 
@@ -84,25 +83,27 @@ class Tasks[T](
                 exceptions.add(exception)
             }
             if (tasksCount.decrementAndGet() == 0) {
-                latch.countDown()
+                tasksLock.synchronized { tasksLock.notifyAll() }
             }
         }(executionContext)
     }
 
     /**
-     * Blocks the calling thread until all sumitted tasks as well as those tasks
+     * Blocks the calling thread until all sbumitted tasks as well as those tasks
      * that are created while processing tasks have been processed.
      */
     def join(): List[Throwable] = {
-        if (tasksCount.get != 0) {
-            // if tasksCount is zero we may already be finished or there were never any tasks...
-            latch.await()
-        }
+        tasksLock.synchronized {
+            while (tasksCount.get != 0) {
+                // if tasksCount is zero we may already be finished or there were never any tasks...
+                tasksLock.wait()
+            }
 
-        if (exceptions ne null) {
-            exceptions.asScala.toList
-        } else {
-            Nil
+            if (exceptions ne null) {
+                exceptions.asScala.toList
+            } else {
+                Nil
+            }
         }
     }
 }

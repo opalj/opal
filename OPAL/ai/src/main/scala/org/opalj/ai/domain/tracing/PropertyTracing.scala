@@ -68,11 +68,11 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
     private var propertiesArray: Array[DomainProperty] = _
 
     abstract override def initProperties(
-        code: Code, joinInstructions: BitSet,
+        code: Code, cfJoins: BitSet,
         locals: Locals
     ): Unit = {
 
-        super.initProperties(code, joinInstructions, locals)
+        super.initProperties(code, cfJoins, locals)
 
         this.propertiesArray = new Array(code.instructions.size)
         this.propertiesArray(0) = initialPropertyValue()

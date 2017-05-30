@@ -37,25 +37,47 @@ import java.lang.{StringBuilder ⇒ JStringBuilder}
 /**
  * Enables the tracing of `StringBuilders`.
  *
+ * TODO ==Implementation Details==
+ * ==Copy on Branch==
+ * Given that StringBuilders are mutable, we have to create a copy whenever we
+ * have a branch. This enables us to make the domain value
+ * that represents the state of the StringBuilder independently mutable on each branch.
+ * E.g.,
+ * {{{
+ * val sb : StringBuilder = ....
+ * if (condition) sb.append("X") else sb.append("Y")
+ * // here, the represented string either ends with "X" or with "Y", but not with "XY" or "YX"
+ * }}}
+ *
+ * ==Ensure Termination==
+ * To ensure termination in degenerated cases, such as:
+ * {{{
+ * val b : StringBuilder = ...
+ * while((System.nanoTime % 33L) != 0){
+ *     b.append((System.nanoTime % 33L).toString)
+ * }
+ * return b.toString
+ * }}}
+ * We count the number of joins per PC and if that value exceeds the configured threshold,
+ * we completely abstract over the contents of the string builder.
+ *
  * @author Michael Eichberg
  */
-trait StringBuilderValues extends StringValues with ReflectiveInvoker {
-    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory with ClassHierarchy ⇒
+trait StringBuilderValues extends StringValues {
+    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory with TheClassHierarchy ⇒
+
+    import StringBuilderValues._
 
     protected class StringBuilderValue(
-        origin:          ValueOrigin,
-        val builderType: ObjectType /*either StringBuilder oder StringBuffer*/ ,
-        val builder:     JStringBuilder,
-        t:               Timestamp
-    )
-            extends SObjectValue(origin, No, true, builderType, t) {
+            origin:          ValueOrigin,
+            val builderType: ObjectType /*either StringBuilder oder StringBuffer*/ ,
+            val builder:     JStringBuilder,
+            t:               Timestamp
+    ) extends SObjectValue(origin, No, true, builderType, t) {
         this: DomainStringValue ⇒
 
         assert(builder != null)
-        assert(
-            (builderType eq StringBuilderValues.Buffer) ||
-                (builderType eq StringBuilderValues.Builder)
-        )
+        assert((builderType eq JavaStringBuffer) || (builderType eq JavaStringBuilder))
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
@@ -87,7 +109,7 @@ trait StringBuilderValues extends StringValues with ReflectiveInvoker {
 
         override def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
-                return true
+                return true;
 
             other match {
                 case that: StringBuilderValue ⇒
@@ -117,26 +139,28 @@ trait StringBuilderValues extends StringValues with ReflectiveInvoker {
             }
         }
 
-        override protected def canEqual(other: SObjectValue): Boolean =
+        override protected def canEqual(other: SObjectValue): Boolean = {
             other.isInstanceOf[StringBuilderValue]
+        }
 
         override def hashCode: Int = super.hashCode * 71 + value.hashCode()
 
-        override def toString(): String =
-            s"""${this.builderType.toString()}(origin=$origin;builder="$builder";t=$t)"""
+        override def toString(): String = {
+            s"""${this.builderType.toJava}(origin=$origin;builder="$builder";t=$t)"""
+        }
 
     }
 
     object StringBuilderValue {
-        def unapply(value: StringBuilderValue): Option[String] =
-            Some(value.builder.toString)
+        def unapply(value: StringBuilderValue): Option[String] = Some(value.builder.toString)
     }
 
     final def StringBuilderValue(
         origin:      ValueOrigin,
         builderType: ObjectType
-    ): StringBuilderValue =
+    ): StringBuilderValue = {
         StringBuilderValue(origin, builderType, new JStringBuilder())
+    }
 
     def StringBuilderValue(
         origin:      ValueOrigin,
@@ -146,6 +170,6 @@ trait StringBuilderValues extends StringValues with ReflectiveInvoker {
 }
 
 object StringBuilderValues {
-    val Builder = ObjectType("java/lang/StringBuilder")
-    val Buffer = ObjectType("java/lang/StringBuffer")
+    val JavaStringBuilder = ObjectType("java/lang/StringBuilder")
+    val JavaStringBuffer = ObjectType("java/lang/StringBuffer")
 }

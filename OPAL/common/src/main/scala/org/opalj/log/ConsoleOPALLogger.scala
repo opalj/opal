@@ -49,8 +49,11 @@ class ConsoleOPALLogger(
             return ;
 
         val stream = if (messageLevel == Error) Console.err else Console.out
-        stream.println(message.toConsoleOutput(ansiColored))
+        val theMessage = message.toConsoleOutput(ansiColored)
+        if (theMessage.charAt(0) == '\r')
+            stream.print(theMessage)
+        else
+            stream.println(theMessage)
     }
 
 }
-

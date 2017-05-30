@@ -244,7 +244,7 @@ object PerformInvocationsTestFixture {
             with IgnoreSynchronization
             with l0.DefaultTypeLevelHandlingOfMethodResults
             with DefaultRecordMethodCallResults {
-        domain: ValuesFactory with ClassHierarchy with Configuration with TheProject with TheMethod ⇒
+        domain: ValuesFactory with TheClassHierarchy with Configuration with TheProject with TheMethod ⇒
 
         override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
             ExceptionsRaisedByCalledMethods.AllExplicitlyHandled

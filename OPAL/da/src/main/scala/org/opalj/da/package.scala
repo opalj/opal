@@ -28,13 +28,17 @@
  */
 package org.opalj
 
+import scala.annotation.switch
+
 import scala.xml.Node
+import scala.xml.NodeSeq
+
 import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.AccessFlagsContext
+import org.opalj.bi.VisibilityModifier
 
 /**
- *
- * Defines convenience methods related to reading in class files.
+ * Defines convenience methods related to representing certain class file elements.
  *
  * @author Michael Eichberg
  * @author Andre Pacak
@@ -52,37 +56,54 @@ package object da {
 
     type ExceptionTable = IndexedSeq[ExceptionTableEntry]
 
-    def asReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
-        val rt = cp(cpIndex).toString(cp)
-        if (rt.charAt(0) == '[')
-            parseFieldType(rt.substring(1))+"[]"
-        else
-            asJavaObjectType(rt);
+    /**
+     * A node representing the context's access flags and a string that can be used
+     * for filtering purposes and can be attached to the member's node.
+     *
+     * In the string the default visibility is represented using the name `default`.
+     */
+    def accessFlagsToXHTML(access_flags: Int, context: AccessFlagsContext): (Node, String) = {
+        val accessFlags = AccessFlags.toString(access_flags, context)
+
+        val explicitAccessFlags =
+            VisibilityModifier.get(access_flags) match {
+                case None ⇒ if (accessFlags.length() == 0) "default" else accessFlags+" default"
+                case _    ⇒ accessFlags
+            }
+
+        (<span class="access_flags">{ accessFlags }</span>, explicitAccessFlags)
     }
 
-    def asObjectType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
+    def asJavaReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
+        val rt = cp(cpIndex).toString(cp)
+        if (rt.charAt(0) == '[')
+            parseFieldType(rt.substring(1)).asJavaType+"[]"
+        else
+            asJavaObjectType(rt)
+    }
+
+    def asJavaObjectType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
         asJavaObjectType(cp(cpIndex).toString(cp))
     }
 
     def asJavaObjectType(t: String): String = t.replace('/', '.')
 
-    def parseReturnType(type_index: Int)(implicit cp: Constant_Pool): String = {
-        parseReturnType(cp(type_index).toString)
+    def returnTypeAsJavaType(type_index: Int)(implicit cp: Constant_Pool): String = {
+        parseReturnType(cp(type_index).toString).asJavaType
     }
 
-    def parseReturnType(rt: String): String = {
+    def parseReturnType(rt: String): TypeInfo = {
         if (rt.charAt(0) == 'V')
-            "void"
+            VoidTypeInfo
         else
-            parseFieldType(rt).javaTypeName
+            parseFieldType(rt)
     }
 
     /**
      * Returns a string representation of the type and the information whether the (element) type
      * is a base type.
      */
-    // TODO return FieldTypeInfo structure
-    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): TypeInfo = {
+    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): FieldTypeInfo = {
         parseFieldType(cp(type_index).toString)
     }
 
@@ -90,7 +111,7 @@ package object da {
      * Returns a string representation of the type and the information whether the (element) type
      * is a base type.
      */
-    def parseFieldType(descriptor: String): TypeInfo = {
+    def parseFieldType(descriptor: String): FieldTypeInfo = {
         (descriptor.charAt(0): @scala.annotation.switch) match {
             case 'B' ⇒ ByteTypeInfo
             case 'C' ⇒ CharTypeInfo
@@ -101,11 +122,16 @@ package object da {
             case 'S' ⇒ ShortTypeInfo
             case 'Z' ⇒ BooleanTypeInfo
             case 'L' ⇒
-                val javaTypeName = descriptor.substring(1, descriptor.length - 1).replace('/', '.')
+                val javaTypeName = asJavaObjectType(descriptor.substring(1, descriptor.length - 1))
                 ObjectTypeInfo(javaTypeName)
             case '[' ⇒
-                val TypeInfo(componentType, elementTypeIsBaseType) = parseFieldType(descriptor.substring(1))
-                ArrayTypeInfo(componentType+"[]", elementTypeIsBaseType)
+                val componentType = descriptor.substring(1)
+                parseFieldType(componentType) match {
+                    case ArrayTypeInfo(elementType, dimensions, elementTypeIsBaseType) ⇒
+                        ArrayTypeInfo(elementType, dimensions + 1, elementTypeIsBaseType)
+                    case TypeInfo(elementType, elementTypeIsBaseType) ⇒
+                        ArrayTypeInfo(elementType, 1, elementTypeIsBaseType)
+                }
 
             case _ ⇒
                 val message = s"$descriptor is not a valid field type descriptor"
@@ -113,36 +139,44 @@ package object da {
         }
     }
 
-    def parseMethodDescriptor(
-        //definingTypeFQN: String,
-        methodName: String,
-        descriptor: String
-    ): String = {
+    def parseMethodDescriptor(descriptor: String): (IndexedSeq[FieldTypeInfo], TypeInfo) = {
         var index = 1 // we are not interested in the leading '('
-        var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
+        var parameterTypes: IndexedSeq[FieldTypeInfo] = IndexedSeq.empty
         while (descriptor.charAt(index) != ')') {
             val (ft, nextIndex) = parseParameterType(descriptor, index)
             parameterTypes = parameterTypes :+ ft
             index = nextIndex
         }
-        val returnType = parseReturnType(descriptor.substring(index + 1))
 
-        s"$returnType $methodName(${parameterTypes.mkString(", ")})"
+        (
+            parameterTypes,
+            parseReturnType(descriptor.substring(index + 1))
+        )
+
     }
 
-    def methodDescriptorAsInlineNode(
-        //definingTypeFQN: String,
-        methodName: String,
-        descriptor: String
-    ): Node = {
+    def methodDescriptorAsJavaSignature(methodName: String, descriptor: String): String = {
         var index = 1 // we are not interested in the leading '('
         var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
         while (descriptor.charAt(index) != ')') {
             val (ft, nextIndex) = parseParameterType(descriptor, index)
-            parameterTypes = parameterTypes :+ ft
+            parameterTypes = parameterTypes :+ ft.asJavaType
             index = nextIndex
         }
-        val returnType = parseReturnType(descriptor.substring(index + 1))
+        val returnType = parseReturnType(descriptor.substring(index + 1)).asJavaType
+
+        parameterTypes.mkString(s"$returnType $methodName(", ", ", ")")
+    }
+
+    def methodDescriptorAsInlineNode(methodName: String, descriptor: String): Node = {
+        var index = 1 // we are not interested in the leading '('
+        var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
+        while (descriptor.charAt(index) != ')') {
+            val (ft, nextIndex) = parseParameterType(descriptor, index)
+            parameterTypes = parameterTypes :+ ft.asJavaType
+            index = nextIndex
+        }
+        val returnType = parseReturnType(descriptor.substring(index + 1)).asJavaType
 
         <span class="cp_method">
             <span class="method_returntype fqn">{ returnType }</span>
@@ -151,55 +185,55 @@ package object da {
             <span class="method_parametertypes">({
                 if (parameterTypes.nonEmpty)
                     <span class="method_parametertype fqn">{ parameterTypes.head }</span> ++ {
-                        parameterTypes.tail.map { x ⇒
-                            <span class="method_parametertype fqn">{ ", "+x }</span>
+                        parameterTypes.tail.map { t ⇒
+                            <span class="method_parametertype fqn">{ ", "+t }</span>
                         }
                     }
                 else
-                    scala.xml.NodeSeq.Empty
+                    NodeSeq.Empty
             })</span>
         </span>
     }
 
-    private[this] def parseParameterType(md: String, startIndex: Int): (String, Int) = {
+    private[this] def parseParameterType(md: String, startIndex: Int): (FieldTypeInfo, Int) = {
         val td = md.charAt(startIndex)
-        (td: @scala.annotation.switch) match {
+        (td: @switch) match {
             case 'L' ⇒
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple
-                    md.substring(startIndex + 1, endIndex).replace('/', '.'),
+                    ObjectTypeInfo(md.substring(startIndex + 1, endIndex).replace('/', '.')),
                     endIndex + 1
                 )
             case '[' ⇒
-                val (ft, index) = parseParameterType(md, startIndex + 1)
-                ( // this is the return tuple
-                    ft+"[]",
-                    index
-                )
+                parseParameterType(md, startIndex + 1) match {
+                    case (ati: ArrayTypeInfo, index) ⇒
+                        (
+                            ArrayTypeInfo(
+                                ati.elementTypeAsJavaType,
+                                ati.dimensions + 1,
+                                ati.elementTypeIsBaseType
+                            ),
+                                index
+                        )
+                    case (t, index) ⇒
+                        (ArrayTypeInfo(t.asJavaType, 1, t.elementTypeIsBaseType), index)
+                }
             case _ ⇒
-                ( // this is the return tuple
-                    parseFieldType(td.toString).javaTypeName,
+                (
+                    parseFieldType(td.toString),
                     startIndex + 1
                 )
         }
     }
 
-    def methodAccessFlagsToString(access_flags: Int): String =
-        AccessFlags.toString(access_flags, AccessFlagsContexts.METHOD)
+    def abbreviateType(definingType: String, memberType: String): Node = {
+        val classAttrtibute = "type "+(if (definingType.indexOf('[') == -1) "object" else "array")
 
-    def abbreviateFQN(definingTypeFQN: String, memberTypeFQN: String): Node = {
-        val abbreviatedMemberTypeFQN =
-            org.opalj.bytecode.abbreviateFQN(definingTypeFQN, memberTypeFQN, '.')
-
-        if (abbreviatedMemberTypeFQN == memberTypeFQN)
-            <span class="fqn"> { memberTypeFQN } </span>
-        else
-            <span class="fqn tooltip">
-                { abbreviatedMemberTypeFQN }<span>{ memberTypeFQN }</span>
-            </span>
+        val abbreviatedMemberType = org.opalj.bytecode.abbreviateType(definingType, memberType, '.')
+        <span class={ classAttrtibute } data-type={ memberType }> { abbreviatedMemberType } </span>
     }
 
     def byteArrayToNode(info: Array[Byte]): Node = {
-        <pre>{ info.map(b ⇒ f"$b%02x").grouped(40).map(_.mkString("", " ", "\n")).mkString }</pre>
+        <pre>{ info.map(b ⇒ f"$b%02x").grouped(32).map(_.mkString("", " ", "\n")).mkString }</pre>
     }
 }

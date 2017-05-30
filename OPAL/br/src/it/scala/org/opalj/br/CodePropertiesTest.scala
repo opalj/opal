@@ -27,7 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj.br
-package cfg
 
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
@@ -43,9 +42,11 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.instructions.LocalVariableAccess
 
 /**
- * Just tests if we can compute the stack depth and max locals for a wide range of methods.
+ * Just tests if we can compute various information for a wide range of methods;
+ * the stack depth, max locals, liveVariables.
  *
  * @author Michael Eichberg
  */
@@ -67,22 +68,49 @@ class CodePropertiesTest extends FunSuite {
 
         project.parForeachMethodWithBody(() ⇒ false) { m ⇒
 
-            import Code.computeMaxStack
-
-            val MethodInfo(_, classFile, method) = m
+            val MethodInfo(src, classFile, method) = m
             val code = method.body.get
             val instructions = code.instructions
             val eh = code.exceptionHandlers
             val specifiedMaxStack = code.maxStack
-
-            //Code.computeMaxLocalsRequiredByCode(instructions)
+            val specifiedMaxLocals = code.maxLocals
 
             try {
-                val computedMaxStack = computeMaxStack(instructions, ch, eh)
+                val liveVariables = code.liveVariables(ch)
+                assert(
+                    code.programCounters.forall(pc ⇒ liveVariables(pc) ne null),
+                    s"computation of liveVariables fail for ${method.toJava(classFile)}"
+                )
+
+                for {
+                    (pc, LocalVariableAccess(i, isRead)) ← code
+                } {
+                    if (isRead)
+                        assert(
+                            liveVariables(pc).contains(i),
+                            s"$i is not live at $pc in ${method.toJava(classFile)}"
+                        )
+                    else
+                        assert(
+                            !liveVariables(pc).contains(i),
+                            s"$i is live at $pc in ${method.toJava(classFile)}"
+                        )
+                }
+
+                val computedMaxLocals = Code.computeMaxLocalsRequiredByCode(instructions)
+                if (computedMaxLocals > specifiedMaxLocals) {
+                    errors.add(
+                        s"$src: computed max locals is too large - ${method.toJava(classFile)}}: "+
+                            s"$specifiedMaxLocals(specified) vs. $computedMaxLocals(computed):\n"+
+                            code.toString
+                    )
+                }
+
+                val computedMaxStack = Code.computeMaxStack(instructions, ch, eh)
                 analyzedMethodsCount.incrementAndGet()
                 if (specifiedMaxStack < computedMaxStack) {
                     errors.add(
-                        s"the computed max stack is too large for ${method.toJava(classFile)}}: "+
+                        s"$src: computed max stack is too large - ${method.toJava(classFile)}}: "+
                             s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed):\n"+
                             code.toString
                     )
@@ -92,7 +120,7 @@ class CodePropertiesTest extends FunSuite {
             }
         }
         if (!errors.isEmpty()) {
-            fail(errors.asScala.mkString("computation of max stack failed:\n", "\n", "\n"))
+            fail(errors.asScala.mkString("computation of max stack/locals failed:\n", "\n", "\n"))
         }
         analyzedMethodsCount.get()
     }
@@ -104,7 +132,7 @@ class CodePropertiesTest extends FunSuite {
     allBIProjects() foreach { biProject ⇒
         val (name, createProject) = biProject
         test(s"computation of maxStack/maxLocals for all methods of $name") {
-            val count = analyzeProject("JDK", createProject)
+            val count = analyzeProject(name, createProject)
             info(s"computation of maxStack/maxLocals succeeded for $count methods")
         }
     }

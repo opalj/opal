@@ -32,10 +32,7 @@ package collection
 /**
  * Identifies objects which have a – potentially context dependent – unique id.
  * I.e., this trait is implemented by objects that have – by construction -
- * unique ids in a well-defined scope.
- *
- * @note    Two object that are not equal may have the same id, if both objects
- *          do not have the same context.
+ * unique ids in a well-defined scope. The `UIDSet` is based on comparing uids.
  *
  * @author Michael Eichberg
  */
@@ -45,7 +42,24 @@ trait UID {
      * This object's context dependent unique id.
      */
     def id: Int
+}
 
+/**
+ * Identifies objects which have a – potentially context dependent – unique id.
+ * I.e., this trait is implemented by objects that have – by construction -
+ * unique ids in a well-defined scope.
+ *
+ * @note   Two object that are not equal may have the same id, if both objects
+ *         do not have the same context.
+ *
+ * @author Michael Eichberg
+ */
+trait UIDValue extends UID {
+
+    /**
+     * Two objects with a unique id are considered equal if they have the same unique id;
+     * all other properties will be ignored!
+     */
     final override def equals(other: Any): Boolean = {
         other match {
             case that: UID ⇒ UID.areEqual(this, that)
@@ -55,6 +69,9 @@ trait UID {
 
     final def ===(that: UID): Boolean = UID.areEqual(this, that)
 
+    /**
+     * The unique id.
+     */
     final override def hashCode: Int = id
 
 }

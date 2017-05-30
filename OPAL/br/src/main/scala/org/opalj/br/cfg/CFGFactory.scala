@@ -30,8 +30,9 @@ package org.opalj
 package br
 package cfg
 
+import scala.collection.immutable.IntMap
 import scala.collection.immutable.HashMap
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.IntSet
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
@@ -65,17 +66,18 @@ object CFGFactory {
      * Constructs the control flow graph for a given method.
      *
      * The constructed [[CFG]] basically consists of the code's basic blocks. Additionally,
-     * an artificial exit node is added to facilitate the navigation to all normal
+     * two artifical exit nodes are added.
+     * One artificial exit node is added to facilitate the navigation to all normal
      * return instructions. A second artificial node is added that enables the navigation
      * to all instructions that led to an abnormal return. Exception handlers are
      * directly added to the graph using [[CatchNode]]s. Each exception handler is
      * associated with exactly one [[CatchNode]] and all instructions that may throw
      * a corresponding exception will have the respective [[CatchNode]] as a successor.
      *
-     * @note  The algorithm supports all Java bytecode instructions. (In particular JSR/RET)
+     * @note  The algorithm supports all Java bytecode instructions - in particular JSR/RET.
      *
-     * @note  The code is only parsed linearly and the graph is therefore constructed implicitly.
-     *        Hence, it is possible that the graph contains node that cannot be reached from
+     * @note  The code is parsed linearly and the graph is therefore constructed implicitly.
+     *        Hence, it is possible that the graph contains nodes that cannot be reached from
      *        the start node.
      *
      * @param method A method with a body (i.e., with some code.)
@@ -85,7 +87,7 @@ object CFGFactory {
     def apply(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): CFG = {
 
         /*
@@ -108,8 +110,8 @@ object CFGFactory {
         // BBs is a sparse array; only those fields are used that are related to an instruction
 
         var exceptionHandlers = HashMap.empty[ExceptionHandler, CatchNode]
-        for (exceptionHandler ← code.exceptionHandlers) {
-            val catchNode = new CatchNode(exceptionHandler)
+        for ((exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex) {
+            val catchNode = new CatchNode(exceptionHandler, index)
             exceptionHandlers += (exceptionHandler → catchNode)
             val handlerPC = exceptionHandler.handlerPC
             var handlerBB = bbs(handlerPC)
@@ -126,7 +128,7 @@ object CFGFactory {
         // 2. iterate over the code to determine basic block boundaries
         var runningBB: BasicBlock = null
         var previousPC: PC = 0
-        var subroutineReturnPCs = HashMap.empty[PC, UShortSet]
+        var subroutineReturnPCs = IntMap.empty[IntSet] // PC => IntSet
         code.iterate { (pc, instruction) ⇒
             if (runningBB eq null) {
                 runningBB = bbs(pc)
@@ -262,10 +264,10 @@ object CFGFactory {
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     val subroutinePC = pc + jsrInstr.branchoffset
                     val thisSubroutineReturnPCs =
-                        subroutineReturnPCs.getOrElse(subroutinePC, UShortSet.empty)
+                        subroutineReturnPCs.getOrElse(subroutinePC, IntSet.empty)
                     subroutineReturnPCs += (
                         subroutinePC →
-                        (jsrInstr.indexOfNextInstruction(pc) +≈: thisSubroutineReturnPCs)
+                        (thisSubroutineReturnPCs + jsrInstr.indexOfNextInstruction(pc))
                     )
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
@@ -389,7 +391,10 @@ object CFGFactory {
         if (subroutineReturnPCs.nonEmpty) {
             subroutineReturnPCs.foreach(subroutine ⇒ bbs(subroutine._1).setIsStartOfSubroutine())
             for ((subroutinePC, returnToAddresses) ← subroutineReturnPCs) {
-                val returnBBs = returnToAddresses.map(bbs(_)).toSet[CFGNode]
+                val returnBBs = returnToAddresses.transform[CFGNode, Set[CFGNode]](
+                    ra ⇒ bbs(ra),
+                    Set.newBuilder[CFGNode]
+                )
                 val subroutineBB = bbs(subroutinePC)
                 val subroutineBBs: List[BasicBlock] = subroutineBB.subroutineFrontier(code, bbs)
                 val retBBs = subroutineBBs.toSet[CFGNode]
@@ -398,9 +403,16 @@ object CFGFactory {
             }
         }
 
+        val effectiveExceptionHandlers = exceptionHandlers.values filter { catchNode ⇒
+            catchNode.predecessors.nonEmpty || {
+                catchNode.successors foreach { successor ⇒ successor.removePredecessor(catchNode) }
+                false
+            }
+        }
+
         CFG(
             code,
-            normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList,
+            normalReturnNode, abnormalReturnNode, effectiveExceptionHandlers.toList,
             bbs
         )
     }

@@ -148,6 +148,10 @@ package object concurrent {
         tp
     }
 
+    def ExecutionContextN(n: Int): ExecutionContext = {
+        ExecutionContext.fromExecutorService(ThreadPoolN(n))
+    }
+
     /**
      * Returns the singleton instance of the global `ThreadPool` used throughout OPAL.
      */
@@ -161,16 +165,18 @@ package object concurrent {
      *
      * This `ExecutionContext` must not be shutdown.
      */
-    implicit final val OPALExecutionContext: ExecutionContext =
+    implicit final val OPALExecutionContext: ExecutionContext = {
         ExecutionContext.fromExecutorService(ThreadPool)
+    }
 
     //
     // STEP 5
     //
-    final val OPALExecutionContextTaskSupport: ExecutionContextTaskSupport =
+    final val OPALExecutionContextTaskSupport: ExecutionContextTaskSupport = {
         new ExecutionContextTaskSupport(OPALExecutionContext) {
             override def parallelismLevel: Int = NumberOfThreadsForCPUBoundTasks
         }
+    }
 
     //
     // GENERAL HELPER METHODS
@@ -187,7 +193,10 @@ package object concurrent {
      * situations gracefully where the effort necessary to analyze a specific element
      * varies widely.
      *
-     * @note The OPALExecutionContext is used for getting the necessary threads.
+     * @note   The given function `f` must not make use of non-local returns; such returns
+     *         will be caught and reported later.
+     *
+     * @note   The OPALExecutionContext is used for getting the necessary threads.
      */
     def parForeachArrayElement[T, U](
         data:                 Array[T],
@@ -195,22 +204,36 @@ package object concurrent {
         isInterrupted:        () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
     )(
         f: Function[T, U]
-    ): List[Throwable] = {
+    ): Iterable[Throwable] = {
+
+        val exceptions = new ConcurrentLinkedQueue[Throwable]()
 
         if (parallelizationLevel == 1) {
-            try {
-                data.foreach(f)
-                return Nil;
-            } catch {
-                case ct: ControlThrowable ⇒ throw ct
-                case t: Throwable         ⇒ return List(t);
+            data.forall { e ⇒
+                try {
+                    if (!isInterrupted()) {
+                        f(e)
+                        true
+                    } else {
+                        false
+                    }
+                } catch {
+                    case ct: ControlThrowable ⇒
+                        OPALLogger.error(
+                            "internal - severe - non-recoverable",
+                            "unsupported non-local return is used"
+                        )(GlobalLogContext)
+                        exceptions.add(ct)
+                    case t: Throwable ⇒
+                        exceptions.add(new RuntimeException("evaluation failed for "+e, t))
+                }
             }
+            return exceptions.asScala
         }
 
         val max = data.length
         val index = new AtomicInteger(0)
         val futures = new Array[Future[Unit]](parallelizationLevel)
-        val exceptions = new ConcurrentLinkedQueue[Throwable]()
 
         // Start parallel execution
         {
@@ -219,11 +242,18 @@ package object concurrent {
                 futures(t) = Future[Unit] {
                     var i: Int = -1
                     while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
+                        val e = data(i)
                         try {
-                            f(data(i))
+                            f(e)
                         } catch {
-                            case ct: ControlThrowable ⇒ throw ct;
-                            case t: Throwable         ⇒ exceptions.add(t)
+                            case ct: ControlThrowable ⇒
+                                OPALLogger.error(
+                                    "internal - severe - non-recoverable",
+                                    "unsupported non-local return is used"
+                                )(GlobalLogContext)
+                                exceptions.add(ct)
+                            case t: Throwable ⇒
+                                exceptions.add(new RuntimeException("evaluation failed for "+e, t))
                         }
                     }
                 }
@@ -234,11 +264,18 @@ package object concurrent {
         {
             var t = 0
             while (t < parallelizationLevel) {
-                Await.ready(futures(t), Duration.Inf)
+                val future = futures(t)
+                if (Await.ready(future, Duration.Inf).value.get.isFailure) {
+                    // this should not happen!
+                    OPALLogger.error(
+                        "internal - severe - non-recoverable",
+                        "concurrent execution failed unexpectedly: "+future.value.get
+                    )
+                }
                 t += 1
             }
         }
-        exceptions.asScala.toList
+        exceptions.asScala
     }
 
 }

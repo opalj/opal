@@ -36,9 +36,9 @@ import org.scalatest.Matchers
 import org.opalj.io.writeAndOpen
 
 /**
- * This system test(suite) just loads a very large number of class files and creates
- * an HTML representation of the bytecode. It basically tests if we can load and
- * process a large number of different classes without exceptions.
+ * This test(suite) just loads a very large number of class files and creates
+ * the xHTML representation of the classes. It basically tests if we can load and
+ * process a large number of different classes without exceptions (smoke test).
  *
  * @author Michael Eichberg
  */
@@ -46,71 +46,70 @@ import org.opalj.io.writeAndOpen
 class XHTMLRepresentationTest extends FlatSpec with Matchers {
 
     behavior of "the Disassembler"
+    for { file ← bi.TestSupport.allBITestJARs ++ Traversable(bytecode.JRELibraryFolder) } {
 
-    //val files = new java.io.File("/users/eichberg/Applications/Scala IDE")
-    val files = org.opalj.bytecode.JRELibraryFolder
+        it should (s"be able to create the xHTML representation of every class of $file") in {
 
-    it should (s"be able to create the xHTML representation of every class of $files") in {
+            val Lock = new Object
+            var exceptions: List[Throwable] = Nil
+            val exceptionHandler = (source: AnyRef, exception: Throwable) ⇒ {
+                Lock.synchronized { exceptions = exception :: exceptions }
+            }
 
-        val Lock = new Object
-        var exceptions: List[Throwable] = Nil
-        val exceptionHandler = (source: AnyRef, exception: Throwable) ⇒ {
-            Lock.synchronized { exceptions = exception :: exceptions }
-        }
+            val classFiles = ClassFileReader.ClassFiles(file, exceptionHandler)
 
-        val classFiles = ClassFileReader.ClassFiles(files, exceptionHandler)
+            exceptions should be('empty)
+            if (file.getName() != "Empty.jar") { classFiles.isEmpty should be(false) }
+            info(s"loaded ${classFiles.size} class files")
 
-        exceptions should be('empty)
-        classFiles.isEmpty should be(false)
-        info(s"loaded ${classFiles.size} class files")
+            val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
+                val (classFile, _ /*url*/ ) = e
+                val fqn = classFile.thisType
+                if (fqn.contains('.'))
+                    fqn.substring(0, fqn.lastIndexOf('.'))
+                else
+                    "<default>"
+            }
+            info(s"identified ${classFilesGroupedByPackage.size} packages")
 
-        val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
-            val (classFile, _ /*url*/ ) = e
-            val fqn = classFile.fqn
-            if (fqn.contains('.'))
-                fqn.substring(0, fqn.lastIndexOf('.'))
-            else
-                "<default>"
-        }
-        info(s"identified ${classFilesGroupedByPackage.size} packages")
-
-        val transformationCounter = new java.util.concurrent.atomic.AtomicInteger(0)
-        for (groupedClassFiles ← classFilesGroupedByPackage) {
-            val (packageName, classFiles) = groupedClassFiles
-            info("processing package "+packageName)
-            val parClassFiles = classFiles.par
-            parClassFiles.tasksupport = org.opalj.concurrent.OPALExecutionContextTaskSupport
-            parClassFiles.foreach { e ⇒
-                val (classFile, url) = e
-                try {
-                    classFile.toXHTML().toString.length() should be > (0)
-                    transformationCounter.incrementAndGet()
-                    // ideally: should be valid HTML
-                } catch {
-                    case e: Exception ⇒ Lock.synchronized {
-                        val message = s"failed: $url; message:"+e.getMessage()
-                        val newException = new RuntimeException(message, e)
-                        exceptions = newException :: exceptions
+            val transformationCounter = new java.util.concurrent.atomic.AtomicInteger(0)
+            for (groupedClassFiles ← classFilesGroupedByPackage) {
+                val (packageName, classFiles) = groupedClassFiles
+                info("processing package "+packageName)
+                val parClassFiles = classFiles.par
+                parClassFiles.tasksupport = org.opalj.concurrent.OPALExecutionContextTaskSupport
+                parClassFiles.foreach { e ⇒
+                    val (classFile, url) = e
+                    try {
+                        classFile.toXHTML().toString.length() should be > (0)
+                        transformationCounter.incrementAndGet()
+                        // ideally: should be valid HTML
+                    } catch {
+                        case e: Exception ⇒ Lock.synchronized {
+                            val message = s"failed: $url; message:"+e.getMessage()
+                            val newException = new RuntimeException(message, e)
+                            exceptions = newException :: exceptions
+                        }
                     }
                 }
             }
-        }
-        if (exceptions.nonEmpty) {
-            val out = new java.io.ByteArrayOutputStream
-            val writer = new java.io.PrintWriter(out)
-            exceptions.foreach { e ⇒
-                writer.println(e.getMessage())
-                e.getCause().printStackTrace(writer)
-                writer.println("\n")
-            }
-            writer.flush()
-            val exceptionsAsText = new String(out.toByteArray())
-            val fileName = "bytecode disassembler - exceptions"
-            val file = writeAndOpen(exceptionsAsText, fileName, ".txt")
+            if (exceptions.nonEmpty) {
+                val out = new java.io.ByteArrayOutputStream
+                val writer = new java.io.PrintWriter(out)
+                exceptions.foreach { e ⇒
+                    writer.println(e.getMessage())
+                    e.getCause().printStackTrace(writer)
+                    writer.println("\n")
+                }
+                writer.flush()
+                val exceptionsAsText = new String(out.toByteArray())
+                val fileName = "bytecode disassembler - exceptions"
+                val file = writeAndOpen(exceptionsAsText, fileName, ".txt")
 
-            fail(exceptions.map(_.getMessage()).
-                mkString("Exceptions:\n", "\n", "Details: "+file))
+                fail(exceptions.map(_.getMessage()).
+                    mkString("Exceptions:\n", "\n", "Details: "+file))
+            }
+            info(s"transformed ${transformationCounter.get} class files")
         }
-        info(s"transformed ${transformationCounter.get} class files")
     }
 }

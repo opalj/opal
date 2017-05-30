@@ -46,7 +46,7 @@ import org.opalj.br.ObjectType
 trait DefaultReferenceValuesBinding
         extends DefaultTypeLevelReferenceValues
         with DefaultExceptionsFactory {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type AReferenceValue = ReferenceValue
     type DomainReferenceValue = AReferenceValue
@@ -70,11 +70,7 @@ trait DefaultReferenceValuesBinding
      */
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
-    override def ObjectValue(
-        origin:     ValueOrigin,
-        objectType: ObjectType
-    ): DomainObjectValue = {
-
+    override def ObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainObjectValue = {
         new SObjectValue(objectType)
     }
 
@@ -82,9 +78,8 @@ trait DefaultReferenceValuesBinding
         origin:         ValueOrigin,
         upperTypeBound: UIDSet[ObjectType]
     ): DomainObjectValue = {
-
         if (upperTypeBound.isSingletonSet)
-            ObjectValue(origin, upperTypeBound.first)
+            ObjectValue(origin, upperTypeBound.head)
         else
             new MObjectValue(upperTypeBound)
     }
@@ -93,7 +88,6 @@ trait DefaultReferenceValuesBinding
         origin:    ValueOrigin,
         arrayType: ArrayType
     ): DomainArrayValue = {
-
         new ArrayValue(arrayType)
     }
 

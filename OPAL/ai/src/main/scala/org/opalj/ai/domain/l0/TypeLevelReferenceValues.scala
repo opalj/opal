@@ -66,7 +66,7 @@ import org.opalj.br.UpperTypeBound
  * @author Michael Eichberg
  */
 trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObject {
-    domain: IntegerValuesDomain with Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with Configuration with TheClassHierarchy ⇒
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
@@ -285,7 +285,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
         final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
-        final override def upperTypeBound: UpperTypeBound = UIDSet(theUpperTypeBound)
+        final override def upperTypeBound: UpperTypeBound = new UIDSet1(theUpperTypeBound)
 
         final override def summarize(pc: PC): this.type = this
 
@@ -702,7 +702,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     }
 
     object UpperTypeBound {
-        def unapply(value: AReferenceValue): Some[UpperTypeBound] = Some(value.upperTypeBound)
+        def unapply(value: AReferenceValue): Some[UIDSet[_ <: ReferenceType]] = {
+            Some(value.upperTypeBound)
+        }
     }
 
     // -----------------------------------------------------------------------------------
@@ -809,8 +811,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Size: '''Count'''
      *  - Content: '''Empty''' (i.e., default values w.r.t. to the array's component type)
      */
-    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue =
+    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)
+    }
 
     /**
      * Factory method to create a new domain value that represents a newly created

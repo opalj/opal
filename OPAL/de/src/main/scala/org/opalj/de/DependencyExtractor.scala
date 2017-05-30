@@ -29,6 +29,9 @@
 package org.opalj
 package de
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.BasicLogMessage
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
@@ -156,17 +159,21 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     processSignature(vc, attribute.asInstanceOf[Signature])
 
                 // The following attributes do not create dependencies.
-                case Synthetic.KindId            ⇒ /*do nothing*/
-                case SourceFile.KindId           ⇒ /*do nothing*/
-                case Deprecated.KindId           ⇒ /*do nothing*/
-                case SourceDebugExtension.KindId ⇒ /*do nothing*/
+                case Synthetic.KindId             ⇒ /*do nothing*/
+                case SourceFile.KindId            ⇒ /*do nothing*/
+                case Deprecated.KindId            ⇒ /*do nothing*/
+                case SourceDebugExtension.KindId  ⇒ /*do nothing*/
 
                 // The Java 7 BootstrapMethodTable Attribute is resolved and related
                 // dependencies will be extracted when the respective invokedynamic
                 // instructions are processed.
 
                 // We know nothing about:
-                case UnknownAttribute.KindId     ⇒ /*do nothing*/
+                case UnknownAttribute.KindId      ⇒ /*do nothing*/
+
+                // These are "custom attributes"
+                case SynthesizedClassFiles.KindId ⇒ /*ignore*/
+                case VirtualTypeFlag.KindId       ⇒ /*ignore*/
 
                 case _ ⇒
                     val classInfo = classFile.thisType.toJava
@@ -853,7 +860,12 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
             }
 
             case handle: FieldAccessMethodHandle ⇒ {
-                processDependency(declaringMethod, handle.declaringClassType, DECLARING_CLASS_OF_ACCESSED_FIELD)
+                processDependency(
+                    declaringMethod,
+                    handle.declaringClassType,
+                    DECLARING_CLASS_OF_ACCESSED_FIELD
+                )
+
                 handle match {
 
                     case _: FieldReadAccessMethodHandle ⇒
@@ -866,11 +878,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                             ),
                             READS_FIELD
                         )
-                        processDependency(
-                            declaringMethod,
-                            handle.fieldType,
-                            TYPE_OF_ACCESSED_FIELD
-                        )
+                        processDependency(declaringMethod, handle.fieldType, TYPE_OF_ACCESSED_FIELD)
                         processDependency(
                             declaringMethod,
                             handle.declaringClassType,
@@ -997,19 +1005,12 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
  */
 private object DependencyExtractor {
 
-    private[this] var wasIncompleteHandlingOfInvokedynamicWarningShown = false
-
-    private val incompleteHandlingOfInvokedynamicMessage: String =
-        "[info] This project contains invokedynamic instructions. "+
-            "Using the currently configured strategy only dependencies to the runtime are resolved."
+    private final val incompleteHandlingOfInvokedynamicMessage: String = {
+        "for the code's invokedynamic instructions only dependencies to the runtime are resolved"
+    }
 
     def warnAboutIncompleteHandlingOfInvokedynamic(): Unit = {
-        if (!wasIncompleteHandlingOfInvokedynamicWarningShown)
-            this.synchronized {
-                if (!wasIncompleteHandlingOfInvokedynamicWarningShown) {
-                    wasIncompleteHandlingOfInvokedynamicWarningShown = true
-                    println(incompleteHandlingOfInvokedynamicMessage)
-                }
-            }
+        implicit val logContext = GlobalLogContext
+        OPALLogger.logOnce(BasicLogMessage(message = incompleteHandlingOfInvokedynamicMessage))
     }
 }

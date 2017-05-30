@@ -31,7 +31,9 @@ package br
 package instructions
 
 import scala.annotation.switch
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.IntSet
 
 /**
  * An instruction that returns from a method.
@@ -66,9 +68,15 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        UShortSet.empty
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
+        if (regularSuccessorsOnly)
+            Naught
+        else {
+            val ehs = code.handlersForException(currentPC, ReturnInstruction.jvmExceptions.head)
+            ehs.map(_.handlerPC)
+        }
     }
 
     final def expressionResult: NoExpression.type = NoExpression
@@ -98,7 +106,7 @@ object ReturnInstruction {
         }
     }
 
-    def apply(theType: Type): ReturnInstruction =
+    def apply(theType: Type): ReturnInstruction = {
         (theType.id: @switch) match {
             case VoidType.id    ⇒ RETURN
             case IntegerType.id ⇒ IRETURN
@@ -110,6 +118,20 @@ object ReturnInstruction {
             case FloatType.id   ⇒ FRETURN
             case DoubleType.id  ⇒ DRETURN
             case _              ⇒ ARETURN
+        }
+    }
+
+    def unapply(instruction: Instruction): Option[ReturnInstruction] =
+        (instruction.opcode: @switch) match {
+            case RETURN.opcode
+                | IRETURN.opcode
+                | LRETURN.opcode
+                | FRETURN.opcode
+                | DRETURN.opcode
+                | ARETURN.opcode ⇒
+                Some(instruction.asInstanceOf[ReturnInstruction])
+            case _ ⇒
+                None
         }
 
 }
@@ -127,11 +149,11 @@ object ReturnInstructions {
         val instructions = code.instructions
         val max = instructions.length
         var pc = 0
-        var returnPCs = org.opalj.collection.mutable.UShortSet.empty
+        var returnPCs = IntSet.empty
         while (pc < max) {
             val instruction = instructions(pc)
             if (ReturnInstruction.isReturnInstruction(instruction))
-                returnPCs = pc +≈: returnPCs
+                returnPCs += pc
             pc = instruction.indexOfNextInstruction(pc)(code)
         }
         Some(returnPCs)

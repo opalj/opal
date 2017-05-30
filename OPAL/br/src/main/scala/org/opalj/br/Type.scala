@@ -38,8 +38,9 @@ import scala.annotation.tailrec
 import scala.math.Ordered
 import scala.collection.SortedSet
 
-import org.opalj.collection.UID
+import org.opalj.collection.UIDValue
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet2
 
 /**
  * Represents a JVM type.
@@ -76,7 +77,7 @@ import org.opalj.collection.immutable.UIDSet
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-sealed abstract class Type extends UID with Ordered[Type] {
+sealed abstract class Type extends UIDValue with Ordered[Type] {
 
     /**
      * Returns `true` if this type can be used by fields. Returns `true` unless
@@ -1053,12 +1054,12 @@ object ObjectType {
     /**
      * Factory method to create `ObjectType`s.
      *
-     * @param fqn The fully qualified name of a class or interface type in
-     *      binary notation.
-     * @note `ObjectType` objects are cached internally to reduce the overall memory
-     *      requirements and to ensure that only one instance of an `ObjectType` exists
-     *      per fully qualified name. Hence, comparing `ObjectTypes` using reference
-     *      comparison is explicitly supported.
+     * @param  fqn The fully qualified name of a class or interface type in
+     *         binary notation.
+     * @note   `ObjectType` objects are cached internally to reduce the overall memory
+     *         requirements and to ensure that only one instance of an `ObjectType` exists
+     *         per fully qualified name. Hence, comparing `ObjectTypes` using reference
+     *         comparison is explicitly supported.
      */
     def apply(fqn: String): ObjectType = {
         val readLock = cacheRWLock.readLock()
@@ -1198,7 +1199,7 @@ object ObjectType {
      * is always `Serializable` and `Cloneable`.
      */
     final val SerializableAndCloneable: UIDSet[ObjectType] = {
-        UIDSet(ObjectType.Serializable, ObjectType.Cloneable)
+        new UIDSet2(ObjectType.Serializable, ObjectType.Cloneable)
     }
 
     private final val javaLangBooleanId = Boolean.id
@@ -1329,28 +1330,30 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      * Returns this array type's element type. E.g., the element type of an
      * array of arrays of arrays of `int` is `int`.
      */
-    def elementType: FieldType =
+    def elementType: FieldType = {
         componentType match {
             case at: ArrayType ⇒ at.elementType
             case _             ⇒ componentType
         }
+    }
 
     /**
      * The number of dimensions of this array. E.g. "Object[]" has one dimension and
      * "Object[][]" has two dimensions.
      */
-    def dimensions: Int =
+    def dimensions: Int = {
         1 + (componentType match { case at: ArrayType ⇒ at.dimensions; case _ ⇒ 0 })
+    }
 
     /**
      * Returns the component type of this array type after dropping the given number
      * of dimensions. E.g., if dimensions is `0`
-     * `this` is returned; if it is `1` then this arraytype's component type is returned.
+     * `this` is returned; if it is `1` then this array type's component type is returned.
      * If the value is larger than `1` then the `componentType` has to be an array type
      * and `drop(dimensions-1)` will be called on that type.
      *
-     * @param dimensions The number of dimensions to drop. This values has be equal or
-     *      smaller than the number of dimensions of this array.
+     * @param  dimensions The number of dimensions to drop. This values has be equal or
+     *         smaller than the number of dimensions of this array.
      */
     def drop(dimensions: Int): FieldType = {
         dimensions match {
@@ -1366,8 +1369,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = "["+componentType.toJVMTypeName
 
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Class.forName(toBinaryJavaName)
+    override def toJavaClass: java.lang.Class[_] = java.lang.Class.forName(toBinaryJavaName)
 
     override def adapt[T](
         targetType: Type
@@ -1446,8 +1448,16 @@ object ArrayElementType {
 }
 
 /**
- * Defines an extractor to match a type against any `ObjectType`
- * except `java.lang.Object`.
+ * Defines an extractor to match a type against any `ObjectType` except `java.lang.Object`.
+ *
+ * @example
+ * {{{
+ * val t : Type = ...
+ * t match {
+ *  case ot @ NotJavaLangObject() => ot
+ *  case _ =>
+ * }
+ * }}}
  *
  * @author Michael Eichberg
  */

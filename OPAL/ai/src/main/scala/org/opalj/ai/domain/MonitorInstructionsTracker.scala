@@ -49,11 +49,11 @@ trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomIn
     def isMonitorInstructionUsed: Boolean = usesMonitorInstruction
 
     abstract override def initProperties(
-        code:             Code,
-        joinInstructions: BitSet,
-        initialLocals:    Locals
+        code:          Code,
+        cfJoins:       BitSet,
+        initialLocals: Locals
     ): Unit = {
-        super.initProperties(code, joinInstructions, initialLocals)
+        super.initProperties(code, cfJoins, initialLocals)
 
         this.usesMonitorInstruction = false
     }

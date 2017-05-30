@@ -1,0 +1,74 @@
+<section>
+	<link type="text/css" href="css/infovis-icicle.css" rel="stylesheet" />
+	<script language="javascript" type="text/javascript" src="js/infovis-jit-yc.js"></script>
+	<script language="javascript" type="text/javascript" src="JDK8Complexity.data.js"></script>
+	<script type="text/javascript">window.addEventListener('load',initViz,false);</script>
+
+
+	<h1>Visualizing Java 8</h1>
+	<p>
+	The following is a visualization of the relative size of the packages – measured in terms of the number of bytecode instructions – of Oracle JDK 1.8.0's runtime jar (rt.jar) for Mac OS X.
+	As you can see, the <code>java</code> package and its subpackages contains a major part of the code.
+	Another major package is (more or less as expected) the <code>javax</code> package. (JavaFX is stored in another jar and is not considered here.)
+	</p>
+
+	<p>
+	However, it is very interesting that more than half of the code belongs to packages (<code>com</code> and <code>sun</code>) that are not intended to be used by the regular Java developer.
+	</p>
+	<p>
+	To get more detailed information on a package and its sub-packages just <emph>left-click</emph> on the package. If you want to get more abstract information <emph>right click</emph> on the package.
+	</p>
+ 	<div id="infovis"></div>
+  	<div>
+    	<label for="s-orientation">Orientation: </label>
+    	<select name="s-orientation" id="s-orientation">
+      		<option value="h" selected>horizontal</option>
+      		<option value="v">vertical</option>
+    	</select>
+    	<div id="max-levels">
+    		<label for="i-levels-to-show">Max levels: </label>
+    		<select  id="i-levels-to-show" name="i-levels-to-show" style="width: 50px">
+      			<option>all</option>
+			    <option>1</option>
+      			<option>2</option>
+				<option selected="selected">3</option>
+				<option>4</option>
+				<option>5</option>
+    		</select>
+    	</div>
+ 	</div>
+	<!--<a style="visibility: hidden;" id="update" href="#" class="theme button white">Go to Parent</a>-->
+
+	<p>
+	The visualization was created using: <a href="https://philogb.github.io/jit/">JavaScript InfoVis Toolkit</a>.
+	</p>
+
+	<p>
+	The analysis was written using the OPAL Bytecode toolkit and is shown next (5 lines of boilerplate and 12 lines for the analysis).
+
+	<pre><code>object InstructionStatistics extends AnalysisExecutor {
+
+  val analysis = new Analysis[URL, BasicReport] {
+
+    def description: String = "Collects information about the number of instructions per package."
+
+    def analyze(project: Project[URL], parameters: Seq[String]) = {
+      import scala.collection.mutable.{ HashSet, HashMap }
+      // FQPN = FullyQualifiedPackageName
+      val instructionsPerFQPN = HashMap.empty[String, Int]
+      for {
+        classFile ← project.classFiles
+        packageName = classFile.thisType.packageName
+        MethodWithBody(body) ← classFile.methods
+      } {
+        instructionsPerFQPN.update(
+          packageName,
+          instructionsPerFQPN.getOrElse(packageName, 0) + body.programCounters.size)
+      }
+      val json : String = // generate the JSON
+      BasicReport(json)
+    }
+  }
+}</code></pre>
+	</p>
+</section>

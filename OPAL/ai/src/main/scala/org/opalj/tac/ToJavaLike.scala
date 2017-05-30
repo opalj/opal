@@ -31,6 +31,7 @@ package tac
 
 import org.opalj.br.Method
 import org.opalj.ai.AIResult
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeReturnAddress
@@ -43,13 +44,12 @@ import org.opalj.br.ComputationalTypeReturnAddress
  */
 object ToJavaLike {
 
-    private def callToJavaLike(name: String, params: List[Expr]): String = {
+    private def callToJavaLike(name: String, params: Seq[Expr]): String = {
         params.reverse map { toJavaLikeExpr(_) } mkString (s".$name(", ", ", ")")
     }
 
     @inline final def toJavaLikeExpr(expr: Expr): String = {
         expr match {
-            case dvr: DomainValueBasedVar ⇒ s"${dvr.name} /*${dvr.properties.toString()}*/"
             case v @ Var(name) ⇒
                 if (v.cTpe == ComputationalTypeReturnAddress)
                     name+"/* return address */"
@@ -122,50 +122,80 @@ object ToJavaLike {
     }
 
     @inline final def toJavaLikeStmt(stmt: Stmt): String = {
-        stmt match {
-            case Return(_)                   ⇒ "return;"
-            case ReturnValue(_, expr)        ⇒ s"return ${toJavaLikeExpr(expr)};"
-            case Throw(_, exc)               ⇒ s"throw ${toJavaLikeExpr(exc)};"
+        stmt.astID match {
+            case Return.ASTID ⇒ "return;"
+            case ReturnValue.ASTID ⇒
+                val ReturnValue(_, expr) = stmt
+                s"return ${toJavaLikeExpr(expr)};"
+            case Throw.ASTID ⇒
+                val Throw(_, exc) = stmt
+                s"throw ${toJavaLikeExpr(exc)};"
 
-            case Nop(_)                      ⇒ ";"
+            case Nop.ASTID ⇒ ";"
 
-            case MonitorEnter(_, objRef)     ⇒ s"monitorenter ${toJavaLikeExpr(objRef)};"
-            case MonitorExit(_, objRef)      ⇒ s"monitorexit ${toJavaLikeExpr(objRef)};"
+            case MonitorEnter.ASTID ⇒
+                val MonitorEnter(_, objRef) = stmt
+                s"monitorenter ${toJavaLikeExpr(objRef)};"
+            case MonitorExit.ASTID ⇒
+                val MonitorExit(_, objRef) = stmt
+                s"monitorexit ${toJavaLikeExpr(objRef)};"
 
-            case Goto(_, target)             ⇒ s"goto $target;"
-            case JumpToSubroutine(_, target) ⇒ s"jsr $target;"
-            case Ret(_, variable)            ⇒ s"ret ${toJavaLikeExpr(variable)};"
-            case If(_, left, cond, right, target) ⇒
+            case Goto.ASTID ⇒
+                val Goto(_, target) = stmt
+                s"goto $target;"
+
+            case JumpToSubroutine.ASTID ⇒
+                val JumpToSubroutine(_, target) = stmt
+                s"jsr $target;"
+            case Ret.ASTID ⇒
+                val Ret(_, variable) = stmt
+                s"ret ${toJavaLikeExpr(variable)};"
+
+            case If.ASTID ⇒
+                val If(_, left, cond, right, target) = stmt
                 s"if(${toJavaLikeExpr(left)} $cond ${toJavaLikeExpr(right)}) goto $target;"
 
-            case Switch(_, defaultTarget, index, npairs) ⇒
+            case Switch.ASTID ⇒
+                val Switch(_, defaultTarget, index, npairs) = stmt
                 var result = "\n"
                 for (x ← npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
                 result = result+"    default: goto "+defaultTarget+";\n"
                 s"switch(${toJavaLikeExpr(index)}){$result}"
 
-            case Assignment(_, variable, expr) ⇒
+            case Assignment.ASTID ⇒
+                val Assignment(_, variable, expr) = stmt
                 s"${variable.name} = ${toJavaLikeExpr(expr)};"
 
-            case ArrayStore(_, arrayRef, index, operandVar) ⇒
+            case ArrayStore.ASTID ⇒
+                val ArrayStore(_, arrayRef, index, operandVar) = stmt
                 s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}] = ${toJavaLikeExpr(operandVar)};"
 
-            case PutStatic(_, declaringClass, name, value) ⇒
+            case PutStatic.ASTID ⇒
+                val PutStatic(_, declaringClass, name, value) = stmt
                 s"${declaringClass.toJava}.$name = ${toJavaLikeExpr(value)}"
 
-            case PutField(_, declaringClass, name, receiver, value) ⇒
+            case PutField.ASTID ⇒
+                val PutField(_, declaringClass, name, receiver, value) = stmt
                 s"${toJavaLikeExpr(receiver)}/*${declaringClass.toJava}*/.$name = ${toJavaLikeExpr(value)}"
 
-            case StaticMethodCall(_, declClass, name, descriptor, params) ⇒
+            case StaticMethodCall.ASTID ⇒
+                val StaticMethodCall(_, declClass, name, _ /* descriptor*/ , params) = stmt
                 declClass.toJava + callToJavaLike(name, params) + ';'
 
-            case VirtualMethodCall(_, declClass, name, descriptor, receiver, params) ⇒
+            case VirtualMethodCall.ASTID ⇒
+                val VirtualMethodCall(_, declClass, name, _ /*descriptor*/ , receiver, params) = stmt
                 val call = callToJavaLike(name, params)
                 toJavaLikeExpr(receiver)+"/*"+declClass.toJava+"*/"+call + ';'
 
-            case NonVirtualMethodCall(_, declClass, name, descriptor, receiver, params) ⇒
+            case NonVirtualMethodCall.ASTID ⇒
+                val NonVirtualMethodCall(_, declClass, name, _ /* descriptor*/ , receiver, params) = stmt
                 val call = callToJavaLike(name, params)
                 toJavaLikeExpr(receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call + ';'
+
+            case FailingExpression.ASTID ⇒
+                val FailingExpression(_, expr) = stmt
+                "/*always throws an exception: */"+toJavaLikeExpr(expr) + ';'
+
         }
     }
 
@@ -209,12 +239,17 @@ object ToJavaLike {
 
     def apply(
         method:         Method,
-        classHierarchy: ClassHierarchy   = Code.preDefinedClassHierarchy,
-        aiResult:       Option[AIResult] = None
+        classHierarchy: ClassHierarchy                                = Code.BasicClassHierarchy,
+        aiResult:       Option[AIResult { val domain: RecordDefUse }] = None
     ): String = {
         val optimizations = List(SimplePropagation)
-        val quadruples = AsQuadruples(method, classHierarchy, aiResult, optimizations, false)
-        ToJavaLike(quadruples._1)
+        val quadruples =
+            aiResult map { aiResult ⇒
+                TACAI(method, classHierarchy, aiResult, optimizations)._1
+            } getOrElse {
+                TACNaive(method, classHierarchy, optimizations, false)._1
+            }
+        ToJavaLike(quadruples)
     }
 
 }

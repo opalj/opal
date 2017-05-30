@@ -45,7 +45,8 @@ import org.opalj.issues.FieldLocation
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.properties.IsExtensible
+import org.opalj.fpcf.properties.NotExtensibleType
+import org.opalj.fpcf.properties.TypeExtensibility
 
 /**
  * Identifies fields (static or instance) that are not used and which are also not useable.
@@ -64,11 +65,11 @@ object UnusedFields {
 
         val candidateFields = classFile.fields.filterNot { field ⇒
             (field.isSynthetic) ||
-                // These fields are inlined by compilers; hence, even if the field is not accessed 
+                // These fields are inlined by compilers; hence, even if the field is not accessed
                 // it may be used in the source code.
                 (field.isFinal && (field.fieldType.isBaseType || field.fieldType == ObjectType.String)) ||
                 // The field is read at least once...
-                (fieldAccessInformation.readAccesses(classFile, field).nonEmpty) ||
+                (fieldAccessInformation.readAccesses(field).nonEmpty) ||
                 // We may have some users of the field in the future...
                 // IMPROVE use FutureFieldAccess property (TBD) to get the information if we may have future field accesses
                 (!field.isPrivate && AnalysisModes.isLibraryLike(theProject.analysisMode))
@@ -78,7 +79,7 @@ object UnusedFields {
             return Nil;
 
         val unusedFields = candidateFields.filterNot { field ⇒
-            // Test if the field defines a (probably inlined) constant string.             
+            // Test if the field defines a (probably inlined) constant string.
             field.isFinal && (field.fieldType eq ObjectType.String) &&
                 {
                     field.constantFieldValue match {
@@ -121,7 +122,10 @@ object UnusedFields {
                 unusedAndNotReflectivelyAccessedFields.filter(f ⇒
                     f.isPrivate || f.isPackagePrivate || {
                         // IMPROVE Test if the "isExtensible" property was properly computed!
-                        f.isProtected && propertyStore(IsExtensible, classFile).isNo
+                        f.isProtected && {
+                            val p = propertyStore(classFile, TypeExtensibility.key)
+                            p.hasProperty && p.p == NotExtensibleType
+                        }
                     })
             } else {
                 val message = s"the analysis mode $analysisMode is unknown"

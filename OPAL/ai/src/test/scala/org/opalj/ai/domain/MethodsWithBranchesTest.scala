@@ -177,9 +177,6 @@ class MethodsWithBranchesTest extends FlatSpec with Matchers {
     }
 }
 private object MethodsWithBranchesTest {
-
-    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
-
-    val classFile = classFiles.map(_._1).
-        find(_.thisType.fqn == "ai/MethodsWithBranches").get
+    val classFiles = ClassFiles(locateTestResources("ai.jar", "bi"))
+    val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithBranches").get
 }

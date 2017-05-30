@@ -77,8 +77,9 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def invokeinterface(
         pc:               PC,
@@ -86,8 +87,9 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def invokespecial(
         pc:               PC,
@@ -95,8 +97,9 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def invokestatic(
         pc:               PC,
@@ -104,8 +107,9 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def invokedynamic(
         pc:               PC,
@@ -113,8 +117,9 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): Computation[DomainValue, ExceptionValues] =
+    ): Computation[DomainValue, ExceptionValues] = {
         throw new UnsupportedOperationException
+    }
 
     /* override*/ def getfield(
         pc:             PC,
@@ -122,16 +127,18 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         declaringClass: ObjectType,
         name:           String,
         fieldType:      FieldType
-    ): Computation[DomainValue, ExceptionValue] =
+    ): Computation[DomainValue, ExceptionValue] = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def getstatic(
         pc:             PC,
         declaringClass: ObjectType,
         name:           String,
         fieldType:      FieldType
-    ): Computation[DomainValue, Nothing] =
+    ): Computation[DomainValue, Nothing] = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def putfield(
         pc:             PC,
@@ -140,8 +147,9 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         declaringClass: ObjectType,
         name:           String,
         fieldType:      FieldType
-    ): Computation[Nothing, ExceptionValue] =
+    ): Computation[Nothing, ExceptionValue] = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def putstatic(
         pc:             PC,
@@ -149,20 +157,23 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         declaringClass: ObjectType,
         name:           String,
         fieldType:      FieldType
-    ): Computation[Nothing, Nothing] =
+    ): Computation[Nothing, Nothing] = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def monitorenter(
         pc:    PC,
         value: DomainValue
-    ): Computation[Nothing, ExceptionValue] =
+    ): Computation[Nothing, ExceptionValue] = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def monitorexit(
         pc:    PC,
         value: DomainValue
-    ): Computation[Nothing, ExceptionValues] =
+    ): Computation[Nothing, ExceptionValues] = {
         throw new UnsupportedOperationException
+    }
 
     /*override*/ def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
@@ -199,14 +210,14 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/ def i2l(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 
-    /*override*/ def f2d(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue =
+    /*override*/ def f2d(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
     /*override*/ def f2i(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
     /*override*/ def f2l(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 
-    /*override*/ def d2f(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue =
+    /*override*/ def d2f(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
     /*override*/ def d2i(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
@@ -222,4 +233,3 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/ def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 }
-

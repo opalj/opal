@@ -54,13 +54,13 @@ trait LogMessage {
     def category: Option[String]
 
     /**
-     * The log message. An unformatted string that may contain line breaks
-     * and tabs.
+     * The log message. An unformatted string that may contain line breaks and tabs.
+     *
+     * If the message starts with "\r", the "\r" is moved to the beginning.
      */
     def message: String
 
-    private def categoryToConsoleOutput: String =
-        category.map(c ⇒ s"[$c]").getOrElse("")
+    private def categoryToConsoleOutput: String = category.map(c ⇒ s"[$c]").getOrElse("")
 
     /**
      * Creates a string representation of the log message that is well-suited for
@@ -70,17 +70,25 @@ trait LogMessage {
         val (lnStart, lnEnd) =
             if (ansiColored) {
                 (
-                    s"${level.ansiColorEscape}[${level.id}]${categoryToConsoleOutput} ",
+                    s"${level.ansiColorEscape}[${level.id}]$categoryToConsoleOutput ",
                     Console.RESET
                 )
             } else {
                 (
-                    s"[${level.id}]${categoryToConsoleOutput} ",
+                    s"[${level.id}]$categoryToConsoleOutput ",
                     ""
                 )
             }
 
-        message.split('\n').map(ln ⇒ lnStart + ln + lnEnd).mkString("\n")
+        message.split('\n').map { ln ⇒
+            var cr = ""
+            var rawln = ln
+            if (ln.startsWith("\r")) {
+                cr = "\r"
+                rawln = ln.substring(1)
+            }
+            cr + lnStart + rawln + lnEnd
+        }.mkString("\n")
     }
 }
 
@@ -95,6 +103,7 @@ case class BasicLogMessage(
 ) extends LogMessage {
 
     def category: Option[String] = None
+
 }
 
 /**

@@ -63,15 +63,12 @@ trait TypeLevelPrimitiveValuesConversions extends PrimitiveValuesConversionsDoma
      */
     override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def f2d(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue =
-        DoubleValue(pc)
+    override def f2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
     override def f2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
     override def f2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 
-    override def d2f(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue =
-        FloatValue(pc)
+    override def d2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
     override def d2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
     override def d2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 
 }
-

@@ -30,16 +30,12 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
-
 /**
  * An instruction that adds two primitive values.
  *
  * @author Michael Eichberg
  */
-abstract class AddInstruction
-        extends StackBasedArithmeticInstruction
-        with BinaryArithmeticInstruction {
+abstract class AddInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
 
     final def isShiftInstruction: Boolean = false
 
@@ -49,13 +45,4 @@ abstract class AddInstruction
 
     final def stackSlotsChange: Int = -computationalType.operandSize
 
-    final def nextInstructions(
-        currentPC:             PC,
-        regularSuccessorsOnly: Boolean
-    )(
-        implicit
-        code: Code
-    ): PCs = {
-        UShortSet(indexOfNextInstruction(currentPC))
-    }
 }

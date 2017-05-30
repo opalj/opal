@@ -30,8 +30,9 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntSet1
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.mutable.UShortSet
 
 /**
  * Access jump table by key match and jump.
@@ -72,13 +73,13 @@ case class LOOKUPSWITCH(
         npairs:        IndexedSeq[(Int, Int)]
 ) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
 
-    override def tableSize = npairs.size
+    override def tableSize: Int = npairs.size
 
-    def jumpOffsets = npairs.map(_._2)
+    def jumpOffsets: Iterable[Int] = npairs.view.map(_._2)
 
     def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
         (
-            npairs.filter(_._2 == jumpOffset).map(_._1)(Chain.GenericSpecializedCBF),
+            npairs.view.filter(_._2 == jumpOffset).map(_._1)(Chain.GenericSpecializedCBF),
             jumpOffset == defaultOffset
         )
     }
@@ -90,12 +91,19 @@ case class LOOKUPSWITCH(
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        var pcs = UShortSet(currentPC + defaultOffset)
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
+        val defaultTarget = currentPC + defaultOffset
+        var pcs = Chain.singleton(defaultTarget)
+        var seen: IntSet = new IntSet1(defaultTarget)
         npairs foreach { npair ⇒
             val (_, offset) = npair
-            pcs = (currentPC + offset) +≈: pcs
+            val nextTarget = (currentPC + offset)
+            if (!seen.contains(nextTarget)) {
+                seen += nextTarget
+                pcs :&:= nextTarget
+            }
         }
         pcs
     }

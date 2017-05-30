@@ -29,6 +29,11 @@
 package org.opalj
 package util
 
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsPath
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
+
 /**
  * Represents a time span of `n` nanoseconds.
  *
@@ -70,6 +75,11 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal with Serializable {
  * @author Michael Eichberg
  */
 object Nanoseconds {
+    implicit val nanosecondsWrites = new Writes[Nanoseconds] {
+        def writes(nanosecond: Nanoseconds) = JsNumber(nanosecond.timeSpan)
+    }
+
+    implicit val nanosecondsReads: Reads[Nanoseconds] = JsPath.read[Long].map(Nanoseconds.apply)
 
     final val None: Nanoseconds = new Nanoseconds(0L)
 

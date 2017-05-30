@@ -31,7 +31,7 @@ package ai
 package domain
 
 import org.opalj.br.Code
-import org.opalj.br.{ClassHierarchy ⇒ TheClassHierarchy}
+import org.opalj.br.ClassHierarchy
 
 /**
  * This class uses OPAL's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
@@ -41,7 +41,7 @@ import org.opalj.br.{ClassHierarchy ⇒ TheClassHierarchy}
  *
  * @author Michael Eichberg
  */
-trait PredefinedClassHierarchy extends ClassHierarchy {
+trait PredefinedClassHierarchy extends TheClassHierarchy {
 
     /**
      * Returns the predefined class hierarchy unless explicitly overridden. OPAL's
@@ -52,12 +52,12 @@ trait PredefinedClassHierarchy extends ClassHierarchy {
      * @note '''This method is not intended to be overridden.''' Use a different domain
      *      as a foundation.
      */
-    final def classHierarchy: TheClassHierarchy = PredefinedClassHierarchy.classHierarchy
+    final def classHierarchy: ClassHierarchy = PredefinedClassHierarchy.classHierarchy
 
 }
 
 object PredefinedClassHierarchy {
 
-    final val classHierarchy: TheClassHierarchy = Code.preDefinedClassHierarchy
+    final val classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
 
 }

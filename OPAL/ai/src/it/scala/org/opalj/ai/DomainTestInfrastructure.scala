@@ -59,9 +59,9 @@ import org.opalj.ai.util.XHTML
  * The primary mechanism to adapt this framework is to override the `analyzeAIResult` method
  * and to throw some exception if an expected property is violated.
  *
- * @param 	domainName A descriptive name of the domain.
+ * @param   domainName A descriptive name of the domain.
  *
- * @author 	Michael Eichberg
+ * @author  Michael Eichberg
  */
 abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec with Matchers {
 
@@ -75,6 +75,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
      * Called for each method that was successfully analyzed.
      */
     def analyzeAIResult(
+        project:   Project[URL],
         classFile: ClassFile,
         method:    Method,
         result:    AIResult { val domain: AnalyzedDomain }
@@ -116,7 +117,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                                 s" (maxStack=${body.maxStack}; maxLocals=${body.maxLocals})"
                         )
                     } else {
-                        analyzeAIResult(classFile, method, result)
+                        analyzeAIResult(project, classFile, method, result)
                     }
                 }
                 methodsCount.incrementAndGet()

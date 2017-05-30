@@ -61,7 +61,7 @@ package ai
  *
  * @author Michael Eichberg
  */
-sealed trait Computation[+V, +E] {
+sealed abstract class Computation[+V, +E] {
 
     /**
      * Returns `true` if this computation ''may have returned normally'' without

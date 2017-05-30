@@ -1151,6 +1151,6 @@ private object MethodsPlainTest {
     }
 
     val classFile =
-        ClassFiles(locateTestResources("classfiles/ai.jar", "ai")).map(_._1).
+        ClassFiles(locateTestResources("ai.jar", "bi")).map(_._1).
             find(_.thisType.fqn == "ai/MethodsPlain").get
 }

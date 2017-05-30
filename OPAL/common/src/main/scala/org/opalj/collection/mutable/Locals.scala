@@ -96,7 +96,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * Merges this `Locals` data-structure with the given `Locals`. If
      * the pairwise merge of those values that are different always results in values that
      * are reference equal to this local's elements or the other local's elements,
-     * the return value will be `this` or `other` otherwise a new locals data structure
+     * the return value will be `this` or `other`, otherwise a new locals data structure
      * is created.
      *
      * @param other Another `Locals` data-structure that has the the same number of

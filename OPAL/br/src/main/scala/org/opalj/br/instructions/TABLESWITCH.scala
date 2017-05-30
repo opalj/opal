@@ -31,7 +31,8 @@ package br
 package instructions
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntSet1
 
 /**
  * Access jump table by index and jump.
@@ -87,10 +88,19 @@ case class TABLESWITCH(
         regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code
-    ): PCs = {
-        var pcs = UShortSet(currentPC + defaultOffset)
-        jumpOffsets foreach (offset ⇒ { pcs = (currentPC + offset) +≈: pcs })
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Chain[PC] = {
+        val defaultTarget = currentPC + defaultOffset
+        var pcs = Chain.singleton(defaultTarget)
+        var seen: IntSet = IntSet1(defaultTarget)
+        jumpOffsets foreach { offset ⇒
+            val newPC = (currentPC + offset)
+            if (!seen.contains(newPC)) {
+                seen += newPC
+                pcs :&:= newPC
+            }
+        }
         pcs
     }
 

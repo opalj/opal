@@ -42,12 +42,12 @@ class DefaultPerformInvocationsDomain[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
-)
-        extends SharedDefaultDomain[Source](project, classFile, method)
+) extends SharedDefaultDomain[Source](project, classFile, method)
         with PerformInvocations {
 
-    def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean =
+    def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean = {
         !method.returnType.isVoidType
+    }
 
     type CalledMethodDomain = SharedDefaultDomain[Source] with DefaultRecordMethodCallResults
 
@@ -66,7 +66,4 @@ class DefaultPerformInvocationsDomainWithCFG[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
-)
-        extends DefaultPerformInvocationsDomain[Source](project, classFile, method)
-        with RecordCFG
-
+) extends DefaultPerformInvocationsDomain[Source](project, classFile, method) with RecordCFG

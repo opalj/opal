@@ -37,7 +37,9 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.br.{ObjectType, ArrayType, IntegerType}
+import org.opalj.br.ObjectType
+import org.opalj.br.ArrayType
+import org.opalj.br.IntegerType
 import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
 
 /**
@@ -65,16 +67,45 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
 
     describe("operations involving IntegerRange values") {
 
-        describe("the behavior of join if we exceed the max spread") {
+        describe("the behavior of join if we exceed the maximum configured cardinality") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(2L)
             import theDomain._
+            assert(theDomain.maxCardinalityOfIntegerRanges == 2L)
+
+            it("(a join of [2,3] and [5,6] which exceeds the max. card.); i1 join i2 => \"StructuralUpdate(IntegerRange(0,127))\"") {
+                val v1 = IntegerRange(lb = 2, ub = 3)
+                val v2 = IntegerRange(lb = 5, ub = 6)
+                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 127)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(0, 127)))
+            }
+
+            it("(a join of [2,3] and [177,230] which exceeds the max. card.); i1 join i2 => \"StructuralUpdate(IntegerRange(0,Short.MaxValue))\"") {
+                val v1 = IntegerRange(lb = 2, ub = 3)
+                val v2 = IntegerRange(lb = 177, ub = 230)
+                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, Short.MaxValue)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(0, Short.MaxValue)))
+            }
+
+            it("(a join of [20000,300000] and [177,230] which exceeds the max. card.); i1 join i2 => \"StructuralUpdate(IntegerRange(0,Int.MaxValue))\"") {
+                val v1 = IntegerRange(lb = 20000, ub = 300000)
+                val v2 = IntegerRange(lb = 177, ub = 230)
+                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, Int.MaxValue)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(0, Int.MaxValue)))
+            }
 
             it("(join of two ranges with positive values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(2,4))\"") {
                 val v1 = IntegerRange(lb = 2, ub = 3)
                 val v2 = IntegerRange(lb = 3, ub = 4)
                 v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(2, 4)))
                 v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(2, 4)))
+            }
+
+            it("(a join of [-2,-1] and [-5,-4] which exceeds the max. card.); i1 join i2 => \"StructuralUpdate(IntegerRange(-128,-1))\"") {
+                val v1 = IntegerRange(lb = -2, ub = -1)
+                val v2 = IntegerRange(lb = -5, ub = -4)
+                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-128, -1)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-128, -1)))
             }
 
             it("(join of two ranges with negative values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(-3,-1))\"") {
@@ -84,21 +115,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
                 v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-3, -1)))
             }
 
-            it("(join of two ranges with positive values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
-                val v1 = IntegerRange(lb = 2, ub = 3)
-                val v2 = IntegerRange(lb = 5, ub = 6)
-                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 127)))
-                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(0, 127)))
-            }
-
-            it("(join of two ranges with negative values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
-                val v1 = IntegerRange(lb = -2, ub = -1)
-                val v2 = IntegerRange(lb = -5, ub = -4)
-                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-128, -1)))
-                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-128, -1)))
-            }
-
-            it("(join of two ranges with Int.MaxValue); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+            it("(join of two ranges with Int.MaxValue); i1 join i2 => \"StructuralUpdate(IntegerRange(-128,Int.MaxValue))\"") {
                 val v1 = IntegerRange(lb = 1, ub = Int.MaxValue)
                 val v2 = IntegerRange(lb = -10, ub = -1)
                 v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-128, Int.MaxValue)))
@@ -110,6 +127,20 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
                 val v2 = IntegerRange(lb = -10, ub = -1)
                 v1.join(-1, v2) should be(MetaInformationUpdate(IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)))
                 v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+            }
+
+            it("the rejoin of two ranges which exceed the max. card. should result in the same rane") {
+                val v1 = IntegerRange(lb = 0, ub = Char.MaxValue)
+                val v2 = IntegerRange(lb = 0, ub = Char.MaxValue)
+                v1.join(-1, v2) should be(MetaInformationUpdate(IntegerRange(lb = 0, ub = Char.MaxValue)))
+                v2.join(-1, v1) should be(MetaInformationUpdate(IntegerRange(lb = 0, ub = Char.MaxValue)))
+            }
+
+            it("the join of a range which has primitive value boundaries with some subrange should result in the same range") {
+                val v1 = IntegerRange(lb = 0, ub = Char.MaxValue)
+                val v2 = IntegerRange(lb = 10, ub = Byte.MaxValue)
+                v1.join(-1, v2) should be(MetaInformationUpdate(IntegerRange(lb = 0, ub = Char.MaxValue)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(lb = 0, ub = Char.MaxValue)))
             }
 
         }
@@ -3275,10 +3306,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
 
     describe("using IntegerRangeValues") {
 
-        val testJAR = "classfiles/ai.jar"
-        val testFolder = org.opalj.bi.TestSupport.locateTestResources(testJAR, "ai")
-        val testProject = org.opalj.br.analyses.Project(testFolder)
-        val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
+        val aiProject = org.opalj.br.TestSupport.biProject("ai.jar")
+        val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
         describe("when we have multiple loops that reuse the same local variable") {
 
@@ -3610,6 +3639,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             }
         }
     }
+
 }
 
 class DefaultIntegerRangesTestDomain(

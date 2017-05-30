@@ -319,28 +319,28 @@ object Assembler {
             writeByte(target_typeTag)
             (target_typeTag: @switch) match {
                 case 0x00 | 0x01 ⇒
-                    val tt = as[Type_Parameter_Target](target_type)
+                    val tt = as[TATTypeParameter](target_type)
                     writeByte(tt.type_parameter_index)
 
                 case 0x10 ⇒
-                    val tt = as[Supertype_Target](target_type)
+                    val tt = as[TATSupertype](target_type)
                     writeShort(tt.supertype_index)
 
                 case 0x11 | 0x12 ⇒
-                    val tt = as[Type_Parameter_Bound_Target](target_type)
+                    val tt = as[TATTypeParameterBound](target_type)
                     writeByte(tt.type_parameter_index)
                     writeByte(tt.bound_index)
 
                 case 0x16 ⇒
-                    val tt = as[Formal_Parameter_Target](target_type)
+                    val tt = as[TATFormalParameter](target_type)
                     writeByte(tt.formal_parameter_index)
 
                 case 0x17 ⇒
-                    val tt = as[Throws_Target](target_type)
-                    writeShort(tt.throws_type_index)
+                    val TATThrows(throws_type_index) = target_type
+                    writeShort(throws_type_index)
 
                 case 0x40 | 0x41 ⇒
-                    val tt = as[Localvar_Target](target_type)
+                    val tt = as[TATLocalvar](target_type)
                     val lvt = tt.localvarTable
                     writeShort(lvt.length)
                     lvt.foreach { lvte ⇒
@@ -350,15 +350,15 @@ object Assembler {
                     }
 
                 case 0x42 ⇒
-                    val tt = as[Catch_Target](target_type)
+                    val tt = as[TATCatch](target_type)
                     writeShort(tt.exception_table_index)
 
                 case 0x43 | 0x44 | 0x45 | 0x46 ⇒
-                    val tt = as[Offset_Target](target_type)
+                    val tt = as[TATWithOffset](target_type)
                     writeShort(tt.offset)
 
                 case 0x47 | 0x48 | 0x49 | 0x4A | 0x4B ⇒
-                    val tt = as[Type_Argument_Target](target_type)
+                    val tt = as[TATTypeArgument](target_type)
                     writeShort(tt.offset)
                     writeByte(tt.type_argument_index)
 
@@ -430,10 +430,10 @@ object Assembler {
 
                 case a: TypeAnnotations_attribute ⇒
                     // Handles:
-                    // RuntimeVisibleTypeAnnotations_attribute   
-                    // RuntimeInvisibleTypeAnnotations_attribute 
-                    writeShort(a.annotations.size)
-                    a.annotations.foreach { serialize(_) }
+                    // RuntimeVisibleTypeAnnotations_attribute
+                    // RuntimeInvisibleTypeAnnotations_attribute
+                    writeShort(a.typeAnnotations.size)
+                    a.typeAnnotations.foreach { serialize(_) }
 
                 case a: StackMapTable_attribute ⇒
                     writeShort(a.stack_map_frames.length)
@@ -477,7 +477,7 @@ object Assembler {
 
                 case a: ParametersAnnotations_attribute ⇒
                     // Handles:
-                    // RuntimeVisibleParameterAnnotations_attribute   
+                    // RuntimeVisibleParameterAnnotations_attribute
                     // RuntimeInvisibleParameterAnnotations_attribute
                     writeByte(a.parameters_annotations.length)
                     a.parameters_annotations.foreach { pas ⇒
@@ -502,9 +502,9 @@ object Assembler {
                     }
 
                 case as: Annotations_attribute ⇒
-                    // Handles: 
-                    // RuntimeVisibleAnnotations_attribute 
-                    // RuntimeInvisibleAnnotations_attribute         
+                    // Handles:
+                    // RuntimeVisibleAnnotations_attribute
+                    // RuntimeInvisibleAnnotations_attribute
                     writeShort(as.annotations.size)
                     as.annotations.foreach { serialize(_) }
 
@@ -717,4 +717,3 @@ object Assembler {
     }
 
 }
-

@@ -149,6 +149,11 @@ object ChainProperties extends Properties("Chain") {
 
     // METHODS DEFINED BY CHAINED LIST
 
+    property("hasMultipleElements") = forAll { l1: List[String] ⇒
+        val fl1 = Chain(l1: _*)
+        (l1.size >= 2 && fl1.hasMultipleElements) || (l1.size <= 1 && !fl1.hasMultipleElements)
+    }
+
     property("startsWith") = forAll { (l1: List[String], l2: List[String]) ⇒
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)

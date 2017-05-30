@@ -40,7 +40,7 @@ import org.opalj.br.ArrayType
  * @author Michael Eichberg
  */
 trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with ArrayValues {
-    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy with LogContextProvider ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with TheClassHierarchy with LogContextProvider ⇒
 
     type DomainInitializedArrayValue = InitializedArrayValue
     final val DomainInitializedArrayValue: ClassTag[DomainInitializedArrayValue] = implicitly

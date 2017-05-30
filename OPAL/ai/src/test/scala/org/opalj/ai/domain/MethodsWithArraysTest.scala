@@ -125,7 +125,7 @@ class MethodsWithArraysTest extends FlatSpec with Matchers {
 }
 private object MethodsWithArraysTest {
 
-    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("ai.jar", "bi"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
 }

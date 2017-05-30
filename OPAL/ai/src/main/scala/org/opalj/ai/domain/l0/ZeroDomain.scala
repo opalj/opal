@@ -42,9 +42,7 @@ package l0
  * class ZDomain extends { // we need the "early initializer"
  *      val project: SomeProject = theProject
  *      val code: Code = body
- * }
- *      with ZeroDomain
- *      with ThrowNoPotentialExceptionsConfiguration
+ * } with ZeroDomain with ThrowNoPotentialExceptionsConfiguration
  * }}}
  *
  * @author Michael Eichberg
@@ -57,4 +55,3 @@ trait ZeroDomain
         with TheCode { domain: Configuration ⇒
 
 }
-

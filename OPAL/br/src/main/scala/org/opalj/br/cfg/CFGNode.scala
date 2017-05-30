@@ -26,11 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.cfg
+package org.opalj.br
+package cfg
 
 import scala.collection.mutable
 import org.opalj.graphs.Node
-import org.opalj.br.Code
 
 /**
  * The common super trait of all nodes belonging to a method's control flow graph.
@@ -62,6 +62,9 @@ trait CFGNode extends Node {
     }
     private[cfg] def setPredecessors(predecessors: Set[CFGNode]): Unit = {
         _predecessors = predecessors
+    }
+    def removePredecessor(predecessor: CFGNode): Unit = {
+        _predecessors -= predecessor
     }
     private[cfg] def clearPredecessors(): Unit = {
         _predecessors = Set.empty
@@ -101,9 +104,25 @@ trait CFGNode extends Node {
     //
 
     private[cfg] def reachable(reachable: mutable.Set[CFGNode]): Unit = {
-        _successors.
-            filterNot { d ⇒ reachable.contains(d) }.
-            foreach { d ⇒ reachable += d; d.reachable(reachable) }
+        // the following
+        //_successors.
+        //filterNot(reachable.contains).
+        //foreach { d ⇒ reachable += d; d.reachable(reachable) }
+
+        var remainingSuccessors = this._successors
+        while (remainingSuccessors.nonEmpty) {
+            val successor = remainingSuccessors.head
+            remainingSuccessors = remainingSuccessors.tail
+            if (reachable.add(successor)) {
+                for {
+                    nextSuccessor ← successor.successors
+                    if !remainingSuccessors.contains(nextSuccessor)
+                    if !reachable.contains(nextSuccessor)
+                } {
+                    remainingSuccessors += nextSuccessor
+                }
+            }
+        }
     }
 
     /**
@@ -148,7 +167,8 @@ trait CFGNode extends Node {
                     // of a subroutine because a subroutine's code is never reached via a
                     // normal control flow...(it may however contain a call to a subroutine!)
                     if (nextBB.isStartOfSubroutine) {
-                        nextBB = bbs(code.pcOfNextInstruction(bb.asBasicBlock.endPC /*the jsr instruction...*/ ))
+                        val jsrPC = bb.asBasicBlock.endPC /*the jsr instruction...*/
+                        nextBB = bbs(code.pcOfNextInstruction(jsrPC))
                     }
                     if (!seen.contains(nextBB)) {
                         seen += nextBB

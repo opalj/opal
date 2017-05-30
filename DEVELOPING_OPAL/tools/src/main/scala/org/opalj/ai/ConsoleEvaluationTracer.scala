@@ -69,9 +69,8 @@ trait ConsoleEvaluationTracer extends AITracer {
     }
 
     override def continuingInterpretation(
-        strictfp: Boolean,
-        code:     Code,
-        domain:   Domain
+        code:   Code,
+        domain: Domain
     )(
         initialWorkList:                  List[PC],
         alreadyEvaluated:                 List[PC],
@@ -87,7 +86,8 @@ trait ConsoleEvaluationTracer extends AITracer {
     )(
         sourcePC:                 PC,
         targetPC:                 PC,
-        isExceptionalControlFlow: Boolean
+        isExceptionalControlFlow: Boolean,
+        worklist:                 List[PC]
     ): Unit = { /*EMPTY*/ }
 
     override def flow(

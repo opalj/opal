@@ -58,10 +58,10 @@ case class ClassFile(
         attributes:    Attributes          = IndexedSeq.empty
 ) {
 
-    assert(
-        (constant_pool(0) eq null) ||
-            constant_pool(0).isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore]
-    )
+    assert({
+        val cp0 = constant_pool(0)
+        (cp0 eq null) || cp0.isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore]
+    })
 
     /**
      * Size of the class file in bytes.
@@ -97,15 +97,15 @@ case class ClassFile(
     private[this] implicit val cp = constant_pool
 
     /**
-     * The fully qualified name of the class in Java notation (i.e., using dots
+     * The fully qualified name of this class in Java notation (i.e., using dots
      * to seperate packages.)
      */
-    final val fqn: String = cp(this_class).toString
+    final val thisType: String = cp(this_class).asConstantClass.asJavaClassOrInterfaceType
 
-    final val superTypeFQNs = {
+    final val superTypes = {
         {
             if (super_class != 0)
-                <span class="extends">{ "extends " }<span class="super_class">{ cp(super_class).toString }</span></span>
+                <span class="extends">extends <span class="super_class type">{ cp(super_class).toString }</span></span>
             else
                 NodeSeq.Empty
         } ++ {
@@ -126,33 +126,30 @@ case class ClassFile(
         val cpEntries =
             for {
                 cpIndex ← (1 until constant_pool.length)
-                if cp(cpIndex) != null /*<= need for constant_double/_long entries*/
+                cpNode = cp(cpIndex)
+                if cpNode != null /* <= need for constant_double/_long entries */
             } yield {
-                <li value={ cpIndex.toString }>{ cp(cpIndex).asCPNode }</li>
+                <li value={ cpIndex.toString }>{ cpNode.asCPNode }</li>
             }
 
-        <ol class="cp_entries">
-            <li value="0"> &lt;UNUSED&gt;</li>
-            { cpEntries }
-        </ol>
+        <ol class="cp_entries">{ cpEntries }</ol>
     }
 
     def attributesToXHTML: Seq[Node] = attributes.map(attributeToXHTML(_))
 
     def attributeToXHTML(attribute: Attribute): Node = {
         attribute match {
-            case ica: InnerClasses_attribute ⇒ ica.toXHTML(fqn)
+            case ica: InnerClasses_attribute ⇒ ica.toXHTML(thisType)
             case _                           ⇒ attribute.toXHTML(cp)
         }
     }
 
     def fieldsToXHTML: Seq[Node] = {
-        <table class="fields">{ fields.map(_.toXHTML(fqn)) }</table>
+        fields map { field ⇒ field.toXHTML(thisType) }
     }
 
     def methodsToXHTML: Seq[Node] = {
-        for ((method, index) ← methods.zipWithIndex)
-            yield method.toXHTML( /*fqn,*/ index)
+        methods.zipWithIndex map { mi ⇒ val (method, index) = mi; method.toXHTML(thisType, index) }
     }
 
     protected def accessFlags: Node = {
@@ -192,7 +189,7 @@ case class ClassFile(
     def toXHTML(css: String = ClassFile.TheCSS): Node =
         <html>
             <head>
-                <title>Java Bytecode of { fqn }</title>
+                <title>Java Bytecode of { thisType }</title>
                 <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
                 <style type="text/css">{ scala.xml.Unparsed(css) }</style>
                 <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
@@ -200,8 +197,8 @@ case class ClassFile(
             <body>
                 <div id="class_file">
                     { accessFlags }
-                    &nbsp;<b id="defining_class">{ fqn }</b>
-                    &nbsp;{ superTypeFQNs }
+                    &nbsp;<b id="defining_class">{ thisType }</b>
+                    &nbsp;{ superTypes }
                     <div id="class_file_version">
                         Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }
                     </div>
@@ -243,20 +240,12 @@ case class ClassFile(
 
 object ClassFile {
 
-    final val ResetCSS: String = {
-        val resource = this.getClass().getResourceAsStream("reset.css")
-        process(resource)(Source.fromInputStream(_).mkString)
-    }
-
-    final val TheCSS: String = {
-        val resource = this.getClass().getResourceAsStream("style.css")
-        process(resource)(Source.fromInputStream(_).mkString)
-    }
-
-    final val FilterJS = loadJavaScript("filter.js")
-
-    private def loadJavaScript(js: String): String = {
+    private def loadResource(js: String): String = {
         process(this.getClass().getResourceAsStream(js))(Source.fromInputStream(_).mkString)
     }
+
+    final val ResetCSS: String = loadResource("reset.css")
+    final val TheCSS: String = loadResource("style.css")
+    final val FilterJS: String = loadResource("filter.js")
 
 }

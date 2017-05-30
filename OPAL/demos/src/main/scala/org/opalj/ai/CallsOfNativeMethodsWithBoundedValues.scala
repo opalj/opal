@@ -127,29 +127,31 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             callerClassFile = theProject.classFile(caller)
             result = BaseAI(callerClassFile, caller, domain)
         } {
-            val pcs: Seq[UShort] = callerPCs.iterable.toSeq
-            for {
-                pc ← pcs
-                operands = result.operandsArray(pc)
-                if operands != null //<= this is practically the only place where a null check is necessary
-                stackIndex ← stackIndexes
-            } {
-                operands(stackIndex) match {
-                    case result.domain.IntegerRange(lb, ub) ⇒
-                        addResult(
-                            NativeCallWithBoundedMethodParameter(
-                                theProject,
-                                nativeMethod,
-                                parametersCount - stackIndex,
-                                caller,
-                                pc,
-                                lb,
-                                ub
-                            )
-                        )
-                    case _ ⇒
-                        unboundedCalls.incrementAndGet()
-                }
+            val pcs: org.opalj.collection.immutable.IntSet = callerPCs //.iterable.toSeq
+            for { pc: Int ← pcs } {
+                val operands = result.operandsArray(pc)
+                if (operands != null)
+                    for {
+                        //<= this is practically the only place where a null check is necessary
+                        stackIndex ← stackIndexes
+                    } {
+                        operands(stackIndex) match {
+                            case result.domain.IntegerRange(lb, ub) ⇒
+                                addResult(
+                                    NativeCallWithBoundedMethodParameter(
+                                        theProject,
+                                        nativeMethod,
+                                        parametersCount - stackIndex,
+                                        caller,
+                                        pc,
+                                        lb,
+                                        ub
+                                    )
+                                )
+                            case _ ⇒
+                                unboundedCalls.incrementAndGet()
+                        }
+                    }
             }
         }
 
