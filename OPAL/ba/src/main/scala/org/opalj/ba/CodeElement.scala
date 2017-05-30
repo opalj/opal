@@ -37,9 +37,9 @@ import org.opalj.br.instructions.InstructionLike
  * Wrapper for elements that will generate the instructions and attributes of a
  * [[org.opalj.br.Code]] and the annotations of the bytecode.
  *
- * @see [[InstructionElement]]
- * @see [[AnnotatedInstructionElement]]
- * @see [[PseudoInstruction]]
+ * @see [[org.opalj.ba.InstructionElement]]
+ * @see [[org.opalj.ba.AnnotatedInstructionElement]]
+ * @see [[org.opalj.ba.PseudoInstruction]]
  * @tparam T The type of the annotations of instructions.
  *
  * @author Malte Limmeroth
