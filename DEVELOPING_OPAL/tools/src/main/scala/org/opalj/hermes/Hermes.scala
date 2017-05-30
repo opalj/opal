@@ -731,9 +731,9 @@ object Hermes extends JFXApp {
                 analysisTimesStage.show()
             }
         }
-        val showPieChart = new MenuItem("Show Pie Chart...") {
+        val showMethodDistribiution = new MenuItem("Show Method Distribiution...") {
             onAction = handle {
-                pieChartStage.show()
+                methodDistribiutionStage.show()
             }
         }
         val csvExport = new MenuItem("Export As CVS...") {
@@ -755,7 +755,7 @@ object Hermes extends JFXApp {
             disable <== analysesFinished.not
             onAction = handle { computeCorpus() }
         }
-        List(showConfig, showAnalysisTimes, showPieChart, csvExport, computeProjectsForCorpus)
+        List(showConfig, showAnalysisTimes, showMethodDistribiution, csvExport, computeProjectsForCorpus)
     }
 
     val rootPane = new BorderPane {
@@ -831,7 +831,7 @@ object Hermes extends JFXApp {
         initOwner(stage)
     }
 
-    val pieChartStage = new Stage {
+    val methodDistribiutionStage = new Stage {
         title = "Pie Chart"
         scene = new Scene(900, 600) {
             root = new StackPane {
@@ -853,7 +853,7 @@ object Hermes extends JFXApp {
 
                 val pieChart = new PieChart {
                     data = pieChartDataBuffer
-                    title = "Pie Chart"
+                    title = "Method Distribiution Among All Projects"
                 }
                 pieChart.legendVisible = true
 
