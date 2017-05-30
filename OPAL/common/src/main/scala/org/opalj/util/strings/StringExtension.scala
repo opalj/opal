@@ -207,9 +207,9 @@ case class ConcreteString(cs: String) extends StringExtension {
     }
 
     override def join(other: StringExtension) = other match {
-        case oCs @ ConcreteString(v) if v != cs  => StringExtensions(Set(oCs,this))
-        case StringExtensions(values) ⇒ StringExtensions(values + this)
-        case _                        ⇒ this
+        case oCs @ ConcreteString(v) if v != cs ⇒ StringExtensions(Set(oCs, this))
+        case StringExtensions(values)           ⇒ StringExtensions(values + this)
+        case _                                  ⇒ this
     }
 }
 

@@ -70,7 +70,7 @@ class StringExtensionsTest extends FunSpec with Matchers {
             val anyStr: StringExtension = AnyString
 
             //concStr should not equal (fragStrSame)
-           // concStr should not equal (fragStrDiff)
+            // concStr should not equal (fragStrDiff)
             concStr should not equal (anyStr)
         }
 
@@ -172,17 +172,17 @@ class StringExtensionsTest extends FunSpec with Matchers {
             val concStr: StringExtension = ConcreteString("++OPAL")
             val anyStr: StringExtension = AnyString
 
-//            anyStr should not equal (fragStr)
+            //            anyStr should not equal (fragStr)
             anyStr should not equal (concStr)
         }
 
         it("should leftInclude every other possible StringExtension") {
             val concStr: StringExtension = ConcreteString("OPAL rocks!")
-  //          val fragStrSame: StringExtension = StringFragment("OPAL rocks!")
+            //          val fragStrSame: StringExtension = StringFragment("OPAL rocks!")
             val anyStr: StringExtension = AnyString
 
             anyStr.leftIncludes(concStr) should be(Yes)
-    //        anyStr.leftIncludes(fragStrSame) should be(Yes)
+            //        anyStr.leftIncludes(fragStrSame) should be(Yes)
             anyStr.leftIncludes(anyStr) should be(Yes)
         }
     }
