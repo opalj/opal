@@ -36,6 +36,7 @@ import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicIntegerArray
 
+import scala.annotation.switch
 import scala.collection.JavaConverters._
 import scala.collection.Set
 import scala.collection.Map
@@ -1508,6 +1509,13 @@ object Project {
             for ((libClassFile, source) ← libraryClassFilesWithSources) {
                 val libraryType = libClassFile.thisType
                 if (projectTypes.contains(libClassFile.thisType)) {
+                    val libraryTypeQualifier =
+                        if (libClassFile.isInterfaceDeclaration) "interface" else "class"
+                    val projectTypeQualifier = {
+                        val projectClassFile = projectClassFiles.find(_.thisType == libraryType).get
+                        if (projectClassFile.isInterfaceDeclaration) "interface" else "class"
+                    }
+
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
@@ -1516,6 +1524,18 @@ object Project {
                                 source.toString+"; keeping the project class file."
                         )
                     )
+
+                    if (libraryTypeQualifier != projectTypeQualifier) {
+                        handleInconsistentProject(
+                            logContext,
+                            InconsistentProjectException(
+                                s"the kind of the type ${libraryType.toJava} "+
+                                    s"defined by the project ($projectTypeQualifier) "+
+                                    s"and a library ($libraryTypeQualifier) differs"
+                            )
+                        )
+                    }
+
                 } else if (libraryTypes.contains(libraryType)) {
                     handleInconsistentProject(
                         logContext,
@@ -1583,7 +1603,12 @@ object Project {
                 info(
                     "project configuration",
                     s"project validation revealed ${issues.size} significant issues"+
-                        (if (issues.size > 0) "; validate the configured libraries for inconsistencies" else "")
+                        (
+                            if (issues.size > 0)
+                                "; validate the configured libraries for inconsistencies"
+                            else
+                                ""
+                        )
                 )
             } { t ⇒ info("project setup", s"validating the project took ${t.toSeconds}") }
 
@@ -1616,7 +1641,7 @@ object Project {
         val exceptions = project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
             val BasicMethodInfo(c: ClassFile, m: Method) = e
             m.body.get.iterate { (pc, instruction) ⇒
-                (instruction.opcode: @scala.annotation.switch) match {
+                (instruction.opcode: @switch) match {
 
                     case NEW.opcode ⇒
                         val objectType = instruction.asInstanceOf[NEW].objectType

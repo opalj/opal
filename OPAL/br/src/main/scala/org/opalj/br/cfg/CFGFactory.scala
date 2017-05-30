@@ -128,7 +128,7 @@ object CFGFactory {
         // 2. iterate over the code to determine basic block boundaries
         var runningBB: BasicBlock = null
         var previousPC: PC = 0
-        var subroutineReturnPCs = IntMap.empty[ /*PC,*/ IntSet]
+        var subroutineReturnPCs = IntMap.empty[IntSet] // PC => IntSet
         code.iterate { (pc, instruction) ⇒
             if (runningBB eq null) {
                 runningBB = bbs(pc)

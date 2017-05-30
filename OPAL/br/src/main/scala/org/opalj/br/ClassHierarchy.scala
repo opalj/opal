@@ -2553,7 +2553,7 @@ object ClassHierarchy {
                     val message = s"the class file ${objectType.toJava} defines a "+
                         s"super interface ${knownTypesMap(aSuperinterfaceTypeId).toJava} "+
                         "which is actually a regular class file"
-                    OPALLogger.warn("project configuration - class hierarchy", message)
+                    OPALLogger.error("project configuration - class hierarchy", message)
                 }
                 if (isInterfaceType) {
                     addToSet(subinterfaceTypesMap, aSuperinterfaceTypeId, objectType)
@@ -2576,14 +2576,27 @@ object ClassHierarchy {
             )
         }
         // Analyzes the given class file and extends the current class hierarchy.
+        val processedClassType: Array[Boolean] = new Array[Boolean](objectTypesCount)
         classFiles.seq foreach { classFile ⇒
             if (!classFile.isModuleDeclaration) {
-                process(
-                    classFile.thisType,
-                    classFile.isInterfaceDeclaration,
-                    classFile.isFinal,
-                    classFile.superclassType,
-                    UIDSet.empty ++ classFile.interfaceTypes
+                // we always keep the FIRST class file which defines a type this is inline
+                // with the behavior of the project which prioritizes a project class file
+                // over library class files
+                val classType = classFile.thisType
+                if (!processedClassType(classType.id)) {
+                    processedClassType(classType.id) = true
+                    process(
+                        classType,
+                        classFile.isInterfaceDeclaration,
+                        classFile.isFinal,
+                        classFile.superclassType,
+                        UIDSet.empty ++ classFile.interfaceTypes
+                    )
+                }
+            } else {
+                OPALLogger.info(
+                    "project configuration - class hierarchy",
+                    s"ignored module defining class file ${classFile.thisType.toJava}"
                 )
             }
         }
@@ -2660,14 +2673,16 @@ object ClassHierarchy {
                     typesToProcess += superclassType
                 }
                 val superSuperinterfaceTypes = superinterfaceTypesMap(t.id)
-                if (superSuperinterfaceTypes ne null)
+                if (superSuperinterfaceTypes ne null) {
                     typesToProcess ++= superSuperinterfaceTypes
+                }
             }
 
             leafTypes.foreach { t ⇒
                 subtypes += ((t, SubtypeInformation.empty))
                 scheduleSupertypes(t)
             }
+            var madeProgress = false
             while (typesToProcess.nonEmpty) {
                 val t = typesToProcess.dequeue
                 // it may be the case that some type was already processed
@@ -2699,19 +2714,72 @@ object ClassHierarchy {
                         }
 
                     if (done) {
-                        subtypes += ((
-                            t,
-                            SubtypeInformation(allSubclassTypes, allSubinterfaceTypes)
-                        ))
+                        madeProgress = true
+                        val subtypeInfo = SubtypeInformation(allSubclassTypes, allSubinterfaceTypes)
+                        subtypes += ((t, subtypeInfo))
                         scheduleSupertypes(t)
                     } else {
                         deferredTypes += t
                     }
+                } else {
+                    madeProgress = true // this is philosophical...
                 }
 
-                if (typesToProcess.isEmpty) {
-                    typesToProcess ++= deferredTypes
-                    deferredTypes = UIDSet.empty[ObjectType]
+                // test if we have really finished processing all types
+                if (typesToProcess.isEmpty && deferredTypes.nonEmpty) {
+                    if (!madeProgress) {
+                        // The following is NOT performance sensitive... we are lost anyway
+                        // and we just want to provide some hints to the user...
+                        // 1. Do we have a cycle in the extracted type information ?
+                        {
+                            val ns = knownTypesMap.size
+                            val es = (oid: Int) ⇒ {
+                                if (knownTypesMap(oid) ne null) {
+                                    subinterfaceTypesMap(oid).map(_.id).iterator ++
+                                        subclassTypesMap(oid).map(_.id).iterator
+                                } else {
+                                    Iterator.empty
+                                }
+                            }
+                            val cyclicTypeDependencies =
+                                org.opalj.graphs.sccs(ns, es, filterSingletons = true)
+                            if (cyclicTypeDependencies.nonEmpty) {
+                                OPALLogger.error(
+                                    "project configuration",
+                                    cyclicTypeDependencies.map { scc ⇒
+                                        scc.map { oid ⇒
+                                            if (knownTypesMap(oid) ne null)
+                                                knownTypesMap(oid).toJava
+                                            else
+                                                "N/A"
+                                        }.mkString(", ")
+                                    }.mkString("cyclic type hierarchy:\n\t", "\n\t", "\n")
+                                )
+                            }
+                        }
+
+                        // 2. Which type(s) cause the problem?
+                        val allIssues =
+                            for {
+                                dt ← deferredTypes
+                                subtype ← subinterfaceTypesMap(dt.id) ++ subclassTypesMap(dt.id)
+                                None ← subtypes.get(subtype)
+                                if !deferredTypes.contains(subtype)
+                            } yield {
+                                s"${dt.toJava} (waits)->(subtype) ${subtype.toJava}"
+                            }
+                        OPALLogger.error(
+                            "project configuration",
+                            allIssues.mkString(
+                                "could not compute subtype information for:\n\t", "\n\t", "\n"
+                            )
+                        )
+
+                    } else {
+                        madeProgress = false
+                        typesToProcess ++= deferredTypes
+                        deferredTypes = UIDSet.empty[ObjectType]
+                    }
                 }
             }
             var allClassTypes = UIDSet.empty[ObjectType]

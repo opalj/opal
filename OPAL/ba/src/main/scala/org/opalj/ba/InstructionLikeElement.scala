@@ -48,14 +48,14 @@ object InstructionLikeElement {
 /**
  * Wrapper for [[org.opalj.br.instructions.InstructionLike]]s.
  */
-private[ba] case class InstructionElement(
+case class InstructionElement(
     instruction: InstructionLike
 ) extends InstructionLikeElement[Nothing]
 
 /**
  * Wrapper for annotated [[org.opalj.br.instructions.InstructionLike]]s.
  */
-private[ba] case class AnnotatedInstructionElement[T](
+case class AnnotatedInstructionElement[T](
         instruction: InstructionLike,
         annotation:  T
 ) extends InstructionLikeElement[T] {

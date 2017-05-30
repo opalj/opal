@@ -34,4 +34,4 @@ package ba
  *
  * @author Malte Limmeroth
  */
-private[ba] abstract class PseudoInstruction extends CodeElement[Nothing]
+abstract class PseudoInstruction extends CodeElement[Nothing]

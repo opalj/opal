@@ -94,7 +94,7 @@ object CollectionsUsage {
                         val usages = domain.usedBy(origins.head)
                         if (usages.size == 2) {
                             // one for the call of the initializer and for the call to Coll...
-                            instructions(usages.filter { _ != pc }.head) match {
+                            instructions(usages.withFilter(_ != pc).head) match {
 
                                 // TODO Support the matching of other constructors... (e.g., which take a size hint)
                                 case INVOKESPECIAL(_, false, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
@@ -123,7 +123,7 @@ object CollectionsUsage {
                         } else if (usages.size == 3) {
                             var foundConstructorCall = false
                             var foundAddCall = false
-                            val previousUsages = usages.filter { _ != pc }
+                            val previousUsages = usages.withFilter(_ != pc)
                             previousUsages.foreach { pc ⇒
                                 instructions(pc) match {
 

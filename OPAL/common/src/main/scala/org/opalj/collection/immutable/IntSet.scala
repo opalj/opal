@@ -1,4 +1,3 @@
-
 /* BSD 2-Clause License:
  * Copyright (c) 2009 - 2017
  * Software Technology Group
