@@ -29,6 +29,8 @@
 package org.opalj
 package tac
 
+import org.opalj.collection.immutable.IntSet
+
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
@@ -50,12 +52,11 @@ import org.opalj.br.MethodHandle
 import org.opalj.br.PC
 import org.opalj.ai.ValueOrigin
 
-
 trait Expr extends ASTNode {
 
     /**
      * The computational type of the underlying value.
-     * I.e., An approximation of the type of the underlying value. It is the best
+     * I.e., an approximation of the type of the underlying value. It is the best
      * type information directly available. The precision of the type information
      * depends on the number of pre-/post-processing steps that are done.
      */
@@ -361,11 +362,10 @@ object Var {
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
- *
  */
 abstract class DUVar[ValueType <: org.opalj.ai.Domain#DomainValue] extends Var {
 
-    def value : ValueType
+    def value: ValueType
 
     final def cTpe: ComputationalType = value.computationalType
 
@@ -373,17 +373,17 @@ abstract class DUVar[ValueType <: org.opalj.ai.Domain#DomainValue] extends Var {
 
 }
 
-/** Identifies the single index(pc) of the instruction which initialized
-  * the variable. I.e., per method there must be at most one DU variable which
-  * has the given origin.
-  * Initially, the pc of the underlying bytecode instruction is used.
-*/
-
+/**
+ * Identifies the single index(pc) of the instruction which initialized
+ * the variable. I.e., per method there must be at most one D variable which
+ * has the given origin.
+ * Initially, the pc of the underlying bytecode instruction is used.
+ */
 class DVar[ValueType <: org.opalj.ai.Domain#DomainValue](
-    val value:       ValueType,
-    private[tac] var origin:  ValueOrigin,
-    private[tac] var useSites :  Set[Int] // TODO Use SmallValuesSet
-) extends DUVar[ValueType]{
+        val value:                 ValueType,
+        private[tac] var origin:   ValueOrigin,
+        private[tac] var useSites: IntSet
+) extends DUVar[ValueType] {
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         origin = pcToIndex(origin)
@@ -395,19 +395,19 @@ class DVar[ValueType <: org.opalj.ai.Domain#DomainValue](
 }
 
 class UVar[ValueType <: org.opalj.ai.Domain#DomainValue](
-            val value:       ValueType,
-            private[tac] var defSites : Set[Int]// TODO Use SmallValuesSet
-          ) extends DUVar[ValueType] {
+        val value:                 ValueType,
+        private[tac] var defSites: IntSet
+) extends DUVar[ValueType] {
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         defSites = defSites.map(pcToIndex.apply)
     }
 
     def name: String = {
-                if(defSites.size == 1) {
-                "l"+defSites.head
+        if (defSites.size == 1) {
+            "l"+defSites.head
         } else {
-            defSites.mkString("l{",", ","}")
+            defSites.mkString("l{", ", ", "}")
         }
     }
 }
@@ -442,14 +442,13 @@ sealed trait IdBasedVar extends Var {
         else if (id >= 0) "op_"+id.toString
         else "r_"+(-(id + 1))
 
-
-        /**
-         * Creates a new variable that has the same identifier etc. but an updated
-         * computational type.
-         *
-         * This operation is not supported for local variables!
-         */
-            def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
+    /**
+     * Creates a new variable that has the same identifier etc. but an updated
+     * computational type.
+     *
+     * This operation is not supported for local variables!
+     */
+    def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
 }
 
 /**

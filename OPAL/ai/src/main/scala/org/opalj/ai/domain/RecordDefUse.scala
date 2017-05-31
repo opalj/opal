@@ -96,7 +96,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
     type ValueOrigins = IntSet
-    def ValueOrigins(vo: Int): IntSet = new IntSet1(vo)
+    def ValueOrigins(vo: Int): IntSet = IntSet1(vo)
 
     private[this] var instructions: Array[Instruction] = _ // initialized by initProperties
 
@@ -122,7 +122,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     ): Unit = {
 
         instructions = code.instructions
-        val codeSize = instructions.size
+        val codeSize = instructions.length
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
         defOps(0) = Naught // the operand stack is empty...
         this.defOps = defOps
@@ -136,7 +136,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // used by the AI for parameters
                 parameterIndex -= 1
                 if (v ne null) {
-                    new IntSet1(parameterIndex)
+                    IntSet1(parameterIndex)
                 } else {
                     null
                 }
@@ -237,7 +237,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def dumpDefUseTable(): Node = {
         val perInstruction =
             defOps.zip(defLocals).zipWithIndex.
-                filter(e ⇒ (e._1._1 != null || e._1._2 != null)).
+                filter(e ⇒ e._1._1 != null || e._1._2 != null).
                 map { e ⇒
                     val ((os, ls), i) = e
                     val operands =
@@ -311,7 +311,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         val unusedNode =
             new DefaultMutableNode(
-                Int.MinValue: ValueOrigin, (vo: ValueOrigin) ⇒ "<NONE>", Some("orange")
+                Int.MinValue: ValueOrigin, (_: ValueOrigin) ⇒ "<NONE>", Some("orange")
             )
 
         // 1. create nodes for all local vars (i.e., the corresponding instructions)
@@ -378,7 +378,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
                 val oldUsedInfo: ValueOrigins = used(usedIndex)
                 if (oldUsedInfo eq null) {
-                    used(usedIndex) = new IntSet1(useSite)
+                    used(usedIndex) = IntSet1(useSite)
                 } else {
                     val newUsedInfo = oldUsedInfo + useSite
                     if (newUsedInfo ne oldUsedInfo)
@@ -419,7 +419,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             oldIsSuperset, oldHead :&: joinedDefOps
                         )
                     else {
-                        val joinedHead = (newHead ++ oldHead)
+                        val joinedHead = newHead ++ oldHead
                         // assert(newHead.subsetOf(joinedHead))
                         // assert(oldHead.subsetOf(joinedHead), s"$newHead ++ $oldHead is $joinedHead")
                         // assert(joinedHead.size > oldHead.size, s"$newHead ++  $oldHead is $joinedHead")
@@ -600,15 +600,15 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             case IF_ACMPEQ.opcode | IF_ACMPNE.opcode
                 | IF_ICMPEQ.opcode | IF_ICMPNE.opcode
                 | IF_ICMPGT.opcode | IF_ICMPGE.opcode | IF_ICMPLT.opcode | IF_ICMPLE.opcode ⇒
-                stackOp(2, false)
+                stackOp(2, pushesValue = false)
 
             case IFNULL.opcode | IFNONNULL.opcode
                 | IFEQ.opcode | IFNE.opcode
                 | IFGT.opcode | IFGE.opcode | IFLT.opcode | IFLE.opcode
                 | LOOKUPSWITCH.opcode | TABLESWITCH.opcode ⇒
-                stackOp(1, false)
+                stackOp(1, pushesValue = false)
 
-            case ATHROW.opcode                      ⇒ stackOp(1, false)
+            case ATHROW.opcode                      ⇒ stackOp(1, pushesValue = false)
 
             //
             // ARRAYS
@@ -806,10 +806,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 else
                     propagate(defOps(currentPC).tail, defLocals(currentPC))
 
-            case 95 /*swap*/ ⇒ {
+            case 95 /*swap*/ ⇒
                 val v1 :&: v2 :&: rest = defOps(currentPC)
                 propagate(v2 :&: v1 :&: rest, defLocals(currentPC))
-            }
 
             //
             // VALUE CONVERSIONS
@@ -819,7 +818,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 145 /*i2b*/ | 146 /*i2c*/ | 135 /*i2d*/ | 134 /*i2f*/ | 133 /*i2l*/ | 147 /*i2s*/ |
                 138 /*l2d*/ | 137 /*l2f*/ | 136 /*l2i*/ |
                 193 /*instanceof*/ ⇒
-                stackOp(1, true)
+                stackOp(1, pushesValue = true)
 
             case CHECKCAST.opcode ⇒
                 val currentDefOps = defOps(currentPC)
@@ -875,7 +874,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         super.abstractInterpretationEnded(aiResult)
 
         if (aiResult.wasAborted)
-            return ;
+            return /* nothing to do */ ;
 
         val operandsArray = aiResult.operandsArray
         val cfJoins = aiResult.cfJoins
@@ -949,7 +948,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             defLocals(currPC).
                                 zipWithIndex.
                                 map { e ⇒ val (local, index) = e; s"$index: $local" }
-                        message += (localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n"))
+                        message += localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n")
                         val bout = new ByteArrayOutputStream()
                         val pout = new PrintStream(bout)
                         e.printStackTrace(pout)

@@ -53,7 +53,7 @@ trait TACOptimization {
 case class TACOptimizationResult(
     code:           Array[Stmt],
     cfg:            CFG,
-    wasTransformed: Boolean     = false
+    wasTransformed: Boolean
 )
 
 /**

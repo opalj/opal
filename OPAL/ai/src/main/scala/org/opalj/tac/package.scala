@@ -35,8 +35,6 @@ package org.opalj
  */
 package object tac {
 
-    type Stack = List[Var]
-
     final val NoOptimizations: List[TACOptimization] = Nil
 
     final val AllOptimizations: List[TACOptimization] = List(SimplePropagation)

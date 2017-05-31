@@ -52,6 +52,8 @@ import org.opalj.br.cfg.CFG
  */
 object TACNaive {
 
+    type Stack = List[IdBasedVar]
+
     /**
      * Converts the plain bytecode of a method into a quadruples based three address
      * representation. Compared to the previous method, no data- and control-flow information is
@@ -79,11 +81,11 @@ object TACNaive {
         val code = method.body.get
         import code.pcOfNextInstruction
         val instructions = code.instructions
-        val codeSize = instructions.size
+        val codeSize = instructions.length
 
         // used if we find jsr/ret instructions or want to do optimizations
         var theCFG: CFG = null
-        def cfg: CFG = {
+        def cfg(): CFG = {
             if (theCFG eq null) theCFG = CFGFactory(code, classHierarchy)
             theCFG
         }
@@ -190,49 +192,47 @@ object TACNaive {
 
             def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
                 instr match {
-                    case LDCInt(value) ⇒ {
+                    case LDCInt(value) ⇒
                         val newVar = OperandVar(ComputationalTypeInt, stack)
                         statements(pc) = List(Assignment(pc, newVar, IntConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
-                    case LDCFloat(value) ⇒ {
+
+                    case LDCFloat(value) ⇒
                         val newVar = OperandVar(ComputationalTypeFloat, stack)
                         val floatConst = FloatConst(pc, value)
                         statements(pc) = List(Assignment(pc, newVar, floatConst))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
-                    case LDCClass(value) ⇒ {
+
+                    case LDCClass(value) ⇒
                         val newVar = OperandVar(ComputationalTypeReference, stack)
                         statements(pc) = List(Assignment(pc, newVar, ClassConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
-                    case LDCString(value) ⇒ {
+
+                    case LDCString(value) ⇒
                         val newVar = OperandVar(ComputationalTypeReference, stack)
                         statements(pc) = List(Assignment(pc, newVar, StringConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
-                    case LDCMethodHandle(value) ⇒ {
+
+                    case LDCMethodHandle(value) ⇒
                         val newVar = OperandVar(ComputationalTypeReference, stack)
                         statements(pc) = List(Assignment(pc, newVar, MethodHandleConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
-                    case LDCMethodType(value) ⇒ {
+
+                    case LDCMethodType(value) ⇒
                         val newVar = OperandVar(ComputationalTypeReference, stack)
                         val methodTypeConst = MethodTypeConst(pc, value)
                         statements(pc) = List(Assignment(pc, newVar, methodTypeConst))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
 
-                    case LoadDouble(value) ⇒ {
+                    case LoadDouble(value) ⇒
                         val newVar = OperandVar(ComputationalTypeDouble, stack)
                         statements(pc) = List(Assignment(pc, newVar, DoubleConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
-                    case LoadLong(value) ⇒ {
+
+                    case LoadLong(value) ⇒
                         val newVar = OperandVar(ComputationalTypeLong, stack)
                         statements(pc) = List(Assignment(pc, newVar, LongConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
 
                     case _ ⇒
                         val message = s"unexpected constant $instr"
@@ -626,15 +626,13 @@ object TACNaive {
                     val ret = as[RET](instruction)
                     val returnAddressVar = RegisterVar(ComputationalTypeReturnAddress, ret.lvIndex)
                     statements(pc) = List(Ret(pc, returnAddressVar))
-                    cfg.bb(pc).successors.foreach { cfgNode ⇒
-                        cfgNode match {
-                            case cn: CatchNode  ⇒ schedule(cn.handlerPC, stack)
-                            case bb: BasicBlock ⇒ schedule(bb.startPC, stack)
-                            case _ ⇒
-                                // in these cases something went terribly wrong...
-                                val message = "the cfg has an unexpected shape: "+cfgNode
-                                throw new AnalysisException(message)
-                        }
+                    cfg().bb(pc).successors.foreach {
+                        case cn: CatchNode  ⇒ schedule(cn.handlerPC, stack)
+                        case bb: BasicBlock ⇒ schedule(bb.startPC, stack)
+                        case cfgNode ⇒
+                            // in these cases something went terribly wrong...
+                            val message = "the cfg has an unexpected shape: "+cfgNode
+                            throw AnalysisException(message)
                     }
 
                 case NOP.opcode ⇒
@@ -649,7 +647,7 @@ object TACNaive {
                 case POP2.opcode ⇒
                     statements(pc) = List(Nop(pc))
                     stack match {
-                        case (val1 @ CTC1()) :: val2 :: rest ⇒
+                        case CTC1() :: _ :: rest ⇒
                             schedule(pcOfNextInstruction(pc), rest)
                         case _ :: rest ⇒
                             schedule(pcOfNextInstruction(pc), rest)
@@ -819,7 +817,7 @@ object TACNaive {
             currentPC += 1
         }
 
-        if (forceCFGCreation || optimizations.nonEmpty) cfg;
+        if (forceCFGCreation || optimizations.nonEmpty) cfg()
         var tacCFG = Option(theCFG).map(cfg ⇒ cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1))
 
         finalStatements.foreach(_.remapIndexes(pcToIndex))
