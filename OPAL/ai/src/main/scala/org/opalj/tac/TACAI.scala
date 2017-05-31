@@ -28,19 +28,17 @@
  */
 package org.opalj
 package tac
-/*
+
+import scala.annotation.switch
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
-import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.cfg.CatchNode
-import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
-*/
+
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.cfg.CFG
@@ -52,12 +50,10 @@ import org.opalj.ai.TypeUnknown
 import org.opalj.ai.domain.RecordDefUse
 
 /**
- * Converts the bytecode of a method into a three address representation using quadruples.
- * The converted method has an isomorophic CFG when compared to the original method,
- * but may contain more instructions.
+ * Factory to convert the bytecode of a method into a three address representation.
+ *
  *
  * @author Michael Eichberg
- * @author Roberts Kolosovs
  */
 object TACAI {
 
@@ -77,7 +73,7 @@ object TACAI {
         aiResult:       AIResult { val domain: RecordDefUse },
         optimizations:  List[TACOptimization]
     ): (Array[Stmt], CFG) = {
-        /*
+
         type ValueType = aiResult.domain.DomainValue
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -87,7 +83,7 @@ object TACAI {
         val code = method.body.get
         import code.pcOfNextInstruction
         val instructions = code.instructions
-        val codeSize = instructions.size
+        val codeSize = instructions.length
         val domain = aiResult.domain
         val wasExecuted = new BitSet(codeSize) ++= aiResult.evaluated
         val cfg: CFG = domain.bbCFG
@@ -207,41 +203,39 @@ object TACAI {
 
             def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
                 instr match {
-                    case LDCInt(value) ⇒ {
+                    case LDCInt(value) ⇒
                         val newVar = SSAPrimVar(pc, IntegerType)
                         addStmt(Assignment(pc, newVar, IntConst(pc, value)))
-                    }
-                    case LDCFloat(value) ⇒ {
+
+                    case LDCFloat(value) ⇒
                         val newVar = SSAPrimVar(pc, FloatType)
                         val floatConst = FloatConst(pc, value)
                         addStmt(Assignment(pc, newVar, floatConst))
-                    }
-                    case LDCClass(value) ⇒ {
+
+                    case LDCClass(value) ⇒
                         val newVar = SSARefVar(pc, ObjectType.Class)
                         addStmt(Assignment(pc, newVar, ClassConst(pc, value)))
-                    }
-                    case LDCString(value) ⇒ {
+
+                    case LDCString(value) ⇒
                         val newVar = SSARefVar(pc, ObjectType.String)
                         addStmt(Assignment(pc, newVar, StringConst(pc, value)))
-                    }
-                    case LDCMethodHandle(value) ⇒ {
+
+                    case LDCMethodHandle(value) ⇒
                         val newVar = SSARefVar(pc, ObjectType.MethodHandle)
                         addStmt(Assignment(pc, newVar, MethodHandleConst(pc, value)))
-                    }
-                    case LDCMethodType(value) ⇒ {
+
+                    case LDCMethodType(value) ⇒
                         val newVar = SSARefVar(pc, ObjectType.MethodType)
                         val methodTypeConst = MethodTypeConst(pc, value)
                         addStmt(Assignment(pc, newVar, methodTypeConst))
-                    }
 
-                    case LoadDouble(value) ⇒ {
+                    case LoadDouble(value) ⇒
                         val newVar = SSAPrimVar(pc, DoubleType)
                         addStmt(Assignment(pc, newVar, DoubleConst(pc, value)))
-                    }
-                    case LoadLong(value) ⇒ {
+
+                    case LoadLong(value) ⇒
                         val newVar = SSAPrimVar(pc, LongType)
                         addStmt(Assignment(pc, newVar, LongConst(pc, value)))
-                    }
 
                     case _ ⇒
                         val message = s"unexpected constant $instr"
@@ -258,14 +252,13 @@ object TACAI {
             }
 
             def addNOP(): Unit = {
-                // TODO Don't add if we don't have to (per basic block, we currently need
-                // at least one instruction, because we keep the existing CFG.)
+                // TODO Don't add if we don't have to (per basic block, we currently need at least one instruction, because we keep the existing CFG.)
                 addStmt(Nop(pc))
             }
 
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
 
-            (opcode: @scala.annotation.switch) match {
+            (opcode: @switch) match {
                 case ALOAD_0.opcode | ALOAD_1.opcode | ALOAD_2.opcode | ALOAD_3.opcode |
                     ALOAD.opcode |
                     ASTORE_0.opcode | ASTORE_1.opcode | ASTORE_2.opcode | ASTORE_3.opcode |
@@ -289,7 +282,8 @@ object TACAI {
                     addNOP()
 
                 case IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
-                    ARETURN.opcode ⇒ addStmt(ReturnValue(pc, operandUse(0)))
+                    ARETURN.opcode ⇒
+                    addStmt(ReturnValue(pc, operandUse(0)))
 
                 case RETURN.opcode ⇒ addStmt(Return(pc))
 
@@ -637,8 +631,7 @@ object TACAI {
         }
 
         (tacCode, tacCFG)
-*/
-        ???
+
     }
 
 }

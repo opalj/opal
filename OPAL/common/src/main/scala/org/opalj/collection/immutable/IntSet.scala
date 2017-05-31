@@ -129,7 +129,7 @@ abstract class IntSet {
 
     def toChain: Chain[Int]
 
-    final override def toString = mkString("IntSet(", ",", ")")
+    final override def toString: String = mkString("IntSet(", ",", ")")
 }
 
 case object EmptyIntSet extends IntSet {
@@ -289,7 +289,7 @@ case class IntArraySet private[immutable] (private[immutable] val is: Array[Int]
             isb += f(is(i))
             i += 1
         }
-        isb.result
+        isb.result()
     }
 
     def -(i: Int): IntSet = {
@@ -350,7 +350,7 @@ private[immutable] class FilteredIntArraySet(
         origS: IntArraySet
 ) extends IntSet {
 
-    @volatile private[this] var filteredS: IntSet = null
+    @volatile private[this] var filteredS: IntSet = _
 
     private def getFiltered: IntSet = {
         if (filteredS eq null) {

@@ -30,6 +30,7 @@ package org.opalj
 package tac
 
 import org.opalj.br.cfg.CFG
+import org.opalj.tac.TACNaive.IdBasedVar
 
 /**
  * Common interface of all code optimizers that operate on the three-address code
@@ -88,7 +89,7 @@ object SimplePropagation extends TACOptimization {
 
                             case Assignment(
                                 nextPC,
-                                nextTrgtVar,
+                                nextTrgtVar: IdBasedVar,
                                 PrimitiveTypecastExpr(exprPC, targetTpe, `trgtVar`)
                                 ) ⇒
                                 wasTransformed = true
