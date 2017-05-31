@@ -29,6 +29,9 @@
 package lambdas;
 
 import annotations.target.InvokedMethod;
+
+import java.util.ArrayList;
+
 import static annotations.target.TargetResolution.*;
 
 /**
@@ -180,6 +183,11 @@ public class Lambdas {
         return l.apply(3d, 3.14f);
     }
 
+    public double doubleFloatParamter2() {
+        DoubleFloatInterface l = (x, y) -> x+y;
+        return l.apply(3d, 3.14f);
+    }
+
     public Long singleLongParamter() {
         java.util.function.Function<Long, Long> l
                 = (x) -> x+5l;
@@ -214,5 +222,23 @@ public class Lambdas {
         java.util.function.BiFunction<Long, Double, Double> l
                 = (x, y) -> x+y;
         return l.apply(3l, 3.14d);
+    }
+
+    public ArrayList<String> someBiConsumer() {
+	    final java.util.ArrayList<String> al = new ArrayList<>();
+	    java.util.function.BiConsumer<java.util.HashMap<String, String>, java.util
+                .HashMap<String, String>> bi = (x, y) -> {
+	        al.addAll(x.keySet());
+	        al.addAll(y.values());
+        };
+
+        return al;
+    }
+
+    // TODO: Functional Interfaces for long / double parameters
+
+    @FunctionalInterface
+    interface DoubleFloatInterface {
+	    double apply(double d, float f);
     }
 }
