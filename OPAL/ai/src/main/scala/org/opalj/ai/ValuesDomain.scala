@@ -497,7 +497,6 @@ trait ValuesDomain {
                 case _           ⇒ MetaInformationUpdateIllegalValue
                 // Note that "Value" already handles the case
                 // where this value is joined with itself.
-
             }
         }
 
