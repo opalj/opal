@@ -30,7 +30,6 @@ package org.opalj
 package tac
 
 import org.opalj.collection.immutable.IntSet
-
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
@@ -379,8 +378,6 @@ abstract class DUVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] extends
 
     final def cTpe: ComputationalType = value.computationalType
 
-    def updated(cTpe: ComputationalType): Var = throw new UnsupportedOperationException()
-
 }
 
 /**
@@ -406,7 +403,7 @@ class DVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
 
     def usedBy: IntSet = useSites
 
-    def name: String = "l"+origin
+    def name: String = s"l$origin/*:$value*/"
 
 }
 
@@ -437,11 +434,11 @@ class UVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
         if (defSites.size == 1) {
             val defSite = defSites.head
             if (defSite < 0)
-                "p"+(-defSite)
+                s"p${-defSite}/*:$value*/"
             else
-                "l"+defSites.head
+                s"l${defSites.head}/*:$value*/"
         } else {
-            defSites.mkString("l{", ", ", "}")
+            defSites.mkString(s"l/*:$value*/{", ", ", "}")
         }
     }
 
