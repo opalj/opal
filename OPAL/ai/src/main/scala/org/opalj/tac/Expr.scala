@@ -61,6 +61,16 @@ trait Expr extends ASTNode {
      */
     def cTpe: ComputationalType
 
+    /**
+     * `true` if the expression is ''GUARANTEED'' to have no externally observable effect if it is
+     * not executed. Sideeffect free instructions can be removed
+     * if the result of the evaluation of the expression is not used.
+     *
+     * @return `true` if the expression is ''GUARENTEED'' to have no side effect other than
+     *        wasting some CPU cycles if it is not executed.
+     */
+    def isSideEffectFree: Boolean
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 }
 
@@ -71,22 +81,36 @@ trait ValueExpr extends Expr
  * and must perform the initial initialization of the register values.
  */
 case class Param(cTpe: ComputationalType, name: String) extends ValueExpr {
+
     final def astID: Int = Param.ASTID
+
+    final def isSideEffectFree: Boolean = true
 }
 object Param { final val ASTID = -1 }
 
 case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
+
     final def astID: Int = InstanceOf.ASTID
+
     final def cTpe: ComputationalType = ComputationalTypeInt
+
+    final def isSideEffectFree: Boolean = true
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
     }
+
 }
 object InstanceOf { final val ASTID = -2 }
 
 case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
+
     final def astID: Int = Checkcast.ASTID
+
     final def cTpe: ComputationalType = ComputationalTypeReference
+
+    final def isSideEffectFree: Boolean = true
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
     }
@@ -99,8 +123,13 @@ case class Compare(
         condition: RelationalOperator,
         right:     Expr
 ) extends Expr {
+
     final def astID: Int = Compare.ASTID
+
     final def cTpe: ComputationalType = ComputationalTypeInt
+
+    final def isSideEffectFree: Boolean = left.isSideEffectFree && right.isSideEffectFree
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
         right.remapIndexes(pcToIndex)
@@ -108,9 +137,14 @@ case class Compare(
 }
 object Compare { final val ASTID = -4 }
 
-sealed abstract class Const extends ValueExpr
+sealed abstract class Const extends ValueExpr {
+
+    final def isSideEffectFree: Boolean = true
+
+}
 
 sealed abstract class SimpleValueConst extends Const {
+
     def tpe: Type
 }
 
@@ -186,7 +220,11 @@ case class BinaryExpr(
         op:   BinaryArithmeticOperator,
         left: Expr, right: Expr
 ) extends Expr {
+
     final def astID: Int = BinaryExpr.ASTID
+
+    final def isSideEffectFree: Boolean = left.isSideEffectFree && right.isSideEffectFree
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
         right.remapIndexes(pcToIndex)
@@ -203,7 +241,11 @@ case class PrefixExpr(
         op:      UnaryArithmeticOperator,
         operand: Expr
 ) extends Expr {
+
     final def astID: Int = PrefixExpr.ASTID
+
+    final def isSideEffectFree: Boolean = operand.isSideEffectFree
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
     }
@@ -211,17 +253,37 @@ case class PrefixExpr(
 object PrefixExpr { final val ASTID = -15 }
 
 case class PrimitiveTypecastExpr(pc: PC, targetTpe: BaseType, operand: Expr) extends Expr {
+
     final def astID: Int = PrimitiveTypecastExpr.ASTID
+
     final def cTpe: ComputationalType = targetTpe.computationalType
+
+    final def isSideEffectFree: Boolean = operand.isSideEffectFree
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
     }
 }
 object PrimitiveTypecastExpr { final val ASTID = -16 }
 
+/**
+ * Allocates memory for the (non-abstract) given object. Note, that the call of the separator
+ * is done later and therefore the object is not considered to be properly initialized and –
+ * therefore – no further operations other than the call of a constructor are allowed.
+ */
 case class New(pc: PC, tpe: ObjectType) extends Expr {
+
     final def astID: Int = New.ASTID
+
     final def cTpe: ComputationalType = ComputationalTypeReference
+
+    /**
+     * Always returns `true` since the new instruction just allocates memory, but does NOT call the
+     * constructor. Hence, except of a `java.lang.OutOfMemoryError`. which we do not
+     * model any further, nothing will happen if the value is not used any further.
+     */
+    final def isSideEffectFree: Boolean = true
+
 }
 object New { final val ASTID = -17 }
 
@@ -233,8 +295,13 @@ object New { final val ASTID = -17 }
  * @param tpe The type of the array. The number of dimensions is always `>= count.size`.
  */
 case class NewArray(pc: PC, counts: Seq[Expr], tpe: ArrayType) extends Expr {
+
     final def astID: Int = NewArray.ASTID
+
     final def cTpe: ComputationalType = ComputationalTypeReference
+
+    final def isSideEffectFree: Boolean = true
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         counts.foreach { c ⇒ c.remapIndexes(pcToIndex) }
     }
@@ -242,8 +309,13 @@ case class NewArray(pc: PC, counts: Seq[Expr], tpe: ArrayType) extends Expr {
 object NewArray { final val ASTID = -18 }
 
 case class ArrayLoad(pc: PC, index: Var, arrayRef: Var) extends Expr {
+
     final def astID: Int = ArrayLoad.ASTID
+
     final def cTpe: ComputationalType = ComputationalTypeReference
+
+    final def isSideEffectFree: Boolean = true
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         index.remapIndexes(pcToIndex)
         arrayRef.remapIndexes(pcToIndex)
@@ -252,8 +324,13 @@ case class ArrayLoad(pc: PC, index: Var, arrayRef: Var) extends Expr {
 object ArrayLoad { final val ASTID = -19 }
 
 case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
+
     final def astID: Int = ArrayLength.ASTID
+
     final def cTpe: ComputationalType = ComputationalTypeInt
+
+    final def isSideEffectFree: Boolean = true
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
     }
@@ -261,8 +338,13 @@ case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
 object ArrayLength { final val ASTID = -20 }
 
 case class GetField(pc: PC, declaringClass: ObjectType, name: String, objRef: Expr) extends Expr {
+
     final def astID: Int = GetField.ASTID
+
     final def cTpe: ComputationalType = ComputationalTypeInt
+
+    final def isSideEffectFree: Boolean = true
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         objRef.remapIndexes(pcToIndex)
     }
@@ -270,8 +352,13 @@ case class GetField(pc: PC, declaringClass: ObjectType, name: String, objRef: Ex
 object GetField { final val ASTID = -21 }
 
 case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr {
+
     final def astID: Int = GetStatic.ASTID
+
     final def cTpe: ComputationalType = ComputationalTypeInt
+
+    final def isSideEffectFree: Boolean = true
+
 }
 object GetStatic { final val ASTID = -22 }
 
@@ -282,8 +369,13 @@ case class Invokedynamic(
         descriptor:      MethodDescriptor,
         params:          Seq[Expr]
 ) extends Expr {
+
     final def astID: Int = Invokedynamic.ASTID
+
     final def cTpe: ComputationalType = descriptor.returnType.computationalType
+
+    final def isSideEffectFree: Boolean = false
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
     }
@@ -307,7 +399,11 @@ case class NonVirtualFunctionCall(
         receiver:       Expr,
         params:         Seq[Expr]
 ) extends InstanceFunctionCall {
+
     final def astID: Int = NonVirtualFunctionCall.ASTID
+
+    final def isSideEffectFree: Boolean = false
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -324,7 +420,11 @@ case class VirtualFunctionCall(
         receiver:       Expr,
         params:         Seq[Expr]
 ) extends InstanceFunctionCall {
+
     final def astID: Int = VirtualFunctionCall.ASTID
+
+    final def isSideEffectFree: Boolean = false
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -340,7 +440,11 @@ case class StaticFunctionCall(
         descriptor:     MethodDescriptor,
         params:         Seq[Expr]
 ) extends FunctionCall {
+
     final def astID: Int = StaticFunctionCall.ASTID
+
+    final def isSideEffectFree: Boolean = false
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
     }
@@ -394,17 +498,18 @@ class DVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
 
     assert(useSites ne null)
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        origin = pcToIndex(origin)
-        useSites = useSites.map(pcToIndex.apply) // use site are always positive...
-    }
-
     def definedBy: ValueOrigin = origin
 
     def usedBy: IntSet = useSites
 
     def name: String = s"l$origin/*:$value*/"
 
+    final def isSideEffectFree: Boolean = true
+
+    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        origin = pcToIndex(origin)
+        useSites = useSites.map(pcToIndex.apply) // use site are always positive...
+    }
 }
 
 object DVar {
@@ -424,12 +529,6 @@ class UVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
         private[tac] var defSites: IntSet
 ) extends DUVar[ValueType] {
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        defSites = defSites.map { defSite ⇒
-            if (defSite >= 0) pcToIndex(defSite) else defSite /* <= it is a parameter */
-        }
-    }
-
     def name: String = {
         if (defSites.size == 1) {
             val defSite = defSites.head
@@ -438,11 +537,19 @@ class UVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
             else
                 s"l${defSites.head}/*:$value*/"
         } else {
-            defSites.mkString(s"l/*:$value*/{", ", ", "}")
+            defSites.mkString("l{", ", ", s"}/*:$value*/")
         }
     }
 
     def definedBy: IntSet = defSites
+
+    final def isSideEffectFree: Boolean = true
+
+    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        defSites = defSites.map { defSite ⇒
+            if (defSite >= 0) pcToIndex(defSite) else defSite /* <= it is a parameter */
+        }
+    }
 
 }
 

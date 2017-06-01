@@ -97,9 +97,29 @@ object TACAI {
             val opcode = instruction.opcode
 
             def addStmt(stmt: Stmt): Unit = {
-                statements(index) = stmt
-                pcToIndex(pc) = index
-                index += 1
+                if (cfg.bb(pc).startPC != pc && statements(index - 1).astID == Nop.ASTID) {
+                    // ... we are not at the beginning of a basic block, but the previous
+                    // instruction was a NOP instruction... let's replace it by this instruction.
+                    statements(index - 1) = stmt
+                    pcToIndex(pc) = index - 1
+                } else {
+                    statements(index) = stmt
+                    pcToIndex(pc) = index
+                    index += 1
+                }
+            }
+
+            def addNOP(): Unit = {
+                // We only add a NOP if it is the first instruction of a basic block since
+                // we want to ensure that we don't have to rewrite the CFG during the initial
+                // transformation
+                if (cfg.bb(pc).startPC == pc) {
+                    statements(index) = Nop(pc)
+                    pcToIndex(pc) = index
+                    index += 1
+                } else {
+                    pcToIndex(pc) = index - 1
+                }
             }
 
             def operandUse(index: Int): UVar[aiResult.domain.DomainValue] = {
@@ -129,8 +149,9 @@ object TACAI {
                 if (uses ne null) {
                     val localVal = DVar(aiResult.domain)(pc, v, uses)
                     addStmt(Assignment(pc, localVal, expr))
+                } else if (expr.isSideEffectFree) {
+                    addNOP()
                 } else {
-                    // TODO Check is expr has any potential side effect... if not filter!
                     addStmt(ExprStmt(pc, expr))
                 }
             }
@@ -210,11 +231,6 @@ object TACAI {
                 initLocalVal(pc, operandsArray(nextPC).head, compare)
             }
 
-            def addNOP(): Unit = {
-                // TODO Don't add if we don't have to (per basic block, we currently need at least one instruction, because we keep the existing CFG.)
-                addStmt(Nop(pc))
-            }
-
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
 
             (opcode: @switch) match {
@@ -272,6 +288,12 @@ object TACAI {
                 case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
                     IF_ICMPLT.opcode | IF_ICMPLE.opcode |
                     IF_ICMPGT.opcode | IF_ICMPGE.opcode ⇒
+                    // TODO Check if this if is actually useless... i.e., either a GOTO or a NOP
+                    //if(cfg.bb(pc).endPC != pc) {
+                    //    // The comparison is actually
+                    //    addNOP()
+                    //    // ... and correct def-use information...
+                    //}
                     val ifInstr = as[IFICMPInstruction](instruction)
                     val value2 = operandUse(0)
                     val value1 = operandUse(1)
@@ -300,7 +322,7 @@ object TACAI {
                     val IFXNullInstruction(condition, branchoffset) = instruction
                     val value = operandUse(0)
                     val targetPC = pc + branchoffset
-                    val cmpVal = NullExpr(ai.ValueOriginForVMLevelValue(-pc))
+                    val cmpVal = NullExpr(ai.ValueOriginForVMLevelValue(pc))
                     addStmt(If(pc, value, condition, cmpVal, targetPC))
 
                 case DCMPG.opcode | FCMPG.opcode ⇒ compareValues(CMPG)

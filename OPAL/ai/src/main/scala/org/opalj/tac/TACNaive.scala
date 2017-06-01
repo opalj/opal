@@ -64,6 +64,8 @@ object TACNaive {
 
         def id: Int
 
+        final def isSideEffectFree: Boolean = true
+
         /**
          * @return `true` if this variable and the given variable use the same location.
          *         Compared to `equals` this test does not consider the computational type.
