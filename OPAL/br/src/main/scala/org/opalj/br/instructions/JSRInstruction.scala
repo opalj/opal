@@ -54,3 +54,9 @@ trait JSRInstruction extends UnconditionalBranchInstruction with JSRInstructionL
         )
     }
 }
+
+object JSRInstruction {
+
+    def unapply(i : JSRInstruction) : Some[Int] = Some(i.branchoffset)
+
+}
