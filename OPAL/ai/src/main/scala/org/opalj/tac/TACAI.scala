@@ -32,17 +32,16 @@ package tac
 import scala.annotation.switch
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
-
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.cfg.CFG
-import org.opalj.ai.AIResult
+import org.opalj.ai.{AIResult, IsAReferenceValue, IsPrimitiveValue}
+import org.opalj.collection.immutable.IntSet
 /*import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.IsPrimitiveValue
 import org.opalj.ai.TypeUnknown
@@ -50,8 +49,8 @@ import org.opalj.ai.TypeUnknown
 import org.opalj.ai.domain.RecordDefUse
 
 /**
- * Factory to convert the bytecode of a method into a three address representation.
- *
+ * Factory to convert the bytecode of a method into a three address representation using the
+  * results of an abstract interpretation of the method.
  *
  * @author Michael Eichberg
  */
@@ -82,29 +81,26 @@ object TACAI {
 
         val code = method.body.get
         import code.pcOfNextInstruction
-        val instructions = code.instructions
-        val codeSize = instructions.length
-        val domain = aiResult.domain
-        val wasExecuted = new BitSet(codeSize) ++= aiResult.evaluated
+        val instructions : Array[Instruction] = code.instructions
+        val codeSize :Int = instructions.length
+        val domain : aiResult.domain.type = aiResult.domain
+        val wasExecuted : BitSet= new BitSet(codeSize) ++= aiResult.evaluated
         val cfg: CFG = domain.bbCFG
-        val operandsArray = aiResult.operandsArray
+        val operandsArray : aiResult.domain.OperandsArray = aiResult.operandsArray
 
         // We already have the def-use information directly available, hence, for
         // instructions such as swap and dup, which do not create "relevant"
         // uses, we do not have to create multiple instructions, therefore, we
-        // can directly create the final list of statments.
+        // can directly create the "final list" of statements (which will include nops
+        // for all useless instructions).
 
         val statements = new Array[Stmt](codeSize)
-        val pcToIndex = new Array[Int](codeSize)
-        var pc = 0
-        var index = 0
+
+        var pc : PC = 0
 
         def addStmt(stmt: Stmt): Unit = {
-            // TODO if the previous statement belongs to the same basic block as this one
-            // and is a NOP statement, we replace it by this one
-            statements(index) = stmt
-            pcToIndex(pc) = index
-            index += 1
+            // TODO if the previous statement belongs to the same basic block as this one and is a NOP statement, we replace it by this one
+            statements(pc) = stmt
         }
 
         do {
@@ -120,7 +116,7 @@ object TACAI {
                 new UVar[ValueType](operands(index), defSites)
             }
 
-            def registerUse(index: Int): DVar = {
+            def registerUse(index: Int): DVar[ValueType] = {
                 // 1. get the definition site
                 // Recall: if the defSite is negative, we are using a parameter
                 val defSite = domain.localOrigin(pc, index)
@@ -148,7 +144,9 @@ object TACAI {
              * Creates a local var using the current pc and the type
              * information from the domain value.
              */
-            def domainValueBasedLocalVar(v: aiResult.domain.DomainValue): SSAVar = {
+            def domainValueBasedLocalVar(
+                                            v: aiResult.domain.DomainValue
+                                        ): DVar[ValueType] = {
                 aiResult.domain.typeOfValue(v) match {
                     case refVal: IsAReferenceValue ⇒
                         val tpe = computeLeastCommonSuperType(refVal.upperTypeBound)
@@ -537,15 +535,15 @@ object TACAI {
                     addStmt(Goto(pc, targetPC))
 
                 case JSR.opcode | JSR_W.opcode ⇒
-                    val targetPC = pc + as[JSRInstruction](instruction).branchoffset
-                    addStmt(JumpToSubroutine(pc, targetPC))
-
+                    val JSRInstruction(branchoffset) = instruction
+                    addStmt(f
                 case RET.opcode ⇒
-                    //val ret = as[RET](instruction)
-                    // the use sites are actually the JSR instructions ...
-                    //val returnAddressVar = RegisterVar(ComputationalTypeReturnAddress, ret.lvIndex)
-                    //addStmt( Ret(pc, returnAddressVar))
-                    ???
+                    val RET(lvIndex) = instruction
+                    // the def sites are actually the JSR instructions ...
+                    // However, in this case we explicitly encode the targets
+                    val domain.TheReturnAddressValues() = registerUse(lvIndex)
+                    var returnAddresses =  IntSet.empty // TODO extract the values
+                    addStmt( Ret(pc, returnAddresses)
 
                 case NOP.opcode               ⇒ addNOP()
                 case POP.opcode | POP2.opcode ⇒ addNOP()
@@ -553,13 +551,13 @@ object TACAI {
                 case INSTANCEOF.opcode ⇒
                     val value1 = operandUse(0)
                     val resultVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                    val tpe = as[INSTANCEOF](instruction).referenceType
+                    val INSTANCEOF(tpe) = instruction
                     val instanceOf = InstanceOf(pc, value1, tpe)
                     addStmt(Assignment(pc, resultVar, instanceOf))
 
                 case CHECKCAST.opcode ⇒
                     val value1 = operandUse(0)
-                    val targetType = as[CHECKCAST](instruction).referenceType
+                    val CHECKCAST(targetType) = instruction
                     val checkcast = Checkcast(pc, value1, targetType)
                     if (wasExecuted(nextPC)) {
                         val resultVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
@@ -615,21 +613,17 @@ object TACAI {
             }
 
             pc = nextPC
-            while (!wasExecuted(pc)) pc = pcOfNextInstruction(pc)
+            while (pc < codeSize && !wasExecuted(pc)) pc = pcOfNextInstruction(pc)
         } while (pc < codeSize)
 
-        var tacCFG = cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1)
-        var tacCode = new Array[Stmt](index)
-        System.arraycopy(statements, 0, tacCode, 0, index)
-        tacCode.foreach(_.remapIndexes(pcToIndex))
-
+        var tacCFG = cfg
+        var tacCode = statements
         if (optimizations.nonEmpty) {
             val baseTAC = TACOptimizationResult(tacCode, tacCFG, false)
             val result = optimizations.foldLeft(baseTAC) { (tac, optimization) ⇒ optimization(tac) }
             tacCode = result.code
             tacCFG = result.cfg
         }
-
         (tacCode, tacCFG)
 
     }

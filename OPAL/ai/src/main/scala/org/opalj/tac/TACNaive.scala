@@ -31,7 +31,6 @@ package tac
 
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
@@ -41,6 +40,7 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CFG
+import org.opalj.collection.immutable.IntSetBuilder
 
 /**
  * Converts the bytecode of a method into a three address representation using quadruples.
@@ -710,15 +710,21 @@ object TACNaive {
                 case RET.opcode ⇒
                     val ret = as[RET](instruction)
                     val returnAddressVar = RegisterVar(ComputationalTypeReturnAddress, ret.lvIndex)
-                    statements(pc) = List(Ret(pc, returnAddressVar))
-                    cfg().bb(pc).successors.foreach {
-                        case cn: CatchNode  ⇒ schedule(cn.handlerPC, stack)
-                        case bb: BasicBlock ⇒ schedule(bb.startPC, stack)
+                    val pcs = new IntSetBuilder
+                    val successors = cfg().bb(pc).successors
+                    successors foreach {
+                        case cn: CatchNode  ⇒
+                            pcs += cn.handlerPC
+                            schedule(cn.handlerPC, stack)
+                        case bb: BasicBlock ⇒
+                            pcs += bb.startPC
+                            schedule(bb.startPC, stack)
                         case cfgNode ⇒
                             // in these cases something went terribly wrong...
                             val message = "the cfg has an unexpected shape: "+cfgNode
                             throw AnalysisException(message)
                     }
+                    statements(pc) = List(Ret(pc, pcs.result ))
 
                 case NOP.opcode ⇒
                     statements(pc) = List(Nop(pc))

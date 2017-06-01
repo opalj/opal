@@ -112,11 +112,13 @@ object Goto {
     final val ASTID = 1
 }
 
-case class Ret(pc: PC, private var returnAddressVar: Var) extends Stmt {
+case class Ret(pc: PC, private var returnAddresses: PCs) extends Stmt {
 
     final def astID = Ret.ASTID
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        returnAddresses = returnAddresses map { pcToIndex }
+    }
 
 }
 object Ret {
