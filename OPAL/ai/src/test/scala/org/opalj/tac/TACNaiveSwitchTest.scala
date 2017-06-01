@@ -34,6 +34,7 @@ import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
+import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Michael Eichberg

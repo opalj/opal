@@ -74,7 +74,7 @@ object TAC {
             "(1) <JAR file containing class files>\n"+
             "(2) <class file name>\n"+
             "(3) <method name>\n"+
-            "[(4) ai|naive (default: naive)]"+
+            "[(4) ai|naive|both (default: ai)]"+
             "Example:\n\tjava …TAC /Library/jre/lib/rt.jar java.util.ArrayList toString"
     }
 
@@ -82,7 +82,7 @@ object TAC {
         project:   SomeProject,
         classFile: ClassFile,
         method:    Method,
-        useAI:     Boolean
+        use:       String
     ): Unit = {
         val naiveCFGFile = writeAndOpen(
             CFGFactory(method.body.get, project.classHierarchy).toDot,
@@ -93,7 +93,7 @@ object TAC {
         try {
             val ch = project.classHierarchy
 
-            if (useAI) { // USING AI
+            if (use == "ai" || use == "both") { // USING AI
                 val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
                 val aiResult = BaseAI(classFile, method, domain)
                 val aiCFGFile = writeAndOpen(
@@ -111,7 +111,9 @@ object TAC {
                 val fileNamePrefix = classFile.thisType.toJava+"."+method.name
                 val file = writeAndOpen(tac, fileNamePrefix, ".ai.tac.txt")
                 println(s"Generated the ai tac file $file.")
-            } else { // USING NO AI
+            }
+
+            if (use == "naive" || use == "both") { // USING NO AI
                 val (code, _) = TACNaive(method, ch, AllOptimizations, forceCFGCreation = true)
 
                 val tac = ToJavaLike(code)
@@ -144,7 +146,7 @@ object TAC {
         } else {
             val clazzName = args(1)
             val methodName = args(2)
-            val useAI = args.length == 4 && args(3).toLowerCase == "ai"
+            val useAI = if (args.length == 4) args(3).toLowerCase else "both"
 
             val classFile = classFiles.find(e ⇒ e._1.thisType.toJava == clazzName).map(_._1).get
             val methods = classFile.findMethod(methodName)

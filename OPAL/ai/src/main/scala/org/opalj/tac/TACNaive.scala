@@ -35,12 +35,8 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.cfg.CatchNode
-import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntSetBuilder
 
 /**
  * Converts the bytecode of a method into a three address representation using quadruples.
@@ -570,7 +566,7 @@ object TACNaive {
                     val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
                     val (params, List(receiver)) = operands.splitAt(numOps - 1)
-                    import invoke.{methodDescriptor, declaringClass, name}
+                    import invoke.{methodDescriptor, declaringClass, isInterfaceCall, name}
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
                         val stmtFactory =
@@ -581,7 +577,7 @@ object TACNaive {
                         val stmt =
                             stmtFactory(
                                 pc,
-                                declaringClass, name, methodDescriptor,
+                                declaringClass, isInterfaceCall, name, methodDescriptor,
                                 receiver,
                                 params
                             )
@@ -597,7 +593,7 @@ object TACNaive {
                         val expr =
                             exprFactory(
                                 pc,
-                                declaringClass, name, methodDescriptor,
+                                declaringClass, isInterfaceCall, name, methodDescriptor,
                                 receiver,
                                 params
                             )
@@ -609,13 +605,13 @@ object TACNaive {
                     val invoke = as[INVOKESTATIC](instruction)
                     val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (params, rest) = stack.splitAt(numOps)
-                    import invoke.{declaringClass, methodDescriptor, name}
+                    import invoke.{declaringClass, methodDescriptor, name, isInterface}
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
                         val stmt =
                             StaticMethodCall(
                                 pc,
-                                declaringClass, name, methodDescriptor,
+                                declaringClass, isInterface, name, methodDescriptor,
                                 params
                             )
                         statements(pc) = List(stmt)
@@ -625,7 +621,7 @@ object TACNaive {
                         val expr =
                             StaticFunctionCall(
                                 pc,
-                                declaringClass, name, methodDescriptor,
+                                declaringClass, isInterface, name, methodDescriptor,
                                 params
                             )
                         statements(pc) = List(Assignment(pc, newVar, expr))
@@ -633,15 +629,10 @@ object TACNaive {
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    val invoke = as[INVOKEDYNAMIC](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒
-                        stack.drop(x).head.cTpe.category
-                    }
+                    val call @ INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
+                    val numOps = call.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
-                    val returnType = invoke.methodDescriptor.returnType
-                    val name = invoke.name
-                    val methodDescriptor = invoke.methodDescriptor
-                    val bootstrapMethod = invoke.bootstrapMethod
+                    val returnType = methodDescriptor.returnType
                     val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, operands)
                     val newVar = OperandVar(returnType.computationalType, rest)
                     statements(pc) = List(Assignment(pc, newVar, expr))
@@ -708,23 +699,7 @@ object TACNaive {
                     schedule(targetPC, retVar :: stack)
 
                 case RET.opcode ⇒
-                    val ret = as[RET](instruction)
-                    val returnAddressVar = RegisterVar(ComputationalTypeReturnAddress, ret.lvIndex)
-                    val pcs = new IntSetBuilder
-                    val successors = cfg().bb(pc).successors
-                    successors foreach {
-                        case cn: CatchNode  ⇒
-                            pcs += cn.handlerPC
-                            schedule(cn.handlerPC, stack)
-                        case bb: BasicBlock ⇒
-                            pcs += bb.startPC
-                            schedule(bb.startPC, stack)
-                        case cfgNode ⇒
-                            // in these cases something went terribly wrong...
-                            val message = "the cfg has an unexpected shape: "+cfgNode
-                            throw AnalysisException(message)
-                    }
-                    statements(pc) = List(Ret(pc, pcs.result ))
+                    statements(pc) = List(Ret(pc, cfg().successors(pc)))
 
                 case NOP.opcode ⇒
                     statements(pc) = List(Nop(pc))

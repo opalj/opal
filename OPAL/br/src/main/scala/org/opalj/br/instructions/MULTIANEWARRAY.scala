@@ -77,7 +77,7 @@ object MULTIANEWARRAY {
     /**
      * Factory method to create [[MULTIANEWARRAY]] instructions.
      *
-     * @param   arrayType The array's type name; see [[org.opalj.br.FieldType$]] for details.
+     * @param   arrayTypeName The array's type name; see [[org.opalj.br.FieldType$]] for details.
      * @param   dimensions The number of dimensions that should be initialized; the instruction will
      *          take a corresponding number of values from the stack.
      */

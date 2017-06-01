@@ -37,6 +37,7 @@ import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
+import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Roberts Kolosovs
@@ -82,7 +83,7 @@ class TACNaiveStackAndSynchronizationTest extends FunSpec with Matchers {
                     SimpleVar(0, ComputationalTypeInt),
                     VirtualFunctionCall(
                         1,
-                        ObjectType("tactest/StackManipulationAndSynchronization"),
+                        ObjectType("tactest/StackManipulationAndSynchronization"), true,
                         "returnInt",
                         MethodDescriptor(IndexedSeq[FieldType](), IntegerType),
                         SimpleVar(0, ComputationalTypeReference),
@@ -116,6 +117,7 @@ class TACNaiveStackAndSynchronizationTest extends FunSpec with Matchers {
                     VirtualFunctionCall(
                         1,
                         ObjectType("tactest/StackManipulationAndSynchronization"),
+                        false,
                         "returnDouble",
                         MethodDescriptor(IndexedSeq[FieldType](), DoubleType),
                         SimpleVar(0, ComputationalTypeReference),
@@ -144,7 +146,7 @@ class TACNaiveStackAndSynchronizationTest extends FunSpec with Matchers {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType.Object)),
                 Nop(3),
-                NonVirtualMethodCall(4, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(0, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(4, ObjectType.Object, false, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(0, ComputationalTypeReference), List()),
                 Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Return(8)
             ))
@@ -171,7 +173,7 @@ class TACNaiveStackAndSynchronizationTest extends FunSpec with Matchers {
                 Assignment(2, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 MonitorEnter(3, SimpleVar(0, ComputationalTypeReference)),
                 Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
-                VirtualMethodCall(5, ObjectType("tactest/StackManipulationAndSynchronization"), "pop", MethodDescriptor("()V"), SimpleVar(0, ComputationalTypeReference), List()),
+                VirtualMethodCall(5, ObjectType("tactest/StackManipulationAndSynchronization"), false, "pop", MethodDescriptor("()V"), SimpleVar(0, ComputationalTypeReference), List()),
                 Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 MonitorExit(9, SimpleVar(0, ComputationalTypeReference)), Goto(10, 13),
                 Assignment(13, SimpleVar(1, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
@@ -212,7 +214,7 @@ class TACNaiveStackAndSynchronizationTest extends FunSpec with Matchers {
                     SimpleVar(0, ComputationalTypeInt),
                     StaticFunctionCall(
                         2,
-                        ObjectType("tactest/StackManipulationAndSynchronization"),
+                        ObjectType("tactest/StackManipulationAndSynchronization"), true,
                         "staticMethod",
                         MethodDescriptor(IndexedSeq[FieldType](IntegerType, IntegerType), IntegerType),
                         List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt))
@@ -241,18 +243,19 @@ class TACNaiveStackAndSynchronizationTest extends FunSpec with Matchers {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType("java/util/ArrayList"))),
                 Nop(3),
-                NonVirtualMethodCall(4, ObjectType("java/util/ArrayList"), "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(0, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(4, ObjectType("java/util/ArrayList"), false, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(0, ComputationalTypeReference), List()),
                 Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(9, SimpleVar(1, ComputationalTypeReference), New(9, ObjectType.Object)),
                 Nop(12),
-                NonVirtualMethodCall(13, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(1, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(13, ObjectType.Object, false, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(1, ComputationalTypeReference), List()),
                 Assignment(
                     16,
                     SimpleVar(0, ComputationalTypeInt),
                     VirtualFunctionCall(
                         16,
                         ObjectType("java/util/List"),
+                        true,
                         "add",
                         MethodDescriptor(IndexedSeq[FieldType](ObjectType.Object), BooleanType),
                         SimpleVar(0, ComputationalTypeReference),

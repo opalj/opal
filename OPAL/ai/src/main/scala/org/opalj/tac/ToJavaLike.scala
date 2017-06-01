@@ -102,14 +102,14 @@ object ToJavaLike {
             case Invokedynamic(_, bootstrapMethod, name, descriptor, params) ⇒
                 s"invokedynamic[${bootstrapMethod.toJava}]${callToJavaLike(name, params)}"
 
-            case StaticFunctionCall(_, declClass, name, descriptor, params) ⇒
+            case StaticFunctionCall(_, declClass, _, name, descriptor, params) ⇒
                 declClass.toJava + callToJavaLike(name, params)
 
-            case VirtualFunctionCall(_, declClass, name, descriptor, receiver, params) ⇒
+            case VirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
                 val call = callToJavaLike(name, params)
                 toJavaLikeExpr(receiver)+"/*"+declClass.toJava+"*/"+call
 
-            case NonVirtualFunctionCall(_, declClass, name, descriptor, receiver, params) ⇒
+            case NonVirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
                 val call = callToJavaLike(name, params)
                 toJavaLikeExpr(receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call
 
@@ -148,8 +148,8 @@ object ToJavaLike {
                 val JumpToSubroutine(_, target) = stmt
                 s"jsr $target;"
             case Ret.ASTID ⇒
-                val Ret(_, variable) = stmt
-                s"ret ${toJavaLikeExpr(variable)};"
+                val Ret(_, targets) = stmt
+                targets.mkString("ret {", ",", "};")
 
             case If.ASTID ⇒
                 val If(_, left, cond, right, target) = stmt
@@ -166,6 +166,10 @@ object ToJavaLike {
                 val Assignment(_, variable, expr) = stmt
                 s"${variable.name} = ${toJavaLikeExpr(expr)};"
 
+            case ExprStmt.ASTID ⇒
+                val ExprStmt(_, expr) = stmt
+                s"/* expression value is ignored */ ${toJavaLikeExpr(expr)};"
+
             case ArrayStore.ASTID ⇒
                 val ArrayStore(_, arrayRef, index, operandVar) = stmt
                 s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}] = ${toJavaLikeExpr(operandVar)};"
@@ -179,22 +183,26 @@ object ToJavaLike {
                 s"${toJavaLikeExpr(receiver)}/*${declaringClass.toJava}*/.$name = ${toJavaLikeExpr(value)}"
 
             case StaticMethodCall.ASTID ⇒
-                val StaticMethodCall(_, declClass, name, _ /* descriptor*/ , params) = stmt
+                val StaticMethodCall(_, declClass, _, name, _ /* descriptor*/ , params) = stmt
                 declClass.toJava + callToJavaLike(name, params) + ';'
 
             case VirtualMethodCall.ASTID ⇒
-                val VirtualMethodCall(_, declClass, name, _ /*descriptor*/ , receiver, params) = stmt
+                val VirtualMethodCall(_, declClass, _, name, _ /*descriptor*/ , receiver, params) = stmt
                 val call = callToJavaLike(name, params)
                 toJavaLikeExpr(receiver)+"/*"+declClass.toJava+"*/"+call + ';'
 
             case NonVirtualMethodCall.ASTID ⇒
-                val NonVirtualMethodCall(_, declClass, name, _ /* descriptor*/ , receiver, params) = stmt
+                val NonVirtualMethodCall(_, declClass, _, name, _ /* descriptor*/ , receiver, params) = stmt
                 val call = callToJavaLike(name, params)
                 toJavaLikeExpr(receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call + ';'
 
             case FailingExpression.ASTID ⇒
-                val FailingExpression(_, expr) = stmt
-                "/*always throws an exception: */"+toJavaLikeExpr(expr) + ';'
+                val FailingExpression(_, fExpr) = stmt
+                s"/*always throws an exception: */${toJavaLikeExpr(fExpr)};"
+
+            case FailingStatement.ASTID ⇒
+                val FailingStatement(_, fStmt) = stmt
+                s"/*always throws an exception: */${toJavaLikeStmt(fStmt)};"
 
         }
     }

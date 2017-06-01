@@ -226,6 +226,13 @@ case class New(pc: PC, tpe: ObjectType) extends Expr {
 }
 object New { final val ASTID = -17 }
 
+/**
+ *
+ * @param pc
+ * @param counts Encodes the number of dimensions that are initialized and the size of the
+ *               respective dimension.
+ * @param tpe The type of the array. The number of dimensions is always `>= count.size`.
+ */
 case class NewArray(pc: PC, counts: Seq[Expr], tpe: ArrayType) extends Expr {
     final def astID: Int = NewArray.ASTID
     final def cTpe: ComputationalType = ComputationalTypeReference
@@ -295,6 +302,7 @@ sealed abstract class InstanceFunctionCall extends FunctionCall {
 case class NonVirtualFunctionCall(
         pc:             PC,
         declaringClass: ReferenceType,
+        isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
         receiver:       Expr,
@@ -311,6 +319,7 @@ object NonVirtualFunctionCall { final val ASTID = -24 }
 case class VirtualFunctionCall(
         pc:             PC,
         declaringClass: ReferenceType,
+        isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
         receiver:       Expr,
@@ -327,6 +336,7 @@ object VirtualFunctionCall { final val ASTID = -25 }
 case class StaticFunctionCall(
         pc:             PC,
         declaringClass: ReferenceType,
+        isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
         params:         Seq[Expr]
@@ -363,7 +373,7 @@ object Var {
 /**
  * Identifies a variable which has a single static definition/initialization site.
  */
-abstract class DUVar[ValueType <: org.opalj.ai.Domain#DomainValue] extends Var {
+abstract class DUVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] extends Var {
 
     def value: ValueType
 
@@ -379,36 +389,75 @@ abstract class DUVar[ValueType <: org.opalj.ai.Domain#DomainValue] extends Var {
  * has the given origin.
  * Initially, the pc of the underlying bytecode instruction is used.
  */
-class DVar[ValueType <: org.opalj.ai.Domain#DomainValue](
-        val value:                 ValueType,
+class DVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
         private[tac] var origin:   ValueOrigin,
+        val value:                 ValueType,
         private[tac] var useSites: IntSet
 ) extends DUVar[ValueType] {
 
+    assert(useSites ne null)
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         origin = pcToIndex(origin)
-        useSites = useSites.map(pcToIndex.apply)
+        useSites = useSites.map(pcToIndex.apply) // use site are always positive...
     }
+
+    def definedBy: ValueOrigin = origin
+
+    def usedBy: IntSet = useSites
 
     def name: String = "l"+origin
 
 }
 
-class UVar[ValueType <: org.opalj.ai.Domain#DomainValue](
+object DVar {
+
+    def apply(
+        d: org.opalj.ai.ValuesDomain
+    )(
+        origin: ValueOrigin, value: d.DomainValue, useSites: IntSet
+    ): DVar[d.DomainValue] = {
+        new DVar[d.DomainValue](origin, value, useSites)
+    }
+
+}
+
+class UVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
         val value:                 ValueType,
         private[tac] var defSites: IntSet
 ) extends DUVar[ValueType] {
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        defSites = defSites.map(pcToIndex.apply)
+        defSites = defSites.map { defSite ⇒
+            if (defSite >= 0) pcToIndex(defSite) else defSite /* <= it is a parameter */
+        }
     }
 
     def name: String = {
         if (defSites.size == 1) {
-            "l"+defSites.head
+            val defSite = defSites.head
+            if (defSite < 0)
+                "p"+(-defSite)
+            else
+                "l"+defSites.head
         } else {
             defSites.mkString("l{", ", ", "}")
         }
     }
+
+    def definedBy: IntSet = defSites
+
+}
+
+object UVar {
+
+    def apply(
+        d: org.opalj.ai.ValuesDomain
+    )(
+        value: d.DomainValue, useSites: IntSet
+    ): UVar[d.DomainValue] = {
+        new UVar[d.DomainValue](value, useSites)
+    }
+
 }
 

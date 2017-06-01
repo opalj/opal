@@ -34,6 +34,7 @@ import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
+import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Michael Eichberg
@@ -107,7 +108,7 @@ class ArrayTest extends TACTest {
                 Assignment(6, SimpleVar(1, ComputationalTypeInt), IntConst(6, 4)),
                 Assignment(7, SimpleVar(2, ComputationalTypeReference), New(7, ObjectType.Object)),
                 Nop(10),
-                NonVirtualMethodCall(11, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(2, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(11, ObjectType.Object, false, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(2, ComputationalTypeReference), List()),
                 ArrayStore(14, SimpleVar(0, ComputationalTypeReference), SimpleVar(1, ComputationalTypeInt), SimpleVar(2, ComputationalTypeReference)),
                 Assignment(15, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(16, SimpleVar(1, ComputationalTypeInt), IntConst(16, 4)),
