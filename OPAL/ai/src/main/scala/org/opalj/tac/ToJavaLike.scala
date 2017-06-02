@@ -223,6 +223,7 @@ object ToJavaLike {
         val javaLikeCode = new Array[String](max)
         var index = 0;
         while (index < max) {
+
             def qualify(javaLikeStmt: String): String = {
                 if (indented)
                     f"$index%5d: ${javaLikeStmt.replace("\n", "\n       ")}"

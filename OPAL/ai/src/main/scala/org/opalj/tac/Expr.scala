@@ -36,6 +36,7 @@ import org.opalj.br.ComputationalTypeLong
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.br.Type
 import org.opalj.br.IntegerType
 import org.opalj.br.BaseType
@@ -508,7 +509,9 @@ class DVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
         private[tac] var useSites: IntSet
 ) extends DUVar[ValueType] {
 
-    assert(useSites ne null)
+    assert(useSites != null, s"no uses (null) for $origin: $value")
+    assert(value != null)
+    assert(value.computationalType != ComputationalTypeReturnAddress, s"value has unexpected computational type: $value")
 
     def definedBy: ValueOrigin = origin
 
