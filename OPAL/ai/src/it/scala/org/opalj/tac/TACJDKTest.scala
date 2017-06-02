@@ -78,7 +78,7 @@ class TACJDKTest extends FunSpec with Matchers {
                 ch = project.classHierarchy
                 cf ← project.allProjectClassFiles.par
                 m ← cf.methods
-                if m.body.isDefined
+                body <-  m.body
                 aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
             } {
                 try {
@@ -99,14 +99,13 @@ class TACJDKTest extends FunSpec with Matchers {
                     case e: Throwable ⇒ this.synchronized {
                         val methodSignature = m.toJava(cf)
                         mutex.synchronized {
-                            println(methodSignature)
+                            println(methodSignature+" - size: "+body.instructions.length)
                             e.printStackTrace()
                             if (e.getCause != null) {
                                 println("\tcause:")
                                 e.getCause.printStackTrace()
                             }
-                            println("\n")
-                            println(m.body.get.instructions.mkString("Instructions:\n\t","\n\t","\n"))
+                            println(body.instructions.zipWithIndex.filter(_._1 != null).map(_.swap).mkString("Instructions:\n\t","\n\t","\n"))
                             errors ::= ((file+":"+methodSignature, e))
                         }
                     }
