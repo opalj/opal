@@ -416,7 +416,7 @@ case class CFG(
                 assert(newSuccBB ne null, s"no mapping for $oldSuccBB")
                 newBB.addSuccessor(newSuccBB)
                 // Instead of iterating over the predecessors, we just iterate over
-                // the successors; this way we only include the node that are
+                // the successors; this way, we only include the nodes that are
                 // live; nodes that; e.g., are attached to the exit node but for
                 // which there is no path to reach them at all are dropped!
                 newSuccBB.addPredecessor(newBB)

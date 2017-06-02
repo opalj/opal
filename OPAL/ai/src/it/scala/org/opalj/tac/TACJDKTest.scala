@@ -29,6 +29,8 @@
 package org.opalj
 package tac
 
+import scala.language.existentials
+
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
@@ -36,6 +38,7 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 import java.io.File
+
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
@@ -43,6 +46,7 @@ import org.opalj.ai.Domain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.analyses.SomeProject
 
@@ -62,7 +66,7 @@ class TACJDKTest extends FunSpec with Matchers {
 
         def checkFolder(
             folder:        File,
-            domainFactory: Option[(SomeProject, ClassFile, Method) ⇒ Domain] = None
+            domainFactory: Option[(SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse] = None
         ): Unit = {
             var errors: List[(String, Throwable)] = Nil
             val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -79,12 +83,18 @@ class TACJDKTest extends FunSpec with Matchers {
             } {
                 try {
                     // without using AIResults
-                    val (tacCode, _) = TACNaive(
+                    val (tacNaiveCode, _) = TACNaive(
                         method = m,
                         classHierarchy = project.classHierarchy,
-                        optimizations = AllOptimizations
+                        optimizations = AllTACNaiveOptimizations
                     )
-                    ToJavaLike(tacCode)
+                    ToJavaLike(tacNaiveCode)
+
+                    // using AIResults (if available)
+                    if(aiResult.isDefined) {
+                        val (tacAICode, _) = TACAI(m, project.classHierarchy, aiResult.get)(List.empty)
+                        ToJavaLike(tacAICode)
+                    }
                 } catch {
                     case e: Throwable ⇒ this.synchronized {
                         val methodSignature = m.toJava(cf)
@@ -96,7 +106,7 @@ class TACJDKTest extends FunSpec with Matchers {
                                 e.getCause.printStackTrace()
                             }
                             println("\n")
-                            println(m.body.get.toString)
+                            println(m.body.get.instructions.mkString("Instructions:\n\t","\n\t","\n"))
                             errors ::= ((file+":"+methodSignature, e))
                         }
                     }
@@ -123,21 +133,20 @@ class TACJDKTest extends FunSpec with Matchers {
                 new DefaultDomainWithCFGAndDefUse(p, cf, m)
             })
 
-            it("it should be able to create fully typed TAC for the JDK") {
-                time {
-                    checkFolder(jreLibFolder, domainFactory)
-                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
-            }
-
             it("it should be able to create fully typed TAC for the set of collected class files") {
                 time {
                     checkFolder(biClassfilesFolder, domainFactory)
                 } { t ⇒ info(s"conversion took ${t.toSeconds}") }
             }
 
+            it("it should be able to create fully typed TAC for the JDK") {
+                time {
+                    checkFolder(jreLibFolder, domainFactory)
+                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
         }
 
-        describe("plain transformation") {
+        describe("using the naive transformation approach") {
 
             it("it should be able to convert all methods of the JDK") {
                 time {
