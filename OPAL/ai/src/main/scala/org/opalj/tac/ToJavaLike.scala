@@ -194,15 +194,15 @@ object ToJavaLike {
             case NonVirtualMethodCall.ASTID ⇒
                 val NonVirtualMethodCall(_, declClass, _, name, _ /* descriptor*/ , receiver, params) = stmt
                 val call = callToJavaLike(name, params)
-                toJavaLikeExpr(receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call + ';'
+                toJavaLikeExpr(receiver)+"/*(Non-Virtual)"+declClass.toJava+"*/"+call + ';'
 
             case FailingExpression.ASTID ⇒
                 val FailingExpression(_, fExpr) = stmt
-                s"/*always throws an exception: */${toJavaLikeExpr(fExpr)};"
+                s"/*always throws an exception:*/${toJavaLikeExpr(fExpr)};"
 
             case FailingStatement.ASTID ⇒
                 val FailingStatement(_, fStmt) = stmt
-                s"/*always throws an exception: */${toJavaLikeStmt(fStmt)};"
+                s"/*always throws an exception:*/${toJavaLikeStmt(fStmt)};"
 
         }
     }
