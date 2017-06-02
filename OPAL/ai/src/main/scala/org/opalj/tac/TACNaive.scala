@@ -36,7 +36,11 @@ import org.opalj.br._
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.CatchNode
+import org.opalj.br.cfg.BasicBlock
+import org.opalj.collection.immutable.IntSet
 
 /**
  * Converts the bytecode of a method into a three address representation using quadruples.
@@ -620,7 +624,21 @@ object TACNaive {
                     schedule(targetPC, retVar :: stack)
 
                 case RET.opcode ⇒
-                    statements(pc) = List(Ret(pc, cfg().successors(pc)))
+                    var successors = IntSet.empty
+                    cfg.bb(pc).successors foreach { successorNode ⇒
+                        val successor = successorNode match {
+                            case cn: CatchNode  ⇒ cn.handlerPC
+                            case bb: BasicBlock ⇒ bb.startPC
+                            case cfgNode ⇒
+                                // in these cases something went terribly wrong...
+                                val message = "the cfg has an unexpected shape: "+cfgNode
+                                throw new AnalysisException(message)
+                        }
+                        successors += successor
+                        schedule(successor, stack)
+                    }
+
+                    statements(pc) = List(Ret(pc, successors))
 
                 case NOP.opcode ⇒
                     statements(pc) = List(Nop(pc))
