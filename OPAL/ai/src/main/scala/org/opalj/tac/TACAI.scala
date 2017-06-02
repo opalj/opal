@@ -288,7 +288,12 @@ object TACAI {
                 case ARRAYLENGTH.opcode ⇒
                     val arrayRef = operandUse(0)
                     val lengthExpr = ArrayLength(pc, arrayRef)
-                    addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
+                    if (wasExecuted(nextPC)) {
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
+                    } else {
+                        // IMPROVE Encode information about the failing exception!
+                        addStmt(FailingExpression(pc, lengthExpr))
+                    }
 
                 case BIPUSH.opcode | SIPUSH.opcode ⇒
                     val value = as[LoadConstantInstruction[Int]](instruction).value
