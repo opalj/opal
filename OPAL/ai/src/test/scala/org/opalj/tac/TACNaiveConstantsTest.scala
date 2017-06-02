@@ -29,22 +29,18 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Roberts Kolosovs
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveConstantsTest extends FunSpec with Matchers {
+class TACNaiveConstantsTest extends TACNaiveTest {
 
     val ConstantsType = ObjectType("tactest/Constants")
 

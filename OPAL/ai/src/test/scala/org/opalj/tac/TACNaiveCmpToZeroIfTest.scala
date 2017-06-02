@@ -29,22 +29,18 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Roberts Kolosovs
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveCmpToZeroIfTest extends FunSpec with Matchers {
+class TACNaiveCmpToZeroIfTest extends TACNaiveTest {
 
     val ControlSequencesType = ObjectType("tactest/ControlSequences")
 
@@ -74,7 +70,7 @@ class TACNaiveCmpToZeroIfTest extends FunSpec with Matchers {
             "7: return op_0;"
         )
 
-        def resultAST(stmt: Stmt): Array[Stmt] = Array(
+        def resultAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
             Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),

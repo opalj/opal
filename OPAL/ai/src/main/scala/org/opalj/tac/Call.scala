@@ -29,46 +29,25 @@
 package org.opalj
 package tac
 
-import java.util.Arrays
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.opalj.br.PC
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ReferenceType
 
 /**
- * Common superclass of all TAC unit tests.
- *
- * @author Michael Eichberg
+ * Common supertrait of statements and expressions calling a method.
  */
-private[tac] class TACTest extends FunSpec with Matchers {
-
-    def compareStatements[V <: Var[V]](
-        expectedStmts: IndexedSeq[Stmt[V]],
-        actualStmts:   IndexedSeq[Stmt[V]]
-    ): Unit = {
-        compareStatements(expectedStmts.toArray, actualStmts.toArray)
-    }
-
-    def compareStatements[V <: Var[V]](
-        expectedStmts: Array[Stmt[V]],
-        actualStmts:   Array[Stmt[V]]
-    ): Unit = {
-        val expected = expectedStmts.asInstanceOf[Array[Object]]
-        val actual = actualStmts.asInstanceOf[Array[Object]]
-        if (!Arrays.equals(expected: Array[Object], actual: Array[Object])) {
-            val message =
-                actualStmts.zip(expectedStmts).
-                    filter(p ⇒ p._1 != p._2).
-                    map(p ⇒ "\t"+p._1+"\n\t<=>[Expected:]\n\t"+p._2+"\n").
-                    mkString("Differences:\n", "\n", "\n")
-            fail(message)
-        }
-    }
+trait Call[+V <: Var[V]] {
+    def declaringClass: ReferenceType
+    def isInterface: Boolean
+    def name: String
+    def descriptor: MethodDescriptor
+    def params: Seq[Expr[V]] // TODO IndexedSeq
 }
 
-private[tac] class TACNaiveTest extends TACTest {
+object Call {
 
-    def Assignment(pc: PC, targetVar: IdBasedVar, expr: Expr[IdBasedVar]): Assignment[IdBasedVar] = {
-        new Assignment[IdBasedVar](pc, targetVar, expr)
+    def unapply[V <: Var[V]](
+        call: Call[V]
+    ): Some[(ReferenceType, Boolean, String, MethodDescriptor)] = {
+        Some((call.declaringClass, call.isInterface, call.name, call.descriptor))
     }
-
 }

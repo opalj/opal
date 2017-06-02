@@ -35,8 +35,8 @@ package org.opalj
  */
 package object tac {
 
-    final val NoOptimizations: List[TACOptimization] = Nil
-
-    final val AllOptimizations: List[TACOptimization] = List(SimplePropagation)
+    final val AllTACNaiveOptimizations: List[TACOptimization[IdBasedVar]] = {
+        List(SimplePropagation)
+    }
 
 }

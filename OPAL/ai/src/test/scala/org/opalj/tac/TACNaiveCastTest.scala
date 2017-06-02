@@ -29,22 +29,18 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveCastTest extends FunSpec with Matchers {
+class TACNaiveCastTest extends TACNaiveTest {
 
     describe("the naive TAC of cast instructions") {
 
@@ -104,7 +100,7 @@ class TACNaiveCastTest extends FunSpec with Matchers {
             "5: return;"
         )
 
-        def castResultAST(from: ComputationalType, to: BaseType): Array[Stmt] = Array(
+        def castResultAST(from: ComputationalType, to: BaseType) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, from), Param(from, "p_1")),
             Assignment(0, SimpleVar(0, from), SimpleVar(-2, from)),
@@ -113,7 +109,7 @@ class TACNaiveCastTest extends FunSpec with Matchers {
             Return(3)
         )
 
-        def typecheckResultAST(refTp: ReferenceType): Array[Stmt] = Array(
+        def typecheckResultAST(refTp: ReferenceType) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
             Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
@@ -150,7 +146,7 @@ class TACNaiveCastTest extends FunSpec with Matchers {
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             val listType = ReferenceType("java/util/List")
-            statements.shouldEqual(Array[Stmt](
+            statements.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),

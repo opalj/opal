@@ -34,14 +34,13 @@ import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class ArrayTest extends TACTest {
+class ArrayTest extends TACNaiveTest {
 
     val ArrayInstructionsType = ObjectType("tactest/ArrayCreationAndManipulation")
 
@@ -61,7 +60,11 @@ class ArrayTest extends TACTest {
 
     describe("the naive TAC of array creation and manipulation instructions") {
 
-        def expectedAST(cTpe: ComputationalType, arrayType: ArrayType, const: Expr) = Array[Stmt](
+        def expectedAST(
+            cTpe:      ComputationalType,
+            arrayType: ArrayType,
+            const:     Expr[IdBasedVar]
+        ) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
             Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), arrayType)),
@@ -141,7 +144,7 @@ class ArrayTest extends TACTest {
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(Array(
+            statements.shouldEqual(Array[Stmt[IdBasedVar]](
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
                 Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),

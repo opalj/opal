@@ -44,17 +44,17 @@ import org.opalj.br.ComputationalTypeReturnAddress
  */
 object ToJavaLike {
 
-    private def callToJavaLike(name: String, params: Seq[Expr]): String = {
-        params.reverse map { toJavaLikeExpr(_) } mkString (s".$name(", ", ", ")")
+    private def callToJavaLike[V <: Var[V]](name: String, params: Seq[Expr[V]]): String = {
+        params.reverse map { toJavaLikeExpr[V] } mkString (s".$name(", ", ", ")")
     }
 
-    @inline final def toJavaLikeExpr(expr: Expr): String = {
+    @inline final def toJavaLikeExpr[V <: Var[V]](expr: Expr[V]): String = {
         expr match {
-            case v @ Var(name) ⇒
+            case v: Var[_] ⇒
                 if (v.cTpe == ComputationalTypeReturnAddress)
-                    name+"/* return address */"
+                    v.name+"/* return address */"
                 else
-                    name
+                    v.name
             case Param(_ /*cTpe*/ , name) ⇒ name
             case IntConst(_, value)       ⇒ value.toString
             case LongConst(_, value)      ⇒ value.toString+"l"
@@ -71,13 +71,13 @@ object ToJavaLike {
                 s"(${tpe.asReferenceType.toJava}) ${toJavaLikeExpr(value)}"
 
             case Compare(_, left, op, right) ⇒
-                toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
+                toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr[V](right)
 
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
-                toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
+                toJavaLikeExpr[V](left)+" "+op.toString()+" "+toJavaLikeExpr[V](right)
 
             case PrefixExpr(_, _, op, operand) ⇒
-                op.toString()+" "+toJavaLikeExpr(operand)
+                op.toString()+" "+toJavaLikeExpr[V](operand)
 
             case PrimitiveTypecastExpr(_, baseTpe, operand) ⇒
                 s"(${baseTpe.toJava}) ${toJavaLikeExpr(operand)}"
@@ -103,15 +103,15 @@ object ToJavaLike {
                 s"invokedynamic[${bootstrapMethod.toJava}]${callToJavaLike(name, params)}"
 
             case StaticFunctionCall(_, declClass, _, name, descriptor, params) ⇒
-                declClass.toJava + callToJavaLike(name, params)
+                declClass.toJava + callToJavaLike[V](name, params)
 
             case VirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
                 val call = callToJavaLike(name, params)
-                toJavaLikeExpr(receiver)+"/*"+declClass.toJava+"*/"+call
+                toJavaLikeExpr[V](receiver)+"/*"+declClass.toJava+"*/"+call
 
             case NonVirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
                 val call = callToJavaLike(name, params)
-                toJavaLikeExpr(receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call
+                toJavaLikeExpr[V](receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call
 
             case GetStatic(_, declaringClass, name) ⇒
                 s"${declaringClass.toJava}.$name"
@@ -121,7 +121,7 @@ object ToJavaLike {
         }
     }
 
-    @inline final def toJavaLikeStmt(stmt: Stmt): String = {
+    @inline final def toJavaLikeStmt[V <: Var[V]](stmt: Stmt[V]): String = {
         stmt.astID match {
             case Return.ASTID ⇒ "return;"
             case ReturnValue.ASTID ⇒
@@ -210,14 +210,14 @@ object ToJavaLike {
     /**
      * Converts the quadruples representation into Java-like code.
      */
-    def apply(stmts: Array[Stmt]): String = {
+    def apply[V <: Var[V]](stmts: Array[Stmt[V]]): String = {
         apply(stmts, true).mkString("\n")
     }
 
     /**
      * Converts each statement into a Java-like statement.
      */
-    def apply(stmts: Array[Stmt], indented: Boolean): Array[String] = {
+    def apply[V <: Var[V]](stmts: Array[Stmt[V]], indented: Boolean): Array[String] = {
 
         val max = stmts.size
         val javaLikeCode = new Array[String](max)
@@ -241,7 +241,7 @@ object ToJavaLike {
     /**
      * Converts each statement into a Java-like statement.
      */
-    def apply(stmts: IndexedSeq[Stmt], indented: Boolean): Array[String] = {
+    def apply[V <: Var[V]](stmts: IndexedSeq[Stmt[V]], indented: Boolean): Array[String] = {
         apply(stmts.toArray, indented)
     }
 
@@ -250,14 +250,11 @@ object ToJavaLike {
         classHierarchy: ClassHierarchy                                = Code.BasicClassHierarchy,
         aiResult:       Option[AIResult { val domain: RecordDefUse }] = None
     ): String = {
-        val optimizations = List(SimplePropagation)
-        val quadruples =
-            aiResult map { aiResult ⇒
-                TACAI(method, classHierarchy, aiResult, optimizations)._1
-            } getOrElse {
-                TACNaive(method, classHierarchy, optimizations, false)._1
-            }
-        ToJavaLike(quadruples)
+        aiResult map { aiResult ⇒
+            ToJavaLike(TACAI(method, classHierarchy, aiResult)(List.empty)._1)
+        } getOrElse {
+            ToJavaLike(TACNaive(method, classHierarchy, List(SimplePropagation), false)._1)
+        }
     }
 
 }

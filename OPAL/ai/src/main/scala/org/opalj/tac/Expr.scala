@@ -51,7 +51,7 @@ import org.opalj.br.MethodHandle
 import org.opalj.br.PC
 import org.opalj.ai.ValueOrigin
 
-trait Expr extends ASTNode {
+trait Expr[+V <: Var[V]] extends ASTNode[V] {
 
     /**
      * The computational type of the underlying value.
@@ -74,13 +74,14 @@ trait Expr extends ASTNode {
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 }
 
-trait ValueExpr extends Expr
+trait ValueExpr[+V <: Var[V]] extends Expr[V]
 
 /**
- * Parameter expressions must occur at the very beginning of the quadruples code
- * and must perform the initial initialization of the register values.
+ * Explicit reference to a paramter. Parameter statements are only used by the naive
+ * representation where it is necessary to perform an initial initialization of the
+ * register values.
  */
-case class Param(cTpe: ComputationalType, name: String) extends ValueExpr {
+case class Param(cTpe: ComputationalType, name: String) extends ValueExpr[Nothing] {
 
     final def astID: Int = Param.ASTID
 
@@ -88,7 +89,7 @@ case class Param(cTpe: ComputationalType, name: String) extends ValueExpr {
 }
 object Param { final val ASTID = -1 }
 
-case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
+case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Expr[V] {
 
     final def astID: Int = InstanceOf.ASTID
 
@@ -103,7 +104,7 @@ case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
 }
 object InstanceOf { final val ASTID = -2 }
 
-case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
+case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Expr[V] {
 
     final def astID: Int = Checkcast.ASTID
 
@@ -117,12 +118,12 @@ case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
 }
 object Checkcast { final val ASTID = -3 }
 
-case class Compare(
+case class Compare[+V <: Var[V]](
         pc:        PC,
-        left:      Expr,
+        left:      Expr[V],
         condition: RelationalOperator,
-        right:     Expr
-) extends Expr {
+        right:     Expr[V]
+) extends Expr[V] {
 
     final def astID: Int = Compare.ASTID
 
@@ -137,7 +138,7 @@ case class Compare(
 }
 object Compare { final val ASTID = -4 }
 
-sealed abstract class Const extends ValueExpr {
+sealed abstract class Const extends ValueExpr[Nothing] {
 
     final def isSideEffectFree: Boolean = true
 
@@ -214,12 +215,12 @@ object NullExpr { final val ASTID = -13 }
 /**
  * @param cTpe The computational type of the result of the binary expression.
  */
-case class BinaryExpr(
+case class BinaryExpr[+V <: Var[V]](
         pc:   PC,
         cTpe: ComputationalType,
         op:   BinaryArithmeticOperator,
-        left: Expr, right: Expr
-) extends Expr {
+        left: Expr[V], right: Expr[V]
+) extends Expr[V] {
 
     final def astID: Int = BinaryExpr.ASTID
 
@@ -235,12 +236,12 @@ object BinaryExpr { final val ASTID = -14 }
 /**
  * @param cTpe The computational type of the result of the prefix expression.
  */
-case class PrefixExpr(
+case class PrefixExpr[+V <: Var[V]](
         pc:      PC,
         cTpe:    ComputationalType,
         op:      UnaryArithmeticOperator,
-        operand: Expr
-) extends Expr {
+        operand: Expr[V]
+) extends Expr[V] {
 
     final def astID: Int = PrefixExpr.ASTID
 
@@ -252,7 +253,10 @@ case class PrefixExpr(
 }
 object PrefixExpr { final val ASTID = -15 }
 
-case class PrimitiveTypecastExpr(pc: PC, targetTpe: BaseType, operand: Expr) extends Expr {
+case class PrimitiveTypecastExpr[+V <: Var[V]](
+        pc: PC, targetTpe: BaseType,
+        operand: Expr[V]
+) extends Expr[V] {
 
     final def astID: Int = PrimitiveTypecastExpr.ASTID
 
@@ -271,7 +275,7 @@ object PrimitiveTypecastExpr { final val ASTID = -16 }
  * is done later and therefore the object is not considered to be properly initialized and –
  * therefore – no further operations other than the call of a constructor are allowed.
  */
-case class New(pc: PC, tpe: ObjectType) extends Expr {
+case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
 
     final def astID: Int = New.ASTID
 
@@ -294,7 +298,7 @@ object New { final val ASTID = -17 }
  *               respective dimension.
  * @param tpe The type of the array. The number of dimensions is always `>= count.size`.
  */
-case class NewArray(pc: PC, counts: Seq[Expr], tpe: ArrayType) extends Expr {
+case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) extends Expr[V] {
 
     final def astID: Int = NewArray.ASTID
 
@@ -308,7 +312,7 @@ case class NewArray(pc: PC, counts: Seq[Expr], tpe: ArrayType) extends Expr {
 }
 object NewArray { final val ASTID = -18 }
 
-case class ArrayLoad(pc: PC, index: Var, arrayRef: Var) extends Expr {
+case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) extends Expr[V] {
 
     final def astID: Int = ArrayLoad.ASTID
 
@@ -323,7 +327,7 @@ case class ArrayLoad(pc: PC, index: Var, arrayRef: Var) extends Expr {
 }
 object ArrayLoad { final val ASTID = -19 }
 
-case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
+case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends Expr[V] {
 
     final def astID: Int = ArrayLength.ASTID
 
@@ -337,7 +341,12 @@ case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
 }
 object ArrayLength { final val ASTID = -20 }
 
-case class GetField(pc: PC, declaringClass: ObjectType, name: String, objRef: Expr) extends Expr {
+case class GetField[+V <: Var[V]](
+        pc:             PC,
+        declaringClass: ObjectType,
+        name:           String,
+        objRef:         Expr[V]
+) extends Expr[V] {
 
     final def astID: Int = GetField.ASTID
 
@@ -351,7 +360,7 @@ case class GetField(pc: PC, declaringClass: ObjectType, name: String, objRef: Ex
 }
 object GetField { final val ASTID = -21 }
 
-case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr {
+case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr[Nothing] {
 
     final def astID: Int = GetStatic.ASTID
 
@@ -362,13 +371,13 @@ case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends E
 }
 object GetStatic { final val ASTID = -22 }
 
-case class Invokedynamic(
+case class Invokedynamic[+V <: Var[V]](
         pc:              PC,
         bootstrapMethod: BootstrapMethod,
         name:            String,
         descriptor:      MethodDescriptor,
-        params:          Seq[Expr]
-) extends Expr {
+        params:          Seq[Expr[V]]
+) extends Expr[V] {
 
     final def astID: Int = Invokedynamic.ASTID
 
@@ -382,23 +391,23 @@ case class Invokedynamic(
 }
 object Invokedynamic { final val ASTID = -23 }
 
-sealed abstract class FunctionCall extends Expr with Call {
+sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
     final def cTpe: ComputationalType = descriptor.returnType.computationalType
 }
 
-sealed abstract class InstanceFunctionCall extends FunctionCall {
-    def receiver: Expr
+sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
+    def receiver: Expr[V]
 }
 
-case class NonVirtualFunctionCall(
+case class NonVirtualFunctionCall[+V <: Var[V]](
         pc:             PC,
         declaringClass: ReferenceType,
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
-        receiver:       Expr,
-        params:         Seq[Expr]
-) extends InstanceFunctionCall {
+        receiver:       Expr[V],
+        params:         Seq[Expr[V]]
+) extends InstanceFunctionCall[V] {
 
     final def astID: Int = NonVirtualFunctionCall.ASTID
 
@@ -411,15 +420,15 @@ case class NonVirtualFunctionCall(
 }
 object NonVirtualFunctionCall { final val ASTID = -24 }
 
-case class VirtualFunctionCall(
+case class VirtualFunctionCall[+V <: Var[V]](
         pc:             PC,
         declaringClass: ReferenceType,
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
-        receiver:       Expr,
-        params:         Seq[Expr]
-) extends InstanceFunctionCall {
+        receiver:       Expr[V],
+        params:         Seq[Expr[V]]
+) extends InstanceFunctionCall[V] {
 
     final def astID: Int = VirtualFunctionCall.ASTID
 
@@ -432,14 +441,14 @@ case class VirtualFunctionCall(
 }
 object VirtualFunctionCall { final val ASTID = -25 }
 
-case class StaticFunctionCall(
+case class StaticFunctionCall[+V <: Var[V]](
         pc:             PC,
         declaringClass: ReferenceType,
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
-        params:         Seq[Expr]
-) extends FunctionCall {
+        params:         Seq[Expr[V]]
+) extends FunctionCall[V] {
 
     final def astID: Int = StaticFunctionCall.ASTID
 
@@ -451,7 +460,7 @@ case class StaticFunctionCall(
 }
 object StaticFunctionCall { final val ASTID = -26 }
 
-trait Var extends ValueExpr {
+trait Var[+V <: Var[V]] extends ValueExpr[V] { this: V ⇒
 
     final def astID: Int = Var.ASTID
 
@@ -463,8 +472,11 @@ trait Var extends ValueExpr {
 }
 
 object Var {
+
     final val ASTID = -27
-    def unapply(variable: Var): Some[String] = Some(variable.name)
+
+    def unapply[V <: Var[V]](variable: Var[V]): Some[String] = Some(variable.name)
+
 }
 
 //
@@ -476,7 +488,7 @@ object Var {
 /**
  * Identifies a variable which has a single static definition/initialization site.
  */
-abstract class DUVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] extends Var {
+abstract class DUVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] extends Var[DUVar[ValueType]] {
 
     def value: ValueType
 
@@ -490,7 +502,7 @@ abstract class DUVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] extends
  * has the given origin.
  * Initially, the pc of the underlying bytecode instruction is used.
  */
-class DVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
+class DVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
         private[tac] var origin:   ValueOrigin,
         val value:                 ValueType,
         private[tac] var useSites: IntSet
@@ -502,7 +514,7 @@ class DVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
 
     def usedBy: IntSet = useSites
 
-    def name: String = s"l$origin/*:$value*/"
+    def name: String = s"lv${origin.toHexString}/*:$value*/"
 
     final def isSideEffectFree: Boolean = true
 
@@ -524,21 +536,18 @@ object DVar {
 
 }
 
-class UVar[ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
+class UVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
         val value:                 ValueType,
         private[tac] var defSites: IntSet
 ) extends DUVar[ValueType] {
 
     def name: String = {
-        if (defSites.size == 1) {
-            val defSite = defSites.head
+        defSites.iterator.map { defSite ⇒
             if (defSite < 0)
-                s"p${-defSite}/*:$value*/"
+                s"param${(-defSite).toHexString}/*:$value*/"
             else
-                s"l${defSites.head}/*:$value*/"
-        } else {
-            defSites.mkString("l{", ", ", s"}/*:$value*/")
-        }
+                "lv"+defSite.toHexString
+        }.mkString("{", ", ", s"}/*:$value*/")
     }
 
     def definedBy: IntSet = defSites
@@ -564,4 +573,3 @@ object UVar {
     }
 
 }
-

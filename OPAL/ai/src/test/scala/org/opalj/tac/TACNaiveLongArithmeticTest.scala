@@ -29,22 +29,18 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveLongArithmeticTest extends FunSpec with Matchers {
+class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
 
@@ -80,7 +76,7 @@ class TACNaiveLongArithmeticTest extends FunSpec with Matchers {
             "6: return op_0;"
         )
 
-        def binaryAST(stmt: Stmt): Array[Stmt] = Array(
+        def binaryAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeLong), Param(ComputationalTypeLong, "p_1")),
             Assignment(-1, SimpleVar(-4, ComputationalTypeLong), Param(ComputationalTypeLong, "p_2")),
@@ -90,7 +86,7 @@ class TACNaiveLongArithmeticTest extends FunSpec with Matchers {
             ReturnValue(3, SimpleVar(0, ComputationalTypeLong))
         )
 
-        def binaryShiftAST(stmt: Stmt): Array[Stmt] = Array(
+        def binaryShiftAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeLong), Param(ComputationalTypeLong, "p_1")),
             Assignment(-1, SimpleVar(-4, ComputationalTypeInt), Param(ComputationalTypeInt, "p_2")),

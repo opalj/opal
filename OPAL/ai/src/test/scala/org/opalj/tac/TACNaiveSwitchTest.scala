@@ -34,14 +34,13 @@ import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveSwitchTest extends TACTest {
+class TACNaiveSwitchTest extends TACNaiveTest {
 
     val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
 
@@ -60,7 +59,7 @@ class TACNaiveSwitchTest extends TACTest {
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
 
-            val expected = Array[Stmt](
+            val expected = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),

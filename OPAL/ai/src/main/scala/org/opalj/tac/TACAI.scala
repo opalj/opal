@@ -61,9 +61,10 @@ object TACAI {
     def apply(
         method:         Method,
         classHierarchy: ClassHierarchy,
-        aiResult:       AIResult { val domain: RecordDefUse },
-        optimizations:  List[TACOptimization]
-    ): (Array[Stmt], CFG) = {
+        aiResult:       AIResult { val domain: RecordDefUse }
+    )(
+        optimizations: List[TACOptimization[DUVar[aiResult.domain.DomainValue]]]
+    ): (Array[Stmt[DUVar[aiResult.domain.DomainValue]]], CFG) = {
 
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -85,7 +86,7 @@ object TACAI {
         // can directly create the "final list" of statements (which will include nops
         // for all useless instructions).
 
-        val statements = new Array[Stmt](codeSize)
+        val statements = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](codeSize)
         val pcToIndex = new Array[Int](codeSize)
 
         var pc: PC = 0
@@ -96,7 +97,7 @@ object TACAI {
             val instruction = instructions(pc)
             val opcode = instruction.opcode
 
-            def addStmt(stmt: Stmt): Unit = {
+            def addStmt(stmt: Stmt[DUVar[aiResult.domain.DomainValue]]): Unit = {
                 if (cfg.bb(pc).startPC != pc && statements(index - 1).astID == Nop.ASTID) {
                     // ... we are not at the beginning of a basic block, but the previous
                     // instruction was a NOP instruction... let's replace it by this instruction.
@@ -143,7 +144,7 @@ object TACAI {
             def initLocalVal(
                 pc:   PC,
                 v:    aiResult.domain.DomainValue,
-                expr: Expr
+                expr: Expr[DUVar[aiResult.domain.DomainValue]]
             ): Unit = {
                 val uses = domain.usedBy(pc)
                 if (uses ne null) {
@@ -350,7 +351,7 @@ object TACAI {
                     val indexReg = registerUse(index)
                     val incVal = IntConst(pc, const)
                     val iinc = BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, incVal)
-                    initLocalVal(pc, operandsArray(nextPC).head, iinc)
+                    initLocalVal(pc, localsArray(nextPC)(index), iinc)
 
                 case IAND.opcode | LAND.opcode   ⇒ binaryArithmeticOperation(And)
                 case IOR.opcode | LOR.opcode     ⇒ binaryArithmeticOperation(Or)
@@ -393,30 +394,36 @@ object TACAI {
                     val receiver = operandUse(parametersCount) // this is the self reference
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
-                        val stmtFactory =
-                            if (call.isVirtualMethodCall)
-                                VirtualMethodCall.apply _
-                            else
-                                NonVirtualMethodCall.apply _
-                        addStmt(stmtFactory(
-                            pc,
-                            declaringClass, isInterface, name, methodDescriptor,
-                            receiver,
-                            params
-                        ))
-                    } else {
-                        val exprFactory =
-                            if (call.isVirtualMethodCall)
-                                VirtualFunctionCall.apply _
-                            else
-                                NonVirtualFunctionCall.apply _
-                        val expr =
-                            exprFactory(
+                        if (call.isVirtualMethodCall)
+                            addStmt(VirtualMethodCall(
                                 pc,
                                 declaringClass, isInterface, name, methodDescriptor,
                                 receiver,
                                 params
-                            )
+                            ))
+                        else
+                            addStmt(NonVirtualMethodCall(
+                                pc,
+                                declaringClass, isInterface, name, methodDescriptor,
+                                receiver,
+                                params
+                            ))
+                    } else {
+                        val expr =
+                            if (call.isVirtualMethodCall)
+                                VirtualFunctionCall(
+                                    pc,
+                                    declaringClass, isInterface, name, methodDescriptor,
+                                    receiver,
+                                    params
+                                )
+                            else
+                                NonVirtualFunctionCall(
+                                    pc,
+                                    declaringClass, isInterface, name, methodDescriptor,
+                                    receiver,
+                                    params
+                                )
                         initLocalVal(pc, operandsArray(nextPC).head, expr)
                     }
 
@@ -426,13 +433,13 @@ object TACAI {
                     val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
-                        addStmt(
+                        val staticCall =
                             StaticMethodCall(
                                 pc,
                                 declaringClass, isInterface, name, methodDescriptor,
                                 params
                             )
-                        )
+                        addStmt(staticCall)
                     } else {
                         val expr =
                             StaticFunctionCall(
@@ -596,7 +603,7 @@ object TACAI {
         } while (pc < codeSize)
 
         var tacCode = {
-            val tacCode = new Array[Stmt](index)
+            val tacCode = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](index)
             var s = 0
             while (s < index) {
                 val stmt = statements(s)

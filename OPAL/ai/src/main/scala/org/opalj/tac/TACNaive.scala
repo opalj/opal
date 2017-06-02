@@ -57,87 +57,6 @@ object TACNaive {
     type Stack = List[IdBasedVar]
 
     /**
-     * Id based variables are named based on the position of the stack/register they were
-     * defined.
-     */
-    sealed trait IdBasedVar extends Var {
-
-        def id: Int
-
-        final def isSideEffectFree: Boolean = true
-
-        /**
-         * @return `true` if this variable and the given variable use the same location.
-         *         Compared to `equals` this test does not consider the computational type.
-         */
-        final def hasSameLocation(that: Var): Boolean = {
-            that match {
-                case that: IdBasedVar ⇒ this.id == that.id
-                case _                ⇒ false
-            }
-        }
-
-        def name: String =
-            if (id == Int.MinValue) "t"
-            else if (id >= 0) "op_"+id.toString
-            else "r_"+(-(id + 1))
-
-        /**
-         * Creates a new variable that has the same identifier etc. but an updated
-         * computational type.
-         *
-         * This operation is not supported for local variables!
-         */
-        def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
-    }
-
-    /**
-     * The id determines the name of the local variable and is equivalent to "the position
-     * of the value on the operand stack" or "-1-(the accessed register)".
-     * If the id is Int.MinValue then the variable is an intermediate variable that
-     * was artificially generated.
-     */
-    case class SimpleVar(id: Int, cTpe: ComputationalType) extends IdBasedVar
-
-    object TempVar {
-
-        def apply(cTpe: ComputationalType): SimpleVar = SimpleVar(Int.MinValue, cTpe)
-
-    }
-
-    object RegisterVar {
-
-        def apply(cTpe: ComputationalType, index: UShort): SimpleVar = SimpleVar(-index - 1, cTpe)
-
-    }
-
-    object OperandVar {
-
-        /**
-         * Creates a new operand variable to store a value of the given type.
-         */
-        def apply(cTpe: ComputationalType, stack: Stack): SimpleVar = {
-            val id = stack.foldLeft(0)((c, n) ⇒ c + n.cTpe.operandSize)
-            SimpleVar(id, cTpe)
-        }
-
-        /**
-         * Returns the operand variable representation used for the bottom value on the stack.
-         */
-        def bottom(cTpe: ComputationalType): SimpleVar = {
-            SimpleVar(0, cTpe)
-        }
-
-        final val IntReturnValue = OperandVar.bottom(ComputationalTypeInt)
-        final val LongReturnValue = OperandVar.bottom(ComputationalTypeLong)
-        final val FloatReturnValue = OperandVar.bottom(ComputationalTypeFloat)
-        final val DoubleReturnValue = OperandVar.bottom(ComputationalTypeDouble)
-        final val ReferenceReturnValue = OperandVar.bottom(ComputationalTypeReference)
-
-        final val HandledException = OperandVar.bottom(ComputationalTypeReference)
-    }
-
-    /**
      * Converts the plain bytecode of a method into a quadruples based three address
      * representation. Compared to the previous method, no data- and control-flow information is
      * used and a very general tranformation mechanism is used to do the transformation.
@@ -153,9 +72,9 @@ object TACNaive {
     def apply(
         method:           Method,
         classHierarchy:   ClassHierarchy,
-        optimizations:    List[TACOptimization] = NoOptimizations,
-        forceCFGCreation: Boolean               = false
-    ): (Array[Stmt], Option[CFG]) = {
+        optimizations:    List[TACOptimization[IdBasedVar]] = List.empty,
+        forceCFGCreation: Boolean                           = false
+    ): (Array[Stmt[IdBasedVar]], Option[CFG]) = {
 
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -183,7 +102,7 @@ object TACNaive {
         // for one instruction appear to have the same pc.
         //
         // However, no transformation creates new control structures.
-        val statements = new Array[List[Stmt]](codeSize)
+        val statements = new Array[List[Stmt[IdBasedVar]]](codeSize)
 
         processed(0) = true
         var worklist: List[(PC, Stack)] = List((0, Nil))
@@ -277,44 +196,44 @@ object TACNaive {
                 instr match {
                     case LDCInt(value) ⇒
                         val newVar = OperandVar(ComputationalTypeInt, stack)
-                        statements(pc) = List(Assignment(pc, newVar, IntConst(pc, value)))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, IntConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
                     case LDCFloat(value) ⇒
                         val newVar = OperandVar(ComputationalTypeFloat, stack)
                         val floatConst = FloatConst(pc, value)
-                        statements(pc) = List(Assignment(pc, newVar, floatConst))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, floatConst))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
                     case LDCClass(value) ⇒
                         val newVar = OperandVar(ComputationalTypeReference, stack)
-                        statements(pc) = List(Assignment(pc, newVar, ClassConst(pc, value)))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, ClassConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
                     case LDCString(value) ⇒
                         val newVar = OperandVar(ComputationalTypeReference, stack)
-                        statements(pc) = List(Assignment(pc, newVar, StringConst(pc, value)))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, StringConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
                     case LDCMethodHandle(value) ⇒
                         val newVar = OperandVar(ComputationalTypeReference, stack)
-                        statements(pc) = List(Assignment(pc, newVar, MethodHandleConst(pc, value)))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, MethodHandleConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
                     case LDCMethodType(value) ⇒
                         val newVar = OperandVar(ComputationalTypeReference, stack)
                         val methodTypeConst = MethodTypeConst(pc, value)
-                        statements(pc) = List(Assignment(pc, newVar, methodTypeConst))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, methodTypeConst))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
                     case LoadDouble(value) ⇒
                         val newVar = OperandVar(ComputationalTypeDouble, stack)
-                        statements(pc) = List(Assignment(pc, newVar, DoubleConst(pc, value)))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, DoubleConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
                     case LoadLong(value) ⇒
                         val newVar = OperandVar(ComputationalTypeLong, stack)
-                        statements(pc) = List(Assignment(pc, newVar, LongConst(pc, value)))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, LongConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
                     case _ ⇒
@@ -327,7 +246,7 @@ object TACNaive {
                 val value2 :: value1 :: rest = stack
                 val result = OperandVar(ComputationalTypeInt, rest)
                 val compare = Compare(pc, value1, op, value2)
-                statements(pc) = List(Assignment(pc, result, compare))
+                statements(pc) = List(Assignment[IdBasedVar](pc, result, compare))
                 schedule(pcOfNextInstruction(pc), result :: rest)
             }
 
@@ -428,13 +347,13 @@ object TACNaive {
                     val arrayRef :: rest = stack
                     val lengthVar = OperandVar(ComputationalTypeInt, rest)
                     val lengthExpr = ArrayLength(pc, arrayRef)
-                    statements(pc) = List(Assignment(pc, lengthVar, lengthExpr))
+                    statements(pc) = List(Assignment[IdBasedVar](pc, lengthVar, lengthExpr))
                     schedule(pcOfNextInstruction(pc), lengthVar :: rest)
 
                 case BIPUSH.opcode | SIPUSH.opcode ⇒
                     val value = as[LoadConstantInstruction[Int]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeInt, stack)
-                    statements(pc) = List(Assignment(pc, targetVar, IntConst(pc, value)))
+                    statements(pc) = List(Assignment[IdBasedVar](pc, targetVar, IntConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
@@ -532,30 +451,30 @@ object TACNaive {
                     ICONST_M1.opcode ⇒
                     val value = as[LoadConstantInstruction[Int]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeInt, stack)
-                    statements(pc) = List(Assignment(pc, targetVar, IntConst(pc, value)))
+                    statements(pc) = List(Assignment[IdBasedVar](pc, targetVar, IntConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case ACONST_NULL.opcode ⇒
                     val targetVar = OperandVar(ComputationalTypeReference, stack)
-                    statements(pc) = List(Assignment(pc, targetVar, NullExpr(pc)))
+                    statements(pc) = List(Assignment[IdBasedVar](pc, targetVar, NullExpr(pc)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case DCONST_0.opcode | DCONST_1.opcode ⇒
                     val value = as[LoadConstantInstruction[Double]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeDouble, stack)
-                    statements(pc) = List(Assignment(pc, targetVar, DoubleConst(pc, value)))
+                    statements(pc) = List(Assignment[IdBasedVar](pc, targetVar, DoubleConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case FCONST_0.opcode | FCONST_1.opcode | FCONST_2.opcode ⇒
                     val value = as[LoadConstantInstruction[Float]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeFloat, stack)
-                    statements(pc) = List(Assignment(pc, targetVar, FloatConst(pc, value)))
+                    statements(pc) = List(Assignment[IdBasedVar](pc, targetVar, FloatConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case LCONST_0.opcode | LCONST_1.opcode ⇒
                     val value = as[LoadConstantInstruction[Long]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeLong, stack)
-                    statements(pc) = List(Assignment(pc, targetVar, LongConst(pc, value)))
+                    statements(pc) = List(Assignment[IdBasedVar](pc, targetVar, LongConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
@@ -573,9 +492,9 @@ object TACNaive {
                     if (returnType.isVoidType) {
                         val stmtFactory =
                             if (invoke.isVirtualMethodCall)
-                                VirtualMethodCall.apply _
+                                VirtualMethodCall.apply[IdBasedVar] _
                             else
-                                NonVirtualMethodCall.apply _
+                                NonVirtualMethodCall.apply[IdBasedVar] _
                         val stmt =
                             stmtFactory(
                                 pc,
@@ -589,9 +508,9 @@ object TACNaive {
                         val newVar = OperandVar(returnType.computationalType, rest)
                         val exprFactory =
                             if (invoke.isVirtualMethodCall)
-                                VirtualFunctionCall.apply _
+                                VirtualFunctionCall.apply[IdBasedVar] _
                             else
-                                NonVirtualFunctionCall.apply _
+                                NonVirtualFunctionCall.apply[IdBasedVar] _
                         val expr =
                             exprFactory(
                                 pc,
@@ -599,7 +518,7 @@ object TACNaive {
                                 receiver,
                                 params
                             )
-                        statements(pc) = List(Assignment(pc, newVar, expr))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, expr))
                         schedule(pcOfNextInstruction(pc), newVar :: rest)
                     }
 
@@ -626,7 +545,7 @@ object TACNaive {
                                 declaringClass, isInterface, name, methodDescriptor,
                                 params
                             )
-                        statements(pc) = List(Assignment(pc, newVar, expr))
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, expr))
                         schedule(pcOfNextInstruction(pc), newVar :: rest)
                     }
 
@@ -658,7 +577,7 @@ object TACNaive {
                     val GETSTATIC = as[GETSTATIC](instruction)
                     val getStatic = GetStatic(pc, GETSTATIC.declaringClass, GETSTATIC.name)
                     val newVal = OperandVar(ComputationalTypeReference, stack)
-                    statements(pc) = List(Assignment(pc, newVal, getStatic))
+                    statements(pc) = List(Assignment[IdBasedVar](pc, newVal, getStatic))
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 
                 case GETFIELD.opcode ⇒
@@ -672,7 +591,7 @@ object TACNaive {
                 case NEW.opcode ⇒
                     val instr = as[NEW](instruction)
                     val newVal = OperandVar(ComputationalTypeReference, stack)
-                    statements(pc) = List(Assignment(pc, newVal, New(pc, instr.objectType)))
+                    statements(pc) = List(Assignment[IdBasedVar](pc, newVal, New(pc, instr.objectType)))
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 
                 case NEWARRAY.opcode ⇒
@@ -847,12 +766,12 @@ object TACNaive {
         // However, before we can do that we first add the register initialization
         // statements.
         var index = 0
-        val finalStatements = new ArrayBuffer[Stmt](codeSize)
+        val finalStatements = new ArrayBuffer[Stmt[IdBasedVar]](codeSize)
         var registerIndex = 0
         if (!method.isStatic) {
             val targetVar = RegisterVar(ComputationalTypeReference, 0)
             val sourceParam = Param(ComputationalTypeReference, "this")
-            finalStatements += Assignment(-1, targetVar, sourceParam)
+            finalStatements += Assignment[IdBasedVar](-1, targetVar, sourceParam)
             index += 1
             registerIndex += 1
         }
@@ -861,7 +780,7 @@ object TACNaive {
             val cTpe = parameterType.computationalType
             val targetVar = RegisterVar(cTpe, registerIndex)
             val sourceParam = Param(cTpe, varName)
-            finalStatements += Assignment(-1, targetVar, sourceParam)
+            finalStatements += Assignment[IdBasedVar](-1, targetVar, sourceParam)
             index += 1
             registerIndex += cTpe.operandSize
         }
@@ -892,7 +811,7 @@ object TACNaive {
         var tacCode = finalStatements.toArray
 
         if (optimizations.nonEmpty) {
-            val baseTAC = TACOptimizationResult(tacCode, tacCFG.get, wasTransformed = false)
+            val baseTAC = TACOptimizationResult[IdBasedVar](tacCode, tacCFG.get, wasTransformed = false)
             val result = optimizations.foldLeft(baseTAC) { (tac, optimization) ⇒ optimization(tac) }
             tacCode = result.code
             tacCFG = Some(result.cfg)

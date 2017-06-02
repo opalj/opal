@@ -29,22 +29,18 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveRefCmpIfTest extends FunSpec with Matchers {
+class TACNaiveRefCmpIfTest extends TACNaiveTest {
 
     val ControlSequencesType = ObjectType("tactest/ControlSequences")
 
@@ -61,7 +57,7 @@ class TACNaiveRefCmpIfTest extends FunSpec with Matchers {
 
     describe("the naive TAC of reference comparison if instructions") {
 
-        def binaryResultAST(stmt: Stmt): Array[Stmt] = Array(
+        def binaryResultAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
             Assignment(-1, SimpleVar(-3, ComputationalTypeReference), Param(ComputationalTypeReference, "p_2")),
@@ -74,7 +70,7 @@ class TACNaiveRefCmpIfTest extends FunSpec with Matchers {
             ReturnValue(8, SimpleVar(0, ComputationalTypeReference))
         )
 
-        def unaryResultAST(stmt: Stmt): Array[Stmt] = Array(
+        def unaryResultAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
             Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),

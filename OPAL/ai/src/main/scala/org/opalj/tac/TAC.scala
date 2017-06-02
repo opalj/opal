@@ -103,7 +103,7 @@ object TAC {
                 println(s"Generated ai CFG (input) $aiCFGFile.")
                 val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
                 println(s"Generated the reified ai CFG $aiBRCFGFile.")
-                val (code, cfg) = TACAI(method, project.classHierarchy, aiResult, AllOptimizations)
+                val (code, cfg) = TACAI(method, project.classHierarchy, aiResult)(List.empty)
                 val graph = cfg.toDot
                 val tacCFGFile = writeAndOpen(graph, "TACCFG-"+method.name, ".tac.cfg.gv")
                 println(s"Generated the tac cfg file $tacCFGFile.")
@@ -114,7 +114,8 @@ object TAC {
             }
 
             if (use == "naive" || use == "both") { // USING NO AI
-                val (code, _) = TACNaive(method, ch, AllOptimizations, forceCFGCreation = true)
+                val (code, _) =
+                    TACNaive(method, ch, AllTACNaiveOptimizations, forceCFGCreation = true)
 
                 val tac = ToJavaLike(code)
                 val fileNamePrefix = classFile.thisType.toJava+"."+method.name

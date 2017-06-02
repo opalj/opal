@@ -29,22 +29,18 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
-import org.opalj.tac.TACNaive.SimpleVar
 
 /**
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveFloatArithmeticTest extends FunSpec with Matchers {
+class TACNaiveFloatArithmeticTest extends TACNaiveTest {
 
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
 
@@ -76,7 +72,7 @@ class TACNaiveFloatArithmeticTest extends FunSpec with Matchers {
             "6: return op_0;"
         )
 
-        def binaryAST(stmt: Stmt): Array[Stmt] = Array(
+        def binaryAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeFloat), Param(ComputationalTypeFloat, "p_1")),
             Assignment(-1, SimpleVar(-3, ComputationalTypeFloat), Param(ComputationalTypeFloat, "p_2")),
