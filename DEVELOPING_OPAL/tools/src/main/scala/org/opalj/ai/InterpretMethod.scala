@@ -252,7 +252,6 @@ object InterpretMethod {
                     Some(method),
                     method.body.get,
                     Some(
-
                         s"Analyzed: ${new Date}<br>Domain: ${domainClass.getName}<br>"+
                             (
                                 if (doIdentifyDeadVariables)

@@ -390,7 +390,7 @@ object XHTML {
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-                { locals.map { mapLocal(_) }.toSeq }
+                { locals.map { mapLocal }.iterator }
             </ol>
         }
     }
