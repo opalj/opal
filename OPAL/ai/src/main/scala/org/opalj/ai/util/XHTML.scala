@@ -147,16 +147,14 @@ object XHTML {
         val subroutineEnd = "</div></details>"
 
         var openSubroutines = 0
-        val asStrings = evaluated.reverse.map { instruction ⇒
-            instruction match {
-                case SUBROUTINE_START ⇒
-                    openSubroutines += 1
-                    subroutineStart
-                case SUBROUTINE_END ⇒
-                    openSubroutines -= 1
-                    subroutineEnd
-                case _ ⇒ instruction.toString+" "
-            }
+        val asStrings = evaluated.reverse.map {
+            case SUBROUTINE_START ⇒
+                openSubroutines += 1
+                subroutineStart
+            case SUBROUTINE_END ⇒
+                openSubroutines -= 1
+                subroutineEnd
+            case instruction ⇒ instruction.toString+" "
         }
 
         header+"Evaluation Order:<br><div style=\"margin-left:2em;\">"+
