@@ -111,7 +111,7 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
 
     final def cTpe: ComputationalType = ComputationalTypeReference
 
-    final def isSideEffectFree: Boolean = true
+    final def isSideEffectFree: Boolean = false // TODO Check if the type of the value is a subtype of cmpTpe.. then it is sideeffect free.
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
