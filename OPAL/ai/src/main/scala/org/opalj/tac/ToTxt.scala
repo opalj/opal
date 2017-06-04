@@ -55,14 +55,21 @@ object ToTxt {
                     v.name+"/* return address */"
                 else
                     v.name
-            case Param(_ /*cTpe*/ , name) ⇒ name
-            case IntConst(_, value)       ⇒ value.toString
-            case LongConst(_, value)      ⇒ value.toString+"l"
-            case FloatConst(_, value)     ⇒ value.toString+"f"
-            case DoubleConst(_, value)    ⇒ value.toString+"d"
-            case ClassConst(_, value)     ⇒ value.toJava+".class"
-            case StringConst(_, value)    ⇒ s""""$value""""
-            case NullExpr(_)              ⇒ "null"
+            case Param(_ /*cTpe*/ , name)      ⇒ name
+            case IntConst(_, value)            ⇒ value.toString
+            case LongConst(_, value)           ⇒ value.toString+"l"
+            case FloatConst(_, value)          ⇒ value.toString+"f"
+            case DoubleConst(_, value)         ⇒ value.toString+"d"
+            case ClassConst(_, value)          ⇒ value.toJava+".class"
+            case StringConst(_, value)         ⇒ s""""$value""""
+            case NullExpr(_)                   ⇒ "null"
+
+            case PrefixExpr(_, _, op, operand) ⇒ op.toString()+" "+toTxtExpr[V](operand)
+
+            case ArrayLoad(_, index, arrayRef) ⇒ s"${toTxtExpr(arrayRef)}[${toTxtExpr(index)}]"
+            case ArrayLength(_, arrayRef)      ⇒ s"${toTxtExpr(arrayRef)}.length"
+
+            case New(_, objTpe)                ⇒ s"new ${objTpe.simpleName}"
 
             case InstanceOf(_, value, tpe) ⇒
                 s"${toTxtExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
@@ -76,14 +83,8 @@ object ToTxt {
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
                 toTxtExpr[V](left)+" "+op.toString()+" "+toTxtExpr[V](right)
 
-            case PrefixExpr(_, _, op, operand) ⇒
-                op.toString()+" "+toTxtExpr[V](operand)
-
             case PrimitiveTypecastExpr(_, baseTpe, operand) ⇒
                 s"(${baseTpe.toJava}) ${toTxtExpr(operand)}"
-
-            case New(_, objTpe) ⇒
-                s"new ${objTpe.simpleName}"
 
             case NewArray(_, counts, arrayType) ⇒
                 val initializedDimensions = counts.size
@@ -93,12 +94,6 @@ object ToTxt {
                         ("[]" * (dimensions - initializedDimensions))
                 s"new ${arrayType.drop(initializedDimensions).toJava}$initializer"
 
-            case ArrayLoad(_, index, arrayRef) ⇒
-                s"${toTxtExpr(arrayRef)}[${toTxtExpr(index)}]"
-
-            case ArrayLength(_, arrayRef) ⇒
-                s"${toTxtExpr(arrayRef)}.length"
-
             case Invokedynamic(_, bootstrapMethod, name, descriptor, params) ⇒
                 s"invokedynamic[${bootstrapMethod.toJava}]${callToTxt(name, params)}"
 
@@ -106,12 +101,13 @@ object ToTxt {
                 declClass.toJava + callToTxt[V](name, params)
 
             case VirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
-                val call = callToTxt(name, params)
-                toTxtExpr[V](receiver)+"/*"+declClass.toJava+"*/"+call
+                val callAsTxt = callToTxt(name, params)
+                val receiverAsTxt = toTxtExpr[V](receiver)
+                s"$receiverAsTxt/*${declClass.toJava}*/$callAsTxt"
 
             case NonVirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
                 val call = callToTxt(name, params)
-                toTxtExpr[V](receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call
+                toTxtExpr[V](receiver)+"/*(non-virtual) "+declClass.toJava+"*/"+call
 
             case GetStatic(_, declaringClass, name) ⇒
                 s"${declaringClass.toJava}.$name"
@@ -121,89 +117,90 @@ object ToTxt {
         }
     }
 
-    @inline final def toTxtStmt[V <: Var[V]](stmt: Stmt[V]): String = {
-        val pc = stmt.pc
+    @inline final def toTxtStmt[V <: Var[V]](stmt: Stmt[V], includePC: Boolean): String = {
+        val pc = if (includePC) s"/*pc=${stmt.pc}:*/" else ""
         stmt.astID match {
-            case Return.ASTID ⇒ s"/*$pc:*/return;"
+            case Return.ASTID ⇒ s"$pc return"
             case ReturnValue.ASTID ⇒
                 val ReturnValue(_, expr) = stmt
-                s"/*$pc:*/return ${toTxtExpr(expr)};"
+                s"$pc return ${toTxtExpr(expr)}"
             case Throw.ASTID ⇒
                 val Throw(_, exc) = stmt
-                s"/*$pc:*/throw ${toTxtExpr(exc)};"
+                s"$pc throw ${toTxtExpr(exc)}"
 
-            case Nop.ASTID ⇒ s"/*$pc*/;"
+            case Nop.ASTID ⇒ s"$pc ;"
 
             case MonitorEnter.ASTID ⇒
                 val MonitorEnter(_, objRef) = stmt
-                s"/*$pc:*/monitorenter ${toTxtExpr(objRef)};"
+                s"$pc monitorenter ${toTxtExpr(objRef)}"
             case MonitorExit.ASTID ⇒
                 val MonitorExit(_, objRef) = stmt
-                s"/*$pc:*/monitorexit ${toTxtExpr(objRef)};"
+                s"$pc monitorexit ${toTxtExpr(objRef)}"
 
             case Goto.ASTID ⇒
                 val Goto(_, target) = stmt
-                s"/*$pc:*/goto $target;"
+                s"$pc goto $target"
 
             case JumpToSubroutine.ASTID ⇒
                 val JumpToSubroutine(_, target) = stmt
-                s"/*$pc:*/jsr $target;"
+                s"$pc jsr $target"
             case Ret.ASTID ⇒
                 val Ret(_, targets) = stmt
-                targets.mkString(s"/*$pc:*/ret {", ",", "};")
+                targets.mkString(s"$pc ret {", ",", "}")
 
             case If.ASTID ⇒
                 val If(_, left, cond, right, target) = stmt
-                s"/*$pc:*/if(${toTxtExpr(left)} $cond ${toTxtExpr(right)}) goto $target;"
+                s"$pc if(${toTxtExpr(left)} $cond ${toTxtExpr(right)}) goto $target"
 
             case Switch.ASTID ⇒
                 val Switch(_, defaultTarget, index, npairs) = stmt
                 var result = "\n"
                 for (x ← npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
-                result = result+"    default: goto "+defaultTarget+";\n"
-                s"/*$pc:*/switch(${toTxtExpr(index)}){$result}"
+                result = result+"    default: goto "+defaultTarget+"\n"
+                s"$pc switch(${toTxtExpr(index)}){$result}"
 
             case Assignment.ASTID ⇒
                 val Assignment(_, variable, expr) = stmt
-                s"/*$pc:*/${variable.name} = ${toTxtExpr(expr)};"
+                s"$pc ${variable.name} = ${toTxtExpr(expr)}"
 
             case ExprStmt.ASTID ⇒
                 val ExprStmt(_, expr) = stmt
-                s"/*$pc - expression value is ignored:*/${toTxtExpr(expr)};"
+                s"/*pc=$pc - expression value is ignored:*/${toTxtExpr(expr)}"
 
             case ArrayStore.ASTID ⇒
                 val ArrayStore(_, arrayRef, index, operandVar) = stmt
-                s"/*$pc:*/${toTxtExpr(arrayRef)}[${toTxtExpr(index)}] = ${toTxtExpr(operandVar)};"
+                s"$pc ${toTxtExpr(arrayRef)}[${toTxtExpr(index)}] = ${toTxtExpr(operandVar)}"
 
             case PutStatic.ASTID ⇒
                 val PutStatic(_, declaringClass, name, value) = stmt
-                s"/*$pc:*/${declaringClass.toJava}.$name = ${toTxtExpr(value)}"
+                s"$pc ${declaringClass.toJava}.$name = ${toTxtExpr(value)}"
 
             case PutField.ASTID ⇒
                 val PutField(_, declaringClass, name, receiver, value) = stmt
-                s"/*$pc:*/${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name = ${toTxtExpr(value)}"
+                val field = s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
+                s"$pc $field = ${toTxtExpr(value)}"
 
             case StaticMethodCall.ASTID ⇒
                 val StaticMethodCall(_, declClass, _, name, _ /* descriptor*/ , params) = stmt
-                s"/*$pc:*/${declClass.toJava} ${callToTxt(name, params)};"
+                s"$pc ${declClass.toJava}${callToTxt(name, params)}"
 
             case VirtualMethodCall.ASTID ⇒
-                val VirtualMethodCall(_, declClass, _, name, _ /*descriptor*/ , receiver, params) = stmt
+                val VirtualMethodCall(_, declClass, _, name, _ /*desc.*/ , receiver, params) = stmt
                 val call = callToTxt(name, params)
-                s"/*$pc:*/${toTxtExpr(receiver)} /*${declClass.toJava}*/$call;"
+                s"$pc ${toTxtExpr(receiver)}/*${declClass.toJava}*/$call"
 
             case NonVirtualMethodCall.ASTID ⇒
-                val NonVirtualMethodCall(_, declClass, _, name, _ /* descriptor*/ , receiver, params) = stmt
+                val NonVirtualMethodCall(_, declClass, _, name, _ /*desc.*/ , receiver, params) = stmt
                 val call = callToTxt(name, params)
-                s"/*$pc:*/${toTxtExpr(receiver)}/* non-virtual call:*/ ${declClass.toJava}*/$call;"
+                s"$pc ${toTxtExpr(receiver)}/*(non-virtual) ${declClass.toJava}*/$call"
 
             case FailingExpression.ASTID ⇒
                 val FailingExpression(_, fExpr) = stmt
-                s"/*$pc - expression evaluation will throw exception:*/${toTxtExpr(fExpr)};"
+                s"$pc expression evaluation will throw exception: ${toTxtExpr(fExpr)}"
 
             case FailingStatement.ASTID ⇒
                 val FailingStatement(_, fStmt) = stmt
-                s"/*$pc - statement always throws an exception:*/${toTxtStmt(fStmt)};"
+                s"$pc statement always throws an exception: ${toTxtStmt(fStmt, includePC)}"
 
         }
     }
@@ -212,13 +209,17 @@ object ToTxt {
      * Converts the quadruples representation into Java-like code.
      */
     def apply[V <: Var[V]](stmts: Array[Stmt[V]]): String = {
-        apply(stmts, true).mkString("\n")
+        apply(stmts, true, true).mkString("\n")
     }
 
     /**
      * Converts each statement into a Java-like statement.
      */
-    def apply[V <: Var[V]](stmts: Array[Stmt[V]], indented: Boolean): Array[String] = {
+    def apply[V <: Var[V]](
+        stmts:     Array[Stmt[V]],
+        indented:  Boolean,
+        includePC: Boolean
+    ): Array[String] = {
 
         val max = stmts.length
         val javaLikeCode = new Array[String](max)
@@ -227,12 +228,12 @@ object ToTxt {
 
             def qualify(javaLikeStmt: String): String = {
                 if (indented)
-                    f"$index%5d: ${javaLikeStmt.replace("\n", "\n       ")}"
+                    f"$index%5d:${javaLikeStmt.replace("\n", "\n       ")}"
                 else
-                    s"$index: $javaLikeStmt"
+                    s"$index:$javaLikeStmt"
             }
 
-            javaLikeCode(index) = qualify(toTxtStmt(stmts(index)))
+            javaLikeCode(index) = qualify(toTxtStmt(stmts(index), includePC))
 
             index += 1
         }
@@ -243,8 +244,12 @@ object ToTxt {
     /**
      * Converts each statement into a Java-like statement.
      */
-    def apply[V <: Var[V]](stmts: IndexedSeq[Stmt[V]], indented: Boolean): Array[String] = {
-        apply(stmts.toArray, indented)
+    def apply[V <: Var[V]](
+        stmts:     IndexedSeq[Stmt[V]],
+        indented:  Boolean,
+        includePC: Boolean
+    ): Array[String] = {
+        apply(stmts.toArray, indented, includePC)
     }
 
     def apply(

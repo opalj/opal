@@ -27,35 +27,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
+package tac
 
-import org.opalj.br.cfg.{BasicBlock, CFG}
-import org.opalj.br.cfg.CatchNode
-import org.opalj.br.cfg.CFG
-import org.opalj.graphs.Node
+import org.opalj.br.PC
 
 /**
- * Common definitions related to the definition and processing of three address code.
+ * Common superclass of all TAC Naive unit tests.
  *
  * @author Michael Eichberg
  */
-package object tac {
+private[tac] class TACNaiveTest extends TACTest {
 
-    final val AllTACNaiveOptimizations: List[TACOptimization[IdBasedVar]] = {
-        List(SimplePropagation)
-    }
-
-    def tacToGraph[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): Iterable[Node] = {
-        cfg.toDot {
-            case cn: CatchNode ⇒ cn.toString
-            case bb: BasicBlock ⇒
-                val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1)
-                val txtStmts = bbStmts.map { stmt ⇒ ToTxt.toTxtStmt[V](stmt, false) }
-                txtStmts.mkString("", "\\l\\l", "\\l")
-        }
-    }
-
-    def tacToDot[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): String = {
-        org.opalj.graphs.toDot(tacToGraph(stmts, cfg))
+    def Assignment(
+        pc:        PC,
+        targetVar: IdBasedVar,
+        expr:      Expr[IdBasedVar]
+    ): Assignment[IdBasedVar] = {
+        new Assignment[IdBasedVar](pc, targetVar, expr)
     }
 
 }

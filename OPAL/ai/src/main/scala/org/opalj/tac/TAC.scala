@@ -56,7 +56,7 @@ import org.opalj.br.cfg.CFGFactory
  * time {
  * p.parForeachMethodWithBody(parallelizationLevel=32){ mi =>
  *   val (code,_) = org.opalj.tac.AsQuadruples(mi.method,p.classHierarchy)
- *   val tac = ToJavaLike(code)
+ *   val tac = ToTxt(code)
  *   val fileNamePrefix = mi.classFile.thisType.toJava+"."+mi.method.name
  *   val file = write(tac, fileNamePrefix, ".tac.txt")
  *   i+= 1

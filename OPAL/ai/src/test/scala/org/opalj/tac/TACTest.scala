@@ -32,7 +32,6 @@ package tac
 import java.util.Arrays
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.opalj.br.PC
 
 /**
  * Common superclass of all TAC unit tests.
@@ -63,12 +62,4 @@ private[tac] class TACTest extends FunSpec with Matchers {
             fail(message)
         }
     }
-}
-
-private[tac] class TACNaiveTest extends TACTest {
-
-    def Assignment(pc: PC, targetVar: IdBasedVar, expr: Expr[IdBasedVar]): Assignment[IdBasedVar] = {
-        new Assignment[IdBasedVar](pc, targetVar, expr)
-    }
-
 }

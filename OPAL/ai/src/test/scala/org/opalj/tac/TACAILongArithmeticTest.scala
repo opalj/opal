@@ -107,7 +107,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongAddMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongAddMethod, domain)
                 val statements = AsQuadruples(method = LongAddMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -123,7 +123,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongAndMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongAndMethod, domain)
                 val statements = AsQuadruples(method = LongAndMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -139,7 +139,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongDivMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongDivMethod, domain)
                 val statements = AsQuadruples(method = LongDivMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -155,7 +155,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongNegMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongNegMethod, domain)
                 val statements = AsQuadruples(method = LongNegMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -182,7 +182,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongMulMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongMulMethod, domain)
                 val statements = AsQuadruples(method = LongMulMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -198,7 +198,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongOrMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongOrMethod, domain)
                 val statements = AsQuadruples(method = LongOrMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -214,7 +214,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongRemMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongRemMethod, domain)
                 val statements = AsQuadruples(method = LongRemMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -230,7 +230,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongShRMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongShRMethod, domain)
                 val statements = AsQuadruples(method = LongShRMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -246,7 +246,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongShLMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongShLMethod, domain)
                 val statements = AsQuadruples(method = LongShLMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -262,7 +262,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongSubMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongSubMethod, domain)
                 val statements = AsQuadruples(method = LongSubMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -278,7 +278,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongAShMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongAShMethod, domain)
                 val statements = AsQuadruples(method = LongAShMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -294,7 +294,7 @@ class TACAILongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongXOrMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongXOrMethod, domain)
                 val statements = AsQuadruples(method = LongXOrMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

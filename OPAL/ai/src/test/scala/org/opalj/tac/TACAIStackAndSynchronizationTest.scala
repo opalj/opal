@@ -68,7 +68,7 @@ class TACAIStackAndSynchronizationTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, PopMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, PopMethod, domain)
                 val statements = AsQuadruples(method = PopMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -103,7 +103,7 @@ class TACAIStackAndSynchronizationTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, Pop2Case2Method)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, Pop2Case2Method, domain)
                 val statements = AsQuadruples(method = Pop2Case2Method, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -138,7 +138,7 @@ class TACAIStackAndSynchronizationTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, DupMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, DupMethod, domain)
                 val statements = AsQuadruples(method = DupMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -164,7 +164,7 @@ class TACAIStackAndSynchronizationTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, MonitorEnterAndExitMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, MonitorEnterAndExitMethod, domain)
                 val statements = AsQuadruples(method = MonitorEnterAndExitMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -205,7 +205,7 @@ class TACAIStackAndSynchronizationTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, InvokeStaticMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, InvokeStaticMethod, domain)
                 val statements = AsQuadruples(method = InvokeStaticMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -241,7 +241,7 @@ class TACAIStackAndSynchronizationTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, InvokeInterfaceMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, InvokeInterfaceMethod, domain)
                 val statements = AsQuadruples(method = InvokeInterfaceMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

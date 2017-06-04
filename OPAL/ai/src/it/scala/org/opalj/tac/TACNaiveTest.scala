@@ -73,7 +73,7 @@ class TACNaiveTest extends FunSpec with Matchers {
                     classHierarchy = project.classHierarchy,
                     optimizations = AllTACNaiveOptimizations
                 )
-                ToJavaLike(tacNaiveCode)
+                ToTxt(tacNaiveCode)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
                     val methodSignature = m.toJava(cf)

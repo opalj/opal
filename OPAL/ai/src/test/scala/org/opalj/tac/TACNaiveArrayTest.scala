@@ -40,7 +40,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class ArrayTest extends TACNaiveTest {
+class TACNaiveArrayTest extends TACNaiveTest {
 
     val ArrayInstructionsType = ObjectType("tactest/ArrayCreationAndManipulation")
 
@@ -81,24 +81,24 @@ class ArrayTest extends TACNaiveTest {
         )
 
         def expectedJLC(tpe: String, value: String) = Array[String](
-            "0: r_0 = this;",
-            "1: op_0 = 5;",
-            "2: op_0 = new "+tpe+"[op_0];",
-            "3: r_1 = op_0;",
-            "4: op_0 = r_1;",
-            "5: op_1 = 4;",
-            "6: op_2 = "+value+";",
-            "7: op_0[op_1] = op_2;",
-            "8: op_0 = r_1;",
-            "9: op_1 = 4;",
-            "10: op_0 = op_0[op_1];",
-            "11: r_2 = op_0;",
-            "12: return;"
+            "0: r_0 = this",
+            "1: op_0 = 5",
+            "2: op_0 = new "+tpe+"[op_0]",
+            "3: r_1 = op_0",
+            "4: op_0 = r_1",
+            "5: op_1 = 4",
+            "6: op_2 = "+value+"",
+            "7: op_0[op_1] = op_2",
+            "8: op_0 = r_1",
+            "9: op_1 = 4",
+            "10: op_0 = op_0[op_1]",
+            "11: r_2 = op_0",
+            "12: return"
         )
 
         it("should correctly reflect reference array instructions") {
             val statements = TACNaive(method = RefArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -120,27 +120,27 @@ class ArrayTest extends TACNaiveTest {
                 Return(19)
             ))
             javaLikeCode.shouldEqual(Array(
-                "0: r_0 = this;",
-                "1: op_0 = 5;",
-                "2: op_0 = new java.lang.Object[op_0];",
-                "3: r_1 = op_0;",
-                "4: op_0 = r_1;",
-                "5: op_1 = 4;",
-                "6: op_2 = new Object;",
+                "0: r_0 = this",
+                "1: op_0 = 5",
+                "2: op_0 = new java.lang.Object[op_0]",
+                "3: r_1 = op_0",
+                "4: op_0 = r_1",
+                "5: op_1 = 4",
+                "6: op_2 = new Object",
                 "7: ;",
-                "8: op_2/* (Non-Virtual) java.lang.Object*/.<init>();",
-                "9: op_0[op_1] = op_2;",
-                "10: op_0 = r_1;",
-                "11: op_1 = 4;",
-                "12: op_0 = op_0[op_1];",
-                "13: r_2 = op_0;",
-                "14: return;"
+                "8: op_2/*(non-virtual) java.lang.Object*/.<init>()",
+                "9: op_0[op_1] = op_2",
+                "10: op_0 = r_1",
+                "11: op_1 = 4",
+                "12: op_0 = op_0[op_1]",
+                "13: r_2 = op_0",
+                "14: return"
             ))
         }
 
         it("should correctly reflect multidimensional array instructions") {
             val statements = TACNaive(method = MultidimArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -157,21 +157,21 @@ class ArrayTest extends TACNaiveTest {
                 Return(10)
             ))
             javaLikeCode.shouldEqual(Array(
-                "0: r_0 = this;",
-                "1: op_0 = 4;",
-                "2: op_1 = 2;",
-                "3: op_0 = new int[op_0][op_1];",
-                "4: r_1 = op_0;",
-                "5: op_0 = r_1;",
-                "6: op_0 = op_0.length;",
-                "7: r_2 = op_0;",
-                "8: return;"
+                "0: r_0 = this",
+                "1: op_0 = 4",
+                "2: op_1 = 2",
+                "3: op_0 = new int[op_0][op_1]",
+                "4: r_1 = op_0",
+                "5: op_0 = r_1",
+                "6: op_0 = op_0.length",
+                "7: r_2 = op_0",
+                "8: return"
             ))
         }
 
         it("should correctly reflect double array instructions") {
             val statements = TACNaive(method = DoubleArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -181,7 +181,7 @@ class ArrayTest extends TACNaiveTest {
 
         it("should correctly reflect float array instructions") {
             val statements = TACNaive(method = FloatArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -191,7 +191,7 @@ class ArrayTest extends TACNaiveTest {
 
         it("should correctly reflect int array instructions") {
             val statements = TACNaive(method = IntArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -201,7 +201,7 @@ class ArrayTest extends TACNaiveTest {
 
         it("should correctly reflect long array instructions") {
             val statements = TACNaive(method = LongArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -211,7 +211,7 @@ class ArrayTest extends TACNaiveTest {
 
         it("should correctly reflect short array instructions") {
             val statements = TACNaive(method = ShortArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -221,7 +221,7 @@ class ArrayTest extends TACNaiveTest {
 
         it("should correctly reflect byte array instructions") {
             val statements = TACNaive(method = ByteArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -231,7 +231,7 @@ class ArrayTest extends TACNaiveTest {
 
         it("should correctly reflect char array instructions") {
             val statements = TACNaive(method = CharArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)

@@ -79,7 +79,7 @@ class TACAITest extends FunSpec with Matchers {
         } {
             try {
                 val (tacAICode, _) = TACAI(m, project.classHierarchy, aiResult)(List.empty)
-                ToJavaLike(tacAICode)
+                ToTxt(tacAICode)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
                     val methodSignature = m.toJava(cf)

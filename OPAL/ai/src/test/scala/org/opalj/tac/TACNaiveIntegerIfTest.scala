@@ -60,16 +60,16 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
     describe("the naive TAC of integer if instructions") {
 
         def resultJLC(strg: String) = Array(
-            "0: r_0 = this;",
-            "1: r_1 = p_1;",
-            "2: r_2 = p_2;",
-            "3: op_0 = r_1;",
-            "4: op_1 = r_2;",
+            "0: r_0 = this",
+            "1: r_1 = p_1",
+            "2: r_2 = p_2",
+            "3: op_0 = r_1",
+            "4: op_1 = r_2",
             strg,
-            "6: op_0 = r_1;",
-            "7: return op_0;",
-            "8: op_0 = r_2;",
-            "9: return op_0;"
+            "6: op_0 = r_1",
+            "7: return op_0",
+            "8: op_0 = r_2",
+            "9: return op_0"
         )
 
         def resultAST(stmt: Stmt[IdBasedVar]) = Array(
@@ -87,74 +87,74 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
 
         it("should correctly reflect the not-equals case") {
             val statements = TACNaive(method = ICMPNEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), NE, SimpleVar(1, ComputationalTypeInt), 8)
             ))
-            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 != op_1) goto 8;"))
+            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 != op_1) goto 8"))
         }
 
         it("should correctly reflect the equals case") {
             val statements = TACNaive(method = ICMPEQMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), EQ, SimpleVar(1, ComputationalTypeInt), 8)
             ))
-            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 == op_1) goto 8;"))
+            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 == op_1) goto 8"))
         }
 
         it("should correctly reflect the greater-equals case") {
             val statements = TACNaive(method = ICMPGEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), GE, SimpleVar(1, ComputationalTypeInt), 8)
             ))
-            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 >= op_1) goto 8;"))
+            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 >= op_1) goto 8"))
         }
 
         it("should correctly reflect the less-then case") {
             val statements = TACNaive(method = ICMPLTMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), LT, SimpleVar(1, ComputationalTypeInt), 8)
             ))
-            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 < op_1) goto 8;"))
+            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 < op_1) goto 8"))
         }
 
         it("should correctly reflect the less-equals case") {
             val statements = TACNaive(method = ICMPLEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), LE, SimpleVar(1, ComputationalTypeInt), 8)
             ))
-            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 <= op_1) goto 8;"))
+            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 <= op_1) goto 8"))
         }
 
         it("should correctly reflect the greater-then case") {
             val statements = TACNaive(method = ICMPGTMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), GT, SimpleVar(1, ComputationalTypeInt), 8)
             ))
-            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 > op_1) goto 8;"))
+            javaLikeCode.shouldEqual(resultJLC("5: if(op_0 > op_1) goto 8"))
         }
 
     }

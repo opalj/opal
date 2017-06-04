@@ -82,75 +82,75 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
         )
 
         def binaryJLC(strg: String) = Array(
-            "0: r_0 = this;",
-            "1: r_1 = p_1;",
-            "2: r_2 = p_2;",
-            "3: op_0 = r_1;",
-            "4: op_1 = r_2;",
+            "0: r_0 = this",
+            "1: r_1 = p_1",
+            "2: r_2 = p_2",
+            "3: op_0 = r_1",
+            "4: op_1 = r_2",
             strg,
-            "6: op_0 = r_1;",
-            "7: return op_0;",
-            "8: op_0 = r_2;",
-            "9: return op_0;"
+            "6: op_0 = r_1",
+            "7: return op_0",
+            "8: op_0 = r_2",
+            "9: return op_0"
         )
 
         def unaryJLC(strg: String) = Array(
-            "0: r_0 = this;",
-            "1: r_1 = p_1;",
-            "2: op_0 = r_1;",
+            "0: r_0 = this",
+            "1: r_1 = p_1",
+            "2: op_0 = r_1",
             strg,
-            "4: op_0 = r_1;",
-            "5: return op_0;",
-            "6: op_0 = null;",
-            "7: return op_0;"
+            "4: op_0 = r_1",
+            "5: return op_0",
+            "6: op_0 = null",
+            "7: return op_0"
         )
 
         it("should correctly reflect the equals case") {
             val statements = TACNaive(method = IfACMPEQMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(binaryResultAST(
                 If(2, SimpleVar(0, ComputationalTypeReference), EQ, SimpleVar(1, ComputationalTypeReference), 8)
             ))
-            javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 == op_1) goto 8;"))
+            javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 == op_1) goto 8"))
         }
 
         it("should correctly reflect the not-equals case") {
             val statements = TACNaive(method = IfACMPNEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(binaryResultAST(
                 If(2, SimpleVar(0, ComputationalTypeReference), NE, SimpleVar(1, ComputationalTypeReference), 8)
             ))
-            javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 != op_1) goto 8;"))
+            javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 != op_1) goto 8"))
         }
 
         it("should correctly reflect the non-null case") {
             val statements = TACNaive(method = IfNonNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(unaryResultAST(
                 If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr(-1), 6)
             ))
-            javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 != null) goto 6;"))
+            javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 != null) goto 6"))
         }
 
         it("should correctly reflect the is-null case") {
             val statements = TACNaive(method = IfNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(unaryResultAST(
                 If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6)
             ))
-            javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 == null) goto 6;"))
+            javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 == null) goto 6"))
         }
 
     }

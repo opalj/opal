@@ -90,7 +90,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfNEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfNEMethod, domain)
                 val statements = AsQuadruples(method = IfNEMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -110,7 +110,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfEQMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfEQMethod, domain)
                 val statements = AsQuadruples(method = IfEQMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -130,7 +130,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfGEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfGEMethod, domain)
                 val statements = AsQuadruples(method = IfGEMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -153,7 +153,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfLTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfLTMethod, domain)
                 val statements = AsQuadruples(method = IfLTMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -176,7 +176,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfLEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfLEMethod, domain)
                 val statements = AsQuadruples(method = IfLEMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -199,7 +199,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfGTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfGTMethod, domain)
                 val statements = AsQuadruples(method = IfGTMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
