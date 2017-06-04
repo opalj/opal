@@ -35,9 +35,10 @@ import java.util.IdentityHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.JavaConverters._
-
 import org.opalj.collection.immutable.IntSet
 import org.opalj.collection.immutable.IntSet1
+import org.opalj.graphs.DefaultMutableNode
+import org.opalj.graphs.Node
 
 /**
  * Represents the control flow graph of a method.
@@ -467,5 +468,24 @@ case class CFG(
     def toDot: String = {
         val rootNodes = Set(startBlock) ++ catchNodes
         org.opalj.graphs.toDot(rootNodes)
+    }
+
+    def toDot(f: CFGNode ⇒ String): Iterable[Node] = {
+        // 1. create a node foreach basic block
+        var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] =
+            allBBs.map(bb ⇒ (bb, new DefaultMutableNode(f(bb)))).toMap
+        cfgNodeToGNodes ++= catchNodes.map(cn ⇒ (cn, new DefaultMutableNode(f(cn)))).toMap
+        cfgNodeToGNodes += (abnormalReturnNode → new DefaultMutableNode("abnormal return", theVisualProperties = abnormalReturnNode.visualProperties))
+        cfgNodeToGNodes += (normalReturnNode → new DefaultMutableNode("return", theVisualProperties = normalReturnNode.visualProperties))
+
+        // 2. reconnet nodes
+        cfgNodeToGNodes foreach { cfgNodeToGNode ⇒
+            val (cfgNode, gNode) = cfgNodeToGNode
+            cfgNode.successors foreach { cfgNode ⇒
+                gNode.addChild(cfgNodeToGNodes(cfgNode))
+            }
+        }
+
+        cfgNodeToGNodes.values
     }
 }
