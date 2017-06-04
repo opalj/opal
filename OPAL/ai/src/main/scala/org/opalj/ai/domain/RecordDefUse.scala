@@ -326,7 +326,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         None
                 (
                     defSite,
-                    new DefaultMutableNode[ValueOrigin](defSite, instructionToString, color)
+                    new DefaultMutableNode[ValueOrigin](defSite, instructionToString _, color)
                 )
             }).toMap
 
@@ -342,7 +342,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     if (usageNode.isDefined)
                         usageNode.get.addChild(thisNode)
                     else {
-                        val useNode = new DefaultMutableNode[ValueOrigin](usage, instructionToString)
+                        val useNode = new DefaultMutableNode[ValueOrigin](usage, instructionToString _)
                         useNode.addChild(thisNode)
                         nodes += ((usage, useNode))
                     }
