@@ -54,17 +54,19 @@ import org.opalj.ai.util.XHTML
  * Collects the abstract interpretation time definition/use information.
  * I.e., makes the information available which value is accessed where/where a used
  * value is defined.
- * In general, all regular values are identified using `Int`
- * values where the `Int` value identifies the instruction or parameter responsible for
- * the value. In case of exception values the `Int` value identifies the exception
- * handlers that caught the respective exception. This information can then be used –
+ * In general, all local variables are identified using `Int`s
+ * where the `Int` identifies the expression (by means of it's pc) which evaluated
+ * to the respective value. In case of a parameter the `Int` value is equivalent to
+ * the value `-parameterIndex`.
+ * In case of exception values the `Int` value identifies the exception
+ * handler that caught the respective exception. This information can then be used –
  * in combination with the AICFG - to identify the origin instruction that caused
  * the exception.
  *
  * ==General Usage==
- * This trait collects the def/use information '''after the abstract interpretation has
- * successfully completed''' and the control-flow graph is available. The information
- * is automatically made available, when this plug-in is mixed in.
+ * This trait finalizes the collection of the def/use information '''after the abstract
+ * interpretation has successfully completed''' and the control-flow graph is available.
+ * The information is automatically made available, when this plug-in is mixed in.
  *
  * ==Special Values==
  *
@@ -72,6 +74,8 @@ import org.opalj.ai.util.XHTML
  * The parameters given to a method have negative `int` values (the first
  * parameter has the value -1, the second -2 if the first one is a value of computational
  * type category one and -3 if the first value is of computational type category two and so forth).
+ * I.e., in case of a method `def (d : Double, i : Int)`, the second parameter will have the index
+ * -3.
  *
  * ==Core Properties==
  *
@@ -222,135 +226,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * index `registerIndex` and the program counter `pc`.
      */
     def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
-
-    /**
-     * Creates an XHTML document that contains information about the def-/use
-     * information.
-     */
-    def dumpDefUseInfo(): Node = {
-        XHTML.createXHTML(Some("Definition/Use Information"), dumpDefUseTable())
-    }
-
-    /**
-     * Creates an XHTML table node which contains the def/use information.
-     */
-    def dumpDefUseTable(): Node = {
-        val perInstruction =
-            defOps.zip(defLocals).zipWithIndex.
-                filter(e ⇒ e._1._1 != null || e._1._2 != null).
-                map { e ⇒
-                    val ((os, ls), i) = e
-                    val operands =
-                        if (os eq null)
-                            <i>{ "N/A" }</i>
-                        else
-                            os.map { o ⇒
-                                <li>{ if (o eq null) "N/A" else o.mkString("{", ",", "}") }</li>
-                            }.toList
-
-                    val locals =
-                        if (ls eq null)
-                            <i>{ "N/A" }</i>
-                        else
-                            ls.toSeq.reverse.map { e ⇒
-                                <li>{ if (e eq null) "N/A" else e.mkString("{", ",", "}") }</li>
-                            }
-
-                    val used = this.used(i + parametersOffset)
-                    val usedBy = if (used eq null) "N/A" else used.mkString("{", ", ", "}")
-                    <tr>
-                        <td>{ i }<br/>{ instructions(i).toString(i) }</td>
-                        <td>{ usedBy }</td>
-                        <td><ul class="Stack">{ operands }</ul></td>
-                        <td><ol start="0" class="registers">{ locals }</ol></td>
-                    </tr>
-                }
-
-        <div>
-            <h1>Unused</h1>
-            { unused().mkString("", ", ", "") }
-            <h1>Overview</h1>
-            <table>
-                <tr>
-                    <th class="pc">PC</th>
-                    <th class="pc">Used By</th>
-                    <th class="stack">Stack</th>
-                    <th class="registers">Locals</th>
-                </tr>
-                { perInstruction }
-            </table>
-        </div>
-    }
-
-    /**
-     * Creates a multi-graph that represents the method's def-use information. I.e.,
-     * in which way a certain value is used by other instructions and where the derived
-     * values are then used by further instructions.
-     */
-    def createDefUseGraph(code: Code): Set[DefaultMutableNode[ValueOrigin]] = {
-
-        // 1. create set of all def sites
-        var defSites: Set[ValueOrigin] = Set.empty
-        defOps.filter(_ ne null).foreach { _.foreach { _.foreach { defSites += _ } } }
-        for {
-            defLocalsPerPC ← this.defLocals
-            if defLocalsPerPC ne null
-            defLocalsPerPCPerRegister ← defLocalsPerPC.toSeq
-            if defLocalsPerPCPerRegister ne null
-            valueOrigin ← defLocalsPerPCPerRegister
-        } {
-            defSites += valueOrigin
-        }
-
-        def instructionToString(vo: ValueOrigin): String = {
-            if (vo < 0)
-                s"<parameter:${-vo - 1}>"
-            else
-                s"$vo: "+code.instructions(vo).toString(vo)
-        }
-
-        val unusedNode =
-            new DefaultMutableNode(
-                Int.MinValue: ValueOrigin, (_: ValueOrigin) ⇒ "<NONE>", Some("orange")
-            )
-
-        // 1. create nodes for all local vars (i.e., the corresponding instructions)
-        var nodes: Map[ValueOrigin, DefaultMutableNode[ValueOrigin]] =
-            (defSites map { defSite ⇒
-                val color =
-                    if (defSite < 0)
-                        Some("green")
-                    else if (code.exceptionHandlers.exists { _.handlerPC == defSite })
-                        Some("yellow")
-                    else
-                        None
-                (
-                    defSite,
-                    new DefaultMutableNode[ValueOrigin](defSite, instructionToString _, color)
-                )
-            }).toMap
-
-        // 2. create edges
-        defSites foreach { lvar ⇒
-            val thisNode = nodes(lvar)
-            val usages = used(lvar + parametersOffset)
-            if ((usages eq null) || usages.isEmpty)
-                unusedNode.addChild(thisNode)
-            else
-                usages.foreach { usage ⇒
-                    val usageNode = nodes.get(usage)
-                    if (usageNode.isDefined)
-                        usageNode.get.addChild(thisNode)
-                    else {
-                        val useNode = new DefaultMutableNode[ValueOrigin](usage, instructionToString _)
-                        useNode.addChild(thisNode)
-                        nodes += ((usage, useNode))
-                    }
-                }
-        }
-
-        nodes.values.toSet + unusedNode
-    }
 
     /**
      * The method which computes the def/use information when the instruction with
@@ -548,7 +423,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     // (Whether we had a join or not is irrelevant.)
                     val successorDefOps = defOps(successorPC)
                     if (successorDefOps eq null)
-                        Chain.singleton(ValueOrigins(successorPC))
+                        new :&:(ValueOrigins(successorPC))
                     else {
                         // assert(successorDefOps.tail.isEmpty)
                         successorDefOps
@@ -863,7 +738,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
     /**
-     * Extracts the definition/use information by using the recorded cfg.
+     * Completes the computation of the definition/use information by using the recorded cfg.
      */
     abstract override def abstractInterpretationEnded(
         aiResult: AIResult { val domain: defUseDomain.type }
@@ -982,6 +857,143 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             regularSuccessorsOf(currPC) foreach { handleSuccessor(false) }
             exceptionHandlerSuccessorsOf(currPC) foreach { handleSuccessor(true) }
         }
+    }
+
+    // #############################################################################################
+    // #
+    // #
+    // # DEBUG
+    // #
+    // #
+    // #############################################################################################
+
+    /**
+     * Creates an XHTML document that contains information about the def-/use
+     * information.
+     */
+    def dumpDefUseInfo(): Node = {
+        XHTML.createXHTML(Some("Definition/Use Information"), dumpDefUseTable())
+    }
+
+    /**
+     * Creates an XHTML table node which contains the def/use information.
+     */
+    def dumpDefUseTable(): Node = {
+        val perInstruction =
+            defOps.zip(defLocals).zipWithIndex.
+                filter(e ⇒ e._1._1 != null || e._1._2 != null).
+                map { e ⇒
+                    val ((os, ls), i) = e
+                    val operands =
+                        if (os eq null)
+                            <i>{ "N/A" }</i>
+                        else
+                            os.map { o ⇒
+                                <li>{ if (o eq null) "N/A" else o.mkString("{", ",", "}") }</li>
+                            }.toList
+
+                    val locals =
+                        if (ls eq null)
+                            <i>{ "N/A" }</i>
+                        else
+                            ls.toSeq.reverse.map { e ⇒
+                                <li>{ if (e eq null) "N/A" else e.mkString("{", ",", "}") }</li>
+                            }
+
+                    val used = this.used(i + parametersOffset)
+                    val usedBy = if (used eq null) "N/A" else used.mkString("{", ", ", "}")
+                    <tr>
+                        <td>{ i }<br/>{ instructions(i).toString(i) }</td>
+                        <td>{ usedBy }</td>
+                        <td><ul class="Stack">{ operands }</ul></td>
+                        <td><ol start="0" class="registers">{ locals }</ol></td>
+                    </tr>
+                }
+
+        <div>
+            <h1>Unused</h1>
+            { unused().mkString("", ", ", "") }
+            <h1>Overview</h1>
+            <table>
+                <tr>
+                    <th class="pc">PC</th>
+                    <th class="pc">Used By</th>
+                    <th class="stack">Stack</th>
+                    <th class="registers">Locals</th>
+                </tr>
+                { perInstruction }
+            </table>
+        </div>
+    }
+
+    /**
+     * Creates a multi-graph that represents the method's def-use information. I.e.,
+     * in which way a certain value is used by other instructions and where the derived
+     * values are then used by further instructions.
+     */
+    def createDefUseGraph(code: Code): Set[DefaultMutableNode[ValueOrigin]] = {
+
+        // 1. create set of all def sites
+        var defSites: Set[ValueOrigin] = Set.empty
+        defOps.filter(_ ne null).foreach { _.foreach { _.foreach { defSites += _ } } }
+        for {
+            defLocalsPerPC ← this.defLocals
+            if defLocalsPerPC ne null
+            defLocalsPerPCPerRegister ← defLocalsPerPC.toSeq
+            if defLocalsPerPCPerRegister ne null
+            valueOrigin ← defLocalsPerPCPerRegister
+        } {
+            defSites += valueOrigin
+        }
+
+        def instructionToString(vo: ValueOrigin): String = {
+            if (vo < 0)
+                s"<parameter:${-vo - 1}>"
+            else
+                s"$vo: "+code.instructions(vo).toString(vo)
+        }
+
+        val unusedNode =
+            new DefaultMutableNode(
+                Int.MinValue: ValueOrigin, (_: ValueOrigin) ⇒ "<NONE>", Some("orange")
+            )
+
+        // 1. create nodes for all local vars (i.e., the corresponding instructions)
+        var nodes: Map[ValueOrigin, DefaultMutableNode[ValueOrigin]] =
+            (defSites map { defSite ⇒
+                val color =
+                    if (defSite < 0)
+                        Some("green")
+                    else if (code.exceptionHandlers.exists { _.handlerPC == defSite })
+                        Some("yellow")
+                    else
+                        None
+                (
+                    defSite,
+                    new DefaultMutableNode[ValueOrigin](defSite, instructionToString _, color)
+                )
+            }).toMap
+
+        // 2. create edges
+        defSites foreach { lvar ⇒
+            val thisNode = nodes(lvar)
+            val usages = used(lvar + parametersOffset)
+            if ((usages eq null) || usages.isEmpty)
+                unusedNode.addChild(thisNode)
+            else
+                usages.foreach { usage ⇒
+                    val usageNode = nodes.get(usage)
+                    if (usageNode.isDefined)
+                        usageNode.get.addChild(thisNode)
+                    else {
+                        val useNode = new DefaultMutableNode[ValueOrigin](usage, instructionToString _)
+                        useNode.addChild(thisNode)
+                        nodes += ((usage, useNode))
+                    }
+                }
+        }
+
+        nodes.values.toSet + unusedNode
     }
 
 }
