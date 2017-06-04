@@ -216,10 +216,12 @@ object TACAI {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, StringConst(pc, value))
 
                     case LDCMethodHandle(value) ⇒
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, MethodHandleConst(pc, value))
+                        val lVal = operandsArray(nextPC).head
+                        addInitLocalValStmt(pc, lVal, MethodHandleConst(pc, value))
 
                     case LDCMethodType(value) ⇒
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, MethodTypeConst(pc, value))
+                        val lVal = operandsArray(nextPC).head
+                        addInitLocalValStmt(pc, lVal, MethodTypeConst(pc, value))
 
                     case LoadDouble(value) ⇒
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, DoubleConst(pc, value))
@@ -398,26 +400,26 @@ object TACAI {
                 case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
                     loadConstant(as[LoadConstantInstruction[_]](instruction))
 
-                case INVOKEINTERFACE.opcode |
-                    INVOKESPECIAL.opcode |
-                    INVOKEVIRTUAL.opcode ⇒
-                    val call @ MethodInvocationInstruction(declaringClass, isInterface, name, methodDescriptor) = instruction
-                    val parametersCount = methodDescriptor.parametersCount
+                case INVOKEINTERFACE.opcode | INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode ⇒
+                    val call @ MethodInvocationInstruction(
+                        declClass, isInterface,
+                        name, descriptor) = instruction
+                    val parametersCount = descriptor.parametersCount
                     val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
                     val receiver = operandUse(parametersCount) // this is the self reference
-                    val returnType = methodDescriptor.returnType
+                    val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
                         if (call.isVirtualMethodCall)
                             addStmt(VirtualMethodCall(
                                 pc,
-                                declaringClass, isInterface, name, methodDescriptor,
+                                declClass, isInterface, name, descriptor,
                                 receiver,
                                 params
                             ))
                         else
                             addStmt(NonVirtualMethodCall(
                                 pc,
-                                declaringClass, isInterface, name, methodDescriptor,
+                                declClass, isInterface, name, descriptor,
                                 receiver,
                                 params
                             ))
@@ -426,14 +428,14 @@ object TACAI {
                             if (call.isVirtualMethodCall)
                                 VirtualFunctionCall(
                                     pc,
-                                    declaringClass, isInterface, name, methodDescriptor,
+                                    declClass, isInterface, name, descriptor,
                                     receiver,
                                     params
                                 )
                             else
                                 NonVirtualFunctionCall(
                                     pc,
-                                    declaringClass, isInterface, name, methodDescriptor,
+                                    declClass, isInterface, name, descriptor,
                                     receiver,
                                     params
                                 )
@@ -446,15 +448,15 @@ object TACAI {
                     }
 
                 case INVOKESTATIC.opcode ⇒
-                    val INVOKESTATIC(declaringClass, isInterface, name, methodDescriptor) = instruction
-                    val parametersCount = methodDescriptor.parametersCount
+                    val INVOKESTATIC(declaringClass, isInterface, name, descriptor) = instruction
+                    val parametersCount = descriptor.parametersCount
                     val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
-                    val returnType = methodDescriptor.returnType
+                    val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
                         val staticCall =
                             StaticMethodCall(
                                 pc,
-                                declaringClass, isInterface, name, methodDescriptor,
+                                declaringClass, isInterface, name, descriptor,
                                 params
                             )
                         addStmt(staticCall)
@@ -462,7 +464,7 @@ object TACAI {
                         val expr =
                             StaticFunctionCall(
                                 pc,
-                                declaringClass, isInterface, name, methodDescriptor,
+                                declaringClass, isInterface, name, descriptor,
                                 params
                             )
                         if (wasExecuted(nextPC)) {
@@ -636,7 +638,7 @@ object TACAI {
 
         if (optimizations.nonEmpty) {
             val baseTAC = TACOptimizationResult(tacCode, tacCFG, wasTransformed = false)
-            val result = optimizations.foldLeft(baseTAC) { (tac, optimization) ⇒ optimization(tac) }
+            val result = optimizations.foldLeft(baseTAC)((tac, optimization) ⇒ optimization(tac))
             tacCode = result.code
             tacCFG = result.cfg
         }
