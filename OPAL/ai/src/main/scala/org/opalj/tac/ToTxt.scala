@@ -42,13 +42,13 @@ import org.opalj.br.ComputationalTypeReturnAddress
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
-object ToJavaLike {
+object ToTxt {
 
-    private def callToJavaLike[V <: Var[V]](name: String, params: Seq[Expr[V]]): String = {
-        params.reverse map { toJavaLikeExpr[V] } mkString (s".$name(", ", ", ")")
+    private def callToTxt[V <: Var[V]](name: String, params: Seq[Expr[V]]): String = {
+        params.reverse map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
     }
 
-    @inline final def toJavaLikeExpr[V <: Var[V]](expr: Expr[V]): String = {
+    @inline final def toTxtExpr[V <: Var[V]](expr: Expr[V]): String = {
         expr match {
             case v: Var[_] ⇒
                 if (v.cTpe == ComputationalTypeReturnAddress)
@@ -65,22 +65,22 @@ object ToJavaLike {
             case NullExpr(_)              ⇒ "null"
 
             case InstanceOf(_, value, tpe) ⇒
-                s"${toJavaLikeExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
+                s"${toTxtExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
 
             case Checkcast(_, value, tpe) ⇒
-                s"(${tpe.asReferenceType.toJava}) ${toJavaLikeExpr(value)}"
+                s"(${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
 
             case Compare(_, left, op, right) ⇒
-                toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr[V](right)
+                toTxtExpr(left)+" "+op.toString()+" "+toTxtExpr[V](right)
 
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
-                toJavaLikeExpr[V](left)+" "+op.toString()+" "+toJavaLikeExpr[V](right)
+                toTxtExpr[V](left)+" "+op.toString()+" "+toTxtExpr[V](right)
 
             case PrefixExpr(_, _, op, operand) ⇒
-                op.toString()+" "+toJavaLikeExpr[V](operand)
+                op.toString()+" "+toTxtExpr[V](operand)
 
             case PrimitiveTypecastExpr(_, baseTpe, operand) ⇒
-                s"(${baseTpe.toJava}) ${toJavaLikeExpr(operand)}"
+                s"(${baseTpe.toJava}) ${toTxtExpr(operand)}"
 
             case New(_, objTpe) ⇒
                 s"new ${objTpe.simpleName}"
@@ -89,120 +89,121 @@ object ToJavaLike {
                 val initializedDimensions = counts.size
                 val dimensions = arrayType.dimensions
                 val initializer =
-                    counts.map(c ⇒ s"[${toJavaLikeExpr(c)}]").reverse.mkString("") +
+                    counts.map(c ⇒ s"[${toTxtExpr(c)}]").reverse.mkString("") +
                         ("[]" * (dimensions - initializedDimensions))
                 s"new ${arrayType.drop(initializedDimensions).toJava}$initializer"
 
             case ArrayLoad(_, index, arrayRef) ⇒
-                s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}]"
+                s"${toTxtExpr(arrayRef)}[${toTxtExpr(index)}]"
 
             case ArrayLength(_, arrayRef) ⇒
-                s"${toJavaLikeExpr(arrayRef)}.length"
+                s"${toTxtExpr(arrayRef)}.length"
 
             case Invokedynamic(_, bootstrapMethod, name, descriptor, params) ⇒
-                s"invokedynamic[${bootstrapMethod.toJava}]${callToJavaLike(name, params)}"
+                s"invokedynamic[${bootstrapMethod.toJava}]${callToTxt(name, params)}"
 
             case StaticFunctionCall(_, declClass, _, name, descriptor, params) ⇒
-                declClass.toJava + callToJavaLike[V](name, params)
+                declClass.toJava + callToTxt[V](name, params)
 
             case VirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
-                val call = callToJavaLike(name, params)
-                toJavaLikeExpr[V](receiver)+"/*"+declClass.toJava+"*/"+call
+                val call = callToTxt(name, params)
+                toTxtExpr[V](receiver)+"/*"+declClass.toJava+"*/"+call
 
             case NonVirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
-                val call = callToJavaLike(name, params)
-                toJavaLikeExpr[V](receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call
+                val call = callToTxt(name, params)
+                toTxtExpr[V](receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call
 
             case GetStatic(_, declaringClass, name) ⇒
                 s"${declaringClass.toJava}.$name"
 
             case GetField(_, declaringClass, name, receiver) ⇒
-                s"${toJavaLikeExpr(receiver)}/*${declaringClass.toJava}*/.$name"
+                s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
         }
     }
 
-    @inline final def toJavaLikeStmt[V <: Var[V]](stmt: Stmt[V]): String = {
+    @inline final def toTxtStmt[V <: Var[V]](stmt: Stmt[V]): String = {
+        val pc = stmt.pc
         stmt.astID match {
-            case Return.ASTID ⇒ "return;"
+            case Return.ASTID ⇒ s"/*$pc:*/return;"
             case ReturnValue.ASTID ⇒
                 val ReturnValue(_, expr) = stmt
-                s"return ${toJavaLikeExpr(expr)};"
+                s"/*$pc:*/return ${toTxtExpr(expr)};"
             case Throw.ASTID ⇒
                 val Throw(_, exc) = stmt
-                s"throw ${toJavaLikeExpr(exc)};"
+                s"/*$pc:*/throw ${toTxtExpr(exc)};"
 
-            case Nop.ASTID ⇒ ";"
+            case Nop.ASTID ⇒ s"/*$pc*/;"
 
             case MonitorEnter.ASTID ⇒
                 val MonitorEnter(_, objRef) = stmt
-                s"monitorenter ${toJavaLikeExpr(objRef)};"
+                s"/*$pc:*/monitorenter ${toTxtExpr(objRef)};"
             case MonitorExit.ASTID ⇒
                 val MonitorExit(_, objRef) = stmt
-                s"monitorexit ${toJavaLikeExpr(objRef)};"
+                s"/*$pc:*/monitorexit ${toTxtExpr(objRef)};"
 
             case Goto.ASTID ⇒
                 val Goto(_, target) = stmt
-                s"goto $target;"
+                s"/*$pc:*/goto $target;"
 
             case JumpToSubroutine.ASTID ⇒
                 val JumpToSubroutine(_, target) = stmt
-                s"jsr $target;"
+                s"/*$pc:*/jsr $target;"
             case Ret.ASTID ⇒
                 val Ret(_, targets) = stmt
-                targets.mkString("ret {", ",", "};")
+                targets.mkString(s"/*$pc:*/ret {", ",", "};")
 
             case If.ASTID ⇒
                 val If(_, left, cond, right, target) = stmt
-                s"if(${toJavaLikeExpr(left)} $cond ${toJavaLikeExpr(right)}) goto $target;"
+                s"/*$pc:*/if(${toTxtExpr(left)} $cond ${toTxtExpr(right)}) goto $target;"
 
             case Switch.ASTID ⇒
                 val Switch(_, defaultTarget, index, npairs) = stmt
                 var result = "\n"
                 for (x ← npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
                 result = result+"    default: goto "+defaultTarget+";\n"
-                s"switch(${toJavaLikeExpr(index)}){$result}"
+                s"/*$pc:*/switch(${toTxtExpr(index)}){$result}"
 
             case Assignment.ASTID ⇒
                 val Assignment(_, variable, expr) = stmt
-                s"${variable.name} = ${toJavaLikeExpr(expr)};"
+                s"/*$pc:*/${variable.name} = ${toTxtExpr(expr)};"
 
             case ExprStmt.ASTID ⇒
                 val ExprStmt(_, expr) = stmt
-                s"/* expression value is ignored */ ${toJavaLikeExpr(expr)};"
+                s"/*$pc - expression value is ignored:*/${toTxtExpr(expr)};"
 
             case ArrayStore.ASTID ⇒
                 val ArrayStore(_, arrayRef, index, operandVar) = stmt
-                s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}] = ${toJavaLikeExpr(operandVar)};"
+                s"/*$pc:*/${toTxtExpr(arrayRef)}[${toTxtExpr(index)}] = ${toTxtExpr(operandVar)};"
 
             case PutStatic.ASTID ⇒
                 val PutStatic(_, declaringClass, name, value) = stmt
-                s"${declaringClass.toJava}.$name = ${toJavaLikeExpr(value)}"
+                s"/*$pc:*/${declaringClass.toJava}.$name = ${toTxtExpr(value)}"
 
             case PutField.ASTID ⇒
                 val PutField(_, declaringClass, name, receiver, value) = stmt
-                s"${toJavaLikeExpr(receiver)}/*${declaringClass.toJava}*/.$name = ${toJavaLikeExpr(value)}"
+                s"/*$pc:*/${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name = ${toTxtExpr(value)}"
 
             case StaticMethodCall.ASTID ⇒
                 val StaticMethodCall(_, declClass, _, name, _ /* descriptor*/ , params) = stmt
-                declClass.toJava + callToJavaLike(name, params) + ';'
+                s"/*$pc:*/${declClass.toJava} ${callToTxt(name, params)};"
 
             case VirtualMethodCall.ASTID ⇒
                 val VirtualMethodCall(_, declClass, _, name, _ /*descriptor*/ , receiver, params) = stmt
-                val call = callToJavaLike(name, params)
-                toJavaLikeExpr(receiver)+"/*"+declClass.toJava+"*/"+call + ';'
+                val call = callToTxt(name, params)
+                s"/*$pc:*/${toTxtExpr(receiver)} /*${declClass.toJava}*/$call;"
 
             case NonVirtualMethodCall.ASTID ⇒
                 val NonVirtualMethodCall(_, declClass, _, name, _ /* descriptor*/ , receiver, params) = stmt
-                val call = callToJavaLike(name, params)
-                toJavaLikeExpr(receiver)+"/*(Non-Virtual)"+declClass.toJava+"*/"+call + ';'
+                val call = callToTxt(name, params)
+                s"/*$pc:*/${toTxtExpr(receiver)}/* non-virtual call:*/ ${declClass.toJava}*/$call;"
 
             case FailingExpression.ASTID ⇒
                 val FailingExpression(_, fExpr) = stmt
-                s"/*always throws an exception:*/${toJavaLikeExpr(fExpr)};"
+                s"/*$pc - expression evaluation will throw exception:*/${toTxtExpr(fExpr)};"
 
             case FailingStatement.ASTID ⇒
                 val FailingStatement(_, fStmt) = stmt
-                s"/*always throws an exception:*/${toJavaLikeStmt(fStmt)};"
+                s"/*$pc - statement always throws an exception:*/${toTxtStmt(fStmt)};"
 
         }
     }
@@ -219,9 +220,9 @@ object ToJavaLike {
      */
     def apply[V <: Var[V]](stmts: Array[Stmt[V]], indented: Boolean): Array[String] = {
 
-        val max = stmts.size
+        val max = stmts.length
         val javaLikeCode = new Array[String](max)
-        var index = 0;
+        var index = 0
         while (index < max) {
 
             def qualify(javaLikeStmt: String): String = {
@@ -231,7 +232,7 @@ object ToJavaLike {
                     s"$index: $javaLikeStmt"
             }
 
-            javaLikeCode(index) = qualify(toJavaLikeStmt(stmts(index)))
+            javaLikeCode(index) = qualify(toTxtStmt(stmts(index)))
 
             index += 1
         }
@@ -252,9 +253,9 @@ object ToJavaLike {
         aiResult:       Option[AIResult { val domain: RecordDefUse }] = None
     ): String = {
         aiResult map { aiResult ⇒
-            ToJavaLike(TACAI(method, classHierarchy, aiResult)(List.empty)._1)
+            ToTxt(TACAI(method, classHierarchy, aiResult)(List.empty)._1)
         } getOrElse {
-            ToJavaLike(TACNaive(method, classHierarchy, List(SimplePropagation), false)._1)
+            ToTxt(TACNaive(method, classHierarchy, List(SimplePropagation), false)._1)
         }
     }
 
