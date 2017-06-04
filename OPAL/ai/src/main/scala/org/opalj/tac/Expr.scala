@@ -64,8 +64,12 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
 
     /**
      * `true` if the expression is ''GUARANTEED'' to have no externally observable effect if it is
-     * not executed. Sideeffect free instructions can be removed
-     * if the result of the evaluation of the expression is not used.
+     * not executed. Sideeffect free instructions can be removed if the result of the evaluation
+     * of the expression is not used. For those expressions, which may result in an exception it
+     * has to be guaranteed that the exception is '''NEVER''' thrown. For example, a div instruction
+     * is sideeffect free if it is (statically) known that the divisor is always not equal to zero;
+     * otherwise, even if the result value is not used, the expression is not (potentially) side
+     * effect free.
      *
      * @return `true` if the expression is ''GUARENTEED'' to have no side effect other than
      *        wasting some CPU cycles if it is not executed.
@@ -78,8 +82,8 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
 trait ValueExpr[+V <: Var[V]] extends Expr[V]
 
 /**
- * Explicit reference to a paramter. Parameter statements are only used by the naive
- * representation where it is necessary to perform an initial initialization of the
+ * Explicit reference to a parameter. Parameter statements are only used by the naive
+ * representation ([[TACNaive]]) where it is necessary to perform an initial initialization of the
  * register values.
  */
 case class Param(cTpe: ComputationalType, name: String) extends ValueExpr[Nothing] {
@@ -90,6 +94,9 @@ case class Param(cTpe: ComputationalType, name: String) extends ValueExpr[Nothin
 }
 object Param { final val ASTID = -1 }
 
+/**
+ * An instance of expression as defined by the JVM specification.
+ */
 case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Expr[V] {
 
     final def astID: Int = InstanceOf.ASTID
@@ -105,13 +112,16 @@ case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceTyp
 }
 object InstanceOf { final val ASTID = -2 }
 
+/**
+ * A checkcast expression as defined by the JVM specification.
+ */
 case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Expr[V] {
 
     final def astID: Int = Checkcast.ASTID
 
     final def cTpe: ComputationalType = ComputationalTypeReference
 
-    final def isSideEffectFree: Boolean = false // TODO Check if the type of the value is a subtype of cmpTpe.. then it is sideeffect free.
+    final def isSideEffectFree: Boolean = false // TODO Check if the type of the value is ALWAYS a subtype of cmpTpe.. then it is sideeffect free.
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
