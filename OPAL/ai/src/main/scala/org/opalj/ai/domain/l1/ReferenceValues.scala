@@ -50,8 +50,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 
 /**
- * This partial domain enables tracking of a reference value's null-ness and origin
- * properties.
+ * This partial domain enables tracking of a reference value's null-ness and must-alias information.
  *
  * @author Michael Eichberg
  */
@@ -105,7 +104,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * to the same object on the heap/stack).
      *
      * However, two domain values that have the same timestamp are guaranteed to refer
-     * to the same object at runtime.
+     * to the same object at runtime (must-alias).
      *
      * Timestamps are required to determine changes in the memory layout. I.e., to
      * determine if two values created by the same instruction are aliases or "just"
@@ -378,8 +377,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * Represents all `DomainReferenceValue`s that represent a reference value where
      * – in the current analysis context – the value has a single origin.
      *
-     * To make it possible to store `SingleOriginReferenceValue`s - which in particular provides
-     * fast `filter` and `tail` methods compared to the standard sets, the UID trait is implemented.
+     * @note To make it possible to store `SingleOriginReferenceValue`s in UIDSets -
+     *       which in particular provide fast `filter` and `tail` methods compared to the
+     *       standard sets - the UID trait is implemented.
      */
     trait SingleOriginReferenceValue extends ReferenceValue with SingleOriginValue with UID {
         this: DomainSingleOriginReferenceValue ⇒
@@ -481,7 +481,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                     } else {
                         // This value has the the same origin as a value found in
-                        // MultipleRefrenceValues.
+                        // MultipleReferenceValues.
                         val key = IdentityPair(this, that)
                         val joinResult = joinedValues.getOrElseUpdate(key, this.join(pc, that))
 
@@ -509,22 +509,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             that:   DomainNullValue
         ): Update[DomainSingleOriginReferenceValue] = {
             this.isNull match {
-                /*
-                case Yes ⇒
-                    if (this.t == that.t)
-                        NoUpdate
-                    else
-                        TimestampUpdate(that)
-
-                case Unknown ⇒
-                    if (this.t == that.t)
-                        NoUpdate
-                    else
-                        TimestampUpdate(this.updateT(that.t))
-case No ⇒
-                    StructuralUpdate(                      this.updateT(that.t, isNull = Unknown)                    )
-                        *
-                        */
                 case Yes | Unknown ⇒ NoUpdate
                 case No            ⇒ StructuralUpdate(this.update(isNull = Unknown))
             }
@@ -556,11 +540,6 @@ case No ⇒
         }
     }
 
-    /**
-     * @param t  The timestamp associated with this null-value. Though null-values are
-     *             indistinguishable, we
-     *
-     */
     protected class NullValue(
             override val origin: ValueOrigin
     ) extends super.NullValue with SingleOriginReferenceValue { this: DomainNullValue ⇒
@@ -596,13 +575,6 @@ case No ⇒
             that:   DomainSingleOriginReferenceValue
         ): StructuralUpdate[DomainSingleOriginReferenceValue] = {
             StructuralUpdate(
-                /* OLD - CAN BE DELETED ... ?
-                if (that.isNull.isUnknown && that.t > this.t)
-                    that
-                else
-                    that.updateT(Math.max(this.t, that.t), isNull = Unknown)
-                    */
-
                 // Basically, the timestamp is not relevant in combination with definitive
                 // null values. The other object, which was created at the timestamp specified
                 // by the other object may have been null.
@@ -673,7 +645,7 @@ case No ⇒
                 return StructuralUpdate(doPeformJoinWithNonNullValueWithSameOrigin(that, that.t));
         }
 
-        def toString(upperTypeBound: String) = {
+        def toString(upperTypeBound: String): String = {
             var description = upperTypeBound
             if (!isPrecise) description = "_ <: "+description
             if (isNull.isUnknown) description = s"{$description, null}"
@@ -944,7 +916,7 @@ case No ⇒
                 origin
         }
 
-        override def toString(): String = toString(theUpperTypeBound.toJava)
+        override def toString: String = toString(theUpperTypeBound.toJava)
     }
 
     protected class MObjectValue(
