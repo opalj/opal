@@ -41,7 +41,15 @@ import org.opalj.ai.domain.RecordDefUse
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
- * results of an abstract interpretation of the method.
+ * results of a(n) (local) abstract interpretation of the method.
+ *
+ * The generated representation is completely parameterized over the domains that were used
+ * to perform the abstract interpretation. The only requirement is that the Def/Use information
+ * is recorded while performing the abstract interpretation (see
+ * [[org.opalj.ai.domain.RecordDefUse]]). The generated representation is necessarily in
+ * static single assignment form: each variable is assigned exactly once, and every variable is
+ * defined before it is used. However, no PHI instructions are inserted; instead - in case of a
+ * use - we simply directly refer to all usage sites.
  *
  * @author Michael Eichberg
  */
@@ -137,7 +145,7 @@ object TACAI {
             }
 
             /**
-             * Creates a local var using the current pc and the type
+             * Creates a local variable using the current pc and the type
              * information from the domain value.
              */
             def addInitLocalValStmt(
