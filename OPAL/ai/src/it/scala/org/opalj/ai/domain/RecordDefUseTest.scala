@@ -55,7 +55,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
     object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    class DefUseDomain[I](val method: Method, val project: Project[java.net.URL])
+    private[this] class DefUseDomain[I](val method: Method, val project: Project[java.net.URL])
         extends CorrelationalDomain
         with TheProject
         with TheMethod
@@ -95,7 +95,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     domain.dominatorTree
                 }
                 evaluatedInstructions foreach { pc ⇒
-                    if (pc != 0) dt.dom(pc) should be < (domain.code.instructions.size)
+                    if (pc != 0) dt.dom(pc) should be < domain.code.instructions.length
                 }
 
                 r.operandsArray.zipWithIndex.foreach { opsPC ⇒
