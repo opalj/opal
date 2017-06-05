@@ -247,7 +247,7 @@ object ToTxt {
     }
 
     /**
-     * @see [[apply(Array,Boolean,Boolean]]
+     * @see `apply(Array,Boolean,Boolean)`
      */
     def apply[V <: Var[V]](
         stmts:     IndexedSeq[Stmt[V]],
