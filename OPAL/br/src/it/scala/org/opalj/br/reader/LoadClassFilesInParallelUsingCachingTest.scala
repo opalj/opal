@@ -30,44 +30,30 @@ package org.opalj
 package br
 package reader
 
-import java.io.File
-import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestSupport.locateTestResources
 
-/**
- * This test(suite) just loads a very large number of class files to make sure the library
- * can handle them and to test the "corner" cases. Basically, we test for NPEs,
- * ArrayIndexOutOfBoundExceptions and similar issues.
- *
- * @author Michael Eichberg
- */
-@RunWith(classOf[JUnitRunner])
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bi.TestSupport.allBITestJARs
+
 class LoadClassFilesInParallelUsingCachingTest extends FlatSpec with Matchers {
-
-    private def commonValidator(classFile: ClassFile, source: java.net.URL): Unit = {
-        classFile.thisType.fqn should not be null
-    }
 
     behavior of "OPAL"
 
-    val jreLibFolder: File = org.opalj.bytecode.JRELibraryFolder
-    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
+    val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
 
-    val cache = new BytecodeInstructionsCache
-    val reader = new Java8FrameworkWithCaching(cache)
+    private[this] def validate(classFile: ClassFile, source: java.net.URL): Unit = {
+        classFile.thisType.fqn should not be null
+    }
 
     for {
-        file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
+        file ← Iterator(JRELibraryFolder) ++ allBITestJARs()
         if file.isFile && file.canRead && file.getName.endsWith(".jar")
     } {
-        it should ("be able to completely read all classes in the jar file "+file.getPath+" in parallel using caching") in {
-            reader.ClassFiles(file) foreach { cs ⇒
-                val (cf, s) = cs
-                commonValidator(cf, s)
-            }
+        val path = file.getPath
+        val testName = s"should be able to read all classes in $path in parallel using caching"
+        it should (testName) in {
+            reader.ClassFiles(file) foreach { cs ⇒ val (cf, s) = cs; validate(cf, s) }
         }
     }
 }
