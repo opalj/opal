@@ -361,9 +361,9 @@ object InstanceMethodCall {
 
     def unapply[V <: Var[V]](
         call: InstanceMethodCall[V]
-    ): Some[(PC, ReferenceType, String, MethodDescriptor, Expr[V], Seq[Expr[V]])] = {
+    ): Some[(PC, ReferenceType, Boolean, String, MethodDescriptor, Expr[V], Seq[Expr[V]])] = {
         import call._
-        Some((pc, declaringClass, name, descriptor, receiver, params))
+        Some((pc, declaringClass, isInterface, name, descriptor, receiver, params))
     }
 }
 
