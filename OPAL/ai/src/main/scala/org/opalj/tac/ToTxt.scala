@@ -37,14 +37,17 @@ import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
- * Converts a list of three-address instructions into a Java like representation.
+ * Converts a list of three-address instructions into a text-based representation.
+ *
+ * @note This representation is primarily provided for debugging purposes and is not
+ *       performance optimized.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
 object ToTxt {
 
-    private def callToTxt[V <: Var[V]](name: String, params: Seq[Expr[V]]): String = {
+    def callToTxt[V <: Var[V]](name: String, params: Seq[Expr[V]]): String = {
         params.reverse map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
     }
 
@@ -64,7 +67,7 @@ object ToTxt {
             case StringConst(_, value)         ⇒ s""""$value""""
             case NullExpr(_)                   ⇒ "null"
 
-            case PrefixExpr(_, _, op, operand) ⇒ op.toString()+" "+toTxtExpr[V](operand)
+            case PrefixExpr(_, _, op, operand) ⇒ op.toString+" "+toTxtExpr[V](operand)
 
             case ArrayLoad(_, index, arrayRef) ⇒ s"${toTxtExpr(arrayRef)}[${toTxtExpr(index)}]"
             case ArrayLength(_, arrayRef)      ⇒ s"${toTxtExpr(arrayRef)}.length"
@@ -78,10 +81,10 @@ object ToTxt {
                 s"(${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
 
             case Compare(_, left, op, right) ⇒
-                toTxtExpr(left)+" "+op.toString()+" "+toTxtExpr[V](right)
+                toTxtExpr(left)+" "+op.toString+" "+toTxtExpr[V](right)
 
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
-                toTxtExpr[V](left)+" "+op.toString()+" "+toTxtExpr[V](right)
+                toTxtExpr[V](left)+" "+op.toString+" "+toTxtExpr[V](right)
 
             case PrimitiveTypecastExpr(_, baseTpe, operand) ⇒
                 s"(${baseTpe.toJava}) ${toTxtExpr(operand)}"
@@ -190,9 +193,9 @@ object ToTxt {
                 s"$pc ${toTxtExpr(receiver)}/*${declClass.toJava}*/$call"
 
             case NonVirtualMethodCall.ASTID ⇒
-                val NonVirtualMethodCall(_, declClass, _, name, _ /*desc.*/ , receiver, params) = stmt
+                val NonVirtualMethodCall(_, declClass, _, name, _ /*desc.*/ , rec, params) = stmt
                 val call = callToTxt(name, params)
-                s"$pc ${toTxtExpr(receiver)}/*(non-virtual) ${declClass.toJava}*/$call"
+                s"$pc ${toTxtExpr(rec)}/*(non-virtual) ${declClass.toJava}*/$call"
 
             case FailingExpression.ASTID ⇒
                 val FailingExpression(_, fExpr) = stmt
@@ -206,14 +209,16 @@ object ToTxt {
     }
 
     /**
-     * Converts the quadruples representation into Java-like code.
+     * Converts the statements to some human readable text.
      */
     def apply[V <: Var[V]](stmts: Array[Stmt[V]]): String = {
         apply(stmts, true, true).mkString("\n")
     }
 
     /**
-     * Converts each statement into a Java-like statement.
+     * Converts the statements to some human readable text.
+     *
+     * @param includePC If `true` the original program counter is also shown in the output.
      */
     def apply[V <: Var[V]](
         stmts:     Array[Stmt[V]],
@@ -242,7 +247,7 @@ object ToTxt {
     }
 
     /**
-     * Converts each statement into a Java-like statement.
+     * @see [[apply(Array,Boolean,Boolean]]
      */
     def apply[V <: Var[V]](
         stmts:     IndexedSeq[Stmt[V]],
@@ -252,6 +257,10 @@ object ToTxt {
         apply(stmts.toArray, indented, includePC)
     }
 
+    /**
+     *  Creates a text based representation of the three address code generated for the given
+     *  method.
+     */
     def apply(
         method:         Method,
         classHierarchy: ClassHierarchy                                = Code.BasicClassHierarchy,

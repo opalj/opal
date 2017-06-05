@@ -364,8 +364,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
-    def ClassFile(jarFilename: String, jarFileEntryName: String): List[ClassFile] = {
-        ClassFile(new File(jarFilename), jarFileEntryName)
+    def ClassFile(jarFileName: String, jarFileEntryName: String): List[ClassFile] = {
+        ClassFile(new File(jarFileName), jarFileEntryName)
     }
 
     /**
