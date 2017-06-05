@@ -54,12 +54,23 @@ object TestSupport {
 
     def createRTJarProject(): Project[URL] = Project(readRTJarClassFiles(), Traversable.empty, true)
 
+    def biProjectWithFullJDK(projectJARName: String): Project[URL] = {
+        val resources = locateTestResources(projectJARName, "bi")
+        val projectClassFiles: Seq[(ClassFile, URL)] = DefaultJava9Reader.ClassFiles(resources)
+        val jreClassFiles: Seq[(ClassFile, URL)] = readJREClassFiles()
+        Project(projectClassFiles, jreClassFiles, false)
+    }
+
     def biProject(projectJARName: String): Project[URL] = {
         Project(locateTestResources(projectJARName, "bi"))
     }
 
     def brProject(projectJARName: String): Project[URL] = {
         Project(locateTestResources(projectJARName, "br"))
+    }
+
+    final val DefaultJava9Reader: Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
+        new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache)
     }
 
     /**
@@ -80,39 +91,32 @@ object TestSupport {
      * }}}
      */
     def allBIProjects(
-        projectReader: ClassFileReader         = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache),
+        projectReader: ClassFileReader         = DefaultJava9Reader,
         jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
     ): Iterator[(String, () ⇒ Project[URL])] = {
-        if (jreReader.isDefined) {
-            val theJREReader = jreReader.get
-            val jreClassFiles = theJREReader.ClassFiles(RTJar)
-            allBITestJARs().toIterator.map { biProjectJAR ⇒
-                val projectClassFiles = projectReader.ClassFiles(biProjectJAR)
-                (
-                    biProjectJAR.getName,
-                    () ⇒ {
-                        Project(projectClassFiles, jreClassFiles, theJREReader.loadsInterfacesOnly)
-                    }
-                )
-            }
-        } else {
-            allBITestJARs().toIterator map { biProjectJAR ⇒
-                (
-                    biProjectJAR.getName,
-                    () ⇒ {
-                        Project(projectReader.ClassFiles(biProjectJAR), Traversable.empty, true)
-                    }
-                )
-            }
+        jreReader match {
+            case Some(jreReader) ⇒
+                val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
+                val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
+                allBITestJARs().toIterator map { biProjectJAR ⇒
+                    val projectClassFiles = projectReader.ClassFiles(biProjectJAR)
+                    val readerFactory = () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly)
+                    (biProjectJAR.getName, readerFactory)
+                }
+            case None ⇒
+                allBITestJARs().toIterator map { biProjectJAR ⇒
+                    val readerFactory = () ⇒ Project(biProjectJAR)
+                    (biProjectJAR.getName, readerFactory)
+                }
         }
     }
 
     /**
      * @note     Using this method in combination with Scalatest, where the test cases are generated
-     *             inside the loop, may lead to the situation that the project's are not gc'ed!
+     *           inside the loop, may lead to the situation that the project's are not gc'ed!
      */
     def foreachBIProject(
-        projectReader: ClassFileReader         = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache),
+        projectReader: ClassFileReader         = DefaultJava9Reader,
         jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
     )(
         f: (String, Project[URL]) ⇒ Unit
