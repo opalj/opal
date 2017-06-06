@@ -51,7 +51,10 @@ package object tac {
     }
 
     def tacToDot[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): String = {
-        org.opalj.graphs.toDot(tacToGraph(stmts, cfg))
+        org.opalj.graphs.toDot(
+            tacToGraph(stmts, cfg),
+            ranksep = "0.4"
+        )
     }
 
 }

@@ -37,8 +37,7 @@ import org.opalj.br.Method
 import org.opalj.br.reader.Java8Framework
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.{domain, BaseAI}
 import org.opalj.br.cfg.CFGFactory
 
 /**
@@ -94,16 +93,17 @@ object TAC {
             val ch = project.classHierarchy
 
             if (use == "-ai" || use == "-both") { // USING AI
-                val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
-                val aiResult = BaseAI(classFile, method, domain)
+                //val d = new domain.l1.DefaultDomainWithCFGAndDefUse(project, classFile, method)
+                val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
+                val aiResult = BaseAI(classFile, method, d)
 
                 val aiCFGFile = writeAndOpen(
                     toDot(Set(aiResult.domain.cfgAsGraph())),
                     "AI-CFG-"+method.name, ".gv"
                 )
                 println(s"Generated ai CFG (input): $aiCFGFile")
-
-                val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, "AI-BR-CFG-"+method.name, ".gv")
+                val prefix = "AI-BR-CFG-"+method.name
+                val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, prefix , ".gv")
                 println(s"Generated the reified ai CFG: $aiBRCFGFile")
 
                 val (code, cfg) = TACAI(method, project.classHierarchy, aiResult)(List.empty)

@@ -305,7 +305,7 @@ trait IsReferenceValue extends KnownType with IsAReferenceValue {
  */
 object IsReferenceValue {
 
-    def unapply(value: IsReferenceValue): Option[Traversable[IsAReferenceValue]] = {
+    def unapply(value: IsReferenceValue): Some[Traversable[IsAReferenceValue]] = {
         Some(value.referenceValues)
     }
 }

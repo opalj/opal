@@ -96,6 +96,20 @@ object SomeUpdate {
 
 }
 
+// TODO Replace by qualified update - where the qualification is specified using an INT value.
+// Predefined int masks:
+//  0               => no update         <=> nothing has changed...
+//
+//  Int.MinValue    => illegal update    <=> the update resulted in an illegal value.
+//  (100000....000)
+//
+//  1               => heap shape update <=> the structure of the heap was updated
+//                     (timestamp update)
+//
+//  2               => type update       <=> the (upper) type bound was updated
+//
+//  4               => value update      <=> the represented value was updated
+
 /**
  * Characterizes updates where the abstract state was updated such that it is required to
  * continue the abstract interpretation.

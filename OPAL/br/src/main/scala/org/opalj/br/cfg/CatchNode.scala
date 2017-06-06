@@ -62,8 +62,8 @@ class CatchNode(
 
     final override def nodeId: Int = {
         // the offset is required to ensure that catch node ids do not collide with basic
-        // block ids.
-        0xFFFFFF + startPC
+        // block ids (even if the index is zero!)
+        0xFFFFFF + startPC + (index << 16)
     }
 
     def copy(

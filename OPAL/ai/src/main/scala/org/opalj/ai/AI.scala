@@ -1391,6 +1391,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 def handleException(exceptionValue: DomainValue): PCs = {
+                    // potentially iterating over the individual exceptions is potentially
+                    // more precise than just iterating over the "abstraction"
                     theDomain.typeOfValue(exceptionValue) match {
 
                         case IsReferenceValue(exceptionValues) ⇒

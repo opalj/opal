@@ -139,6 +139,14 @@ object DomainRegistry {
     )
 
     register(
+        "[l0.BaseDomainWithDefUse] The most basic domain; it does all computations at the type level and records the definition/use information.",
+        classOf[domain.l0.BaseDomainWithDefUse[_]],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.l0.BaseDomainWithDefUse(project, classFile, method)
+        }
+    )
+
+    register(
         "[l1.DefaultIntervalValuesDomain] A domain that uses intervals to represent the values of primitive values/variables.",
         classOf[domain.l1.DefaultIntervalValuesDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {

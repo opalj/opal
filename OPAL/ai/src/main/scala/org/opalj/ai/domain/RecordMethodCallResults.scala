@@ -154,16 +154,15 @@ trait RecordMethodCallResults
                     case exceptionValueProperties: IsAReferenceValue ⇒
                         handleIsAReferenceValue(exceptionValue, exceptionValueProperties)
 
-                    // case _ => ... should never occur
+                    case valueType ⇒
+                        throw DomainException(s"unexpected exception type: $valueType")
                 }
             }
 
             exceptionValuesPerType.values.map { exceptionValuesPerType ⇒
                 summarize(callerPC, exceptionValuesPerType)
             }.map { exceptionValuePerType ⇒
-                exceptionValuePerType.
-                    adapt(target, callerPC).
-                    asInstanceOf[target.ExceptionValue]
+                exceptionValuePerType.adapt(target, callerPC).asInstanceOf[target.ExceptionValue]
             }
         }
     }

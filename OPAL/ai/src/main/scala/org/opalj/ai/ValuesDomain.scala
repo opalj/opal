@@ -335,9 +335,9 @@ trait ValuesDomain {
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
-         * @note The abstract interpretation framework does not use/call this method.
-         *      This method is solely predefined to facilitate the development of
-         *      project-wide analyses.
+         * @note   The abstract interpretation framework does not use/call this method.
+         *         This method is solely predefined to facilitate the development of
+         *         project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
         def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
