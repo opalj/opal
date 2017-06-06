@@ -42,7 +42,7 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.cfg.CFGFactory
 
 /**
- * Creates the three-address representation and prints it.
+ * Creates the three-address representation for some method and prints it.
  *
  * @example
  *         To convert all files of a project to TAC you can use:
@@ -74,7 +74,7 @@ object TAC {
             "(1) <JAR file containing class files>\n"+
             "(2) <class file name>\n"+
             "(3) <method name>\n"+
-            "[(4) ai|naive|both (default: ai)]"+
+            "[(4) -ai|-naive|-both (default: -both)]"+
             "Example:\n\tjava …TAC /Library/jre/lib/rt.jar java.util.ArrayList toString"
     }
 
@@ -93,7 +93,7 @@ object TAC {
         try {
             val ch = project.classHierarchy
 
-            if (use == "ai" || use == "both") { // USING AI
+            if (use == "-ai" || use == "-both") { // USING AI
                 val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
                 val aiResult = BaseAI(classFile, method, domain)
                 val aiCFGFile = writeAndOpen(
@@ -113,7 +113,7 @@ object TAC {
                 println(s"Generated the ai tac file $file.")
             }
 
-            if (use == "naive" || use == "both") { // USING NO AI
+            if (use == "-naive" || use == "-both") { // USING NO AI
                 val (code, _) =
                     TACNaive(method, ch, AllTACNaiveOptimizations, forceCFGCreation = true)
 
@@ -147,14 +147,13 @@ object TAC {
         } else {
             val clazzName = args(1)
             val methodName = args(2)
-            val useAI = if (args.length == 4) args(3).toLowerCase else "both"
+            val useAI = if (args.length == 4) args(3).toLowerCase else "-both"
 
             val classFile = classFiles.find(e ⇒ e._1.thisType.toJava == clazzName).map(_._1).get
             val methods = classFile.findMethod(methodName)
             if (methods.isEmpty) {
                 val methodNames = classFile.methods.map(_.name)
-                val messageHead = s"cannot find the method: $methodName (Available: "
-                println(methodNames.mkString(messageHead, ",", ")"))
+                println(methodNames.mkString(s"cannot find: $methodName (available: ", ",", ")"))
             } else {
                 methods.foreach { method ⇒ processMethod(project, classFile, method, useAI) }
             }
