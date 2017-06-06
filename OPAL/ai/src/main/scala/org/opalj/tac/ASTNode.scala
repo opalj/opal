@@ -29,14 +29,10 @@
 package org.opalj
 package tac
 
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
-
 /**
  * Defines nodes used by statements and expressions.
  */
-
-trait ASTNode {
+trait ASTNode[+V <: Var[V]] {
 
     /**
      * Each type of node is assigned a different id to make it easily possible
@@ -46,16 +42,3 @@ trait ASTNode {
 
 }
 
-trait Call {
-    def declaringClass: ReferenceType
-    def name: String
-    def descriptor: MethodDescriptor
-    def params: Seq[Expr] // TODO IndexedSeq
-}
-
-object Call {
-
-    def unapply(call: Call): Some[(ReferenceType, String, MethodDescriptor)] = {
-        Some((call.declaringClass, call.name, call.descriptor))
-    }
-}

@@ -28,14 +28,9 @@
  */
 package org.opalj.br
 
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
-
-import scala.collection.JavaConverters._
 
 import org.opalj.util.PerformanceEvaluation.timed
 import org.opalj.bytecode.JRELibraryFolder
@@ -45,16 +40,14 @@ import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.instructions.LocalVariableAccess
 
 /**
- * Just tests if we can compute various information for a wide range of methods;
+ * Just tests if we can compute various information for a wide range of methods; e.g.,
  * the stack depth, max locals, liveVariables.
  *
  * @author Michael Eichberg
  */
-@RunWith(classOf[JUnitRunner])
 class CodePropertiesTest extends FunSuite {
 
-    def analyzeProject(name: String, createProject: () ⇒ SomeProject): String = {
-        val project = createProject()
+    def analyzeProject(name: String, project: SomeProject): String = {
         val (t, analyzedMethodsCount) = timed { doAnalyzeProject(name, project) }
         s"$name: the analysis of $analyzedMethodsCount methods took ${t.toSeconds}"
     }
@@ -64,9 +57,7 @@ class CodePropertiesTest extends FunSuite {
         val ch = project.classHierarchy
 
         val analyzedMethodsCount = new AtomicInteger(0)
-        val errors = new ConcurrentLinkedQueue[String]
-
-        project.parForeachMethodWithBody(() ⇒ false) { m ⇒
+        val errors = project.parForeachMethodWithBody(() ⇒ false) { m ⇒
 
             val MethodInfo(src, classFile, method) = m
             val code = method.body.get
@@ -75,52 +66,41 @@ class CodePropertiesTest extends FunSuite {
             val specifiedMaxStack = code.maxStack
             val specifiedMaxLocals = code.maxLocals
 
-            try {
-                val liveVariables = code.liveVariables(ch)
-                assert(
-                    code.programCounters.forall(pc ⇒ liveVariables(pc) ne null),
-                    s"computation of liveVariables fail for ${method.toJava(classFile)}"
+            val liveVariables = code.liveVariables(ch)
+            assert(
+                code.programCounters.forall(pc ⇒ liveVariables(pc) ne null),
+                s"computation of liveVariables fail for ${method.toJava(classFile)}"
+            )
+
+            for { (pc, LocalVariableAccess(i, isRead)) ← code } {
+                val isLive = liveVariables(pc).contains(i)
+                if (isRead)
+                    assert(isLive, s"$i is not live at $pc in ${method.toJava(classFile)}")
+                else
+                    assert(!isLive, s"$i is live at $pc in ${method.toJava(classFile)}")
+            }
+
+            val computedMaxLocals = Code.computeMaxLocalsRequiredByCode(instructions)
+            if (computedMaxLocals > specifiedMaxLocals) {
+                fail(
+                    s"$src: computed max locals is too large - ${method.toJava(classFile)}}: "+
+                        s"$specifiedMaxLocals(specified) vs. $computedMaxLocals(computed):\n"+
+                        code.toString
                 )
+            }
 
-                for {
-                    (pc, LocalVariableAccess(i, isRead)) ← code
-                } {
-                    if (isRead)
-                        assert(
-                            liveVariables(pc).contains(i),
-                            s"$i is not live at $pc in ${method.toJava(classFile)}"
-                        )
-                    else
-                        assert(
-                            !liveVariables(pc).contains(i),
-                            s"$i is live at $pc in ${method.toJava(classFile)}"
-                        )
-                }
-
-                val computedMaxLocals = Code.computeMaxLocalsRequiredByCode(instructions)
-                if (computedMaxLocals > specifiedMaxLocals) {
-                    errors.add(
-                        s"$src: computed max locals is too large - ${method.toJava(classFile)}}: "+
-                            s"$specifiedMaxLocals(specified) vs. $computedMaxLocals(computed):\n"+
-                            code.toString
-                    )
-                }
-
-                val computedMaxStack = Code.computeMaxStack(instructions, ch, eh)
-                analyzedMethodsCount.incrementAndGet()
-                if (specifiedMaxStack < computedMaxStack) {
-                    errors.add(
-                        s"$src: computed max stack is too large - ${method.toJava(classFile)}}: "+
-                            s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed):\n"+
-                            code.toString
-                    )
-                }
-            } catch {
-                case t: Throwable ⇒ errors.add(t.getMessage)
+            val computedMaxStack = Code.computeMaxStack(instructions, ch, eh)
+            analyzedMethodsCount.incrementAndGet()
+            if (specifiedMaxStack < computedMaxStack) {
+                fail(
+                    s"$src: computed max stack is too large - ${method.toJava(classFile)}}: "+
+                        s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed):\n"+
+                        code.toString
+                )
             }
         }
-        if (!errors.isEmpty()) {
-            fail(errors.asScala.mkString("computation of max stack/locals failed:\n", "\n", "\n"))
+        if (errors.nonEmpty) {
+            fail(errors.mkString("computation of max stack/locals failed:\n", "\n", "\n"))
         }
         analyzedMethodsCount.get()
     }
@@ -132,13 +112,13 @@ class CodePropertiesTest extends FunSuite {
     allBIProjects() foreach { biProject ⇒
         val (name, createProject) = biProject
         test(s"computation of maxStack/maxLocals for all methods of $name") {
-            val count = analyzeProject(name, createProject)
+            val count = analyzeProject(name, createProject())
             info(s"computation of maxStack/maxLocals succeeded for $count methods")
         }
     }
 
     test(s"computation of maxStack/maxLocals for all methods of the JDK ($JRELibraryFolder)") {
-        analyzeProject("JDK", () ⇒ TestSupport.createJREProject)
+        analyzeProject("JDK", TestSupport.createJREProject)
     }
 
 }

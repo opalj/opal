@@ -26,7 +26,9 @@ The code is formatted using the same settings and style as the rest of the code 
 The code is reasonably documented.
 
 ## Code Conventions
-The code conventions w.r.t. naming and formatting are followed (Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, **a line should not have more than 100 chars** (unless Scalariform always reformats the code such that the line has more than 100 chars which is, e.g., often the case for type declarations).
+Ensure that the code conventions w.r.t. naming and formatting are followed. 
+
+Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, **a line should not have more than 100 chars** (unless Scalariform always reformats the code such that the line has more than 100 chars which is, e.g., often the case for type declarations).
 
 ## Do Not Change Unrelated Code
 Never reformat code that is not related to your task at hand; unless explicitly asked to do so. The commit should focus solely on your feature.

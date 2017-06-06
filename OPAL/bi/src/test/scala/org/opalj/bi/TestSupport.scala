@@ -41,7 +41,9 @@ import scala.util.Properties.versionNumberString
  */
 object TestSupport {
 
-    val ScalaMajorVersion = versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
+    val ScalaMajorVersion: String = {
+        versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
+    }
 
     val unmanagedResourcesFolder = "src/test/resources/"
     val managedResourcesFolder = s"target/scala-$ScalaMajorVersion/resource_managed/test/"
@@ -78,7 +80,7 @@ object TestSupport {
      * @param   resourceName The name of the resource relative to the test/resources
      *          folder. The name must not begin with a "/".
      *
-     * @param   subProjectFoler The root folder of the OPAL subproject; e.g., "ai".
+     * @param   subProjectFolder The root folder of the OPAL subproject; e.g., "ai".
      */
     def locateTestResources(resourceName: String, subProjectFolder: String): File = {
         val resourceFiles /*CANDIDATES*/ = Array(
@@ -86,9 +88,10 @@ object TestSupport {
             s"$subProjectFolder/$managedResourcesFolder/$resourceName"
         )
 
+        // IMPROVE Consider using flatMap etc.
         pathPrefixCandidates(subProjectFolder) foreach { pathFunction ⇒
             resourceFiles foreach { rf ⇒
-                pathFunction(rf) map { fCandidate ⇒
+                pathFunction(rf) foreach { fCandidate ⇒
                     val f = new File(fCandidate)
                     if (f.exists) return f; // <======== NORMAL RETURN
                 }
@@ -99,20 +102,21 @@ object TestSupport {
     }
 
     /**
-     * Returns all JARs that are intended to be used by tests.
+     * Returns all JARs that are intended to be used by tests and which were compiled
+     * using the test fixtures.
      */
     def allManagedBITestJARs(): Traversable[File] = {
-        var allJARs: List[File] = Nil
-        pathPrefixCandidates("bi") foreach { pathFunction ⇒
-            pathFunction(s"bi/$managedResourcesFolder") map { fCandidate ⇒
-                val f = new File(fCandidate)
-                if (f.exists && f.isDirectory) {
-                    val s = f.listFiles(JARsFileFilter)
-                    allJARs ++= s
-                }
-            }
+        for {
+            pathFunction ← pathPrefixCandidates("bi")
+            fCandidate = pathFunction(s"bi/$managedResourcesFolder")
+            if fCandidate.isDefined
+            f = new File(fCandidate.get)
+            if f.exists
+            if f.isDirectory
+            jarFile ← f.listFiles(JARsFileFilter)
+        } yield {
+            jarFile
         }
-        allJARs
     }
 
     def allUnmanagedBITestJARs(): Traversable[File] = {
@@ -134,7 +138,9 @@ object TestSupport {
 }
 
 object JARsFileFilter extends FileFilter {
+
     def accept(path: File): Boolean = {
         path.isFile && path.getName.endsWith(".jar") && path.canRead
     }
+
 }

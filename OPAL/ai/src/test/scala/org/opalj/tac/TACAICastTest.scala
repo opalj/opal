@@ -130,7 +130,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, TypecheckStringMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, TypecheckStringMethod, domain)
                 val statements = AsQuadruples(method = TypecheckStringMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -142,7 +142,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, TypecheckListMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, TypecheckListMethod, domain)
                 val statements = AsQuadruples(method = TypecheckListMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -155,7 +155,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, CheckcastMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, CheckcastMethod, domain)
                 val statements = AsQuadruples(method = CheckcastMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -188,7 +188,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, D2FMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, D2FMethod, domain)
                 val statements = AsQuadruples(method = D2FMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -200,7 +200,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, D2IMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, D2IMethod, domain)
                 val statements = AsQuadruples(method = D2IMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -212,7 +212,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, D2LMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, D2LMethod, domain)
                 val statements = AsQuadruples(method = D2LMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -224,7 +224,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, F2DMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, F2DMethod, domain)
                 val statements = AsQuadruples(method = F2DMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -236,7 +236,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, F2LMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, F2LMethod, domain)
                 val statements = AsQuadruples(method = F2LMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -248,7 +248,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, F2IMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, F2IMethod, domain)
                 val statements = AsQuadruples(method = F2IMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -260,7 +260,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, L2DMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, L2DMethod, domain)
                 val statements = AsQuadruples(method = L2DMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -272,7 +272,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, L2FMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, L2FMethod, domain)
                 val statements = AsQuadruples(method = L2FMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -284,7 +284,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, L2IMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, L2IMethod, domain)
                 val statements = AsQuadruples(method = L2IMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -296,7 +296,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, I2DMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, I2DMethod, domain)
                 val statements = AsQuadruples(method = I2DMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -308,7 +308,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, I2LMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, I2LMethod, domain)
                 val statements = AsQuadruples(method = I2LMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -320,7 +320,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, I2FMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, I2FMethod, domain)
                 val statements = AsQuadruples(method = I2FMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -332,7 +332,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, I2CMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, I2CMethod, domain)
                 val statements = AsQuadruples(method = I2CMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -344,7 +344,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, I2BMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, I2BMethod, domain)
                 val statements = AsQuadruples(method = I2BMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -356,7 +356,7 @@ class TACAICastTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, I2SMethod)
                 val aiResult = BaseAI(CastInstructionsClassFile, I2SMethod, domain)
                 val statements = AsQuadruples(method = I2SMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

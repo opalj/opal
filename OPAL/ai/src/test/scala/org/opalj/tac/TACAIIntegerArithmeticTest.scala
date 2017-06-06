@@ -107,7 +107,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerAddMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAddMethod, domain)
                 val statements = AsQuadruples(method = IntegerAddMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -123,7 +123,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerAndMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAndMethod, domain)
                 val statements = AsQuadruples(method = IntegerAndMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -139,7 +139,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerDivMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerDivMethod, domain)
                 val statements = AsQuadruples(method = IntegerDivMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -155,7 +155,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerIncMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerIncMethod, domain)
                 val statements = AsQuadruples(method = IntegerIncMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -174,7 +174,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerNegMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerNegMethod, domain)
                 val statements = AsQuadruples(method = IntegerNegMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -193,7 +193,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerMulMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerMulMethod, domain)
                 val statements = AsQuadruples(method = IntegerMulMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -209,7 +209,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerOrMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerOrMethod, domain)
                 val statements = AsQuadruples(method = IntegerOrMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -225,7 +225,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerRemMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerRemMethod, domain)
                 val statements = AsQuadruples(method = IntegerRemMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -241,7 +241,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerShRMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerShRMethod, domain)
                 val statements = AsQuadruples(method = IntegerShRMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -257,7 +257,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerShLMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerShLMethod, domain)
                 val statements = AsQuadruples(method = IntegerShLMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -273,7 +273,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerSubMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerSubMethod, domain)
                 val statements = AsQuadruples(method = IntegerSubMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -289,7 +289,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerAShMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAShMethod, domain)
                 val statements = AsQuadruples(method = IntegerAShMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -305,7 +305,7 @@ class TACAIIntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerXOrMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerXOrMethod, domain)
                 val statements = AsQuadruples(method = IntegerXOrMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

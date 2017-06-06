@@ -57,7 +57,7 @@ package object graphs {
     def toDot(
         rootNodes: Traversable[_ <: Node],
         dir:       String                 = "forward",
-        ranksep:   String                 = "1.0",
+        ranksep:   String                 = "0.8",
         fontname:  String                 = "Helvetica",
         rankdir:   String                 = "TB"
     ): String = {

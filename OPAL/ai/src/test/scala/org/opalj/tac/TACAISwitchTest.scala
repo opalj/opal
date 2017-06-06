@@ -61,7 +61,7 @@ class TACAISwitchTest extends TACTest {
                 val domain = new DefaultDomain(project, SwitchStatementsClassFile, TableSwitchMethod)
                 val aiResult = BaseAI(SwitchStatementsClassFile, TableSwitchMethod, domain)
                 val statements = AsQuadruples(method = TableSwitchMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -99,7 +99,7 @@ class TACAISwitchTest extends TACTest {
                 val domain = new DefaultDomain(project, SwitchStatementsClassFile, LookupSwitchMethod)
                 val aiResult = BaseAI(SwitchStatementsClassFile, LookupSwitchMethod, domain)
                 val statements = AsQuadruples(method = LookupSwitchMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

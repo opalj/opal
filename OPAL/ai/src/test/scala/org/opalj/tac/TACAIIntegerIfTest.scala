@@ -93,7 +93,7 @@ class TACAIIntegerIfTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPNEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPNEMethod, domain)
                 val statements = AsQuadruples(method = ICMPNEMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -113,7 +113,7 @@ class TACAIIntegerIfTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPEQMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPEQMethod, domain)
                 val statements = AsQuadruples(method = ICMPEQMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -133,7 +133,7 @@ class TACAIIntegerIfTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPGEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPGEMethod, domain)
                 val statements = AsQuadruples(method = ICMPGEMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -156,7 +156,7 @@ class TACAIIntegerIfTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPLTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPLTMethod, domain)
                 val statements = AsQuadruples(method = ICMPLTMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -179,7 +179,7 @@ class TACAIIntegerIfTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPLEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPLEMethod, domain)
                 val statements = AsQuadruples(method = ICMPLEMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -202,7 +202,7 @@ class TACAIIntegerIfTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPGTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPGTMethod, domain)
                 val statements = AsQuadruples(method = ICMPGTMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

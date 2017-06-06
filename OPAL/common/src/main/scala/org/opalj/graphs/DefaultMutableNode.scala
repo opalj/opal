@@ -41,34 +41,23 @@ import scala.collection.Map
  */
 class DefaultMutableNode[I](
     theIdentifier:       I,
-    identifierToString:  I ⇒ String,
-    theVisualProperties: Map[String, String],
-    theChildren:         List[DefaultMutableNode[I]]
+    identifierToString:  I ⇒ String                  = (_: Any).toString,
+    theVisualProperties: Map[String, String]         = Map("shape" → "box"),
+    theChildren:         List[DefaultMutableNode[I]] = List.empty
 ) extends MutableNodeLike[I, DefaultMutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
         with MutableNode[I, DefaultMutableNode[I]] {
 
-    def this(identifier: I) {
-        this(identifier, id ⇒ id.toString, Map("shape" → "box"), List.empty)
-    }
-
     def this(
         identifier:         I,
-        identifierToString: I ⇒ String
-    ) {
-        this(identifier, identifierToString, Map("shape" → "box"), List.empty)
-    }
-
-    def this(
-        identifier:         I,
-        identifierToString: I ⇒ String     = (_: Any).toString,
+        identifierToString: I ⇒ String,
         fillcolor:          Option[String]
     ) {
         this(
             identifier,
             identifierToString,
-            fillcolor.map(c ⇒ DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" → c)).
-                getOrElse(DefaultMutableMode.BaseVirtualPropertiers),
-            List.empty
+            theVisualProperties =
+                fillcolor.map(c ⇒ DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" → c)).
+                    getOrElse(DefaultMutableMode.BaseVirtualPropertiers)
         )
     }
 

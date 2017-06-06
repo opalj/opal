@@ -29,10 +29,7 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
@@ -43,7 +40,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveRefCmpIfTest extends FunSpec with Matchers {
+class TACNaiveRefCmpIfTest extends TACNaiveTest {
 
     val ControlSequencesType = ObjectType("tactest/ControlSequences")
 
@@ -60,7 +57,7 @@ class TACNaiveRefCmpIfTest extends FunSpec with Matchers {
 
     describe("the naive TAC of reference comparison if instructions") {
 
-        def binaryResultAST(stmt: Stmt): Array[Stmt] = Array(
+        def binaryResultAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
             Assignment(-1, SimpleVar(-3, ComputationalTypeReference), Param(ComputationalTypeReference, "p_2")),
@@ -73,7 +70,7 @@ class TACNaiveRefCmpIfTest extends FunSpec with Matchers {
             ReturnValue(8, SimpleVar(0, ComputationalTypeReference))
         )
 
-        def unaryResultAST(stmt: Stmt): Array[Stmt] = Array(
+        def unaryResultAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
             Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
@@ -85,75 +82,75 @@ class TACNaiveRefCmpIfTest extends FunSpec with Matchers {
         )
 
         def binaryJLC(strg: String) = Array(
-            "0: r_0 = this;",
-            "1: r_1 = p_1;",
-            "2: r_2 = p_2;",
-            "3: op_0 = r_1;",
-            "4: op_1 = r_2;",
+            "0: r_0 = this",
+            "1: r_1 = p_1",
+            "2: r_2 = p_2",
+            "3: op_0 = r_1",
+            "4: op_1 = r_2",
             strg,
-            "6: op_0 = r_1;",
-            "7: return op_0;",
-            "8: op_0 = r_2;",
-            "9: return op_0;"
+            "6: op_0 = r_1",
+            "7: return op_0",
+            "8: op_0 = r_2",
+            "9: return op_0"
         )
 
         def unaryJLC(strg: String) = Array(
-            "0: r_0 = this;",
-            "1: r_1 = p_1;",
-            "2: op_0 = r_1;",
+            "0: r_0 = this",
+            "1: r_1 = p_1",
+            "2: op_0 = r_1",
             strg,
-            "4: op_0 = r_1;",
-            "5: return op_0;",
-            "6: op_0 = null;",
-            "7: return op_0;"
+            "4: op_0 = r_1",
+            "5: return op_0",
+            "6: op_0 = null",
+            "7: return op_0"
         )
 
         it("should correctly reflect the equals case") {
             val statements = TACNaive(method = IfACMPEQMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(binaryResultAST(
                 If(2, SimpleVar(0, ComputationalTypeReference), EQ, SimpleVar(1, ComputationalTypeReference), 8)
             ))
-            javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 == op_1) goto 8;"))
+            javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 == op_1) goto 8"))
         }
 
         it("should correctly reflect the not-equals case") {
             val statements = TACNaive(method = IfACMPNEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(binaryResultAST(
                 If(2, SimpleVar(0, ComputationalTypeReference), NE, SimpleVar(1, ComputationalTypeReference), 8)
             ))
-            javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 != op_1) goto 8;"))
+            javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 != op_1) goto 8"))
         }
 
         it("should correctly reflect the non-null case") {
             val statements = TACNaive(method = IfNonNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(unaryResultAST(
                 If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr(-1), 6)
             ))
-            javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 != null) goto 6;"))
+            javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 != null) goto 6"))
         }
 
         it("should correctly reflect the is-null case") {
             val statements = TACNaive(method = IfNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(unaryResultAST(
                 If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6)
             ))
-            javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 == null) goto 6;"))
+            javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 == null) goto 6"))
         }
 
     }

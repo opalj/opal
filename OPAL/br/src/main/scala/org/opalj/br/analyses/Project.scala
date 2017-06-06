@@ -1217,19 +1217,15 @@ object Project {
         projectFile: File,
         libraryFile: File
     ): Project[URL] = {
-
+        implicit val logContext = GlobalLogContext
         val libraries: Traversable[(ClassFile, URL)] =
             if (!libraryFile.exists) {
-                OPALLogger.error(
-                    "project configuration", s"$libraryFile does not exist"
-                )(GlobalLogContext)
+                OPALLogger.error("project configuration", s"$libraryFile does not exist")
                 Traversable.empty
             } else {
                 val libraries = JavaLibraryClassFileReader.ClassFiles(libraryFile)
                 if (libraries.isEmpty)
-                    OPALLogger.warn(
-                        "project configuration", s"$libraryFile is empty"
-                    )(GlobalLogContext)
+                    OPALLogger.warn("project configuration", s"$libraryFile is empty")
                 libraries
             }
         apply(

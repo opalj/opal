@@ -42,8 +42,7 @@ import org.opalj.br.MethodHandle
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait ReferenceValuesFactory extends ExceptionsFactory {
-    domain: org.opalj.ai.ReferenceValuesFactory ⇒
+trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
 
     /**
      * Factory method to create a `DomainValue` that represents value `null` and
@@ -79,10 +78,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory {
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ReferenceValue(
-        origin:        ValueOrigin,
-        referenceType: ReferenceType
-    ): DomainReferenceValue
+    def ReferenceValue(origin: ValueOrigin, referenceType: ReferenceType): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''an array''
@@ -119,10 +115,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory {
      *  - Type: '''Upper Bound'''
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def NonNullObjectValue(
-        origin:     ValueOrigin,
-        objectType: ObjectType
-    ): DomainReferenceValue
+    def NonNullObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainReferenceValue
 
     /**
      * Creates a new `DomainValue` that represents ''a new,
@@ -170,10 +163,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory {
      *      correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def InitializedObjectValue(
-        origin:     ValueOrigin,
-        objectType: ObjectType
-    ): DomainReferenceValue
+    def InitializedObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
