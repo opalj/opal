@@ -240,7 +240,7 @@ trait ValuesDomain {
          * [[TheIllegalValue]] only abstracts over itself.
          *
          * ==Implementation==
-         * The default implementation relies on this domain value's [[join]] method.
+         * The default implementation relies on this '''domain value''''s [[join]] method.
          *
          * Overriding this method is, hence, primarily meaningful for performance reasons.
          *
@@ -257,7 +257,7 @@ trait ValuesDomain {
 
         /**
          * Returns `true` iff the abstract state represented by this value
-         * is striclty more precise than the state of the given value. In other
+         * is strictly more precise than the state of the given value. In other
          * words if every possible runtime value represented by this value
          * is also represented by the given value, but both '''are not equal''';
          * in other words, this method is '''irreflexive'''.
@@ -292,7 +292,7 @@ trait ValuesDomain {
                 case NoUpdateType
                     // ... if the other values abstracts over this value (or equals
                     // this value).
-                    | MetaInformationUpdateType // W.r.t. the props. relevant for a join:
+                    | MetaInformationUpdateType // w.r.t. the props. relevant for a join:
                     // the other value is either more precise than this value or is
                     // equal to this value, but some property that is not relevant to
                     // a join has changed. We now have to rule out the case
@@ -316,8 +316,8 @@ trait ValuesDomain {
          * method and, hence, keeping all information would just waste memory and
          * a summary may be sufficient.
          *
-         * @note This method is predefined to facilitate the development of
-         *      project-wide analyses.
+         * @note   This method is predefined to facilitate the development of
+         *         project-wide analyses.
          */
         def summarize(pc: PC): DomainValue
 
@@ -374,19 +374,17 @@ trait ValuesDomain {
     val DomainReferenceValue: ClassTag[DomainReferenceValue]
 
     /**
-     * A simple type alias of the type `DomainValue`.
-     * Used to facilitate comprehension.
+     * A simple type alias of the type `DomainValue`; used to facilitate comprehension.
      */
     type ExceptionValue = DomainReferenceValue
 
     /**
-     * A type alias for `Iterable`s of `ExceptionValue`s.
-     * Primarily used to facilitate comprehension.
+     * A type alias for `Iterable`s of `ExceptionValue`s; used to facilitate comprehension.
      */
     type ExceptionValues = Iterable[ExceptionValue]
 
     /**
-     * The typed null value.
+     * The typed `null` value.
      */
     private[ai] val Null: DomainValue = null
 
@@ -414,14 +412,18 @@ trait ValuesDomain {
      */
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
-        @throws[DomainException]("An illegal value has no computational type")
-        final override def computationalType: ComputationalType = {
-            throw DomainException("the illegal value has no computational type")
+        final override def computationalType: Nothing = {
+            throw DomainException("an IllegalValue has no computational type")
         }
 
-        @throws[DomainException]("\"doJoin\" is not defined on illegal values")
+        @throws[DomainException]("doJoin(...) is not supported by IllegalValue")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
-            throw DomainException("this method is not supported")
+            throw DomainException("doJoin(...) is not supported by IllegalValue")
+        }
+
+        @throws[DomainException]("summarize(...) is not supported by IllegalValue")
+        override def summarize(pc: PC): DomainValue = {
+            throw DomainException("summarize(...) is not supported by IllegalValue")
         }
 
         override def join(pc: PC, other: DomainValue): Update[DomainValue] = {
@@ -429,11 +431,6 @@ trait ValuesDomain {
                 NoUpdate
             else
                 MetaInformationUpdateIllegalValue
-        }
-
-        @throws[DomainException]("\"summarize\" is not defined on illegal values")
-        override def summarize(pc: PC): DomainValue = {
-            throw DomainException("creating a summary of an illegal value is meaningless")
         }
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
@@ -464,12 +461,11 @@ trait ValuesDomain {
 
     /**
      * The result of merging two values should never be reported as a
-     * `StructuralUpdate` if the computed value is an `IllegalValue`. The JVM semantics
-     * guarantee that the value was not used in the first case and, hence, continuing
-     * the interpretation is meaningless.
+     * `StructuralUpdate` if the computed value is an `IllegalValue`. The JVM semantics guarantee
+     * that the value will not be used and, hence, continuing the interpretation is meaningless.
      *
-     * @note This method is solely defined for documentation purposes and to catch
-     *      implementation errors early on.
+     * @note   This method is solely defined for documentation purposes and to catch
+     *         implementation errors early on.
      */
     final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] = {
         val message = "internal error (see ValuesDomain.StructuralUpdateIllegalValue())"
@@ -481,14 +477,16 @@ trait ValuesDomain {
 
         final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
-        @throws[DomainException]("Summarizing return address values is meaningless.")
+        @throws[DomainException]("summarize(...) is not supported by RETValue")
         override def summarize(pc: PC): DomainValue = {
-            throw DomainException("summarizing return address values is meaningless")
+            throw DomainException("summarize(...) is not supported by RETValue")
         }
     }
 
-    type DomainReturnAddressValues <: ReturnAddressValues with DomainValue
-
+    /**
+     * A collection of (not furhter stored) return address values. Primarily used when we
+     * join the executions of subroutines.
+     */
     class ReturnAddressValues extends RETValue { this: DomainReturnAddressValues ⇒
 
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
@@ -508,6 +506,7 @@ trait ValuesDomain {
         override def toString = "ReturnAddresses"
 
     }
+    type DomainReturnAddressValues <: ReturnAddressValues with DomainValue
 
     /**
      *  The singleton instance of `ReturnAddressValues`
@@ -524,9 +523,7 @@ trait ValuesDomain {
      *      the point-of-view of OPAL-AI - just throw an `OperationNotSupportedException`
      *      as these additional methods will never be called by OPAL-AI.
      */
-    class ReturnAddressValue(
-            val address: PC
-    ) extends RETValue { this: DomainReturnAddressValue ⇒
+    class ReturnAddressValue(val address: PC) extends RETValue { this: DomainReturnAddressValue ⇒
 
         private[ai] final override def asReturnAddressValue: Int = address
 
@@ -671,8 +668,7 @@ trait ValuesDomain {
      * `Domain`s that define (additional) properties should (`abstract`) `override`
      * this method and should return a textual representation of the property.
      */
-    def properties(
-        pc:               PC,
-        propertyToString: AnyRef ⇒ String = (v) ⇒ v.toString
-    ): Option[String] = None
+    def properties(pc: PC, propertyToString: AnyRef ⇒ String = (v) ⇒ v.toString): Option[String] = {
+        None
+    }
 }

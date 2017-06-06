@@ -65,13 +65,11 @@ sealed abstract class Update[+V] {
     /**
      * The updated value; if available.
      */
-    @throws[java.lang.IllegalStateException]("if no value was updated")
     def value: V
 
     /**
      * Creates a new `Update` object of the same type with the given value.
      */
-    @throws[java.lang.IllegalStateException]("if the type of this update is NoUpdate")
     def updateValue[NewV](newValue: NewV): Update[NewV]
 }
 
@@ -83,9 +81,9 @@ sealed abstract class Update[+V] {
  */
 sealed abstract class SomeUpdate[V] extends Update[V] {
 
-    def isNoUpdate: Boolean = false
+    override def isNoUpdate: Boolean = false
 
-    def isSomeUpdate: Boolean = true
+    override def isSomeUpdate: Boolean = true
 
 }
 
@@ -93,7 +91,9 @@ sealed abstract class SomeUpdate[V] extends Update[V] {
  * Facilitates matching against updates that actually encapsulate an updated value.
  */
 object SomeUpdate {
-    def unapply[V](update: SomeUpdate[V]): Option[V] = Some(update.value)
+
+    def unapply[V](update: SomeUpdate[V]): Some[V] = Some(update.value)
+
 }
 
 /**
@@ -157,19 +157,17 @@ case object NoUpdate extends Update[Nothing] {
 
     type ThisType[V] = NoUpdate.type
 
-    def isNoUpdate: Boolean = true
+    override def isNoUpdate: Boolean = true
 
-    def isSomeUpdate: Boolean = false
+    override def isSomeUpdate: Boolean = false
 
     override def updateType: UpdateType = NoUpdateType
 
     override def &:(updateType: UpdateType): UpdateType = updateType
 
-    override def value: Nothing = {
-        throw new IllegalStateException("a NoUpdate contains no value")
-    }
+    override def value: Nothing = throw DomainException("a NoUpdate contains no value")
 
     override def updateValue[NewV](newValue: NewV): Nothing = {
-        throw new IllegalStateException("updating the value of a NoUpdate is not supported")
+        throw DomainException("cannot update the value of a NoUpdate")
     }
 }

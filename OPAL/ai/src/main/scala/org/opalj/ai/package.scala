@@ -195,7 +195,33 @@ package object ai {
     final val ConstantValueOrigin /*: ValueOrigin*/ = -257
 
     /**
-     * Special value that is added to the ''work list''/''list of evaluated instructions''
+     * Calculates the initial `ValueOrigin` associated with a method's explicit parameter.
+     * The index of the first parameter is 0. If the method is not static the this reference
+     * stored in local variable `0` has the origin `-1`.
+     *
+     * @param   isStatic `true` if method is static and, hence, has no implicit
+     *          parameter for `this`.
+     * @see     [[mapOperandsToParameters]]
+     */
+    def parameterIndexToValueOrigin(
+        isStatic:       Boolean,
+        descriptor:     MethodDescriptor,
+        parameterIndex: Int
+    ): ValueOrigin = {
+        assert(descriptor.parametersCount > 0)
+
+        var origin = if (isStatic) -1 else -2 // this handles the case parameterIndex == 0
+        val parameterTypes = descriptor.parameterTypes
+        var currentIndex = 0
+        while (currentIndex < parameterIndex) {
+            origin -= parameterTypes(currentIndex).computationalType.operandSize
+            currentIndex += 1
+        }
+        origin
+    }
+
+    /**
+     * Special value ("pc") that is added to the ''work list''/''list of evaluated instructions''
      * before the '''program counter of the first instruction''' of a subroutine.
      *
      * The marker [[SUBROUTINE]] is used to mark the place in the worklist where we
@@ -205,7 +231,7 @@ package object ai {
     final val SUBROUTINE_START = -80000008
 
     /**
-     * Special value that is added to the list of `evaluated instructions`
+     * Special value ("pc") that is added to the list of `evaluated instructions`
      * to mark the end of the evaluation of a subroutine.
      */
     final val SUBROUTINE_END = -88888888
@@ -244,49 +270,18 @@ package object ai {
         operandsArray: domain.OperandsArray,
         localsArray:   domain.LocalsArray
     ): String = {
-        (
+        val operandsAndLocals =
             for {
                 ((operands, locals), pc) ← operandsArray.zip(localsArray).zipWithIndex
                 if operands != null /*|| locals != null*/
             } yield {
                 val localsWithIndex =
-                    for {
-                        (local, index) ← locals.zipWithIndex
-                        if local ne null
-                    } yield {
-                        "("+index+":"+local+")"
-                    }
+                    for { (l, idx) ← locals.zipWithIndex if l ne null } yield { s"($idx:$l)" }
 
-                "PC: "+pc + operands.mkString("\n\tOperands: ", " <- ", "") +
+                operands.mkString(s"PC: $pc\n\tOperands: ", " <- ", "") +
                     localsWithIndex.mkString("\n\tLocals: [", ",", "]")
             }
-        ).mkString("Operands and Locals: \n", "\n", "\n")
-    }
-
-    /**
-     * Calculates the initial `ValueOrigin` associated with a method's explicit parameter.
-     * The index of the first parameter is 0. If the method is not static the this reference
-     * stored in local variable `0` has the origin `-1`.
-     *
-     * @param   isStatic `true` if method is static and, hence, has no implicit
-     *          parameter for `this`.
-     * @see     [[mapOperandsToParameters]]
-     */
-    def parameterIndexToValueOrigin(
-        isStatic:       Boolean,
-        descriptor:     MethodDescriptor,
-        parameterIndex: Int
-    ): ValueOrigin = {
-        assert(descriptor.parametersCount > 0)
-
-        var origin = if (isStatic) -1 else -2 // this handles the case parameterIndex == 0
-        val parameterTypes = descriptor.parameterTypes
-        var currentIndex = 0
-        while (currentIndex < parameterIndex) {
-            origin -= parameterTypes(currentIndex).computationalType.operandSize
-            currentIndex += 1
-        }
-        origin
+        operandsAndLocals.mkString("Operands and Locals:\n", "\n", "\n")
     }
 
     /**
@@ -314,8 +309,8 @@ package object ai {
      * @param targetDomain The [[Domain]] that will be use to perform the abstract
      *      interpretation.
      */
-    def mapOperandsToParameters[D <: ValuesDomain](
-        operands:     Operands[D#DomainValue],
+    def mapOperandsToParameters(
+        operands:     Operands[_ <: ValuesDomain#DomainValue],
         calledMethod: Method,
         targetDomain: ValuesDomain with ValuesFactory
     ): Locals[targetDomain.DomainValue] = {
@@ -362,7 +357,7 @@ package object ai {
 
     /**
      * Maps the operands to the target domain while ensuring that two operands that
-     * are identical are identical afterwards.
+     * are identical before are identical afterwards.
      */
     def mapOperands(
         theOperands:  Operands[_ <: ValuesDomain#DomainValue],

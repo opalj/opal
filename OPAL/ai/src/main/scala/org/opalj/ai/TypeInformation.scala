@@ -245,7 +245,6 @@ trait IsAReferenceValue {
      *
      * @return This default implementation always returns `Unknown`.
      */
-    @throws[DomainException]("If this value is null (isNull.yes == true).")
     def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
     /**

@@ -1418,7 +1418,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             }
 
                         case exceptionType ⇒
-                            throw new AIException(s"exception has unexpected type: $exceptionType")
+                            throw DomainException(s"unexpected exception type: $exceptionType")
                     }
                 }
 

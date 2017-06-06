@@ -1231,7 +1231,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             var answer: Answer = values.next.isValueSubtypeOf(supertype)
             values foreach { value ⇒ /* the first value is already removed */
                 if (answer eq Unknown)
-                    return answer //isSubtype;
+                    return answer; //isSubtype
 
                 answer = answer join value.isValueSubtypeOf(supertype)
             }
@@ -1690,21 +1690,17 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             assert(upperTypeBound.isSingletonSet, "no array type: "+this.upperTypeBound)
             assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is no array type")
 
-            if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
+            if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
                 if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
                     thrownExceptions = VMNullPointerException(pc) :: thrownExceptions
                 if (throwArrayIndexOutOfBoundsException)
                     thrownExceptions = VMArrayIndexOutOfBoundsException(pc) :: thrownExceptions
 
-                ComputedValueOrException(
-                    TypedValue(pc, upperTypeBound.head.asArrayType.componentType),
-                    thrownExceptions
-                )
+                val value = TypedValue(pc, upperTypeBound.head.asArrayType.componentType)
+                ComputedValueOrException(value, thrownExceptions)
             } else {
-                (values map (_.load(pc, index))) reduce {
-                    (c1, c2) ⇒ mergeDEsComputations(pc, c1, c2)
-                }
+                values.map(_.load(pc, index)).reduce((c1, c2) ⇒ mergeDEsComputations(pc, c1, c2))
             }
         }
 
@@ -1715,7 +1711,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             assert(upperTypeBound.isSingletonSet)
             assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is no array type")
 
-            if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
+            if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
                 if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
                     thrownExceptions = VMNullPointerException(pc) :: thrownExceptions
@@ -1739,7 +1735,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             assert(upperTypeBound.isSingletonSet)
             assert(upperTypeBound.head.isArrayType, s"$upperTypeBound (values=$values)")
 
-            if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
+            if (values.exists(_.isInstanceOf[ObjectValue])) {
                 if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
                     ComputedValueOrException(IntegerValue(pc), VMNullPointerException(pc))
                 else
@@ -1765,7 +1761,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def toString() = {
-            var s =
+            val s =
                 if (isNull.isYes) {
                     "null"
                 } else {
@@ -1774,8 +1770,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     if (isNull.isUnknown) ss = s"{$ss, null}"
                     ss
                 }
-            s = s + values.mkString(s"[t=$t; values=«", ", ", "»]")
-            s
+            values.mkString(s"$s[t=$t; values=«", ", ", "»]")
         }
     }
 
@@ -1935,10 +1930,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         t:                 Timestamp
     ): DomainSingleOriginReferenceValue = {
         theUpperTypeBound match {
-            case ot: ObjectType ⇒
-                ObjectValue(origin, isNull, isPrecise, ot, t)
-            case at: ArrayType ⇒
-                ArrayValue(origin, isNull, isPrecise, at, t)
+            case ot: ObjectType ⇒ ObjectValue(origin, isNull, isPrecise, ot, t)
+            case at: ArrayType  ⇒ ArrayValue(origin, isNull, isPrecise, at, t)
         }
     }
 

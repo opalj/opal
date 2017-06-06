@@ -41,7 +41,7 @@ import org.opalj.util.Milliseconds
  *
  * @param maxEvaluationCount See [[InstructionCountBoundedAI.maxEvaluationCount]].
  *
- * @param maxEvaluationTimeInNS The maximum number of nanoseconds the abstract interpreter
+ * @param maxEvaluationTime The maximum number of nanoseconds the abstract interpreter
  *      is allowed to run. It starts with the evaluation of the first instruction.
  *
  * @param doInterrupt This function is called by the abstract interpreter to check if
