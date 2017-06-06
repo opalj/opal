@@ -31,18 +31,17 @@ package ai
 package domain
 
 import scala.collection.JavaConverters._
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.instructions.CHECKCAST
 
 /**
  * Tests if we are able to collect def/use information for all methods of the JDK and OPAL and if
@@ -75,7 +74,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
         with RecordDefUse // <=== we are going to test!
 
     def analyzeProject(name: String, project: Project[java.net.URL]): Unit = {
-        info(s"the loaded project ($name) contains ${project.methodsCount} methods")
+        info(s"$name contains ${project.methodsCount} methods")
 
         val comparisonCount = new java.util.concurrent.atomic.AtomicLong(0)
         val failures = new java.util.concurrent.ConcurrentLinkedQueue[(String, Throwable)]
@@ -89,11 +88,12 @@ class RecordDefUseTest extends FunSpec with Matchers {
             try {
                 val domain = new DefUseDomain(method, project)
                 val body = method.body.get
+                val ehs = body.exceptionHandlers
                 val r = BaseAI(classFile, method, domain)
                 val evaluatedInstructions = r.evaluatedInstructions
-                val dt = DominatorsPerformanceEvaluation.time('Dominators) {
-                    domain.dominatorTree
-                }
+
+                val dt = DominatorsPerformanceEvaluation.time('Dominators) { domain.dominatorTree }
+
                 evaluatedInstructions foreach { pc ⇒
                     if (pc != 0) dt.dom(pc) should be < domain.code.instructions.length
                 }
@@ -102,11 +102,11 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     val (ops, pc) = opsPC
                     if ((ops ne null) &&
                         // Note:
-                        // In case of handlers, the def/use information
+                        // In case of handlers and checkcast, the def/use information
                         // is slightly different when compared with the
                         // information recorded by the reference values domain.
-                        !body.exceptionHandlers.exists(_.handlerPC == pc)) {
-                        ops.zipWithIndex.foreach { opValueIndex ⇒
+                        ehs.forall(_.handlerPC != pc)) {
+                        ops.toIterator.zipWithIndex.foreach { opValueIndex ⇒
 
                             val (op, valueIndex) = opValueIndex
                             val domainOrigins = domain.origin(op).toSet
@@ -117,22 +117,24 @@ class RecordDefUseTest extends FunSpec with Matchers {
                                 } catch {
                                     case t: Throwable ⇒
                                         fail(
-                                            "no def/use information avaiable for "+
-                                                s"pc=$pc and stack index=$valueIndex",
+                                            s"no def/use info: pc=$pc / stack index=$valueIndex",
                                             t
                                         )
                                 }
+                            def isCheckcast(pc : PC) : Boolean =  {
+                                pc >= 0 && body.instructions(pc).opcode == CHECKCAST.opcode
+                            }
                             def haveSameOrigins: Boolean = {
                                 domainOrigins forall { o ⇒
                                     defUseOrigins.contains(o) ||
-                                        defUseOrigins.exists(duo ⇒
-                                            body.exceptionHandlers.exists(_.handlerPC == duo))
+                                        defUseOrigins.exists(duo ⇒ehs.exists(_.handlerPC == duo)) ||
+                                        defUseOrigins.exists(isCheckcast)
                                 }
                             }
+
                             if (!haveSameOrigins) {
                                 val message =
-                                    s"{pc=$pc: "+
-                                        s"operands[$valueIndex] == domain: "+
+                                    s"{pc=$pc: operands[$valueIndex] == domain: "+
                                         s"$domainOrigins vs defUse: $defUseOrigins}"
                                 fail(message)
                             }
@@ -140,11 +142,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                         }
                     }
                 }
-            } catch {
-                case t: Throwable ⇒
-                    val methodName = method.toJava(classFile)
-                    failures.add((methodName, t))
-            }
+            } catch { case t: Throwable ⇒ failures.add((method.toJava(classFile), t))            }
             // DEBUG[If the analysis does not terminate]
             // println("analysis of : "+methodName+"- finished")
         }
@@ -156,8 +154,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 var root: Throwable = exception
                 while (root.getCause != null) root = root.getCause
                 val location =
-                    if (root.getStackTrace() != null && root.getStackTrace().length > 0) {
-                        root.getStackTrace().take(5).map { stackTraceElement ⇒
+                    if (root.getStackTrace != null && root.getStackTrace.length > 0) {
+                        root.getStackTrace.take(5).map { stackTraceElement ⇒
                             stackTraceElement.getClassName+" { "+
                                 stackTraceElement.getMethodName+":"+stackTraceElement.getLineNumber+
                                 " }"
@@ -168,47 +166,37 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 s"$failure[${root.getClass.getSimpleName}: ${root.getMessage}; location: $location]"
             }
 
-            fail(failures.size + s" exceptions occured ($baseMessage) in: "+
-                failureMessages.mkString("\n", "\n", "\n"))
-        } else
+            val errorMessageHeader = s"${failures.size} exceptions occured ($baseMessage) in:\n"
+            fail(                failureMessages.mkString(errorMessageHeader , "\n", "\n"))
+        } else {
             info(baseMessage)
+        }
     }
 
-    describe("getting def/use information") {
+    describe("computing the def/use information") {
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
-        import reader.AllClassFiles
 
-        it("should be possible to calculate the def/use information for all methods of the JDK") {
+        it("should be possible for all methods of the JDK") {
             DominatorsPerformanceEvaluation.resetAll()
             val project = org.opalj.br.TestSupport.createJREProject
-            time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
-            info("computing dominator information took (CPU time) "+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
-        }
-
-        it("should be possible to calculate the def/use information for all methods of the OPAL 0.3 snapshot") {
-            DominatorsPerformanceEvaluation.resetAll()
-            val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-            val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
-            time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
-            info("computing dominator information took (CPU time)"+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
-        }
-
-        it("should be possible to calculate the def/use information for all methods of the OPAL-08-14-2014 snapshot") {
-            DominatorsPerformanceEvaluation.resetAll()
-            val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
-            val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
-                def accept(dir: java.io.File, name: String) =
-                    name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")
-            })
-            info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
-            opalJARs.size should not be (0)
-            val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
-
             time {
-                analyzeProject("OPAL-08-14-2014 snapshot", project)
-            } { t ⇒ info("the analysis took (real time) "+t.toSeconds) }
-            info("computing dominator information took (CPU time)"+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
+                analyzeProject("JDK", project)
+            } { t ⇒ info("the analysis took (real time): "+t.toSeconds) }
+            val effort = DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds
+            info(s"computing dominator information took (CPU time): $effort")
         }
 
+        br.TestSupport.allBIProjects(reader,None) foreach { biProject ⇒
+            val (projectName, projectFactory) = biProject
+            it(s"should be possible for all methods of $projectName") {
+                DominatorsPerformanceEvaluation.resetAll()
+                val project = projectFactory()
+                time {
+                    analyzeProject(projectName, project)
+                } { t ⇒ info("the analysis took (real time): "+t.toSeconds) }
+                val effort = DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds
+                info(s"computing dominator information took (CPU time): $effort")
+            }
+        }
     }
 }
