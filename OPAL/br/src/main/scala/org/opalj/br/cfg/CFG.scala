@@ -412,7 +412,7 @@ case class CFG(
 
         bbMapping.keySet().asScala.foreach { oldBB ⇒
             val newBB = bbMapping.get(oldBB)
-            oldBB.successors.foreach { oldSuccBB ⇒
+            oldBB.successors foreach { oldSuccBB ⇒
                 val newSuccBB = bbMapping.get(oldSuccBB)
                 assert(newSuccBB ne null, s"no mapping for $oldSuccBB")
                 newBB.addSuccessor(newSuccBB)
