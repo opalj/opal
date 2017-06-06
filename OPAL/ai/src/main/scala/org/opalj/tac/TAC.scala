@@ -96,17 +96,21 @@ object TAC {
             if (use == "-ai" || use == "-both") { // USING AI
                 val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
                 val aiResult = BaseAI(classFile, method, domain)
+
                 val aiCFGFile = writeAndOpen(
                     toDot(Set(aiResult.domain.cfgAsGraph())),
-                    "AICFG-"+method.name, ".ai.cfg.gv"
+                    "AI-CFG-"+method.name, ".gv"
                 )
-                println(s"Generated ai CFG (input) $aiCFGFile.")
-                val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
-                println(s"Generated the reified ai CFG $aiBRCFGFile.")
+                println(s"Generated ai CFG (input): $aiCFGFile")
+
+                val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, "AI-BR-CFG-"+method.name, ".gv")
+                println(s"Generated the reified ai CFG: $aiBRCFGFile")
+
                 val (code, cfg) = TACAI(method, project.classHierarchy, aiResult)(List.empty)
                 val graph = tacToDot(code, cfg)
-                val tacCFGFile = writeAndOpen(graph, "TACCFG-"+method.name, ".tac.cfg.gv")
+                val tacCFGFile = writeAndOpen(graph, "TACAI-CFG-"+method.name, ".gv")
                 println(s"Generated the tac cfg file $tacCFGFile.")
+
                 val tac = ToTxt(code)
                 val fileNamePrefix = classFile.thisType.toJava+"."+method.name
                 val file = writeAndOpen(tac, fileNamePrefix, ".ai.tac.txt")
