@@ -57,11 +57,9 @@ class LoadClassFilesInParallelTest extends FlatSpec with Matchers {
         path = file.getPath
     } {
         it should (s"it should be able to reify all class files in $path") in {
-            Java8Framework.ClassFiles(file) foreach { cs ⇒
-                val (cf, s) = cs
-                commonValidator(cf, s)
-            }
+            Java8Framework.ClassFiles(file) foreach { e ⇒ val (cf, s) = e; commonValidator(cf, s) }
         }
+
         it should (s"it should be able to reify only the signatures of all methods in $path") in {
             Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs

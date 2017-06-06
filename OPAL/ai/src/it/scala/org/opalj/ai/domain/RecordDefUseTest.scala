@@ -121,13 +121,13 @@ class RecordDefUseTest extends FunSpec with Matchers {
                                             t
                                         )
                                 }
-                            def isCheckcast(pc : PC) : Boolean =  {
+                            def isCheckcast(pc: PC): Boolean = {
                                 pc >= 0 && body.instructions(pc).opcode == CHECKCAST.opcode
                             }
                             def haveSameOrigins: Boolean = {
                                 domainOrigins forall { o ⇒
                                     defUseOrigins.contains(o) ||
-                                        defUseOrigins.exists(duo ⇒ehs.exists(_.handlerPC == duo)) ||
+                                        defUseOrigins.exists(duo ⇒ ehs.exists(_.handlerPC == duo)) ||
                                         defUseOrigins.exists(isCheckcast)
                                 }
                             }
@@ -142,7 +142,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                         }
                     }
                 }
-            } catch { case t: Throwable ⇒ failures.add((method.toJava(classFile), t))            }
+            } catch { case t: Throwable ⇒ failures.add((method.toJava(classFile), t)) }
             // DEBUG[If the analysis does not terminate]
             // println("analysis of : "+methodName+"- finished")
         }
@@ -167,7 +167,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
             }
 
             val errorMessageHeader = s"${failures.size} exceptions occured ($baseMessage) in:\n"
-            fail(                failureMessages.mkString(errorMessageHeader , "\n", "\n"))
+            fail(failureMessages.mkString(errorMessageHeader, "\n", "\n"))
         } else {
             info(baseMessage)
         }
@@ -186,7 +186,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
             info(s"computing dominator information took (CPU time): $effort")
         }
 
-        br.TestSupport.allBIProjects(reader,None) foreach { biProject ⇒
+        br.TestSupport.allBIProjects(reader, None) foreach { biProject ⇒
             val (projectName, projectFactory) = biProject
             it(s"should be possible for all methods of $projectName") {
                 DominatorsPerformanceEvaluation.resetAll()
