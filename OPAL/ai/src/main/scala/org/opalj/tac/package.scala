@@ -29,8 +29,6 @@
 package org.opalj
 
 import org.opalj.br.cfg.{BasicBlock, CFG}
-import org.opalj.br.cfg.CatchNode
-import org.opalj.br.cfg.CFG
 import org.opalj.graphs.Node
 
 /**
@@ -45,12 +43,10 @@ package object tac {
     }
 
     def tacToGraph[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): Iterable[Node] = {
-        cfg.toDot {
-            case cn: CatchNode ⇒ cn.toString
-            case bb: BasicBlock ⇒
-                val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1)
-                val txtStmts = bbStmts.map { stmt ⇒ ToTxt.toTxtStmt[V](stmt, false) }
-                txtStmts.mkString("", "\\l\\l", "\\l")
+        cfg.toDot { bb: BasicBlock ⇒
+            val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1)
+            val txtStmts = bbStmts.map { stmt ⇒ ToTxt.toTxtStmt[V](stmt, false) }
+            txtStmts.mkString("", "\\l\\l", "\\l")
         }
     }
 
