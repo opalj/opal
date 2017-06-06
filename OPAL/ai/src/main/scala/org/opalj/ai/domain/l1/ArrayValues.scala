@@ -446,8 +446,7 @@ trait ArrayValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainConcreteArrayValue(that) if this.t == that.t &&
-                    this.values.size == that.values.size ⇒
+                case DomainConcreteArrayValue(that) if this.t == that.t ⇒
                     var update: UpdateType = NoUpdateType
                     var isOther: Boolean = true
                     val allValues = this.values.view.zip(that.values)
