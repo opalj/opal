@@ -168,7 +168,7 @@ object ToTxt {
 
             case ExprStmt.ASTID ⇒
                 val ExprStmt(_, expr) = stmt
-                s"/*pc=$pc - expression value is ignored:*/${toTxtExpr(expr)}"
+                s"$pc expression value is ignored:*/${toTxtExpr(expr)}"
 
             case ArrayStore.ASTID ⇒
                 val ArrayStore(_, arrayRef, index, operandVar) = stmt
