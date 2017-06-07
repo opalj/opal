@@ -103,12 +103,9 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
      */
-    def intAreNotEqual(
-        pc:     PC,
-        value1: DomainValue,
-        value2: DomainValue
-    ): Answer =
+    def intAreNotEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
         intAreEqual(pc, value1, value2).negate
+    }
 
     /**
      * Tests if the first integer value is smaller than the second value.
@@ -165,24 +162,23 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *
      * @param value A value with computational type integer.
      */
-    def intIs0(pc: PC, value: DomainValue): Answer =
-        intAreEqual(pc, value, IntegerConstant0)
+    def intIs0(pc: PC, value: DomainValue): Answer = intAreEqual(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is not 0 or maybe not 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIsNot0(pc: PC, value: DomainValue): Answer =
-        intAreNotEqual(pc, value, IntegerConstant0)
+    def intIsNot0(pc: PC, value: DomainValue): Answer = intAreNotEqual(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is &lt; 0 or maybe &lt; 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIsLessThan0(pc: PC, value: DomainValue): Answer =
+    def intIsLessThan0(pc: PC, value: DomainValue): Answer = {
         intIsLessThan(pc, value, IntegerConstant0)
+    }
 
     /**
      * Tests if the given integer value is less than or equal to 0 or maybe
@@ -190,16 +186,18 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *
      * @param value A value with computational type integer.
      */
-    def intIsLessThanOrEqualTo0(pc: PC, value: DomainValue): Answer =
+    def intIsLessThanOrEqualTo0(pc: PC, value: DomainValue): Answer = {
         intIsLessThanOrEqualTo(pc, value, IntegerConstant0)
+    }
 
     /**
      * Tests if the given integer value is &gt; 0 or maybe &gt; 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIsGreaterThan0(pc: PC, value: DomainValue): Answer =
+    def intIsGreaterThan0(pc: PC, value: DomainValue): Answer = {
         intIsGreaterThan(pc, value, IntegerConstant0)
+    }
 
     /**
      * Tests if the given value is greater than or equal to 0 or maybe greater
@@ -207,8 +205,9 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *
      * @param value A value with computational type integer.
      */
-    def intIsGreaterThanOrEqualTo0(pc: PC, value: DomainValue): Answer =
+    def intIsGreaterThanOrEqualTo0(pc: PC, value: DomainValue): Answer = {
         intIsGreaterThanOrEqualTo(pc, value, IntegerConstant0)
+    }
 
     // -----------------------------------------------------------------------------------
     //

@@ -108,10 +108,7 @@ object InterpretMethod {
         }
         val doTrace = {
             if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-trace=")) {
-                val result = (
-                    remainingArgs.head == "-trace=true" ||
-                    remainingArgs.head == "-trace=1"
-                )
+                val result = remainingArgs.head == "-trace=true" || remainingArgs.head == "-trace=1"
                 remainingArgs = remainingArgs.tail
                 result
             } else
@@ -255,7 +252,6 @@ object InterpretMethod {
                     Some(method),
                     method.body.get,
                     Some(
-
                         s"Analyzed: ${new Date}<br>Domain: ${domainClass.getName}<br>"+
                             (
                                 if (doIdentifyDeadVariables)
@@ -265,13 +261,13 @@ object InterpretMethod {
                             ) +
                                 XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
                                 (
-                                    if (result.subroutineInstructions.nonEmpty)
+                                    if (result.subroutineInstructions.nonEmpty) {
                                         XHTML.instructionsToXHTML(
-                                        "Subroutine instructions",
-                                        result.subroutineInstructions.iterable
-                                    )
-                                    else
+                                            "Subroutine instructions", result.subroutineInstructions
+                                        )
+                                    } else {
                                         ""
+                                    }
                                 ) + XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain

@@ -63,7 +63,7 @@ object Disassembler {
 
     def processClassFile(classFile: ClassFile): Unit = {
         try {
-            val prefix = classFile.thisType.replace('.', '/')
+            val prefix = classFile.thisType.replace('/', '.')
             val file = writeAndOpen(classFile.toXHTML().toString, prefix, ".html")
             OPALLogger.info("progress", s"generated the HTML documentation $file")
         } catch {

@@ -128,15 +128,15 @@ package object br {
     type PC = UShort
 
     /**
-     * A collection of program counters using a UShortSet as its backing collection.
+     * A collection of program counters using an IntSet as its backing collection.
      *
      * Using PCs is in particular well suited for small(er) collections.
      *
      * @note This type alias serves comprehension purposes.
      */
-    type PCs = org.opalj.collection.UShortSet
+    type PCs = org.opalj.collection.immutable.IntSet
 
-    final def NoPCs = org.opalj.collection.UShortSet.empty
+    final def NoPCs = org.opalj.collection.immutable.EmptyIntSet
 
     /**
      * Converts a given list of annotations into a Java-like representation.

@@ -64,9 +64,7 @@ case class TypeAnnotation(
 
         // main tag
         <div class="type_annotation">
-            <b>Target</b>
             { target_type.toXHTML }<br/>
-            <b>Path</b>
             { target_path.toXHTML }<br/>
             <b>Annotation Type</b>
             { at }<br/>

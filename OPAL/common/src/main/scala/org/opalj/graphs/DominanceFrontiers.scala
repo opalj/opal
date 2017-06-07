@@ -29,33 +29,31 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.SmallValuesSet
-import org.opalj.collection.immutable
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.mutable
+import org.opalj.collection.immutable.IntSet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * @author Michael Eichberg
  */
-final class DominanceFrontiers private (private final val dfs: Array[SmallValuesSet]) {
+final class DominanceFrontiers private (private final val dfs: Array[IntSet]) {
 
-    final def apply(n: Int): SmallValuesSet = df(n)
+    final def apply(n: Int): IntSet = df(n)
 
     final def maxNode: Int = dfs.length - 1
 
     /**
      * Returns the nodes in the dominance frontier of the given node.
      */
-    final def df(n: Int): SmallValuesSet = {
+    final def df(n: Int): IntSet = {
         val df = dfs(n)
         if (df eq null)
-            immutable.EmptySmallValuesSet
+            IntSet.empty
         else
             df
     }
 
-    def dominanceFrontiers: IndexedSeq[SmallValuesSet] = dfs
+    def dominanceFrontiers: IndexedSeq[IntSet] = dfs
 
     //
     //
@@ -165,14 +163,14 @@ object DominanceFrontiers {
         //        val nodesWithChildren = children.filter(_ ne null).map(_.size)
         //      println((nodesWithChildren.sum.toDouble / nodesWithChildren.size)+"(max="+nodesWithChildren.max+";elems="+nodesWithChildren.size+")")
 
-        val dfs /* dominanceFrontiers */ = new Array[SmallValuesSet](max)
+        val dfs /* dominanceFrontiers */ = new Array[IntSet](max)
 
         // Textbook/Paper based implementation (using recursion):
         //
         //        def computeDF(n: Int): Unit = {
         //            var s = mutable.SmallValuesSet.empty(max)
         //            foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = y +≈: s }
-        //            
+        //
         //            val nChildren = children(n)
         //            if (nChildren ne null) {
         //                children(n).foreach { c ⇒
@@ -185,9 +183,9 @@ object DominanceFrontiers {
         //
         //        computeDF(startNode)
 
-        @inline def dfLocal(n: Int): mutable.SmallValuesSet = {
-            var s = mutable.SmallValuesSet.empty(max)
-            foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = y +≈: s }
+        @inline def dfLocal(n: Int): IntSet = {
+            var s = IntSet.empty
+            foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
             s
         }
 
@@ -208,7 +206,7 @@ object DominanceFrontiers {
                 nChildren.foreach { nodes :&:= _ }
                 // nodes.push(nChildren)
             } else {
-                // we immediately compute the dfs_local information 
+                // we immediately compute the dfs_local information
                 dfs(n) = dfLocal(n)
             }
         }
@@ -219,7 +217,7 @@ object DominanceFrontiers {
             val s = children(n).foldLeft(dfLocal(n)) { (s, c) ⇒
                 dfs(c).foldLeft(s) { (s, w) ⇒
                     if (!dt.strictlyDominates(n, w)) {
-                        w +≈: s
+                        s + w
                     } else
                         s
                 }

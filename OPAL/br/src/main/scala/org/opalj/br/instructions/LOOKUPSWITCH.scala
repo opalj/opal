@@ -30,8 +30,9 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntSet1
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.mutable.UShortSet
 
 /**
  * Access jump table by key match and jump.
@@ -95,12 +96,12 @@ case class LOOKUPSWITCH(
     ): Chain[PC] = {
         val defaultTarget = currentPC + defaultOffset
         var pcs = Chain.singleton(defaultTarget)
-        var seen = UShortSet(defaultTarget)
+        var seen: IntSet = new IntSet1(defaultTarget)
         npairs foreach { npair ⇒
             val (_, offset) = npair
             val nextTarget = (currentPC + offset)
             if (!seen.contains(nextTarget)) {
-                seen = nextTarget +≈: seen
+                seen += nextTarget
                 pcs :&:= nextTarget
             }
         }

@@ -37,7 +37,7 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.io.IOException
-import java.util.zip.{ZipFile, ZipEntry}
+import java.util.zip.{ZipEntry, ZipFile}
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
@@ -229,7 +229,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * }
      * </pre>
      *
-     * @param in    The `DataInputStream from which the class file will be read. The
+     * @param in    The `DataInputStream` from which the class file will be read. The
      *              stream is not closed by this method.
      *              '''It is highly recommended that the stream is buffered; otherwise the
      *              performance will be terrible!'''
@@ -294,22 +294,29 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     /**
      * Reads in a class file.
      *
-     * @param create A function that creates a new `InputStream` and
-     *  which must not return `null`. If you already do have an open input stream
-     *  which should not be closed after reading the class file use
-     *  `...ClassFileReader.ClassFile(java.io.DataInputStream) : ClassFile` instead.
-     *  The (newly created) `InputStream` returned by calling `create` is closed by
-     *  this method.
-     *  The created input stream will automatically be wrapped by OPAL to enable
-     *  efficient reading of the class file.
+     * @param   create A function that creates a new `InputStream` and
+     *          which must not return `null`. If you already do have an open input stream
+     *          which should not be closed after reading the class file use
+     *          `...ClassFileReader.ClassFile(java.io.DataInputStream) : ClassFile` instead.
+     *          The (newly created) `InputStream` returned by calling `create` is closed by
+     *          this method.
+     *          The created input stream will automatically be wrapped by OPAL to enable
+     *          efficient reading of the class file.
      */
     def ClassFile(create: () ⇒ InputStream): List[ClassFile] = {
-        process(create() match {
-            case dis: DataInputStream      ⇒ dis
-            case bis: BufferedInputStream  ⇒ new DataInputStream(bis)
-            case bas: ByteArrayInputStream ⇒ new DataInputStream(bas)
-            case is                        ⇒ new DataInputStream(new BufferedInputStream(is))
-        }) { in ⇒ ClassFile(in) }
+        process(create()) {
+            case null                      ⇒ throw new IllegalArgumentException("the created stream is null")
+            case dis: DataInputStream      ⇒ ClassFile(dis)
+            case bis: BufferedInputStream  ⇒ ClassFile(new DataInputStream(bis))
+            case bas: ByteArrayInputStream ⇒ ClassFile(new DataInputStream(bas))
+            case is ⇒
+                ClassFile(new DataInputStream(new BufferedInputStream(is)))
+        }
+    }
+
+    def isClassFileRepository(filename: String): Boolean = {
+        filename.endsWith(".jar") || filename.endsWith(".zip") ||
+            filename.endsWith(".war") || filename.endsWith(".ear")
     }
 
     protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): List[ClassFile] = {
@@ -327,28 +334,23 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
     def ClassFile(jarFile: File, jarFileEntryName: String): List[ClassFile] = {
         if (jarFile.length() == 0)
-            throw new IOException("the file "+jarFile+" is empty");
+            throw new IOException(s"the file $jarFile is empty");
 
         process(new ZipFile(jarFile)) { zf ⇒
             val jarEntry = zf.getEntry(jarFileEntryName)
             if (jarEntry == null) {
                 var names: List[(Int, String)] = Nil
                 val zfEntries = zf.entries()
-                while (zfEntries.hasMoreElements()) {
+                while (zfEntries.hasMoreElements) {
                     val zfEntry = zfEntries.nextElement()
                     val zfEntryName = zfEntry.getName
                     val distance = getLevenshteinDistance(zfEntryName, jarFileEntryName)
                     names = (distance, zfEntryName) :: names
                 }
-                val mostRelatedNames = names.sortWith((l, r) ⇒ l._1 < r._1).map(_._2)
+                val mostRelatedNames = names.sortWith((l, r) ⇒ l._1 < r._1).map(_._2).take(15)
                 val ending = if (mostRelatedNames.length > 15) ", ...)" else ")"
-
-                val message =
-                    mostRelatedNames.take(15).mkString(
-                        s"the file $jarFile does not contain $jarFileEntryName (similar: ",
-                        ", ",
-                        ending
-                    )
+                val messageHeader = s"the file $jarFile does not contain $jarFileEntryName"
+                val message = mostRelatedNames.mkString(s"$messageHeader (similar: ", ", ", ending)
                 throw new IOException(message)
             }
             ClassFile(zf, jarEntry)
@@ -362,8 +364,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
-    def ClassFile(jarFilename: String, jarFileEntryName: String): List[ClassFile] = {
-        ClassFile(new File(jarFilename), jarFileEntryName)
+    def ClassFile(jarFileName: String, jarFileEntryName: String): List[ClassFile] = {
+        ClassFile(new File(jarFileName), jarFileEntryName)
     }
 
     /**
@@ -406,8 +408,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         classFileHandler: (ClassFile, URL) ⇒ Unit,
         exceptionHandler: ExceptionHandler
     ): Unit = {
-        val jarFileURL = new File(jarFile.getName()).toURI().toURL().toExternalForm()
-        val jarFileName = "jar:"+jarFileURL+"!/"
+        val jarFileURL = new File(jarFile.getName).toURI.toURL.toExternalForm
+        val jarFileName = s"jar:$jarFileURL!/"
         ClassFiles(jarFileName, jarFile, classFileHandler, exceptionHandler)
     }
 
@@ -422,43 +424,46 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         // First let's collect all inner Jar Entries, then do the processing.
         // Otherwise - if the OPALExecutionContextTaskSupport uses a fixed
-        // sized thread pool - we may run out of threads... to process anything
+        // sized thread pool - we may run out of threads... to process anything.
         val innerJarEntries = new ConcurrentLinkedQueue[ZipEntry]
 
         val jarEntries = jarFile.entries.toArray
         val nextEntryIndex = new AtomicInteger(jarEntries.length - 1)
         val parallelismLevel = NumberOfThreadsForIOBoundTasks
         val futures: Array[Future[Unit]] = new Array(parallelismLevel)
-        val futureIndexes = (0 until parallelismLevel)
-        futureIndexes.foreach { fi ⇒
-            futures(fi) = Future[Unit] {
+        var futureIndex = 0
+        while (futureIndex < parallelismLevel) {
+            futures(futureIndex) = Future[Unit] {
                 var index = -1
                 while ({ index = nextEntryIndex.getAndDecrement; index } >= 0) {
                     val jarEntry = jarEntries(index)
-                    if (!jarEntry.isDirectory && jarEntry.getSize() > 0) {
+                    if (!jarEntry.isDirectory && jarEntry.getSize > 0) {
                         val jarEntryName = jarEntry.getName
                         if (jarEntryName.endsWith(".class")) {
                             try {
-                                val url = new URL(jarFileURL + jarEntry.getName())
+                                val url = new URL(jarFileURL + jarEntry.getName)
                                 val classFiles = ClassFile(jarFile, jarEntry)
                                 classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
                             } catch {
                                 case ct: ControlThrowable ⇒ throw ct
                                 case t: Throwable         ⇒ exceptionHandler(jarEntryName, t)
                             }
-                        } else if (jarEntryName.endsWith(".jar")) {
+                        } else if (isClassFileRepository(jarEntryName)) {
                             innerJarEntries.add(jarEntry)
                         }
                     }
                 }
             }(org.opalj.concurrent.OPALExecutionContext)
+            futureIndex += 1
         }
-        futureIndexes.foreach { fi ⇒ Await.ready(futures(fi), Duration.Inf) }
+        while ({ futureIndex -= 1; futureIndex } >= 0) {
+            Await.ready(futures(futureIndex), Duration.Inf)
+        }
 
         for (jarEntry ← innerJarEntries.iterator()) {
-            val nextJarFileURL = jarFileURL+"jar:"+jarEntry.getName()+"!/"
+            val nextJarFileURL = s"${jarFileURL}jar:${jarEntry.getName}!/"
             try {
-                val jarData = new Array[Byte](jarEntry.getSize().toInt)
+                val jarData = new Array[Byte](jarEntry.getSize.toInt)
                 val din = new DataInputStream(jarFile.getInputStream(jarEntry))
                 din.readFully(jarData)
                 din.close()
@@ -500,12 +505,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     /**
      * Loads class files from the given file location. If the file denotes
      * a single ".class" file this class file is loaded. If the file
-     * object denotes a ".jar" file, all class files in the jar file will be loaded.
+     * object denotes a ".jar|.war|.ear|.zip" file, all class files in the jar file will be loaded.
      * If the file object specifies a directory object, all ".class" files
      * in the directory and in all subdirectories are loaded as well as all
      * class files stored in ".jar" files in one of the directories. This class loads
      * all class files in parallel. However, this does not effect analyses working on the
-     * resulting `Seq`.
+     * resulting `List`.
      */
     def ClassFiles(
         file:             File,
@@ -524,31 +529,25 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         def processClassFile(file: File): List[(ClassFile, URL)] = {
             try {
-                process(new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) { in ⇒
-                    ClassFile(in).map(classFile ⇒ (classFile, file.toURI().toURL()))
-                }
+                process(
+                    new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
+                ) { in ⇒ ClassFile(in).map(classFile ⇒ (classFile, file.toURI.toURL)) }
             } catch {
                 case e: Exception ⇒
-                    exceptionHandler(file, new IOException("cannot process "+file, e))
+                    exceptionHandler(file, new IOException(s"cannot process $file", e))
                     Nil
             }
         }
 
-        def isClassFileRepository(filename: String): Boolean = {
-            filename.endsWith(".jar") || filename.endsWith(".war") || filename.endsWith(".ear") ||
-                filename.endsWith(".zip")
-
-        }
-
         if (!file.exists()) {
             Nil
-        } else if (file.isFile()) {
+        } else if (file.isFile) {
             val filename = file.getName
             if (file.length() == 0) Nil
             else if (isClassFileRepository(filename)) processJar(file)
             else if (filename.endsWith(".class")) processClassFile(file)
             else Nil
-        } else if (file.isDirectory()) {
+        } else if (file.isDirectory) {
             var jarFiles = List.empty[File]
             var classFiles = List.empty[File]
             def collectFiles(files: Array[File]): Unit = {
@@ -557,11 +556,11 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
                 files.foreach { file ⇒
                     val filename = file.getName
-                    if (file.isFile()) {
+                    if (file.isFile) {
                         if (file.length() == 0) Nil
                         else if (isClassFileRepository(filename)) jarFiles ::= file
                         else if (filename.endsWith(".class")) classFiles ::= file
-                    } else if (file.isDirectory()) {
+                    } else if (file.isDirectory) {
                         collectFiles(file.listFiles())
                     } else {
                         throw new IOException(s"$file is neither a file nor a directory")
@@ -601,8 +600,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         files:            Traversable[File],
         exceptionHandler: ExceptionHandler  = defaultExceptionHandler
     ): Traversable[(ClassFile, URL)] = {
-
-        files.map(file ⇒ ClassFiles(file, exceptionHandler)).flatten
+        files.flatMap(file ⇒ ClassFiles(file, exceptionHandler))
     }
 }
 /**
@@ -615,11 +613,7 @@ object ClassFileReader {
     type ExceptionHandler = (AnyRef, Throwable) ⇒ Unit
 
     final val defaultExceptionHandler: ExceptionHandler = (source, t) ⇒ {
-        OPALLogger.error(
-            "reading class files",
-            s"processing $source failed",
-            t
-        )(GlobalLogContext)
+        OPALLogger.error("reading class files", s"processing $source failed", t)(GlobalLogContext)
     }
 
 }

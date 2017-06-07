@@ -37,9 +37,9 @@ import org.opalj.br.instructions.InstructionLike
  * Wrapper for elements that will generate the instructions and attributes of a
  * [[org.opalj.br.Code]] and the annotations of the bytecode.
  *
- * @see [[InstructionElement]]
- * @see [[AnnotatedInstructionElement]]
- * @see [[PseudoInstruction]]
+ * @see [[org.opalj.ba.InstructionElement]]
+ * @see [[org.opalj.ba.AnnotatedInstructionElement]]
+ * @see [[org.opalj.ba.PseudoInstruction]]
  * @tparam T The type of the annotations of instructions.
  *
  * @author Malte Limmeroth
@@ -52,7 +52,8 @@ trait CodeElement[+T]
 object CodeElement {
 
     /**
-     * Converts [[org.opalj.br.instructions.InstructionLike]]s to [[InstructionElement]].
+     * Converts [[org.opalj.br.instructions.InstructionLike]]s to
+     * [org.opalj.ba.[InstructionElement]].
      */
     implicit def instructionToInstructionElement(
         instruction: InstructionLike
@@ -62,7 +63,7 @@ object CodeElement {
 
     /**
      * Converts a tuple of [[org.opalj.br.instructions.InstructionLike]] and `scala.AnyRef`
-     * (an annotated instruction) to [[AnnotatedInstructionElement]].
+     * (an annotated instruction) to [[org.opalj.ba.AnnotatedInstructionElement]].
      */
     implicit def annotatedInstructionToAnnotatedInstructionElement[T](
         ai: (InstructionLike, T)
@@ -71,7 +72,7 @@ object CodeElement {
     }
 
     /**
-     * Converts a `Symbol` (label) to [[LabelElement]].
+     * Converts a `Symbol` (label) to [[org.opalj.ba.LabelElement]].
      */
     implicit def symbolToLabelElement(label: Symbol): LabelElement = new LabelElement(label)
 }

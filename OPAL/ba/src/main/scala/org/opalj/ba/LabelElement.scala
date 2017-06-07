@@ -34,4 +34,4 @@ package ba
  *
  * @author Malte Limmeroth
  */
-private[ba] case class LabelElement(label: Symbol) extends PseudoInstruction
+case class LabelElement(label: Symbol) extends PseudoInstruction

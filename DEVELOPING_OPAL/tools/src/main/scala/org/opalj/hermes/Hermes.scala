@@ -34,16 +34,14 @@ import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.prefs.Preferences;
+import java.util.prefs.Preferences
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.fasterxml.jackson.dataformat.csv.CsvFactory
 
@@ -52,12 +50,15 @@ import javafx.scene.control.SelectionMode
 import javafx.scene.layout.Priority
 import javafx.stage.Screen
 
+import org.controlsfx.control.PopOver
+import org.controlsfx.control.HiddenSidesPane
+import org.controlsfx.control.PopOver.ArrowLocation
+
 import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.application.Platform
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.collections.ObservableBuffer
-
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
 import scalafx.stage.Stage
@@ -90,21 +91,18 @@ import scalafx.scene.control.Menu
 import scalafx.scene.input.KeyCombination
 import scalafx.beans.property.LongProperty
 import scalafx.scene.layout.StackPane
+import scalafx.scene.chart.XYChart
 import scalafx.scene.chart.CategoryAxis
 import scalafx.scene.chart.NumberAxis
 import scalafx.scene.chart.BarChart
-
-import org.controlsfx.control.PopOver
-import org.controlsfx.control.HiddenSidesPane
-import org.controlsfx.control.PopOver.ArrowLocation
+import scalafx.scene.chart.PieChart
 
 import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
 
+import org.opalj.util.Nanoseconds
 import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFileReader
-import scalafx.scene.chart.XYChart
-import org.opalj.util.Nanoseconds
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
@@ -185,7 +183,7 @@ object Hermes extends JFXApp {
             featureQuery ← featureQueries
             featureID ← featureQuery.featureIDs
         } {
-            if (!featureIDs.contains(featureID))
+            if (!featureIDs.exists(_._1 == featureID))
                 featureIDs :+= ((featureID, featureQuery))
             else
                 throw DuplicateFeatureIDException(
@@ -545,7 +543,7 @@ object Hermes extends JFXApp {
             )*/
             perFeatureCounts(featureIndex) onChange { (_, oldCount, newCount) ⇒
                 if (newCount != null) {
-                    if (oldCount == 0 &&
+                    if (oldCount.intValue == 0 &&
                         newCount.intValue > 0 &&
                         onlyShowNotAvailableFeatures.selected.value) {
                         featureColumn.visible = false
@@ -582,9 +580,9 @@ object Hermes extends JFXApp {
                             }
                     }
                     perFeatureCounts(featureIndex).onChange { (_, oldValue, newValue) ⇒
-                        if (oldValue.intValue() != newValue.intValue && currentValue != -1) {
+                        if (oldValue.intValue != newValue.intValue && currentValue != -1) {
                             style =
-                                if (newValue == 0)
+                                if (newValue.intValue == 0)
                                     "-fx-background-color: #ffd0db"
                                 else if (currentValue == 0)
                                     "-fx-background-color: #ffffe0"
@@ -732,8 +730,33 @@ object Hermes extends JFXApp {
             }
         }
         val showAnalysisTimes = new MenuItem("Show Analysis Times...") {
+            onAction = handle { analysisTimesStage.show() }
+        }
+        val showMethodDistribution = new MenuItem("Show Method Distribution...") {
+            // IMPROVE Move it to a "permanent stage" and make the project statistics observable to make it possible to react on changes and to get proper JavaFX behavior
+            disable <== analysesFinished.not
             onAction = handle {
-                analysisTimesStage.show()
+                new Stage {
+                    title = "Method Distribution Across All Projects"
+                    scene = new Scene(900, 600) {
+                        root = new StackPane {
+                            val pieChartData = ObservableBuffer.empty[javafx.scene.chart.PieChart.Data]
+                            val pieChart = new PieChart {
+                                data = pieChartData
+                                title = "Method Distribution Across All Projects"
+                            }
+                            pieChart.legendVisible = true
+                            children = pieChart
+
+                            featureMatrix foreach { pf ⇒
+                                val statistics = pf.projectConfiguration.statistics
+                                val numberOfMethods = statistics.get("ProjectMethods")
+                                pieChartData.add(PieChart.Data(pf.id.value, numberOfMethods.get))
+                            }
+                        }
+                    }
+                    initOwner(stage)
+                }.show()
             }
         }
         val csvExport = new MenuItem("Export As CVS...") {
@@ -755,7 +778,12 @@ object Hermes extends JFXApp {
             disable <== analysesFinished.not
             onAction = handle { computeCorpus() }
         }
-        List(showConfig, showAnalysisTimes, csvExport, computeProjectsForCorpus)
+        List(
+            showConfig,
+            showAnalysisTimes, showMethodDistribution,
+            csvExport,
+            computeProjectsForCorpus
+        )
     }
 
     val rootPane = new BorderPane {
@@ -771,7 +799,7 @@ object Hermes extends JFXApp {
     stage = new PrimaryStage {
         scene = new Scene {
             stylesheets = List(getClass.getResource("Hermes.css").toExternalForm)
-            title = "Hermes - "+parameters.unnamed(0)
+            title = "Hermes - "+parameters.unnamed.head
             root = rootPane
 
             analyzeCorpus()
@@ -803,7 +831,7 @@ object Hermes extends JFXApp {
                     tickLabelsVisible = false
                 }
                 corpusAnalysisTime.onChange { (_, _, newValue) ⇒
-                    xAxis.label = "Feature Queries ∑"+(Nanoseconds(newValue.longValue).toSeconds)
+                    xAxis.label = "Feature Queries ∑"+Nanoseconds(newValue.longValue).toSeconds
                 }
                 val yAxis = new NumberAxis()
 
@@ -814,7 +842,7 @@ object Hermes extends JFXApp {
                     }
                     data.add(series)
                     featureQuery.accumulatedAnalysisTime.onChange { (_, _, newValue) ⇒
-                        if (newValue != 0)
+                        if (newValue.intValue != 0)
                             series.data = Seq(XYChart.Data[String, Number](featureQuery.id, newValue))
                     }
                 }
@@ -830,5 +858,4 @@ object Hermes extends JFXApp {
         }
         initOwner(stage)
     }
-
 }

@@ -28,6 +28,9 @@
  */
 package org.opalj
 
+import org.opalj.br.cfg.{BasicBlock, CFG}
+import org.opalj.graphs.Node
+
 /**
  * Common definitions related to the definition and processing of three address code.
  *
@@ -35,10 +38,23 @@ package org.opalj
  */
 package object tac {
 
-    type Stack = List[Var]
+    final val AllTACNaiveOptimizations: List[TACOptimization[IdBasedVar]] = {
+        List(SimplePropagation)
+    }
 
-    final val NoOptimizations: List[TACOptimization] = Nil
+    def tacToGraph[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): Iterable[Node] = {
+        cfg.toDot { bb: BasicBlock ⇒
+            val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1)
+            val txtStmts = bbStmts.map { stmt ⇒ ToTxt.toTxtStmt[V](stmt, false) }
+            txtStmts.mkString("", "\\l\\l", "\\l")
+        }
+    }
 
-    final val AllOptimizations: List[TACOptimization] = List(SimplePropagation)
+    def tacToDot[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): String = {
+        org.opalj.graphs.toDot(
+            tacToGraph(stmts, cfg),
+            ranksep = "0.4"
+        )
+    }
 
 }

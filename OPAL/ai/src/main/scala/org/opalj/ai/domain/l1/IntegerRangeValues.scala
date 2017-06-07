@@ -31,7 +31,10 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ComputationalType, ComputationalTypeInt}
+import scala.Int.{MinValue ⇒ MinInt}
+import scala.Int.{MaxValue ⇒ MaxInt}
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeInt
 
 /**
  * This domain represents integer values using ranges.
@@ -120,6 +123,11 @@ trait IntegerRangeValues
     /**
      * Determines the maximum number of values captured by an integer value range.
      *
+     * This setting is only used when true ranges are merged; in case of a join of two
+     * concrete values we will always create an [[IntegerRange]] value. If the cardinality
+     * is exceeded, we will also first create ranges based on the boundaries determined
+     * by the defaul data types (byte,short,char).
+     *
      * This setting can be adapted at runtime.
      */
     def maxCardinalityOfIntegerRanges: Long = 16L
@@ -174,10 +182,7 @@ trait IntegerRangeValues
     /**
      * Creates a new IntegerRange value with the given bounds.
      */
-    final def IntegerRange(
-        origin:     ValueOrigin,
-        lowerBound: Int, upperBound: Int
-    ): DomainValue = {
+    final def IntegerRange(origin: ValueOrigin, lowerBound: Int, upperBound: Int): DomainValue = {
         IntegerRange(lowerBound, upperBound)
     }
 
@@ -185,8 +190,7 @@ trait IntegerRangeValues
      * Extractor for `IntegerRange` values.
      */
     object IntegerRange {
-        def unapply(v: IntegerRange): Option[(Int, Int)] =
-            Some((v.lowerBound, v.upperBound))
+        def unapply(v: IntegerRange): Some[(Int, Int)] = Some((v.lowerBound, v.upperBound))
     }
 
     // -----------------------------------------------------------------------------------
@@ -322,7 +326,7 @@ trait IntegerRangeValues
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
-            return Yes
+            return Yes;
 
         right match {
             case IntegerRange(rightLB, rightUB) ⇒
@@ -342,10 +346,8 @@ trait IntegerRangeValues
                     }
             case _ ⇒
                 left match {
-                    case IntegerRange(_, Int.MinValue) ⇒
-                        Yes
-                    case _ ⇒
-                        Unknown
+                    case IntegerRange(_, Int.MinValue) ⇒ Yes
+                    case _                             ⇒ Unknown
                 }
         }
     }
@@ -849,8 +851,8 @@ trait IntegerRangeValues
                     val r = vlb << slb
                     IntegerRange(r)
                 } else if (vlb >= 0) {
-                    // max will never be negative, since shifting a 64 bit value at most 31 times always results
-                    // into a positive value
+                    // max : Long will never be negative, since shifting a 64 bit value at most 31
+                    // times always results into a positive value
                     val max = vub.toLong << maxShift
 
                     if (max <= Int.MaxValue)
@@ -868,20 +870,17 @@ trait IntegerRangeValues
                         // be 1.
                         // To ensure that the number is always positive the sign bit
                         // is set to zero by using "& Int.MaxValue".
-                        IntegerRange(
-                            (1 << maxShift) | Int.MinValue,
-                            (-1 << minShift) & Int.MaxValue
-                        )
+                        IntegerRange((1 << maxShift) | MinInt, (-1 << minShift) & Int.MaxValue)
                 } else {
-                    IntegerRange(
-                        (1 << maxShift) | Int.MinValue,
-                        (-1 << minShift) & Int.MaxValue
-                    )
+                    IntegerRange((1 << maxShift) | MinInt, (-1 << minShift) & MaxInt)
                 }
 
             case (IntegerRange(-1, -1), _) ⇒ IntegerRange(Int.MinValue, -1)
-            case (_, IntegerRange(31, 31)) ⇒ IntegerRange(Int.MinValue, 0) // actually, the value is either Int.MinValue or 0
-            case _                         ⇒ IntegerValue(pc)
+            case (_, IntegerRange(31, 31)) ⇒
+                // the value is either Int.MinValue or 0
+                IntegerRange(Int.MinValue, 0)
+
+            case _ ⇒ IntegerValue(pc)
         }
     }
 
@@ -900,8 +899,9 @@ trait IntegerRangeValues
 
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                 // We have one "arbitrary" range of numbers to shift and one range that
-                // should be between 0 and 31. Every number above 31 or any negative number does not make sense, since
-                // only the five least significant bits are used for shifting.
+                // should be between 0 and 31. Every number above 31 or any negative number
+                // does not make sense, since only the five least significant bits are used
+                // for shifting.
                 val maxShift = if (sub >= 0 && sub <= 31) sub else 31
                 val minShift = if (slb >= 0 && slb <= 31) slb else 0
 
@@ -1173,6 +1173,6 @@ object IntegerRangeValues {
     /**
      * The largest cardinality that makes sense.
      */
-    final val AbsoluteMaxCardinalityOfIntegerRanges = Int.MaxValue.toLong + (-(Int.MinValue).toLong)
+    final val AbsoluteMaxCardinalityOfIntegerRanges = Int.MaxValue.toLong + (-(Int.MinValue.toLong))
 
 }

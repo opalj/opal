@@ -71,7 +71,7 @@ sealed trait TypeInformation {
  *
  * @author Michael Eichberg
  */
-case object TypeUnknown extends TypeInformation {
+case object UnknownType extends TypeInformation {
 
     def unknown: Boolean = true
 
@@ -84,10 +84,12 @@ case object TypeUnknown extends TypeInformation {
     def isPrimitiveValue: Boolean = throw DomainException("the type is unknown")
 }
 
+sealed trait KnownType extends TypeInformation
+
 /**
  * The value has the primitive type.
  */
-sealed trait IsPrimitiveValue extends TypeInformation {
+sealed trait IsPrimitiveValue extends KnownType {
 
     final def unknown: Boolean = false
 
@@ -142,7 +144,7 @@ trait IsDoubleValue extends IsPrimitiveValue {
 }
 
 /**
- * Characterizes a single reference value. Captures the information about one of the values
+ * Characterizes a  reference value. Captures the information about one of the values
  * a domain value may refer to. For example, in the following:
  * {{{
  * val o = If(...) new Object() else "STRING"
@@ -243,7 +245,6 @@ trait IsAReferenceValue {
      *
      * @return This default implementation always returns `Unknown`.
      */
-    @throws[DomainException]("If this value is null (isNull.yes == true).")
     def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
     /**
@@ -278,7 +279,7 @@ object IsAReferenceValue {
  *
  * @author Michael Eichberg
  */
-trait IsReferenceValue extends TypeInformation with IsAReferenceValue {
+trait IsReferenceValue extends KnownType with IsAReferenceValue {
 
     /**
      * In general a domain value can represent several distinct values (depending
@@ -304,7 +305,7 @@ trait IsReferenceValue extends TypeInformation with IsAReferenceValue {
  */
 object IsReferenceValue {
 
-    def unapply(value: IsReferenceValue): Option[Traversable[IsAReferenceValue]] = {
+    def unapply(value: IsReferenceValue): Some[Traversable[IsAReferenceValue]] = {
         Some(value.referenceValues)
     }
 }

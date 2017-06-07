@@ -752,8 +752,6 @@ class ClassHierarchy private (
      * Calls the given function `f` for each of the given type's supertypes.
      * It is possible that the same super interface type `I` is passed multiple
      * times to `f` when `I` is implemented multiple times by the given type's supertypes.
-     *
-     * This method will
      */
     def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
         if (isUnknown(objectType))
@@ -2289,7 +2287,7 @@ class ClassHierarchy private (
      * of the given types is determined.
      *
      * @see `joinObjectTypesUntilSingleUpperBound(upperTypeBoundA: ObjectType,
-     *       upperTypeBoundB: ObjectType,reflexive: Boolean)` for further details.
+     *       upperTypeBoundB: ObjectType, reflexive: Boolean)` for further details.
      */
     def joinObjectTypesUntilSingleUpperBound(
         upperTypeBound: UIDSet[ObjectType]
@@ -2298,6 +2296,17 @@ class ClassHierarchy private (
             upperTypeBound.head
         else
             upperTypeBound reduce { (c, n) ⇒ joinObjectTypesUntilSingleUpperBound(c, n, true) }
+    }
+
+    def joinReferenceTypesUntilSingleUpperBound(
+        upperTypeBound: UIDSet[ReferenceType]
+    ): ReferenceType = {
+        if (upperTypeBound.isSingletonSet)
+            return upperTypeBound.head;
+
+        // Note that the upper type bound must never consist of more than one array type.
+        // The type hierarchy related to arrays is "hard coded"
+        joinObjectTypesUntilSingleUpperBound(upperTypeBound.asInstanceOf[UIDSet[ObjectType]]) // type erasure also has its benefits...
     }
 
     def joinUpperTypeBounds(
@@ -2323,20 +2332,14 @@ class ClassHierarchy private (
                         case Right(upperTypeBound) ⇒ upperTypeBound
                     }
                 } else {
-                    joinAnyArrayTypeWithObjectType(
-                        utbB.head.asInstanceOf[ObjectType]
-                    ).asInstanceOf[UpperTypeBound]
+                    joinAnyArrayTypeWithObjectType(utbB.head.asInstanceOf[ObjectType])
                 }
             } else {
-                joinAnyArrayTypeWithMultipleTypesBound(
-                    utbB.asInstanceOf[UIDSet[ObjectType]]
-                ).asInstanceOf[UpperTypeBound]
+                joinAnyArrayTypeWithMultipleTypesBound(utbB.asInstanceOf[UIDSet[ObjectType]])
             }
         } else if (utbB.isSingletonSet) {
             if (utbB.head.isArrayType) {
-                joinAnyArrayTypeWithMultipleTypesBound(
-                    utbA.asInstanceOf[UIDSet[ObjectType]]
-                ).asInstanceOf[UpperTypeBound]
+                joinAnyArrayTypeWithMultipleTypesBound(utbA.asInstanceOf[UIDSet[ObjectType]])
             } else {
                 joinObjectTypes(
                     utbB.head.asObjectType,
@@ -2550,7 +2553,7 @@ object ClassHierarchy {
                     val message = s"the class file ${objectType.toJava} defines a "+
                         s"super interface ${knownTypesMap(aSuperinterfaceTypeId).toJava} "+
                         "which is actually a regular class file"
-                    OPALLogger.warn("project configuration - class hierarchy", message)
+                    OPALLogger.error("project configuration - class hierarchy", message)
                 }
                 if (isInterfaceType) {
                     addToSet(subinterfaceTypesMap, aSuperinterfaceTypeId, objectType)
@@ -2573,14 +2576,27 @@ object ClassHierarchy {
             )
         }
         // Analyzes the given class file and extends the current class hierarchy.
+        val processedClassType: Array[Boolean] = new Array[Boolean](objectTypesCount)
         classFiles.seq foreach { classFile ⇒
             if (!classFile.isModuleDeclaration) {
-                process(
-                    classFile.thisType,
-                    classFile.isInterfaceDeclaration,
-                    classFile.isFinal,
-                    classFile.superclassType,
-                    UIDSet.empty ++ classFile.interfaceTypes
+                // we always keep the FIRST class file which defines a type this is inline
+                // with the behavior of the project which prioritizes a project class file
+                // over library class files
+                val classType = classFile.thisType
+                if (!processedClassType(classType.id)) {
+                    processedClassType(classType.id) = true
+                    process(
+                        classType,
+                        classFile.isInterfaceDeclaration,
+                        classFile.isFinal,
+                        classFile.superclassType,
+                        UIDSet.empty ++ classFile.interfaceTypes
+                    )
+                }
+            } else {
+                OPALLogger.info(
+                    "project configuration - class hierarchy",
+                    s"ignored module defining class file ${classFile.thisType.toJava}"
                 )
             }
         }
@@ -2657,14 +2673,16 @@ object ClassHierarchy {
                     typesToProcess += superclassType
                 }
                 val superSuperinterfaceTypes = superinterfaceTypesMap(t.id)
-                if (superSuperinterfaceTypes ne null)
+                if (superSuperinterfaceTypes ne null) {
                     typesToProcess ++= superSuperinterfaceTypes
+                }
             }
 
             leafTypes.foreach { t ⇒
                 subtypes += ((t, SubtypeInformation.empty))
                 scheduleSupertypes(t)
             }
+            var madeProgress = false
             while (typesToProcess.nonEmpty) {
                 val t = typesToProcess.dequeue
                 // it may be the case that some type was already processed
@@ -2696,19 +2714,72 @@ object ClassHierarchy {
                         }
 
                     if (done) {
-                        subtypes += ((
-                            t,
-                            SubtypeInformation(allSubclassTypes, allSubinterfaceTypes)
-                        ))
+                        madeProgress = true
+                        val subtypeInfo = SubtypeInformation(allSubclassTypes, allSubinterfaceTypes)
+                        subtypes += ((t, subtypeInfo))
                         scheduleSupertypes(t)
                     } else {
                         deferredTypes += t
                     }
+                } else {
+                    madeProgress = true // this is philosophical...
                 }
 
-                if (typesToProcess.isEmpty) {
-                    typesToProcess ++= deferredTypes
-                    deferredTypes = UIDSet.empty[ObjectType]
+                // test if we have really finished processing all types
+                if (typesToProcess.isEmpty && deferredTypes.nonEmpty) {
+                    if (!madeProgress) {
+                        // The following is NOT performance sensitive... we are lost anyway
+                        // and we just want to provide some hints to the user...
+                        // 1. Do we have a cycle in the extracted type information ?
+                        {
+                            val ns = knownTypesMap.size
+                            val es = (oid: Int) ⇒ {
+                                if (knownTypesMap(oid) ne null) {
+                                    subinterfaceTypesMap(oid).map(_.id).iterator ++
+                                        subclassTypesMap(oid).map(_.id).iterator
+                                } else {
+                                    Iterator.empty
+                                }
+                            }
+                            val cyclicTypeDependencies =
+                                org.opalj.graphs.sccs(ns, es, filterSingletons = true)
+                            if (cyclicTypeDependencies.nonEmpty) {
+                                OPALLogger.error(
+                                    "project configuration",
+                                    cyclicTypeDependencies.map { scc ⇒
+                                        scc.map { oid ⇒
+                                            if (knownTypesMap(oid) ne null)
+                                                knownTypesMap(oid).toJava
+                                            else
+                                                "N/A"
+                                        }.mkString(", ")
+                                    }.mkString("cyclic type hierarchy:\n\t", "\n\t", "\n")
+                                )
+                            }
+                        }
+
+                        // 2. Which type(s) cause the problem?
+                        val allIssues =
+                            for {
+                                dt ← deferredTypes
+                                subtype ← subinterfaceTypesMap(dt.id) ++ subclassTypesMap(dt.id)
+                                None ← subtypes.get(subtype)
+                                if !deferredTypes.contains(subtype)
+                            } yield {
+                                s"${dt.toJava} (waits)->(subtype) ${subtype.toJava}"
+                            }
+                        OPALLogger.error(
+                            "project configuration",
+                            allIssues.mkString(
+                                "could not compute subtype information for:\n\t", "\n\t", "\n"
+                            )
+                        )
+
+                    } else {
+                        madeProgress = false
+                        typesToProcess ++= deferredTypes
+                        deferredTypes = UIDSet.empty[ObjectType]
+                    }
                 }
             }
             var allClassTypes = UIDSet.empty[ObjectType]
@@ -2748,7 +2819,7 @@ object ClassHierarchy {
             // interface inherits from multiple interfaces (and maybe from the same (indirect)
             // superinterface.)
 
-            // 1. process all interfac types
+            // 1. process all interface types
             while (typesToProcess.nonEmpty) {
                 val t = typesToProcess.dequeue
                 val superinterfaceTypes = {
@@ -2917,116 +2988,5 @@ object ClassHierarchy {
             supertypes,
             subtypes
         )
-    }
-}
-
-sealed abstract class TypeHierarchyInformation {
-
-    def typeInformationType: String
-    def classTypes: UIDSet[ObjectType]
-    def interfaceTypes: UIDSet[ObjectType]
-
-    def size: Int = classTypes.size + interfaceTypes.size
-
-    def foreach[T](f: ObjectType ⇒ T): Unit = {
-        classTypes.foreach(f)
-        interfaceTypes.foreach(f)
-    }
-
-    def all: UIDSet[ObjectType] = classTypes ++ interfaceTypes
-
-    override def toString: String = {
-        val classInfo = classTypes.map(_.toJava).mkString("classes={", ", ", "}")
-        val interfaceInfo = interfaceTypes.map(_.toJava).mkString("interfaces={", ", ", "}")
-        s"$typeInformationType($classInfo, $interfaceInfo)"
-    }
-
-}
-
-/**
- * Represents a type's subtype information.
- *
- * @author Michael Eichberg
- */
-sealed abstract class SubtypeInformation extends TypeHierarchyInformation {
-    def typeInformationType: String = "SubtypeInformation"
-}
-
-object SubtypeInformation {
-
-    final val empty = new SubtypeInformation {
-        def classTypes: UIDSet[ObjectType] = UIDSet.empty
-        def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-    }
-
-    def apply(
-        theClassTypes:     UIDSet[ObjectType],
-        theInterfaceTypes: UIDSet[ObjectType]
-    ): SubtypeInformation = {
-        if (theClassTypes.isEmpty) {
-            if (theInterfaceTypes.isEmpty)
-                empty
-            else
-                new SubtypeInformation {
-                    def classTypes: UIDSet[ObjectType] = UIDSet.empty
-                    val interfaceTypes = theInterfaceTypes
-                }
-        } else if (theInterfaceTypes.isEmpty) {
-            new SubtypeInformation {
-                val classTypes = theClassTypes
-                def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-            }
-        } else {
-            new SubtypeInformation {
-                val classTypes = theClassTypes
-                val interfaceTypes = theInterfaceTypes
-            }
-        }
-    }
-}
-
-/**
- * Represents a type's supertype information.
- *
- * @author Michael Eichberg
- */
-sealed abstract class SupertypeInformation extends TypeHierarchyInformation {
-    def typeInformationType: String = "SupertypeInformation"
-}
-
-object SupertypeInformation {
-
-    def none = new SupertypeInformationForClasses(UIDSet.empty, UIDSet.empty)
-
-    def apply(
-        classTypes:     UIDSet[ObjectType],
-        interfaceTypes: UIDSet[ObjectType]
-    ): SupertypeInformation = {
-        new SupertypeInformationForClasses(classTypes, interfaceTypes)
-    }
-}
-
-private[br] final class SupertypeInformationForClasses(
-    val classTypes:     UIDSet[ObjectType],
-    val interfaceTypes: UIDSet[ObjectType]
-) extends SupertypeInformation
-
-private[br] object NoSpecificSupertypeInformationForInterfaces extends SupertypeInformation {
-    def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
-    def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-}
-
-private[br] final class SupertypeInformationForInterfaces private (
-        val interfaceTypes: UIDSet[ObjectType]
-) extends SupertypeInformation {
-    def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
-}
-
-object SupertypeInformationForInterfaces {
-    def apply(interfaceTypes: UIDSet[ObjectType]): SupertypeInformation = {
-        if (interfaceTypes.isEmpty)
-            NoSpecificSupertypeInformationForInterfaces
-        else
-            new SupertypeInformationForInterfaces(interfaceTypes)
     }
 }

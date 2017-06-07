@@ -68,7 +68,12 @@ sealed abstract class TATTypeParameter extends TypeAnnotationTarget {
     final override def attribute_length: Int = 1 + 1
 
     final override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(type parameter index: { type_parameter_index })</span>
+        <span class="type_annotation_target">
+            <b>Target</b>
+            <i>{ description }[0x{ tag.toHexString }]</i>
+            (type parameter index:{ type_parameter_index }
+            )
+        </span>
     }
 }
 

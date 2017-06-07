@@ -59,7 +59,7 @@ class TypeAnnotationsTest extends FlatSpec with Matchers {
                 TAOfSupertype(1),
                 TADirectlyOnType,
                 aTA,
-                IndexedSeq.empty
+                IndexedSeq(ElementValuePair("value", StringValue("superinterface")))
             )
         )
     }
@@ -89,15 +89,15 @@ private object TypeAnnotationsTest {
         Project(ClassFiles(testResources), Traversable.empty, true)
     }
 
-    //Classfile /Users/Michael/Code/OPAL/core/bin/type_annotations/ATypeAnnotationUser.class
-    //Compiled from "ATypeAnnotationUser.java"
-    //public abstract class type_annotations.ATypeAnnotationUser<T extends java.io.Serializable> extends java.lang.Object implements java.util.List<java.lang.Object>, java.io.Serializable
+    //Classfile /Users/Michael/Code/OPAL/core/bin/type_annotations/RITypeAnnotationUser.class
+    //Compiled from "RITypeAnnotationUser.java"
+    //public abstract class type_annotations.RITypeAnnotationUser<T extends java.io.Serializable> extends java.lang.Object implements java.util.List<java.lang.Object>, java.io.Serializable
     //  Constant_Pool:
     //  ...
-    //  #15 = Utf8               Ltype_annotations/ATypeAnnotation;
+    //  #15 = Utf8               Ltype_annotations/RITypeAnnotation;
     //  ...
-    //  SourceFile: "ATypeAnnotationUser.java"
-    //  Signature: #42                          // <T::Ljava/io/Serializable;>Ljava/lang/Object;Ljava/util/List<Ljava/lang/Object;>;Ljava/io/Serializable;
+    //  SourceFile: "RITypeAnnotationUser.java"
+    //  Signature: #42 // <T::Ljava/io/Serializable;>Ljava/lang/Object;Ljava/util/List<Ljava/lang/Object;>;Ljava/io/Serializable;
     //  RuntimeInvisibleTypeAnnotations:
     //    0: #15(): CLASS_EXTENDS, type_index=0, location=[TYPE_ARGUMENT(0)]
     //    1: #15(): CLASS_EXTENDS, type_index=1
@@ -129,11 +129,11 @@ private object TypeAnnotationsTest {
     //        line 56: 8
     //      LocalVariableTable:
     //        Start  Length  Slot  Name   Signature
-    //            0      10     0  this   Ltype_annotations/ATypeAnnotationUser;
+    //            0      10     0  this   Ltype_annotations/RITypeAnnotationUser;
     //            8       2     1     l   Ljava/util/List;
     //      LocalVariableTypeTable:
     //        Start  Length  Slot  Name   Signature
-    //            0      10     0  this   Ltype_annotations/ATypeAnnotationUser<TT;>;
+    //            0      10     0  this   Ltype_annotations/RITypeAnnotationUser<TT;>;
     //            8       2     1     l   Ljava/util/List<TT;>;
     //      RuntimeInvisibleTypeAnnotations:
     //        0: #15(): NEW, offset=0
@@ -142,8 +142,8 @@ private object TypeAnnotationsTest {
     //    RuntimeInvisibleTypeAnnotations:
     //      0: #15(): METHOD_RETURN
     //}
-    val aTA = ObjectType("type_annotations/ATypeAnnotation")
-    val taUser = ObjectType("type_annotations/ATypeAnnotationUser")
+    val aTA = ObjectType("type_annotations/RITypeAnnotation")
+    val taUser = ObjectType("type_annotations/RITypeAnnotationUser")
     val taUserClassFile = project.classFile(taUser).get
 
 }

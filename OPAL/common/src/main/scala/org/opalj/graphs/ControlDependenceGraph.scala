@@ -29,8 +29,8 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.SmallValuesSet
 import scala.collection.mutable.BitSet
+import org.opalj.collection.immutable.IntSet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -58,7 +58,7 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
      *          `Control(X)/*the returned set*/` and X, whose selection is controlled by Y and
      *          which contains no nodes that may prevent the execution of X.
      */
-    def xIsDirectlyControlDependentOn(x: Int): SmallValuesSet = {
+    def xIsDirectlyControlDependentOn(x: Int): IntSet = {
         dominanceFrontiers(x)
     }
 

@@ -30,52 +30,38 @@ package org.opalj
 package br
 package reader
 
-import java.io.File
-import org.junit.runner.RunWith
+import java.net.URL
+
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bi.TestSupport.allBITestJARs
 
-/**
- * This test(suite) just loads a very large number of class files to make sure the library
- * can handle them and to test the "corner" cases. Basically, we test for NPEs,
- * ArrayIndexOutOfBoundExceptions and similar issues.
- *
- * @author Michael Eichberg
- */
-@RunWith(classOf[JUnitRunner])
 class LoadClassFilesInParallelTest extends FlatSpec with Matchers {
 
-    private def commonValidator(classFile: ClassFile, source: java.net.URL): Unit = {
-        classFile.thisType.fqn should not be null
+    behavior of "OPAL when reading class files (in parallel)"
+
+    private[this] def commonValidator(classFile: ClassFile, source: URL): Unit = {
+        classFile.thisType should not be null
     }
 
-    private def publicInterfaceValidator(classFile: ClassFile, source: java.net.URL): Unit = {
+    private[this] def publicInterfaceValidator(classFile: ClassFile, source: URL): Unit = {
         commonValidator(classFile, source)
         // the body of no method should be available
         classFile.methods.forall(m ⇒ m.body.isEmpty)
     }
 
-    behavior of "OPAL"
-
-    val jreLibFolder: File = JRELibraryFolder
-    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
-
     for {
-        file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
+        file ← Iterator(JRELibraryFolder) ++ allBITestJARs()
         if file.isFile && file.canRead && file.getName.endsWith(".jar")
+        path = file.getPath
     } {
-        it should ("be able to completely read all classes in the jar file "+file.getPath+" in parallel") in {
-            reader.Java8Framework.ClassFiles(file) foreach { cs ⇒
-                val (cf, s) = cs
-                commonValidator(cf, s)
-            }
+        it should (s"it should be able to reify all class files in $path") in {
+            Java8Framework.ClassFiles(file) foreach { e ⇒ val (cf, s) = e; commonValidator(cf, s) }
         }
 
-        it should ("be able to read the public interface of all classes in the jar file "+file.getPath+" in parallel") in {
-            reader.Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
+        it should (s"it should be able to reify only the signatures of all methods in $path") in {
+            Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs
                 publicInterfaceValidator(cf, s)
             }

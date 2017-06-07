@@ -53,11 +53,7 @@ trait CustomInitialization { domain: ValuesDomain ⇒
      * Always use `abstract override` and call the super method; it is recommended
      * to complete the initialization of this domain before calling the super method.
      */
-    def initProperties(
-        code:          Code,
-        cfJoins:       BitSet,
-        initialLocals: Locals
-    ): Unit = {
+    def initProperties(code: Code, cfJoins: BitSet, initialLocals: Locals): Unit = {
         // Empty by default.
     }
 

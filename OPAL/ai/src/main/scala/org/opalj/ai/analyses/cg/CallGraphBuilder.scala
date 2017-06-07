@@ -31,9 +31,10 @@ package ai
 package analyses.cg
 
 import scala.collection.{Set, Map}
-import org.opalj.collection.mutable.UShortSet
-import org.opalj.br._
+
+import org.opalj.collection.immutable.IntSet1
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br._
 
 /**
  * Builds a call graph by first collecting all call graph edges before the final
@@ -76,10 +77,10 @@ class CallGraphBuilder(val project: SomeProject) {
 
         import scala.collection.mutable.{OpenHashMap, AnyRefMap, WrappedArray}
 
-        val calledByMapFuture: Future[AnyRefMap[Method, AnyRefMap[Method, MutablePCs]]] = Future {
+        val calledByMapFuture: Future[AnyRefMap[Method, AnyRefMap[Method, PCs]]] = Future {
 
-            val calledByMap: AnyRefMap[Method, AnyRefMap[Method, MutablePCs]] =
-                new AnyRefMap[Method, AnyRefMap[Method, MutablePCs]](project.methodsCount)
+            val calledByMap: AnyRefMap[Method, AnyRefMap[Method, PCs]] =
+                new AnyRefMap[Method, AnyRefMap[Method, PCs]](project.methodsCount)
             for {
                 (caller, edges) ← allCallEdges
                 (pc, callees) ← edges
@@ -88,21 +89,20 @@ class CallGraphBuilder(val project: SomeProject) {
                 val callers =
                     calledByMap.getOrElseUpdate(
                         callee,
-                        new AnyRefMap[Method, MutablePCs](8)
+                        new AnyRefMap[Method, PCs](8)
                     )
                 callers.get(caller) match {
                     case Some(pcs) ⇒
-                        val newPCs = pc +≈: pcs
-                        if (pcs ne newPCs)
-                            callers.update(caller, newPCs)
+                        val newPCs = pcs + pc
+                        if (pcs ne newPCs) callers.update(caller, newPCs)
                     case None ⇒
-                        val newPCs = UShortSet(pc)
+                        val newPCs = IntSet1(pc)
                         callers.put(caller, newPCs)
                 }
                 // USING AN IMMUTABLE MAP - ROUGHLY 5% SLOWER AND 10% MEMORY OVERHEAD
                 // val callers = calledByMap(callee.id)
                 // if (callers eq null) {
-                //  calledByMap(callee.id) = new Map.Map1(caller, UShortSet(pc))
+                //  calledByMap(callee.id) = new Map.Map1(caller, IntSet1(pc))
                 // } else {
                 //  callers.get(caller) match {
                 //      case Some(pcs) ⇒
@@ -110,7 +110,7 @@ class CallGraphBuilder(val project: SomeProject) {
                 //          if (pcs ne newPCs)
                 //              calledByMap(callee.id) = callers.updated(caller, newPCs)
                 //      case None ⇒
-                //          val newPCs = UShortSet(pc)
+                //          val newPCs = IntSet1(pc)
                 //          calledByMap(callee.id) = callers.updated(caller, newPCs)
                 //      }
                 // }
