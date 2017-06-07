@@ -176,11 +176,26 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                     None
                 }
 
+            val receiverType =
+                try {
+                    if (invocationInstruction != INVOKEVIRTUAL.opcode)
+                        targetMethodOwner
+                    else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty) {
+                        invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
+                    } else if (functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.nonEmpty) {
+                        functionalInterfaceDescriptorBeforeTypeErasure.parameterType(0).asObjectType
+                    } else {
+                        targetMethodOwner
+                    }
+                } catch {
+                    case _: Exception ⇒ targetMethodOwner
+                }
             val proxy: ClassFile = ClassFileFactory.Proxy(
                 typeDeclaration,
                 functionalInterfaceMethodName,
                 functionalInterfaceDescriptorBeforeTypeErasure,
-                targetMethodOwner,
+                //targetMethodOwner,
+                receiverType,
                 // Note a static lambda method in an interface needs
                 // to be called using the correct variant of an invokestatic.
                 receiverIsInterface = classFile.isInterfaceDeclaration,
@@ -206,12 +221,13 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             )
 
             // DEBUG ---
-            if (classFile.thisType.toJava.startsWith("java.util.stream.DistinctOps")) {
+            if (classFile.thisType.toJava.startsWith("lambdas.MethodReferenceError") || receiverType != targetMethodOwner) {
                 println("Creating Proxy Class:")
                 println(s"\t\ttypeDeclaration = $typeDeclaration")
                 println(s"\t\tfunctionalInterfaceMethodName = $functionalInterfaceMethodName")
                 println(s"\t\tfunctionalInterfaceDescriptorBeforeTypeErasure = $functionalInterfaceDescriptorBeforeTypeErasure")
                 println(s"\t\ttargetMethodOwner = $targetMethodOwner")
+                println(s"\t\treceiverType =  $receiverType")
                 println(s"\t\ttargetMethodName = $targetMethodName")
                 println(s"\t\treceiverDescriptor = $receiverDescriptor")
                 println(s"\t\tinvocationInstruction = $invocationInstruction")

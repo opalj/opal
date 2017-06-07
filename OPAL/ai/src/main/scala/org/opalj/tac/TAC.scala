@@ -103,7 +103,7 @@ object TAC {
                 )
                 println(s"Generated ai CFG (input): $aiCFGFile")
                 val prefix = "AI-BR-CFG-"+method.name
-                val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, prefix , ".gv")
+                val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, prefix, ".gv")
                 println(s"Generated the reified ai CFG: $aiBRCFGFile")
 
                 val (code, cfg) = TACAI(method, project.classHierarchy, aiResult)(List.empty)
