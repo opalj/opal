@@ -30,9 +30,11 @@ package org.opalj
 package ai
 
 import scala.reflect.ClassTag
-
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -369,7 +371,32 @@ trait ValuesDomain {
      */
     implicit val DomainValue: ClassTag[DomainValue]
 
-    type DomainReferenceValue >: Null <: DomainValue
+    trait TypedValue[T <: Type] extends Value { this: DomainValue ⇒
+
+        /**
+         * The type of the value, if the value has a specific type; `None` if and only if the
+         * underlying value is `null`.
+         *
+         * @return The type/The upper type bound of the value. If the type is a base type, then
+         *         the type is necessarily precise. In case of a reference type the type may be
+         *         an upper type bound or may be precise. In the latter case, using the
+         *         concrete domain it may be possible to get further information.
+         *         If the underlying value is `null`, `None` is returned.
+         */
+        def valueType: Option[T]
+
+    }
+
+    trait ReferenceValue extends TypedValue[ReferenceType] { this: DomainReferenceValue ⇒
+
+        /**
+         * Returns `ComputationalTypeReference`.
+         */
+        final override def computationalType: ComputationalType = ComputationalTypeReference
+
+    }
+
+    type DomainReferenceValue >: Null <: ReferenceValue with DomainValue
 
     val DomainReferenceValue: ClassTag[DomainReferenceValue]
 

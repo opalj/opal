@@ -182,29 +182,22 @@ sealed abstract class Type extends UIDValue with Ordered[Type] {
 
     @throws[ClassCastException]("if this type is not a base type")
     def asBaseType: BaseType = {
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to a BaseType"
-        )
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a BaseType")
     }
 
     @throws[ClassCastException]("if this type is not a field type")
     def asFieldType: FieldType = {
-        val message = s"a ${this.getClass.getSimpleName} cannot be cast to a FieldType"
-        throw new ClassCastException(message)
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a FieldType")
     }
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asNumericType: NumericType = {
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to a NumericType"
-        )
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType")
     }
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asIntLikeType: IntLikeType = {
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to an IntLikeType"
-        )
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
     }
 
     /**
@@ -418,9 +411,7 @@ object ReferenceType {
      *          "[Ljava/lang/Object;" // for the array of java.lang.Object
      *          }}}
      */
-    @throws[IllegalArgumentException](
-        "if the given string is not a valid reference type descriptor"
-    )
+    @throws[IllegalArgumentException]("in case of an invalid reference type descriptor")
     def apply(rt: String): ReferenceType = {
         if (rt.charAt(0) == '[')
             ArrayType(FieldType(rt.substring(1)))

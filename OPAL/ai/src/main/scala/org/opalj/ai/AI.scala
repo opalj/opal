@@ -47,7 +47,6 @@ import org.opalj.ai.util.removeFirstUnless
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
-import org.opalj.br.LiveVariables
 import org.opalj.br._
 import org.opalj.br.instructions._
 

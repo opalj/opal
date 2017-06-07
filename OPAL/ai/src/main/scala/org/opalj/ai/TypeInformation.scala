@@ -96,7 +96,7 @@ sealed trait IsPrimitiveValue extends KnownType {
     final def isReferenceValue: Boolean = false
 
     final def asIsAReferenceValue: IsAReferenceValue = {
-        val className = this.getClass().getName()
+        val className = this.getClass.getName
         throw new ClassCastException(s"cannot cast $className to IsAReferenceValue")
     }
 
@@ -154,7 +154,7 @@ trait IsDoubleValue extends IsPrimitiveValue {
  *
  * @author Michael Eichberg
  */
-trait IsAReferenceValue {
+trait IsAReferenceValue /*[DomainValue <: AnyRef]*/ { // this:  DomainValue =>
 
     /**
      * The upper bound of the value's type. The upper bound is empty if this
