@@ -45,26 +45,26 @@ import static annotations.target.TargetResolution.*;
  * SPECIFIED LINE NUMBERS ARE STABLE.
  * -->
  *
- * @author Arne Lottmann
+ * @author Andreas Muttscheller
  */
 public class MethodReferenceError {
     public static <T, R> R someBiConsumerParameter(
-    	//	java.util.function.Supplier<R> s,
+    		java.util.function.Supplier<R> s,
     		java.util.function.BiConsumer<R, T> bc,
-		//	java.util.function.BiConsumer<R, R> r,
+			java.util.function.BiConsumer<R, R> r,
 			T t) {
-		//R state = s.get();
-		//bc.accept(state, t);
-		//r.accept(state, state);
+		R state = s.get();
+		bc.accept(state, t);
+		r.accept(state, state);
 
 		return null;
 	}
 
 	public static <T> LinkedHashSet<T> callBiConsumer(T t) {
 		LinkedHashSet<T> lhm = MethodReferenceError.<T, LinkedHashSet<T>>someBiConsumerParameter(
-		//		LinkedHashSet::new,
+				LinkedHashSet::new,
 				LinkedHashSet::add,
-		//		LinkedHashSet::addAll,
+				LinkedHashSet::addAll,
 				t
 		);
 

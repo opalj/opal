@@ -177,19 +177,25 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 }
 
             val receiverType =
-                try {
-                    if (invocationInstruction != INVOKEVIRTUAL.opcode)
-                        targetMethodOwner
-                    else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty) {
-                        invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
-                    } else if (functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.nonEmpty) {
-                        functionalInterfaceDescriptorBeforeTypeErasure.parameterType(0).asObjectType
-                    } else {
-                        targetMethodOwner
-                    }
-                } catch {
-                    case _: Exception ⇒ targetMethodOwner
+                // Check the target method op code. Only INVOKEVIRTUAL methods have to be changed, e.g.
+                // `LinkedHashSet::contains`.
+                if (invocationInstruction != INVOKEVIRTUAL.opcode)
+                    targetMethodOwner
+                else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
+                    // If we have an instance of a object and use a method reference, get the receiver type from
+                    // the inovkedynamic instruction. It is the first parameter of the functional interface parameter
+                    // list.
+                    invokedynamic.methodDescriptor.parameterTypes.head.isObjectType) {
+                    invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
+                } else if (functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.nonEmpty &&
+                    // If we get a instance method reference like `LinkedHashSet::addAll`, get the receiver type from
+                    // the functional interface. The first parameter is the instance where the method should be called.
+                    functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.isObjectType) {
+                    functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.asObjectType
+                } else {
+                    targetMethodOwner
                 }
+
             val proxy: ClassFile = ClassFileFactory.Proxy(
                 typeDeclaration,
                 functionalInterfaceMethodName,
@@ -222,6 +228,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
             // DEBUG ---
             if (classFile.thisType.toJava.startsWith("lambdas.MethodReferenceError") || receiverType != targetMethodOwner) {
+                println("Rewritten proxy class receiver type from targetMethodOwner to receiverType!\n")
                 println("Creating Proxy Class:")
                 println(s"\t\ttypeDeclaration = $typeDeclaration")
                 println(s"\t\tfunctionalInterfaceMethodName = $functionalInterfaceMethodName")
