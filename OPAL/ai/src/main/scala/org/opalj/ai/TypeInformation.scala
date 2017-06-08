@@ -37,8 +37,6 @@ import org.opalj.br.{FloatType, DoubleType}
 /**
  * Encapsulates the available type information about a `DomainValue`.
  *
- * (See `ValuesDomain.typeOfValue(DomainValue)` for further details.)
- *
  * @author Michael Eichberg
  */
 sealed trait TypeInformation { // TODO Rename to ValueInformation
@@ -51,9 +49,7 @@ sealed trait TypeInformation { // TODO Rename to ValueInformation
     /** True if the value has a reference type; undefined if the type is unknown. */
     def isReferenceValue: Boolean
 
-    //   def asReferenceValue: this.type
-
-    /** True if the value has a primitive type; undefined if the type is unknown. */
+    /** True in case of a value with primitive type; undefined if the type is unknown. */
     def isPrimitiveValue: Boolean
 
 }
