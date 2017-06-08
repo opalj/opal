@@ -32,6 +32,7 @@ package domain
 package l1
 
 import scala.annotation.switch
+
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
@@ -90,7 +91,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                     // && the NullPointerException was created by the JVM, because
                     // the objectRef is (assumed to be) null
                     && {
-                        val IsAReferenceValue(utb) = typeOfValue(objectRef)
+                        val TypeOfReferenceValue(utb) = objectRef
                         utb.head eq ObjectType.NullPointerException
                     }
                     && {

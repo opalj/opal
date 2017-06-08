@@ -36,7 +36,6 @@ import scala.collection.Map
 import scala.collection.mutable.HashSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br._
-import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.TheMethod
@@ -109,7 +108,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         }
 
         /**
-         * @param receiverMayBeNull The parameter is `false` if:
+         * @param receiverIsNull The parameter is `false` if:
          *      - a static method is called,
          *      - this is an invokespecial call (in this case the receiver is `this`),
          *      - the receiver is known not to be null and the type is known to be precise.
@@ -157,8 +156,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             operands:           domain.Operands
         ): Unit = {
             // MODIFIED CHA - we used the type information that is readily available
-            val receiver =
-                domain.typeOfValue(operands(descriptor.parametersCount)).asInstanceOf[IsReferenceValue]
+            val domain.DomainReferenceValue(receiver) = operands(descriptor.parametersCount)
             val receiverIsNull = receiver.isNull
 
             // Possible Cases:
@@ -246,9 +244,8 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             }
 
             val receiverUpperTypeBound = receiver.upperTypeBound.toUIDSet[ReferenceType]
-
-            val receivers = receiver.referenceValues
-            if (receivers.tail.nonEmpty) {
+            val receivers = receiver.baseValues
+            if (receivers.nonEmpty) {
                 // the reference value is a "MultipleReferenceValue"
 
                 // The following numbers are created using ExtVTA for JDK 1.8.0_25

@@ -31,21 +31,21 @@ package ai
 package domain
 package l1
 
+import org.opalj.br.ComputationalTypeInt
+
 /**
  * This domain implements the tracking of simple integer values.
  *
  * @see [[IntegerValues]] for more details.
- *
  * @note   This domain uses a single object to represent some integer. I.e., this
  *         domain does not support the identification of values that may be equal.
- *
  * @author Michael Eichberg
  */
 trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues {
     domain: Configuration with ExceptionsFactory ⇒
 
     /**
-     * Represents a specific but unknown Integer value.
+     * Represents an unspecific, unknown Integer value.
      *
      * Two instances of
      */
@@ -53,7 +53,9 @@ trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues 
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
-        override def abstractsOver(other: DomainValue): Boolean = other.isInstanceOf[IsIntegerValue]
+        override def abstractsOver(other: DomainValue): Boolean = {
+            other.computationalType == ComputationalTypeInt
+        }
 
         override def summarize(pc: PC): DomainValue = this
 
@@ -122,27 +124,27 @@ trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues 
 
     }
 
-    override def BooleanValue(origin: ValueOrigin): DomainValue = AnIntegerValue
-    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue = {
+    override def BooleanValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
+    override def BooleanValue(origin: ValueOrigin, value: Boolean): TheIntegerValue = {
         if (value) new TheIntegerValue(1) else new TheIntegerValue(0)
     }
 
-    override def ByteValue(origin: ValueOrigin): DomainValue = AnIntegerValue
+    override def ByteValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
     override def ByteValue(origin: ValueOrigin, value: Byte): TheIntegerValue = {
         new TheIntegerValue(value.toInt)
     }
 
-    override def ShortValue(origin: ValueOrigin): DomainValue = AnIntegerValue
+    override def ShortValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
     override def ShortValue(origin: ValueOrigin, value: Short): TheIntegerValue = {
         new TheIntegerValue(value.toInt)
     }
 
-    override def CharValue(origin: ValueOrigin): DomainValue = AnIntegerValue
+    override def CharValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
     override def CharValue(origin: ValueOrigin, value: Char): TheIntegerValue = {
         new TheIntegerValue(value.toInt)
     }
 
-    override def IntegerValue(origin: ValueOrigin): DomainValue = AnIntegerValue
+    override def IntegerValue(origin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
     override def IntegerValue(origin: ValueOrigin, value: Int): TheIntegerValue = {
         new TheIntegerValue(value)
     }

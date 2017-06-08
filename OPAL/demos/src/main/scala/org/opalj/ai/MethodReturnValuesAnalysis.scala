@@ -148,7 +148,7 @@ case class RefinedReturnType[D <: Domain](
         val returnType = method.descriptor.returnType
         val additionalInfo =
             refinedType match {
-                case value @ IsAReferenceValue(utb) ⇒
+                case value @ TypeOfReferenceValue(utb) ⇒
                     if (returnType.isReferenceType && value.isValueSubtypeOf(returnType.asReferenceType).isNoOrUnknown)
                         s"the $refinedType is not a subtype of the declared type $returnType"
                     else if (returnType.isObjectType && project.classHierarchy.hasSubtypes(returnType.asObjectType).isNoOrUnknown)

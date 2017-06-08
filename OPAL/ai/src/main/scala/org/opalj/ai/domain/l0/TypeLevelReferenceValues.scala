@@ -246,7 +246,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * Abstracts over all values with computational type `reference`. I.e.,
      * abstracts over class and array values and also the `null` value.
      */
-    trait ReferenceValue extends super.ReferenceValue with IsReferenceValue with ArrayAbstraction {
+    trait ReferenceValue extends super.ReferenceValue with ArrayAbstraction {
         this: AReferenceValue ⇒
 
         override def valueType: Option[ReferenceType] = {
@@ -264,6 +264,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             }
         }
 
+        /*
         final override def asDomainValue(
             implicit
             targetDomain: Domain
@@ -274,6 +275,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                 )
             this.asInstanceOf[targetDomain.DomainReferenceValue]
         }
+        */
     }
 
     /**
@@ -284,8 +286,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         val theUpperTypeBound: T
 
         final override def valueType: Some[ReferenceType] = Some(theUpperTypeBound)
-
-        final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
         final override def upperTypeBound: UpperTypeBound = new UIDSet1(theUpperTypeBound)
 
@@ -310,7 +310,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         /** Returns an empty upper type bound. */
         final override def upperTypeBound: UpperTypeBound = UIDSet.empty
 
-        final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
+        final override def baseValues: Traversable[AReferenceValue] = Traversable.empty
 
         /** Returns `Yes`. */
         final override def isNull: Answer = Yes
@@ -466,8 +466,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          */
         def length: Option[Int] = None
 
-        final def doGetLength(pc: PC): DomainValue =
+        final def doGetLength(pc: PC): DomainValue = {
             length.map(IntegerValue(pc, _)).getOrElse(IntegerValue(pc))
+        }
 
         override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
             if (isNull == Unknown && throwNullPointerExceptionOnArrayAccess)

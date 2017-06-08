@@ -586,7 +586,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
-            (this eq other) || asReferenceValue(other).isNull.isYes
+            (this eq other) || (other match {
+                case DomainReferenceValue(v) ⇒ v.isNull.isYes
+                case _                       ⇒ false
+            })
         }
 
         override def equals(other: Any): Boolean = {
@@ -705,7 +708,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (this eq other)
                 return true;
 
-            val that = asReferenceValue(other)
+            val that = domain.asReferenceValue(other)
 
             if (this.isNull.isUnknown && that.isNull.isYes)
                 return true;
@@ -983,13 +986,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (this eq other)
                 return true;
 
-            val that = asReferenceValue(other)
+            val DomainReferenceValue(that) = other
 
             if (this.isNull.isNo && that.isNull.isYesOrUnknown)
                 return false;
 
             val thatUTB = that.upperTypeBound
-            classHierarchy.isSubtypeOf(thatUTB, this.upperTypeBound.asInstanceOf[UIDSet[ReferenceType]]).isYes
+            classHierarchy.isSubtypeOf(thatUTB, this.upperTypeBound).isYes
         }
 
         override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
@@ -1185,7 +1188,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def origins: Iterable[ValueOrigin] = values.view.map(_.origin)
 
-        override def referenceValues: Iterable[IsAReferenceValue] = values
+        override def baseValues: Traversable[DomainReferenceValue] = values
 
         /**
          * Summarizes this value by creating a new domain value that abstracts over

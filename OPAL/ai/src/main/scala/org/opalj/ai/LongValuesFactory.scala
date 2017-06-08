@@ -29,6 +29,8 @@
 package org.opalj
 package ai
 
+import org.opalj.br.LongType
+
 /**
  * Defines the primary factory methods to create `long` values.
  *
@@ -43,7 +45,7 @@ trait LongValuesFactory extends ValuesDomain { domain ⇒
      *
      * The domain may ignore the information about the origin (`vo`).
      */
-    def LongValue(origin: ValueOrigin): DomainValue
+    def LongValue(origin: ValueOrigin): DomainTypedValue[LongType]
 
     /**
      * Factory method to create a `DomainValue` that represents the given long value
@@ -52,7 +54,7 @@ trait LongValuesFactory extends ValuesDomain { domain ⇒
      *
      * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def LongValue(origin: ValueOrigin, value: Long): DomainValue
+    def LongValue(origin: ValueOrigin, value: Long): DomainTypedValue[LongType]
 
 }
 

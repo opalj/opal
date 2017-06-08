@@ -41,19 +41,19 @@ import org.opalj.br.{FloatType, DoubleType}
  *
  * @author Michael Eichberg
  */
-sealed trait TypeInformation {
+sealed trait TypeInformation { // TODO Rename to ValueInformation
 
     /**
      * Returns `true` if no type information is available.
      */
-    def unknown: Boolean
+    def isUnknownValue: Boolean
 
-    @throws[DomainException]("if no type information is available")
+    /** True if the value has a reference type; undefined if the type is unknown. */
     def isReferenceValue: Boolean
 
-    def asIsAReferenceValue: IsAReferenceValue
+    //   def asReferenceValue: this.type
 
-    @throws[DomainException]("if no type information is available")
+    /** True if the value has a primitive type; undefined if the type is unknown. */
     def isPrimitiveValue: Boolean
 
 }
@@ -71,90 +71,122 @@ sealed trait TypeInformation {
  *
  * @author Michael Eichberg
  */
-case object UnknownType extends TypeInformation {
+case object UnknownType extends TypeInformation { // TODO Rename to UnknownValue
 
-    def unknown: Boolean = true
+    override def isUnknownValue: Boolean = true
 
-    def isReferenceValue: Boolean = throw DomainException("the type is unknown")
+    override def isPrimitiveValue: Boolean = throw DomainException("the type is unknown")
 
-    final def asIsAReferenceValue: IsAReferenceValue = {
-        throw new ClassCastException("cannot cast TypeUnknown to IsAReferenceValue")
-    }
+    override def isReferenceValue: Boolean = throw DomainException("the type is unknown")
 
-    def isPrimitiveValue: Boolean = throw DomainException("the type is unknown")
 }
 
-sealed trait KnownType extends TypeInformation
+trait KnownType extends TypeInformation { // TODO Rename to KnownValue
+
+    final override def isUnknownValue: Boolean = false
+
+}
 
 /**
  * The value has the primitive type.
  */
-sealed trait IsPrimitiveValue extends KnownType {
-
-    final def unknown: Boolean = false
+sealed trait IsPrimitiveValue[T <: BaseType, DomainPrimitiveValue <: AnyRef] extends KnownType {
+    this: DomainPrimitiveValue ⇒
 
     final def isReferenceValue: Boolean = false
 
-    final def asIsAReferenceValue: IsAReferenceValue = {
-        val className = this.getClass.getName
-        throw new ClassCastException(s"cannot cast $className to IsAReferenceValue")
-    }
-
     final def isPrimitiveValue: Boolean = true
 
-    def primitiveType: BaseType
+    def primitiveType: T
+
+    def valueType: Option[T] = Some(primitiveType)
+
 }
 
 object IsPrimitiveValue {
 
-    def unapply(answer: IsPrimitiveValue): Option[BaseType] = Some(answer.primitiveType)
+    def unapply[T <: BaseType, V <: AnyRef](answer: IsPrimitiveValue[T, V]): Option[T] = {
+        Some(answer.primitiveType)
+    }
 
 }
 
-trait IsBooleanValue extends IsPrimitiveValue {
+trait IsBooleanValue[DomainBooleanValue <: AnyRef]
+        extends IsPrimitiveValue[BooleanType, DomainBooleanValue] {
+    this: DomainBooleanValue ⇒
+
     final def primitiveType: BooleanType = BooleanType
 }
 
-trait IsByteValue extends IsPrimitiveValue {
+trait IsByteValue[DomainByteValue <: AnyRef]
+        extends IsPrimitiveValue[ByteType, DomainByteValue] {
+    this: DomainByteValue ⇒
+
     final def primitiveType: ByteType = ByteType
 }
 
-trait IsCharValue extends IsPrimitiveValue {
+trait IsCharValue[DomainCharValue <: AnyRef]
+        extends IsPrimitiveValue[CharType, DomainCharValue] {
+    this: DomainCharValue ⇒
+
     final def primitiveType: CharType = CharType
 }
 
-trait IsShortValue extends IsPrimitiveValue {
+trait IsShortValue[DomainShortValue <: AnyRef]
+        extends IsPrimitiveValue[ShortType, DomainShortValue] {
+    this: DomainShortValue ⇒
+
     final def primitiveType: ShortType = ShortType
 }
 
-trait IsIntegerValue extends IsPrimitiveValue {
+trait IsIntegerValue[DomainIntegerValue <: AnyRef]
+        extends IsPrimitiveValue[IntegerType, DomainIntegerValue] {
+    this: DomainIntegerValue ⇒
+
     final def primitiveType: IntegerType = IntegerType
 }
 
-trait IsFloatValue extends IsPrimitiveValue {
+trait IsFloatValue[DomainFloatValue <: AnyRef]
+        extends IsPrimitiveValue[FloatType, DomainFloatValue] {
+    this: DomainFloatValue ⇒
+
     final def primitiveType: FloatType = FloatType
 }
 
-trait IsLongValue extends IsPrimitiveValue {
+trait IsLongValue[DomainLongValue <: AnyRef]
+        extends IsPrimitiveValue[LongType, DomainLongValue] {
+    this: DomainLongValue ⇒
+
     final def primitiveType: LongType = LongType
 }
 
-trait IsDoubleValue extends IsPrimitiveValue {
+trait IsDoubleValue[DomainDoubleValue <: AnyRef]
+        extends IsPrimitiveValue[DoubleType, DomainDoubleValue] {
+    this: DomainDoubleValue ⇒
+
     final def primitiveType: DoubleType = DoubleType
 }
 
 /**
- * Characterizes a  reference value. Captures the information about one of the values
+ * Characterizes a reference value. Captures the information about the values
  * a domain value may refer to. For example, in the following:
  * {{{
  * val o = If(...) new Object() else "STRING"
  * }}}
- * o is a reference value (`IsReferenceValue`) that refers to two "simple" values each
- * represented by an instance of an `IsAReferenceValue` (`new Object()` and `"STRING"`).
+ * o is a reference value (`IsReferenceValue`) that (may) refers to two "simple" base values:
+ * `new Object()` and `"STRING"`; however, it is a decision of the the underlying domain whether
+ * the information about the base values is made available or not. Furthermore, if the base values
+ * are actually used, the constraints in effect for the overall abstraction should be considered
+ * to get the most precise result.
  *
  * @author Michael Eichberg
  */
-trait IsAReferenceValue /*[DomainValue <: AnyRef]*/ { // this:  DomainValue =>
+trait IsReferenceValue[DomainReferenceValue <: AnyRef] extends KnownType {
+    this: DomainReferenceValue ⇒
+
+    final override def isReferenceValue: Boolean = true
+
+    final override def isPrimitiveValue: Boolean = false
 
     /**
      * The upper bound of the value's type. The upper bound is empty if this
@@ -248,6 +280,44 @@ trait IsAReferenceValue /*[DomainValue <: AnyRef]*/ { // this:  DomainValue =>
     def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
     /**
+     * In general an `IsReferenceValue` abstracts over all potential values and this information is
+     * sufficient for subsequent analyses; but in some cases, analyzing the set of underlying values
+     * may increase the overall precision and this set is returned by this function. In other
+     * words: if `baseValues` is nonEmpty, then the properties return by `this` value are derived
+     * from the base values, but still maybe more specific. For example,
+     * {{{
+     *     Object o = _;
+     *     if(...) o = f() else o = g();
+     *     // when we reach this point, we generally don't know if the values returned by f and g
+     *     // are non-null; hence, o is potentially null.
+     *     if(o != null)
+     *      // Now, we know that o is not null, but we still don't know if the values returned
+     *      // by f OR g were null and we cannot establish that when we don't know to which value
+     *      // o is actually referring to.
+     *      u(o);
+     * }}}
+     *
+     * @note A reference value which belongs to the base values by some other reference value
+     *       '''never''' has base values itself.
+     *
+     * @return the set of values this reference value abstracts over. The set is empty if this
+     *         value is already a base base value.
+     */
+    def baseValues: Traversable[DomainReferenceValue]
+
+    /**
+     * The set of base values this values abstracts over. This set is never empty and contains
+     * this value if this value does not (further) abstract over other reference values.
+     *
+     * @note Primarily defined as a convenience interface.
+     */
+    final def allValues: Traversable[DomainReferenceValue] = {
+        val baseValues = this.baseValues
+        if (baseValues.isEmpty) Traversable(this) else baseValues
+    }
+
+    /*
+    /**
      * Returns this reference value as a `DomainValue` of its original domain.
      *
      * @param domain The domain that was used to create this object can be used
@@ -258,7 +328,8 @@ trait IsAReferenceValue /*[DomainValue <: AnyRef]*/ { // this:  DomainValue =>
     )
     def asDomainValue(implicit domain: Domain): domain.DomainReferenceValue
 
-    final def asIsAReferenceValue: this.type = this
+    final def asReferenceValue: this.type = this
+    */
 }
 
 /**
@@ -266,36 +337,11 @@ trait IsAReferenceValue /*[DomainValue <: AnyRef]*/ { // this:  DomainValue =>
  *
  * @author Michael Eichberg
  */
-object IsAReferenceValue {
+object TypeOfReferenceValue {
 
-    def unapply(value: IsAReferenceValue): Option[UIDSet[_ <: ReferenceType]] = {
-        Some(value.upperTypeBound)
+    def unapply[V <: AnyRef](rv: IsReferenceValue[V]): Some[UIDSet[_ <: ReferenceType]] = {
+        Some(rv.upperTypeBound)
     }
-}
-
-/**
- * The value identifies one or more reference values. Additionally, it is possible
- * to get a representation that represents a summary of all underlying reference values.
- *
- * @author Michael Eichberg
- */
-trait IsReferenceValue extends KnownType with IsAReferenceValue {
-
-    /**
-     * In general a domain value can represent several distinct values (depending
-     * on the control flow).
-     *
-     * Each of these values can have a different upper bound and
-     * an upper bound can in turn consist of several interfaces and a class.
-     */
-    def referenceValues: Traversable[IsAReferenceValue]
-
-    final def unknown: Boolean = false
-
-    final def isReferenceValue: Boolean = true
-
-    final def isPrimitiveValue: Boolean = false
-
 }
 
 /**
@@ -303,10 +349,10 @@ trait IsReferenceValue extends KnownType with IsAReferenceValue {
  *
  * @author Michael Eichberg
  */
-object IsReferenceValue {
+object BaseReferenceValues {
 
-    def unapply(value: IsReferenceValue): Some[Traversable[IsAReferenceValue]] = {
-        Some(value.referenceValues)
+    def unapply[V <: IsReferenceValue[V]](rv: IsReferenceValue[V]): Some[Traversable[V]] = {
+        Some(rv.allValues)
     }
 }
 
@@ -317,6 +363,6 @@ object IsReferenceValue {
  */
 object IsNullValue {
 
-    def unapply(rv: IsReferenceValue): Boolean = rv.isNull == Yes
+    def unapply[V <: AnyRef](rv: IsReferenceValue[V]): Boolean = rv.isNull == Yes
 
 }
