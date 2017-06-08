@@ -316,20 +316,6 @@ trait IsReferenceValue[DomainReferenceValue <: AnyRef] extends KnownType {
         if (baseValues.isEmpty) Traversable(this) else baseValues
     }
 
-    /*
-    /**
-     * Returns this reference value as a `DomainValue` of its original domain.
-     *
-     * @param domain The domain that was used to create this object can be used
-     *      to get/create a DomainValue.
-     */
-    @throws[UnsupportedOperationException](
-        "the given domain has to be equal to the domain that was used to creat this object"
-    )
-    def asDomainValue(implicit domain: Domain): domain.DomainReferenceValue
-
-    final def asReferenceValue: this.type = this
-    */
 }
 
 /**
@@ -346,6 +332,16 @@ object TypeOfReferenceValue {
 
 /**
  * Defines an extractor method for instances of `IsReferenceValue` objects.
+ *
+ * @note To ensure that the generic type can be matched, it may be necessary to first cast
+ *       a ''generic'' [[org.opalj.ai.ValuesDomain.DomainValue]] to a
+ *       [[org.opalj.ai.ValuesDomain.DomainReferenceValue]].
+ *       {{{
+ *           val d : Domain = ...
+ *           val d.DomainReferenceValue(v) = /*some domain value; e.g., operands.head*/
+ *           val BaseReferenceValues(values) = v
+ *           values...
+ *       }}}
  *
  * @author Michael Eichberg
  */
