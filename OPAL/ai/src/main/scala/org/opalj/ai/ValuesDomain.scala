@@ -406,6 +406,14 @@ trait ValuesDomain {
 
     type DomainReferenceValue >: Null <: ReferenceValue with DomainTypedValue[ReferenceType]
 
+    /**
+     * The class tag can be used to create type safe arrays or to extract the concrete type
+     * of the domain value.
+     * {{{
+     *     val DomainReferenceValue(v) = value // of type "DomainValue"
+     *     // v is now of the type DomainReferenceValue
+     * }}}
+     */
     val DomainReferenceValue: ClassTag[DomainReferenceValue]
 
     trait ReferenceValue
