@@ -33,15 +33,16 @@ import sbt._
  * This sbt-imported object organizes the libraries on which every
  * OPAL subproject depends by default
  *
- * @author OPAL team, Simon Leischnig
+ * @author Michael Eichberg
+ * @author Simon Leischnig
  */
 object Dependencies {
 
-  // Libraries
-  val junit = "junit" % "junit" % "4.12" % "test,it"
-  val scalatest = "org.scalatest" %% "scalatest" % "3.0.1" % "test,it"
-  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.13.5" % "test,it"
+    // Libraries
+    val junit = "junit" % "junit" % "4.12" % "test,it"
+    val scalatest = "org.scalatest" %% "scalatest" % "3.0.1" % "test,it"
+    val scalacheck = "org.scalacheck" %% "scalacheck" % "1.13.5" % "test,it"
 
-  // centralized dependency sequences
-  val opalDefaultDependencies = Seq(junit, scalatest, scalacheck)
+    // centralized dependency sequences
+    val opalDefaultDependencies = Seq(junit, scalatest, scalacheck)
 }
