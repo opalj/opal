@@ -227,7 +227,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             )
 
             // DEBUG ---
-            if (classFile.thisType.toJava.startsWith("lambdas.MethodReferenceError") || receiverType != targetMethodOwner) {
+            if (receiverType != targetMethodOwner) {
                 println("Rewritten proxy class receiver type from targetMethodOwner to receiverType!\n")
                 println("Creating Proxy Class:")
                 println(s"\t\ttypeDeclaration = $typeDeclaration")
