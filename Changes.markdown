@@ -1,6 +1,9 @@
 # Major Changes
 
 ## Upcomming
+ - OPAL now has a very advanced 3-address code representation
+ - fixed bugs when rewriting INVOKEDYNAMIC instruction (thanks Andreas Muttscheller)
+ - improved the public API of the Abstract Interpretation Framework to facilitate analyses written using the 3-address representation
 
 ## 0.8.13
  - we now have complete support for converting a class file using the standard bytecode representation to the native representation; the latter can then be serialized to a valid class file
