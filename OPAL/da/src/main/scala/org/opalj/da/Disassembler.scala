@@ -48,16 +48,16 @@ object Disassembler {
     OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, ErrorLogLevel))
 
     private final val Usage = {
-        "Usage: java …Disassembler \n" +
-            "[-o <File> the name of the file to which the generated html page should be written]\n" +
-            "[-open the generated html page will be opened in a browser]\n" +
-            "[-source <File> a class or jar file or a directory containg jar or class files]*\n" +
-            "<ClassName> name of the class for which we want to create the HTML page\n" +
-            "Example:\n\tjava …Disassembler -source /Library/jre/lib/rt.jar java.util.ArrayList"
+        "Usage: java …Disassembler \n"+
+            "       [-o <File> the name of the file to which the generated html page should be written]\n"+
+            "       [-open the generated html page will be opened in a browser]\n"+
+            "       [-source <File> a class or jar file or a directory containg jar or class files]*\n"+
+            "       <ClassName> name of the class for which we want to create the HTML page\n"+
+            "Example:\n       java …Disassembler -source /Library/jre/lib/rt.jar java.util.ArrayList"
     }
 
     def handleError(error: String): Nothing = {
-        Console.err.println(error)
+        Console.err.println("Error: "+error)
         Console.out.println(Usage)
         sys.exit(1)
     }
