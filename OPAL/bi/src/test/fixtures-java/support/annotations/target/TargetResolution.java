@@ -38,7 +38,7 @@ package annotations.target;
  * @author Arne Lottmann
  */
 public enum TargetResolution {
-	
+
     /**
      * Describes a method call made using one of the following instructions:
      * <ul>

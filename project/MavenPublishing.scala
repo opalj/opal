@@ -26,44 +26,43 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 import sbt._
+
 import scala.xml.NodeSeq
 
 /**
- * This sbt-imported object contains tasks and settings specific to maven export
+ * Definiton of the tasks and settings to support exporting OPAL to Maven.
  *
- * @author OPAL team, Simon Leischnig
+ * @author Michael Eichberg
+ * @author Simon Leischnig
  */
 object MavenPublishing {
 
     // method populates sbt.publishTo = SettingKey[Option[Resolver]]
     def publishTo(isSnapshot: Boolean): Option[Resolver] = {
-      val nexus = "https://oss.sonatype.org/"
-      if (isSnapshot)
-        Some("snapshots" at nexus + "content/repositories/snapshots")
-      else
-        Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+        val nexus = "https://oss.sonatype.org/"
+        if (isSnapshot)
+            Some("snapshots" at nexus+"content/repositories/snapshots")
+        else
+            Some("releases" at nexus+"service/local/staging/deploy/maven2")
     }
 
     def pomNodeSeq(): NodeSeq = {
-      (
         <scm>
-          <url>git@bitbucket.org:delors/opal.git</url>
-          <connection>scm:git:git@bitbucket.org:delors/opal.git</connection>
+            <url>git@bitbucket.org:delors/opal.git</url>
+            <connection>scm:git:git@bitbucket.org:delors/opal.git</connection>
         </scm>
         <developers>
-          <developer>
-            <id>eichberg</id>
-            <name>Michael Eichberg</name>
-            <url>http://www.michael-eichberg.de</url>
-          </developer>
-          <developer>
-            <id>reif</id>
-            <name>Michael Reif</name>
-          </developer>
+            <developer>
+                <id>eichberg</id>
+                <name>Michael Eichberg</name>
+                <url>http://www.michael-eichberg.de</url>
+            </developer>
+            <developer>
+                <id>reif</id>
+                <name>Michael Reif</name>
+            </developer>
         </developers>
-      )
     }
 
 }
