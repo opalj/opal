@@ -16,21 +16,21 @@ version 		in ThisBuild := "0.9.0-SNAPSHOT"
 // RELEASED version 		in ThisBuild := "0.8.10"
 // RELEASED version 		in ThisBuild := "0.8.9"
 
-organization 	in ThisBuild := "de.opal-project"
-homepage 		in ThisBuild := Some(url("http://www.opal-project.de"))
-licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
+organization    in ThisBuild := "de.opal-project"
+homepage        in ThisBuild := Some(url("http://www.opal-project.de"))
+licenses        in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
-scalaVersion 	in ThisBuild := "2.11.11"
-//scalaVersion 	in ThisBuild := "2.12.2"
+scalaVersion    in ThisBuild := "2.11.11"
+//scalaVersion  in ThisBuild := "2.12.2"
 
 scalacOptions 	in ThisBuild ++= Seq(
-		"-target:jvm-1.8",
-		"-deprecation", "-feature", "-unchecked",
-		"-Xlint", "-Xfuture", "-Xfatal-warnings",
-		"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
-		"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code"
+    "-target:jvm-1.8",
+    "-deprecation", "-feature", "-unchecked",
+    "-Xlint", "-Xfuture", "-Xfatal-warnings",
+    "-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
+    "-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code"
 )
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
@@ -78,7 +78,7 @@ addCommandAlias("cleanAll","; clean ; test:clean ; it:clean ; cleanFiles ; clean
 
 addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; buildAll ")
 
-lazy val IntegrationTest = config("it") extend(Test)
+lazy val IntegrationTest = config("it") extend Test
 
 // Default settings without scoverage
 lazy val buildSettings =
@@ -93,7 +93,7 @@ lazy val buildSettings =
 
 def getScalariformPreferences(dir: File) = {
 		val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
-		PreferencesImporterExporter.loadPreferences((file(formatterPreferencesFile).getPath))
+		PreferencesImporterExporter.loadPreferences(file(formatterPreferencesFile).getPath)
 }
 
 lazy val opal = Project(
@@ -251,15 +251,15 @@ lazy val incubation = Project(
 // To run the task: OPAL/publish::generateSite
 val generateSite = taskKey[File]("creates the OPAL website") in Compile
 generateSite := {
-		lazy val disassemblerJar = (assembly in da).value
-		val runUnidoc = (unidoc in Compile).value
+	lazy val disassemblerJar = (assembly in da).value
+	val runUnidoc = (unidoc in Compile).value
 
     SiteGeneration.generateSite(
-			sourceDirectory.value,
-			resourceManaged.value,
-			streams.value,
-			disassemblerJar
-		)
+		sourceDirectory.value,
+		resourceManaged.value,
+		streams.value,
+		disassemblerJar
+	)
 }
 
 compile := {
@@ -274,12 +274,7 @@ compile := {
 //
 //
 
-
 publishMavenStyle in ThisBuild := true
 publishArtifact in Test := false
-
-publishTo in ThisBuild := {
-	MavenPublishing.publishTo(isSnapshot.value)
-}
-
+publishTo in ThisBuild := MavenPublishing.publishTo(isSnapshot.value)
 pomExtra in ThisBuild := MavenPublishing.pomNodeSeq()
