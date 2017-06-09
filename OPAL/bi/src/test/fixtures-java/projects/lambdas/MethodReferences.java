@@ -315,6 +315,13 @@ public class MethodReferences {
 		return lhm;
 	}
 
+	public static <T> void instanceBiConsumer() {
+		LinkedHashSet<T> lhm = new LinkedHashSet<T>();
+		java.util.function.Consumer<T> bc = lhm::contains;
+
+		lhm.contains("foo");
+	}
+
 	public static class MixedDoubleParamters {
     	public static double sum(double a, double b) {
     		return a+b;
