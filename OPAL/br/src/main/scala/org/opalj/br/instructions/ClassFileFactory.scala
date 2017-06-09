@@ -239,9 +239,7 @@ object ClassFileFactory {
         val fields: IndexedSeq[Field] =
             receiverField ++ additionalFieldsForStaticParameters
 
-        val constructorFields = fields
-
-        val constructor: Method = createConstructor(definingType, constructorFields)
+        val constructor: Method = createConstructor(definingType, fields)
 
         val factoryMethodName: String =
             if (methodName == DefaultFactoryMethodName) {
@@ -265,7 +263,7 @@ object ClassFileFactory {
         methods(1) = constructor
         methods(2) = createFactoryMethod(
             definingType.objectType,
-            constructorFields.map(_.fieldType),
+            fields.map(_.fieldType),
             factoryMethodName
         )
         if (bridgeMethodDescriptor.isDefined) {
