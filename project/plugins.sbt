@@ -1,9 +1,6 @@
 // We have centralized the configuration of all plug-ins here, to make this file easily
 // useable by the dockerfile to configure the docker image used for building OPAL.
 
-// to build eclipse project configurations
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "5.1.0")
-
 // to clear the ivy folders
 addSbtPlugin("com.eed3si9n" % "sbt-dirty-money" % "0.1.0")
 
