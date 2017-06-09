@@ -221,57 +221,57 @@ public class MethodReferences {
     }
 
     public Double sumDoubleFloat() {
-        BiFunction<Double, Float, Double> bf = lambdas.MethodReferences.MixedDoubleParamters::sum;
+        BiFunction<Double, Float, Double> bf = MixedDoubleParamters::sum;
         return bf.apply(2d, 3.14f);
     }
 
     public Double sumFloatDouble() {
-        BiFunction<Float, Double, Double> bf = lambdas.MethodReferences.MixedDoubleParamters::sum;
+        BiFunction<Float, Double, Double> bf = MixedDoubleParamters::sum;
         return bf.apply(4.2f, 2d);
     }
 
     public Float sumFloatFloat() {
-        BiFunction<Float, Float, Float> bf = lambdas.MethodReferences.MixedDoubleParamters::sum;
+        BiFunction<Float, Float, Float> bf = MixedDoubleParamters::sum;
         return bf.apply(2.7f, 2.5f);
     }
 
     public Double sumFloatDoubleFloat() {
-        TriFunction<Float, Double, Float, Double> tf = lambdas.MethodReferences.MixedDoubleParamters::sum;
+        TriFunction<Float, Double, Float, Double> tf = MixedDoubleParamters::sum;
         return tf.apply(3.14f, 42d, 2.5f);
     }
 
     public Double sumDoubleInt() {
-        BiFunction<Integer, Double, Double> bf = lambdas.MethodReferences.MixedDoubleParamters::sum;
+        BiFunction<Integer, Double, Double> bf = MixedDoubleParamters::sum;
         return bf.apply(42, 42d);
     }
 
     public Double sumLongDouble() {
-        BiFunction<Long, Double, Double> bf = lambdas.MethodReferences.MixedDoubleParamters::sum;
+        BiFunction<Long, Double, Double> bf = MixedDoubleParamters::sum;
         return bf.apply(42l, 42.3d);
     }
 
     public Long sumLongLong() {
-        BiFunction<Long, Long, Long> bf = lambdas.MethodReferences.MixedLongParamters::sum;
+        BiFunction<Long, Long, Long> bf = MixedLongParamters::sum;
         return bf.apply(42l, 42l);
     }
 
     public Long sumLongInt() {
-        BiFunction<Long, Integer, Long> bf = lambdas.MethodReferences.MixedLongParamters::sum;
+        BiFunction<Long, Integer, Long> bf = MixedLongParamters::sum;
         return bf.apply(42l, 24);
     }
 
     public Long sumIntInt() {
-        BiFunction<Integer, Integer, Long> bf = lambdas.MethodReferences.MixedLongParamters::sum;
+        BiFunction<Integer, Integer, Long> bf = MixedLongParamters::sum;
         return bf.apply(42, 314);
     }
 
     public Double sumDoubleLong() {
-        BiFunction<Double, Long, Double> bf = lambdas.MethodReferences.MixedLongParamters::sum;
+        BiFunction<Double, Long, Double> bf = MixedLongParamters::sum;
         return bf.apply(5.5d, 42l);
     }
 
     public Long sumIntLongLong() {
-        TriFunction<Integer, Long, Long, Long> tf = lambdas.MethodReferences.MixedLongParamters::sum;
+        TriFunction<Integer, Long, Long, Long> tf = MixedLongParamters::sum;
         return tf.apply(3, 4l, 5l);
     }
 
