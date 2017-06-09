@@ -32,6 +32,7 @@ import annotations.target.InvokedMethod;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 import static annotations.target.TargetResolution.*;
 
@@ -290,6 +291,36 @@ public class MethodReferences {
                 lambdas.MethodReferences.MixedLongParamters::sum;
         return tf.apply(3, 4l, 5l);
     }
+
+    public static <T, R> R someBiConsumerParameter(
+    		java.util.function.Supplier<R> s,
+    		java.util.function.BiConsumer<R, T> bc,
+			java.util.function.BiConsumer<R, R> r,
+			T t) {
+		R state = s.get();
+		bc.accept(state, t);
+		r.accept(state, state);
+
+		return state;
+	}
+
+	public static <T> LinkedHashSet<T> callBiConsumer(T t) {
+		LinkedHashSet<T> lhm = MethodReferences.<T, LinkedHashSet<T>>someBiConsumerParameter(
+				LinkedHashSet::new,
+				LinkedHashSet::add,
+				LinkedHashSet::addAll,
+				t
+		);
+
+		return lhm;
+	}
+
+	public static <T> void instanceBiConsumer() {
+		LinkedHashSet<T> lhm = new LinkedHashSet<T>();
+		java.util.function.Consumer<T> bc = lhm::contains;
+
+		lhm.contains("foo");
+	}
 
 	public static class MixedDoubleParamters {
     	public static double sum(double a, double b) {
