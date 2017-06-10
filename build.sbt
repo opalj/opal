@@ -138,8 +138,8 @@ lazy val common = Project(
 			scalacOptions in (Compile, console) := Seq("-deprecation"),
 			libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
 			libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-			libraryDependencies += "com.typesafe.play" %% "play-json" % "2.5.14",
-			libraryDependencies += "com.iheart" %% "ficus" % "1.4.0"
+			libraryDependencies += "com.typesafe.play" %% "play-json" % "2.5.15",
+			libraryDependencies += "com.iheart" %% "ficus" % "1.4.1"
 		)
 ).configs(IntegrationTest)
 
@@ -161,7 +161,7 @@ lazy val br = Project(
 			// standard compiler settings!
 			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation"),
 			scalacOptions in (Compile, console) := Seq("-deprecation"),
-			libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"
+			libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6"
 		)
 ).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
  .configs(IntegrationTest)
