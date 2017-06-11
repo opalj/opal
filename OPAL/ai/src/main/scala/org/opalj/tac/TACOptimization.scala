@@ -29,8 +29,6 @@
 package org.opalj
 package tac
 
-import org.opalj.br.cfg.CFG
-
 /**
  * Common interface of all code optimizers that operate on the three-address code
  * representation.
@@ -50,11 +48,7 @@ trait TACOptimization[V <: Var[V]] {
  *
  * @author Michael Eichberg
  */
-case class TACOptimizationResult[V <: Var[V]](
-    code:           Array[Stmt[V]],
-    cfg:            CFG,
-    wasTransformed: Boolean
-)
+case class TACOptimizationResult[V <: Var[V]](code: TACode[V], wasTransformed: Boolean)
 
 /**
  * A very simple peephole optimizer which performs intra-basic block constant and copy propagation.
@@ -64,9 +58,9 @@ case class TACOptimizationResult[V <: Var[V]](
 object SimplePropagation extends TACOptimization[IdBasedVar] {
 
     def apply(tac: TACOptimizationResult[IdBasedVar]): TACOptimizationResult[IdBasedVar] = {
-
-        val bbs = tac.cfg.allBBs
-        val code = tac.code
+        val cfg = tac.code.cfg
+        val bbs = cfg.allBBs
+        val code = tac.code.stmts
         var wasTransformed = false
         bbs.withFilter(bb ⇒ bb.startPC < bb.endPC).foreach { bb ⇒
             var index = bb.startPC
@@ -148,7 +142,7 @@ object SimplePropagation extends TACOptimization[IdBasedVar] {
             }
 
         }
-
-        new TACOptimizationResult(code, tac.cfg, wasTransformed)
+        val newTACode = TACode(code, cfg, tac.code.exceptionHandlers, tac.code.lineNumberTable)
+        new TACOptimizationResult(newTACode, wasTransformed)
     }
 }

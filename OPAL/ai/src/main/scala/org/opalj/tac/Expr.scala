@@ -499,9 +499,9 @@ object Var {
 /**
  * Identifies a variable which has a single static definition/initialization site.
  */
-abstract class DUVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] extends Var[DUVar[ValueType]] {
+abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Var[DUVar[Value]] {
 
-    def value: ValueType
+    def value: Value
 
     final def cTpe: ComputationalType = value.computationalType
 
@@ -513,11 +513,11 @@ abstract class DUVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] extend
  * has the given origin.
  * Initially, the pc of the underlying bytecode instruction is used.
  */
-class DVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
+class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         private[tac] var origin:   ValueOrigin,
-        val value:                 ValueType,
+        val value:                 Value,
         private[tac] var useSites: IntSet
-) extends DUVar[ValueType] {
+) extends DUVar[Value] {
 
     assert(useSites != null, s"no uses (null) for $origin: $value")
     assert(value != null)
@@ -535,6 +535,9 @@ class DVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
         origin = pcToIndex(origin)
         useSites = useSites.map(pcToIndex.apply) // use site are always positive...
     }
+
+    override def toString: String = s"DVar(useSites=$useSites,value=$value,origin=$origin)"
+
 }
 
 object DVar {
@@ -549,10 +552,10 @@ object DVar {
 
 }
 
-class UVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
-        val value:                 ValueType,
+class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
+        val value:                 Value,
         private[tac] var defSites: IntSet
-) extends DUVar[ValueType] {
+) extends DUVar[Value] {
 
     def name: String = {
         defSites.iterator.map { defSite ⇒
@@ -572,6 +575,8 @@ class UVar[+ValueType <: org.opalj.ai.ValuesDomain#DomainValue] private (
             if (defSite >= 0) pcToIndex(defSite) else defSite /* <= it is a parameter */
         }
     }
+
+    override def toString: String = s"UVar(defSites=$defSites,value=$value)"
 
 }
 
