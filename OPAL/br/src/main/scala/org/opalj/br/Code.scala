@@ -60,13 +60,13 @@ import org.opalj.br.cfg.CFGFactory
  *          This value is determined by the compiler and is not necessarily the minimum.
  *          However, in the vast majority of cases it is the minimum.
  * @param   maxLocals The number of registers/local variables needed to execute the method.
- *          As in case of `maxStack` this number is expected to be the minimum, but this is
- *          not guaranteed.
- * @param   instructions The instructions of this `Code` array/`Code` block. Since the code
- *          array is not completely filled (it contains `null` values) the preferred way
- *          to iterate over all instructions is to use for-comprehensions and pattern
- *          matching or to use one of the predefined methods [[foreach]], [[collect]],
- *          [[collectPair]], [[collectWithIndex]], etc..
+ *          As in case of `maxStack` this number is expected to be the minimum, but this
+ *          is not guaranteed.
+ * @param   instructions The instructions of this `Code` array/`Code` block. Since the
+ *          code array is not completely filled (it contains `null` values) the
+ *          preferred way to iterate over all instructions is to use for-comprehensions
+ *          and pattern matching or to use one of the predefined methods [[foreach]],
+ *          [[collect]], [[collectPair]], [[collectWithIndex]], etc..
  *          The `instructions` array must not be mutated!
  *
  * @author Michael Eichberg
@@ -119,7 +119,7 @@ final class Code private (
             return false;
         }
 
-        if (!this.attributes.forall(a ⇒ other.attributes.find(a.similar).isDefined)) {
+        if (!this.attributes.forall(a ⇒ other.attributes.exists(a.similar))) {
             return false;
         }
 
@@ -165,13 +165,15 @@ final class Code private (
 
         def foreach[U](f: ((PC, Instruction)) ⇒ U): Unit = {
             code.foreach { (pcInstruction: (PC, Instruction)) ⇒
-                if (p(pcInstruction)) f((pcInstruction))
+                if (p(pcInstruction)) f(pcInstruction)
             }
         }
 
         def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilteredCode = {
             new FilteredCode(
-                (pcInstruction: (PC, Instruction)) ⇒ this.p(pcInstruction) && p((pcInstruction))
+                (pcInstruction: (PC, Instruction)) ⇒ {
+                    this.p(pcInstruction) && p(pcInstruction)
+                }
             )
         }
     }
