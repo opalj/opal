@@ -94,7 +94,7 @@ object TACAI {
         // for all useless instructions).
 
         val statements = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](codeSize)
-        val pcToIndex = new Array[Int](codeSize)
+        val pcToIndex = new Array[Int](codeSize + 1 /* +1 if the try block includes the last inst. */ )
 
         var pc: PC = 0
         var index: Int = 0
@@ -630,6 +630,9 @@ object TACAI {
                 pc = pcOfNextInstruction(pc)
             }
         } while (pc < codeSize)
+
+        // add the artificial lastPC + 1 instruction to enable the mapping of exception handlers
+        pcToIndex(pc /* == codeSize +1 */ ) = index
 
         val tacStmts = {
             val tacStmts = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](index)

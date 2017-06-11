@@ -826,7 +826,7 @@ object TACNaive {
         }
 
         var currentPC = 0
-        val pcToIndex = new Array[Int](codeSize)
+        val pcToIndex = new Array[Int](codeSize + 1 /* +1 for try blocks which include the last inst. */ )
         while (currentPC < codeSize) {
             val currentStatements = statements(currentPC)
             if (currentStatements ne null) {
@@ -837,12 +837,15 @@ object TACNaive {
                     index += 1
                 }
             } else {
-                // Required by subsequent tranformations to identifiy that some pcs
+                // Required by subsequent transformations to identify that some pcs
                 // are related to dead code!
                 pcToIndex(currentPC) = Int.MinValue
             }
             currentPC += 1
         }
+
+        // add the artificial lastPC + 1 instruction to enable the mapping of exception handlers
+        pcToIndex(currentPC /* == codeSize +1 */ ) = index
 
         if (forceCFGCreation || optimizations.nonEmpty) cfg()
         val tacCFG = Option(theCFG).map(cfg ⇒ cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1))

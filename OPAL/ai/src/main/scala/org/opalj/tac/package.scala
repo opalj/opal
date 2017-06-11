@@ -75,6 +75,10 @@ package object tac {
         newIndexes:        Array[Int]
     ): ExceptionHandlers = {
         exceptionHandlers map { old ⇒
+            // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
+            // included in the handler block, the endPC is equal to `(pc of last instruction) +
+            // instruction.size`; however, this is already handled by the caller!
+
             old.copy(
                 startPC = newIndexes(old.startPC),
                 endPC = newIndexes(old.endPC),
