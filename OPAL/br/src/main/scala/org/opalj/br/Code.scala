@@ -1033,20 +1033,10 @@ final class Code private (
     }
 
     /**
-     * Collects all local variable type tables.
-     *
-     * @note Depending on the configuration of the reader for `ClassFile`s this
-     *      attribute may not be reified.
-     */
-    def runtimeVisibleType: Seq[LocalVariableTypes] = {
-        attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
-    }
-
-    /**
      * The JVM specification mandates that a Code attribute has at most one
      * StackMapTable attribute.
      *
-     * @note Depending on the configuration of the reader for `ClassFile`s this
+     * @note   Depending on the configuration of the reader for `ClassFile`s this
      *         attribute may not be reified.
      */
     def stackMapTable: Option[StackMapFrames] = {
