@@ -78,7 +78,7 @@ class TACAITest extends FunSpec with Matchers {
             aiResult = BaseAI(cf, m, domainFactory(project, cf, m))
         } {
             try {
-                val (tacAICode, _) = TACAI(m, project.classHierarchy, aiResult)(List.empty)
+                val TACode(tacAICode, _, _,_ ) = TACAI(m, project.classHierarchy, aiResult)(List.empty)
                 ToTxt(tacAICode)
             } catch {
                 case e: Throwable ⇒ this.synchronized {

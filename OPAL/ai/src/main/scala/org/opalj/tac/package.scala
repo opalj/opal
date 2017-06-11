@@ -28,7 +28,9 @@
  */
 package org.opalj
 
-import org.opalj.br.cfg.{BasicBlock, CFG}
+import org.opalj.br.ExceptionHandlers
+import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CFG
 import org.opalj.graphs.Node
 
 /**
@@ -55,6 +57,30 @@ package object tac {
             tacToGraph(stmts, cfg),
             ranksep = "0.4"
         )
+    }
+
+    /**
+     * Updates the exception handlers by adjusting the start, end and handler index (pc).
+     *
+     * This method can only be used in simple cases where the order of instructions remains
+     * the same - deleting instructions is supported.
+     *
+     * @param exceptionHandlers
+     * @param newIndexes A map that contains for each previous index the new index
+     *                   that should be used.
+     * @return The new exception handler.
+     */
+    def updateExceptionHandlers(
+        exceptionHandlers: ExceptionHandlers,
+        newIndexes:        Array[Int]
+    ): ExceptionHandlers = {
+        exceptionHandlers map { old ⇒
+            old.copy(
+                startPC = newIndexes(old.startPC),
+                endPC = newIndexes(old.endPC),
+                handlerPC = newIndexes(old.endPC)
+            )
+        }
     }
 
 }

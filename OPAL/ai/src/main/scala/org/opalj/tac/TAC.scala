@@ -73,7 +73,7 @@ object TAC {
             "(1) <JAR file containing class files>\n"+
             "(2) <class file name>\n"+
             "(3) <method name>\n"+
-            "[(4) -ai|-naive|-both (default: -both)]"+
+            "[(4) -ai|-naive|-both (default: -ai)]"+
             "Example:\n\tjava …TAC /Library/jre/lib/rt.jar java.util.ArrayList toString"
     }
 
@@ -106,7 +106,7 @@ object TAC {
                 val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, prefix, ".gv")
                 println(s"Generated the reified ai CFG: $aiBRCFGFile")
 
-                val (code, cfg) = TACAI(method, project.classHierarchy, aiResult)(List.empty)
+                val TACode(code, cfg, _, _) = TACAI(method, project.classHierarchy, aiResult)(Nil)
                 val graph = tacToDot(code, cfg)
                 val tacCFGFile = writeAndOpen(graph, "TACAI-CFG-"+method.name, ".gv")
                 println(s"Generated the tac cfg file $tacCFGFile.")
@@ -118,7 +118,7 @@ object TAC {
             }
 
             if (use == "-naive" || use == "-both") { // USING NO AI
-                val (code, _) =
+                val (code, _, _) =
                     TACNaive(method, ch, AllTACNaiveOptimizations, forceCFGCreation = true)
 
                 val tac = ToTxt(code)
@@ -151,7 +151,7 @@ object TAC {
         } else {
             val clazzName = args(1)
             val methodName = args(2)
-            val useAI = if (args.length == 4) args(3).toLowerCase else "-both"
+            val useAI = if (args.length == 4) args(3).toLowerCase else "-ai"
 
             val classFile = classFiles.find(e ⇒ e._1.thisType.toJava == clazzName).map(_._1).get
             val methods = classFile.findMethod(methodName)

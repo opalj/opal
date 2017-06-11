@@ -87,7 +87,7 @@ object TACNaive {
         classHierarchy:   ClassHierarchy,
         optimizations:    List[TACOptimization[IdBasedVar]] = List.empty,
         forceCFGCreation: Boolean                           = false
-    ): (Array[Stmt[IdBasedVar]], Option[CFG]) = {
+    ): (Array[Stmt[IdBasedVar]], Option[CFG], ExceptionHandlers) = {
 
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -845,23 +845,21 @@ object TACNaive {
         }
 
         if (forceCFGCreation || optimizations.nonEmpty) cfg()
-        var tacCFG = Option(theCFG).map(cfg ⇒ cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1))
+        val tacCFG = Option(theCFG).map(cfg ⇒ cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1))
 
         finalStatements.foreach(_.remapIndexes(pcToIndex))
-        var tacCode = finalStatements.toArray
+        val tacCode = finalStatements.toArray
+
+        val tacEHs = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
 
         if (optimizations.nonEmpty) {
-            val baseTAC = TACOptimizationResult[IdBasedVar](
-                tacCode,
-                tacCFG.get,
-                wasTransformed = false
-            )
-            val result = optimizations.foldLeft(baseTAC)((tac, optimization) ⇒ optimization(tac))
-            tacCode = result.code
-            tacCFG = Some(result.cfg)
+            val initialTACode = TACode(tacCode, tacCFG.get, tacEHs, code.lineNumberTable)
+            val base = TACOptimizationResult[IdBasedVar](initialTACode, wasTransformed = false)
+            val result = optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac))
+            (result.code.stmts, Some(result.code.cfg), result.code.exceptionHandlers)
+        } else {
+            (tacCode, tacCFG, tacEHs)
         }
-
-        (tacCode, tacCFG)
     }
 
 }

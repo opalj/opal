@@ -68,7 +68,7 @@ class TACNaiveTest extends FunSpec with Matchers {
         } {
             try {
                 // without using AIResults
-                val (tacNaiveCode, _) = TACNaive(
+                val (tacNaiveCode, _, _) = TACNaive(
                     method = m,
                     classHierarchy = project.classHierarchy,
                     optimizations = AllTACNaiveOptimizations
