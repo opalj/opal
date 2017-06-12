@@ -29,7 +29,7 @@
 package lambdas.methodreferences;
 
 /**
- * This class contains a method reference examples used with primitives.
+ * This class contains method reference examples used with primitives.
  *
  * <!--
  * <p>
