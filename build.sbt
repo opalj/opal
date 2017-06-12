@@ -136,6 +136,7 @@ lazy val common = Project(
 			// we publish the projects.)
 			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL-Common"),
 			scalacOptions in (Compile, console) := Seq("-deprecation"),
+      //library dependencies
 			libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
 			libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
 			libraryDependencies += "com.typesafe.play" %% "play-json" % "2.5.15",
@@ -143,10 +144,19 @@ lazy val common = Project(
 		)
 ).configs(IntegrationTest)
 
+// For the bytecode infrastructure project, the OPAL/bi/build.sbt file
+// contains the task and settings that are responsible for java test fixture compilation
 lazy val bi = Project(
 		id = "BytecodeInfrastructure",
 		base = file("OPAL/bi"),
-		settings = buildSettings
+		settings = buildSettings ++
+    Seq(
+      name := "Bytecode Infrastructure",
+      scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure"),
+      scalacOptions in (Compile, console) := Seq("-deprecation"),
+      //library dependencies
+      libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
+    )
 ).dependsOn(common % "it->test;test->test;compile->compile")
  .configs(IntegrationTest)
 
@@ -161,7 +171,8 @@ lazy val br = Project(
 			// standard compiler settings!
 			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation"),
 			scalacOptions in (Compile, console) := Seq("-deprecation"),
-			libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6"
+      //library dependencies
+			libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"
 		)
 ).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
  .configs(IntegrationTest)
@@ -232,7 +243,7 @@ lazy val de = Project(
 		Seq(
 			name := "Dependencies Extraction Library",
 			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Dependencies Extraction Library"),
-			scalacOptions in (Compile, console) := Seq("-deprecation") 
+			scalacOptions in (Compile, console) := Seq("-deprecation")
 		)
 ).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
  .configs(IntegrationTest)
@@ -267,7 +278,20 @@ lazy val av = Project(
 lazy val DeveloperTools = Project(
 		id = "OPAL-DeveloperTools",
 		base = file("DEVELOPING_OPAL/tools"),
-		settings = buildSettings
+		settings = buildSettings ++
+    Seq(
+      name := "OPAL-Developer Tools",
+      scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Developer Tools"),
+      scalacOptions in (Compile, console) := Seq("-deprecation"),
+      //library dependencies
+      libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.102-R11" withSources() withJavadoc(),
+      libraryDependencies += "org.controlsfx" % "controlsfx" % "8.40.12" withJavadoc(),
+      libraryDependencies += "es.nitaur.markdown" % "txtmark" % "0.16" withJavadoc(),
+      libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % "2.8.8" withJavadoc(),
+      libraryDependencies += "org.choco-solver" % "choco-solver" % "4.0.3" withSources() withJavadoc(),
+      // Required by Java/ScalaFX
+      fork := true
+    )
 ).dependsOn(
 		av % "test->test;compile->compile",
 		bp % "test->test;compile->compile",
@@ -280,7 +304,12 @@ lazy val DeveloperTools = Project(
 lazy val Validate = Project(
 		id = "OPAL-Validate",
 		base = file("DEVELOPING_OPAL/validate"),
-		settings = buildSettings ++ Seq(publishArtifact := false)
+		settings = buildSettings ++ Seq(
+      publishArtifact := false,
+      name := "OPAL-Validate",
+      scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Validate"),
+      scalacOptions in (Compile, console) := Seq("-deprecation")
+    )
 ).dependsOn(
 		DeveloperTools % "compile->compile;test->test;it->it;it->test")
  .configs(IntegrationTest)
@@ -308,7 +337,15 @@ lazy val demos = Project(
 lazy val incubation = Project(
 		id = "Incubation",
 		base = file("OPAL/incubation"),
-		settings = buildSettings ++ Seq(publishArtifact := false)
+		settings = buildSettings ++ Seq(
+      name := "Incubation",
+      // INCUBATION CODE IS NEVER EVEN CONSIDERED TO BE ALPHA QUALITY
+      version := "ALWAYS-SNAPSHOT",
+      scalacOptions in (Compile, doc) := Opts.doc.title("Incubation"),
+      scalacOptions in (Compile, console) := Seq("-deprecation"),
+      fork in run := true,
+      publishArtifact := false
+    )
 ).dependsOn(
 		av % "it->it;it->test;test->test;compile->compile",
 		ba % "it->it;it->test;test->test;compile->compile")
