@@ -47,7 +47,6 @@ import org.opalj.ai.util.removeFirstUnless
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
-import org.opalj.br.LiveVariables
 import org.opalj.br._
 import org.opalj.br.instructions._
 
@@ -1390,9 +1389,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     targetPCs
                 }
 
-                def handleException(exceptionValue: DomainValue): PCs = {
+                def handleException(exceptionValue: ExceptionValue): PCs = {
                     // potentially iterating over the individual exceptions is potentially
                     // more precise than just iterating over the "abstraction"
+                    /*
                     theDomain.typeOfValue(exceptionValue) match {
 
                         case IsReferenceValue(exceptionValues) ⇒
@@ -1422,9 +1422,30 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         case exceptionType ⇒
                             throw DomainException(s"unexpected exception type: $exceptionType")
                     }
+                    */
+                    val baseValues = exceptionValue.baseValues
+                    if (baseValues.isEmpty) {
+                        exceptionValue.isNull match {
+                            case No ⇒ // just forward
+                                doHandleTheException(exceptionValue, false)
+                            case Unknown ⇒
+                                val npeHandlerPC =
+                                    if (theDomain.throwNullPointerExceptionOnThrow) {
+                                        val npe = theDomain.VMNullPointerException(pc)
+                                        doHandleTheException(npe, false)
+                                    } else
+                                        IntSet.empty
+                                npeHandlerPC ++ doHandleTheException(exceptionValue, true)
+                            case Yes ⇒
+                                val npe = theDomain.VMNullPointerException(pc)
+                                doHandleTheException(npe, false)
+                        }
+                    } else {
+                        handleExceptions(baseValues)
+                    }
                 }
 
-                def handleExceptions(exceptions: Traversable[DomainValue]): PCs = {
+                def handleExceptions(exceptions: Traversable[ExceptionValue]): PCs = {
                     exceptions.foldLeft(IntSet.empty)(_ ++ handleException(_))
                 }
 
@@ -1798,7 +1819,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         // stored in a table. At runtime the Java virtual machine searches
                         // the exception handlers of the current method in the order that
                         // they appear in the corresponding exception handler table.
-                        val exceptionValue = operands.head
+                        val theDomain.DomainReferenceValue(exceptionValue) = operands.head
                         handleException(exceptionValue)
 
                     //

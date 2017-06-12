@@ -267,9 +267,10 @@ object ToTxt {
         aiResult:       Option[AIResult { val domain: RecordDefUse }] = None
     ): String = {
         aiResult map { aiResult ⇒
-            ToTxt(TACAI(method, classHierarchy, aiResult)(List.empty)._1)
+            ToTxt(TACAI(method, classHierarchy, aiResult)(Nil).stmts)
         } getOrElse {
-            ToTxt(TACNaive(method, classHierarchy, List(SimplePropagation), false)._1)
+            val (stmts, _, _) = TACNaive(method, classHierarchy, List(SimplePropagation), false)
+            ToTxt(stmts)
         }
     }
 

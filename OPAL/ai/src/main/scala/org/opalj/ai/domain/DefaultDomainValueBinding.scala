@@ -30,7 +30,9 @@ package org.opalj
 package ai
 package domain
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
+
+import org.opalj.br.Type
 
 /**
  * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes of it that are
@@ -43,6 +45,8 @@ import reflect.ClassTag
 trait DefaultDomainValueBinding extends ValuesDomain {
 
     final type DomainValue = Value
+
+    final type DomainTypedValue[+T <: Type] = TypedValue[T]
 
     final override val DomainValue: ClassTag[DomainValue] = implicitly
 

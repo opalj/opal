@@ -33,6 +33,7 @@ package l1
 
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.CTIntType
 
 /**
  * This domain enables the tracking of an integer value (a constant);
@@ -60,7 +61,10 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     /**
      * Abstracts over all values with computational type `integer`.
      */
-    sealed trait IntegerLikeValue extends Value with IsIntegerValue { this: DomainValue ⇒
+    sealed trait IntegerLikeValue
+            extends TypedValue[CTIntType]
+            with IsIntegerValue[IntegerLikeValue] {
+        this: DomainTypedValue[CTIntType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -71,12 +75,12 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
      *
      * Models the top value of this domain's lattice.
      */
-    trait AnIntegerValue extends IntegerLikeValue { this: DomainValue ⇒ }
+    trait AnIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒ }
 
     /**
      * Represents one, concrete integer value.
      */
-    abstract class TheIntegerValue extends IntegerLikeValue { this: DomainValue ⇒
+    abstract class TheIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒
         val value: Int
     }
 

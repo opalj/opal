@@ -62,27 +62,24 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
         def handleVirtualInvokeFallback() = {
             val receiver = operands(descriptor.parametersCount)
 
-            typeOfValue(receiver) match {
-                case refValue: IsAReferenceValue if (
-                    refValue.isNull.isNo && // TODO handle the case if the value maybe null
+            receiver match {
+                case DomainReferenceValue(refValue) if (
+                    refValue.isNull.isNo && // IMPROVE the case if the value maybe null
                     refValue.upperTypeBound.isSingletonSet &&
                     refValue.upperTypeBound.head.isObjectType
                 ) ⇒
                     val methods =
                         callees(refValue.upperTypeBound.head.asObjectType, name, descriptor)
                     if (methods.size == 1) {
-                        val method = methods.head
-                        testAndDoInvoke(
-                            pc,
-                            project.classFile(method), method,
-                            operands,
-                            fallback
-                        )
-                    } else
-                        fallback();
+                        val m = methods.head
+                        val cf = project.classFile(m)
+                        testAndDoInvoke(pc, cf, m, operands, fallback)
+                    } else {
+                        fallback()
+                    }
 
                 case _ ⇒
-                    fallback();
+                    fallback()
             }
         }
 

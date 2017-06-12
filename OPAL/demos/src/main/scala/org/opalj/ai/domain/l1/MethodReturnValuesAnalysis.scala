@@ -40,7 +40,6 @@ import scala.Iterable
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
-import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.domain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
@@ -97,8 +96,10 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
             else
                 theReturnedValue = summarize(Int.MinValue, Iterable(theReturnedValue, value))
 
-            typeOfValue(theReturnedValue) match {
-                case rv @ IsAReferenceValue(UIDSet1(`originalReturnType`)) if rv.isNull.isUnknown && !rv.isPrecise ⇒
+            theReturnedValue match {
+                case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`)) if (
+                    rv.isNull.isUnknown && !rv.isPrecise
+                ) ⇒
                     // the return type will not be more precise than the original type
                     ai.interrupt()
                 case _ ⇒ /*go on*/
@@ -127,8 +128,9 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
                 domain = new AnalysisDomain(theProject, ai, method)
                 result = ai(classFile, method, domain)
                 if !result.wasAborted
-                if domain.returnedValue.isEmpty ||
-                    domain.returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalType)
+                returnedValue = domain.returnedValue
+                if returnedValue.isEmpty ||
+                    returnedValue.get.asDomainReferenceValue.upperTypeBound != UIDSet(originalType)
             } yield {
                 RefinedReturnType(classFile, method, domain.returnedValue)
             }

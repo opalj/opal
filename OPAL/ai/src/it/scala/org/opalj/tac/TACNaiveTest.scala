@@ -68,7 +68,7 @@ class TACNaiveTest extends FunSpec with Matchers {
         } {
             try {
                 // without using AIResults
-                val (tacNaiveCode, _) = TACNaive(
+                val (tacNaiveCode, _, _) = TACNaive(
                     method = m,
                     classHierarchy = project.classHierarchy,
                     optimizations = AllTACNaiveOptimizations
@@ -79,7 +79,7 @@ class TACNaiveTest extends FunSpec with Matchers {
                     val methodSignature = m.toJava(cf)
                     mutex.synchronized {
                         println(methodSignature+" - size: "+body.instructions.length)
-                        e.printStackTrace()
+                        e.printStackTrace(Console.out)
                         if (e.getCause != null) {
                             println("\tcause:")
                             e.getCause.printStackTrace()

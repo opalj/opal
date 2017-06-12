@@ -60,8 +60,8 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * can guarantee that none is a subtype of the given `supertype` the answer will be
      * `No`.
      *
-     * @note The returned value is only meaningful if `value` does not represent
-     *      the runtime value `null`.
+     * @note   The returned value is only meaningful if `value` does not represent
+     *         the runtime value `null`.
      */
     /*ABSTRACT*/ def isValueSubtypeOf(
         value:     DomainValue,
@@ -114,7 +114,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
 
     // -----------------------------------------------------------------------------------
     //
-    // HANDLING CONSTRAINTS RELATED TO VALUES
+    // HANDLING CONSTRAINTS RELATED TO MULTIPLE VALUES
     //
     // -----------------------------------------------------------------------------------
 

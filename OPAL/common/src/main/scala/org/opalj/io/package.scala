@@ -117,17 +117,18 @@ package object io {
         filenamePrefix: String,
         filenameSuffix: String
     ): File = {
+        val file = write(data, filenamePrefix, filenameSuffix).toFile
+        open(file)
+        file
+    }
 
-        val file = write(data, filenamePrefix, filenameSuffix).toFile()
-
+    def open(file: File): Unit = {
         try {
-            Desktop.getDesktop().open(file)
+            Desktop.getDesktop.open(file)
         } catch {
             case ct: ControlThrowable ⇒ throw ct
-            case t: Throwable         ⇒ new OpeningFileFailedException(file, t)
+            case t: Throwable         ⇒ throw OpeningFileFailedException(file, t)
         }
-
-        file
     }
 
     def write(

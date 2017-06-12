@@ -28,6 +28,8 @@
  */
 package lambdas.methodreferences;
 
+import java.util.*;
+import java.util.function.*;
 import annotations.target.InvokedMethod;
 
 import java.util.Arrays;
@@ -37,7 +39,6 @@ import static annotations.target.TargetResolution.*;
 
 /**
  * This class contains a few simple examples for method references introduced in Java 8.
- *
  * <!--
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
@@ -45,16 +46,15 @@ import static annotations.target.TargetResolution.*;
  * @author Arne Lottmann
  */
 public class MethodReferences {
-
     @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$Value", name = "isEmpty", line = 52)
 	public void filterOutEmptyValues() {
-		java.util.List<Value> values = java.util.Arrays.asList(new Value("foo"), new Value(""));
+		List<Value> values = Arrays.asList(new Value("foo"), new Value(""));
 		values.stream().filter(Value::isEmpty);
 	}
 
 	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$Value", name = "compare", line = 58, isStatic = true)
 	public void compareValues() {
-		java.util.Comparator<Value> comparator = Value::compare;
+		Comparator<Value> comparator = Value::compare;
 		System.out.println(comparator.compare(new Value("a"), new Value("b")));
 	}
 
@@ -68,208 +68,212 @@ public class MethodReferences {
 		return v.newValue(value);
 	}
 
-	// @InvokedMethod(...)
-	public int instanceMethod() {
-		java.util.function.Function<String, Integer> i = String::length;
-    	return i.apply("instanceMethod");
+    // @InvokedMethod(...)
+    public int instanceMethod() {
+        Function<String, Integer> i = String::length;
+        return i.apply("instanceMethod");
 
-	}
+    }
 
-	// @InvokedMethod(...)
-	public long staticMethod() {
-		java.util.function.LongSupplier t = System::currentTimeMillis;
-		return t.getAsLong();
-	}
+    // @InvokedMethod(...)
+    public long staticMethod() {
+        LongSupplier t = System::currentTimeMillis;
+        return t.getAsLong();
+    }
 
-	public int explicitTypeArgs() {
-		java.util.function.Function<java.util.List<String>, Integer> t =
-				java.util.List<String>::size;
-		java.util.ArrayList<String> stringArray = new java.util.ArrayList<>();
-		stringArray.add("1");
-		stringArray.add("2");
-		return t.apply(stringArray);
-	}
+    public int explicitTypeArgs() {
+        Function<List<String>, Integer> t = List<String>::size;
+        ArrayList<String> stringArray = new ArrayList<>();
+        stringArray.add("1");
+        stringArray.add("2");
+        return t.apply(stringArray);
+    }
 
-	public void partialBound(java.util.List<Object> someList) {
-    	// add(int index, E element)
-		java.util.function.BiConsumer<Integer, Object> s = someList::add;
-		s.accept(0, new Object());
-	}
+    public void partialBound(List<Object> someList) {
+        // add(int index, E element)
+        BiConsumer<Integer, Object> s = someList::add;
+        s.accept(0, new Object());
+    }
 
-	public int inferredTypeArgs() {
-    	@SuppressWarnings("rawtypes")
-		java.util.function.Function<java.util.List, Integer> t = java.util.List::size;
-		java.util.ArrayList<String> stringArray = new java.util.ArrayList<>();
-		stringArray.add("1");
-		stringArray.add("2");
-		return t.apply(stringArray);
-	}
+    public int inferredTypeArgs() {
+        @SuppressWarnings("rawtypes") Function<List, Integer> t = List::size;
+        ArrayList<String> stringArray = new ArrayList<>();
+        stringArray.add("1");
+        stringArray.add("2");
+        return t.apply(stringArray);
+    }
 
-	public int[] intArrayClone() {
-    	int[] intArray = {0, 1, 2, 42};
-    	java.util.function.Function<int[], int[]> t = int[]::clone;
+    public int[] intArrayClone() {
+        int[] intArray = { 0, 1, 2, 42 };
+        Function<int[], int[]> t = int[]::clone;
 
-    	return t.apply(intArray);
-	}
+        return t.apply(intArray);
+    }
 
-	public int[][] intArrayArrayClone() {
-		int[][] intArray = {{0, 1, 2, 42}};
-		java.util.function.Function<int[][], int[][]> t = int[][]::clone;
+    public int[][] intArrayArrayClone() {
+        int[][] intArray = { { 0, 1, 2, 42 } };
+        Function<int[][], int[][]> t = int[][]::clone;
 
-		return t.apply(intArray);
-	}
+        return t.apply(intArray);
+    }
 
-	public boolean objectMethod() {
-    	Value v = new Value("foo");
-    	java.util.function.BooleanSupplier t = v::isEmpty;
-    	return t.getAsBoolean();
-	}
+    public boolean objectMethod() {
+        Value v = new Value("foo");
+        BooleanSupplier t = v::isEmpty;
+        return t.getAsBoolean();
+    }
 
-	public void referencePrintln() {
-    	java.util.function.Consumer<String> c = System.out::println;
-    	c.accept("Hello World!");
-	}
+    public void referencePrintln() {
+        Consumer<String> c = System.out::println;
+        c.accept("Hello World!");
+    }
 
-	public int referenceLength() {
-    	java.util.function.Supplier<Integer> s = "foo"::length;
-    	return s.get();
-	}
+    public int referenceLength() {
+        Supplier<Integer> s = "foo"::length;
+        return s.get();
+    }
 
-	public int arrayMethod() {
-		String[] stringArray = {"0", "1", "2", "42"};
+    public int arrayMethod() {
+        String[] stringArray = { "0", "1", "2", "42" };
 
-		java.util.function.IntSupplier s = stringArray[0]::length;
+        IntSupplier s = stringArray[0]::length;
 
-		return s.getAsInt();
-	}
+        return s.getAsInt();
+    }
 
-	public Iterator<String> ternaryIterator(boolean t) {
-		java.util.ArrayList<String> stringArray1 = new java.util.ArrayList<>();
-		stringArray1.add("1");
-		stringArray1.add("2");
-		java.util.ArrayList<String> stringArray2 = new java.util.ArrayList<>();
-		stringArray2.add("foo");
-		stringArray2.add("bar");
+    public Iterator<String> ternaryIterator(boolean t) {
+        ArrayList<String> stringArray1 = new ArrayList<>();
+        stringArray1.add("1");
+        stringArray1.add("2");
+        ArrayList<String> stringArray2 = new ArrayList<>();
+        stringArray2.add("foo");
+        stringArray2.add("bar");
 
-		java.util.function.Supplier<Iterator<String>> f =
-				(t ? stringArray1 : stringArray2) :: iterator;
+        Supplier<Iterator<String>> f = (t ?
+                stringArray1 :
+                stringArray2)::iterator;
 
-		return f.get();
-	}
+        return f.get();
+    }
 
-	public String superToString() {
-    	java.util.function.Supplier<String> s = new Child().getSuperToString();
-    	return s.get();
-	}
+    public String superToString() {
+        Supplier<String> s = new Child().getSuperToString();
+        return s.get();
+    }
 
-	public String overloadResolution() {
-    	java.util.function.Function<Double, String> f = String::valueOf;
-    	return f.apply(3.14);
-	}
+    public String overloadResolution() {
+        Function<Double, String> f = String::valueOf;
+        return f.apply(3.14);
+    }
 
-	public int[] typeArgsFromContext() {
-		java.util.function.Consumer<int[]> c = Arrays::sort;
+    public int[] typeArgsFromContext() {
+        Consumer<int[]> c = Arrays::sort;
 
-		int[] someInts = {3, 2, 9, 14, 7};
+        int[] someInts = { 3, 2, 9, 14, 7 };
 
-		c.accept(someInts);
-		return someInts;
-	}
+        c.accept(someInts);
+        return someInts;
+    }
 
-	public int[] typeArgsExplicit() {
-		java.util.function.Consumer<int[]> c = Arrays::<int[]>asList;
+    public int[] typeArgsExplicit() {
+        Consumer<int[]> c = Arrays::<int[]>asList;
 
-		int[] someInts = {3, 2, 9, 14, 7};
+        int[] someInts = { 3, 2, 9, 14, 7 };
 
-		c.accept(someInts);
-		return someInts;
-	}
+        c.accept(someInts);
+        return someInts;
+    }
 
-	public java.util.ArrayList<String> parameterizedConstructor() {
-    	java.util.function.Supplier<java.util.ArrayList<String>> s =
-				java.util.ArrayList<String>::new;
-    	return s.get();
-	}
+    public ArrayList<String> parameterizedConstructor() {
+        Supplier<ArrayList<String>> s = ArrayList<String>::new;
+        return s.get();
+    }
 
-    @SuppressWarnings("rawtypes")
-	public java.util.ArrayList inferredConstructor() {
-		java.util.function.Supplier<java.util.ArrayList> s = java.util.ArrayList::new;
-		return s.get();
-	}
+    @SuppressWarnings("rawtypes") public ArrayList inferredConstructor() {
+        Supplier<ArrayList> s = ArrayList::new;
+        return s.get();
+    }
 
-	public GenericConstructor genericConstructor() {
-    	java.util.function.Function<String, GenericConstructor> f = GenericConstructor::<String>new;
-    	return f.apply("42");
-	}
+    public GenericConstructor genericConstructor() {
+        Function<String, GenericConstructor> f = GenericConstructor::<String>new;
+        return f.apply("42");
+    }
 
-	public GenericClass<String> genericClass() {
-		java.util.function.Function<String, GenericClass<String>> f =
-				GenericClass<String>::<String>new;
-		return f.apply("42");
-	}
+    public GenericClass<String> genericClass() {
+        Function<String, GenericClass<String>> f = GenericClass<String>::<String>new;
+        return f.apply("42");
+    }
 
-	public Outer.Inner nestedClass() {
-    	java.util.function.Supplier<Outer.Inner> s = Outer.Inner::new;
-    	return s.get();
-	}
+    public Outer.Inner nestedClass() {
+        Supplier<Outer.Inner> s = Outer.Inner::new;
+        return s.get();
+    }
 
-	public int[] arrayNew() {
-    	java.util.function.Function<Integer, int[]> f = int[]::new;
-    	return f.apply(42);
-	}
+    public int[] arrayNew() {
+        Function<Integer, int[]> f = int[]::new;
+        return f.apply(42);
+    }
 
 	public static class Outer {
-    	public static class Inner {
+        public static class Inner {
 
-		}
-	}
+        }
+    }
 
-	public static class GenericConstructor {
-    	Object p;
-    	<T> GenericConstructor(T param) {
-    		p = param;
-		}
-	}
+    public static class GenericConstructor {
 
-	public static class GenericClass<T> {
-    	Object p;
-    	T q;
-    	<U> GenericClass(U param) {
-    		p = param;
-		}
-	}
+        Object p;
 
-	public static class Parent {
-    	@Override
-    	public String toString() {
-    		return "Parent";
-		}
-	}
+        <T> GenericConstructor(T param) {
+            p = param;
+        }
+    }
 
-	public static class Child extends Parent {
-    	public java.util.function.Supplier<String> getSuperToString() {
-    		return super::toString;
-		}
+    public static class GenericClass<T> {
 
-		@Override
-		public String toString() {
-    		return "Child";
-		}
-	}
+        Object p;
+        T q;
 
-	public static class Value {
-		private String value;
+        <U> GenericClass(U param) {
+            p = param;
+        }
+    }
 
-		public Value(String value) {
-			this.value = value;
-		}
+    public static class Parent {
 
-		public boolean isEmpty() {
-			return value.isEmpty();
-		}
+        @Override public String toString() {
+            return "Parent";
+        }
+    }
 
+    public static class Child extends Parent {
 		public static int compare(Value a, Value b) {
 			return a.value.compareTo(b.value);
 		}
-	}
+
+        public Supplier<String> getSuperToString() {
+            return super::toString;
+        }
+
+        @Override public String toString() {
+            return "Child";
+        }
+    }
+
+    public static class Value {
+
+        private String value;
+
+        public Value(String value) {
+            this.value = value;
+        }
+
+        public boolean isEmpty() {
+            return value.isEmpty();
+        }
+
+        public static int compare(Value a, Value b) {
+            return a.value.compareTo(b.value);
+        }
+    }
 }

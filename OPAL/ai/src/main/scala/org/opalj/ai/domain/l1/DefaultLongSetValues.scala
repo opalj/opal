@@ -31,6 +31,8 @@ package ai
 package domain
 package l1
 
+import org.opalj.br.ComputationalTypeLong
+
 import scala.collection.immutable.SortedSet
 
 /**
@@ -53,13 +55,15 @@ trait DefaultLongSetValues
             MetaInformationUpdate(new ALongValue())
         }
 
-        override def abstractsOver(other: DomainValue): Boolean =
-            other.isInstanceOf[IsLongValue]
+        override def abstractsOver(other: DomainValue): Boolean = {
+            other.computationalType == ComputationalTypeLong
+        }
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
             target.LongValue(pc)
+        }
 
         override def hashCode: Int = 929
 
@@ -130,7 +134,7 @@ trait DefaultLongSetValues
         override def toString: String = values.mkString("LongSet(", ",", ")")
     }
 
-    override def LongValue(origin: ValueOrigin): DomainValue = new ALongValue()
+    override def LongValue(origin: ValueOrigin): ALongValue = new ALongValue()
 
     override def LongSet(values: SortedSet[Long]): LongSet = new LongSet(values)
 

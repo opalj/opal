@@ -71,14 +71,10 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
         domain.returnedNormally should be(false)
 
         val exs = domain.thrownExceptions(result.domain, -1)
-        if (exs.size != 1) fail("expected one exception: "+exs.mkString(", "))
-        exs forall { ex ⇒
-            ex match {
-                case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
-                    true
-                case _ ⇒
-                    false
-            }
+        if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
+        exs forall {
+            case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒ true
+            case _ ⇒ false
         } should be(true)
     }
 
@@ -89,14 +85,10 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
         domain.returnedNormally should be(true)
 
         val exs = domain.thrownExceptions(result.domain, -1)
-        if (exs.size != 1) fail("expected one exception: "+exs.mkString(", "))
-        exs forall { ex ⇒
-            ex match {
-                case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
-                    true
-                case _ ⇒
-                    false
-            }
+        if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
+        exs forall {
+            case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒ true
+            case _ ⇒ false
         } should be(true)
     }
 

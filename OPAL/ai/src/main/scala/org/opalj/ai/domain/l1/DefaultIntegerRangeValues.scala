@@ -33,6 +33,9 @@ package l1
 
 import java.lang.Math.abs
 
+import org.opalj.br.CTIntType
+import org.opalj.br.ComputationalTypeInt
+
 /**
  * This domain implements the tracking of integer values at the level of ranges.
  *
@@ -58,13 +61,15 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
             MetaInformationUpdate(AnIntegerValue())
         }
 
-        override def abstractsOver(other: DomainValue): Boolean =
-            other.isInstanceOf[IsIntegerValue]
+        override def abstractsOver(other: DomainValue): Boolean = {
+            other.computationalType == ComputationalTypeInt
+        }
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
             target.IntegerValue(origin = pc)
+        }
 
         override def newInstance: AnIntegerValue = AnIntegerValue()
 
@@ -226,36 +231,40 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
         new IntegerRange(lb, ub)
     }
 
-    override def BooleanValue(origin: ValueOrigin): DomainValue = IntegerRange(0, 1)
-    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue = {
+    override def BooleanValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = IntegerRange(0, 1)
+    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainTypedValue[CTIntType] = {
         if (value) IntegerValue(origin, 1) else IntegerValue(origin, 0)
     }
 
-    override def ByteValue(origin: ValueOrigin): DomainValue = {
+    override def ByteValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = {
         IntegerRange(Byte.MinValue, Byte.MaxValue)
     }
-    override def ByteValue(origin: ValueOrigin, value: Byte) = {
+    override def ByteValue(origin: ValueOrigin, value: Byte): DomainTypedValue[CTIntType] = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def ShortValue(origin: ValueOrigin): DomainValue = {
+    override def ShortValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = {
         IntegerRange(Short.MinValue, Short.MaxValue)
     }
-    override def ShortValue(origin: ValueOrigin, value: Short) = {
+    override def ShortValue(origin: ValueOrigin, value: Short): DomainTypedValue[CTIntType] = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def CharValue(origin: ValueOrigin): DomainValue = {
+    override def CharValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = {
         IntegerRange(Char.MinValue, Char.MaxValue)
     }
-    override def CharValue(origin: ValueOrigin, value: Char) = {
+    override def CharValue(origin: ValueOrigin, value: Char): DomainTypedValue[CTIntType] = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def IntegerValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
-    override def IntegerValue(origin: ValueOrigin, value: Int) = new IntegerRange(value, value)
+    override def IntegerValue(origin: ValueOrigin): DomainTypedValue[CTIntType] = {
+        AnIntegerValue()
+    }
+    override def IntegerValue(origin: ValueOrigin, value: Int): DomainTypedValue[CTIntType] = {
+        new IntegerRange(value, value)
+    }
 
 }

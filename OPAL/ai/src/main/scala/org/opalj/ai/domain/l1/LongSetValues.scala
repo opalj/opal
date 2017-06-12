@@ -68,7 +68,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     /**
      * Abstracts over all values with computational type `long`.
      */
-    sealed trait LongValue extends Value with IsLongValue { this: DomainValue ⇒
+    sealed trait LongValue extends TypedValue[LongType] with IsLongValue[LongValue] {
+        this: DomainTypedValue[LongType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeLong
 
@@ -81,12 +82,12 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
      *
      * Models the top value of this domain's lattice.
      */
-    trait ALongValue extends LongValue { this: DomainValue ⇒ }
+    trait ALongValue extends LongValue { this: DomainTypedValue[LongType] ⇒ }
 
     /**
      * Represents a set of long values.
      */
-    abstract class LongSet extends LongValue { this: DomainValue ⇒
+    abstract class LongSet extends LongValue { this: DomainTypedValue[LongType] ⇒
 
         val values: SortedSet[Long]
 
@@ -95,12 +96,12 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     /**
      * Factory method to create a new [[LongSet]] value containing just the given value.
      */
-    def LongSet(value: Long): DomainValue = LongSet(SortedSet(value))
+    def LongSet(value: Long): DomainTypedValue[LongType] = LongSet(SortedSet(value))
 
     /**
      * Factory method to create a new [[LongSet]] value using the given set.
      */
-    def LongSet(values: SortedSet[Long]): DomainValue
+    def LongSet(values: SortedSet[Long]): DomainTypedValue[LongType]
 
     /**
      * Extractor for `LongSet` values.

@@ -29,6 +29,8 @@
 package org.opalj
 package ai
 
+import org.opalj.br.FloatType
+
 /**
  * Defines factory methods to create concrete representations of constant
  * float values.
@@ -46,7 +48,7 @@ trait FloatValuesFactory extends ValuesDomain { domain ⇒
      *
      * The domain may ignore the information about the origin (`origin`).
      */
-    def FloatValue(origin: ValueOrigin): DomainValue
+    def FloatValue(origin: ValueOrigin): DomainTypedValue[FloatType]
 
     /**
      * Factory method to create a `DomainValue` with the specified origin.
@@ -56,6 +58,6 @@ trait FloatValuesFactory extends ValuesDomain { domain ⇒
      *
      * The domain may ignore the information about the origin (`origin`).
      */
-    def FloatValue(origin: ValueOrigin, value: Float): DomainValue
+    def FloatValue(origin: ValueOrigin, value: Float): DomainTypedValue[FloatType]
 }
 

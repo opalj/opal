@@ -2299,14 +2299,15 @@ class ClassHierarchy private (
     }
 
     def joinReferenceTypesUntilSingleUpperBound(
-        upperTypeBound: UIDSet[ReferenceType]
+        upperTypeBound: UIDSet[_ <: ReferenceType]
     ): ReferenceType = {
         if (upperTypeBound.isSingletonSet)
             return upperTypeBound.head;
 
-        // Note that the upper type bound must never consist of more than one array type.
-        // The type hierarchy related to arrays is "hard coded"
-        joinObjectTypesUntilSingleUpperBound(upperTypeBound.asInstanceOf[UIDSet[ObjectType]]) // type erasure also has its benefits...
+        // Note that the upper type bound must never consist of more than one array type;
+        // and that the type hierarchy related to arrays is "hard coded"
+        // ... (here) type erasure also has its benefits ...
+        joinObjectTypesUntilSingleUpperBound(upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
     }
 
     def joinUpperTypeBounds(

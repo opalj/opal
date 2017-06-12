@@ -35,6 +35,7 @@ import scala.Int.{MinValue ⇒ MinInt}
 import scala.Int.{MaxValue ⇒ MaxInt}
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.CTIntType
 
 /**
  * This domain represents integer values using ranges.
@@ -141,7 +142,10 @@ trait IntegerRangeValues
     /**
      * Abstracts over all values with computational type `integer`.
      */
-    sealed trait IntegerLikeValue extends Value with IsIntegerValue { this: DomainValue ⇒
+    sealed trait IntegerLikeValue
+            extends TypedValue[CTIntType]
+            with IsIntegerValue[IntegerLikeValue] {
+        this: DomainTypedValue[CTIntType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -153,14 +157,17 @@ trait IntegerRangeValues
      *
      * Models the top value of this domain's lattice.
      */
-    trait AnIntegerValue extends IntegerLikeValue { this: DomainValue ⇒ }
+    trait AnIntegerValue extends IntegerLikeValue {
+        this: DomainTypedValue[CTIntType] ⇒
+    }
 
     /**
      * Represents a range of integer values. The range's bounds are inclusive.
      * Unless a range has only one value it is impossible to tell whether or not
      * a value that is in the range will potentially occur at runtime.
      */
-    abstract class IntegerRange extends IntegerLikeValue { this: DomainValue ⇒
+    abstract class IntegerRange extends IntegerLikeValue {
+        this: DomainTypedValue[CTIntType] ⇒
 
         val lowerBound: Int // inclusive
 
@@ -172,17 +179,22 @@ trait IntegerRangeValues
      * Creates a new IntegerRange value with the lower and upper bound set to the
      * given value.
      */
-    def IntegerRange(value: Int): DomainValue = IntegerRange(value, value)
+    def IntegerRange(value: Int): DomainTypedValue[CTIntType] = {
+        IntegerRange(value, value)
+    }
 
     /**
      * Creates a new IntegerRange value with the given bounds.
      */
-    def IntegerRange(lb: Int, ub: Int): DomainValue
+    def IntegerRange(lb: Int, ub: Int): DomainTypedValue[CTIntType]
 
     /**
      * Creates a new IntegerRange value with the given bounds.
      */
-    final def IntegerRange(origin: ValueOrigin, lowerBound: Int, upperBound: Int): DomainValue = {
+    final def IntegerRange(
+        origin:     ValueOrigin,
+        lowerBound: Int, upperBound: Int
+    ): DomainTypedValue[CTIntType] = {
         IntegerRange(lowerBound, upperBound)
     }
 

@@ -29,10 +29,14 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
+import scala.language.higherKinds
 
+import scala.reflect.ClassTag
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -49,6 +53,29 @@ trait ValuesDomain {
     // REPRESENTATION OF VALUES
     //
     // -----------------------------------------------------------------------------------
+
+    /**
+     * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
+     * inherit from `Domain` and which extend `Domain`'s `Value` trait.
+     */
+    type DomainValue >: Null <: Value with AnyRef
+
+    /**
+     * The class tag for the type `DomainValue`.
+     *
+     * Required to generate instances of arrays in which values of type
+     * `DomainValue` can be stored in a type-safe manner.
+     *
+     * ==Initialization==
+     * In the sub-trait or class that fixes the type of `DomainValue` it is necessary
+     * to implement this abstract `val` using:
+     * {{{
+     * val DomainValueTag : ClassTag[DomainValue] = implicitly
+     * }}}
+     * (As of Scala 2.10 it is necessary that you do not use `implicit` in the subclass -
+     * it will compile, but fail at runtime.)
+     */
+    implicit val DomainValue: ClassTag[DomainValue]
 
     /**
      * Abstracts over a concrete operand stack value or a value stored in one of the local
@@ -126,11 +153,21 @@ trait ValuesDomain {
          */
         def computationalType: ComputationalType
 
-        // This method is only used by the abstract interpretation framework
-        // and is only implemented by ReturnAddressValue.
-        @throws[DomainException]("This value is not a return address value.")
+        /**
+         * @return  The concrete return address stored by this value; this method
+         *          is defined if and only if the value is guaranteed to encapsulate a
+         *          `ReturnAddressValue`.
+         */
         private[ai] def asReturnAddressValue: PC = {
-            throw new DomainException(s"this value ($this) is not a return address")
+            throw new ClassCastException(this.getClass.getSimpleName+" is no return address value")
+        }
+
+        /**
+         * @return The represented reference value if and only if this value represent a reference
+         *         value.
+         */
+        def asDomainReferenceValue: DomainReferenceValue = {
+            throw new ClassCastException(this.getClass.getSimpleName+" is no reference value")
         }
 
         /**
@@ -233,11 +270,14 @@ trait ValuesDomain {
          *
          * The abstract state generally encompasses every information that would
          * be considered during a [[join]] of `this` value and the `other` value and that
-         * could lead to a [[StructuralUpdate]].
+         * could lead to an [[Update]].
          *
          * This method is '''reflexive''', I.e., every value abstracts over itself.
          *
          * [[TheIllegalValue]] only abstracts over itself.
+         *
+         * @note abstractsOver is only defined for comparable values where both values have the
+         *       same computational type.
          *
          * ==Implementation==
          * The default implementation relies on this '''domain value''''s [[join]] method.
@@ -343,35 +383,51 @@ trait ValuesDomain {
         def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
             throw new DomainException(s"adaptation of $this to $target is unsupported")
         }
+    }
+
+    type DomainTypedValue[+T <: Type] >: Null <: DomainValue
+
+    trait TypedValue[+T <: Type] extends Value with KnownType {
+        this: DomainTypedValue[T] ⇒
+
+        /**
+         * The type kind of the values, if the value has a specific type kind; `None` if and
+         * only if the underlying value is `null`.
+         *
+         * @return The type/The upper type bound of the value. If the type is a base type, then
+         *         the type is necessarily precise. In case of a reference type the type may be
+         *         an upper type bound or may be precise. In the latter case, using the
+         *         concrete domain it may be possible to get further information.
+         *         If the underlying value is `null`, `None` is returned.
+         */
+        def valueType: Option[T]
 
     }
 
-    /**
-     * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
-     * inherit from `Domain` and which extend `Domain`'s `Value` trait.
-     */
-    type DomainValue >: Null <: Value with AnyRef
+    type DomainReferenceValue >: Null <: ReferenceValue with DomainTypedValue[ReferenceType]
 
     /**
-     * The class tag for the type `DomainValue`.
-     *
-     * Required to generate instances of arrays in which values of type
-     * `DomainValue` can be stored in a type-safe manner.
-     *
-     * ==Initialization==
-     * In the sub-trait or class that fixes the type of `DomainValue` it is necessary
-     * to implement this abstract `val` using:
+     * The class tag can be used to create type safe arrays or to extract the concrete type
+     * of the domain value.
      * {{{
-     * val DomainValueTag : ClassTag[DomainValue] = implicitly
+     *     val DomainReferenceValue(v) = value // of type "DomainValue"
+     *     // v is now of the type DomainReferenceValue
      * }}}
-     * (As of Scala 2.10 it is necessary that you do not use `implicit` in the subclass -
-     * it will compile, but fail at runtime.)
      */
-    implicit val DomainValue: ClassTag[DomainValue]
-
-    type DomainReferenceValue >: Null <: DomainValue
-
     val DomainReferenceValue: ClassTag[DomainReferenceValue]
+
+    trait ReferenceValue
+            extends TypedValue[ReferenceType]
+            with IsReferenceValue[DomainReferenceValue] {
+        this: DomainReferenceValue ⇒
+
+        /**
+         * Returns `ComputationalTypeReference`.
+         */
+        final override def computationalType: ComputationalType = ComputationalTypeReference
+
+        final override def asDomainReferenceValue: DomainReferenceValue = this
+    }
 
     /**
      * A simple type alias of the type `DomainValue`; used to facilitate comprehension.

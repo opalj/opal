@@ -70,14 +70,13 @@ abstract class StringPassedToClassForName[Source]
     )
 
     sinks(
-        Calls(
-            {
-                case (
-                    ObjectType.Class, "forName",
-                    SingleArgumentMethodDescriptor((ObjectType.String, ObjectType.Class))
-                    ) ⇒ true
-            }
-        )
+        Calls {
+            case (
+                ObjectType.Class, "forName",
+                SingleArgumentMethodDescriptor((ObjectType.String, ObjectType.Class))
+                ) ⇒ true
+        }
+
     )
 
     // Scenario: ... s.subString(...)
@@ -106,7 +105,7 @@ abstract class StringPassedToClassForName[Source]
             ObjectType.String,
             _,
             _, // the caller
-            Tainted(value: IsAReferenceValue), // receiver type
+            Tainted(value: IsReferenceValue[_]), // receiver type
             receiver
             ) if value.isValueSubtypeOf(ObjectType.String).isYesOrUnknown ⇒
             ValueIsTainted
