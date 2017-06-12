@@ -32,10 +32,8 @@ import annotations.target.InvokedMethod;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 
 import static annotations.target.TargetResolution.*;
-
 
 /**
  * This class contains a few simple examples for method references introduced in Java 8.
@@ -44,10 +42,10 @@ import static annotations.target.TargetResolution.*;
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
  * -->
- *
  * @author Arne Lottmann
  */
 public class MethodReferences {
+
     @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$Value", name = "isEmpty", line = 52)
 	public void filterOutEmptyValues() {
 		java.util.List<Value> values = java.util.Arrays.asList(new Value("foo"), new Value(""));
