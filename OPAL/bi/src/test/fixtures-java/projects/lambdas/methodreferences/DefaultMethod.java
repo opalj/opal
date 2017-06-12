@@ -29,7 +29,7 @@
 package lambdas.methodreferences;
 
 /**
- * This class contains a examples for method references dealing with interface default methods.
+ * This class contains examples for method references dealing with interface default methods.
  *
  * <!--
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE

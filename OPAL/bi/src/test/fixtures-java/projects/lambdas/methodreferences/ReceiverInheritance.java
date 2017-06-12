@@ -32,7 +32,7 @@ import java.util.LinkedHashSet;
 
 
 /**
- * This class contains a examples for method references dealing with proxy class receiver inheritance.
+ * This class contains examples for method references dealing with proxy class receiver inheritance.
  *
  * <!--
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
