@@ -26,34 +26,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package lambdas;
+package lambdas.methodreferences;
 
 import java.util.*;
 import java.util.function.*;
 import annotations.target.InvokedMethod;
+
+import java.util.Arrays;
+import java.util.Iterator;
+
 import static annotations.target.TargetResolution.*;
 
 /**
  * This class contains a few simple examples for method references introduced in Java 8.
  * <!--
- *
- *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
- *
- *
  * -->
  * @author Arne Lottmann
  */
 public class MethodReferences {
-
-    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/MethodReferences$Value", name = "isEmpty", line = 52)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$Value", name = "isEmpty", line = 52)
 	public void filterOutEmptyValues() {
 		List<Value> values = Arrays.asList(new Value("foo"), new Value(""));
 		values.stream().filter(Value::isEmpty);
 	}
 
-	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/MethodReferences$Value", name = "compare", line = 58, isStatic = true)
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$Value", name = "compare", line = 58, isStatic = true)
 	public void compareValues() {
 		Comparator<Value> comparator = Value::compare;
 		System.out.println(comparator.compare(new Value("a"), new Value("b")));
@@ -63,7 +62,7 @@ public class MethodReferences {
 		Value newValue(String value);
 	}
 
-	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/MethodReferences$Value", name = "<init>", line = 68)
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$Value", name = "<init>", line = 68)
 	public Value newValue(String value) {
 		ValueCreator v = Value::new;
 		return v.newValue(value);
@@ -215,146 +214,7 @@ public class MethodReferences {
         return f.apply(42);
     }
 
-    public Double sumDoubleDouble() {
-        BiFunction<Double, Double, Double> bf = MixedDoubleParamters::sum;
-        return bf.apply(2d, 2d);
-    }
-
-    public Double sumDoubleFloat() {
-        BiFunction<Double, Float, Double> bf = MixedDoubleParamters::sum;
-        return bf.apply(2d, 3.14f);
-    }
-
-    public Double sumFloatDouble() {
-        BiFunction<Float, Double, Double> bf = MixedDoubleParamters::sum;
-        return bf.apply(4.2f, 2d);
-    }
-
-    public Float sumFloatFloat() {
-        BiFunction<Float, Float, Float> bf = MixedDoubleParamters::sum;
-        return bf.apply(2.7f, 2.5f);
-    }
-
-    public Double sumFloatDoubleFloat() {
-        TriFunction<Float, Double, Float, Double> tf = MixedDoubleParamters::sum;
-        return tf.apply(3.14f, 42d, 2.5f);
-    }
-
-    public Double sumDoubleInt() {
-        BiFunction<Integer, Double, Double> bf = MixedDoubleParamters::sum;
-        return bf.apply(42, 42d);
-    }
-
-    public Double sumLongDouble() {
-        BiFunction<Long, Double, Double> bf = MixedDoubleParamters::sum;
-        return bf.apply(42l, 42.3d);
-    }
-
-    public Long sumLongLong() {
-        BiFunction<Long, Long, Long> bf = MixedLongParamters::sum;
-        return bf.apply(42l, 42l);
-    }
-
-    public Long sumLongInt() {
-        BiFunction<Long, Integer, Long> bf = MixedLongParamters::sum;
-        return bf.apply(42l, 24);
-    }
-
-    public Long sumIntInt() {
-        BiFunction<Integer, Integer, Long> bf = MixedLongParamters::sum;
-        return bf.apply(42, 314);
-    }
-
-    public Double sumDoubleLong() {
-        BiFunction<Double, Long, Double> bf = MixedLongParamters::sum;
-        return bf.apply(5.5d, 42l);
-    }
-
-    public Long sumIntLongLong() {
-        TriFunction<Integer, Long, Long, Long> tf = MixedLongParamters::sum;
-        return tf.apply(3, 4l, 5l);
-    }
-
-    public static <T, R> R someBiConsumerParameter(Supplier<R> s,
-            BiConsumer<R, T> bc, BiConsumer<R, R> r,
-            T t) {
-        R state = s.get();
-        bc.accept(state, t);
-        r.accept(state, state);
-
-        return state;
-    }
-
-    public static <T> LinkedHashSet<T> callBiConsumer(T t) {
-        LinkedHashSet<T> lhm = MethodReferences.<T, LinkedHashSet<T>>someBiConsumerParameter(
-                LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll, t);
-
-        return lhm;
-    }
-
-    public static <T> void instanceBiConsumer() {
-        LinkedHashSet<Consumer<T>> lhm = new LinkedHashSet<>();
-        Consumer<T> bc = lhm::contains;
-
-        lhm.contains(bc);
-    }
-
-    public static class MixedDoubleParamters {
-
-        public static double sum(double a, double b) {
-            return a + b;
-        }
-
-        public static double sum(double a, float b) {
-            return a + b;
-        }
-
-        public static double sum(float a, double b) {
-            return a + b;
-        }
-
-        public static float sum(float a, float b) {
-            return a + b;
-        }
-
-        public static double sum(float a, double b, float c) {
-            return a + b + c;
-        }
-
-        public static double sum(int a, double b) {
-            return a + b;
-        }
-
-        public static double sum(long a, double b) {
-            return a + b;
-        }
-    }
-
-    public static class MixedLongParamters {
-
-        public static long sum(long a, long b) {
-            return a + b;
-        }
-
-        public static long sum(long a, int b) {
-            return a + b;
-        }
-
-        public static long sum(int a, int b) {
-            return a + b;
-        }
-
-        public static double sum(double a, long b) {
-            return a + b;
-        }
-
-        public static long sum(int a, long b, long c) {
-            return a + b + c;
-        }
-    }
-
-    public static class Outer {
-
+	public static class Outer {
         public static class Inner {
 
         }
@@ -387,6 +247,9 @@ public class MethodReferences {
     }
 
     public static class Child extends Parent {
+		public static int compare(Value a, Value b) {
+			return a.value.compareTo(b.value);
+		}
 
         public Supplier<String> getSuperToString() {
             return super::toString;
@@ -412,10 +275,5 @@ public class MethodReferences {
         public static int compare(Value a, Value b) {
             return a.value.compareTo(b.value);
         }
-    }
-
-    @FunctionalInterface interface TriFunction<A, B, C, R> {
-
-        R apply(A a, B b, C c);
     }
 }
