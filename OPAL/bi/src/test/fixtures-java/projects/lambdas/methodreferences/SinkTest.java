@@ -30,18 +30,22 @@ package lambdas.methodreferences;
 
 import java.util.ArrayList;
 
-
 /**
  * This class contains examples for method references in sink.
  *
  * <!--
+ *
+ *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
+ *
+ *
  * -->
  *
  * @author Andreas Muttscheller
  */
 public class SinkTest {
+
     // Copied from java.util.stream.Sink
     interface Sink<T> extends java.util.function.Consumer<T> {
         default void begin(long size) {}
