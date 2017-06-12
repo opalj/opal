@@ -29,34 +29,39 @@
 package lambdas.methodreferences;
 
 /**
- * This class contains a examples for method references dealing with interface default methods.
+ * This class contains an example of a method reference dealing with interface default methods.
  *
  * <!--
+ * <p>
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
+ * <p>
  * -->
  *
  * @author Andreas Muttscheller
  */
-public class ReceiverInheritance {
-	@FunctionalInterface
-	public interface FIBoolean {
-    	boolean get();
-	}
-	public static <T> boolean interfaceReference(java.util.Enumeration<T> enum1) {
-		FIBoolean bc = enum1::hasMoreElements;
+public class DefaultMethod {
 
-		return bc.get();
-	}
+    @FunctionalInterface public interface FIBoolean {
 
-	public interface IDefaultMethod {
-    	default boolean foo() {
-    		return true;
-		}
-	}
+        boolean get();
+    }
 
-	public static boolean defaultMethodInterface(IDefaultMethod idm) {
-    	FIBoolean bc = idm::foo;
-    	return bc.get();
-	}
+    public static <T> boolean interfaceReference(java.util.Enumeration<T> enum1) {
+        FIBoolean bc = enum1::hasMoreElements;
+
+        return bc.get();
+    }
+
+    public interface IDefaultMethod {
+
+        default boolean foo() {
+            return true;
+        }
+    }
+
+    public static boolean defaultMethodInterface(IDefaultMethod idm) {
+        FIBoolean bc = idm::foo;
+        return bc.get();
+    }
 }
