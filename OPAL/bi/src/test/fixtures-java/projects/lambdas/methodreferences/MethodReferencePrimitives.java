@@ -99,7 +99,7 @@ public class MethodReferencePrimitives {
 		double apply(double a, double b);
 	}
 	public double sumDoubleDouble() {
-		FIDoubleDouble bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
+		FIDoubleDouble bf = MixedDoubleParamters::sum;
     	return bf.apply(2d, 2d);
 	}
 
@@ -109,7 +109,7 @@ public class MethodReferencePrimitives {
 		double apply(double a, float b);
 	}
 	public double sumDoubleFloat() {
-		FIDoubleDoubleFloat bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
+		FIDoubleDoubleFloat bf = MixedDoubleParamters::sum;
 		return bf.apply(2d, 3.14f);
 	}
 
@@ -119,7 +119,7 @@ public class MethodReferencePrimitives {
 		double apply(float a, double b);
 	}
 	public double sumFloatDouble() {
-		FIDoubleFloatDouble bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
+		FIDoubleFloatDouble bf = MixedDoubleParamters::sum;
 		return bf.apply(4.2f, 2d);
 	}
 
@@ -129,7 +129,7 @@ public class MethodReferencePrimitives {
 		float apply(float a, float b);
 	}
 	public float sumFloatFloat() {
-		FIFloatFloatFloat bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
+		FIFloatFloatFloat bf = MixedDoubleParamters::sum;
 		return bf.apply(2.7f, 2.5f);
 	}
 
@@ -139,7 +139,7 @@ public class MethodReferencePrimitives {
 		double apply(float a, double b, float c);
 	}
 	public double sumFloatDoubleFloat() {
-		FIDoubleFloatDoubleFloat tf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
+		FIDoubleFloatDoubleFloat tf = MixedDoubleParamters::sum;
 		return tf.apply(3.14f, 42d, 2.5f);
 	}
 
@@ -149,7 +149,7 @@ public class MethodReferencePrimitives {
 		double apply(int a, double b);
 	}
 	public double sumDoubleInt() {
-		FIDoubleIntDouble bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
+		FIDoubleIntDouble bf = MixedDoubleParamters::sum;
 		return bf.apply(42, 42d);
 	}
 
@@ -159,7 +159,7 @@ public class MethodReferencePrimitives {
 		double apply(long a, double b);
 	}
 	public double sumLongDouble() {
-		FIDoubleLongDouble bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
+		FIDoubleLongDouble bf = MixedDoubleParamters::sum;
         return bf.apply(42l, 42.3d);
     }
 
@@ -169,7 +169,7 @@ public class MethodReferencePrimitives {
 		long apply(long a, long b);
 	}
     public long sumLongLong() {
-        FILongLongLong bf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
+        FILongLongLong bf = MixedLongParamters::sum;
         return bf.apply(42l, 42l);
     }
 
@@ -179,7 +179,7 @@ public class MethodReferencePrimitives {
 		long apply(long a, int b);
 	}
     public long sumLongInt() {
-		FILongLongInt bf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
+		FILongLongInt bf = MixedLongParamters::sum;
         return bf.apply(42l, 24);
     }
 
@@ -189,7 +189,7 @@ public class MethodReferencePrimitives {
 		long apply(int a, int b);
 	}
     public long sumIntInt() {
-		FILongIntInt bf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
+		FILongIntInt bf = MixedLongParamters::sum;
         return bf.apply(42, 314);
     }
 
@@ -199,7 +199,7 @@ public class MethodReferencePrimitives {
 		double apply(double a, long b);
 	}
     public double sumDoubleLong() {
-		FIDoubleDoubleLong bf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
+		FIDoubleDoubleLong bf = MixedLongParamters::sum;
         return bf.apply(5.5d, 42l);
     }
 
@@ -209,7 +209,7 @@ public class MethodReferencePrimitives {
 		long apply(int a, long b, long c);
 	}
     public long sumIntLongLong() {
-		FILongIntLongLong tf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
+		FILongIntLongLong tf = MixedLongParamters::sum;
         return tf.apply(3, 4l, 5l);
     }
 }

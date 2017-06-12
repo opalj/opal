@@ -28,13 +28,7 @@
  */
 package lambdas.methodreferences;
 
-import annotations.target.InvokedMethod;
-
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
-
-import static annotations.target.TargetResolution.*;
 
 
 /**
@@ -71,9 +65,10 @@ public class ReceiverInheritance {
 		return lhm;
 	}
 
-	public static <T> void instanceBiConsumer() {
+	public static <T> void instanceBiConsumer(T t) {
 		LinkedHashSet<T> lhm = new LinkedHashSet<T>();
 		java.util.function.Consumer<T> bc = lhm::contains;
+		bc.accept(t);
 
 		lhm.contains("foo");
 	}
