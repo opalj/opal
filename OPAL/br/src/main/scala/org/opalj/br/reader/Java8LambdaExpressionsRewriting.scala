@@ -181,9 +181,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             val receiverType =
                 // Check the target method op code.
                 // FIXME Either document why this test is sufficient (in the presence of default methods or fix it...
-                // Only INVOKEVIRTUAL methods have to be changed, e.g.
-                // `LinkedHashSet::contains`.
-                if (invocationInstruction != INVOKEVIRTUAL.opcode)
+                // Only INVOKEVIRTUAL and INVOKEINTERFACE methods have to be changed, e.g.
+                // `LinkedHashSet::contains` or `Sink::accept`.
+                if (invocationInstruction != INVOKEVIRTUAL.opcode && invocationInstruction != INVOKEINTERFACE.opcode)
                     targetMethodOwner
                 else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
                     // If we have an instance of a object and use a method reference,

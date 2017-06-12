@@ -32,7 +32,7 @@ import java.util.ArrayList;
 
 
 /**
- * This class contains examples for method references dealing with proxy class receiver inheritance.
+ * This class contains examples for method references in sink.
  *
  * <!--
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
@@ -82,6 +82,5 @@ public class SinkTest {
         downstream.begin(list.size());
         list.forEach(downstream::accept);
         downstream.end();
-        list = null;
     }
 }
