@@ -26,22 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-import sbt._
+package lambdas.methodreferences;
 
 /**
- * This sbt-imported object organizes the libraries on which every
- * OPAL subproject depends by default
+ * This class contains an example of a method reference dealing with interface default methods.
  *
- * @author Michael Eichberg
- * @author Simon Leischnig
+ * <!--
+ * <p>
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ * <p>
+ * -->
+ *
+ * @author Andreas Muttscheller
  */
-object Dependencies {
+public class DefaultMethod {
 
-    // Libraries
-    val junit = "junit" % "junit" % "4.12" % "test,it"
-    val scalatest = "org.scalatest" %% "scalatest" % "3.0.3" % "test,it"
-    val scalacheck = "org.scalacheck" %% "scalacheck" % "1.13.5" % "test,it"
+    @FunctionalInterface public interface FIBoolean {
 
-    // centralized dependency sequences
-    val opalDefaultDependencies = Seq(junit, scalatest, scalacheck)
+        boolean get();
+    }
+
+    public static <T> boolean interfaceReference(java.util.Enumeration<T> enum1) {
+        FIBoolean bc = enum1::hasMoreElements;
+
+        return bc.get();
+    }
+
+    public interface IDefaultMethod {
+
+        default boolean foo() {
+            return true;
+        }
+    }
+
+    public static boolean defaultMethodInterface(IDefaultMethod idm) {
+        FIBoolean bc = idm::foo;
+        return bc.get();
+    }
 }

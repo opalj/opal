@@ -71,7 +71,7 @@ object TACAI {
         aiResult:       AIResult { val domain: RecordDefUse }
     )(
         optimizations: List[TACOptimization[DUVar[aiResult.domain.DomainValue]]]
-    ): (Array[Stmt[DUVar[aiResult.domain.DomainValue]]], CFG) = {
+    ): TACode[DUVar[aiResult.domain.DomainValue]] = {
 
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -94,7 +94,7 @@ object TACAI {
         // for all useless instructions).
 
         val statements = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](codeSize)
-        val pcToIndex = new Array[Int](codeSize)
+        val pcToIndex = new Array[Int](codeSize + 1 /* +1 if the try block includes the last inst. */ )
 
         var pc: PC = 0
         var index: Int = 0
@@ -631,27 +631,31 @@ object TACAI {
             }
         } while (pc < codeSize)
 
-        var tacCode = {
-            val tacCode = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](index)
+        // add the artificial lastPC + 1 instruction to enable the mapping of exception handlers
+        pcToIndex(pc /* == codeSize +1 */ ) = index
+
+        val tacStmts = {
+            val tacStmts = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](index)
             var s = 0
             while (s < index) {
                 val stmt = statements(s)
                 stmt.remapIndexes(pcToIndex)
-                tacCode(s) = stmt
+                tacStmts(s) = stmt
                 s += 1
             }
-            tacCode
+            tacStmts
         }
-        var tacCFG = cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1)
+        val taCodeCFG = cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1)
+        val taExceptionHanders = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
+        val taCode = TACode(tacStmts, taCodeCFG, taExceptionHanders, code.lineNumberTable)
 
         if (optimizations.nonEmpty) {
-            val baseTAC = TACOptimizationResult(tacCode, tacCFG, wasTransformed = false)
-            val result = optimizations.foldLeft(baseTAC)((tac, optimization) ⇒ optimization(tac))
-            tacCode = result.code
-            tacCFG = result.cfg
+            val base = TACOptimizationResult(taCode, wasTransformed = false)
+            val result = optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac))
+            result.code
+        } else {
+            taCode
         }
-        (tacCode, tacCFG)
-
     }
 
 }

@@ -701,7 +701,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 }
             }
 
-            val MethodReferences = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/MethodReferences").get
+            val MethodReferences = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/methodreferences/MethodReferences").get
 
             describe("references to constructors") {
                 it("should be correctly identified") {

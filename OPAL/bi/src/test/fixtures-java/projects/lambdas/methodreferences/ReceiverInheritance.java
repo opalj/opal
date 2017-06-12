@@ -26,22 +26,48 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-import sbt._
+package lambdas.methodreferences;
+
+import java.util.LinkedHashSet;
+import java.util.function.*;
 
 /**
- * This sbt-imported object organizes the libraries on which every
- * OPAL subproject depends by default
+ * This class contains a examples for method references dealing with proxy class receiver inheritance.
  *
- * @author Michael Eichberg
- * @author Simon Leischnig
+ * <!--
+ *
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ *
+ * -->
+ *
+ * @author Andreas Muttscheller
  */
-object Dependencies {
+public class ReceiverInheritance {
 
-    // Libraries
-    val junit = "junit" % "junit" % "4.12" % "test,it"
-    val scalatest = "org.scalatest" %% "scalatest" % "3.0.3" % "test,it"
-    val scalacheck = "org.scalacheck" %% "scalacheck" % "1.13.5" % "test,it"
+    public static <T, R> R someBiConsumerParameter(Supplier<R> s,
+            BiConsumer<R, T> bc, BiConsumer<R, R> r, T t) {
+        R state = s.get();
+        bc.accept(state, t);
+        r.accept(state, state);
 
-    // centralized dependency sequences
-    val opalDefaultDependencies = Seq(junit, scalatest, scalacheck)
+        return state;
+    }
+
+    public static <T> LinkedHashSet<T> callBiConsumer(T t) {
+        LinkedHashSet<T> lhm = ReceiverInheritance.<T, LinkedHashSet<T>>someBiConsumerParameter(
+                LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll, t);
+
+        return lhm;
+    }
+
+    public static <T> void instanceBiConsumer(T t) {
+        LinkedHashSet<T> lhm = new LinkedHashSet<T>();
+        Consumer<T> bc = lhm::contains;
+        bc.accept(t);
+
+        lhm.contains("foo");
+    }
 }
+
+
