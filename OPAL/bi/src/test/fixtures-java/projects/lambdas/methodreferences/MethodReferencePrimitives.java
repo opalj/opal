@@ -96,7 +96,7 @@ public class MethodReferencePrimitives {
 	// Return double, parameter double, double
 	@FunctionalInterface
 	public interface FIDoubleDouble {
-		public double apply(double a, double b);
+		double apply(double a, double b);
 	}
 	public double sumDoubleDouble() {
 		FIDoubleDouble bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
@@ -106,7 +106,7 @@ public class MethodReferencePrimitives {
 	// Return double, parameter double, float
 	@FunctionalInterface
 	public interface FIDoubleDoubleFloat {
-		public double apply(double a, float b);
+		double apply(double a, float b);
 	}
 	public double sumDoubleFloat() {
 		FIDoubleDoubleFloat bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
@@ -116,7 +116,7 @@ public class MethodReferencePrimitives {
 	// Return double, parameter float, double
 	@FunctionalInterface
 	public interface FIDoubleFloatDouble {
-		public double apply(float a, double b);
+		double apply(float a, double b);
 	}
 	public double sumFloatDouble() {
 		FIDoubleFloatDouble bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
@@ -126,7 +126,7 @@ public class MethodReferencePrimitives {
 	// Return float, parameter float, float
 	@FunctionalInterface
 	public interface FIFloatFloatFloat {
-		public float apply(float a, float b);
+		float apply(float a, float b);
 	}
 	public float sumFloatFloat() {
 		FIFloatFloatFloat bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
@@ -136,7 +136,7 @@ public class MethodReferencePrimitives {
 	// Return double, parameter double, float, double
 	@FunctionalInterface
 	public interface FIDoubleFloatDoubleFloat {
-		public double apply(float a, double b, float c);
+		double apply(float a, double b, float c);
 	}
 	public double sumFloatDoubleFloat() {
 		FIDoubleFloatDoubleFloat tf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
@@ -146,7 +146,7 @@ public class MethodReferencePrimitives {
 	// Return double, parameter int, double
 	@FunctionalInterface
 	public interface FIDoubleIntDouble {
-		public double apply(int a, double b);
+		double apply(int a, double b);
 	}
 	public double sumDoubleInt() {
 		FIDoubleIntDouble bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
@@ -156,7 +156,7 @@ public class MethodReferencePrimitives {
 	// Return double, parameter long, double
 	@FunctionalInterface
 	public interface FIDoubleLongDouble {
-		public double apply(long a, double b);
+		double apply(long a, double b);
 	}
 	public double sumLongDouble() {
 		FIDoubleLongDouble bf = lambdas.methodreferences.MethodReferencePrimitives.MixedDoubleParamters::sum;
@@ -166,7 +166,7 @@ public class MethodReferencePrimitives {
 	// Return long, parameter long, long
 	@FunctionalInterface
 	public interface FILongLongLong {
-		public long apply(long a, long b);
+		long apply(long a, long b);
 	}
     public long sumLongLong() {
         FILongLongLong bf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
@@ -176,7 +176,7 @@ public class MethodReferencePrimitives {
 	// Return long, parameter long, int
 	@FunctionalInterface
 	public interface FILongLongInt {
-		public long apply(long a, int b);
+		long apply(long a, int b);
 	}
     public long sumLongInt() {
 		FILongLongInt bf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
@@ -186,7 +186,7 @@ public class MethodReferencePrimitives {
 	// Return long, parameter int, int
 	@FunctionalInterface
 	public interface FILongIntInt {
-		public long apply(int a, int b);
+		long apply(int a, int b);
 	}
     public long sumIntInt() {
 		FILongIntInt bf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
@@ -196,7 +196,7 @@ public class MethodReferencePrimitives {
 	// Return double, parameter double, long
 	@FunctionalInterface
 	public interface FIDoubleDoubleLong {
-		public double apply(double a, long b);
+		double apply(double a, long b);
 	}
     public double sumDoubleLong() {
 		FIDoubleDoubleLong bf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
@@ -206,7 +206,7 @@ public class MethodReferencePrimitives {
 	// Return long, parameter int, long, long
 	@FunctionalInterface
 	public interface FILongIntLongLong {
-		public long apply(int a, long b, long c);
+		long apply(int a, long b, long c);
 	}
     public long sumIntLongLong() {
 		FILongIntLongLong tf = lambdas.methodreferences.MethodReferencePrimitives.MixedLongParamters::sum;
