@@ -171,7 +171,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             testMethod(project, Lambdas, "localAndInstanceClosure")
         }
 
-        val MethodReferences = project.classFile(ObjectType("lambdas/MethodReferences")).get
+        val MethodReferences = project.classFile(ObjectType("lambdas/methodreferences/MethodReferences")).get
 
         it("should resolve a reference to a static method") {
             testMethod(project, MethodReferences, "compareValues")
