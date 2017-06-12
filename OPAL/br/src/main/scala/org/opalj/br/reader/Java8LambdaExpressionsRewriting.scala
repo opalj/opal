@@ -40,6 +40,8 @@ import net.ceedubs.ficus.Ficus._
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.OPALLogger.info
 import org.opalj.br.instructions._
+import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
+import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
 
 /**
  * Provides support for rewriting Java 8 lambda or method reference expressions that
@@ -56,6 +58,7 @@ import org.opalj.br.instructions._
  *
  * @author Arne Lottmann
  * @author Michael Eichberg
+ * @author Andreas Muttscheller
  */
 trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     this: ClassFileBinding ⇒
@@ -67,9 +70,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
         val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (rewrite) {
-            info("project configuration", "Java 8 lambda expressions are rewritten")
+            info("project configuration", "Java 8 invokedynamics are rewritten")
         } else {
-            info("project configuration", "Java 8 lambda expressions are not rewritten")
+            info("project configuration", "Java 8 invokedynamics are not rewritten")
         }
         rewrite
     }
@@ -78,9 +81,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
         val logRewrites: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logRewrites) {
-            info("project configuration", "Java 8 lambda expressions rewrites are logged")
+            info("project configuration", "Java 8 invokedynamic rewrites are logged")
         } else {
-            info("project configuration", "Java 8 lambda expressions rewrites are not logged")
+            info("project configuration", "Java 8 invokedynamic rewrites are not logged")
         }
         logRewrites
     }
@@ -176,11 +179,36 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                     None
                 }
 
+            val receiverType =
+                // Check the target method op code.
+                // Only INVOKEVIRTUAL and INVOKEINTERFACE methods have to be changed, e.g.
+                // `LinkedHashSet::contains` or `Sink::accept`.
+                if (invocationInstruction != INVOKEVIRTUAL.opcode &&
+                    invocationInstruction != INVOKEINTERFACE.opcode) {
+                    targetMethodOwner
+                } else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
+                    // If we have an instance of a object and use a method reference,
+                    // get the receiver type from the inovkedynamic instruction.
+                    // It is the first parameter of the functional interface parameter
+                    // list.
+                    invokedynamic.methodDescriptor.parameterTypes.head.isObjectType) {
+                    invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
+                } else if (functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.nonEmpty &&
+                    // If we get a instance method reference like `LinkedHashSet::addAll`, get
+                    // the receiver type from the functional interface. The first parameter is
+                    // the instance where the method should be called.
+                    functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.isObjectType) {
+                    functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.asObjectType
+                } else {
+                    targetMethodOwner
+                }
+
             val proxy: ClassFile = ClassFileFactory.Proxy(
                 typeDeclaration,
                 functionalInterfaceMethodName,
                 functionalInterfaceDescriptorBeforeTypeErasure,
-                targetMethodOwner,
+                //targetMethodOwner,
+                receiverType,
                 // Note a static lambda method in an interface needs
                 // to be called using the correct variant of an invokestatic.
                 receiverIsInterface = classFile.isInterfaceDeclaration,
@@ -190,10 +218,10 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 bridgeMethodDescriptor
             )
             val factoryMethod = {
-                if (functionalInterfaceMethodName == ClassFileFactory.DefaultFactoryMethodName)
-                    proxy.findMethod(ClassFileFactory.AlternativeFactoryMethodName).head
+                if (functionalInterfaceMethodName == DefaultFactoryMethodName)
+                    proxy.findMethod(AlternativeFactoryMethodName).head
                 else
-                    proxy.findMethod(ClassFileFactory.DefaultFactoryMethodName).head
+                    proxy.findMethod(DefaultFactoryMethodName).head
             }
 
             val newInvokestatic = INVOKESTATIC(
@@ -205,13 +233,15 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 factoryDescriptor.copy(returnType = proxy.thisType)
             )
 
-            // DEBUG ---
-            if (classFile.thisType.toJava.startsWith("java.util.stream.DistinctOps")) {
+            /*// DEBUG ---
+            if (receiverType != targetMethodOwner) {
+                println("Rewritten proxy class receiver type from targetMethodOwner to receiverType!\n")
                 println("Creating Proxy Class:")
                 println(s"\t\ttypeDeclaration = $typeDeclaration")
                 println(s"\t\tfunctionalInterfaceMethodName = $functionalInterfaceMethodName")
                 println(s"\t\tfunctionalInterfaceDescriptorBeforeTypeErasure = $functionalInterfaceDescriptorBeforeTypeErasure")
                 println(s"\t\ttargetMethodOwner = $targetMethodOwner")
+                println(s"\t\treceiverType =  $receiverType")
                 println(s"\t\ttargetMethodName = $targetMethodName")
                 println(s"\t\treceiverDescriptor = $receiverDescriptor")
                 println(s"\t\tinvocationInstruction = $invocationInstruction")
@@ -221,11 +251,11 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 println(s"$pc:\n$invokedynamic\n=>\n$newInvokestatic\n")
                 println()
             }
-            // --- DEBUG
+            // --- DEBUG*/
 
             if (logJava8LambdaExpressionsRewrites) {
-                val message = s"rewriting lambda expression: $invokedynamic ⇒ $newInvokestatic"
-                info("analysis", message)
+                val m = s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic"
+                info("analysis", m)
             }
 
             instructions(pc) = newInvokestatic
@@ -254,7 +284,11 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         }
     }
 
-    def storeProxy(classFile: ClassFile, proxy: ClassFile, reason: Option[AnyRef]): ClassFile = {
+    def storeProxy(
+        classFile: ClassFile,
+        proxy:     ClassFile,
+        reason:    Option[AnyRef]
+    ): ClassFile = {
         classFile.synthesizedClassFiles match {
             case Some(scf @ SynthesizedClassFiles(cfs)) ⇒
                 val newScf = new SynthesizedClassFiles(((proxy, reason)) :: cfs)
@@ -273,7 +307,7 @@ object Java8LambdaExpressionsRewriting {
     final val FactoryNamesRegEx = "^Lambda\\$[0-9a-f]+:[0-9a-f]+$"
 
     final val Java8LambdaExpressionsConfigKeyPrefix = {
-        org.opalj.br.reader.ClassFileReaderConfiguration.ConfigKeyPrefix+"Java8LambdaExpressions."
+        ClassFileReaderConfiguration.ConfigKeyPrefix+"Java8LambdaExpressions."
     }
 
     final val Java8LambdaExpressionsRewritingConfigKey = {

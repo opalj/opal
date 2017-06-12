@@ -73,8 +73,8 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
      * Abstracts over all values with computational type `long`.
      */
     sealed trait LongValue
-            extends Value
-            with IsLongValue { this: DomainValue ⇒
+            extends TypedValue[LongType]
+            with IsLongValue[LongValue] { this: DomainTypedValue[LongType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeLong
 
@@ -85,12 +85,12 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
      *
      * Models the top value of this domain's lattice.
      */
-    trait ALongValue extends LongValue { this: DomainValue ⇒ }
+    trait ALongValue extends LongValue { this: DomainTypedValue[LongType] ⇒ }
 
     /**
      * Represents a concrete long value.
      */
-    trait DefiniteLongValue extends LongValue { this: DomainValue ⇒
+    trait DefiniteLongValue extends LongValue { this: DomainTypedValue[LongType] ⇒
 
         val initial: Long
 

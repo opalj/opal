@@ -82,6 +82,7 @@ trait Attribute {
      *  - 44 The Module Attribute (Java 9)
      *  - 1001 OPAL's VirtualTypeFlag Attribute
      *  - 1002 OPAL's SynthesizedClassFiles Attribute
+     *  - 1003 OPAL's TACode Attribute (the 3-Address Code)
      */
     def kindId: Int
 

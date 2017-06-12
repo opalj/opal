@@ -78,7 +78,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
         }
     }
 
-    private def Method_Info(cp: Constant_Pool, in: DataInputStream): Method_Info =
+    private def Method_Info(cp: Constant_Pool, in: DataInputStream): Method_Info = {
         Method_Info(
             cp,
             in.readUnsignedShort,
@@ -86,5 +86,6 @@ trait MethodsReader extends Constant_PoolAbstractions {
             in.readUnsignedShort,
             Attributes(AttributesParent.Method, cp, in)
         )
+    }
 
 }

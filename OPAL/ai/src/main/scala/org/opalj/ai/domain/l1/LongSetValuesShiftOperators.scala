@@ -47,7 +47,7 @@ trait LongSetValuesShiftOperators extends LongValuesDomain {
     /*override*/ def lshl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         value match {
             case LongSet(leftValues) ⇒
-                intValue(shift) { s ⇒
+                intValue[DomainValue](shift) { s ⇒
                     LongSet(leftValues.map(_ << s))
                 } {
                     if (leftValues.size == 1 && leftValues.head == 0)
@@ -68,7 +68,7 @@ trait LongSetValuesShiftOperators extends LongValuesDomain {
     /*override*/ def lshr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         value match {
             case LongSet(leftValues) ⇒
-                intValue(shift) { s ⇒
+                intValue[DomainValue](shift) { s ⇒
                     LongSet(leftValues.map(_ >> s))
                 } {
                     if (leftValues.size == 1 && leftValues.head == 0)
@@ -88,8 +88,8 @@ trait LongSetValuesShiftOperators extends LongValuesDomain {
 
     /*override*/ def lushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         value match {
-            case LongSet(leftValues) ⇒
-                intValue(shift) { s ⇒
+            case value @ LongSet(leftValues) ⇒
+                intValue[DomainValue](shift) { s ⇒
                     LongSet(leftValues.map(_ >>> s))
                 } {
                     if (leftValues.size == 1 && leftValues.head == 0)

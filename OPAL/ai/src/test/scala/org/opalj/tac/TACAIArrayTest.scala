@@ -100,7 +100,7 @@ class TACAIArrayTest extends TACTest {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, RefArrayMethod)
                 val aiResult = BaseAI(ArrayInstructionsClassFile, RefArrayMethod, domain)
                 val statements = AsQuadruples(method = RefArrayMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -144,7 +144,7 @@ class TACAIArrayTest extends TACTest {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, MultidimArrayMethod)
                 val aiResult = BaseAI(ArrayInstructionsClassFile, MultidimArrayMethod, domain)
                 val statements = AsQuadruples(method = MultidimArrayMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -178,7 +178,7 @@ class TACAIArrayTest extends TACTest {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, DoubleArrayMethod)
                 val aiResult = BaseAI(ArrayInstructionsClassFile, DoubleArrayMethod, domain)
                 val statements = AsQuadruples(method = DoubleArrayMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -190,7 +190,7 @@ class TACAIArrayTest extends TACTest {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, FloatArrayMethod)
                 val aiResult = BaseAI(ArrayInstructionsClassFile, FloatArrayMethod, domain)
                 val statements = AsQuadruples(method = FloatArrayMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -202,7 +202,7 @@ class TACAIArrayTest extends TACTest {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, IntArrayMethod)
                 val aiResult = BaseAI(ArrayInstructionsClassFile, IntArrayMethod, domain)
                 val statements = AsQuadruples(method = IntArrayMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -214,7 +214,7 @@ class TACAIArrayTest extends TACTest {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, LongArrayMethod)
                 val aiResult = BaseAI(ArrayInstructionsClassFile, LongArrayMethod, domain)
                 val statements = AsQuadruples(method = LongArrayMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -226,7 +226,7 @@ class TACAIArrayTest extends TACTest {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, ShortArrayMethod)
                 val aiResult = BaseAI(ArrayInstructionsClassFile, ShortArrayMethod, domain)
                 val statements = AsQuadruples(method = ShortArrayMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -238,7 +238,7 @@ class TACAIArrayTest extends TACTest {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, ByteArrayMethod)
                 val aiResult = BaseAI(ArrayInstructionsClassFile, ByteArrayMethod, domain)
                 val statements = AsQuadruples(method = ByteArrayMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -250,7 +250,7 @@ class TACAIArrayTest extends TACTest {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, CharArrayMethod)
                 val aiResult = BaseAI(ArrayInstructionsClassFile, CharArrayMethod, domain)
                 val statements = AsQuadruples(method = CharArrayMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

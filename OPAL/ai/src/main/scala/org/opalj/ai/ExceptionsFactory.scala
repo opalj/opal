@@ -47,9 +47,7 @@ trait ExceptionsFactory extends ValuesDomain { domain ⇒
      */
     def Throwable(origin: ValueOrigin): ExceptionValue
 
-    final def VMThrowable(pc: PC): ExceptionValue = {
-        Throwable(ValueOriginForVMLevelValue(pc))
-    }
+    final def VMThrowable(pc: PC): ExceptionValue = Throwable(ValueOriginForVMLevelValue(pc))
 
     /**
      * Creates a non-null object that represent a `ClassCastException` and that has the

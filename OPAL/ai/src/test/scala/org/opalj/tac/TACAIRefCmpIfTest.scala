@@ -113,7 +113,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfACMPEQMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfACMPEQMethod, domain)
                 val statements = AsQuadruples(method = IfACMPEQMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -129,7 +129,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfACMPNEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfACMPNEMethod, domain)
                 val statements = AsQuadruples(method = IfACMPNEMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -145,7 +145,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfNonNullMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfNonNullMethod, domain)
                 val statements = AsQuadruples(method = IfNonNullMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -164,7 +164,7 @@ import RelationalOperators._
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfNullMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfNullMethod, domain)
                 val statements = AsQuadruples(method = IfNullMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

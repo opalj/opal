@@ -29,10 +29,7 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
@@ -43,7 +40,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveConstantsTest extends FunSpec with Matchers {
+class TACNaiveConstantsTest extends TACNaiveTest {
 
     val ConstantsType = ObjectType("tactest/Constants")
 
@@ -62,7 +59,7 @@ class TACNaiveConstantsTest extends FunSpec with Matchers {
 
         it("should correctly reflect the integer constants") {
             val statements = TACNaive(method = IntConstsMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -86,29 +83,29 @@ class TACNaiveConstantsTest extends FunSpec with Matchers {
             ))
             javaLikeCode.shouldEqual(
                 Array(
-                    "0: r_0 = this;",
-                    "1: op_0 = 0;",
-                    "2: r_1 = op_0;",
-                    "3: op_0 = 1;",
-                    "4: r_2 = op_0;",
-                    "5: op_0 = 2;",
-                    "6: r_3 = op_0;",
-                    "7: op_0 = 3;",
-                    "8: r_4 = op_0;",
-                    "9: op_0 = 4;",
-                    "10: r_5 = op_0;",
-                    "11: op_0 = 5;",
-                    "12: r_6 = op_0;",
-                    "13: op_0 = -1;",
-                    "14: r_7 = op_0;",
-                    "15: return;"
+                    "0: r_0 = this",
+                    "1: op_0 = 0",
+                    "2: r_1 = op_0",
+                    "3: op_0 = 1",
+                    "4: r_2 = op_0",
+                    "5: op_0 = 2",
+                    "6: r_3 = op_0",
+                    "7: op_0 = 3",
+                    "8: r_4 = op_0",
+                    "9: op_0 = 4",
+                    "10: r_5 = op_0",
+                    "11: op_0 = 5",
+                    "12: r_6 = op_0",
+                    "13: op_0 = -1",
+                    "14: r_7 = op_0",
+                    "15: return"
                 )
             )
         }
 
         it("should correctly reflect the long constants") {
             val statements = TACNaive(method = LongConstsMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -122,19 +119,19 @@ class TACNaiveConstantsTest extends FunSpec with Matchers {
             ))
             javaLikeCode.shouldEqual(
                 Array(
-                    "0: r_0 = this;",
-                    "1: op_0 = 0l;",
-                    "2: r_1 = op_0;",
-                    "3: op_0 = 1l;",
-                    "4: r_3 = op_0;",
-                    "5: return;"
+                    "0: r_0 = this",
+                    "1: op_0 = 0l",
+                    "2: r_1 = op_0",
+                    "3: op_0 = 1l",
+                    "4: r_3 = op_0",
+                    "5: return"
                 )
             )
         }
 
         it("should correctly reflect the float constants") {
             val statements = TACNaive(method = FloatConstsMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -150,21 +147,21 @@ class TACNaiveConstantsTest extends FunSpec with Matchers {
             ))
             javaLikeCode.shouldEqual(
                 Array(
-                    "0: r_0 = this;",
-                    "1: op_0 = 0.0f;",
-                    "2: r_1 = op_0;",
-                    "3: op_0 = 1.0f;",
-                    "4: r_2 = op_0;",
-                    "5: op_0 = 2.0f;",
-                    "6: r_3 = op_0;",
-                    "7: return;"
+                    "0: r_0 = this",
+                    "1: op_0 = 0.0f",
+                    "2: r_1 = op_0",
+                    "3: op_0 = 1.0f",
+                    "4: r_2 = op_0",
+                    "5: op_0 = 2.0f",
+                    "6: r_3 = op_0",
+                    "7: return"
                 )
             )
         }
 
         it("should correctly reflect the double constants") {
             val statements = TACNaive(method = DoubleConstsMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -178,19 +175,19 @@ class TACNaiveConstantsTest extends FunSpec with Matchers {
             ))
             javaLikeCode.shouldEqual(
                 Array(
-                    "0: r_0 = this;",
-                    "1: op_0 = 0.0d;",
-                    "2: r_1 = op_0;",
-                    "3: op_0 = 1.0d;",
-                    "4: r_3 = op_0;",
-                    "5: return;"
+                    "0: r_0 = this",
+                    "1: op_0 = 0.0d",
+                    "2: r_1 = op_0",
+                    "3: op_0 = 1.0d",
+                    "4: r_3 = op_0",
+                    "5: return"
                 )
             )
         }
 
         it("should correctly reflect the null reference constants") {
             val statements = TACNaive(method = NullRefConstMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -202,17 +199,17 @@ class TACNaiveConstantsTest extends FunSpec with Matchers {
             ))
             javaLikeCode.shouldEqual(
                 Array(
-                    "0: r_0 = this;",
-                    "1: op_0 = null;",
-                    "2: r_1 = op_0;",
-                    "3: return;"
+                    "0: r_0 = this",
+                    "1: op_0 = null",
+                    "2: r_1 = op_0",
+                    "3: return"
                 )
             )
         }
 
         it("should correctly reflect the other constant loading instructions") {
             val statements = TACNaive(method = LoadConstsInstrMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -230,16 +227,16 @@ class TACNaiveConstantsTest extends FunSpec with Matchers {
             ))
             javaLikeCode.shouldEqual(
                 Array(
-                    "0: r_0 = this;",
-                    "1: op_0 = 10;",
-                    "2: r_1 = op_0;",
-                    "3: op_0 = 10.0f;",
-                    "4: r_2 = op_0;",
-                    "5: op_0 = 10l;",
-                    "6: r_3 = op_0;",
-                    "7: op_0 = 10.0d;",
-                    "8: r_5 = op_0;",
-                    "9: return;"
+                    "0: r_0 = this",
+                    "1: op_0 = 10",
+                    "2: r_1 = op_0",
+                    "3: op_0 = 10.0f",
+                    "4: r_2 = op_0",
+                    "5: op_0 = 10l",
+                    "6: r_3 = op_0",
+                    "7: op_0 = 10.0d",
+                    "8: r_5 = op_0",
+                    "9: return"
                 )
             )
         }

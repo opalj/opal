@@ -40,7 +40,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveSwitchTest extends TACTest {
+class TACNaiveSwitchTest extends TACNaiveTest {
 
     val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
 
@@ -54,12 +54,12 @@ class TACNaiveSwitchTest extends TACTest {
     describe("the naive TAC of switch instructions") {
         it("should correctly reflect tableswitch case") {
             val statements = TACNaive(method = TableSwitchMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, true)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
 
-            val expected = Array[Stmt](
+            val expected = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
@@ -76,24 +76,24 @@ class TACNaiveSwitchTest extends TACTest {
             compareStatements(expected, statements)
 
             javaLikeCode.shouldEqual(Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: op_0 = r_1;",
-                "3: switch(op_0){\n    1: goto 4;\n    2: goto 6;\n    3: goto 8;\n    default: goto 10;\n}",
-                "4: op_0 = 1;",
-                "5: return op_0;",
-                "6: op_0 = 2;",
-                "7: return op_0;",
-                "8: op_0 = 3;",
-                "9: return op_0;",
-                "10: op_0 = 0;",
-                "11: return op_0;"
+                "0:/*pc=-1:*/ r_0 = this",
+                "1:/*pc=-1:*/ r_1 = p_1",
+                "2:/*pc=0:*/ op_0 = r_1",
+                "3:/*pc=1:*/ switch(op_0){\n    1: goto 4;\n    2: goto 6;\n    3: goto 8;\n    default: goto 10\n}",
+                "4:/*pc=28:*/ op_0 = 1",
+                "5:/*pc=29:*/ return op_0",
+                "6:/*pc=30:*/ op_0 = 2",
+                "7:/*pc=31:*/ return op_0",
+                "8:/*pc=32:*/ op_0 = 3",
+                "9:/*pc=33:*/ return op_0",
+                "10:/*pc=34:*/ op_0 = 0",
+                "11:/*pc=35:*/ return op_0"
             ))
         }
 
         it("should correctly reflect lookupswitch case") {
             val statements = TACNaive(method = LookupSwitchMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, true)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -110,16 +110,16 @@ class TACNaiveSwitchTest extends TACTest {
                 ReturnValue(36, SimpleVar(0, ComputationalTypeInt))
             ))
             javaLikeCode.shouldEqual(Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: op_0 = r_1;",
-                "3: switch(op_0){\n    1: goto 4;\n    10: goto 6;\n    default: goto 8;\n}",
-                "4: op_0 = 10;",
-                "5: return op_0;",
-                "6: op_0 = 200;",
-                "7: return op_0;",
-                "8: op_0 = 0;",
-                "9: return op_0;"
+                "0:/*pc=-1:*/ r_0 = this",
+                "1:/*pc=-1:*/ r_1 = p_1",
+                "2:/*pc=0:*/ op_0 = r_1",
+                "3:/*pc=1:*/ switch(op_0){\n    1: goto 4;\n    10: goto 6;\n    default: goto 8\n}",
+                "4:/*pc=28:*/ op_0 = 10",
+                "5:/*pc=30:*/ return op_0",
+                "6:/*pc=31:*/ op_0 = 200",
+                "7:/*pc=34:*/ return op_0",
+                "8:/*pc=35:*/ op_0 = 0",
+                "9:/*pc=36:*/ return op_0"
             ))
         }
 

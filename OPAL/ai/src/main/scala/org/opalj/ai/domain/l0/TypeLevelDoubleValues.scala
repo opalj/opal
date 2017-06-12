@@ -33,6 +33,7 @@ package l0
 
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeDouble
+import org.opalj.br.DoubleType
 
 /**
  * This partial `Domain` performs all computations related to primitive double
@@ -55,9 +56,12 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
     /**
      * Abstracts over double values at the type level.
      */
-    trait DoubleValue extends Value with IsDoubleValue { this: DomainValue ⇒
+    trait DoubleValue extends TypedValue[DoubleType] with IsDoubleValue[DoubleValue] {
+        this: DomainTypedValue[DoubleType] ⇒
 
         final override def computationalType: ComputationalType = ComputationalTypeDouble
+
+        final override def valueType = Some(DoubleType)
 
     }
 

@@ -29,20 +29,18 @@
 package org.opalj
 package tac
 
-import org.opalj.br.cfg.CFG
-
 /**
  * Common interface of all code optimizers that operate on the three-address code
  * representation.
  *
  * @author Michael Eichberg
  */
-trait TACOptimization {
+trait TACOptimization[V <: Var[V]] {
 
     /**
      * Transforms the given code to the target code.
      */
-    def apply(tac: TACOptimizationResult): TACOptimizationResult
+    def apply(tac: TACOptimizationResult[V]): TACOptimizationResult[V]
 }
 
 /**
@@ -50,23 +48,19 @@ trait TACOptimization {
  *
  * @author Michael Eichberg
  */
-case class TACOptimizationResult(
-    code:           Array[Stmt],
-    cfg:            CFG,
-    wasTransformed: Boolean     = false
-)
+case class TACOptimizationResult[V <: Var[V]](code: TACode[V], wasTransformed: Boolean)
 
 /**
  * A very simple peephole optimizer which performs intra-basic block constant and copy propagation.
  *
  * @author Michael Eichberg
  */
-object SimplePropagation extends TACOptimization {
+object SimplePropagation extends TACOptimization[IdBasedVar] {
 
-    def apply(tac: TACOptimizationResult): TACOptimizationResult = {
-
-        val bbs = tac.cfg.allBBs
-        val code = tac.code
+    def apply(tac: TACOptimizationResult[IdBasedVar]): TACOptimizationResult[IdBasedVar] = {
+        val cfg = tac.code.cfg
+        val bbs = cfg.allBBs
+        val code = tac.code.stmts
         var wasTransformed = false
         bbs.withFilter(bb ⇒ bb.startPC < bb.endPC).foreach { bb ⇒
             var index = bb.startPC
@@ -75,7 +69,7 @@ object SimplePropagation extends TACOptimization {
 
                 code(index) match {
 
-                    case Assignment(pc, trgtVar, c @ (_: SimpleValueConst | _: Var | _: Param)) ⇒
+                    case Assignment(pc, trgtVar, c @ (_: SimpleValueConst | _: IdBasedVar | _: Param)) ⇒
 
                         code(index + 1) match {
                             case Throw(nextPC, `trgtVar`) ⇒
@@ -88,7 +82,7 @@ object SimplePropagation extends TACOptimization {
 
                             case Assignment(
                                 nextPC,
-                                nextTrgtVar,
+                                nextTrgtVar: IdBasedVar,
                                 PrimitiveTypecastExpr(exprPC, targetTpe, `trgtVar`)
                                 ) ⇒
                                 wasTransformed = true
@@ -148,7 +142,7 @@ object SimplePropagation extends TACOptimization {
             }
 
         }
-
-        new TACOptimizationResult(code, tac.cfg, wasTransformed)
+        val newTACode = TACode(code, cfg, tac.code.exceptionHandlers, tac.code.lineNumberTable)
+        new TACOptimizationResult(newTACode, wasTransformed)
     }
 }

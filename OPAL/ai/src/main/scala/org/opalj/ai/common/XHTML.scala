@@ -167,7 +167,7 @@ object XHTML {
         )
     }
 
-    def annotationsAsXHTML(method: Method) =
+    def annotationsAsXHTML(method: Method): Node =
         <div class="annotations">
             {
                 this.annotations(method) map { annotation ⇒
@@ -199,10 +199,9 @@ object XHTML {
         val title =
             classFile.
                 map(_.thisType.toJava + method.map("{ "+methodToString(_)+" }").getOrElse("")).
-                orElse(method.map(methodToString(_)))
+                orElse(method.map(methodToString))
 
-        val annotations =
-            method.map(annotationsAsXHTML(_)).getOrElse(<div class="annotations"></div>)
+        val annotations = method.map(annotationsAsXHTML).getOrElse(<div class="annotations"></div>)
 
         createXHTML(
             title,
@@ -390,7 +389,7 @@ object XHTML {
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-                { locals.map { mapLocal(_) }.toSeq }
+                { locals.map { mapLocal }.iterator }
             </ol>
         }
     }

@@ -28,12 +28,14 @@
  */
 package lambdas;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.function.*;
 import annotations.target.InvokedMethod;
 import static annotations.target.TargetResolution.*;
 
 /**
  * A few simple closures to test resolution of Java8 generated invokedynamic instructions.
- *
  * <!--
  *
  *
@@ -42,9 +44,7 @@ import static annotations.target.TargetResolution.*;
  * SPECIFIED LINE NUMBERS ARE STABLE.
  *
  *
- *
  * -->
- *
  * @author Arne Lottmann
  */
 public class Lambdas {
@@ -163,56 +163,69 @@ public class Lambdas {
     }
 
     public Double doubleIntParamter() {
-        java.util.function.BiFunction<Double, Integer, Double> l
-                = (x, y) -> x+y;
+        BiFunction<Double, Integer, Double> l = (x, y) -> x+y;
         return l.apply(3d, 3);
     }
 
     public Double intDoubleParamter() {
-        java.util.function.BiFunction<Integer, Double, Double> l
-                = (x, y) -> x+y;
+        BiFunction<Integer, Double, Double> l = (x, y) -> x+y;
         return l.apply(3, 3d);
     }
 
     public Double doubleFloatParamter() {
-        java.util.function.BiFunction<Double, Float, Double> l
-                = (x, y) -> x+y;
+        BiFunction<Double, Float, Double> l = (x, y) -> x+y;
+        return l.apply(3d, 3.14f);
+    }
+
+    public double doubleFloatParamter2() {
+        DoubleFloatInterface l = (x, y) -> x+y;
         return l.apply(3d, 3.14f);
     }
 
     public Long singleLongParamter() {
-        java.util.function.Function<Long, Long> l
-                = (x) -> x+5l;
+        Function<Long, Long> l = (x) -> x+5l;
         return l.apply(3l);
     }
 
     public Long longLongParamter() {
-        java.util.function.BiFunction<Long, Long, Long> l
-                = (x, y) -> x+y;
+        BiFunction<Long, Long, Long> l = (x, y) -> x+y;
         return l.apply(3l, 4l);
     }
 
     public Long longIntParamter() {
-        java.util.function.BiFunction<Long, Integer, Long> l
-                = (x, y) -> x+y;
+        BiFunction<Long, Integer, Long> l = (x, y) -> x+y;
         return l.apply(3l, 3);
     }
 
     public Long intLongParamter() {
-        java.util.function.BiFunction<Integer, Long, Long> l
-                = (x, y) -> x+y;
+        BiFunction<Integer, Long, Long> l = (x, y) -> x+y;
         return l.apply(3, 3l);
     }
 
     public Float longFloatParamter() {
-        java.util.function.BiFunction<Long, Float, Float> l
-                = (x, y) -> x+y;
+        BiFunction<Long, Float, Float> l = (x, y) -> x+y;
         return l.apply(3l, 3.14f);
     }
 
     public Double longDoubleParamter() {
-        java.util.function.BiFunction<Long, Double, Double> l
-                = (x, y) -> x+y;
+        BiFunction<Long, Double, Double> l = (x, y) -> x+y;
         return l.apply(3l, 3.14d);
+    }
+
+    public ArrayList<Object> someBiConsumer() {
+	    final ArrayList<Object> al = new ArrayList<>();
+	    BiConsumer<HashMap<String, String>, HashMap<String, String>> bi = (x, y) -> {
+	        al.addAll(x.keySet());
+	        al.addAll(y.values());
+        };
+        al.add(bi);
+        return al;
+    }
+
+    // TODO: Functional Interfaces for long / double parameters
+
+    @FunctionalInterface
+    interface DoubleFloatInterface {
+	    double apply(double d, float f);
     }
 }

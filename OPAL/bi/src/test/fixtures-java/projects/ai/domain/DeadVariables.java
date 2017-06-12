@@ -54,18 +54,18 @@ public class DeadVariables {
 
     private int someInt = (int) (Math.random() * 100.0d);
 
-    // The following example required live variable analysis to determine that the
+    // The following example requires s live variable analysis to determine that the
     // (swallowed) exception is dead.
     public Object java_lang_System_newPrintStream_inspired(Object enc) {
         /*
-        1142    private static PrintStream More ...newPrintStream(FileOutputStream fos, String enc) {
-        1143       if (enc != null) {
-        1144            try {
-        1145                return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
-        1146            } catch (UnsupportedEncodingException uee) {}
-        1147        }
-        1148        return new PrintStream(new BufferedOutputStream(fos, 128), true);
-        1149    }
+        1142 private static PrintStream More ...newPrintStream(FileOutputStream fos, String enc) {
+        1143    if (enc != null) {
+        1144         try {
+        1145             return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
+        1146         } catch (UnsupportedEncodingException uee) {}
+        1147     }
+        1148     return new PrintStream(new BufferedOutputStream(fos, 128), true);
+        1149 }
         */
        if (enc != null) {
             try {
@@ -75,7 +75,7 @@ public class DeadVariables {
         return "";
     }
 
-    public Object initialValusIsAlwaysDead(int i) {
+    public Object initialValueIsAlwaysDead(int i) {
         if (i < 1 || i > 10) return null;
         // ... i is now positive
         Object o = null;
@@ -107,18 +107,18 @@ public class DeadVariables {
 
     public StringBuilder lastStringBuilder(Object o) {
         StringBuilder s = null;
-        for(int i = 1; i< 2 ; i++){
+        for(int i = 1; i < 2 ; i++){
             s = new StringBuilder();
             s.append(i);
             System.out.println(s.toString());
         }
-        return s;
+        return s; // here... the last created string builder in the loop will be returned...
     }
 
 
     public int lastPrimitiveValue(Object o) {
         int s = o.hashCode();
-        for(int i = 1; i< 2 ; i++){
+        for(int i = 1; i < 2 ; i++){
             s = 100;
         }
         return s;

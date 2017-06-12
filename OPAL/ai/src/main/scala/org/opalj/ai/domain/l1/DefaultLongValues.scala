@@ -31,6 +31,8 @@ package ai
 package domain
 package l1
 
+import org.opalj.br.ComputationalTypeLong
+
 /**
  * This domain is able to track constant long values and to perform mathematical
  * operations related to constant long values.
@@ -43,13 +45,15 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
     domain: IntegerValuesFactory with ExceptionsFactory with Configuration ⇒
 
     /**
-     * Represents a specific, but unknown long value.
+     * Represents an unspecific, unknown long value.
      */
     case object ALongValue extends super.ALongValue {
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = NoUpdate
 
-        override def abstractsOver(other: DomainValue): Boolean = other.isInstanceOf[IsLongValue]
+        override def abstractsOver(other: DomainValue): Boolean = {
+            other.computationalType == ComputationalTypeLong
+        }
 
         override def summarize(origin: ValueOrigin): DomainValue = this
 
@@ -105,8 +109,8 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
     // FACTORY METHODS
     //
 
-    override def LongValue(origin: ValueOrigin): DomainValue = ALongValue
+    override def LongValue(origin: ValueOrigin): ALongValue.type = ALongValue
 
-    override def LongValue(origin: ValueOrigin, value: Long): DomainValue = new TheLongValue(value)
+    override def LongValue(origin: ValueOrigin, value: Long): TheLongValue = new TheLongValue(value)
 
 }

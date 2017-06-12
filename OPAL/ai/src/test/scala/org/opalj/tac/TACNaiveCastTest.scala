@@ -29,10 +29,7 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
@@ -43,7 +40,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveCastTest extends FunSpec with Matchers {
+class TACNaiveCastTest extends TACNaiveTest {
 
     describe("the naive TAC of cast instructions") {
 
@@ -77,33 +74,33 @@ class TACNaiveCastTest extends FunSpec with Matchers {
         val I2CMethod = CastInstructionsClassFile.findMethod("i2c").head
 
         def longResultJLC(strg: String) = Array(
-            "0: r_0 = this;",
-            "1: r_1 = p_1;",
-            "2: op_0 = r_1;",
+            "0: r_0 = this",
+            "1: r_1 = p_1",
+            "2: op_0 = r_1",
             strg,
-            "4: r_3 = op_0;",
-            "5: return;"
+            "4: r_3 = op_0",
+            "5: return"
         )
 
         def shortResultJLC(strg: String) = Array(
-            "0: r_0 = this;",
-            "1: r_1 = p_1;",
-            "2: op_0 = r_1;",
+            "0: r_0 = this",
+            "1: r_1 = p_1",
+            "2: op_0 = r_1",
             strg,
-            "4: r_2 = op_0;",
-            "5: return;"
+            "4: r_2 = op_0",
+            "5: return"
         )
 
         def typecheckResultJLC(strg: String) = Array(
-            "0: r_0 = this;",
-            "1: r_1 = p_1;",
-            "2: op_0 = r_1;",
-            "3: op_0 = op_0 instanceof "+strg+";",
-            "4: r_2 = op_0;",
-            "5: return;"
+            "0: r_0 = this",
+            "1: r_1 = p_1",
+            "2: op_0 = r_1",
+            "3: op_0 = op_0 instanceof "+strg+"",
+            "4: r_2 = op_0",
+            "5: return"
         )
 
-        def castResultAST(from: ComputationalType, to: BaseType): Array[Stmt] = Array(
+        def castResultAST(from: ComputationalType, to: BaseType) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, from), Param(from, "p_1")),
             Assignment(0, SimpleVar(0, from), SimpleVar(-2, from)),
@@ -112,7 +109,7 @@ class TACNaiveCastTest extends FunSpec with Matchers {
             Return(3)
         )
 
-        def typecheckResultAST(refTp: ReferenceType): Array[Stmt] = Array(
+        def typecheckResultAST(refTp: ReferenceType) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
             Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
@@ -123,7 +120,7 @@ class TACNaiveCastTest extends FunSpec with Matchers {
 
         it("should correctly reflect the instanceof Object instruction") {
             val statements = TACNaive(method = TypecheckStringMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -133,7 +130,7 @@ class TACNaiveCastTest extends FunSpec with Matchers {
 
         it("should correctly reflect the instanceof List instruction") {
             val statements = TACNaive(method = TypecheckListMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -144,12 +141,12 @@ class TACNaiveCastTest extends FunSpec with Matchers {
 
         it("should correctly reflect the checkcast instruction") {
             val statements = TACNaive(method = CheckcastMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             val listType = ReferenceType("java/util/List")
-            statements.shouldEqual(Array[Stmt](
+            statements.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
@@ -158,163 +155,163 @@ class TACNaiveCastTest extends FunSpec with Matchers {
                 Return(5)
             ))
             javaLikeCode.shouldEqual(Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: op_0 = r_1;",
-                s"3: op_0 = (${listType.toJava}) op_0;",
-                "4: r_2 = op_0;",
-                "5: return;"
+                "0: r_0 = this",
+                "1: r_1 = p_1",
+                "2: op_0 = r_1",
+                s"3: op_0 = (${listType.toJava}) op_0",
+                "4: r_2 = op_0",
+                "5: return"
             ))
         }
 
         it("should correctly reflect the d2f instruction") {
             val statements = TACNaive(method = D2FMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeDouble, FloatType))
-            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (float) op_0;"))
+            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (float) op_0"))
         }
 
         it("should correctly reflect the d2i instruction") {
             val statements = TACNaive(method = D2IMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeDouble, IntegerType))
-            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (int) op_0;"))
+            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (int) op_0"))
         }
 
         it("should correctly reflect the d2l instruction") {
             val statements = TACNaive(method = D2LMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeDouble, LongType))
-            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (long) op_0;"))
+            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (long) op_0"))
         }
 
         it("should correctly reflect the f2d instruction") {
             val statements = TACNaive(method = F2DMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeFloat, DoubleType))
-            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (double) op_0;"))
+            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (double) op_0"))
         }
 
         it("should correctly reflect the f2l instruction") {
             val statements = TACNaive(method = F2LMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeFloat, LongType))
-            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (long) op_0;"))
+            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (long) op_0"))
         }
 
         it("should correctly reflect the f2i instruction") {
             val statements = TACNaive(method = F2IMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeFloat, IntegerType))
-            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (int) op_0;"))
+            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (int) op_0"))
         }
 
         it("should correctly reflect the l2d instruction") {
             val statements = TACNaive(method = L2DMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeLong, DoubleType))
-            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (double) op_0;"))
+            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (double) op_0"))
         }
 
         it("should correctly reflect the l2f instruction") {
             val statements = TACNaive(method = L2FMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeLong, FloatType))
-            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (float) op_0;"))
+            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (float) op_0"))
         }
 
         it("should correctly reflect the l2i instruction") {
             val statements = TACNaive(method = L2IMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeLong, IntegerType))
-            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (int) op_0;"))
+            javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (int) op_0"))
         }
 
         it("should correctly reflect the i2d instruction") {
             val statements = TACNaive(method = I2DMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, DoubleType))
-            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (double) op_0;"))
+            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (double) op_0"))
         }
 
         it("should correctly reflect the i2l instruction") {
             val statements = TACNaive(method = I2LMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, LongType))
-            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (long) op_0;"))
+            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (long) op_0"))
         }
 
         it("should correctly reflect the i2f instruction") {
             val statements = TACNaive(method = I2FMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, FloatType))
-            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (float) op_0;"))
+            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (float) op_0"))
         }
 
         it("should correctly reflect the i2c instruction") {
             val statements = TACNaive(method = I2CMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, CharType))
-            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (char) op_0;"))
+            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (char) op_0"))
         }
 
         it("should correctly reflect the i2b instruction") {
             val statements = TACNaive(method = I2BMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, ByteType))
-            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (byte) op_0;"))
+            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (byte) op_0"))
         }
 
         it("should correctly reflect the i2s instruction") {
             val statements = TACNaive(method = I2SMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, ShortType))
-            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (short) op_0;"))
+            javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (short) op_0"))
         }
     }
 }

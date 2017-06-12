@@ -2299,14 +2299,15 @@ class ClassHierarchy private (
     }
 
     def joinReferenceTypesUntilSingleUpperBound(
-        upperTypeBound: UIDSet[ReferenceType]
+        upperTypeBound: UIDSet[_ <: ReferenceType]
     ): ReferenceType = {
         if (upperTypeBound.isSingletonSet)
             return upperTypeBound.head;
 
-        // Note that the upper type bound must never consist of more than one array type.
-        // The type hierarchy related to arrays is "hard coded"
-        joinObjectTypesUntilSingleUpperBound(upperTypeBound.asInstanceOf[UIDSet[ObjectType]]) // type erasure also has its benefits...
+        // Note that the upper type bound must never consist of more than one array type;
+        // and that the type hierarchy related to arrays is "hard coded"
+        // ... (here) type erasure also has its benefits ...
+        joinObjectTypesUntilSingleUpperBound(upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
     }
 
     def joinUpperTypeBounds(
@@ -2819,7 +2820,7 @@ object ClassHierarchy {
             // interface inherits from multiple interfaces (and maybe from the same (indirect)
             // superinterface.)
 
-            // 1. process all interfac types
+            // 1. process all interface types
             while (typesToProcess.nonEmpty) {
                 val t = typesToProcess.dequeue
                 val superinterfaceTypes = {
@@ -2988,116 +2989,5 @@ object ClassHierarchy {
             supertypes,
             subtypes
         )
-    }
-}
-
-sealed abstract class TypeHierarchyInformation {
-
-    def typeInformationType: String
-    def classTypes: UIDSet[ObjectType]
-    def interfaceTypes: UIDSet[ObjectType]
-
-    def size: Int = classTypes.size + interfaceTypes.size
-
-    def foreach[T](f: ObjectType ⇒ T): Unit = {
-        classTypes.foreach(f)
-        interfaceTypes.foreach(f)
-    }
-
-    def all: UIDSet[ObjectType] = classTypes ++ interfaceTypes
-
-    override def toString: String = {
-        val classInfo = classTypes.map(_.toJava).mkString("classes={", ", ", "}")
-        val interfaceInfo = interfaceTypes.map(_.toJava).mkString("interfaces={", ", ", "}")
-        s"$typeInformationType($classInfo, $interfaceInfo)"
-    }
-
-}
-
-/**
- * Represents a type's subtype information.
- *
- * @author Michael Eichberg
- */
-sealed abstract class SubtypeInformation extends TypeHierarchyInformation {
-    def typeInformationType: String = "SubtypeInformation"
-}
-
-object SubtypeInformation {
-
-    final val empty = new SubtypeInformation {
-        def classTypes: UIDSet[ObjectType] = UIDSet.empty
-        def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-    }
-
-    def apply(
-        theClassTypes:     UIDSet[ObjectType],
-        theInterfaceTypes: UIDSet[ObjectType]
-    ): SubtypeInformation = {
-        if (theClassTypes.isEmpty) {
-            if (theInterfaceTypes.isEmpty)
-                empty
-            else
-                new SubtypeInformation {
-                    def classTypes: UIDSet[ObjectType] = UIDSet.empty
-                    val interfaceTypes = theInterfaceTypes
-                }
-        } else if (theInterfaceTypes.isEmpty) {
-            new SubtypeInformation {
-                val classTypes = theClassTypes
-                def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-            }
-        } else {
-            new SubtypeInformation {
-                val classTypes = theClassTypes
-                val interfaceTypes = theInterfaceTypes
-            }
-        }
-    }
-}
-
-/**
- * Represents a type's supertype information.
- *
- * @author Michael Eichberg
- */
-sealed abstract class SupertypeInformation extends TypeHierarchyInformation {
-    def typeInformationType: String = "SupertypeInformation"
-}
-
-object SupertypeInformation {
-
-    def none = new SupertypeInformationForClasses(UIDSet.empty, UIDSet.empty)
-
-    def apply(
-        classTypes:     UIDSet[ObjectType],
-        interfaceTypes: UIDSet[ObjectType]
-    ): SupertypeInformation = {
-        new SupertypeInformationForClasses(classTypes, interfaceTypes)
-    }
-}
-
-private[br] final class SupertypeInformationForClasses(
-    val classTypes:     UIDSet[ObjectType],
-    val interfaceTypes: UIDSet[ObjectType]
-) extends SupertypeInformation
-
-private[br] object NoSpecificSupertypeInformationForInterfaces extends SupertypeInformation {
-    def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
-    def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-}
-
-private[br] final class SupertypeInformationForInterfaces private (
-        val interfaceTypes: UIDSet[ObjectType]
-) extends SupertypeInformation {
-    def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
-}
-
-object SupertypeInformationForInterfaces {
-    def apply(interfaceTypes: UIDSet[ObjectType]): SupertypeInformation = {
-        if (interfaceTypes.isEmpty)
-            NoSpecificSupertypeInformationForInterfaces
-        else
-            new SupertypeInformationForInterfaces(interfaceTypes)
     }
 }

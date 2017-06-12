@@ -39,6 +39,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.da.CONSTANT_Class_info
 import org.opalj.da.CONSTANT_Fieldref_info
+import org.opalj.da.CONSTANT_InterfaceMethodref_info
 import org.opalj.da.CONSTANT_MethodHandle_info
 import org.opalj.da.CONSTANT_Methodref_info
 import org.opalj.da.Constant_Pool
@@ -235,6 +236,8 @@ object FanInFanOut extends FeatureQuery {
             case CONSTANT_MethodHandle_info(_, reference_index) ⇒
                 getTypeInfo(constant_pool(reference_index))
             case CONSTANT_Methodref_info(_, class_index) ⇒
+                getTypeInfo(constant_pool(class_index))
+            case CONSTANT_InterfaceMethodref_info(_, class_index) ⇒
                 getTypeInfo(constant_pool(class_index))
             case CONSTANT_NameAndType_info(_, descriptor_index) ⇒
                 getTypeInfo(constant_pool(descriptor_index))

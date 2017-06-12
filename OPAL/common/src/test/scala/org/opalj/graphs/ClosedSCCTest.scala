@@ -204,7 +204,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         info(s"tested $testedCount permutations")
     }
 
-    "a complex graph with several cSCCs and connectected components" should "contain all cSCCs" in {
+    "a complex graph with several cSCCs and connected components" should "contain all cSCCs" in {
         val data = List(
             ("a" → "b"), ("b" → "c"), ("c" → "a"),
             ("g" → "f"),

@@ -30,10 +30,13 @@ package org.opalj
 package da
 
 import java.io.File
-import org.opalj.io.writeAndOpen
-import org.opalj.io.OpeningFileFailedException
+import java.nio.file.Files
+
+import org.apache.commons.lang3.StringUtils.getLevenshteinDistance
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.{Error ⇒ ErrorLogLevel}
 
 /**
  * Disassembles the specified class file(s).
@@ -42,60 +45,110 @@ import org.opalj.log.GlobalLogContext
  */
 object Disassembler {
 
-    implicit val logContext = GlobalLogContext
+    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, ErrorLogLevel))
 
-    private final val Usage =
+    private final val Usage = {
         "Usage: java …Disassembler \n"+
-            "(1) <JAR file containing class files> [<path to .class file in the JAR file>+]\n"+
-            "(2) <class file>\n"+
-            "Example:\n\tjava …Disassembler /Library/jre/lib/rt.jar java/util/ArrayList.class"
-
-    def process(jarName: String, classFileName: String): Unit = {
-        val fileName =
-            if (classFileName.endsWith(".class"))
-                classFileName
-            else
-                classFileName.replace('.', '/')+".class"
-
-        val classFile = ClassFileReader.ClassFile(jarName, fileName).head
-        processClassFile(classFile)
+            "       [-o <File> the name of the file to which the generated html page should be written]\n"+
+            "       [-open the generated html page will be opened in a browser]\n"+
+            "       [-source <File> a class or jar file or a directory containg jar or class files]*\n"+
+            "       <ClassName> name of the class for which we want to create the HTML page\n"+
+            "Example:\n       java …Disassembler -source /Library/jre/lib/rt.jar java.util.ArrayList"
     }
 
-    def processClassFile(classFile: ClassFile): Unit = {
-        try {
-            val prefix = classFile.thisType.replace('.', '/')
-            val file = writeAndOpen(classFile.toXHTML().toString, prefix, ".html")
-            OPALLogger.info("progress", s"generated the HTML documentation $file")
-        } catch {
-            case OpeningFileFailedException(file, cause) ⇒ {
-                val message = s"Opening the html file $file failed: ${cause.getMessage()}"
-                OPALLogger.error("setup", message)
-            }
-        }
+    def handleError(error: String): Nothing = {
+        Console.err.println("Error: "+error)
+        Console.out.println(Usage)
+        sys.exit(1)
     }
 
     def main(args: Array[String]): Unit = {
+        // OPTIONS
+        var toStdOut = true
+        var toFile: Option[String] = None
+        var openHTMLFile: Boolean = false
+        var sources: List[String] = List.empty
+        var className: String = null
 
-        if (args.length < 1) {
-            println(Usage)
-            sys.exit(-1)
-        }
-
-        val jarName = args(0)
-        val jarFile = new File(jarName)
-        if (args.length == 1) {
-            val classFiles = ClassFileReader.ClassFiles(jarFile)
-            if (classFiles.isEmpty) {
-                if (jarFile.exists())
-                    OPALLogger.error("setup", s"no classfiles found in ${args(0)}")
-                else
-                    OPALLogger.error("setup", s"the specified file does not exist ${args(0)}")
+        // PARSING PARAMETERS
+        var i = 0
+        def readNextArg(): String = {
+            i += 1
+            if (i < args.length) {
+                args(i)
             } else {
-                classFiles.foreach(cfi ⇒ processClassFile(cfi._1))
+                handleError(args.mkString("missing argument: ", " ", ""))
             }
-        } else {
-            val classFileNames = args.drop(1) /* drop the name of the jar file */
-            classFileNames.foreach(classFileName ⇒ process(jarName, classFileName))
         }
+        while (i < args.length) {
+            args(i) match {
+                case "-o"      ⇒ { toFile = Some(readNextArg()); toStdOut = false }
+                case "-open"   ⇒ { openHTMLFile = true; toStdOut = false }
+                case "-source" ⇒ sources ::= readNextArg()
+                case cName     ⇒ className = cName.replace('/', '.')
+            }
+            i += 1
+        }
+
+        // VALIDATING PARAMETERS
+        if (className == null) handleError("missing class name")
+
+        if (sources.isEmpty) sources = List(System.getProperty("user.dir"))
+        val sourceFiles = sources map { src ⇒
+            val f = new File(src)
+            if (!f.exists()) handleError("file does not exist: "+src)
+            if (!f.canRead) handleError("cannot read: "+src)
+            f
+        }
+
+        val classNameAsFileName: String = org.opalj.io.sanitizeFileName(className)
+
+        val targetFile: Option[File] =
+            if (openHTMLFile) {
+                if (toFile.isEmpty)
+                    Some(File.createTempFile(classNameAsFileName, ".html"))
+                else {
+                    val f = new File(toFile.get)
+                    if (f.exists() && !f.canWrite) handleError("cannot update: "+f)
+                    Some(f)
+                }
+            } else if (toFile.isDefined) {
+                val f = new File(toFile.get)
+                if (f.exists() && !f.canWrite) handleError("cannot update: "+f)
+                Some(f)
+            } else {
+                None
+            }
+
+        val classFiles = ClassFileReader.AllClassFiles(sourceFiles)
+        if (classFiles.isEmpty) handleError(sources.mkString("cannot find class files in: ", ", ", ""))
+        val classFileOption = classFiles find { e ⇒ val (cf, _) = e; cf.thisType == className }
+        val classFile: ClassFile = classFileOption match {
+            case None ⇒
+                val allClassNames: List[(Int, String)] =
+                    classFiles.map { cf ⇒
+                        (getLevenshteinDistance(className, cf._1.thisType), cf._1.thisType)
+                    }.toList
+
+                val mostRelated = allClassNames.sortWith((l, r) ⇒ l._1 < r._1).map(_._2).take(15)
+                val ending = if (mostRelated.length > 15) ", ...)" else ")"
+                val messageHeader = "can't find: "+className
+                val message = mostRelated.mkString(s"$messageHeader (similar: ", ", ", ending)
+                handleError(message)
+
+            case Some((cf, _)) ⇒ cf
+        }
+
+        // FINAL PROCESSING
+        val xHTML = classFile.toXHTML().toString
+        targetFile match {
+            case Some(f) ⇒
+                Files.write(f.toPath, xHTML.toString.getBytes("UTF-8"))
+                println("wrote: "+f)
+                if (openHTMLFile) org.opalj.io.open(f)
+            case None ⇒
+                Console.out.println(xHTML)
+        }
+
     }
 }

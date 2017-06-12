@@ -40,14 +40,20 @@ import org.scalatest.Matchers
  */
 private[tac] class TACTest extends FunSpec with Matchers {
 
-    def compareStatements(expectedStmts: IndexedSeq[Stmt], actualStmts: IndexedSeq[Stmt]): Unit = {
+    def compareStatements[V <: Var[V]](
+        expectedStmts: IndexedSeq[Stmt[V]],
+        actualStmts:   IndexedSeq[Stmt[V]]
+    ): Unit = {
         compareStatements(expectedStmts.toArray, actualStmts.toArray)
     }
 
-    def compareStatements(expectedStmts: Array[Stmt], actualStmts: Array[Stmt]): Unit = {
+    def compareStatements[V <: Var[V]](
+        expectedStmts: Array[Stmt[V]],
+        actualStmts:   Array[Stmt[V]]
+    ): Unit = {
         val expected = expectedStmts.asInstanceOf[Array[Object]]
         val actual = actualStmts.asInstanceOf[Array[Object]]
-        if (!Arrays.equals(expected, actual)) {
+        if (!Arrays.equals(expected: Array[Object], actual: Array[Object])) {
             val message =
                 actualStmts.zip(expectedStmts).
                     filter(p ⇒ p._1 != p._2).

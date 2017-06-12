@@ -31,6 +31,8 @@ package ai
 package domain
 package l1
 
+import org.opalj.br.LongType
+
 /**
  * Implements the shift operators for long values.
  *
@@ -40,25 +42,39 @@ package l1
 trait LongValuesShiftOperators extends LongValuesDomain {
     this: ConcreteLongValues with ConcreteIntegerValues ⇒
 
-    override def lshl(pc: PC, longValue: DomainValue, shiftValue: DomainValue): DomainValue = {
+    override def lshl(
+        pc: PC, longValue: DomainValue, shiftValue: DomainValue
+    ): DomainTypedValue[LongType] = {
         this.longValue(longValue) { v ⇒
-            this.intValue(shiftValue)(s ⇒ LongValue(pc, v << s)) { LongValue(pc) }
+            this.intValue(shiftValue)(s ⇒
+                LongValue(pc, v << s))(
+                LongValue(pc)
+            )
         } {
             LongValue(pc)
         }
     }
 
-    override def lshr(pc: PC, longValue: DomainValue, shiftValue: DomainValue): DomainValue = {
+    override def lshr(
+        pc: PC, longValue: DomainValue, shiftValue: DomainValue
+    ): DomainTypedValue[LongType] = {
         this.longValue(longValue) { v ⇒
-            this.intValue(shiftValue)(s ⇒ LongValue(pc, v >> s)) { LongValue(pc) }
+            this.intValue(shiftValue)(s ⇒
+                LongValue(pc, v >> s))(
+                LongValue(pc)
+            )
         } {
             LongValue(pc)
         }
     }
 
-    override def lushr(pc: PC, longValue: DomainValue, shiftValue: DomainValue): DomainValue = {
+    override def lushr(
+        pc: PC, longValue: DomainValue, shiftValue: DomainValue
+    ): DomainTypedValue[LongType] = {
         this.longValue(longValue) { v ⇒
-            this.intValue(shiftValue)(s ⇒ LongValue(pc, v >>> s)) { LongValue(pc) }
+            this.intValue(shiftValue)(s ⇒ LongValue(pc, v >>> s))(
+                LongValue(pc)
+            )
         } {
             LongValue(pc)
         }

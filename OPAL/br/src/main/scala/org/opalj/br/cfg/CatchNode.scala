@@ -44,7 +44,6 @@ import org.opalj.br.ExceptionHandler
  * @param  endPC The pc of the first instruction after the try-block (exclusive!).
  * @param  handlerPC The first pc of the handler block.
  * @param  catchType The type of the handled exception.
- * @param  id A unique id that is not Long.MinValue (+1) and is not a value in the range[0..65535].
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
@@ -62,8 +61,9 @@ class CatchNode(
     }
 
     final override def nodeId: Int = {
-        // the index is required to avoid collusions with standard basic blocks
-        startPC | (index << 16)
+        // the offset is required to ensure that catch node ids do not collide with basic
+        // block ids (even if the index is zero!)
+        0xFFFFFF + startPC + (index << 16)
     }
 
     def copy(

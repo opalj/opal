@@ -68,7 +68,7 @@ class TACAIConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, IntConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, IntConstsMethod, domain)
                 val statements = AsQuadruples(method = IntConstsMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -116,7 +116,7 @@ class TACAIConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, LongConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, LongConstsMethod, domain)
                 val statements = AsQuadruples(method = LongConstsMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -144,7 +144,7 @@ class TACAIConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, FloatConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, FloatConstsMethod, domain)
                 val statements = AsQuadruples(method = FloatConstsMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -176,7 +176,7 @@ class TACAIConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, DoubleConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, DoubleConstsMethod, domain)
                 val statements = AsQuadruples(method = DoubleConstsMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -204,7 +204,7 @@ class TACAIConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, NullRefConstMethod)
                 val aiResult = BaseAI(ConstantsClassFile, NullRefConstMethod, domain)
                 val statements = AsQuadruples(method = NullRefConstMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -228,7 +228,7 @@ class TACAIConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, LoadConstsInstrMethod)
                 val aiResult = BaseAI(ConstantsClassFile, LoadConstsInstrMethod, domain)
                 val statements = AsQuadruples(method = LoadConstsInstrMethod, aiResult = Some(aiResult))._1
-                val javaLikeCode = ToJavaLike(statements, false)
+                val javaLikeCode = ToTxt(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

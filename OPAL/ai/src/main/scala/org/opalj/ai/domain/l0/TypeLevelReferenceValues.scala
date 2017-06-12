@@ -36,8 +36,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 
 import org.opalj.br.ArrayType
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -248,22 +246,25 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * Abstracts over all values with computational type `reference`. I.e.,
      * abstracts over class and array values and also the `null` value.
      */
-    trait ReferenceValue extends AnyRef with Value with IsReferenceValue with ArrayAbstraction {
+    trait ReferenceValue extends super.ReferenceValue with ArrayAbstraction {
         this: AReferenceValue ⇒
 
-        override def isPrecise: Boolean =
-            upperTypeBound match {
-                case UIDSet1(theUpperTypeBound) ⇒
-                    classHierarchy.isKnownToBeFinal(theUpperTypeBound)
-                case _ ⇒
-                    false
+        override def valueType: Option[ReferenceType] = {
+            upperTypeBound.size match {
+                case 0 ⇒ None /* only null has an empty upper type bound */
+                case 1 ⇒ Some(upperTypeBound.head)
+                case 2 ⇒ Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound(upperTypeBound))
             }
+        }
 
-        /**
-         * Returns `ComputationalTypeReference`.
-         */
-        final override def computationalType: ComputationalType = ComputationalTypeReference
+        override def isPrecise: Boolean = {
+            upperTypeBound match {
+                case UIDSet1(theUpperTypeBound) ⇒ classHierarchy.isKnownToBeFinal(theUpperTypeBound)
+                case _                          ⇒ false
+            }
+        }
 
+        /*
         final override def asDomainValue(
             implicit
             targetDomain: Domain
@@ -274,6 +275,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                 )
             this.asInstanceOf[targetDomain.DomainReferenceValue]
         }
+        */
     }
 
     /**
@@ -283,7 +285,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
         val theUpperTypeBound: T
 
-        final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
+        final override def valueType: Some[ReferenceType] = Some(theUpperTypeBound)
 
         final override def upperTypeBound: UpperTypeBound = new UIDSet1(theUpperTypeBound)
 
@@ -303,16 +305,18 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      */
     protected trait NullValue extends ReferenceValue { this: DomainNullValue ⇒
 
-        final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
+        final override def valueType: None.type = None
+
+        /** Returns an empty upper type bound. */
+        final override def upperTypeBound: UpperTypeBound = UIDSet.empty
+
+        final override def baseValues: Traversable[AReferenceValue] = Traversable.empty
 
         /** Returns `Yes`. */
         final override def isNull: Answer = Yes
 
         /** Returns `true`. */
         final override def isPrecise: Boolean = true
-
-        /** Returns an empty upper type bound. */
-        final override def upperTypeBound: UpperTypeBound = UIDSet.empty
 
         // IMPLEMENTATION OF THE ARRAY RELATED METHODS
         //
@@ -340,8 +344,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          */
         @throws[DomainException]("Always - isValueSubtypeOf is not defined on \"null\" values.")
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing = {
-            val message = "the \"isValueSubtypeOf\" relation is not defined on \"null\" values"
-            throw DomainException(message)
+            throw DomainException("\"isValueSubtypeOf\" is not defined on \"null\" values")
         }
 
         override def summarize(pc: PC): this.type = this
@@ -463,8 +466,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          */
         def length: Option[Int] = None
 
-        final def doGetLength(pc: PC): DomainValue =
+        final def doGetLength(pc: PC): DomainValue = {
             length.map(IntegerValue(pc, _)).getOrElse(IntegerValue(pc))
+        }
 
         override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
             if (isNull == Unknown && throwNullPointerExceptionOnArrayAccess)

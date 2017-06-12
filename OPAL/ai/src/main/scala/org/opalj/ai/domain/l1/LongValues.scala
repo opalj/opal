@@ -33,6 +33,7 @@ package l1
 
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeLong
+import org.opalj.br.LongType
 
 /**
  * Foundation for domains that trace specific long values.
@@ -55,7 +56,8 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
     /**
      * Abstracts over all values with computational type `long`.
      */
-    sealed trait LongValue extends Value with IsLongValue { this: DomainValue ⇒
+    sealed trait LongValue extends TypedValue[LongType] with IsLongValue[LongValue] {
+        this: DomainTypedValue[LongType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeLong
 
@@ -66,12 +68,12 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
      *
      * Models the top value of this domain's lattice.
      */
-    trait ALongValue extends LongValue { this: DomainValue ⇒ }
+    trait ALongValue extends LongValue { this: DomainTypedValue[LongType] ⇒ }
 
     /**
      * Represents one concrete long value.
      */
-    trait TheLongValue extends LongValue { this: DomainValue ⇒
+    trait TheLongValue extends LongValue { this: DomainTypedValue[LongType] ⇒
         val value: Long
     }
 

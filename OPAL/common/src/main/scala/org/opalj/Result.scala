@@ -29,8 +29,8 @@
 package org.opalj
 
 /**
- * Represents the result of some computation that either (a) succeeded and encapsulates some value,
- * (b) finished, but has no value - because it was not possible to compute a value using the given
+ * Represents the result of some expression that either (a) succeeded and encapsulates some value,
+ * or (b) finished, but has no value - because it was not possible to compute a value using the given
  * information - or (c) that failed.
  *
  * @note    Depending on the context, it may be useful to distinguish between a success that returns

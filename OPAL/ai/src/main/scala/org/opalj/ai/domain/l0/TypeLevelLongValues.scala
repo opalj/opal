@@ -33,6 +33,7 @@ package l0
 
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeLong
+import org.opalj.br.LongType
 
 /**
  * This partial `Domain` performs all computations related to primitive long
@@ -54,7 +55,8 @@ trait TypeLevelLongValues extends LongValuesDomain {
     /**
      * Common supertrait of all `DomainValue`s that represent long values.
      */
-    trait LongValue extends Value with IsLongValue { this: DomainValue ⇒
+    trait LongValue extends TypedValue[LongType] with IsLongValue[LongValue] {
+        this: DomainTypedValue[LongType] ⇒
 
         final override def computationalType: ComputationalType = ComputationalTypeLong
 

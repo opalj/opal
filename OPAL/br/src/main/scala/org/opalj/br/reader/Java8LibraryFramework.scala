@@ -44,6 +44,7 @@ trait Java8LibraryFramework
 
 object Java8LibraryFramework extends Java8LibraryFramework {
 
+    // IMPROVE Extend the infrastructure to only read the non-private methods and fields.
     final override def loadsInterfacesOnly: Boolean = true
 
 }

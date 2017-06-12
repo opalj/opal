@@ -60,13 +60,13 @@ import org.opalj.br.cfg.CFGFactory
  *          This value is determined by the compiler and is not necessarily the minimum.
  *          However, in the vast majority of cases it is the minimum.
  * @param   maxLocals The number of registers/local variables needed to execute the method.
- *          As in case of `maxStack` this number is expected to be the minimum, but this is
- *          not guaranteed.
- * @param   instructions The instructions of this `Code` array/`Code` block. Since the code
- *          array is not completely filled (it contains `null` values) the preferred way
- *          to iterate over all instructions is to use for-comprehensions and pattern
- *          matching or to use one of the predefined methods [[foreach]], [[collect]],
- *          [[collectPair]], [[collectWithIndex]], etc..
+ *          As in case of `maxStack` this number is expected to be the minimum, but this
+ *          is not guaranteed.
+ * @param   instructions The instructions of this `Code` array/`Code` block. Since the
+ *          code array is not completely filled (it contains `null` values) the
+ *          preferred way to iterate over all instructions is to use for-comprehensions
+ *          and pattern matching or to use one of the predefined methods [[foreach]],
+ *          [[collect]], [[collectPair]], [[collectWithIndex]], etc..
  *          The `instructions` array must not be mutated!
  *
  * @author Michael Eichberg
@@ -119,7 +119,7 @@ final class Code private (
             return false;
         }
 
-        if (!this.attributes.forall(a ⇒ other.attributes.find(a.similar).isDefined)) {
+        if (!this.attributes.forall(a ⇒ other.attributes.exists(a.similar))) {
             return false;
         }
 
@@ -165,13 +165,15 @@ final class Code private (
 
         def foreach[U](f: ((PC, Instruction)) ⇒ U): Unit = {
             code.foreach { (pcInstruction: (PC, Instruction)) ⇒
-                if (p(pcInstruction)) f((pcInstruction))
+                if (p(pcInstruction)) f(pcInstruction)
             }
         }
 
         def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilteredCode = {
             new FilteredCode(
-                (pcInstruction: (PC, Instruction)) ⇒ this.p(pcInstruction) && p((pcInstruction))
+                (pcInstruction: (PC, Instruction)) ⇒ {
+                    this.p(pcInstruction) && p(pcInstruction)
+                }
             )
         }
     }
@@ -532,8 +534,6 @@ final class Code private (
     /**
      * Performs a live variable analysis restricted to a method's locals.
      *
-     * @note    An IINC instruction does not change live variable information.
-     *
      * @return  For each instruction (identified by its pc) the set of variables (register values)
      *          which are live (identified by their index.) is determined.
      *          I.e., if you need to know if the variable with the index 5 is
@@ -551,7 +551,7 @@ final class Code private (
         cfJoins foreach { pc ⇒
             val instruction = instructions(pc)
             var liveVariableInfo = AllDead
-            if (instruction.readsLocal && instruction.opcode != IINC.opcode) {
+            if (instruction.readsLocal) {
                 // This instruction is by construction "not a final instruction"
                 // because these instructions never throw any(!) exceptions and
                 // are also never "return" instructions.
@@ -564,19 +564,17 @@ final class Code private (
             val pc = workqueue.dequeue
             val instruction = instructions(pc)
             var liveVariableInfo = liveVariables(pc)
-            if (instruction.opcode != IINC.opcode) {
-                if (instruction.readsLocal) {
-                    val lvIndex = instruction.indexOfReadLocal
-                    if (!liveVariableInfo.contains(lvIndex)) {
-                        liveVariableInfo += lvIndex
-                        liveVariables(pc) = liveVariableInfo
-                    }
-                } else if (instruction.writesLocal) {
-                    val lvIndex = instruction.indexOfWrittenLocal
-                    if (liveVariableInfo.contains(lvIndex)) {
-                        liveVariableInfo -= lvIndex
-                        liveVariables(pc) = liveVariableInfo
-                    }
+            if (instruction.readsLocal) {
+                val lvIndex = instruction.indexOfReadLocal
+                if (!liveVariableInfo.contains(lvIndex)) {
+                    liveVariableInfo += lvIndex
+                    liveVariables(pc) = liveVariableInfo
+                }
+            } else if (instruction.writesLocal) {
+                val lvIndex = instruction.indexOfWrittenLocal
+                if (liveVariableInfo.contains(lvIndex)) {
+                    liveVariableInfo -= lvIndex
+                    liveVariables(pc) = liveVariableInfo
                 }
             }
             val thePCPredecessorPCs = predecessorPCs(pc)
@@ -597,7 +595,7 @@ final class Code private (
                         liveVariables(predecessorPC) = liveVariableInfo
                         workqueue.enqueue(predecessorPC)
                     } else {
-                        val newLiveVariableInfo = (predecessorLiveVariableInfo | liveVariableInfo)
+                        val newLiveVariableInfo = predecessorLiveVariableInfo | liveVariableInfo
                         if (newLiveVariableInfo != predecessorLiveVariableInfo) {
                             liveVariables(predecessorPC) = newLiveVariableInfo
                             workqueue.enqueue(predecessorPC)
@@ -972,7 +970,7 @@ final class Code private (
      *         }
      *         }}}
      */
-    def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber)
+    def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber())
 
     /**
      * Collects (the merged if necessary) local variable table.
@@ -996,7 +994,7 @@ final class Code private (
     def localVariablesAt(pc: PC): Map[Int, LocalVariable] = {
         localVariableTable match {
             case Some(lvt) ⇒
-                (lvt.collect {
+                lvt.collect {
                     case lv @ LocalVariable(
                         startPC,
                         length,
@@ -1005,7 +1003,7 @@ final class Code private (
                         index
                         ) if startPC <= pc && startPC + length > pc ⇒
                         (index, lv)
-                }).toMap
+                }.toMap
             case _ ⇒
                 Map.empty
         }
@@ -1037,20 +1035,10 @@ final class Code private (
     }
 
     /**
-     * Collects all local variable type tables.
-     *
-     * @note Depending on the configuration of the reader for `ClassFile`s this
-     *      attribute may not be reified.
-     */
-    def runtimeVisibleType: Seq[LocalVariableTypes] = {
-        attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
-    }
-
-    /**
      * The JVM specification mandates that a Code attribute has at most one
      * StackMapTable attribute.
      *
-     * @note Depending on the configuration of the reader for `ClassFile`s this
+     * @note   Depending on the configuration of the reader for `ClassFile`s this
      *         attribute may not be reified.
      */
     def stackMapTable: Option[StackMapFrames] = {
@@ -1092,7 +1080,7 @@ final class Code private (
      *      code array.
      */
     def collect[B](f: PartialFunction[Instruction, B]): Seq[(PC, B)] = {
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc = 0
         var result: List[(PC, B)] = List.empty
         while (pc < max_pc) {
@@ -1114,7 +1102,7 @@ final class Code private (
      *         descending order w.r.t. the PC'''.
      */
     def collectUntil[B](f: PartialFunction[(PC, Instruction), B]): (PC, Seq[B]) = {
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc = 0
         var result: List[B] = List.empty
         while (pc < max_pc) {
@@ -1136,7 +1124,7 @@ final class Code private (
      * instructions array.
      */
     def collectInstructions[B](f: PartialFunction[Instruction, B]): Seq[B] = {
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var result: List[B] = List.empty
         var pc = 0
         while (pc < max_pc) {
@@ -1165,7 +1153,7 @@ final class Code private (
      * }}}
      */
     def collectWithIndex[B](f: PartialFunction[(PC, Instruction), B]): Seq[B] = {
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc = 0
         var result: List[B] = List.empty
         while (pc < max_pc) {
@@ -1183,7 +1171,7 @@ final class Code private (
      * is defined.
      */
     def collectFirstWithIndex[B](f: PartialFunction[(PC, Instruction), B]): Option[B] = {
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc = 0
         while (pc < max_pc) {
             val params = (pc, instructions(pc))
@@ -1201,7 +1189,7 @@ final class Code private (
      * matching instruction is returned.
      */
     def find(f: Instruction ⇒ Boolean): Option[PC] = {
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc = 0
         while (pc < max_pc) {
             if (f(instructions(pc)))
@@ -1259,7 +1247,7 @@ final class Code private (
 
         import scala.collection.immutable.Queue
 
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var instrs: Queue[Instruction] = Queue.empty
         var firstPC, lastPC = 0
         var elementsInQueue = 0
@@ -1312,7 +1300,7 @@ final class Code private (
 
         import scala.collection.immutable.Queue
 
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var instrs: Queue[Instruction] = Queue.empty
         var firstPC, lastPC = 0
         var elementsInQueue = 0
@@ -1360,7 +1348,7 @@ final class Code private (
      * }}}
      */
     def collectPair[B](f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = {
-        val max_pc = instructions.size
+        val max_pc = instructions.length
 
         var first_pc = 0
         var firstInstruction = instructions(first_pc)
@@ -1402,7 +1390,7 @@ final class Code private (
      * }}}
      */
     def matchPair(f: (Instruction, Instruction) ⇒ Boolean): List[PC] = {
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
 
@@ -1437,7 +1425,7 @@ final class Code private (
         matchMaxTriples: Int                                               = Int.MaxValue,
         f:               (Instruction, Instruction, Instruction) ⇒ Boolean
     ): List[PC] = {
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var matchedTriplesCount = 0
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
@@ -1579,11 +1567,11 @@ final class Code private (
      * A complete representation of this code attribute (including instructions,
      * attributes, etc.).
      */
-    override def toString = {
+    override def toString: String = {
         s"Code_attribute(maxStack=$maxStack, maxLocals=$maxLocals, "+
-            (instructions.zipWithIndex.filter(_._1 ne null).map(_.swap).deep.toString) +
-            (exceptionHandlers.toString)+","+
-            (attributes.toString)+
+            instructions.zipWithIndex.filter(_._1 ne null).map(_.swap).deep.toString +
+            exceptionHandlers.toString+","+
+            attributes.toString+
             ")"
     }
 
@@ -1665,7 +1653,7 @@ object Code {
      * Used to determine the potential handlers in case that an exception is
      * thrown by an instruction.
      */
-    val BasicClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
+    val BasicClassHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
 
     /**
      * The maximum number of registers required to execute the code - independent
@@ -1722,7 +1710,7 @@ object Code {
         val cfg = CFGFactory(tempCode, classHierarchy)
 
         // Basic idea: follow all paths
-        var maxStackDepth: Int = 0;
+        var maxStackDepth: Int = 0
 
         var paths: Chain[(PC, Int /*stackdepth before executing the instruction*/ )] = Naught
         val visitedPCs = new mutable.BitSet(instructions.length)

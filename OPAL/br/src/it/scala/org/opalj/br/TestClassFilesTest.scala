@@ -29,7 +29,6 @@
 package org.opalj
 package br
 
-import java.io.File
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
@@ -41,12 +40,12 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.io.process
 import org.opalj.br.reader._
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestSupport.allBITestJARs
 import org.opalj.bytecode.JRELibraryFolder
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
- * can handle them and to test the "corner" cases. Basically, we test for NPEs,
+ * can handle them and to test "corner" cases. Basically, we test for NPEs,
  * ArrayIndexOutOfBoundExceptions and similar issues.
  *
  * @author Michael Eichberg
@@ -56,16 +55,13 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
 
     behavior of "OPAL's ClassFiles"
 
-    val jreLibFolder: File = JRELibraryFolder
-    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
-
     var count = 0
     for {
-        file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
+        file ← Iterator(JRELibraryFolder) ++ allBITestJARs()
         if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
     } {
         count += 1
-        it should ("be able to parse the class files in "+file) in {
+        it should (s"be able to parse the class files in $file") in {
             val testedForBeingIsomorphicCount = new java.util.concurrent.atomic.AtomicInteger(0)
             val testedForBeingNotIsomorphicCount = new java.util.concurrent.atomic.AtomicInteger(0)
             val testedMethods = new java.util.concurrent.atomic.AtomicBoolean(false)
@@ -117,13 +113,13 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
 
             var classFilesCount = 0
             val jarFile = new ZipFile(file)
-            val jarEntries = (jarFile).entries
+            val jarEntries = jarFile.entries
             while (jarEntries.hasMoreElements) {
                 val jarEntry = jarEntries.nextElement
                 if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
-                    val data = new Array[Byte](jarEntry.getSize().toInt)
-                    process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
-                    import Java8Framework.ClassFile
+                    val data = new Array[Byte](jarEntry.getSize.toInt)
+                    process(new DataInputStream(jarFile.getInputStream(jarEntry)))(_.readFully(data))
+                    import Java9Framework.ClassFile
                     val classFiles1 = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
                     val classFiles2 = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
                     classFilesCount += 1

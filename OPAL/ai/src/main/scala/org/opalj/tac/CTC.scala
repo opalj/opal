@@ -37,7 +37,9 @@ package tac
  * case v @ CTC1() => ...
  * }}}
  */
-private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 1 }
+private[tac] object CTC1 {
+    def unapply(value: Var[_]): Boolean = value.cTpe.categoryId == 1
+}
 
 /**
  * Facilitates matching against values of computational type category 2.
@@ -47,4 +49,6 @@ private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categor
  * case v @ CTC2() => ...
  * }}}
  */
-private[tac] object CTC2 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 2 }
+private[tac] object CTC2 {
+    def unapply(value: Var[_]): Boolean = value.cTpe.categoryId == 2
+}

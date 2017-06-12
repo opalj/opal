@@ -28,36 +28,30 @@
  */
 package org.opalj
 package tac
-/*
-import scala.collection.mutable.BitSet
-import scala.collection.mutable.ArrayBuffer
 
+import scala.annotation.switch
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
-import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.cfg.CatchNode
-import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.analyses.AnalysisException
-*/
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.cfg.CFG
 import org.opalj.ai.AIResult
-/*import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.IsPrimitiveValue
-import org.opalj.ai.TypeUnknown
-*/
 import org.opalj.ai.domain.RecordDefUse
 
 /**
- * Converts the bytecode of a method into a three address representation using quadruples.
- * The converted method has an isomorophic CFG when compared to the original method,
- * but may contain more instructions.
+ * Factory to convert the bytecode of a method into a three address representation using the
+ * results of a(n) (local) abstract interpretation of the method.
+ *
+ * The generated representation is completely parameterized over the domains that were used
+ * to perform the abstract interpretation. The only requirement is that the Def/Use information
+ * is recorded while performing the abstract interpretation (see
+ * [[org.opalj.ai.domain.RecordDefUse]]). The generated representation is necessarily in
+ * static single assignment form: each variable is assigned exactly once, and every variable is
+ * defined before it is used. However, no PHI instructions are inserted; instead - in case of a
+ * use - we simply directly refer to all usage sites.
  *
  * @author Michael Eichberg
- * @author Roberts Kolosovs
  */
 object TACAI {
 
@@ -74,95 +68,99 @@ object TACAI {
     def apply(
         method:         Method,
         classHierarchy: ClassHierarchy,
-        aiResult:       AIResult { val domain: RecordDefUse },
-        optimizations:  List[TACOptimization]
-    ): (Array[Stmt], CFG) = {
-        /*
-        type ValueType = aiResult.domain.DomainValue
+        aiResult:       AIResult { val domain: RecordDefUse }
+    )(
+        optimizations: List[TACOptimization[DUVar[aiResult.domain.DomainValue]]]
+    ): TACode[DUVar[aiResult.domain.DomainValue]] = {
+
         import BinaryArithmeticOperators._
         import RelationalOperators._
         import UnaryArithmeticOperators._
-        import classHierarchy.{joinReferenceTypesUntilSingleUpperBound ⇒ computeLeastCommonSuperType}
 
         val code = method.body.get
         import code.pcOfNextInstruction
-        val instructions = code.instructions
-        val codeSize = instructions.size
-        val domain = aiResult.domain
-        val wasExecuted = new BitSet(codeSize) ++= aiResult.evaluated
+        val instructions: Array[Instruction] = code.instructions
+        val codeSize: Int = instructions.length
+        val domain: aiResult.domain.type = aiResult.domain
         val cfg: CFG = domain.bbCFG
-        val operandsArray = aiResult.operandsArray
+        def wasExecuted(pc: PC) = cfg.bb(pc) != null
+        val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
+        val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
 
         // We already have the def-use information directly available, hence, for
         // instructions such as swap and dup, which do not create "relevant"
         // uses, we do not have to create multiple instructions, therefore, we
-        // can directly create the final list of statments.
+        // can directly create the "final list" of statements (which will include nops
+        // for all useless instructions).
 
-        val statements = new Array[Stmt](codeSize)
-        val pcToIndex = new Array[Int](codeSize)
-        var pc = 0
-        var index = 0
+        val statements = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](codeSize)
+        val pcToIndex = new Array[Int](codeSize + 1 /* +1 if the try block includes the last inst. */ )
 
-        def addStmt(stmt: Stmt): Unit = {
-            // TODO if the previous statement belongs to the same basic block as this one
-            // and is a NOP statement, we replace it by this one
-            statements(index) = stmt
-            pcToIndex(pc) = index
-            index += 1
-        }
+        var pc: PC = 0
+        var index: Int = 0
 
         do {
             val nextPC = pcOfNextInstruction(pc)
             val instruction = instructions(pc)
             val opcode = instruction.opcode
-            val operands = operandsArray(pc)
 
-            def operandUse(index: Int): UVar[ValueType] = {
-                // 1. get the definition site
-                // Recall: if the defSite is negative, we are using a parameter
-                val defSites = domain.operandOrigin(pc, index)
-                new UVar[ValueType](operands(index), defSites)
-            }
-
-            def registerUse(index: Int): DVar = {
-                // 1. get the definition site
-                // Recall: if the defSite is negative, we are using a parameter
-                val defSite = domain.localOrigin(pc, index)
-
-                // 2. get more precise information about the type etc.
-                ???
-            }
-
-            /*
-            def VarUse(vos: ValueOrigins, v: aiResult.domain.DomainValue): VarUse = {
-                aiResult.domain.typeOfValue(v) match {
-                    case refVal: IsAReferenceValue ⇒
-                        val tpe = computeLeastCommonSuperType(refVal.upperTypeBound)
-                        SSARefVar(pc, tpe, Some(refVal))
-
-                    case primVal @ IsPrimitiveValue(tpe) ⇒
-                        SSAPrimVar(pc, tpe, Some(primVal))
-
-                    case TypeUnknown ⇒
-                        throw new BytecodeProcessingFailedException(s"the type of $v is unknown")
+            def addStmt(stmt: Stmt[DUVar[aiResult.domain.DomainValue]]): Unit = {
+                if (cfg.bb(pc).startPC != pc && statements(index - 1).astID == Nop.ASTID) {
+                    // ... we are not at the beginning of a basic block, but the previous
+                    // instruction was a NOP instruction... let's replace it by this instruction.
+                    statements(index - 1) = stmt
+                    pcToIndex(pc) = index - 1
+                } else {
+                    statements(index) = stmt
+                    pcToIndex(pc) = index
+                    index += 1
                 }
-            }*/
+            }
+
+            def addNOP(): Unit = {
+                // We only add a NOP if it is the first instruction of a basic block since
+                // we want to ensure that we don't have to rewrite the CFG during the initial
+                // transformation
+                if (cfg.bb(pc).startPC == pc) {
+                    statements(index) = Nop(pc)
+                    pcToIndex(pc) = index
+                    index += 1
+                } else {
+                    pcToIndex(pc) = index - 1
+                }
+            }
+
+            def operandUse(index: Int): UVar[aiResult.domain.DomainValue] = {
+                val operands = operandsArray(pc)
+                // get the definition site; recall: negative pcs refer to parameters
+                val defSites = domain.operandOrigin(pc, index)
+                UVar(aiResult.domain)(operands(index), defSites)
+            }
+
+            def registerUse(index: Int): UVar[aiResult.domain.DomainValue] = {
+                val locals = localsArray(pc)
+                // get the definition site; recall: negative pcs refer to parameters
+                val defSites = domain.localOrigin(pc, index)
+                UVar(aiResult.domain)(locals(index), defSites)
+            }
 
             /**
-             * Creates a local var using the current pc and the type
+             * Creates a local variable using the current pc and the type
              * information from the domain value.
              */
-            def domainValueBasedLocalVar(v: aiResult.domain.DomainValue): SSAVar = {
-                aiResult.domain.typeOfValue(v) match {
-                    case refVal: IsAReferenceValue ⇒
-                        val tpe = computeLeastCommonSuperType(refVal.upperTypeBound)
-                        DUVar(pc, tpe, Some(refVal))
-
-                    case primVal @ IsPrimitiveValue(tpe) ⇒
-                        SSAPrimVar(pc, tpe, Some(primVal))
-
-                    case TypeUnknown ⇒
-                        throw new BytecodeProcessingFailedException(s"the type of $v is unknown")
+            def addInitLocalValStmt(
+                pc:   PC,
+                v:    aiResult.domain.DomainValue,
+                expr: Expr[DUVar[aiResult.domain.DomainValue]]
+            ): Unit = {
+                val uses = domain.usedBy(pc)
+                if (uses ne null) {
+                    val localVal = DVar(aiResult.domain)(pc, v, uses)
+                    addStmt(Assignment(pc, localVal, expr))
+                } else if (expr.isSideEffectFree) {
+                    addNOP()
+                } else {
+                    addStmt(ExprStmt(pc, expr))
                 }
             }
 
@@ -171,77 +169,73 @@ object TACAI {
                 val arrayRef = operandUse(1)
                 // to get the precise type we take a look at the next instruction's
                 // top operand value
-                val localVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
                 val source = ArrayLoad(pc, index, arrayRef)
-                addStmt(Assignment(pc, localVar, source))
+                if (wasExecuted(nextPC)) {
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, source)
+                } else {
+                    addStmt(FailingExpression(pc, source))
+                }
             }
 
             def binaryArithmeticOperation(operator: BinaryArithmeticOperator): Unit = {
                 val value2 = operandUse(0)
                 val value1 = operandUse(1)
-                val localVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                val expr = BinaryExpr(pc, localVar.tpe.computationalType, operator, value1, value2)
-                addStmt(Assignment(pc, localVar, expr))
+                val cTpe = operandsArray(nextPC).head.computationalType
+                val binExpr = BinaryExpr(pc, cTpe, operator, value1, value2)
+                // may fail in case of a div by zero...
+                if (wasExecuted(nextPC)) {
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, binExpr)
+                } else {
+                    addStmt(FailingExpression(pc, binExpr))
+                }
             }
 
             def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {
                 val value = operandUse(0)
-                val localVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                val expr = PrefixExpr(pc, localVar.tpe.computationalType, operator, value)
-                addStmt(Assignment(pc, localVar, expr))
+                val cTpe = operandsArray(nextPC).head.computationalType
+                val preExpr = PrefixExpr(pc, cTpe, operator, value)
+                addInitLocalValStmt(pc, operandsArray(nextPC).head, preExpr)
             }
 
-            def primitiveCastOperation(): Unit = {
+            def primitiveCastOperation(targetTpe: BaseType): Unit = {
                 val value = operandUse(0)
-                val localVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                val castExpr = PrimitiveTypecastExpr(pc, localVar.tpe.asBaseType, value)
-                addStmt(Assignment(pc, localVar, castExpr))
+                val castExpr = PrimitiveTypecastExpr(pc, targetTpe, value)
+                addInitLocalValStmt(pc, operandsArray(nextPC).head, castExpr)
             }
 
             def newArray(arrayType: ArrayType): Unit = {
                 val count = operandUse(0)
                 val newArray = NewArray(pc, List(count), arrayType)
-                val newVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                addStmt(Assignment(pc, newVar, newArray))
+                addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
             }
 
             def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
                 instr match {
-                    case LDCInt(value) ⇒ {
-                        val newVar = SSAPrimVar(pc, IntegerType)
-                        addStmt(Assignment(pc, newVar, IntConst(pc, value)))
-                    }
-                    case LDCFloat(value) ⇒ {
-                        val newVar = SSAPrimVar(pc, FloatType)
-                        val floatConst = FloatConst(pc, value)
-                        addStmt(Assignment(pc, newVar, floatConst))
-                    }
-                    case LDCClass(value) ⇒ {
-                        val newVar = SSARefVar(pc, ObjectType.Class)
-                        addStmt(Assignment(pc, newVar, ClassConst(pc, value)))
-                    }
-                    case LDCString(value) ⇒ {
-                        val newVar = SSARefVar(pc, ObjectType.String)
-                        addStmt(Assignment(pc, newVar, StringConst(pc, value)))
-                    }
-                    case LDCMethodHandle(value) ⇒ {
-                        val newVar = SSARefVar(pc, ObjectType.MethodHandle)
-                        addStmt(Assignment(pc, newVar, MethodHandleConst(pc, value)))
-                    }
-                    case LDCMethodType(value) ⇒ {
-                        val newVar = SSARefVar(pc, ObjectType.MethodType)
-                        val methodTypeConst = MethodTypeConst(pc, value)
-                        addStmt(Assignment(pc, newVar, methodTypeConst))
-                    }
+                    case LDCInt(value) ⇒
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, IntConst(pc, value))
 
-                    case LoadDouble(value) ⇒ {
-                        val newVar = SSAPrimVar(pc, DoubleType)
-                        addStmt(Assignment(pc, newVar, DoubleConst(pc, value)))
-                    }
-                    case LoadLong(value) ⇒ {
-                        val newVar = SSAPrimVar(pc, LongType)
-                        addStmt(Assignment(pc, newVar, LongConst(pc, value)))
-                    }
+                    case LDCFloat(value) ⇒
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, FloatConst(pc, value))
+
+                    case LDCClass(value) ⇒
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, ClassConst(pc, value))
+
+                    case LDCString(value) ⇒
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, StringConst(pc, value))
+
+                    case LDCMethodHandle(value) ⇒
+                        val lVal = operandsArray(nextPC).head
+                        addInitLocalValStmt(pc, lVal, MethodHandleConst(pc, value))
+
+                    case LDCMethodType(value) ⇒
+                        val lVal = operandsArray(nextPC).head
+                        addInitLocalValStmt(pc, lVal, MethodTypeConst(pc, value))
+
+                    case LoadDouble(value) ⇒
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, DoubleConst(pc, value))
+
+                    case LoadLong(value) ⇒
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, LongConst(pc, value))
 
                     case _ ⇒
                         val message = s"unexpected constant $instr"
@@ -252,20 +246,13 @@ object TACAI {
             def compareValues(op: RelationalOperator): Unit = {
                 val value2 = operandUse(0)
                 val value1 = operandUse(1)
-                val result = domainValueBasedLocalVar(operandsArray(nextPC).head)
                 val compare = Compare(pc, value1, op, value2)
-                addStmt(Assignment(pc, result, compare))
-            }
-
-            def addNOP(): Unit = {
-                // TODO Don't add if we don't have to (per basic block, we currently need
-                // at least one instruction, because we keep the existing CFG.)
-                addStmt(Nop(pc))
+                addInitLocalValStmt(pc, operandsArray(nextPC).head, compare)
             }
 
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
 
-            (opcode: @scala.annotation.switch) match {
+            (opcode: @switch) match {
                 case ALOAD_0.opcode | ALOAD_1.opcode | ALOAD_2.opcode | ALOAD_3.opcode |
                     ALOAD.opcode |
                     ASTORE_0.opcode | ASTORE_1.opcode | ASTORE_2.opcode | ASTORE_3.opcode |
@@ -289,7 +276,8 @@ object TACAI {
                     addNOP()
 
                 case IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
-                    ARETURN.opcode ⇒ addStmt(ReturnValue(pc, operandUse(0)))
+                    ARETURN.opcode ⇒
+                    addStmt(ReturnValue(pc, operandUse(0)))
 
                 case RETURN.opcode ⇒ addStmt(Return(pc))
 
@@ -309,18 +297,27 @@ object TACAI {
 
                 case ARRAYLENGTH.opcode ⇒
                     val arrayRef = operandUse(0)
-                    val lengthVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
                     val lengthExpr = ArrayLength(pc, arrayRef)
-                    addStmt(Assignment(pc, lengthVar, lengthExpr))
+                    if (wasExecuted(nextPC)) {
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
+                    } else {
+                        // IMPROVE Encode information about the failing exception!
+                        addStmt(FailingExpression(pc, lengthExpr))
+                    }
 
                 case BIPUSH.opcode | SIPUSH.opcode ⇒
                     val value = as[LoadConstantInstruction[Int]](instruction).value
-                    val targetVar = SSAPrimVar(pc, IntegerType)
-                    addStmt(Assignment(pc, targetVar, IntConst(pc, value)))
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, IntConst(pc, value))
 
                 case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
                     IF_ICMPLT.opcode | IF_ICMPLE.opcode |
                     IF_ICMPGT.opcode | IF_ICMPGE.opcode ⇒
+                    // TODO Check if this if is actually useless... i.e., either a GOTO or a NOP
+                    //if(cfg.bb(pc).endPC != pc) {
+                    //    // The comparison is actually
+                    //    addNOP()
+                    //    // ... and correct def-use information...
+                    //}
                     val ifInstr = as[IFICMPInstruction](instruction)
                     val value2 = operandUse(0)
                     val value1 = operandUse(1)
@@ -330,25 +327,27 @@ object TACAI {
                 case IFEQ.opcode | IFNE.opcode |
                     IFLT.opcode | IFLE.opcode |
                     IFGT.opcode | IFGE.opcode ⇒
-                    val ifInstr = as[IF0Instruction](instruction)
+                    val IF0Instruction(condition, branchoffset) = instruction
                     val value = operandUse(0)
                     // let's calculate the final address
-                    val targetPC = pc + ifInstr.branchoffset
-                    addStmt(If(pc, value, ifInstr.condition, IntConst(-pc, 0), targetPC))
+                    val targetPC = pc + branchoffset
+                    val cmpVal = IntConst(ai.ValueOriginForVMLevelValue(pc), 0)
+                    addStmt(If(pc, value, condition, cmpVal, targetPC))
 
                 case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
-                    val ifInstr = as[IFACMPInstruction](instruction)
+                    val IFACMPInstruction(condition, branchoffset) = instruction
                     val value2 = operandUse(0)
                     val value1 = operandUse(1)
                     // let's calculate the final address
-                    val targetPC = pc + ifInstr.branchoffset
-                    addStmt(If(pc, value1, ifInstr.condition, value2, targetPC))
+                    val targetPC = pc + branchoffset
+                    addStmt(If(pc, value1, condition, value2, targetPC))
 
                 case IFNONNULL.opcode | IFNULL.opcode ⇒
-                    val ifInstr = as[IFXNullInstruction](instruction)
+                    val IFXNullInstruction(condition, branchoffset) = instruction
                     val value = operandUse(0)
-                    val targetPC = pc + ifInstr.branchoffset
-                    addStmt(If(pc, value, ifInstr.condition, NullExpr(-pc), targetPC))
+                    val targetPC = pc + branchoffset
+                    val cmpVal = NullExpr(ai.ValueOriginForVMLevelValue(pc))
+                    addStmt(If(pc, value, condition, cmpVal, targetPC))
 
                 case DCMPG.opcode | FCMPG.opcode ⇒ compareValues(CMPG)
                 case DCMPL.opcode | FCMPL.opcode ⇒ compareValues(CMPL)
@@ -375,8 +374,7 @@ object TACAI {
                     val indexReg = registerUse(index)
                     val incVal = IntConst(pc, const)
                     val iinc = BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, incVal)
-                    val localVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                    addStmt(Assignment(pc, localVar, iinc))
+                    addInitLocalValStmt(pc, localsArray(nextPC)(index), iinc)
 
                 case IAND.opcode | LAND.opcode   ⇒ binaryArithmeticOperation(And)
                 case IOR.opcode | LOR.opcode     ⇒ binaryArithmeticOperation(Or)
@@ -389,140 +387,156 @@ object TACAI {
                     ICONST_2.opcode | ICONST_3.opcode |
                     ICONST_4.opcode | ICONST_5.opcode |
                     ICONST_M1.opcode ⇒
-                    val value = as[LoadConstantInstruction[Int]](instruction).value
-                    val targetVar = SSAPrimVar(pc, IntegerType)
-                    addStmt(Assignment(pc, targetVar, IntConst(pc, value)))
+                    val IConstInstruction(value) = instruction
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, IntConst(pc, value))
 
                 case ACONST_NULL.opcode ⇒
-                    val targetVar = SSARefVar(pc, ObjectType.Object /* TODO java.null ...*/ )
-                    addStmt(Assignment(pc, targetVar, NullExpr(pc)))
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, NullExpr(pc))
 
                 case DCONST_0.opcode | DCONST_1.opcode ⇒
                     val value = as[LoadConstantInstruction[Double]](instruction).value
-                    val targetVar = SSAPrimVar(pc, DoubleType)
-                    addStmt(Assignment(pc, targetVar, DoubleConst(pc, value)))
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, DoubleConst(pc, value))
 
                 case FCONST_0.opcode | FCONST_1.opcode | FCONST_2.opcode ⇒
                     val value = as[LoadConstantInstruction[Float]](instruction).value
-                    val targetVar = SSAPrimVar(pc, FloatType)
-                    addStmt(Assignment(pc, targetVar, FloatConst(pc, value)))
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, FloatConst(pc, value))
 
                 case LCONST_0.opcode | LCONST_1.opcode ⇒
                     val value = as[LoadConstantInstruction[Long]](instruction).value
-                    val targetVar = SSAPrimVar(pc, LongType)
-                    addStmt(Assignment(pc, targetVar, LongConst(pc, value)))
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, LongConst(pc, value))
 
                 case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
                     loadConstant(as[LoadConstantInstruction[_]](instruction))
 
-                case INVOKEINTERFACE.opcode |
-                    INVOKESPECIAL.opcode |
-                    INVOKEVIRTUAL.opcode ⇒
-                    val invoke = as[MethodInvocationInstruction](instruction)
-                    val parametersCount = invoke.methodDescriptor.parametersCount
+                case INVOKEINTERFACE.opcode | INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode ⇒
+                    val call @ MethodInvocationInstruction(
+                        declClass, isInterface,
+                        name, descriptor) = instruction
+                    val parametersCount = descriptor.parametersCount
                     val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
                     val receiver = operandUse(parametersCount) // this is the self reference
-                    import invoke.{methodDescriptor, declaringClass, name}
-                    val returnType = methodDescriptor.returnType
+                    val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
-                        val stmtFactory =
-                            if (invoke.isVirtualMethodCall)
-                                VirtualMethodCall.apply _
-                            else
-                                NonVirtualMethodCall.apply _
-                        addStmt(stmtFactory(
-                            pc,
-                            declaringClass, name, methodDescriptor,
-                            receiver,
-                            params
-                        ))
-                    } else {
-                        val localVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                        val exprFactory =
-                            if (invoke.isVirtualMethodCall)
-                                VirtualFunctionCall.apply _
-                            else
-                                NonVirtualFunctionCall.apply _
-                        val expr =
-                            exprFactory(
+                        if (call.isVirtualMethodCall)
+                            addStmt(VirtualMethodCall(
                                 pc,
-                                declaringClass, name, methodDescriptor,
+                                declClass, isInterface, name, descriptor,
                                 receiver,
                                 params
-                            )
-                        addStmt(Assignment(pc, localVar, expr))
+                            ))
+                        else
+                            addStmt(NonVirtualMethodCall(
+                                pc,
+                                declClass, isInterface, name, descriptor,
+                                receiver,
+                                params
+                            ))
+                    } else {
+                        val expr =
+                            if (call.isVirtualMethodCall)
+                                VirtualFunctionCall(
+                                    pc,
+                                    declClass, isInterface, name, descriptor,
+                                    receiver,
+                                    params
+                                )
+                            else
+                                NonVirtualFunctionCall(
+                                    pc,
+                                    declClass, isInterface, name, descriptor,
+                                    receiver,
+                                    params
+                                )
+                        if (wasExecuted(nextPC)) {
+                            addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
+                        } else {
+                            // IMPROVE Encode information about the failing exception!
+                            addStmt(FailingExpression(pc, expr))
+                        }
                     }
 
                 case INVOKESTATIC.opcode ⇒
-                    val invoke = as[INVOKESTATIC](instruction)
-                    val parametersCount = invoke.methodDescriptor.parametersCount
+                    val INVOKESTATIC(declaringClass, isInterface, name, descriptor) = instruction
+                    val parametersCount = descriptor.parametersCount
                     val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
-                    import invoke.{declaringClass, methodDescriptor, name}
-                    val returnType = methodDescriptor.returnType
+                    val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
-                        addStmt(
+                        val staticCall =
                             StaticMethodCall(
                                 pc,
-                                declaringClass, name, methodDescriptor,
+                                declaringClass, isInterface, name, descriptor,
                                 params
                             )
-                        )
+                        addStmt(staticCall)
                     } else {
-                        val newVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
                         val expr =
                             StaticFunctionCall(
                                 pc,
-                                declaringClass, name, methodDescriptor,
+                                declaringClass, isInterface, name, descriptor,
                                 params
                             )
-                        addStmt(Assignment(pc, newVar, expr))
+                        if (wasExecuted(nextPC)) {
+                            addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
+                        } else {
+                            // IMPROVE Encode information about the failing exception!
+                            addStmt(FailingExpression(pc, expr))
+                        }
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    val invoke = as[INVOKEDYNAMIC](instruction)
-                    val parametersCount = invoke.methodDescriptor.parametersCount
+                    val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
+                    val parametersCount = methodDescriptor.parametersCount
                     val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
-                    val returnType = invoke.methodDescriptor.returnType
-                    val bootstrapMethod = invoke.bootstrapMethod
-                    val name = invoke.name
-                    val methodDescriptor = invoke.methodDescriptor
                     val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
-                    val newVar = {
-                        if (returnType.isBaseType) SSAPrimVar(pc, returnType.asBaseType)
-                        else SSARefVar(pc, returnType.asReferenceType)
+                    if (wasExecuted(nextPC)) {
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
+                    } else {
+                        // IMPROVE Encode information about the failing exception!
+                        addStmt(FailingExpression(pc, expr))
                     }
-                    addStmt(Assignment(pc, newVar, expr))
 
                 case PUTSTATIC.opcode ⇒
+                    val PUTSTATIC(declaringClass, name, _ /*fieldType*/ ) = instruction
                     val value = operandUse(0)
-                    val PUTSTATIC = as[PUTSTATIC](instruction)
-                    val putStatic = PutStatic(pc, PUTSTATIC.declaringClass, PUTSTATIC.name, value)
+                    val putStatic = PutStatic(pc, declaringClass, name, value)
                     addStmt(putStatic)
 
                 case PUTFIELD.opcode ⇒
+                    val PUTFIELD(declaringClass, name, _ /*fieldType*/ ) = instruction
                     val value = operandUse(0)
                     val objRef = operandUse(1)
-                    val PUTFIELD = as[PUTFIELD](instruction)
-                    val putField = PutField(pc, PUTFIELD.declaringClass, PUTFIELD.name, objRef, value)
-                    addStmt(putField)
+                    val putField = PutField(pc, declaringClass, name, objRef, value)
+                    if (wasExecuted(nextPC)) {
+                        addStmt(putField)
+                    } else {
+                        // IMPROVE Encode information about the failing exception!
+                        addStmt(FailingStatement(pc, putField))
+                    }
 
                 case GETSTATIC.opcode ⇒
-                    val GETSTATIC = as[GETSTATIC](instruction)
-                    val getStatic = GetStatic(pc, GETSTATIC.declaringClass, GETSTATIC.name)
-                    val newVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                    addStmt(Assignment(pc, newVar, getStatic))
+                    val GETSTATIC(declaringClass, name, _ /*fieldType*/ ) = instruction
+                    val getStatic = GetStatic(pc, declaringClass, name)
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, getStatic)
 
                 case GETFIELD.opcode ⇒
-                    val objRef = operandUse(0)
-                    val GETFIELD = as[GETFIELD](instruction)
-                    val getField = GetField(pc, GETFIELD.declaringClass, GETFIELD.name, objRef)
-                    val newVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                    addStmt(Assignment(pc, newVar, getField))
+                    val GETFIELD(declaringClass, name, _ /*fieldType*/ ) = instruction
+                    val getField = GetField(pc, declaringClass, name, operandUse(0))
+                    if (wasExecuted(nextPC)) {
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
+                    } else {
+                        // IMPROVE Encode information about the failing exception!
+                        addStmt(FailingExpression(pc, getField))
+                    }
 
                 case NEW.opcode ⇒
-                    val instr = as[NEW](instruction)
-                    val newVal = SSARefVar(pc, instr.objectType)
-                    addStmt(Assignment(pc, newVal, New(pc, instr.objectType)))
+                    val NEW(objectType) = instruction
+                    val newObject = New(pc, objectType)
+                    if (wasExecuted(nextPC)) {
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, newObject)
+                    } else {
+                        // IMPROVE Encode information about the failing exception!
+                        addStmt(FailingExpression(pc, newObject))
+                    }
 
                 case NEWARRAY.opcode ⇒
                     newArray(ArrayType(as[NEWARRAY](instruction).elementType))
@@ -531,45 +545,36 @@ object TACAI {
                     newArray(ArrayType(as[ANEWARRAY](instruction).componentType))
 
                 case MULTIANEWARRAY.opcode ⇒
-                    val instr = as[MULTIANEWARRAY](instruction)
-                    // TODO Do we need to reverse the list "counts"
-                    val counts = (0 until instr.dimensions).map(d ⇒ operandUse(d))(Seq.canBuildFrom)
-                    val newArray = NewArray(pc, counts, instr.componentType)
-                    val newVal = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                    addStmt(Assignment(pc, newVal, newArray))
+                    val MULTIANEWARRAY(arrayType, dimensions) = instruction
+                    val counts = (0 until dimensions).map(d ⇒ operandUse(d))(Seq.canBuildFrom)
+                    val newArray = NewArray(pc, counts, arrayType)
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
-                    val targetPC = pc + as[GotoInstruction](instruction).branchoffset
-                    addStmt(Goto(pc, targetPC))
+                    val GotoInstruction(branchoffset) = instruction
+                    addStmt(Goto(pc, pc + branchoffset))
 
                 case JSR.opcode | JSR_W.opcode ⇒
-                    val targetPC = pc + as[JSRInstruction](instruction).branchoffset
-                    addStmt(JumpToSubroutine(pc, targetPC))
-
+                    val JSRInstruction(branchoffset) = instruction
+                    addStmt(JumpToSubroutine(pc, pc + branchoffset))
                 case RET.opcode ⇒
-                    //val ret = as[RET](instruction)
-                    // the use sites are actually the JSR instructions ...
-                    //val returnAddressVar = RegisterVar(ComputationalTypeReturnAddress, ret.lvIndex)
-                    //addStmt( Ret(pc, returnAddressVar))
-                    ???
+                    addStmt(Ret(pc, cfg.successors(pc)))
 
                 case NOP.opcode               ⇒ addNOP()
                 case POP.opcode | POP2.opcode ⇒ addNOP()
 
                 case INSTANCEOF.opcode ⇒
                     val value1 = operandUse(0)
-                    val resultVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                    val tpe = as[INSTANCEOF](instruction).referenceType
+                    val INSTANCEOF(tpe) = instruction
                     val instanceOf = InstanceOf(pc, value1, tpe)
-                    addStmt(Assignment(pc, resultVar, instanceOf))
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, instanceOf)
 
                 case CHECKCAST.opcode ⇒
                     val value1 = operandUse(0)
-                    val targetType = as[CHECKCAST](instruction).referenceType
+                    val CHECKCAST(targetType) = instruction
                     val checkcast = Checkcast(pc, value1, targetType)
                     if (wasExecuted(nextPC)) {
-                        val resultVar = domainValueBasedLocalVar(operandsArray(nextPC).head)
-                        addStmt(Assignment(pc, resultVar, checkcast))
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, checkcast)
                     } else {
                         addStmt(FailingExpression(pc, checkcast))
                     }
@@ -604,13 +609,13 @@ object TACAI {
                 case DUP.opcode | DUP_X1.opcode | DUP_X2.opcode
                     | DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode ⇒ addNOP()
 
-                case D2F.opcode | I2F.opcode | L2F.opcode ⇒ primitiveCastOperation()
-                case D2I.opcode | F2I.opcode | L2I.opcode ⇒ primitiveCastOperation()
-                case D2L.opcode | I2L.opcode | F2L.opcode ⇒ primitiveCastOperation()
-                case F2D.opcode | I2D.opcode | L2D.opcode ⇒ primitiveCastOperation()
-                case I2C.opcode                           ⇒ primitiveCastOperation()
-                case I2B.opcode                           ⇒ primitiveCastOperation()
-                case I2S.opcode                           ⇒ primitiveCastOperation()
+                case D2F.opcode | I2F.opcode | L2F.opcode ⇒ primitiveCastOperation(FloatType)
+                case D2I.opcode | F2I.opcode | L2I.opcode ⇒ primitiveCastOperation(IntegerType)
+                case D2L.opcode | I2L.opcode | F2L.opcode ⇒ primitiveCastOperation(LongType)
+                case F2D.opcode | I2D.opcode | L2D.opcode ⇒ primitiveCastOperation(DoubleType)
+                case I2C.opcode                           ⇒ primitiveCastOperation(CharType)
+                case I2B.opcode                           ⇒ primitiveCastOperation(ByteType)
+                case I2S.opcode                           ⇒ primitiveCastOperation(ShortType)
 
                 case ATHROW.opcode                        ⇒ addStmt(Throw(pc, operandUse(0)))
 
@@ -621,24 +626,36 @@ object TACAI {
             }
 
             pc = nextPC
-            while (!wasExecuted(pc)) pc = pcOfNextInstruction(pc)
+            while (pc < codeSize && !wasExecuted(pc)) {
+                pc = pcOfNextInstruction(pc)
+            }
         } while (pc < codeSize)
 
-        var tacCFG = cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1)
-        var tacCode = new Array[Stmt](index)
-        System.arraycopy(statements, 0, tacCode, 0, index)
-        tacCode.foreach(_.remapIndexes(pcToIndex))
+        // add the artificial lastPC + 1 instruction to enable the mapping of exception handlers
+        pcToIndex(pc /* == codeSize +1 */ ) = index
+
+        val tacStmts = {
+            val tacStmts = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](index)
+            var s = 0
+            while (s < index) {
+                val stmt = statements(s)
+                stmt.remapIndexes(pcToIndex)
+                tacStmts(s) = stmt
+                s += 1
+            }
+            tacStmts
+        }
+        val taCodeCFG = cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1)
+        val taExceptionHanders = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
+        val taCode = TACode(tacStmts, taCodeCFG, taExceptionHanders, code.lineNumberTable)
 
         if (optimizations.nonEmpty) {
-            val baseTAC = TACOptimizationResult(tacCode, tacCFG, false)
-            val result = optimizations.foldLeft(baseTAC) { (tac, optimization) ⇒ optimization(tac) }
-            tacCode = result.code
-            tacCFG = result.cfg
+            val base = TACOptimizationResult(taCode, wasTransformed = false)
+            val result = optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac))
+            result.code
+        } else {
+            taCode
         }
-
-        (tacCode, tacCFG)
-*/
-        ???
     }
 
 }

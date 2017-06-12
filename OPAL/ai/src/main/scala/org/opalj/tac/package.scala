@@ -28,6 +28,11 @@
  */
 package org.opalj
 
+import org.opalj.br.ExceptionHandlers
+import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CFG
+import org.opalj.graphs.Node
+
 /**
  * Common definitions related to the definition and processing of three address code.
  *
@@ -35,10 +40,51 @@ package org.opalj
  */
 package object tac {
 
-    type Stack = List[Var]
+    final val AllTACNaiveOptimizations: List[TACOptimization[IdBasedVar]] = {
+        List(SimplePropagation)
+    }
 
-    final val NoOptimizations: List[TACOptimization] = Nil
+    def tacToGraph[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): Iterable[Node] = {
+        cfg.toDot { bb: BasicBlock ⇒
+            val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1)
+            val txtStmts = bbStmts.map { stmt ⇒ ToTxt.toTxtStmt[V](stmt, false) }
+            txtStmts.mkString("", "\\l\\l", "\\l")
+        }
+    }
 
-    final val AllOptimizations: List[TACOptimization] = List(SimplePropagation)
+    def tacToDot[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): String = {
+        org.opalj.graphs.toDot(
+            tacToGraph(stmts, cfg),
+            ranksep = "0.4"
+        )
+    }
+
+    /**
+     * Updates the exception handlers by adjusting the start, end and handler index (pc).
+     *
+     * This method can only be used in simple cases where the order of instructions remains
+     * the same - deleting instructions is supported.
+     *
+     * @param exceptionHandlers
+     * @param newIndexes A map that contains for each previous index the new index
+     *                   that should be used.
+     * @return The new exception handler.
+     */
+    def updateExceptionHandlers(
+        exceptionHandlers: ExceptionHandlers,
+        newIndexes:        Array[Int]
+    ): ExceptionHandlers = {
+        exceptionHandlers map { old ⇒
+            // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
+            // included in the handler block, the endPC is equal to `(pc of last instruction) +
+            // instruction.size`; however, this is already handled by the caller!
+
+            old.copy(
+                startPC = newIndexes(old.startPC),
+                endPC = newIndexes(old.endPC),
+                handlerPC = newIndexes(old.endPC)
+            )
+        }
+    }
 
 }

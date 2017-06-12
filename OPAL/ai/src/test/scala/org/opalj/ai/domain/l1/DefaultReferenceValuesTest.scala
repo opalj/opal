@@ -69,7 +69,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
         with l0.DefaultTypeLevelLongValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
-        with l1.DefaultReferenceValuesBinding // <- PRIMARY GOAL!
+        with l1.DefaultReferenceValuesBinding // <- PRIMARY TEST GOAL
         with l0.DefaultTypeLevelIntegerValues
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelLongValuesShiftOperators
@@ -334,34 +334,34 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
             val ref3 = ObjectValue(732, No, true, ObjectType.String)
 
-            val ref1MergeRef2 = ref1.join(-1, ref2).value
+            val ref1MergeRef2 = ref1.join(-1, ref2).value.asDomainReferenceValue
 
-            val ref1AltMergeRef2Alt = ref1Alt.join(-1, ref2Alt).value
+            val ref1AltMergeRef2Alt = ref1Alt.join(-1, ref2Alt).value.asDomainReferenceValue
 
-            val ref1MergeRef2MergeRef3 = ref1MergeRef2.join(-1, ref3).value
+            val ref1MergeRef2MergeRef3 = ref1MergeRef2.join(-1, ref3).value.asDomainReferenceValue
 
-            val ref3MergeRef1MergeRef2 = ref3.join(-1, ref1MergeRef2).value
+            val ref3MergeRef1MergeRef2 = ref3.join(-1, ref1MergeRef2).value.asDomainReferenceValue
 
             it("it should keep the old value when we merge a value with an identical value") {
                 ref1.join(-1, ref1Alt) should be(MetaInformationUpdate(ref1))
             }
 
             it("it should represent both values after a join of two independent values") {
-                val IsReferenceValue(values) = typeOfValue(ref1MergeRef2)
+                val BaseReferenceValues(values) = ref1MergeRef2
                 values.exists(_ == ref1) should be(true)
                 values.exists(_ == ref2) should be(true)
             }
 
             it("it should represent all three values when we join a MultipleReferenceValue with an ObjectValue if all three values are independent") {
-                val IsReferenceValue(values) = typeOfValue(ref1MergeRef2MergeRef3)
+                val BaseReferenceValues(values) = ref1MergeRef2MergeRef3
                 values.exists(_ == ref1) should be(true)
                 values.exists(_ == ref2) should be(true)
                 values.exists(_ == ref3) should be(true)
             }
 
             it("it should be able to join two value sets that contain (reference) identical values") {
-                val IsReferenceValue(values312) = typeOfValue(ref3MergeRef1MergeRef2)
-                val IsReferenceValue(values123) = typeOfValue(ref1MergeRef2MergeRef3)
+                val BaseReferenceValues(values312) = ref3MergeRef1MergeRef2
+                val BaseReferenceValues(values123) = ref1MergeRef2MergeRef3
                 values312.toSet should be(values123.toSet)
             }
 
@@ -402,7 +402,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
                 val joinResult = mv1.join(-1, mv2)
                 joinResult.updateType should be(StructuralUpdateType)
-                val joinedValue @ IsReferenceValue(_) = joinResult.value
+                val ValuesDomain.DomainReferenceValue(joinedValue) = joinResult.value
                 assert(joinedValue.isPrecise === false)
                 joinedValue.upperTypeBound should be(UIDSet(ObjectType.Object))
             }
@@ -671,8 +671,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "simpleConditionalAssignment").get
                 val theDomain = new TheDomain
                 val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
-
-                val value @ IsReferenceValue(values) = result.operandsArray(26).head
+                val result.domain.DomainReferenceValue(head) = result.operandsArray(26).head
+                val value @ BaseReferenceValues(values) = head
                 value.isNull should be(No)
                 value.isPrecise should be(true)
                 value.upperTypeBound should be(UIDSet(ObjectType.Object))
@@ -687,8 +687,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "conditionalAssignment1").get
                 val theDomain = new TheDomain
                 val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
-
-                val value @ IsReferenceValue(values) = result.operandsArray(46).head
+                val result.domain.DomainReferenceValue(head) = result.operandsArray(46).head
+                val value @ BaseReferenceValues(values) = head
                 value.isNull should be(Unknown)
                 value.isPrecise should be(true) // one value is null and the other is precise
                 value.upperTypeBound should be(UIDSet(ObjectType.Object))
@@ -711,7 +711,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val theDomain.IsNull(secondReturn) = result.operandsArray(27).head
                 secondReturn should be(Unknown)
 
-                val IsReferenceValue(values) = result.operandsArray(27).head
+                val result.domain.DomainReferenceValue(head) = result.operandsArray(27).head
+                val BaseReferenceValues(values) = head
                 values foreach { _.isNull should be(Unknown) }
             }
 
@@ -720,12 +721,13 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val theDomain = new TheDomain
                 val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
-                val value @ IsReferenceValue(values) = result.operandsArray(5).head
+                val result.domain.DomainReferenceValue(head) = result.operandsArray(5).head
+                val value @ BaseReferenceValues(values) = head
                 value.isNull should be(No)
                 values.size should be(2)
                 values foreach { _.isNull should be(Unknown) }
 
-                val IsReferenceValue(returnValues) = result.operandsArray(25).head
+                val BaseReferenceValues(returnValues) = result.operandsArray(25).head.asDomainReferenceValue
                 returnValues foreach { _.isNull should be(Unknown) }
             }
 
@@ -734,8 +736,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val theDomain = new TheDomain
                 val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
-                val IsReferenceValue(values1) = result.operandsArray(43).head;
-                {
+                val BaseReferenceValues(values1) = result.operandsArray(43).head.asDomainReferenceValue; {
                     // the original value is null
                     val value1 = values1.head
                     val value2 = values1.tail.head
@@ -746,8 +747,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                     )
                 }
 
-                val IsReferenceValue(values2) = result.operandsArray(47).head;
-                {
+                val BaseReferenceValues(values2) = result.operandsArray(47).head.asDomainReferenceValue; {
                     // the original value is null
                     val value1 = values2.head
                     val value2 = values2.tail.head
@@ -788,7 +788,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val theDomain = new TheDomain
                 val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
-                val IsReferenceValue(values1) = result.operandsArray(77).head
+                val BaseReferenceValues(values1) = result.operandsArray(77).head.asDomainReferenceValue
                 values1.size should be(3)
                 // values1 <=>
                 // Set(
@@ -802,16 +802,16 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                     theDomain.ObjectValue(4, Unknown, false, ObjectType.Object)
                 ))
 
-                val IsReferenceValue(values2) = result.operandsArray(87).head
+                val BaseReferenceValues(values2) = result.operandsArray(87).head.asDomainReferenceValue
                 values2.size should be(3)
                 // if sorted by origin: a is o , a is p, a is p
                 values2.foreach(_.isNull should be(Unknown))
 
-                val IsReferenceValue(values3) = result.operandsArray(95).head
+                val BaseReferenceValues(values3) = result.operandsArray(95).head.asDomainReferenceValue
                 values3.size should be <= (3)
                 values3.foreach(_.isNull should be(Unknown))
 
-                val IsReferenceValue(values4) = result.operandsArray(104).head
+                val BaseReferenceValues(values4) = result.operandsArray(104).head.asDomainReferenceValue
                 values4.size should be(3)
                 // Set({_ <: java.lang.Object, null}[↦12;t=105], {_ <: java.lang.Object, null}[↦8;t=104], _ <: java.lang.Object[↦4;t=103])
                 values4 should be(UIDSet(
@@ -820,7 +820,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                     theDomain.ObjectValue(12, Unknown, false, ObjectType.Object)
                 ))
 
-                val IsReferenceValue(values5) = result.operandsArray(109).head
+                val BaseReferenceValues(values5) = result.operandsArray(109).head.asDomainReferenceValue
                 // Set(null[↦20], _ <: java.lang.Object[↦4;t=103], {_ <: java.lang.Object, null}[↦8;t=104])
                 values5 should be(UIDSet(
                     theDomain.ObjectValue(4, No, false, ObjectType.Object),
@@ -836,13 +836,13 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val theDomain = new TheDomain
                 val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
-                val value35 @ IsReferenceValue(values35) = result.operandsArray(35).head
+                val value35 @ BaseReferenceValues(values35) = result.operandsArray(35).head.asDomainReferenceValue
                 value35.isNull should be(Yes)
                 values35.size should be(2)
                 // Set({_ <: java.lang.Object, null}[↦4;t=102], {_ <: java.lang.Object, null}[↦8;t=103])
                 values35.foreach(_.isNull should be(Unknown))
 
-                val value51 @ IsReferenceValue(values51) = result.operandsArray(51).head
+                val value51 @ BaseReferenceValues(values51) = result.operandsArray(51).head.asDomainReferenceValue
                 value51.isNull should be(Yes)
                 values51.size should be(1)
                 values51.head.isNull should be(Yes)
@@ -856,7 +856,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
                 assert(theDomain.isSubtypeOf(ObjectType.Exception, ObjectType.Throwable).isYes)
 
-                val value78 @ IsReferenceValue(values78) = result.operandsArray(78).head
+                val value78 @ BaseReferenceValues(values78) = result.operandsArray(78).head.asDomainReferenceValue
                 values78.size should be(1)
                 value78.upperTypeBound should be(UIDSet(ObjectType.Exception))
             }

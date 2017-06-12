@@ -29,10 +29,7 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._
@@ -43,7 +40,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
+class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
 
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
 
@@ -65,16 +62,16 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
     describe("the naive TAC of double operations") {
 
         def binaryJLC(strg: String) = Array(
-            "0: r_0 = this;",
-            "1: r_1 = p_1;",
-            "2: r_3 = p_2;",
-            "3: op_0 = r_1;",
-            "4: op_2 = r_3;",
+            "0: r_0 = this",
+            "1: r_1 = p_1",
+            "2: r_3 = p_2",
+            "3: op_0 = r_1",
+            "4: op_2 = r_3",
             strg,
-            "6: return op_0;"
+            "6: return op_0"
         )
 
-        def binaryAST(stmt: Stmt): Array[Stmt] = Array(
+        def binaryAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
             Assignment(-1, SimpleVar(-2, ComputationalTypeDouble), Param(ComputationalTypeDouble, "p_1")),
             Assignment(-1, SimpleVar(-4, ComputationalTypeDouble), Param(ComputationalTypeDouble, "p_2")),
@@ -86,7 +83,7 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
 
         it("should correctly reflect addition") {
             val statements = TACNaive(method = DoubleAddMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -94,12 +91,12 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
                 Assignment(2, SimpleVar(0, ComputationalTypeDouble),
                     BinaryExpr(2, ComputationalTypeDouble, Add, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
             ))
-            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_2;"))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_2"))
         }
 
         it("should correctly reflect division") {
             val statements = TACNaive(method = DoubleDivMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -107,12 +104,12 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
                 Assignment(2, SimpleVar(0, ComputationalTypeDouble),
                     BinaryExpr(2, ComputationalTypeDouble, Divide, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
             ))
-            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_2;"))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_2"))
         }
 
         it("should correctly reflect negation") {
             val statements = TACNaive(method = DoubleNegMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -126,18 +123,18 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
             ))
             javaLikeCode.shouldEqual(
                 Array(
-                    "0: r_0 = this;",
-                    "1: r_1 = p_1;",
-                    "2: op_0 = r_1;",
-                    "3: op_0 = - op_0;",
-                    "4: return op_0;"
+                    "0: r_0 = this",
+                    "1: r_1 = p_1",
+                    "2: op_0 = r_1",
+                    "3: op_0 = - op_0",
+                    "4: return op_0"
                 )
             )
         }
 
         it("should correctly reflect multiplication") {
             val statements = TACNaive(method = DoubleMulMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -145,12 +142,12 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
                 Assignment(2, SimpleVar(0, ComputationalTypeDouble),
                     BinaryExpr(2, ComputationalTypeDouble, Multiply, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
             ))
-            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_2;"))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_2"))
         }
 
         it("should correctly reflect modulo") {
             val statements = TACNaive(method = DoubleRemMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -158,12 +155,12 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
                 Assignment(2, SimpleVar(0, ComputationalTypeDouble),
                     BinaryExpr(2, ComputationalTypeDouble, Modulo, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
             ))
-            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_2;"))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_2"))
         }
 
         it("should correctly reflect subtraction") {
             val statements = TACNaive(method = DoubleSubMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToJavaLike(statements, false)
+            val javaLikeCode = ToTxt(statements, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -171,7 +168,7 @@ class TACNaiveDoubleArithmeticTest extends FunSpec with Matchers {
                 Assignment(2, SimpleVar(0, ComputationalTypeDouble),
                     BinaryExpr(2, ComputationalTypeDouble, Subtract, SimpleVar(0, ComputationalTypeDouble), SimpleVar(2, ComputationalTypeDouble)))
             ))
-            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
+            javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2"))
         }
     }
 }

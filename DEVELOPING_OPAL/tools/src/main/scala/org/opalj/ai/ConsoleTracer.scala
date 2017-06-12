@@ -74,41 +74,38 @@ trait ConsoleTracer extends AITracer { tracer ⇒
 
     private def correctIndent(value: Object, printOIDs: Boolean): String = {
         if (value eq null)
-            "<EMPTY>"
-        else {
-            def toString(value: Object) =
-                value.toString().replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
+            return "<EMPTY>";
 
-            def toStringWithOID(value: Object) =
-                toString(value)+" "+oidString(value)
+        def toString(value: Object) =
+            value.toString.replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
 
-            if (printOIDs) {
-                value match {
-                    case rv: IsReferenceValue if rv.referenceValues.size > 1 ⇒
-                        val values = rv.referenceValues
-                        val t =
-                            if (rv.isInstanceOf[domain.l1.ReferenceValues#ReferenceValue])
-                                s";t=${rv.asInstanceOf[domain.l1.ReferenceValues#ReferenceValue].t}"
-                            else
-                                ""
-                        values.map(toStringWithOID(_)).mkString("OneOf["+values.size+"](", ",", ")") +
-                            rv.upperTypeBound.map(_.toJava).mkString(";lutb=", " with ", ";") +
-                            s"isPrecise=${rv.isPrecise};isNull=${rv.isNull}$t "+
-                            oidString(rv)
-                    case _ ⇒
-                        toStringWithOID(value)
-                }
-            } else
-                toString(value)
+        def toStringWithOID(value: Object) = toString(value)+" "+oidString(value)
+
+        if (printOIDs) {
+            value match {
+                case rv: IsReferenceValue[_] if rv.allValues.size > 1 ⇒
+                    val values = rv.allValues
+                    val t =
+                        if (rv.isInstanceOf[domain.l1.ReferenceValues#ReferenceValue])
+                            s";t=${rv.asInstanceOf[domain.l1.ReferenceValues#ReferenceValue].t}"
+                        else
+                            ""
+                    values.map(toStringWithOID(_)).mkString("OneOf["+values.size+"](", ",", ")") +
+                        rv.upperTypeBound.map(_.toJava).mkString(";lutb=", " with ", ";") +
+                        s"isPrecise=${rv.isPrecise};isNull=${rv.isNull}$t "+
+                        oidString(rv)
+                case _ ⇒
+                    toStringWithOID(value)
+            }
+        } else {
+            toString(value)
         }
     }
 
     private def line(domain: Domain, pc: PC): String = {
-        if (domain.isInstanceOf[TheCode]) {
-            val code = domain.asInstanceOf[TheCode].code
-            code.lineNumber(pc).map("[line="+_+"]").getOrElse("")
-        } else {
-            ""
+        domain match {
+            case d: TheCode ⇒ d.code.lineNumber(pc).map("[line="+_+"]").getOrElse("")
+            case _          ⇒ ""
         }
     }
 

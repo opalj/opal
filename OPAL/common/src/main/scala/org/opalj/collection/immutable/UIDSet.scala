@@ -293,7 +293,7 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
             left == null || left.forall(p)
         } && {
             val right = this.right
-            (right == null || right.forall(p))
+            right == null || right.forall(p)
         }
     }
 
@@ -694,7 +694,7 @@ case class UIDTrieSetInnerNode[T <: UID] private[immutable] (
         protected var right:   UIDTrieSetNodeLike[T]
 ) extends UIDTrieSetNodeLike[T] {
 
-    final override def size = theSize
+    final override def size: Int = theSize
 
     override def last: T = {
         if (right ne null)
@@ -735,7 +735,7 @@ case class UIDTrieSetInnerNode[T <: UID] private[immutable] (
                 this.value = e
                 this.theSize += 1
             } else {
-                val newRight = (right +! (e, eId, shiftedEId >>> 1, level + 1))
+                val newRight = right +! (e, eId, shiftedEId >>> 1, level + 1)
                 this.right = newRight
                 this.theSize = (if (left ne null) left.size else 0) + newRight.size + 1
             }
@@ -751,7 +751,7 @@ case class UIDTrieSetInnerNode[T <: UID] private[immutable] (
                 this.value = e
                 this.theSize += 1
             } else {
-                val newLeft = (left +! (e, eId, shiftedEId >>> 1, level + 1))
+                val newLeft = left +! (e, eId, shiftedEId >>> 1, level + 1)
                 this.left = newLeft
                 this.theSize = newLeft.size + (if (right ne null) right.size else 0) + 1
             }
@@ -775,15 +775,15 @@ object UIDSet {
 
     implicit def canBuildFrom[T <: UID]: CanBuildFrom[UIDSet[_], T, UIDSet[T]] = {
         new CanBuildFrom[UIDSet[_], T, UIDSet[T]] {
-            def apply(from: UIDSet[_]) = newBuilder[T]
-            def apply() = newBuilder[T]
+            override def apply(from: UIDSet[_]): UIDSetBuilder[T] = newBuilder[T]
+            override def apply(): UIDSetBuilder[T] = newBuilder[T]
         }
     }
 
     def canBuildUIDSet[T <: UID]: CanBuildFrom[Any, T, UIDSet[T]] = {
         new CanBuildFrom[Any, T, UIDSet[T]] {
-            def apply(from: Any) = newBuilder[T]
-            def apply() = newBuilder[T]
+            override def apply(from: Any): UIDSetBuilder[T] = newBuilder[T]
+            override def apply(): UIDSetBuilder[T] = newBuilder[T]
         }
     }
 

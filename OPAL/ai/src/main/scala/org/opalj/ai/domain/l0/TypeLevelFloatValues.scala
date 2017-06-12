@@ -32,6 +32,7 @@ package domain
 package l0
 
 import org.opalj.br.{ComputationalType, ComputationalTypeFloat}
+import org.opalj.br.FloatType
 
 /**
  * This partial `Domain` performs all computations related to primitive float
@@ -54,7 +55,8 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
     /**
      * Abstracts over all values with computational type `float`.
      */
-    trait FloatValue extends Value with IsFloatValue { this: DomainValue ⇒
+    trait FloatValue extends TypedValue[FloatType] with IsFloatValue[FloatValue] {
+        this: DomainTypedValue[FloatType] ⇒
 
         final override def computationalType: ComputationalType = ComputationalTypeFloat
 
