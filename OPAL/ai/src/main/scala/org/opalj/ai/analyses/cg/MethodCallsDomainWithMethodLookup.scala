@@ -71,7 +71,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
     ): MethodCallResult = {
 
         try {
-            val receiver = operands.last.asInstanceOf[IsAReferenceValue]
+            val DomainReferenceValue(receiver) = operands.last
             val receiverUTB = receiver.upperTypeBound
             if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.head.isObjectType)
                 return fallback();

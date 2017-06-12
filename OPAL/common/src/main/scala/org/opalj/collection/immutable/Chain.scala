@@ -540,6 +540,10 @@ sealed trait Chain[@specialized(Int) +T]
         new Traversable[T] { def foreach[U](f: T ⇒ U): Unit = self.foreach(f) }
     }
 
+    def toIntSet(implicit ev: T <:< Int): IntSet = {
+        foldLeft(new IntSetBuilder())(_ += _).result()
+    }
+
     def toStream: Stream[T] = toTraversable.toStream
 
     def copyToArray[B >: T](xs: Array[B], start: Int, len: Int): Unit = {
@@ -1008,5 +1012,8 @@ final case class :&:[@specialized(Int) T](
             newHead
     }
 
-    override def toString: String = s"$head :&: ${rest.toString}"
+    override def toString: String = {
+        //s"$head :&: ${rest.toString}" // cannot handle very long lists (uses recursion)...
+        mkString("", " :&: ", " :&: Naught")
+    }
 }

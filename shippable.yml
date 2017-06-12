@@ -1,14 +1,13 @@
 reset_minion: true
 language: scala
 scala:
-   - 2.11.8
+   - 2.11.11
 jdk:
   - oraclejdk8
-  
+
 branches:
   only:
-    - master
-    - develop 
+    - feature/*
 
 script:
   - export SBT_OPTS="-XX:+CMSClassUnloadingEnabled"
@@ -18,7 +17,7 @@ script:
 after_script:
   - mkdir -p shippable/codecoverage
   - mv target/scala-2.11/coverage-report/cobertura.xml $PWD/shippable/codecoverage/
-  
+
 notifications:
   email:
     - eichberg@informatik.tu-darmstadt.de

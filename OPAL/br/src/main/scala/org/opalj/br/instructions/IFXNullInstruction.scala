@@ -46,3 +46,11 @@ trait IFXNullInstructionLike extends SimpleConditionalBranchInstructionLike {
 }
 
 trait IFXNullInstruction extends SimpleConditionalBranchInstruction with IFXNullInstructionLike
+
+object IFXNullInstruction {
+
+    def unapply(i: IFXNullInstruction): Some[(RelationalOperator, Int)] = {
+        Some((i.condition, i.branchoffset))
+    }
+
+}

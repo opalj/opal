@@ -8,13 +8,13 @@ OPAL consists of several projects which are found in the folder OPAL:
 
 * **Common**(OPAL/common): Contains common helper classes useful when analyzing (byte) code such as generic data structures and graph algorithms (e.g., to compute the DominatorTree).
 
-* **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 8 bytecode.  
+* **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 8 bytecode.
 
 * **Bytecode Disassembler**(OPAL/da): A Java Bytecode Disassembler that provides a one-to-one representation of the class file and which can be used to create a beautiful HTML representation of Java class files. An Eclipse plug-in that uses the Bytecode Disassembler is found in (OPAL/TOOLS/ep).
 
 * **Bytecode Creator**(OPAL/bc): Infrastructure that facilitates the engineering of bytecode.
 
-* **Bytecode Representation**(OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses on top of Java class files.  
+* **Bytecode Representation**(OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses on top of Java class files.
 
 * **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at different levels of precision. Additionally, a three-address representation is provided that uses the results of a basic abstract interpretation.
 
@@ -30,7 +30,7 @@ OPAL consists of several projects which are found in the folder OPAL:
 The following applies to the "Master" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have Java 8, Scala 2.11.8 and SBT 0.13.x installed and running. Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have Java 8, Scala 2.11.11 and SBT 0.13.15 installed and running and that SBT can use at least 3GB of ram (-Xmx3G). Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder.
 
 * Call `sbt cleanBuild`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
@@ -41,6 +41,13 @@ Go to OPAL's root folder.
 * Call `sbt it:test` to run the integration test suite. Executing this test suite will take several minutes (your .sbtconfig file needs to be changed accordingly).
 
 You are ready to go.
+
+**Toubleshooting**
+
+When you encounter problems to build OPAL, please consider the following options.
+
+ - Windows users have to adapt the __global__ sbt options such that it does work with UTF-8. To achieve this you have to add the JVM parameter `-Dfile.encoding=UTF8` to the sbt's _sbtopts_ and _sbtconfig.txt_ file that is located in the sbt installation directory.
+ - The OPAL developer tools subproject depends on JavaFX for and therefore, if you want to build everything, the JavaFX libraries need to be on the class path. This is always the case when you use the Oracle JDK. If you want to use the OpenJDK you have to configure this manually!
 
 # Using OPAL
 To get started, go to the webpage of the project [The OPAL Project](http://www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.

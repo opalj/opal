@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,7 +36,7 @@ import org.scalatest.junit.JUnitRunner
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet2
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport
@@ -64,13 +64,13 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
     behavior of "instances of domains of type l0.DomainReferenceValuesBinding"
 
     it should "be able to join a value with a single interface with one with multiple interfaces" in {
-        // the operand stack value org.omg.CORBA.Object(origin=-1;maybeNull;isUpperBound) 
+        // the operand stack value org.omg.CORBA.Object(origin=-1;maybeNull;isUpperBound)
         // does not abstract over org.omg.CORBA.Object with java.rmi.Remote(origin=-1; isUpperBound)
         val t1 = ObjectType("org/omg/CORBA/Object")
         val t2 = ObjectType("java/rmi/Remote")
         val domain = ValuesDomain
         val stValue = domain.ReferenceValue(-1, t1)
-        val mtValue = domain.ObjectValue(-1, UIDSet(t1, t2))
+        val mtValue = domain.ObjectValue(-1, UIDSet2(t1, t2))
 
         stValue.abstractsOver(mtValue) should be(true)
 

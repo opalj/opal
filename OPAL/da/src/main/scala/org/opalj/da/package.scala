@@ -38,8 +38,7 @@ import org.opalj.bi.AccessFlagsContext
 import org.opalj.bi.VisibilityModifier
 
 /**
- *
- * Defines convenience methods related to reading in class files.
+ * Defines convenience methods related to representing certain class file elements.
  *
  * @author Michael Eichberg
  * @author Andre Pacak
@@ -75,37 +74,36 @@ package object da {
         (<span class="access_flags">{ accessFlags }</span>, explicitAccessFlags)
     }
 
-    def asReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
+    def asJavaReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
         val rt = cp(cpIndex).toString(cp)
         if (rt.charAt(0) == '[')
-            parseFieldType(rt.substring(1))+"[]"
+            parseFieldType(rt.substring(1)).asJavaType+"[]"
         else
-            asJavaObjectType(rt);
+            asJavaObjectType(rt)
     }
 
-    def asObjectType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
+    def asJavaObjectType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
         asJavaObjectType(cp(cpIndex).toString(cp))
     }
 
     def asJavaObjectType(t: String): String = t.replace('/', '.')
 
-    def parseReturnType(type_index: Int)(implicit cp: Constant_Pool): String = {
-        parseReturnType(cp(type_index).toString)
+    def returnTypeAsJavaType(type_index: Int)(implicit cp: Constant_Pool): String = {
+        parseReturnType(cp(type_index).toString).asJavaType
     }
 
-    def parseReturnType(rt: String): String = {
+    def parseReturnType(rt: String): TypeInfo = {
         if (rt.charAt(0) == 'V')
-            "void"
+            VoidTypeInfo
         else
-            parseFieldType(rt).asJavaType
+            parseFieldType(rt)
     }
 
     /**
      * Returns a string representation of the type and the information whether the (element) type
      * is a base type.
      */
-    // TODO return FieldTypeInfo structure
-    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): TypeInfo = {
+    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): FieldTypeInfo = {
         parseFieldType(cp(type_index).toString)
     }
 
@@ -113,7 +111,7 @@ package object da {
      * Returns a string representation of the type and the information whether the (element) type
      * is a base type.
      */
-    def parseFieldType(descriptor: String): TypeInfo = {
+    def parseFieldType(descriptor: String): FieldTypeInfo = {
         (descriptor.charAt(0): @scala.annotation.switch) match {
             case 'B' ⇒ ByteTypeInfo
             case 'C' ⇒ CharTypeInfo
@@ -124,11 +122,16 @@ package object da {
             case 'S' ⇒ ShortTypeInfo
             case 'Z' ⇒ BooleanTypeInfo
             case 'L' ⇒
-                val javaTypeName = descriptor.substring(1, descriptor.length - 1).replace('/', '.')
+                val javaTypeName = asJavaObjectType(descriptor.substring(1, descriptor.length - 1))
                 ObjectTypeInfo(javaTypeName)
             case '[' ⇒
-                val TypeInfo(componentType, elementTypeIsBaseType) = parseFieldType(descriptor.substring(1))
-                ArrayTypeInfo(componentType+"[]", elementTypeIsBaseType)
+                val componentType = descriptor.substring(1)
+                parseFieldType(componentType) match {
+                    case ArrayTypeInfo(elementType, dimensions, elementTypeIsBaseType) ⇒
+                        ArrayTypeInfo(elementType, dimensions + 1, elementTypeIsBaseType)
+                    case TypeInfo(elementType, elementTypeIsBaseType) ⇒
+                        ArrayTypeInfo(elementType, 1, elementTypeIsBaseType)
+                }
 
             case _ ⇒
                 val message = s"$descriptor is not a valid field type descriptor"
@@ -136,36 +139,44 @@ package object da {
         }
     }
 
-    def parseMethodDescriptor(
-        //definingTypeFQN: String,
-        methodName: String,
-        descriptor: String
-    ): String = {
+    def parseMethodDescriptor(descriptor: String): (IndexedSeq[FieldTypeInfo], TypeInfo) = {
         var index = 1 // we are not interested in the leading '('
-        var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
+        var parameterTypes: IndexedSeq[FieldTypeInfo] = IndexedSeq.empty
         while (descriptor.charAt(index) != ')') {
             val (ft, nextIndex) = parseParameterType(descriptor, index)
             parameterTypes = parameterTypes :+ ft
             index = nextIndex
         }
-        val returnType = parseReturnType(descriptor.substring(index + 1))
 
-        s"$returnType $methodName(${parameterTypes.mkString(", ")})"
+        (
+            parameterTypes,
+            parseReturnType(descriptor.substring(index + 1))
+        )
+
     }
 
-    def methodDescriptorAsInlineNode(
-        //definingTypeFQN: String,
-        methodName: String,
-        descriptor: String
-    ): Node = {
+    def methodDescriptorAsJavaSignature(methodName: String, descriptor: String): String = {
         var index = 1 // we are not interested in the leading '('
         var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
         while (descriptor.charAt(index) != ')') {
             val (ft, nextIndex) = parseParameterType(descriptor, index)
-            parameterTypes = parameterTypes :+ ft
+            parameterTypes = parameterTypes :+ ft.asJavaType
             index = nextIndex
         }
-        val returnType = parseReturnType(descriptor.substring(index + 1))
+        val returnType = parseReturnType(descriptor.substring(index + 1)).asJavaType
+
+        parameterTypes.mkString(s"$returnType $methodName(", ", ", ")")
+    }
+
+    def methodDescriptorAsInlineNode(methodName: String, descriptor: String): Node = {
+        var index = 1 // we are not interested in the leading '('
+        var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
+        while (descriptor.charAt(index) != ')') {
+            val (ft, nextIndex) = parseParameterType(descriptor, index)
+            parameterTypes = parameterTypes :+ ft.asJavaType
+            index = nextIndex
+        }
+        val returnType = parseReturnType(descriptor.substring(index + 1)).asJavaType
 
         <span class="cp_method">
             <span class="method_returntype fqn">{ returnType }</span>
@@ -174,8 +185,8 @@ package object da {
             <span class="method_parametertypes">({
                 if (parameterTypes.nonEmpty)
                     <span class="method_parametertype fqn">{ parameterTypes.head }</span> ++ {
-                        parameterTypes.tail.map { x ⇒
-                            <span class="method_parametertype fqn">{ ", "+x }</span>
+                        parameterTypes.tail.map { t ⇒
+                            <span class="method_parametertype fqn">{ ", "+t }</span>
                         }
                     }
                 else
@@ -184,24 +195,32 @@ package object da {
         </span>
     }
 
-    private[this] def parseParameterType(md: String, startIndex: Int): (String, Int) = {
+    private[this] def parseParameterType(md: String, startIndex: Int): (FieldTypeInfo, Int) = {
         val td = md.charAt(startIndex)
         (td: @switch) match {
             case 'L' ⇒
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple
-                    md.substring(startIndex + 1, endIndex).replace('/', '.'),
+                    ObjectTypeInfo(md.substring(startIndex + 1, endIndex).replace('/', '.')),
                     endIndex + 1
                 )
             case '[' ⇒
-                val (ft, index) = parseParameterType(md, startIndex + 1)
-                ( // this is the return tuple
-                    ft+"[]",
-                    index
-                )
+                parseParameterType(md, startIndex + 1) match {
+                    case (ati: ArrayTypeInfo, index) ⇒
+                        (
+                            ArrayTypeInfo(
+                                ati.elementTypeAsJavaType,
+                                ati.dimensions + 1,
+                                ati.elementTypeIsBaseType
+                            ),
+                                index
+                        )
+                    case (t, index) ⇒
+                        (ArrayTypeInfo(t.asJavaType, 1, t.elementTypeIsBaseType), index)
+                }
             case _ ⇒
-                ( // this is the return tuple
-                    parseFieldType(td.toString).asJavaType,
+                (
+                    parseFieldType(td.toString),
                     startIndex + 1
                 )
         }

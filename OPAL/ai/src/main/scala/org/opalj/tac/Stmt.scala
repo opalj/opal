@@ -37,10 +37,10 @@ import org.opalj.br._
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
-sealed abstract class Stmt {
+sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
 
     /**
-     * The program counter of the original underyling bytecode instruction.
+     * The program counter of the original '''underyling bytecode instruction'''.
      *
      * This `pc` is independent of the (implicit) `index` of the statement
      * in the generated statements array! This pc is, e.g., useful for
@@ -61,25 +61,42 @@ sealed abstract class Stmt {
 }
 
 /**
- * @param targetStmt Index in the statements array.
+ * @param target Index in the statements array.
+ * @param left The expression left to the relational operator. In general, this can be expected to
+ *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             generating source code.
+ * @param right The expression right to the relational operator. In general, this can be expected to
+ *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             generating source code.
+ *
  */
-case class If(
+case class If[+V <: Var[V]](
         pc:                      PC,
-        left:                    Expr,
+        left:                    Expr[V],
         condition:               RelationalOperator,
-        right:                   Expr,
+        right:                   Expr[V],
         private[tac] var target: Int
-) extends Stmt {
+) extends Stmt[V] {
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = target = pcToIndex(target)
+    final def astID = If.ASTID
+
+    def leftExpr: Expr[V] = left
+
+    def rightExpr: Expr[V] = right
 
     /**
      * The target statement that is executed if the condition evaluates to `true`.
-     *
-     * @note Calling this method is only supported after the quadruples representation
-     *         is created and the re-mapping of `pc`s to instruction indexes has happened!
      */
     def targetStmt: Int = target
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        left.remapIndexes(pcToIndex)
+        right.remapIndexes(pcToIndex)
+        target = pcToIndex(target)
+    }
+}
+object If {
+    final val ASTID = 0
 }
 
 /**
@@ -87,7 +104,9 @@ case class If(
  *          original bytecode array; then the index of the respective quadruples
  *          instruction.
  */
-case class Goto(pc: PC, private var target: Int) extends Stmt {
+case class Goto(pc: PC, private var target: Int) extends Stmt[Nothing] {
+
+    final def astID = Goto.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
@@ -101,22 +120,46 @@ case class Goto(pc: PC, private var target: Int) extends Stmt {
     def targetStmt: Int = target
 
 }
-
-case class Ret(pc: PC, private var returnAddressVar: Var) extends Stmt {
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+object Goto {
+    final val ASTID = 1
 }
 
 /**
- * A JSR Instruction is mapped to two instructions:
- *  1. the jsr instruction which performs a jump
- *  1. an assigment instruction at the jump target that initializes the local variable that
- *      is used to store the return address.
+ * Return from subroutine; only to be used in combination with JSR instructions.
+ *
+ * @param returnAddresses The set of return addresses. Based on the return addresses it is
+ *                        immediately possible to determine the original JSR instruction that led
+ *                        to the execution of the subroutine. It is the JSR instruction directly
+ *                        preceding the instruction to which this RET instruction jumps to.
+ *                        '''This information is only relevant in case of flow-sensitive
+ *                        analyses.'''
+ */
+case class Ret(pc: PC, private var returnAddresses: PCs) extends Stmt[Nothing] {
+
+    final def astID = Ret.ASTID
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        returnAddresses = returnAddresses map { pcToIndex }
+    }
+
+}
+object Ret {
+    final val ASTID = 2
+}
+
+/**
+ * JSR/RET instructions in the bytecode are mapped to corresponding statements where the
+ * Ret instruction explicitly encodes the control flow by explicitly listing all target
+ * instructions. The target instructions implicitly encode the JSR instruction which
+ * called the subroutine.
  *
  * @param target At creation time the `pc` (absolute) of the target instruction in the
  *          original bytecode array; then the index of the respective quadruples
  *          instruction.
  */
-case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
+case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt[Nothing] {
+
+    final def astID = JumpToSubroutine.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
@@ -131,13 +174,18 @@ case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
     def targetStmt: Int = target
 
 }
+object JumpToSubroutine {
+    final val ASTID = 3
+}
 
-case class Switch(
+case class Switch[+V <: Var[V]](
         pc:                        PC,
         private var defaultTarget: PC,
-        index:                     Var,
+        index:                     Expr[V],
         private var npairs:        IndexedSeq[(Int, PC)]
-) extends Stmt {
+) extends Stmt[V] {
+
+    final def astID = Switch.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
@@ -146,14 +194,42 @@ case class Switch(
 
     // Calling this method is only supported after the quadruples representation
     // is created and the remapping of pcs to instruction indexes has happened!
-    def targetStmt: IndexedSeq[Int] = npairs.map(x ⇒ x._2)
+    def caseStmts: IndexedSeq[Int] = npairs.map(x ⇒ x._2)
 
     // Calling this method is only supported after the quadruples representation
     // is created and the remapping of pcs to instruction indexes has happened!
     def defaultStmt: Int = defaultTarget
 }
+object Switch {
+    final val ASTID = 4
+}
 
-sealed abstract class SimpleStmt extends Stmt {
+case class Assignment[+V <: Var[V]](pc: PC, targetVar: V, expr: Expr[V]) extends Stmt[V] {
+
+    assert(expr ne null)
+
+    final def astID = Assignment.ASTID
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        targetVar.remapIndexes(pcToIndex)
+        expr.remapIndexes(pcToIndex)
+    }
+}
+object Assignment {
+    final val ASTID = 5
+}
+
+case class ReturnValue[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
+
+    final def astID = ReturnValue.ASTID
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+}
+object ReturnValue {
+    final val ASTID = 6
+}
+
+sealed abstract class SimpleStmt[+V <: Var[V]] extends Stmt[V] {
 
     /**
      * Nothing to do.
@@ -161,87 +237,221 @@ sealed abstract class SimpleStmt extends Stmt {
     final private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 }
 
-case class Assignment(pc: PC, targetVar: Var, expr: Expr) extends SimpleStmt
+case class Return(pc: PC) extends SimpleStmt[Nothing] {
+    final def astID = Return.ASTID
+}
+object Return {
+    final val ASTID = 7
+}
 
-case class ReturnValue(pc: PC, expr: Expr) extends SimpleStmt
+case class Nop(pc: PC) extends SimpleStmt[Nothing] {
+    final def astID = Nop.ASTID
+}
+object Nop {
+    final val ASTID = 8
+}
 
-case class Return(pc: PC) extends SimpleStmt
+sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
 
-case class Nop(pc: PC) extends SimpleStmt
+    def objRef: Expr[V]
 
-sealed abstract class SynchronizationStmt extends SimpleStmt
+    final private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        objRef.remapIndexes(pcToIndex)
+    }
+}
 
-case class MonitorEnter(pc: PC, objRef: Expr) extends SynchronizationStmt
+case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
+    final def astID = MonitorEnter.ASTID
+}
+object MonitorEnter {
+    final val ASTID = 9
+}
 
-case class MonitorExit(pc: PC, objRef: Expr) extends SynchronizationStmt
+case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
+    final def astID = MonitorExit.ASTID
+}
+object MonitorExit {
+    final val ASTID = 10
+}
 
-case class ArrayStore(
-    pc:       PC,
-    arrayRef: Expr,
-    index:    Expr,
-    value:    Expr
-) extends SimpleStmt
+case class ArrayStore[+V <: Var[V]](
+        pc:       PC,
+        arrayRef: Expr[V],
+        index:    Expr[V],
+        value:    Expr[V]
+) extends Stmt[V] {
 
-case class Throw(pc: PC, exception: Expr) extends SimpleStmt
+    final def astID = ArrayStore.ASTID
 
-sealed abstract class FieldAccessStmt extends SimpleStmt
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        arrayRef.remapIndexes(pcToIndex)
+        index.remapIndexes(pcToIndex)
+        value.remapIndexes(pcToIndex)
+    }
+}
+object ArrayStore {
+    final val ASTID = 11
+}
 
-case class PutStatic(
-    pc:             PC,
-    declaringClass: ObjectType, name: String,
-    value: Expr
-) extends FieldAccessStmt
+case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
 
-case class PutField(
-    pc:             PC,
-    declaringClass: ObjectType, name: String,
-    objRef: Expr,
-    value:  Expr
-) extends FieldAccessStmt
+    final def astID = Throw.ASTID
 
-sealed abstract class MethodCall extends SimpleStmt with Call
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = exception.remapIndexes(pcToIndex)
 
-sealed abstract class InstanceMethodCall extends MethodCall {
-    def receiver: Expr
+}
+object Throw {
+    final val ASTID = 12
+}
+
+sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
+    def declaringClass: ObjectType
+    def name: String
+    def value: Expr[V]
+}
+
+case class PutStatic[+V <: Var[V]](
+        pc:             PC,
+        declaringClass: ObjectType, name: String,
+        value: Expr[V]
+) extends FieldWriteAccessStmt[V] {
+
+    final def astID = PutStatic.ASTID
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        value.remapIndexes(pcToIndex)
+    }
+}
+object PutStatic {
+    final val ASTID = 13
+}
+
+case class PutField[+V <: Var[V]](
+        pc:             PC,
+        declaringClass: ObjectType, name: String,
+        objRef: Expr[V],
+        value:  Expr[V]
+) extends FieldWriteAccessStmt[V] {
+
+    final def astID = PutField.ASTID
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        objRef.remapIndexes(pcToIndex)
+        value.remapIndexes(pcToIndex)
+    }
+
+}
+object PutField {
+    final val ASTID = 14
+}
+
+sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V]
+
+sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
+
+    def receiver: Expr[V]
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        receiver.remapIndexes(pcToIndex)
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    }
 }
 
 object InstanceMethodCall {
 
-    def unapply(
-        call: InstanceMethodCall
-    ): Some[(PC, ReferenceType, String, MethodDescriptor, Expr, List[Expr])] = {
+    def unapply[V <: Var[V]](
+        call: InstanceMethodCall[V]
+    ): Some[(PC, ReferenceType, Boolean, String, MethodDescriptor, Expr[V], Seq[Expr[V]])] = {
         import call._
-        Some((
-            pc,
-            declaringClass, name, descriptor,
-            receiver,
-            params
-        ))
+        Some((pc, declaringClass, isInterface, name, descriptor, receiver, params))
     }
 }
 
-case class NonVirtualMethodCall(
-    pc:             PC,
-    declaringClass: ReferenceType,
-    name:           String,
-    descriptor:     MethodDescriptor,
-    receiver:       Expr,
-    params:         List[Expr]
-) extends InstanceMethodCall
+case class NonVirtualMethodCall[+V <: Var[V]](
+        pc:             PC,
+        declaringClass: ReferenceType,
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        receiver:       Expr[V],
+        params:         Seq[Expr[V]]
+) extends InstanceMethodCall[V] {
 
-case class VirtualMethodCall(
-    pc:             PC,
-    declaringClass: ReferenceType,
-    name:           String,
-    descriptor:     MethodDescriptor,
-    receiver:       Expr,
-    params:         List[Expr]
-) extends InstanceMethodCall
+    final def astID = NonVirtualMethodCall.ASTID
 
-case class StaticMethodCall(
-    pc:             PC,
-    declaringClass: ReferenceType,
-    name:           String,
-    descriptor:     MethodDescriptor,
-    params:         List[Expr]
-) extends MethodCall
+}
+object NonVirtualMethodCall {
+    final val ASTID = 15
+}
+
+case class VirtualMethodCall[+V <: Var[V]](
+        pc:             PC,
+        declaringClass: ReferenceType,
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        receiver:       Expr[V],
+        params:         Seq[Expr[V]]
+) extends InstanceMethodCall[V] {
+    final def astID = VirtualMethodCall.ASTID
+}
+object VirtualMethodCall {
+    final val ASTID = 16
+}
+
+case class StaticMethodCall[+V <: Var[V]](
+        pc:             PC,
+        declaringClass: ReferenceType,
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        params:         Seq[Expr[V]]
+) extends MethodCall[V] {
+    final def astID = StaticMethodCall.ASTID
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    }
+}
+object StaticMethodCall {
+    final val ASTID = 17
+}
+
+/** An expression where the value is not further used. */
+case class ExprStmt[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
+
+    final def astID = ExprStmt.ASTID
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        expr.remapIndexes(pcToIndex)
+    }
+}
+object ExprStmt {
+    final val ASTID = 18
+}
+
+sealed abstract class FailingInstruction[+V <: Var[V]] extends Stmt[V] {
+    def pc: PC
+}
+
+/**
+ * The underlying expression will always throw an exception.
+ */
+case class FailingExpression[+V <: Var[V]](pc: PC, expr: Expr[V]) extends FailingInstruction[V] {
+
+    final def astID = FailingExpression.ASTID
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+}
+object FailingExpression {
+    final val ASTID = 19
+}
+
+case class FailingStatement[+V <: Var[V]](pc: PC, stmt: Stmt[V]) extends FailingInstruction[V] {
+
+    final def astID = FailingStatement.ASTID
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = stmt.remapIndexes(pcToIndex)
+}
+object FailingStatement {
+    final val ASTID = 20
+}

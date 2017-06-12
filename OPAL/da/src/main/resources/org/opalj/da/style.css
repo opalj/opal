@@ -40,6 +40,11 @@ div{
 	margin-top:0.25em;
 }
 
+ul {
+    padding-left: 2em;
+    margin-bottom: 0.25em;
+}
+
 fieldset{
 	padding:0.15em;
 	margin-bottom:0.25em;

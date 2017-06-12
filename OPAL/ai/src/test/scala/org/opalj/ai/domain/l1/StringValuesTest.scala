@@ -31,14 +31,14 @@ package ai
 package domain
 package l1
 
-import scala.collection.SortedSet
 import org.junit.runner.RunWith
-
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
+
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet2
 
 /**
  * Unit tests for handling `StringValues`.
@@ -75,7 +75,7 @@ class StringValuesTest extends FlatSpec with Matchers {
     val oN = ObjectValue(-1, No, true, ObjectType.String)
     val oU = ObjectValue(-1, Unknown, true, ObjectType.String)
 
-    val msS1t0AndS2 = MultipleReferenceValues(SortedSet[DomainSingleOriginReferenceValue](s1t0, s2))
+    val msS1t0AndS2 = MultipleReferenceValues(UIDSet2[DomainSingleOriginReferenceValue](s1t0, s2))
     assert(msS1t0AndS2.upperTypeBound == UIDSet(ObjectType.String))
 
     behavior of "joining two StringValues"

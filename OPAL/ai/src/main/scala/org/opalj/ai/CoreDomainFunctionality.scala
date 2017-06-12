@@ -68,7 +68,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
     }
 
     /**
-     * This methods is called by OPAL after the evaluation of the instruction with
+     * This methods is called after the evaluation of the instruction with
      * the given `pc` with respect to `targetPC`, but before the values are propagated
      * (joined) and before it is checked whether the interpretation needs to be continued.
      * I.e., if the operands (`newOperands`) or locals (`newLocals`) are further refined
@@ -140,8 +140,8 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      *          computational type (unless the bytecode is not valid or OPAL contains
      *          an error). I.e., if the result of joining two operand stack values is an
      *           `IllegalValue` we assume that the domain implementation is incorrect.
-     *          However, the joining of two register values can result in an illegal value
-     *          which identifies the value is dead.
+     *          However, the joining of two register values can result in an illegal value -
+     *          which identifies the value as being dead.
      */
     def join(
         pc:            PC,
@@ -167,40 +167,9 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                     }
                 }
                 thisOperands.fuse(otherOperands, fuseOperands)
-                /*
-                var thisRemainingOperands = thisOperands
-                var otherRemainingOperands = otherOperands
-                var newOperands: Operands = Nil // during the update we build the operands stack in reverse order
-
-                while (thisRemainingOperands.nonEmpty /* && both stacks have to contain the same number of elements */ ) {
-                    val thisOperand = thisRemainingOperands.head
-                    thisRemainingOperands = thisRemainingOperands.tail
-                    val otherOperand = otherRemainingOperands.head
-                    otherRemainingOperands = otherRemainingOperands.tail
-
-                    val newOperand =
-                        if (thisOperand eq otherOperand) {
-                            thisOperand
-                        } else {
-                            val updatedOperand = joinValues(pc, thisOperand, otherOperand)
-                            val newOperand = updatedOperand match {
-                                case NoUpdate   ⇒ thisOperand
-                                case someUpdate ⇒ someUpdate.value
-                            }
-                            operandsUpdated = operandsUpdated &: updatedOperand
-                            newOperand
-                        }
-                    newOperands = newOperand :&: newOperands
-                }
-                if (operandsUpdated.noUpdate) {
-                    thisOperands
-                } else {
-                    newOperands.reverse
-                }*/
             }
 
         var localsUpdated: UpdateType = NoUpdateType
-        //        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates"
         val newLocals: Locals =
             if (thisLocals eq otherLocals) {
                 thisLocals
@@ -216,47 +185,20 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                         } else {
                             localsUpdated &:= updatedLocal
                             val value = updatedLocal.value
-                            //                            if (value ne TheIllegalValue)
-                            //                                localsUpdateIsRelevant = true
                             value
                         }
                     }
                 }
                 val newLocals = thisLocals.fuse(otherLocals, fuseLocals)
-                //                val newLocals =
-                //                    thisLocals.merge(
-                //                        otherLocals,
-                //                        (thisLocal, otherLocal) ⇒ {
-                //                            if ((thisLocal eq null) || (otherLocal eq null)) {
-                //                                localsUpdated = localsUpdated &: MetaInformationUpdateType
-                //                                TheIllegalValue
-                //                            } else {
-                //                                val updatedLocal = joinValues(pc, thisLocal, otherLocal)
-                //                                if (updatedLocal eq NoUpdate) {
-                //                                    thisLocal
-                //                                } else {
-                //                                    localsUpdated = localsUpdated &: updatedLocal
-                //                                    val value = updatedLocal.value
-                //                                    if (value ne TheIllegalValue)
-                //                                        localsUpdateIsRelevant = true
-                //                                    value
-                //                                }
-                //                            }
-                //                        }
-                //                    )
                 if (localsUpdated.noUpdate)
                     thisLocals
                 else
                     newLocals
             }
+        val updateType = operandsUpdated &: localsUpdated
 
         afterBaseJoin(pc)
 
-        val updateType =
-            // if (localsUpdateIsRelevant)
-            operandsUpdated &: localsUpdated
-        // else
-        //     operandsUpdated
         joinPostProcessing(updateType, pc, thisOperands, thisLocals, newOperands, newLocals)
     }
 
@@ -276,6 +218,11 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         left.join(pc, right)
     }
 
+    /**
+     * This method is called after all values which differ have been joined, but before
+     * `joinPostProcessing` will be called.
+     * @param pc
+     */
     protected[this] def afterBaseJoin(pc: PC): Unit = { /*empty*/ }
 
     /**

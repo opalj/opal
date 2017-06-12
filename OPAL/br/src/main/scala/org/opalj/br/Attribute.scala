@@ -82,8 +82,15 @@ trait Attribute {
      *  - 44 The Module Attribute (Java 9)
      *  - 1001 OPAL's VirtualTypeFlag Attribute
      *  - 1002 OPAL's SynthesizedClassFiles Attribute
+     *  - 1003 OPAL's TACode Attribute (the 3-Address Code)
      */
     def kindId: Int
 
+    /**
+     * Returns true if this attribute and the given one are jvm equal.
+     *
+     * @note   If this class is implemented as a proper `case class`, this method can often be
+     *         implemented by forwarding to the default `equals` method.
+     */
+    def similar(other: Attribute): Boolean
 }
-

@@ -103,11 +103,8 @@ trait RecordMethodCallResults
         } else {
             var exceptionValuesPerType: Map[ObjectType, Set[ExceptionValue]] = Map.empty
 
-            def handleIsAReferenceValue(
-                exceptionValue:           ExceptionValue,
-                exceptionValueProperties: IsAReferenceValue
-            ): Unit = {
-                exceptionValueProperties.upperTypeBound match {
+            def handleExceptionValue(exceptionValue: ExceptionValue): Unit = {
+                exceptionValue.upperTypeBound match {
                     case EmptyUpperTypeBound ⇒
                         println("[info] [RecordMethodCallResults.thrownExceptions] Type of exception is unknown.")
                         exceptionValuesPerType = exceptionValuesPerType.updated(
@@ -139,31 +136,16 @@ trait RecordMethodCallResults
 
             for {
                 exceptionValuesPerInstruction ← allThrownExceptions.values
-                exceptionValue ← exceptionValuesPerInstruction
+                exceptionValues ← exceptionValuesPerInstruction
+                exceptionValue ← exceptionValues.allValues
             } {
-                typeOfValue(exceptionValue) match {
-                    case IsReferenceValue(exceptionValues) ⇒
-                        exceptionValues.foreach { anExceptionValue ⇒
-                            handleIsAReferenceValue(
-                                // TODO [Safety] We should make it possible that a value converts itself to a domain value
-                                anExceptionValue.asDomainValue(this),
-                                anExceptionValue
-                            )
-                        }
-
-                    case exceptionValueProperties: IsAReferenceValue ⇒
-                        handleIsAReferenceValue(exceptionValue, exceptionValueProperties)
-
-                    // case _ => ... should never occur
-                }
+                handleExceptionValue(exceptionValue)
             }
 
             exceptionValuesPerType.values.map { exceptionValuesPerType ⇒
                 summarize(callerPC, exceptionValuesPerType)
             }.map { exceptionValuePerType ⇒
-                exceptionValuePerType.
-                    adapt(target, callerPC).
-                    asInstanceOf[target.ExceptionValue]
+                exceptionValuePerType.adapt(target, callerPC).asInstanceOf[target.ExceptionValue]
             }
         }
     }

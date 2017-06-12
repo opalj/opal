@@ -284,18 +284,16 @@ trait PerformInvocations extends MethodCallsHandling {
         fallback:       () ⇒ MethodCallResult
     ): MethodCallResult = {
         val receiver = operands(descriptor.parametersCount)
-        typeOfValue(receiver) match {
-            case refValue: IsAReferenceValue if (
-                refValue.isPrecise &&
-                refValue.isNull.isNo && // TODO handle the case that null is unknown
+        receiver match {
+            case DomainReferenceValue(refValue) if refValue.isPrecise &&
+                refValue.isNull.isNo && // IMPROVE support the case that null is unknown
                 refValue.upperTypeBound.isSingletonSet &&
-                refValue.upperTypeBound.head.isObjectType
-            ) ⇒
+                refValue.upperTypeBound.head.isObjectType ⇒
                 val receiverClass = refValue.upperTypeBound.head.asObjectType
                 doInvokeNonVirtual(pc, receiverClass, name, descriptor, operands, fallback)
 
             case _ ⇒
-                fallback();
+                fallback()
         }
 
     }

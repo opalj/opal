@@ -128,7 +128,6 @@ trait CFGNode extends Node {
     /**
      * Computes the set of all [[CFGNode]]s that are reachable from this one.
      *
-     * @param includeSubroutines is only evaluated for successors of this node.
      * @note The result is not cached.
      */
     def reachable(reflexive: Boolean = false): mutable.Set[CFGNode] = {

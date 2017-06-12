@@ -262,8 +262,9 @@ case object ComputationFailed extends Computation[Nothing, Nothing] {
 
     def result: Nothing = throw new UnsupportedOperationException("the computation failed")
 
-    def updateResult[X](result: X): ComputationFailed.type =
+    def updateResult[X](result: X): ComputationFailed.type = {
         throw new UnsupportedOperationException("the computation failed")
+    }
 
     def throwsException: Boolean = false
 

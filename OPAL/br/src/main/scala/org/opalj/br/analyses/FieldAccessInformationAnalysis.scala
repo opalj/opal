@@ -32,9 +32,13 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+
 import scala.collection.mutable.AnyRefMap
+
 import org.opalj.log.OPALLogger
-import org.opalj.collection.mutable.UShortSet
+
+import org.opalj.collection.immutable.IntSetBuilder
+import org.opalj.collection.immutable.IntSet
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.br.instructions.GETFIELD
@@ -54,6 +58,7 @@ import org.opalj.br.instructions.PUTSTATIC
  * @note    The analysis does not take reflective field accesses into account.
  * @note    The analysis is internally parallelized and should not be run with other analyses in
  *          parallel.
+ * @note    Fields which are not accessed at all are not further considered.
  *
  * @author Michael Eichberg
  */
@@ -70,9 +75,9 @@ object FieldAccessInformationAnalysis {
         project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
             val method = methodInfo.method
 
-            val readAccesses = AnyRefMap.empty[Field, UShortSet]
-            val writeAccesses = AnyRefMap.empty[Field, UShortSet]
-            var unresolved = UShortSet.empty
+            val readAccesses = AnyRefMap.empty[Field, IntSetBuilder]
+            val writeAccesses = AnyRefMap.empty[Field, IntSetBuilder]
+            var unresolved = IntSet.empty
             method.body.get iterate { (pc, instruction) ⇒
                 instruction.opcode match {
 
@@ -80,24 +85,22 @@ object FieldAccessInformationAnalysis {
                         val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
                         resolveFieldReference(fieldReadAccess) match {
                             case Some(field) ⇒
-                                val pcs = pc +≈: readAccesses.getOrElse(field, UShortSet.empty)
-                                readAccesses.update(field, pcs)
+                                readAccesses.getOrElseUpdate(field, new IntSetBuilder()) += pc
                             case None ⇒
                                 val message = s"cannot resolve field read access: $instruction"
                                 OPALLogger.warn("project configuration", message)
-                                unresolved +≈:= pc
+                                unresolved += pc
                         }
 
                     case PUTFIELD.opcode | PUTSTATIC.opcode ⇒
                         val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
                         resolveFieldReference(fieldWriteAccess) match {
                             case Some(field) ⇒
-                                val pcs = pc +≈: writeAccesses.getOrElse(field, UShortSet.empty)
-                                writeAccesses.update(field, pcs)
+                                writeAccesses.getOrElseUpdate(field, new IntSetBuilder()) += pc
                             case None ⇒
                                 val message = s"cannot resolve field write access: $instruction"
                                 OPALLogger.warn("project configuration", message)
-                                unresolved +≈:= pc
+                                unresolved += pc
                         }
 
                     case _ ⇒ /*nothing to do*/
@@ -110,9 +113,9 @@ object FieldAccessInformationAnalysis {
                 field.synchronized {
                     val currentAccesses = allReadAccesses.get(key)
                     if (currentAccesses eq null)
-                        allReadAccesses.put(key, (method, pcs) :: Nil)
+                        allReadAccesses.put(key, (method, pcs.result()) :: Nil)
                     else
-                        allReadAccesses.put(key, (method, pcs) :: currentAccesses)
+                        allReadAccesses.put(key, (method, pcs.result()) :: currentAccesses)
                 }
             }
             writeAccesses foreach { e ⇒
@@ -120,9 +123,9 @@ object FieldAccessInformationAnalysis {
                 field.synchronized {
                     val currentAccesses = allWriteAccesses.get(key)
                     if (currentAccesses eq null)
-                        allWriteAccesses.put(key, (method, pcs) :: Nil)
+                        allWriteAccesses.put(key, (method, pcs.result()) :: Nil)
                     else
-                        allWriteAccesses.put(key, (method, pcs) :: currentAccesses)
+                        allWriteAccesses.put(key, (method, pcs.result()) :: currentAccesses)
                 }
             }
 

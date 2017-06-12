@@ -102,12 +102,13 @@ trait FeatureQuery {
      * which is expected to be found along the extractor.
      */
     protected def mdDescription: String = {
-        val descriptionResource = s"$id.markdown"
-        val descriptionResourceURL = this.getClass.getResource(descriptionResource)
+        var descriptionResourceURL = this.getClass.getResource(s"$id.markdown")
+        if (descriptionResourceURL == null)
+            descriptionResourceURL = this.getClass.getResource(s"$id.md")
         try {
             processSource(Source.fromURL(descriptionResourceURL)(Codec.UTF8)) { _.mkString }
         } catch {
-            case t: Throwable ⇒ s"Not Available ($descriptionResourceURL; ${t.getMessage})"
+            case t: Throwable ⇒ s"not available: $descriptionResourceURL; ${t.getMessage}"
         }
     }
 
@@ -131,6 +132,48 @@ trait FeatureQuery {
 
     private[hermes] def createInitialFeatures[S]: Seq[ObjectProperty[Feature[S]]] = {
         featureIDs.map(fid ⇒ ObjectProperty(Feature[S](fid)))
+    }
+
+}
+
+abstract class DefaultFeatureQuery extends FeatureQuery {
+
+    def evaluate[S](
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): IndexedSeq[LocationsContainer[S]]
+
+    final def apply[S](
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): TraversableOnce[Feature[S]] = {
+        val locations = evaluate(projectConfiguration, project, rawClassFiles)
+        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+            Feature[S](featureID, locations(featureIDIndex))
+        }
+    }
+}
+
+abstract class DefaultGroupedFeaturesQuery extends DefaultFeatureQuery {
+
+    def groupedFeatureIDs: Seq[Seq[String]]
+
+    def evaluateFeatureGroups[S](
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): IndexedSeq[TraversableOnce[LocationsContainer[S]]]
+
+    final def featureIDs: Seq[String] = groupedFeatureIDs.flatten
+
+    final override def evaluate[S](
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(da.ClassFile, S)]
+    ): IndexedSeq[LocationsContainer[S]] = {
+        evaluateFeatureGroups(projectConfiguration, project, rawClassFiles).flatten
     }
 
 }

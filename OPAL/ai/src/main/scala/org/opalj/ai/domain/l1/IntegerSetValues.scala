@@ -77,7 +77,10 @@ trait IntegerSetValues
     /**
      * Abstracts over all values with computational type `integer`.
      */
-    abstract class IntegerLikeValue extends Value with IsIntegerValue { this: DomainValue ⇒
+    abstract class IntegerLikeValue
+            extends TypedValue[CTIntType]
+            with IsIntegerValue[IntegerLikeValue] {
+        this: DomainTypedValue[CTIntType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -88,12 +91,15 @@ trait IntegerSetValues
      *
      * Models the top value of this domain's lattice.
      */
-    abstract class AnIntegerValue extends IntegerLikeValue { this: DomainValue ⇒ }
+    abstract class AnIntegerValue extends IntegerLikeValue {
+        this: DomainTypedValue[CTIntType] ⇒
+    }
 
     /**
      * Represents a set of integer values.
      */
-    abstract class IntegerSet extends IntegerLikeValue { this: DomainValue ⇒
+    abstract class IntegerSet extends IntegerLikeValue {
+        this: DomainTypedValue[CTIntType] ⇒
 
         val values: SortedSet[Int]
 
@@ -102,30 +108,33 @@ trait IntegerSetValues
     /**
      * Creates a new [[IntegerSet]] value containing the given value.
      */
-    def IntegerSet(value: Int): DomainValue = IntegerSet(SortedSet(value))
+    def IntegerSet(value: Int): DomainTypedValue[CTIntType] = IntegerSet(SortedSet(value))
 
     /**
      * Creates a new [[IntegerSet]] value using the given set unless the set exceeds the
      * maximum cardinality.
      */
-    def IntegerSet(values: SortedSet[Int]): DomainValue
+    def IntegerSet(values: SortedSet[Int]): DomainTypedValue[CTIntType]
 
     type DomainBaseTypesBasedSet <: BaseTypesBasedSet with DomainValue
     val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet]
 
-    trait BaseTypesBasedSet extends IntegerLikeValue { this: DomainValue ⇒
+    trait BaseTypesBasedSet extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒
         def lb: Int
         def ub: Int
+
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue
 
         def newInstance: DomainBaseTypesBasedSet
     }
 
-    def U7BitSet(): DomainValue
+    def U7BitSet(): DomainTypedValue[CTIntType]
 
-    abstract class U7BitSet extends BaseTypesBasedSet { this: DomainValue ⇒
+    abstract class U7BitSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
+
         final def lb = 0
         final def ub = Byte.MaxValue
+
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
             other match {
@@ -139,11 +148,13 @@ trait IntegerSetValues
         }
     }
 
-    def U15BitSet(): DomainValue
+    def U15BitSet(): DomainTypedValue[CTIntType]
 
-    abstract class U15BitSet extends BaseTypesBasedSet { this: DomainValue ⇒
+    abstract class U15BitSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
+
         final def lb = 0
         final def ub = Short.MaxValue
+
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
             other match {
@@ -156,9 +167,11 @@ trait IntegerSetValues
         }
     }
 
-    abstract class CharSet extends BaseTypesBasedSet { this: DomainValue ⇒
+    abstract class CharSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
+
         final def lb = 0 // Char.MinValue
         final def ub = Char.MaxValue
+
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
             other match {
@@ -168,7 +181,7 @@ trait IntegerSetValues
         }
     }
 
-    abstract class ByteSet extends BaseTypesBasedSet { this: DomainValue ⇒
+    abstract class ByteSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
         final def lb = Byte.MinValue
         final def ub = Byte.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
@@ -183,7 +196,7 @@ trait IntegerSetValues
         }
     }
 
-    abstract class ShortSet extends BaseTypesBasedSet { this: DomainValue ⇒
+    abstract class ShortSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
         final def lb = Short.MinValue
         final def ub = Short.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
@@ -198,7 +211,10 @@ trait IntegerSetValues
         }
     }
 
-    protected[this] def approximateSet(origin: ValueOrigin, lb: Int, ub: Int): DomainValue = {
+    protected[this] def approximateSet(
+        origin: ValueOrigin,
+        lb:     Int, ub: Int
+    ): DomainTypedValue[CTIntType] = {
         if (lb >= 0) {
             if (ub <= Byte.MaxValue) U7BitSet()
             else if (ub <= Short.MaxValue) U15BitSet()
@@ -213,7 +229,7 @@ trait IntegerSetValues
      * Creates a new IntegerSet value using the given set unless the set exceeds the
      * maximum cardinality.
      */
-    def IntegerSet(origin: ValueOrigin, values: SortedSet[Int]): DomainValue = {
+    def IntegerSet(origin: ValueOrigin, values: SortedSet[Int]): DomainTypedValue[CTIntType] = {
         if (values.size <= maxCardinalityOfIntegerSets)
             IntegerSet(values)
         else {
@@ -228,7 +244,10 @@ trait IntegerSetValues
      * within the given bounds of the IntegerRange, as long as they don't
      * exceed `maxCardinalityOfIntegerSets`.
      */
-    def IntegerRange(origin: ValueOrigin, lowerBound: Int, upperBound: Int): DomainValue = {
+    def IntegerRange(
+        origin:     ValueOrigin,
+        lowerBound: Int, upperBound: Int
+    ): DomainTypedValue[CTIntType] = {
         assert(lowerBound <= upperBound)
 
         if (upperBound.toLong - lowerBound.toLong <= maxCardinalityOfIntegerSets)
@@ -982,19 +1001,19 @@ trait IntegerSetValues
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    /*override*/ def i2b(pc: PC, value: DomainValue): DomainValue =
+    /*override*/ def i2b(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] =
         value match {
             case IntegerSet(values) ⇒ IntegerSet(pc, values.map(_.toByte.toInt))
             case _                  ⇒ ByteValue(origin = pc)
         }
 
-    /*override*/ def i2c(pc: PC, value: DomainValue): DomainValue =
+    /*override*/ def i2c(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] =
         value match {
             case IntegerSet(values) ⇒ IntegerSet(pc, values.map(_.toChar.toInt))
             case _                  ⇒ CharValue(origin = pc)
         }
 
-    /*override*/ def i2s(pc: PC, value: DomainValue): DomainValue =
+    /*override*/ def i2s(pc: PC, value: DomainValue): DomainTypedValue[CTIntType] =
         value match {
             case IntegerSet(values) ⇒ IntegerSet(pc, values.map(_.toShort.toInt))
             case _                  ⇒ ShortValue(origin = pc)

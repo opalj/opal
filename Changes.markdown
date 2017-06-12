@@ -1,20 +1,44 @@
-# Major Changes 
+# Major Changes
 
 ## Upcomming
+ - OPAL now has a very advanced 3-address code representation; go to wwww.opal-project.de to read about the 3-address code
+ - fixed all known bugs when rewriting INVOKEDYNAMIC instruction (contributed by Andreas Muttscheller)
+ - improved the public API of the `Abstract Interpretation Framework` to facilitate analyses using the 3-address representation
+ - the build script is now free of deprecation warnings (contributed by Simon Leischnig)
+
+## 0.8.13
+ - we now have complete support for converting a class file using the standard bytecode representation to the native representation; the latter can then be serialized to a valid class file
+ - fixed a very, very rare concurreny related issue that resulted in OPAL making no progress at all due to insufficient resource (out of threads)
+ - fixed a null pointer exception in case of "uninitialized" `...ai.StringValues`
+ - we have created a new [webpage](http://www.opal-project.de) along with this release which has more documentation on how to use specific parts of OPAL
+
+## 0.8.12
+ - we are now using Scala 2.11.11 (this is probably the last release using Scala 2.11)
+ - fixed the creation of the XHTML view (Bytecode Disassembler) for several Java 8 features
+
+## 0.8.11
  - the AI now prevents simple, unnecessary joins if a variable is known to be dead when multiple control flow paths join
- - `br.Code.liveVariables`: added a simple live variables analysis which computes liveness information for a code's locals (operand stack values are not considered because standard compiler generally don't create "dead operands" and the intended usage are performance and precision improvements)
+ - added a simple live variables analysis to `br.Code.liveVariables` which computes liveness information for a code's locals (operand stack values are not considered because standard compiler generally don't create "dead operands" and the intended usage are performance and precision improvements)
+ - refined the implementations of Graphs
+ - added efficient implementatin of Tarjan's algorithm for finding strongly connected components (the implementation can easily handle graphs with millions of nodes)
+ - added support for converting dot files to SVG using vis-js.com
  - completely reworked `org.opalj.collection.immmutable.UIDSet`; instead of a simple binary search tree - which had significant scalability issues - we are now using a trie.
  - initial release of Hermes
- - removed the support for `SetProperties` from the `PropertyStore`
- 
+ - removed the support for `SetProperties` from the `PropertyStore` due to conceptual mismatch
+ - we are now using sbt 0.13.15
+ - fixed ClassHierarchy.rootInterfaceTypes
+ - fixed Tasks.submit if all previously submitted tasks were already finished
+ - fixed ClassFile.isEffectiveFinal for interface types
+ - fixed the ids generated for CFGs
+
 ## 0.8.10
  - added support for the JSON Serialization of Milliseconds, Nanoseconds and Seconds
- 
-## 0.8.9
+
+## 0.8.9 (Initial full release of OPAL on Maven.)
  - added a list-like data structure (`Chain`) which is specialized for int values to save memory
  (~ 25%) and to avoid unnecessary boxing operations
  - added preliminary Java 9 support
  - added the fix-point computations framework to facilitate the implementation of concurrent, fix-point based analyses
- 
+
 ## Pre 0.8.9
-Initial release of OPAL on Maven. 
+Older releases can be obtained by checking out the repository and going back in the history.

@@ -31,7 +31,9 @@ package ai
 package domain
 package li
 
-import org.opalj.br.{ComputationalType, ComputationalTypeInt}
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.CTIntType
 
 /**
  * Domain to track integer values at a configurable level of precision.
@@ -60,7 +62,9 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     /**
      * Abstracts over all values with computational type `integer`.
      */
-    sealed trait IntegerLikeValue extends Value with IsIntegerValue { this: DomainValue ⇒
+    sealed trait IntegerLikeValue
+            extends TypedValue[CTIntType]
+            with IsIntegerValue[IntegerLikeValue] { this: DomainTypedValue[CTIntType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -71,12 +75,12 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
      *
      * Models the top value of this domain's lattice.
      */
-    trait AnIntegerValue extends IntegerLikeValue { this: DomainValue ⇒ }
+    trait AnIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒ }
 
     /**
      * Represents a concrete integer value.
      */
-    trait IntegerValue extends IntegerLikeValue { this: DomainValue ⇒
+    trait IntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒
 
         val updateCount: Int
 
@@ -383,14 +387,17 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    override def i2b(pc: PC, value: DomainValue): DomainValue =
+    override def i2b(pc: PC, value: DomainValue): DomainValue = {
         intValue(value)(v ⇒ ByteValue(pc, v.toByte))(ByteValue(pc))
+    }
 
-    override def i2c(pc: PC, value: DomainValue): DomainValue =
+    override def i2c(pc: PC, value: DomainValue): DomainValue = {
         intValue(value)(v ⇒ CharValue(pc, v.toChar))(CharValue(pc))
+    }
 
-    override def i2s(pc: PC, value: DomainValue): DomainValue =
+    override def i2s(pc: PC, value: DomainValue): DomainValue = {
         intValue(value)(v ⇒ ShortValue(pc, v.toShort))(ShortValue(pc))
+    }
 
 }
 

@@ -29,7 +29,6 @@
 package org.opalj
 package br
 
-import java.io.File
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
@@ -41,10 +40,12 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.io.process
 import org.opalj.br.reader._
+import org.opalj.bi.TestSupport.allBITestJARs
+import org.opalj.bytecode.JRELibraryFolder
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
- * can handle them and to test the "corner" cases. Basically, we test for NPEs,
+ * can handle them and to test "corner" cases. Basically, we test for NPEs,
  * ArrayIndexOutOfBoundExceptions and similar issues.
  *
  * @author Michael Eichberg
@@ -52,26 +53,30 @@ import org.opalj.br.reader._
 @RunWith(classOf[JUnitRunner])
 class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARALLELIZED*/ {
 
-    behavior of "OPAL"
-
-    val jreLibFolder: File = org.opalj.bytecode.JRELibraryFolder
+    behavior of "OPAL's ClassFiles"
 
     var count = 0
     for {
-        file ← jreLibFolder.listFiles
-        if file.isFile
-        if file.canRead
-        if file.getName.endsWith(".jar")
-        if file.length() > 0
+        file ← Iterator(JRELibraryFolder) ++ allBITestJARs()
+        if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
     } {
         count += 1
-        it should ("be able to parse the class files in "+file) in {
+        it should (s"be able to parse the class files in $file") in {
             val testedForBeingIsomorphicCount = new java.util.concurrent.atomic.AtomicInteger(0)
             val testedForBeingNotIsomorphicCount = new java.util.concurrent.atomic.AtomicInteger(0)
             val testedMethods = new java.util.concurrent.atomic.AtomicBoolean(false)
 
-            def simpleValidator(classFile: ClassFile): Unit = {
+            def simpleValidator(classFilePair: (ClassFile, ClassFile)): Unit = {
+                val (classFile, classFileTwin) = classFilePair
                 assert(!(classFile.thisType.fqn eq null))
+
+                val selfDiff = classFile.findDissimilarity(classFile)
+                if (selfDiff.nonEmpty)
+                    fail(s"the $classFile is not jvm equal to itself: "+selfDiff.get)
+
+                val twinDiff = classFile.findDissimilarity(classFileTwin)
+                if (twinDiff.nonEmpty)
+                    fail(s"the $classFile is not jvm equal to its twin: "+twinDiff.get)
 
                 for (MethodWithBody(body) ← classFile.methods.par) {
                     body.belongsToSubroutine() should not be (null)
@@ -108,16 +113,17 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
 
             var classFilesCount = 0
             val jarFile = new ZipFile(file)
-            val jarEntries = (jarFile).entries
+            val jarEntries = jarFile.entries
             while (jarEntries.hasMoreElements) {
                 val jarEntry = jarEntries.nextElement
                 if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
-                    val data = new Array[Byte](jarEntry.getSize().toInt)
-                    process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
-                    import Java8Framework.ClassFile
-                    val classFiles = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
+                    val data = new Array[Byte](jarEntry.getSize.toInt)
+                    process(new DataInputStream(jarFile.getInputStream(jarEntry)))(_.readFully(data))
+                    import Java9Framework.ClassFile
+                    val classFiles1 = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
+                    val classFiles2 = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
                     classFilesCount += 1
-                    classFiles foreach simpleValidator
+                    classFiles1.zip(classFiles2) foreach simpleValidator
                 }
             }
             info(s"loaded $classFilesCount class files")

@@ -33,6 +33,9 @@ package l1
 
 import java.lang.Math.min
 import java.lang.Math.max
+
+import org.opalj.br.CTIntType
+
 import scala.collection.immutable.SortedSet
 import scala.reflect.ClassTag
 
@@ -52,7 +55,9 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
             MetaInformationUpdate(AnIntegerValue())
         }
 
-        override def abstractsOver(other: DomainValue): Boolean = other.isInstanceOf[IsIntegerValue]
+        override def abstractsOver(other: DomainValue): Boolean = {
+            other.isInstanceOf[IsIntegerValue[_]]
+        }
 
         override def summarize(pc: PC): DomainValue = this
 
@@ -214,7 +219,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     type DomainBaseTypesBasedSet = BaseTypesBasedSet
     val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet] = implicitly
 
-    def U7BitSet(): DomainValue = new U7BitSet
+    def U7BitSet(): DomainTypedValue[CTIntType] = new U7BitSet
 
     class U7BitSet extends super.U7BitSet with BaseTypesBasedSet { this: DomainValue ⇒
         def name = "Unsigned7BitValue"
@@ -229,7 +234,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         }
     }
 
-    def U15BitSet(): DomainValue = new U15BitSet()
+    def U15BitSet(): DomainTypedValue[CTIntType] = new U15BitSet()
 
     class U15BitSet extends super.U15BitSet with BaseTypesBasedSet { this: DomainValue ⇒
         def name = "Unsigned15BitValue"
@@ -271,27 +276,27 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
     override def IntegerSet(values: SortedSet[Int]): IntegerSet = new IntegerSet(values)
 
-    override def BooleanValue(pc: PC): DomainValue = {
+    override def BooleanValue(pc: PC): IntegerLikeValue = {
         if (maxCardinalityOfIntegerSets > 1)
             IntegerSet(SortedSet(0, 1))
         else
             new ByteSet()
     }
 
-    override def BooleanValue(pc: PC, value: Boolean): DomainValue = {
+    override def BooleanValue(pc: PC, value: Boolean): DomainTypedValue[CTIntType] = {
         if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
     }
 
-    override def ByteValue(pc: PC): DomainValue = new ByteSet()
-    override def ByteValue(pc: PC, value: Byte): DomainValue = IntegerSet(value.toInt)
+    override def ByteValue(pc: PC): ByteSet = new ByteSet()
+    override def ByteValue(pc: PC, value: Byte): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
 
-    override def ShortValue(pc: PC): DomainValue = new ShortSet()
-    override def ShortValue(pc: PC, value: Short): DomainValue = IntegerSet(value.toInt)
+    override def ShortValue(pc: PC): ShortSet = new ShortSet()
+    override def ShortValue(pc: PC, value: Short): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
 
-    override def CharValue(pc: PC): DomainValue = new CharSet()
-    override def CharValue(pc: PC, value: Char): DomainValue = IntegerSet(value.toInt)
+    override def CharValue(pc: PC): CharSet = new CharSet()
+    override def CharValue(pc: PC, value: Char): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
 
-    override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
-    override def IntegerValue(pc: PC, value: Int): DomainValue = IntegerSet(value)
+    override def IntegerValue(pc: PC): AnIntegerValue = AnIntegerValue()
+    override def IntegerValue(pc: PC, value: Int): DomainTypedValue[CTIntType] = IntegerSet(value)
 
 }

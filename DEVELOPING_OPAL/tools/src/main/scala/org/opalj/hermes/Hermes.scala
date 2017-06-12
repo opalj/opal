@@ -34,17 +34,14 @@ import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.prefs.Preferences;
+import java.util.prefs.Preferences
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigRenderOptions
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.fasterxml.jackson.dataformat.csv.CsvFactory
 
@@ -53,12 +50,15 @@ import javafx.scene.control.SelectionMode
 import javafx.scene.layout.Priority
 import javafx.stage.Screen
 
+import org.controlsfx.control.PopOver
+import org.controlsfx.control.HiddenSidesPane
+import org.controlsfx.control.PopOver.ArrowLocation
+
 import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.application.Platform
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.collections.ObservableBuffer
-
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
 import scalafx.stage.Stage
@@ -91,21 +91,18 @@ import scalafx.scene.control.Menu
 import scalafx.scene.input.KeyCombination
 import scalafx.beans.property.LongProperty
 import scalafx.scene.layout.StackPane
+import scalafx.scene.chart.XYChart
 import scalafx.scene.chart.CategoryAxis
 import scalafx.scene.chart.NumberAxis
 import scalafx.scene.chart.BarChart
-
-import org.controlsfx.control.PopOver
-import org.controlsfx.control.HiddenSidesPane
-import org.controlsfx.control.PopOver.ArrowLocation
+import scalafx.scene.chart.PieChart
 
 import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
 
+import org.opalj.util.Nanoseconds
 import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFileReader
-import scalafx.scene.chart.XYChart
-import org.opalj.util.Nanoseconds
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
@@ -114,21 +111,38 @@ import org.opalj.util.Nanoseconds
  */
 object Hermes extends JFXApp {
 
-    val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
-
-    if (parameters.unnamed.size != 1) {
+    if (parameters.unnamed.size != 1 ||
+        parameters.named.size > 1 || (
+            parameters.named.size == 1 && parameters.named.get("csv").isEmpty
+        )) {
         import Console.err
         err.println("OPAL - Hermes")
-        err.println("Invalid parameters. ")
-        err.println("The parameter has to be the configuration which lists a corpus' projects.")
+        err.println("Invalid parameters: "+parameters.named.mkString("{", ",", "}"))
+        err.println("The parameter has to be the configuration which lists a corpus' projects and, ")
+        err.println("optionally, the file to which the results should be exported ")
+        err.println("(\"--csv=<FileName>\"). If such a file is specified the application will")
+        err.println("close automatically after running all analyses.")
+        err.println()
         err.println("java org.opalj.hermes.Hermes <ConfigFile.json>")
         System.exit(1)
     }
 
+    // ---------------------------------------------------------------------------------------------
+    //
+    //
+    // STATIC CONFIGURATION
+    //
+    //
+    // ---------------------------------------------------------------------------------------------
+
+    // We use standard preferences for saving the state of the application only; not for
+    // permanent configuration settings!
+    val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
+
     /** Creates the initial, overall configuration. */
     private[this] def initConfig(configFile: File): Config = {
+        import Console.err
         if (!configFile.exists || !configFile.canRead()) {
-            import Console.err
             err.println(s"The config file cannot be found or read: $configFile")
             System.exit(2)
         }
@@ -136,40 +150,68 @@ object Hermes extends JFXApp {
             ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
         } catch {
             case t: Throwable ⇒
-                import Console.err
                 err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
                 System.exit(3)
-                throw t; //... if System.exit doe not terminate the app.
+                //... if System.exit does not terminate the app; this will at least kill the
+                // the current call.
+                throw t;
+
         }
     }
 
     /** The base configuration of OPAL and Hermes. */
-    val config = initConfig(new File(parameters.unnamed(0)))
-    Globals.MaxLocations = config.getInt(Globals.MaxLocationsKey)
-
-    /** Textual representation of the configuration related to OPAL/Hermes.  */
-    def renderConfig: String = {
-        config.
-            getObject("org.opalj").
-            render(ConfigRenderOptions.defaults().setOriginComments(false))
-    }
+    Globals.setConfig(initConfig(new File(parameters.unnamed(0))))
 
     /** The list of all registered feature queries. */
-    val queries: List[Query] = config.as[List[Query]]("org.opalj.hermes.queries")
+    val registeredQueries: List[Query] = {
+        Globals.Config.as[List[Query]]("org.opalj.hermes.queries.registered")
+    }
 
     /** The list of enabled feature queries. */
     val featureQueries: List[FeatureQuery] = {
-        queries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
+        registeredQueries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
     }
 
-    /** The list of unique features derived by enabled feature queries. */
+    /**
+     * The list of unique features derived by enabled feature queries; one ''feature query'' may
+     * be referenced by multiple unique feature queries.
+     */
     val featureIDs: List[(String, FeatureQuery)] = {
-        featureQueries.flatMap(fe ⇒ fe.featureIDs.map((_, fe)))
+        var featureIDs: List[(String, FeatureQuery)] = List.empty
+
+        for {
+            featureQuery ← featureQueries
+            featureID ← featureQuery.featureIDs
+        } {
+            if (!featureIDs.exists(_._1 == featureID))
+                featureIDs :+= ((featureID, featureQuery))
+            else
+                throw DuplicateFeatureIDException(
+                    featureID,
+                    featureQuery,
+                    featureIDs.collectFirst { case (`featureID`, fq) ⇒ fq }.get
+                )
+        }
+
+        featureIDs
     }
 
     /** The set of all project configurations. */
-    val projectConfigurations = config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
-    // TODO Validate that all project names are unique!
+    val projectConfigurations = {
+        val pcs = Globals.Config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
+        if (pcs.map(_.id).toSet.size != pcs.size) {
+            throw new RuntimeException("some project names are not unique")
+        }
+        pcs
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    //
+    //
+    // FIELDS FOR STORING QUERY RESULTS
+    //
+    //
+    // ---------------------------------------------------------------------------------------------
 
     /** The matrix containing for each project the extensions of all features. */
     private[this] val featureMatrix: ObservableBuffer[ProjectFeatures[URL]] = {
@@ -183,7 +225,7 @@ object Hermes extends JFXApp {
 
     /** Summary of the number of occurrences of a feature across all projects. */
     val perFeatureCounts: Array[IntegerProperty] = {
-        val perFeatureCounts = Array.fill(featureIDs.length)(IntegerProperty(0))
+        val perFeatureCounts = Array.fill(featureIDs.size)(IntegerProperty(0))
         featureMatrix.foreach { projectFeatures ⇒
             projectFeatures.features.view.zipWithIndex foreach { fi ⇒
                 val (feature, index) = fi
@@ -198,7 +240,51 @@ object Hermes extends JFXApp {
         perFeatureCounts
     }
 
+    def exportCSV(file: File): Unit = {
+        // Create the set of all names of all project-wide statistics
+        var projectStatisticsIDs = Set.empty[String]
+        featureMatrix.foreach { pf ⇒
+            projectStatisticsIDs ++= pf.projectConfiguration.statistics.keySet
+        }
+
+        // Logic to create the csv file:
+        val csvSchemaBuilder = CsvSchema.builder().addColumn("Project")
+        projectStatisticsIDs.foreach { id ⇒ csvSchemaBuilder.addColumn(id) }
+        val csvSchema =
+            featureIDs.
+                foldLeft(csvSchemaBuilder) { (schema, feature) ⇒
+                    schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
+                }.
+                setUseHeader(true).
+                build()
+        val writer = new BufferedWriter(new FileWriter(file))
+        val csvGenerator = new CsvFactory().createGenerator(writer)
+        csvGenerator.setSchema(csvSchema)
+        featureMatrix.foreach { pf ⇒
+            csvGenerator.writeStartArray()
+            csvGenerator.writeString(pf.id.value)
+            projectStatisticsIDs.foreach { id ⇒
+                pf.projectConfiguration.statistics.get(id) match {
+                    case Some(number) ⇒ csvGenerator.writeNumber(number)
+                    case None         ⇒ csvGenerator.writeString("N/A")
+                }
+            }
+            pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.value.count) }
+            csvGenerator.flush()
+            csvGenerator.writeEndArray()
+        }
+        csvGenerator.close()
+    }
+
     /* @stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
+    if (parameters.named.size == 1) {
+        analysesFinished onChange { (_, _, isFinished) ⇒
+            if (isFinished) {
+                exportCSV(new File(parameters.named("csv")))
+                stage.close()
+            }
+        }
+    }
 
     // some statistics
     val corpusAnalysisTime = new LongProperty
@@ -285,7 +371,7 @@ object Hermes extends JFXApp {
         // - [per feature f] sum(p_i which has feature f) > 0
         val releventProjectFeatures =
             featureMatrix.filter { pf ⇒
-                pf.projectConfiguration.statistics.getOrElse("ProjectMethods", 0) > 0
+                pf.projectConfiguration.statistics.getOrElse("ProjectMethods", 0.0d) >= 1.0d
             }.toArray
         val pis: Array[IntVar] = releventProjectFeatures.map(pf ⇒ model.boolVar(pf.id.value))
         perFeatureCounts.iterator.zipWithIndex foreach { fCount_fIndex ⇒
@@ -298,7 +384,7 @@ object Hermes extends JFXApp {
             }
         }
         val piSizes: Array[Int] =
-            releventProjectFeatures.map(pf ⇒ pf.projectConfiguration.statistics("ProjectMethods"))
+            releventProjectFeatures.map(_.projectConfiguration.statistics("ProjectMethods").toInt)
         // OPTIMIZATION GOAL
         val overallSize = model.intVar("objective", 0, IntVar.MAX_INT_BOUND /*=21474836*/ )
         model.scalar(pis, piSizes, "=", overallSize).post()
@@ -349,16 +435,18 @@ object Hermes extends JFXApp {
         computeSolutions()
 
         dialog.showAndWait()
-        // Make sure that – when the dialog has been close while we are still computing solutions -
+        // Make sure that – when the dialog has been closed while we are still computing solutions -
         // the computation process "finishes soon".
         aborted = true
     }
 
+    // ---------------------------------------------------------------------------------------------
     //
     //
     // UI SETUP CODE
     //
     //
+    // ---------------------------------------------------------------------------------------------
 
     val progressBar = new ProgressBar { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
 
@@ -384,12 +472,11 @@ object Hermes extends JFXApp {
                     popOver.headerAlwaysVisibleProperty().value = true
                     infoButton.onAction = handle {
                         if (!popOver.isShowing()) {
-                            val statistics =
-                                featureMatrix.
-                                    find(_.id.value == newProject).get.
-                                    projectConfiguration.
-                                    statistics.map(e ⇒ e._1+": "+e._2).toList.sorted.mkString("\n")
-                            textArea.text = statistics
+                            val projectFeatures = featureMatrix.find(_.id.value == newProject).get
+                            val projectConfiguration = projectFeatures.projectConfiguration
+                            val projectStatistics = projectConfiguration.statistics
+                            val statistics = projectStatistics.map(e ⇒ f"${e._1}%-32s${e._2}%12.2f")
+                            textArea.text = statistics.toList.sorted.mkString("\n")
                             popOver.show(infoButton)
                         }
                     }
@@ -456,7 +543,7 @@ object Hermes extends JFXApp {
             )*/
             perFeatureCounts(featureIndex) onChange { (_, oldCount, newCount) ⇒
                 if (newCount != null) {
-                    if (oldCount == 0 &&
+                    if (oldCount.intValue == 0 &&
                         newCount.intValue > 0 &&
                         onlyShowNotAvailableFeatures.selected.value) {
                         featureColumn.visible = false
@@ -493,9 +580,9 @@ object Hermes extends JFXApp {
                             }
                     }
                     perFeatureCounts(featureIndex).onChange { (_, oldValue, newValue) ⇒
-                        if (oldValue.intValue() != newValue.intValue && currentValue != -1) {
+                        if (oldValue.intValue != newValue.intValue && currentValue != -1) {
                             style =
-                                if (newValue == 0)
+                                if (newValue.intValue == 0)
                                     "-fx-background-color: #ffd0db"
                                 else if (currentValue == 0)
                                     "-fx-background-color: #ffffe0"
@@ -630,7 +717,7 @@ object Hermes extends JFXApp {
 
         val showConfig = new MenuItem("Show Config...") {
             onAction = handle {
-                val configurationDetails = new TextArea(renderConfig) {
+                val configurationDetails = new TextArea(Globals.renderConfig) {
                     editable = false
                     prefHeight = 600d
                 }
@@ -643,8 +730,33 @@ object Hermes extends JFXApp {
             }
         }
         val showAnalysisTimes = new MenuItem("Show Analysis Times...") {
+            onAction = handle { analysisTimesStage.show() }
+        }
+        val showMethodDistribution = new MenuItem("Show Method Distribution...") {
+            // IMPROVE Move it to a "permanent stage" and make the project statistics observable to make it possible to react on changes and to get proper JavaFX behavior
+            disable <== analysesFinished.not
             onAction = handle {
-                analysisTimesStage.show()
+                new Stage {
+                    title = "Method Distribution Across All Projects"
+                    scene = new Scene(900, 600) {
+                        root = new StackPane {
+                            val pieChartData = ObservableBuffer.empty[javafx.scene.chart.PieChart.Data]
+                            val pieChart = new PieChart {
+                                data = pieChartData
+                                title = "Method Distribution Across All Projects"
+                            }
+                            pieChart.legendVisible = true
+                            children = pieChart
+
+                            featureMatrix foreach { pf ⇒
+                                val statistics = pf.projectConfiguration.statistics
+                                val numberOfMethods = statistics.get("ProjectMethods")
+                                pieChartData.add(PieChart.Data(pf.id.value, numberOfMethods.get))
+                            }
+                        }
+                    }
+                    initOwner(stage)
+                }.show()
             }
         }
         val csvExport = new MenuItem("Export As CVS...") {
@@ -657,25 +769,7 @@ object Hermes extends JFXApp {
                 }
                 val selectedFile = fileChooser.showSaveDialog(stage)
                 if (selectedFile != null) {
-                    // Logic to create the csv file:
-                    val csvSchema =
-                        featureIDs.
-                            foldLeft(CsvSchema.builder().addColumn("Project")) { (schema, feature) ⇒
-                                schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
-                            }.
-                            setUseHeader(true).
-                            build()
-                    val writer = new BufferedWriter(new FileWriter(selectedFile))
-                    val csvGenerator = new CsvFactory().createGenerator(writer)
-                    csvGenerator.setSchema(csvSchema)
-                    featureMatrix.foreach { pf ⇒
-                        csvGenerator.writeStartArray()
-                        csvGenerator.writeString(pf.id.value)
-                        pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.value.count) }
-                        csvGenerator.flush()
-                        csvGenerator.writeEndArray()
-                    }
-                    csvGenerator.close()
+                    exportCSV(selectedFile)
                 }
             }
         }
@@ -684,7 +778,12 @@ object Hermes extends JFXApp {
             disable <== analysesFinished.not
             onAction = handle { computeCorpus() }
         }
-        List(showConfig, showAnalysisTimes, csvExport, computeProjectsForCorpus)
+        List(
+            showConfig,
+            showAnalysisTimes, showMethodDistribution,
+            csvExport,
+            computeProjectsForCorpus
+        )
     }
 
     val rootPane = new BorderPane {
@@ -700,7 +799,7 @@ object Hermes extends JFXApp {
     stage = new PrimaryStage {
         scene = new Scene {
             stylesheets = List(getClass.getResource("Hermes.css").toExternalForm)
-            title = "Hermes - "+parameters.unnamed(0)
+            title = "Hermes - "+parameters.unnamed.head
             root = rootPane
 
             analyzeCorpus()
@@ -732,7 +831,7 @@ object Hermes extends JFXApp {
                     tickLabelsVisible = false
                 }
                 corpusAnalysisTime.onChange { (_, _, newValue) ⇒
-                    xAxis.label = "Feature Queries ∑"+(Nanoseconds(newValue.longValue).toSeconds)
+                    xAxis.label = "Feature Queries ∑"+Nanoseconds(newValue.longValue).toSeconds
                 }
                 val yAxis = new NumberAxis()
 
@@ -743,7 +842,7 @@ object Hermes extends JFXApp {
                     }
                     data.add(series)
                     featureQuery.accumulatedAnalysisTime.onChange { (_, _, newValue) ⇒
-                        if (newValue != 0)
+                        if (newValue.intValue != 0)
                             series.data = Seq(XYChart.Data[String, Number](featureQuery.id, newValue))
                     }
                 }
@@ -759,5 +858,4 @@ object Hermes extends JFXApp {
         }
         initOwner(stage)
     }
-
 }

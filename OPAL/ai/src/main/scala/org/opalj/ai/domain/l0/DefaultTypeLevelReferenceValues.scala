@@ -78,9 +78,12 @@ trait DefaultTypeLevelReferenceValues
      * @param theUpperTypeBound The upper type bound of this array, which is necessarily
      *      precise if the element type of the array is a base type (primitive type).
      */
-    protected[this] class ArrayValue(override val theUpperTypeBound: ArrayType)
-            extends super.ArrayValue with SReferenceValue[ArrayType] {
+    protected[this] class ArrayValue(
+            override val theUpperTypeBound: ArrayType
+    ) extends super.ArrayValue with SReferenceValue[ArrayType] {
         this: DomainArrayValue ⇒
+
+        override def baseValues: Traversable[DomainArrayValue] = Traversable.empty
 
         override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
@@ -105,6 +108,7 @@ trait DefaultTypeLevelReferenceValues
 
         override def isAssignable(value: DomainValue): Answer = {
 
+            // TODO Get rid of "typeOfValue" call; the value is now always typed!
             typeOfValue(value) match {
 
                 case IsPrimitiveValue(primitiveType) ⇒
@@ -116,7 +120,7 @@ trait DefaultTypeLevelReferenceValues
                             primitiveType.computationalType
                     )
 
-                case elementValue @ IsAReferenceValue(EmptyUpperTypeBound) ⇒
+                case elementValue @ TypeOfReferenceValue(EmptyUpperTypeBound) ⇒
                     // the elementValue is "null"
                     assert(elementValue.isNull.isYes)
                     // e.g., it is possible to store null in the n-1 dimensions of
@@ -126,7 +130,7 @@ trait DefaultTypeLevelReferenceValues
                     else
                         No
 
-                case elementValue @ IsAReferenceValue(UIDSet1(elementValueType)) ⇒
+                case elementValue @ TypeOfReferenceValue(UIDSet1(elementValueType)) ⇒
                     classHierarchy.canBeStoredIn(
                         elementValueType,
                         elementValue.isPrecise,
@@ -134,7 +138,7 @@ trait DefaultTypeLevelReferenceValues
                         this.isPrecise
                     )
 
-                case elementValue @ IsAReferenceValue(otherUpperTypeBound) ⇒
+                case elementValue @ TypeOfReferenceValue(otherUpperTypeBound) ⇒
                     val elementValueIsPrecise = elementValue.isPrecise
                     val thisArrayType = this.theUpperTypeBound
                     val thisIsPrecise = this.isPrecise
@@ -172,8 +176,9 @@ trait DefaultTypeLevelReferenceValues
             value:            DomainValue,
             index:            DomainValue,
             thrownExceptions: ExceptionValues
-        ): ArrayStoreResult =
+        ): ArrayStoreResult = {
             ComputationWithSideEffectOrException(thrownExceptions)
+        }
 
         // WIDENING OPERATION
         override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
@@ -242,6 +247,8 @@ trait DefaultTypeLevelReferenceValues
 
     protected trait ObjectValue extends super.ObjectValue { this: DomainObjectValue ⇒
 
+        override def baseValues: Traversable[DomainObjectValue] = Traversable.empty
+
         protected def asStructuralUpdate(
             pc:                PC,
             newUpperTypeBound: UIDSet[ObjectType]
@@ -252,14 +259,16 @@ trait DefaultTypeLevelReferenceValues
                 StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
         }
 
-        final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
+        final override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
             throw DomainException("arrayload not possible; this is not an array value: "+this)
+        }
 
         final override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult =
             throw DomainException("arraystore not possible; this is not an array value: "+this)
 
-        final override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
+        final override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
             throw DomainException("arraylength not possible; this is not an array value: "+this)
+        }
     }
 
     protected class SObjectValue(
@@ -388,8 +397,6 @@ trait DefaultTypeLevelReferenceValues
     ) extends ObjectValue { value: DomainObjectValue ⇒
 
         assert(upperTypeBound.size > 1)
-
-        override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
         /**
          * Determines if this value is a subtype of the given supertype by

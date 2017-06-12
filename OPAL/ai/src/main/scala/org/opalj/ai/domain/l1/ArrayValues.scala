@@ -84,8 +84,9 @@ trait ArrayValues
      * always effectively immutable. For example, `java.lang.String` and `java.lang.Class`
      * objects are effectively immutable.
      *
-     * @note     This method is used by the default implementation of [[reifyArray]] to
-     *          decide if we want to track the array's content.
+     * @note    This method is used by the default implementation of [[reifyArray]] to
+     *          decide if we want to track the array's content down to the value level -
+     *          for arrays which store non-primitive values.
      *          It can be overridden by subclasses to plug-in more advanced analyses.
      */
     protected def isEffectivelyImmutable(objectType: ObjectType): Boolean = {
@@ -108,7 +109,7 @@ trait ArrayValues
      * By default only arrays of known immutable values up to a size of [[maxTrackedArraySize]]
      * are reified.
      *
-     * @note     Tracking the content of arrays generally has a significant performance
+     * @note    Tracking the content of arrays generally has a significant performance
      *          impact and should be limited to cases where it is absolutely necessary.
      *          "Just tracking the contents of arrays" to improve the overall precision
      *          is in most cases not helpful.
@@ -142,7 +143,7 @@ trait ArrayValues
      * Represents some (multi-dimensional) array where the (initialized) dimensions have
      * the given size.
      *
-     * @param     lengths The list of the sizes of each initialized dimension.
+     * @param   lengths The list of the sizes of each initialized dimension.
      *          Currently, at most two dimensions are supported.
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION ABOUT N-DIMENSIONAL ARRAYS WHERE N IS
@@ -165,11 +166,7 @@ trait ArrayValues
         }
 
         assert(lengths.size > 0, "uninitialized arrays are not supported")
-        assert(
-            lengths.size <= 2,
-            s"tracking the concrete size of the ${lengths.size}th Dimension of arrays"+
-                "is not supported (we are not modeling the heap)"
-        )
+        assert(lengths.size <= 2, "tracking the size of the d > 2nd dimension is not supported")
 
         /**
          * The length of the first dimension of this multi-dimensional array.
@@ -219,7 +216,6 @@ trait ArrayValues
             index:               DomainValue,
             potentialExceptions: ExceptionValues
         ): ArrayStoreResult = {
-            //println(s"$pc - $value - $index - $potentialExceptions")
             if (lengths.size > 1) {
                 value match {
                     // We don't have to consider the timestamp since every subarray
@@ -446,8 +442,7 @@ trait ArrayValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainConcreteArrayValue(that) if this.t == that.t &&
-                    this.values.size == that.values.size ⇒
+                case DomainConcreteArrayValue(that) if this.t == that.t ⇒
                     var update: UpdateType = NoUpdateType
                     var isOther: Boolean = true
                     val allValues = this.values.view.zip(that.values)
@@ -495,6 +490,12 @@ trait ArrayValues
             }
         }
 
+        /**
+         * @note After adaptation of the array value, the array is usually passed to another
+         *       method - in this case it is the responsibility of the caller to
+         *       ensure that the (abstraction of the) contents of the array remains valid.
+         *
+         */
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             val result = target match {
 
@@ -550,7 +551,6 @@ trait ArrayValues
         val sizeOption = this.intValueOption(count)
         if (sizeOption.isEmpty)
             return ArrayValue(pc, No, isPrecise = true, arrayType, nextT()); // <====== early return
-
         val size: Int = sizeOption.get
         if (!reifyArray(pc, size, arrayType))
             return InitializedArrayValue(pc, arrayType, Chain(size));

@@ -126,19 +126,23 @@ trait DefaultTypeLevelIntegerValues
                 other.computationalType == ComputationalTypeInt
     }
 
-    override def BooleanValue(valueOrigin: ValueOrigin): BooleanValue = ABooleanValue
-    override def BooleanValue(valueOrigin: ValueOrigin, value: Boolean): BooleanValue = ABooleanValue
+    override def BooleanValue(valueOrigin: ValueOrigin): ABooleanValue.type = ABooleanValue
+    override def BooleanValue(valueOrigin: ValueOrigin, value: Boolean): ABooleanValue.type = {
+        ABooleanValue
+    }
 
-    override def ByteValue(valueOrigin: ValueOrigin): ByteValue = AByteValue
-    override def ByteValue(valueOrigin: ValueOrigin, value: Byte): ByteValue = AByteValue
+    override def ByteValue(valueOrigin: ValueOrigin): AByteValue.type = AByteValue
+    override def ByteValue(valueOrigin: ValueOrigin, value: Byte): AByteValue.type = AByteValue
 
-    override def ShortValue(valueOrigin: ValueOrigin): ShortValue = AShortValue
-    override def ShortValue(valueOrigin: ValueOrigin, value: Short): ShortValue = AShortValue
+    override def ShortValue(valueOrigin: ValueOrigin): AShortValue.type = AShortValue
+    override def ShortValue(valueOrigin: ValueOrigin, value: Short): AShortValue.type = AShortValue
 
-    override def CharValue(valueOrigin: ValueOrigin): CharValue = ACharValue
-    override def CharValue(valueOrigin: ValueOrigin, value: Char): CharValue = ACharValue
+    override def CharValue(valueOrigin: ValueOrigin): ACharValue.type = ACharValue
+    override def CharValue(valueOrigin: ValueOrigin, value: Char): ACharValue.type = ACharValue
 
-    override def IntegerValue(valueOrigin: ValueOrigin): IntegerValue = AnIntegerValue
-    override def IntegerValue(valueOrigin: ValueOrigin, value: Int): IntegerValue = AnIntegerValue
+    override def IntegerValue(valueOrigin: ValueOrigin): AnIntegerValue.type = AnIntegerValue
+    override def IntegerValue(valueOrigin: ValueOrigin, value: Int): AnIntegerValue.type = {
+        AnIntegerValue
+    }
 }
 

@@ -41,7 +41,7 @@ import org.opalj.br._
  * Stores extracted dependencies.
  *
  * ==Thread Safety==
- * This class is thread safe, as this class does not have any mutable state.
+ * This class is thread safe.
  *
  * @author Michael Eichberg
  */

@@ -33,6 +33,12 @@ package l0
 
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.BooleanType
+import org.opalj.br.CharType
+import org.opalj.br.ByteType
+import org.opalj.br.ShortType
+import org.opalj.br.IntegerType
+import org.opalj.br.CTIntType
 
 /**
  * Domain that performs computations related to integer values at the type level.
@@ -50,8 +56,8 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     /**
      * Abstracts over values with computational type `integer`.
      */
-    protected[this] trait ComputationalTypeIntegerValue extends Value {
-        this: DomainValue ⇒
+    protected[this] trait ComputationalTypeIntegerValue[T <: CTIntType] extends TypedValue[T] {
+        this: DomainTypedValue[T] ⇒
 
         final override def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -59,43 +65,55 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
     }
 
-    trait BooleanValue extends ComputationalTypeIntegerValue with IsBooleanValue {
-        this: DomainValue ⇒
+    trait BooleanValue
+            extends ComputationalTypeIntegerValue[BooleanType]
+            with IsBooleanValue[BooleanValue] {
+        this: DomainTypedValue[BooleanType] ⇒
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.BooleanValue(vo)
-
+        }
     }
 
-    trait ByteValue extends ComputationalTypeIntegerValue with IsByteValue {
-        this: DomainValue ⇒
+    trait ByteValue extends ComputationalTypeIntegerValue[ByteType] with IsByteValue[ByteValue] {
+        this: DomainTypedValue[ByteType] ⇒
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.ByteValue(vo)
+        }
 
     }
 
-    trait CharValue extends ComputationalTypeIntegerValue with IsCharValue {
-        this: DomainValue ⇒
+    trait CharValue
+            extends ComputationalTypeIntegerValue[CharType]
+            with IsCharValue[CharValue] {
+        this: DomainTypedValue[CharType] ⇒
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.CharValue(vo)
+        }
 
     }
 
-    trait ShortValue extends ComputationalTypeIntegerValue with IsShortValue {
-        this: DomainValue ⇒
+    trait ShortValue
+            extends ComputationalTypeIntegerValue[ShortType]
+            with IsShortValue[ShortValue] {
+        this: DomainTypedValue[ShortType] ⇒
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.ShortValue(vo)
+        }
 
     }
 
-    trait IntegerValue extends ComputationalTypeIntegerValue with IsIntegerValue {
-        this: DomainValue ⇒
+    trait IntegerValue
+            extends ComputationalTypeIntegerValue[IntegerType]
+            with IsIntegerValue[IntegerValue] {
+        this: DomainTypedValue[IntegerType] ⇒
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.IntegerValue(vo)
+        }
 
     }
 

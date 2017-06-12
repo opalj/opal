@@ -38,22 +38,19 @@ import scala.annotation.tailrec
 
 import java.util.IdentityHashMap
 
-import scala.collection.SortedSet
-import scala.collection.immutable.{SortedSet ⇒ ImmutableSortedSet}
-import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.collection.immutable.IdentityPair
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.UID
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
+import org.opalj.collection.immutable.UIDSet2
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 
 /**
- * This partial domain enables tracking of a reference value's null-ness and origin
- * properties.
+ * This partial domain enables tracking of a reference value's null-ness and must-alias information.
  *
  * @author Michael Eichberg
  */
@@ -107,7 +104,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * to the same object on the heap/stack).
      *
      * However, two domain values that have the same timestamp are guaranteed to refer
-     * to the same object at runtime.
+     * to the same object at runtime (must-alias).
      *
      * Timestamps are required to determine changes in the memory layout. I.e., to
      * determine if two values created by the same instruction are aliases or "just"
@@ -199,7 +196,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * all values. `NullValue`s are ignored.
      */
     def upperTypeBound(
-        theValues: SortedSet[DomainSingleOriginReferenceValue]
+        theValues: UIDSet[DomainSingleOriginReferenceValue]
     ): UIDSet[_ <: ReferenceType] = {
         val values = theValues.filterNot(_.isNull.isYes)
         if (values.isEmpty)
@@ -379,9 +376,15 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     /**
      * Represents all `DomainReferenceValue`s that represent a reference value where
      * – in the current analysis context – the value has a single origin.
+     *
+     * @note To make it possible to store `SingleOriginReferenceValue`s in UIDSets -
+     *       which in particular provide fast `filter` and `tail` methods compared to the
+     *       standard sets - the UID trait is implemented.
      */
-    trait SingleOriginReferenceValue extends ReferenceValue with SingleOriginValue {
+    trait SingleOriginReferenceValue extends ReferenceValue with SingleOriginValue with UID {
         this: DomainSingleOriginReferenceValue ⇒
+
+        final override def id: Int = origin
 
         /**
          * Updates the `origin` and/or `isNull` property; keeps the timestamp.
@@ -478,7 +481,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                     } else {
                         // This value has the the same origin as a value found in
-                        // MultipleRefrenceValues.
+                        // MultipleReferenceValues.
                         val key = IdentityPair(this, that)
                         val joinResult = joinedValues.getOrElseUpdate(key, this.join(pc, that))
 
@@ -506,22 +509,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             that:   DomainNullValue
         ): Update[DomainSingleOriginReferenceValue] = {
             this.isNull match {
-                /*
-                case Yes ⇒
-                    if (this.t == that.t)
-                        NoUpdate
-                    else
-                        TimestampUpdate(that)
-
-                case Unknown ⇒
-                    if (this.t == that.t)
-                        NoUpdate
-                    else
-                        TimestampUpdate(this.updateT(that.t))
-case No ⇒
-                    StructuralUpdate(                      this.updateT(that.t, isNull = Unknown)                    )
-                        *
-                        */
                 case Yes | Unknown ⇒ NoUpdate
                 case No            ⇒ StructuralUpdate(this.update(isNull = Unknown))
             }
@@ -544,8 +531,7 @@ case No ⇒
                                 doJoinWithNonNullValueWithSameOrigin(joinPC, that)
                         }
                     else {
-                        val values =
-                            SortedSet[DomainSingleOriginReferenceValue](this, that)
+                        val values = UIDSet2[DomainSingleOriginReferenceValue](this, that)
                         StructuralUpdate(MultipleReferenceValues(values))
                     }
                 case DomainMultipleReferenceValues(that) ⇒
@@ -554,11 +540,6 @@ case No ⇒
         }
     }
 
-    /**
-     * @param t  The timestamp associated with this null-value. Though null-values are
-     *             indistinguishable, we
-     *
-     */
     protected class NullValue(
             override val origin: ValueOrigin
     ) extends super.NullValue with SingleOriginReferenceValue { this: DomainNullValue ⇒
@@ -594,13 +575,6 @@ case No ⇒
             that:   DomainSingleOriginReferenceValue
         ): StructuralUpdate[DomainSingleOriginReferenceValue] = {
             StructuralUpdate(
-                /* OLD - CAN BE DELETED ... ?
-                if (that.isNull.isUnknown && that.t > this.t)
-                    that
-                else
-                    that.updateT(Math.max(this.t, that.t), isNull = Unknown)
-                    */
-
                 // Basically, the timestamp is not relevant in combination with definitive
                 // null values. The other object, which was created at the timestamp specified
                 // by the other object may have been null.
@@ -612,7 +586,10 @@ case No ⇒
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
-            (this eq other) || asReferenceValue(other).isNull.isYes
+            (this eq other) || (other match {
+                case DomainReferenceValue(v) ⇒ v.isNull.isYes
+                case _                       ⇒ false
+            })
         }
 
         override def equals(other: Any): Boolean = {
@@ -671,7 +648,7 @@ case No ⇒
                 return StructuralUpdate(doPeformJoinWithNonNullValueWithSameOrigin(that, that.t));
         }
 
-        def toString(upperTypeBound: String) = {
+        def toString(upperTypeBound: String): String = {
             var description = upperTypeBound
             if (!isPrecise) description = "_ <: "+description
             if (isNull.isUnknown) description = s"{$description, null}"
@@ -731,7 +708,7 @@ case No ⇒
             if (this eq other)
                 return true;
 
-            val that = asReferenceValue(other)
+            val that = domain.asReferenceValue(other)
 
             if (this.isNull.isUnknown && that.isNull.isYes)
                 return true;
@@ -942,7 +919,7 @@ case No ⇒
                 origin
         }
 
-        override def toString(): String = toString(theUpperTypeBound.toJava)
+        override def toString: String = toString(theUpperTypeBound.toJava)
     }
 
     protected class MObjectValue(
@@ -978,7 +955,7 @@ case No ⇒
                                 newUTB += theSupertype
                     }
                 }
-                if (newUTB.size == 1) {
+                if (newUTB.isSingletonSet) {
                     ObjectValue(origin, isNull, false, newUTB.head, t)
                 } else {
                     ObjectValue(origin, isNull, newUTB + theSupertype, t)
@@ -1009,13 +986,13 @@ case No ⇒
             if (this eq other)
                 return true;
 
-            val that = asReferenceValue(other)
+            val DomainReferenceValue(that) = other
 
             if (this.isNull.isNo && that.isNull.isYesOrUnknown)
                 return false;
 
             val thatUTB = that.upperTypeBound
-            classHierarchy.isSubtypeOf(thatUTB, this.upperTypeBound.asInstanceOf[UIDSet[ReferenceType]]).isYes
+            classHierarchy.isSubtypeOf(thatUTB, this.upperTypeBound).isYes
         }
 
         override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
@@ -1070,14 +1047,14 @@ case No ⇒
      *          are precise and have the same upper type bound. Null values are ignored.
      */
     protected class MultipleReferenceValues(
-            val values:             SortedSet[DomainSingleOriginReferenceValue],
+            val values:             UIDSet[DomainSingleOriginReferenceValue],
             override val isNull:    Answer,
             override val isPrecise: Boolean,
             val upperTypeBound:     UIDSet[_ <: ReferenceType],
             override val t:         Timestamp
     ) extends ReferenceValue with MultipleOriginsValue { this: DomainMultipleReferenceValues ⇒
 
-        def this(values: SortedSet[DomainSingleOriginReferenceValue]) {
+        def this(values: UIDSet[DomainSingleOriginReferenceValue]) {
             this(
                 values,
                 domain.isNull(values),
@@ -1089,13 +1066,13 @@ case No ⇒
 
         assert(values.size > 1, "a MultipleReferenceValue must have multiple values")
         assert(
-            isNull.isNoOrUnknown || values.forall { _.isNull.isYesOrUnknown },
+            isNull.isNoOrUnknown || values.forall(_.isNull.isYesOrUnknown),
             s"inconsistent null property(isNull == $isNull): ${values.mkString(",")}"
         )
         assert(
             {
-                val nonNullValues = values.filter { _.isNull.isNoOrUnknown }
-                if (nonNullValues.nonEmpty && nonNullValues.forall { _.isPrecise }) {
+                val nonNullValues = values.filter(_.isNull.isNoOrUnknown)
+                if (nonNullValues.nonEmpty && nonNullValues.forall(_.isPrecise)) {
                     val theUTB = nonNullValues.head.upperTypeBound
                     if (nonNullValues.tail.forall(_.upperTypeBound == theUTB))
                         isPrecise
@@ -1128,7 +1105,7 @@ case No ⇒
 
         def addValue(newValue: DomainSingleOriginReferenceValue): DomainMultipleReferenceValues = {
 
-            assert(values.find(_.origin == newValue.origin).isEmpty)
+            assert(!values.exists(_.origin == newValue.origin))
 
             val thisUTB = this.upperTypeBound
             val newValueUTB = newValue.upperTypeBound
@@ -1159,7 +1136,7 @@ case No ⇒
             assert(oldValue.origin == joinValue.origin)
             assert(oldValue.origin == joinedValue.origin)
 
-            assert(values.find(_ eq oldValue).isDefined)
+            assert(values.exists(_ eq oldValue))
 
             val newValues = this.values - oldValue + joinedValue
             val newT = if (oldValue.t == joinedValue.t) this.t else nextT()
@@ -1167,7 +1144,7 @@ case No ⇒
         }
 
         protected[ReferenceValues] def update(
-            newValues:     SortedSet[DomainSingleOriginReferenceValue],
+            newValues:     UIDSet[DomainSingleOriginReferenceValue],
             valuesUpdated: Boolean,
             joinedValue:   DomainSingleOriginReferenceValue,
             newT:          Timestamp
@@ -1211,7 +1188,7 @@ case No ⇒
 
         override def origins: Iterable[ValueOrigin] = values.view.map(_.origin)
 
-        override def referenceValues: Iterable[IsAReferenceValue] = values
+        override def baseValues: Traversable[DomainReferenceValue] = values
 
         /**
          * Summarizes this value by creating a new domain value that abstracts over
@@ -1253,11 +1230,11 @@ case No ⇒
             // subtype of supertype even if this upperTypeBound is not
             // a subtype of supertype.
 
-            val values = this.values.view.filter(_.isNull.isNoOrUnknown)
-            var answer: Answer = values.head.isValueSubtypeOf(supertype)
-            values.tail foreach { value ⇒
+            val values = this.values.iterator.filter(_.isNull.isNoOrUnknown)
+            var answer: Answer = values.next.isValueSubtypeOf(supertype)
+            values foreach { value ⇒ /* the first value is already removed */
                 if (answer eq Unknown)
-                    return answer //isSubtype;
+                    return answer; //isSubtype
 
                 answer = answer join value.isValueSubtypeOf(supertype)
             }
@@ -1294,8 +1271,9 @@ case No ⇒
             // [CONCEPTUALLY] var refinedValues = SortedSet.empty[DomainSingleOriginReferenceValue]
             // we can use a buffer here, since the refinement will not change
             // the origin of a value
-            val refinedValues = new ArrayBuffer[DomainSingleOriginReferenceValue](values.size)
-            this.values.foreach { value ⇒
+            val thisValues = this.values
+            var refinedValues = UIDSet.empty[DomainSingleOriginReferenceValue]
+            thisValues.foreach { value ⇒
                 val refinedValue = refinements.get(value)
                 // INVARIANT: refinedValue ne value
                 if (refinedValue == null) {
@@ -1308,7 +1286,9 @@ case No ⇒
                     // part of the "MultipleReferenceValues"
                     if ((thisIsNull.isUnknown || thisIsNull == refinedValue.isNull) &&
                         (!refinedValue.isPrecise ||
-                            classHierarchy.isSubtypeOf(refinedValue.upperTypeBound, upperTypeBound).isYesOrUnknown)) {
+                            classHierarchy.isSubtypeOf(
+                                refinedValue.upperTypeBound, upperTypeBound
+                            ).isYesOrUnknown)) {
 
                         val refinedSingleOriginValue =
                             refinedValue.asInstanceOf[DomainSingleOriginReferenceValue]
@@ -1370,7 +1350,7 @@ case No ⇒
                         UIDSet.empty[ReferenceType]
                     else {
                         val newRefinedValuesUTB =
-                            domain.upperTypeBound(ImmutableSortedSet.empty ++ refinedValues)
+                            domain.upperTypeBound(refinedValues)
                         if (newRefinedValuesUTB != upperTypeBound &&
                             classHierarchy.isSubtypeOf(newRefinedValuesUTB, upperTypeBound).isYes)
                             newRefinedValuesUTB
@@ -1381,7 +1361,7 @@ case No ⇒
                 refinements.put(
                     this,
                     MultipleReferenceValues(
-                        ImmutableSortedSet.empty ++ refinedValues,
+                        refinedValues,
                         newIsNull,
                         isPrecise || domain.isPrecise(refinedValues),
                         newUTB,
@@ -1447,7 +1427,7 @@ case No ⇒
 
             val newValues = values.filter(v ⇒ v.isNull == isNull || v.isNull.isUnknown)
 
-            if (newValues.size == 1) {
+            if (newValues.isSingletonSet) {
                 refineToValue(newValues.head, isNull, this.upperTypeBound, operands, locals)
             } else {
                 val newT = if (newValues.size == values.size) t else nextT()
@@ -1497,7 +1477,7 @@ case No ⇒
                     }
                 }
 
-            if (filteredValues.size == 1) {
+            if (filteredValues.isSingletonSet) {
                 refineToValue(filteredValues.head, this.isNull, UIDSet(supertype), operands, locals)
             } else {
                 // there are no individual values to refine....
@@ -1632,7 +1612,7 @@ case No ⇒
                 case that: MultipleReferenceValues ⇒
                     var updateType: UpdateType = NoUpdateType
                     var otherValues = that.values
-                    var newValues = SortedSet.empty[DomainSingleOriginReferenceValue]
+                    var newValues = UIDSet.empty[DomainSingleOriginReferenceValue]
                     this.values foreach { thisValue ⇒
                         otherValues.find(thisValue.origin == _.origin) match {
                             case Some(otherValue) ⇒
@@ -1713,21 +1693,17 @@ case No ⇒
             assert(upperTypeBound.isSingletonSet, "no array type: "+this.upperTypeBound)
             assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is no array type")
 
-            if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
+            if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
                 if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
                     thrownExceptions = VMNullPointerException(pc) :: thrownExceptions
                 if (throwArrayIndexOutOfBoundsException)
                     thrownExceptions = VMArrayIndexOutOfBoundsException(pc) :: thrownExceptions
 
-                ComputedValueOrException(
-                    TypedValue(pc, upperTypeBound.head.asArrayType.componentType),
-                    thrownExceptions
-                )
+                val value = TypedValue(pc, upperTypeBound.head.asArrayType.componentType)
+                ComputedValueOrException(value, thrownExceptions)
             } else {
-                (values map (_.load(pc, index))) reduce {
-                    (c1, c2) ⇒ mergeDEsComputations(pc, c1, c2)
-                }
+                values.map(_.load(pc, index)).reduce((c1, c2) ⇒ mergeDEsComputations(pc, c1, c2))
             }
         }
 
@@ -1738,7 +1714,7 @@ case No ⇒
             assert(upperTypeBound.isSingletonSet)
             assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is no array type")
 
-            if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
+            if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
                 if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
                     thrownExceptions = VMNullPointerException(pc) :: thrownExceptions
@@ -1762,7 +1738,7 @@ case No ⇒
             assert(upperTypeBound.isSingletonSet)
             assert(upperTypeBound.head.isArrayType, s"$upperTypeBound (values=$values)")
 
-            if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
+            if (values.exists(_.isInstanceOf[ObjectValue])) {
                 if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
                     ComputedValueOrException(IntegerValue(pc), VMNullPointerException(pc))
                 else
@@ -1788,7 +1764,7 @@ case No ⇒
         }
 
         override def toString() = {
-            var s =
+            val s =
                 if (isNull.isYes) {
                     "null"
                 } else {
@@ -1797,13 +1773,12 @@ case No ⇒
                     if (isNull.isUnknown) ss = s"{$ss, null}"
                     ss
                 }
-            s = s + values.mkString(s"[t=$t; values=«", ", ", "»]")
-            s
+            values.mkString(s"$s[t=$t; values=«", ", ", "»]")
         }
     }
 
     object MultipleReferenceValues {
-        def unapply(value: DomainValue): Option[SortedSet[DomainSingleOriginReferenceValue]] = {
+        def unapply(value: DomainValue): Option[UIDSet[DomainSingleOriginReferenceValue]] = {
             value match {
                 case mrv: MultipleReferenceValues ⇒ Some(mrv.values)
                 case _                            ⇒ None
@@ -1888,7 +1863,7 @@ case No ⇒
     abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
         value match {
             case sov: SObjectValue if sov.isPrecise && sov.isNull.isNo &&
-                (sov.upperTypeBound eq ObjectType.Object) ⇒
+                (sov.upperTypeBound.head eq ObjectType.Object) ⇒
                 Some(new Object)
             case _ ⇒
                 super.toJavaObject(pc, value)
@@ -1958,10 +1933,8 @@ case No ⇒
         t:                 Timestamp
     ): DomainSingleOriginReferenceValue = {
         theUpperTypeBound match {
-            case ot: ObjectType ⇒
-                ObjectValue(origin, isNull, isPrecise, ot, t)
-            case at: ArrayType ⇒
-                ArrayValue(origin, isNull, isPrecise, at, t)
+            case ot: ObjectType ⇒ ObjectValue(origin, isNull, isPrecise, ot, t)
+            case at: ArrayType  ⇒ ArrayValue(origin, isNull, isPrecise, at, t)
         }
     }
 
@@ -2035,11 +2008,11 @@ case No ⇒
     ): DomainArrayValue
 
     protected[domain] def MultipleReferenceValues(
-        values: SortedSet[DomainSingleOriginReferenceValue]
+        values: UIDSet[DomainSingleOriginReferenceValue]
     ): DomainMultipleReferenceValues
 
     protected[domain] def MultipleReferenceValues(
-        values:         SortedSet[DomainSingleOriginReferenceValue],
+        values:         UIDSet[DomainSingleOriginReferenceValue],
         isNull:         Answer,
         isPrecise:      Boolean,
         upperTypeBound: UIDSet[_ <: ReferenceType],

@@ -36,7 +36,6 @@ import org.opalj.br.Type
 import org.opalj.ai.domain._
 import org.opalj.ai.domain.RecordReturnedValueInfrastructure
 import org.opalj.ai.InterruptableAI
-import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
@@ -96,7 +95,7 @@ class BaseMethodReturnValuesAnalysisDomain(
                 joinedValue.value
             }
         newValue match {
-            case value @ IsAReferenceValue(utb) if value.isNull.isUnknown &&
+            case value @ TypeOfReferenceValue(utb) if value.isNull.isUnknown &&
                 (utb.isSingletonSet) &&
                 (utb.head eq originalReturnType) &&
                 !value.isPrecise ⇒

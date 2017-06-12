@@ -30,6 +30,8 @@ package org.opalj
 package ai
 package util
 
+import scala.language.reflectiveCalls
+
 import scala.xml.Node
 import scala.xml.NodeSeq
 
@@ -134,7 +136,10 @@ object XHTML {
         }
     }
 
-    def instructionsToXHTML(title: String, instructions: Traversable[PC]): Node = {
+    def instructionsToXHTML(
+        title:        String,
+        instructions: { def mkString(sep: String): String }
+    ): Node = {
         <p>
             <span>{ title }: { instructions.mkString(", ") }</span>
         </p>
@@ -147,16 +152,14 @@ object XHTML {
         val subroutineEnd = "</div></details>"
 
         var openSubroutines = 0
-        val asStrings = evaluated.reverse.map { instruction ⇒
-            instruction match {
-                case SUBROUTINE_START ⇒
-                    openSubroutines += 1
-                    subroutineStart
-                case SUBROUTINE_END ⇒
-                    openSubroutines -= 1
-                    subroutineEnd
-                case _ ⇒ instruction.toString+" "
-            }
+        val asStrings = evaluated.reverse.map {
+            case SUBROUTINE_START ⇒
+                openSubroutines += 1
+                subroutineStart
+            case SUBROUTINE_END ⇒
+                openSubroutines -= 1
+                subroutineEnd
+            case instruction ⇒ instruction.toString+" "
         }
 
         header+"Evaluation Order:<br><div style=\"margin-left:2em;\">"+

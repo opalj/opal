@@ -84,11 +84,11 @@ class BaseDomain[Source](
 
 object BaseDomain {
 
-    def apply[Source](
-        project:   Project[Source],
-        classFile: ClassFile,
-        method:    Method
-    ): BaseDomain[Source] = {
+    /**
+     * @tparam S The type of the underlying source files (e.g., java.net.URL)
+     * @return A new instance of a `BaseDomain`.
+     */
+    def apply[S](project: Project[S], classFile: ClassFile, method: Method): BaseDomain[S] = {
         new BaseDomain(project, classFile, method)
     }
 
@@ -98,9 +98,10 @@ object BaseDomain {
  * Configuration of a domain that uses the `l0` domains and
  * which also records the abstract-interpretation time control flow graph and def/use
  * information.
+ * @tparam S The source file's type.
  */
-class BaseDomainWithDefUse[Source](
-    project:   Project[Source],
+class BaseDomainWithDefUse[S](
+    project:   Project[S],
     classFile: ClassFile,
     method:    Method
-) extends BaseDomain[Source](project, classFile, method) with RecordDefUse
+) extends BaseDomain[S](project, classFile, method) with RecordDefUse

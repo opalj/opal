@@ -136,6 +136,10 @@
                         "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/methods.jar"
                     },
                     {
+                      "id": "metrics",
+                      "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/metrics.jar"
+                    },
+                    {
                         "id": "polymorphism",
                         "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/polymorphism.jar"
                     },

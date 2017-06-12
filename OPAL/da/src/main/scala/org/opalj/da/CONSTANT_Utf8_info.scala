@@ -46,6 +46,8 @@ case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Utf8
 
+    override def asConstantUTF8: this.type = this
+
     override def asString = value
 
     override def asCPNode(implicit cp: Constant_Pool): Node = {
@@ -57,6 +59,7 @@ case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_
 
     override def toString(implicit cp: Constant_Pool): String = value
 }
+
 object CONSTANT_Utf8 {
 
     def apply(value: String): CONSTANT_Utf8_info = {

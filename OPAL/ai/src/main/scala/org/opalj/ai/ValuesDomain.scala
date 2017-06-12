@@ -29,10 +29,14 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
+import scala.language.higherKinds
 
+import scala.reflect.ClassTag
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -49,6 +53,29 @@ trait ValuesDomain {
     // REPRESENTATION OF VALUES
     //
     // -----------------------------------------------------------------------------------
+
+    /**
+     * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
+     * inherit from `Domain` and which extend `Domain`'s `Value` trait.
+     */
+    type DomainValue >: Null <: Value with AnyRef
+
+    /**
+     * The class tag for the type `DomainValue`.
+     *
+     * Required to generate instances of arrays in which values of type
+     * `DomainValue` can be stored in a type-safe manner.
+     *
+     * ==Initialization==
+     * In the sub-trait or class that fixes the type of `DomainValue` it is necessary
+     * to implement this abstract `val` using:
+     * {{{
+     * val DomainValueTag : ClassTag[DomainValue] = implicitly
+     * }}}
+     * (As of Scala 2.10 it is necessary that you do not use `implicit` in the subclass -
+     * it will compile, but fail at runtime.)
+     */
+    implicit val DomainValue: ClassTag[DomainValue]
 
     /**
      * Abstracts over a concrete operand stack value or a value stored in one of the local
@@ -126,11 +153,21 @@ trait ValuesDomain {
          */
         def computationalType: ComputationalType
 
-        // This method is only used by the abstract interpretation framework
-        // and is only implemented by ReturnAddressValue.
-        @throws[DomainException]("This value is not a return address value.")
+        /**
+         * @return  The concrete return address stored by this value; this method
+         *          is defined if and only if the value is guaranteed to encapsulate a
+         *          `ReturnAddressValue`.
+         */
         private[ai] def asReturnAddressValue: PC = {
-            throw new DomainException(s"this value ($this) is not a return address")
+            throw new ClassCastException(this.getClass.getSimpleName+" is no return address value")
+        }
+
+        /**
+         * @return The represented reference value if and only if this value represent a reference
+         *         value.
+         */
+        def asDomainReferenceValue: DomainReferenceValue = {
+            throw new ClassCastException(this.getClass.getSimpleName+" is no reference value")
         }
 
         /**
@@ -233,14 +270,17 @@ trait ValuesDomain {
          *
          * The abstract state generally encompasses every information that would
          * be considered during a [[join]] of `this` value and the `other` value and that
-         * could lead to a [[StructuralUpdate]].
+         * could lead to an [[Update]].
          *
          * This method is '''reflexive''', I.e., every value abstracts over itself.
          *
          * [[TheIllegalValue]] only abstracts over itself.
          *
+         * @note abstractsOver is only defined for comparable values where both values have the
+         *       same computational type.
+         *
          * ==Implementation==
-         * The default implementation relies on this domain value's [[join]] method.
+         * The default implementation relies on this '''domain value''''s [[join]] method.
          *
          * Overriding this method is, hence, primarily meaningful for performance reasons.
          *
@@ -257,7 +297,7 @@ trait ValuesDomain {
 
         /**
          * Returns `true` iff the abstract state represented by this value
-         * is striclty more precise than the state of the given value. In other
+         * is strictly more precise than the state of the given value. In other
          * words if every possible runtime value represented by this value
          * is also represented by the given value, but both '''are not equal''';
          * in other words, this method is '''irreflexive'''.
@@ -292,7 +332,7 @@ trait ValuesDomain {
                 case NoUpdateType
                     // ... if the other values abstracts over this value (or equals
                     // this value).
-                    | MetaInformationUpdateType // W.r.t. the props. relevant for a join:
+                    | MetaInformationUpdateType // w.r.t. the props. relevant for a join:
                     // the other value is either more precise than this value or is
                     // equal to this value, but some property that is not relevant to
                     // a join has changed. We now have to rule out the case
@@ -316,8 +356,8 @@ trait ValuesDomain {
          * method and, hence, keeping all information would just waste memory and
          * a summary may be sufficient.
          *
-         * @note This method is predefined to facilitate the development of
-         *      project-wide analyses.
+         * @note   This method is predefined to facilitate the development of
+         *         project-wide analyses.
          */
         def summarize(pc: PC): DomainValue
 
@@ -335,58 +375,72 @@ trait ValuesDomain {
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
-         * @note The abstract interpretation framework does not use/call this method.
-         *      This method is solely predefined to facilitate the development of
-         *      project-wide analyses.
+         * @note   The abstract interpretation framework does not use/call this method.
+         *         This method is solely predefined to facilitate the development of
+         *         project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
         def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
             throw new DomainException(s"adaptation of $this to $target is unsupported")
         }
+    }
+
+    type DomainTypedValue[+T <: Type] >: Null <: DomainValue
+
+    trait TypedValue[+T <: Type] extends Value with KnownType {
+        this: DomainTypedValue[T] ⇒
+
+        /**
+         * The type kind of the values, if the value has a specific type kind; `None` if and
+         * only if the underlying value is `null`.
+         *
+         * @return The type/The upper type bound of the value. If the type is a base type, then
+         *         the type is necessarily precise. In case of a reference type the type may be
+         *         an upper type bound or may be precise. In the latter case, using the
+         *         concrete domain it may be possible to get further information.
+         *         If the underlying value is `null`, `None` is returned.
+         */
+        def valueType: Option[T]
 
     }
 
-    /**
-     * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
-     * inherit from `Domain` and which extend `Domain`'s `Value` trait.
-     */
-    type DomainValue >: Null <: Value with AnyRef
+    type DomainReferenceValue >: Null <: ReferenceValue with DomainTypedValue[ReferenceType]
 
     /**
-     * The class tag for the type `DomainValue`.
-     *
-     * Required to generate instances of arrays in which values of type
-     * `DomainValue` can be stored in a type-safe manner.
-     *
-     * ==Initialization==
-     * In the sub-trait or class that fixes the type of `DomainValue` it is necessary
-     * to implement this abstract `val` using:
+     * The class tag can be used to create type safe arrays or to extract the concrete type
+     * of the domain value.
      * {{{
-     * val DomainValueTag : ClassTag[DomainValue] = implicitly
+     *     val DomainReferenceValue(v) = value // of type "DomainValue"
+     *     // v is now of the type DomainReferenceValue
      * }}}
-     * (As of Scala 2.10 it is necessary that you do not use `implicit` in the subclass -
-     * it will compile, but fail at runtime.)
      */
-    implicit val DomainValue: ClassTag[DomainValue]
-
-    type DomainReferenceValue >: Null <: DomainValue
-
     val DomainReferenceValue: ClassTag[DomainReferenceValue]
 
+    trait ReferenceValue
+            extends TypedValue[ReferenceType]
+            with IsReferenceValue[DomainReferenceValue] {
+        this: DomainReferenceValue ⇒
+
+        /**
+         * Returns `ComputationalTypeReference`.
+         */
+        final override def computationalType: ComputationalType = ComputationalTypeReference
+
+        final override def asDomainReferenceValue: DomainReferenceValue = this
+    }
+
     /**
-     * A simple type alias of the type `DomainValue`.
-     * Used to facilitate comprehension.
+     * A simple type alias of the type `DomainValue`; used to facilitate comprehension.
      */
     type ExceptionValue = DomainReferenceValue
 
     /**
-     * A type alias for `Iterable`s of `ExceptionValue`s.
-     * Primarily used to facilitate comprehension.
+     * A type alias for `Iterable`s of `ExceptionValue`s; used to facilitate comprehension.
      */
     type ExceptionValues = Iterable[ExceptionValue]
 
     /**
-     * The typed null value.
+     * The typed `null` value.
      */
     private[ai] val Null: DomainValue = null
 
@@ -414,14 +468,18 @@ trait ValuesDomain {
      */
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
-        @throws[DomainException]("An illegal value has no computational type")
-        final override def computationalType: ComputationalType = {
-            throw DomainException("the illegal value has no computational type")
+        final override def computationalType: Nothing = {
+            throw DomainException("an IllegalValue has no computational type")
         }
 
-        @throws[DomainException]("\"doJoin\" is not defined on illegal values")
+        @throws[DomainException]("doJoin(...) is not supported by IllegalValue")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
-            throw DomainException("this method is not supported")
+            throw DomainException("doJoin(...) is not supported by IllegalValue")
+        }
+
+        @throws[DomainException]("summarize(...) is not supported by IllegalValue")
+        override def summarize(pc: PC): DomainValue = {
+            throw DomainException("summarize(...) is not supported by IllegalValue")
         }
 
         override def join(pc: PC, other: DomainValue): Update[DomainValue] = {
@@ -429,11 +487,6 @@ trait ValuesDomain {
                 NoUpdate
             else
                 MetaInformationUpdateIllegalValue
-        }
-
-        @throws[DomainException]("\"summarize\" is not defined on illegal values")
-        override def summarize(pc: PC): DomainValue = {
-            throw DomainException("creating a summary of an illegal value is meaningless")
         }
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
@@ -464,12 +517,11 @@ trait ValuesDomain {
 
     /**
      * The result of merging two values should never be reported as a
-     * `StructuralUpdate` if the computed value is an `IllegalValue`. The JVM semantics
-     * guarantee that the value was not used in the first case and, hence, continuing
-     * the interpretation is meaningless.
+     * `StructuralUpdate` if the computed value is an `IllegalValue`. The JVM semantics guarantee
+     * that the value will not be used and, hence, continuing the interpretation is meaningless.
      *
-     * @note This method is solely defined for documentation purposes and to catch
-     *      implementation errors early on.
+     * @note   This method is solely defined for documentation purposes and to catch
+     *         implementation errors early on.
      */
     final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] = {
         val message = "internal error (see ValuesDomain.StructuralUpdateIllegalValue())"
@@ -481,14 +533,16 @@ trait ValuesDomain {
 
         final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
-        @throws[DomainException]("Summarizing return address values is meaningless.")
+        @throws[DomainException]("summarize(...) is not supported by RETValue")
         override def summarize(pc: PC): DomainValue = {
-            throw DomainException("summarizing return address values is meaningless")
+            throw DomainException("summarize(...) is not supported by RETValue")
         }
     }
 
-    type DomainReturnAddressValues <: ReturnAddressValues with DomainValue
-
+    /**
+     * A collection of (not furhter stored) return address values. Primarily used when we
+     * join the executions of subroutines.
+     */
     class ReturnAddressValues extends RETValue { this: DomainReturnAddressValues ⇒
 
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
@@ -497,7 +551,6 @@ trait ValuesDomain {
                 case _           ⇒ MetaInformationUpdateIllegalValue
                 // Note that "Value" already handles the case
                 // where this value is joined with itself.
-
             }
         }
 
@@ -509,6 +562,7 @@ trait ValuesDomain {
         override def toString = "ReturnAddresses"
 
     }
+    type DomainReturnAddressValues <: ReturnAddressValues with DomainValue
 
     /**
      *  The singleton instance of `ReturnAddressValues`
@@ -525,9 +579,7 @@ trait ValuesDomain {
      *      the point-of-view of OPAL-AI - just throw an `OperationNotSupportedException`
      *      as these additional methods will never be called by OPAL-AI.
      */
-    class ReturnAddressValue(
-            val address: PC
-    ) extends RETValue { this: DomainReturnAddressValue ⇒
+    class ReturnAddressValue(val address: PC) extends RETValue { this: DomainReturnAddressValue ⇒
 
         private[ai] final override def asReturnAddressValue: Int = address
 
@@ -585,7 +637,7 @@ trait ValuesDomain {
      * it is possible that the returned type(s) is(are) only an upper bound of the
      * real type unless the type is a primitive type.
      *
-     * This default implementation always returns [[org.opalj.ai.TypeUnknown]].
+     * This default implementation always returns [[org.opalj.ai.UnknownType]].
      *
      * ==Implementing `typeOfValue`==
      * This method is typically not implemented by a single `Domain` trait/object, but is
@@ -611,7 +663,7 @@ trait ValuesDomain {
     def typeOfValue(value: DomainValue): TypeInformation = {
         value match {
             case ta: TypeInformation ⇒ ta
-            case _                   ⇒ TypeUnknown
+            case _                   ⇒ UnknownType
         }
     }
 
@@ -672,8 +724,7 @@ trait ValuesDomain {
      * `Domain`s that define (additional) properties should (`abstract`) `override`
      * this method and should return a textual representation of the property.
      */
-    def properties(
-        pc:               PC,
-        propertyToString: AnyRef ⇒ String = (v) ⇒ v.toString
-    ): Option[String] = None
+    def properties(pc: PC, propertyToString: AnyRef ⇒ String = (v) ⇒ v.toString): Option[String] = {
+        None
+    }
 }

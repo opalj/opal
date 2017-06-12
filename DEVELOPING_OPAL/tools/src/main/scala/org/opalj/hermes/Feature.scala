@@ -39,10 +39,10 @@ import org.opalj.collection.immutable.Chain
  *         `ProtectedMethod` or `DeadMethod`. The name must not contain spaces or other
  *         special characters.
  * @param  count How often the feature was found in a project.
- * @param  extensions (Some of) The places where the feature was found. This information is
- *         primarily useful when navigating the project and is optional.
+ * @param  extensions Places where the feature was found. This information is
+ *         primarily useful when exploring the project and is optional.
  *         I.e., `extensions.size` can be  smaller than `count`. The maximum number
- *         of stored locations is set using the global setting: "org.opalj.hermes.maxLocations"
+ *         of stored locations is set using the global setting: `org.opalj.hermes.maxLocations`.
  *
  * @author Michael Eichberg
  */

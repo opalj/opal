@@ -38,7 +38,7 @@ import scala.math.Ordered
  * @author Michael Eichberg
  * @author Marco Torsello
  */
-sealed trait VirtualSourceElement extends SourceElement with Ordered[VirtualSourceElement] {
+sealed abstract class VirtualSourceElement extends SourceElement with Ordered[VirtualSourceElement] {
 
     override def attributes = Nil
 
@@ -51,9 +51,8 @@ sealed trait VirtualSourceElement extends SourceElement with Ordered[VirtualSour
 
     /**
      * Returns the declared/declaring class type of this `VirtualSourceElement`.
-     * If this `VirtualSourceElement`
-     * is a [[VirtualClass]] the returned type is the declared class else it is the
-     * declaring class.
+     * If this `VirtualSourceElement` is a [[VirtualClass]] the returned type is the
+     * declared class else it is the declaring class.
      */
     def classType: ReferenceType
 
@@ -133,7 +132,7 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
 /**
  * @author Michael Eichberg
  */
-sealed trait VirtualClassMember extends VirtualSourceElement
+sealed abstract class VirtualClassMember extends VirtualSourceElement
 
 /**
  * Represents a field of a virtual class.
@@ -150,8 +149,7 @@ final case class VirtualField(
 
     override def classType: ObjectType = declaringClassType
 
-    override def toJava: String =
-        declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
+    override def toJava: String = declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
 
     override def getLineNumber(project: ClassFileRepository): Option[Int] = None
 
@@ -177,8 +175,9 @@ final case class VirtualField(
         }
     }
 
-    override def hashCode: Int =
+    override def hashCode: Int = {
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + fieldType.id
+    }
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -197,27 +196,24 @@ final case class VirtualField(
  * @author Michael Eichberg
  */
 sealed class VirtualMethod(
-    val declaringClassType: ReferenceType,
-    val name:               String,
-    val descriptor:         MethodDescriptor
-)
-        extends VirtualClassMember {
+        val declaringClassType: ReferenceType,
+        val name:               String,
+        val descriptor:         MethodDescriptor
+) extends VirtualClassMember {
 
     override def isMethod: Boolean = true
 
     override def classType: ReferenceType = declaringClassType
 
-    override def toJava: String =
-        declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
+    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
 
     override def getLineNumber(project: ClassFileRepository): Option[Int] = {
         if (declaringClassType.isArrayType)
             return None;
 
-        project.classFile(declaringClassType.asObjectType).flatMap(cf ⇒
-            cf.findMethod(name, descriptor).flatMap(m ⇒
-                m.body.flatMap(b ⇒
-                    b.firstLineNumber)))
+        project.classFile(declaringClassType.asObjectType).flatMap { cf ⇒
+            cf.findMethod(name, descriptor).flatMap(m ⇒ m.body.flatMap(b ⇒ b.firstLineNumber))
+        }
     }
 
     override def compare(that: VirtualSourceElement): Int = {
@@ -240,8 +236,9 @@ sealed class VirtualMethod(
         }
     }
 
-    override def hashCode: Int =
+    override def hashCode: Int = {
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
+    }
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -253,14 +250,16 @@ sealed class VirtualMethod(
         }
     }
 }
+
 object VirtualMethod {
 
     def apply(
         declaringClassType: ReferenceType,
         name:               String,
         descriptor:         MethodDescriptor
-    ): VirtualMethod =
+    ): VirtualMethod = {
         new VirtualMethod(declaringClassType, name, descriptor)
+    }
 
     def unapply(virtualMethod: VirtualMethod): Option[(ReferenceType, String, MethodDescriptor)] = {
         Some((
@@ -272,15 +271,13 @@ object VirtualMethod {
 }
 
 final class VirtualForwardingMethod(
-    declaringClassType: ReferenceType,
-    name:               String,
-    descriptor:         MethodDescriptor,
-    val target:         Method
-)
-        extends VirtualMethod(declaringClassType, name, descriptor) {
+        declaringClassType: ReferenceType,
+        name:               String,
+        descriptor:         MethodDescriptor,
+        val target:         Method
+) extends VirtualMethod(declaringClassType, name, descriptor) {
 
-    override def toJava: String =
-        declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
+    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
 
 }
 
@@ -291,10 +288,13 @@ object VirtualForwardingMethod {
         name:               String,
         descriptor:         MethodDescriptor,
         target:             Method
-    ): VirtualMethod =
+    ): VirtualMethod = {
         new VirtualForwardingMethod(declaringClassType, name, descriptor, target)
+    }
 
-    def unapply(virtualMethod: VirtualForwardingMethod): Option[(ReferenceType, String, MethodDescriptor, Method)] = {
+    def unapply(
+        virtualMethod: VirtualForwardingMethod
+    ): Option[(ReferenceType, String, MethodDescriptor, Method)] = {
         Some((
             virtualMethod.declaringClassType,
             virtualMethod.name,

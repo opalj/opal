@@ -38,7 +38,7 @@ import scala.annotation.tailrec
 import scala.math.Ordered
 import scala.collection.SortedSet
 
-import org.opalj.collection.UID
+import org.opalj.collection.UIDValue
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet2
 
@@ -77,7 +77,7 @@ import org.opalj.collection.immutable.UIDSet2
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-sealed abstract class Type extends UID with Ordered[Type] {
+sealed trait Type extends UIDValue with Ordered[Type] {
 
     /**
      * Returns `true` if this type can be used by fields. Returns `true` unless
@@ -182,29 +182,22 @@ sealed abstract class Type extends UID with Ordered[Type] {
 
     @throws[ClassCastException]("if this type is not a base type")
     def asBaseType: BaseType = {
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to a BaseType"
-        )
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a BaseType")
     }
 
     @throws[ClassCastException]("if this type is not a field type")
     def asFieldType: FieldType = {
-        val message = s"a ${this.getClass.getSimpleName} cannot be cast to a FieldType"
-        throw new ClassCastException(message)
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a FieldType")
     }
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asNumericType: NumericType = {
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to a NumericType"
-        )
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType")
     }
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asIntLikeType: IntLikeType = {
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to an IntLikeType"
-        )
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
     }
 
     /**
@@ -335,7 +328,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Void.TYPE
 
-    override def toString(): String = "VoidType"
+    override def toString: String = "VoidType"
 
 }
 case object VoidType extends VoidType
@@ -345,7 +338,7 @@ case object VoidType extends VoidType
  *
  * @author Michael Eichberg
  */
-sealed abstract class FieldType extends Type {
+sealed trait FieldType extends Type {
 
     final override def isFieldType: Boolean = true
 
@@ -418,9 +411,7 @@ object ReferenceType {
      *          "[Ljava/lang/Object;" // for the array of java.lang.Object
      *          }}}
      */
-    @throws[IllegalArgumentException](
-        "if the given string is not a valid reference type descriptor"
-    )
+    @throws[IllegalArgumentException]("in case of an invalid reference type descriptor")
     def apply(rt: String): ReferenceType = {
         if (rt.charAt(0) == '[')
             ArrayType(FieldType(rt.substring(1)))
@@ -429,7 +420,7 @@ object ReferenceType {
     }
 }
 
-sealed abstract class BaseType extends FieldType with TypeSignature {
+sealed trait BaseType extends FieldType with TypeSignature {
 
     final override def isBaseType: Boolean = true
 
@@ -485,6 +476,9 @@ object BaseType {
             DoubleType
         )
 }
+
+/** All values which are stored in a value with computational type integer. */
+sealed trait CTIntType extends BaseType
 
 sealed abstract class NumericType protected () extends BaseType {
 
@@ -545,7 +539,7 @@ sealed abstract class NumericType protected () extends BaseType {
  *      JVM has basically no explicit support for booleans (e.g., a conversion of an int
  *      value to a boolean is not directly supported).
  */
-sealed abstract class IntLikeType protected () extends NumericType {
+sealed abstract class IntLikeType protected () extends NumericType with CTIntType {
 
     override def isIntLikeType: Boolean = true
 
@@ -575,7 +569,7 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Byte.TYPE
 
-    override def toString() = "ByteType"
+    override def toString: String = "ByteType"
 
     override def isWiderThan(targetType: NumericType): Boolean = false
 
@@ -626,7 +620,7 @@ sealed abstract class CharType private () extends IntLikeType {
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Character.TYPE
 
-    override def toString() = "CharType"
+    override def toString: String = "CharType"
 
     override def isWiderThan(targetType: NumericType): Boolean = false
 
@@ -678,7 +672,7 @@ sealed abstract class DoubleType private () extends NumericType {
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Double.TYPE
 
-    override def toString() = "DoubleType"
+    override def toString: String = "DoubleType"
 
     override def isWiderThan(targetType: NumericType): Boolean = targetType ne this
 
@@ -730,7 +724,7 @@ sealed abstract class FloatType private () extends NumericType {
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Float.TYPE
 
-    override def toString() = "FloatType"
+    override def toString: String = "FloatType"
 
     override def isWiderThan(targetType: NumericType): Boolean =
         (targetType ne DoubleType) && (targetType ne this)
@@ -782,7 +776,7 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Short.TYPE
 
-    override def toString() = "ShortType"
+    override def toString: String = "ShortType"
 
     override def isWiderThan(targetType: NumericType): Boolean = targetType eq ByteType
 
@@ -833,7 +827,7 @@ sealed abstract class IntegerType private () extends IntLikeType {
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Integer.TYPE
 
-    override def toString() = "IntegerType"
+    override def toString: String = "IntegerType"
 
     override def isWiderThan(targetType: NumericType): Boolean =
         (targetType.id: @scala.annotation.switch) match {
@@ -888,7 +882,7 @@ sealed abstract class LongType private () extends NumericType {
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Long.TYPE
 
-    override def toString() = "LongType"
+    override def toString: String = "LongType"
 
     override def isWiderThan(targetType: NumericType): Boolean =
         targetType.isInstanceOf[IntLikeType]
@@ -925,7 +919,7 @@ case object LongType extends LongType
  * no special further support for handling booleans. In particular the conversion of
  * some "byte|short|char|int" value to an int value is not directly supported.
  */
-sealed abstract class BooleanType private () extends BaseType {
+sealed abstract class BooleanType private () extends CTIntType {
 
     final val atype = 4
 
@@ -947,7 +941,7 @@ sealed abstract class BooleanType private () extends BaseType {
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Boolean.TYPE
 
-    override def toString() = "BooleanType"
+    override def toString: String = "BooleanType"
 
     override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
         typeConversionFactory.PrimitiveBooleanToLangBoolean
@@ -1011,7 +1005,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     // The default equals and hashCode methods are a perfect fit.
 
-    override def toString = "ObjectType("+fqn+")"
+    override def toString: String = "ObjectType("+fqn+")"
 
 }
 /**
@@ -1330,28 +1324,30 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      * Returns this array type's element type. E.g., the element type of an
      * array of arrays of arrays of `int` is `int`.
      */
-    def elementType: FieldType =
+    def elementType: FieldType = {
         componentType match {
             case at: ArrayType ⇒ at.elementType
             case _             ⇒ componentType
         }
+    }
 
     /**
      * The number of dimensions of this array. E.g. "Object[]" has one dimension and
      * "Object[][]" has two dimensions.
      */
-    def dimensions: Int =
+    def dimensions: Int = {
         1 + (componentType match { case at: ArrayType ⇒ at.dimensions; case _ ⇒ 0 })
+    }
 
     /**
      * Returns the component type of this array type after dropping the given number
      * of dimensions. E.g., if dimensions is `0`
-     * `this` is returned; if it is `1` then this arraytype's component type is returned.
+     * `this` is returned; if it is `1` then this array type's component type is returned.
      * If the value is larger than `1` then the `componentType` has to be an array type
      * and `drop(dimensions-1)` will be called on that type.
      *
-     * @param dimensions The number of dimensions to drop. This values has be equal or
-     *      smaller than the number of dimensions of this array.
+     * @param  dimensions The number of dimensions to drop. This values has be equal or
+     *         smaller than the number of dimensions of this array.
      */
     def drop(dimensions: Int): FieldType = {
         dimensions match {
@@ -1367,8 +1363,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = "["+componentType.toJVMTypeName
 
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Class.forName(toBinaryJavaName)
+    override def toJavaClass: java.lang.Class[_] = java.lang.Class.forName(toBinaryJavaName)
 
     override def adapt[T](
         targetType: Type
@@ -1447,8 +1442,16 @@ object ArrayElementType {
 }
 
 /**
- * Defines an extractor to match a type against any `ObjectType`
- * except `java.lang.Object`.
+ * Defines an extractor to match a type against any `ObjectType` except `java.lang.Object`.
+ *
+ * @example
+ * {{{
+ * val t : Type = ...
+ * t match {
+ *  case ot @ NotJavaLangObject() => ot
+ *  case _ =>
+ * }
+ * }}}
  *
  * @author Michael Eichberg
  */
