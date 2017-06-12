@@ -29,47 +29,45 @@
 package lambdas.methodreferences;
 
 import java.util.LinkedHashSet;
-
+import java.util.function.*;
 
 /**
  * This class contains a examples for method references dealing with proxy class receiver inheritance.
  *
  * <!--
+ *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
+ *
  * -->
  *
  * @author Andreas Muttscheller
  */
 public class ReceiverInheritance {
-    public static <T, R> R someBiConsumerParameter(
-    		java.util.function.Supplier<R> s,
-    		java.util.function.BiConsumer<R, T> bc,
-			java.util.function.BiConsumer<R, R> r,
-			T t) {
-		R state = s.get();
-		bc.accept(state, t);
-		r.accept(state, state);
 
-		return state;
-	}
+    public static <T, R> R someBiConsumerParameter(Supplier<R> s,
+            BiConsumer<R, T> bc, BiConsumer<R, R> r, T t) {
+        R state = s.get();
+        bc.accept(state, t);
+        r.accept(state, state);
 
-	public static <T> LinkedHashSet<T> callBiConsumer(T t) {
-		LinkedHashSet<T> lhm = ReceiverInheritance.<T, LinkedHashSet<T>>someBiConsumerParameter(
-				LinkedHashSet::new,
-				LinkedHashSet::add,
-				LinkedHashSet::addAll,
-				t
-		);
+        return state;
+    }
 
-		return lhm;
-	}
+    public static <T> LinkedHashSet<T> callBiConsumer(T t) {
+        LinkedHashSet<T> lhm = ReceiverInheritance.<T, LinkedHashSet<T>>someBiConsumerParameter(
+                LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll, t);
 
-	public static <T> void instanceBiConsumer(T t) {
-		LinkedHashSet<T> lhm = new LinkedHashSet<T>();
-		java.util.function.Consumer<T> bc = lhm::contains;
-		bc.accept(t);
+        return lhm;
+    }
 
-		lhm.contains("foo");
-	}
+    public static <T> void instanceBiConsumer(T t) {
+        LinkedHashSet<T> lhm = new LinkedHashSet<T>();
+        Consumer<T> bc = lhm::contains;
+        bc.accept(t);
+
+        lhm.contains("foo");
+    }
 }
+
+

@@ -28,188 +28,207 @@
  */
 package lambdas.methodreferences;
 
-
 /**
  * This class contains a method reference examples used with primitives.
  *
  * <!--
+ * <p>
+ * <p>
+ * <p>
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
+ * <p>
+ * <p>
+ * <p>
  * -->
  *
  * @author Andreas Muttscheller
  */
 public class MethodReferencePrimitives {
-	public static class MixedDoubleParamters {
-		public static double sum(double a, double b) {
-			return a+b;
-		}
 
-		public static double sum(double a, float b) {
-			return a+b;
-		}
+    public static class MixedDoubleParamters {
 
-		public static double sum(float a, double b) {
-			return a+b;
-		}
+        public static double sum(double a, double b) {
+            return a + b;
+        }
 
-		public static float sum(float a, float b) {
-			return a+b;
-		}
+        public static double sum(double a, float b) {
+            return a + b;
+        }
 
-		public static double sum(float a, double b, float c) {
-			return a+b+c;
-		}
+        public static double sum(float a, double b) {
+            return a + b;
+        }
 
-		public static double sum(int a, double b) {
-			return a+b;
-		}
+        public static float sum(float a, float b) {
+            return a + b;
+        }
 
-		public static double sum(long a, double b) {
-			return a+b;
-		}
-	}
+        public static double sum(float a, double b, float c) {
+            return a + b + c;
+        }
 
-	public static class MixedLongParamters {
-		public static long sum(long a, long b) {
-			return a+b;
-		}
+        public static double sum(int a, double b) {
+            return a + b;
+        }
 
-		public static long sum(long a, int b) {
-			return a+b;
-		}
+        public static double sum(long a, double b) {
+            return a + b;
+        }
+    }
 
-		public static long sum(int a, int b) {
-			return a+b;
-		}
+    public static class MixedLongParamters {
 
-		public static double sum(double a, long b) {
-			return a+b;
-		}
+        public static long sum(long a, long b) {
+            return a + b;
+        }
 
-		public static long sum(int a, long b, long c) {
-			return a+b+c;
-		}
-	}
+        public static long sum(long a, int b) {
+            return a + b;
+        }
 
+        public static long sum(int a, int b) {
+            return a + b;
+        }
 
-	// Return double, parameter double, double
-	@FunctionalInterface
-	public interface FIDoubleDouble {
-		double apply(double a, double b);
-	}
-	public double sumDoubleDouble() {
-		FIDoubleDouble bf = MixedDoubleParamters::sum;
-    	return bf.apply(2d, 2d);
-	}
+        public static double sum(double a, long b) {
+            return a + b;
+        }
 
-	// Return double, parameter double, float
-	@FunctionalInterface
-	public interface FIDoubleDoubleFloat {
-		double apply(double a, float b);
-	}
-	public double sumDoubleFloat() {
-		FIDoubleDoubleFloat bf = MixedDoubleParamters::sum;
-		return bf.apply(2d, 3.14f);
-	}
+        public static long sum(int a, long b, long c) {
+            return a + b + c;
+        }
+    }
 
-	// Return double, parameter float, double
-	@FunctionalInterface
-	public interface FIDoubleFloatDouble {
-		double apply(float a, double b);
-	}
-	public double sumFloatDouble() {
-		FIDoubleFloatDouble bf = MixedDoubleParamters::sum;
-		return bf.apply(4.2f, 2d);
-	}
+    // Return double, parameter double, double
+    @FunctionalInterface public interface FIDoubleDouble {
 
-	// Return float, parameter float, float
-	@FunctionalInterface
-	public interface FIFloatFloatFloat {
-		float apply(float a, float b);
-	}
-	public float sumFloatFloat() {
-		FIFloatFloatFloat bf = MixedDoubleParamters::sum;
-		return bf.apply(2.7f, 2.5f);
-	}
+        double apply(double a, double b);
+    }
 
-	// Return double, parameter double, float, double
-	@FunctionalInterface
-	public interface FIDoubleFloatDoubleFloat {
-		double apply(float a, double b, float c);
-	}
-	public double sumFloatDoubleFloat() {
-		FIDoubleFloatDoubleFloat tf = MixedDoubleParamters::sum;
-		return tf.apply(3.14f, 42d, 2.5f);
-	}
+    public double sumDoubleDouble() {
+        FIDoubleDouble bf = MixedDoubleParamters::sum;
+        return bf.apply(2d, 2d);
+    }
 
-	// Return double, parameter int, double
-	@FunctionalInterface
-	public interface FIDoubleIntDouble {
-		double apply(int a, double b);
-	}
-	public double sumDoubleInt() {
-		FIDoubleIntDouble bf = MixedDoubleParamters::sum;
-		return bf.apply(42, 42d);
-	}
+    // Return double, parameter double, float
+    @FunctionalInterface public interface FIDoubleDoubleFloat {
 
-	// Return double, parameter long, double
-	@FunctionalInterface
-	public interface FIDoubleLongDouble {
-		double apply(long a, double b);
-	}
-	public double sumLongDouble() {
-		FIDoubleLongDouble bf = MixedDoubleParamters::sum;
+        double apply(double a, float b);
+    }
+
+    public double sumDoubleFloat() {
+        FIDoubleDoubleFloat bf = MixedDoubleParamters::sum;
+        return bf.apply(2d, 3.14f);
+    }
+
+    // Return double, parameter float, double
+    @FunctionalInterface public interface FIDoubleFloatDouble {
+
+        double apply(float a, double b);
+    }
+
+    public double sumFloatDouble() {
+        FIDoubleFloatDouble bf = MixedDoubleParamters::sum;
+        return bf.apply(4.2f, 2d);
+    }
+
+    // Return float, parameter float, float
+    @FunctionalInterface public interface FIFloatFloatFloat {
+
+        float apply(float a, float b);
+    }
+
+    public float sumFloatFloat() {
+        FIFloatFloatFloat bf = MixedDoubleParamters::sum;
+        return bf.apply(2.7f, 2.5f);
+    }
+
+    // Return double, parameter double, float, double
+    @FunctionalInterface public interface FIDoubleFloatDoubleFloat {
+
+        double apply(float a, double b, float c);
+    }
+
+    public double sumFloatDoubleFloat() {
+        FIDoubleFloatDoubleFloat tf = MixedDoubleParamters::sum;
+        return tf.apply(3.14f, 42d, 2.5f);
+    }
+
+    // Return double, parameter int, double
+    @FunctionalInterface public interface FIDoubleIntDouble {
+
+        double apply(int a, double b);
+    }
+
+    public double sumDoubleInt() {
+        FIDoubleIntDouble bf = MixedDoubleParamters::sum;
+        return bf.apply(42, 42d);
+    }
+
+    // Return double, parameter long, double
+    @FunctionalInterface public interface FIDoubleLongDouble {
+
+        double apply(long a, double b);
+    }
+
+    public double sumLongDouble() {
+        FIDoubleLongDouble bf = MixedDoubleParamters::sum;
         return bf.apply(42l, 42.3d);
     }
 
-	// Return long, parameter long, long
-	@FunctionalInterface
-	public interface FILongLongLong {
-		long apply(long a, long b);
-	}
+    // Return long, parameter long, long
+    @FunctionalInterface public interface FILongLongLong {
+
+        long apply(long a, long b);
+    }
+
     public long sumLongLong() {
         FILongLongLong bf = MixedLongParamters::sum;
         return bf.apply(42l, 42l);
     }
 
-	// Return long, parameter long, int
-	@FunctionalInterface
-	public interface FILongLongInt {
-		long apply(long a, int b);
-	}
+    // Return long, parameter long, int
+    @FunctionalInterface public interface FILongLongInt {
+
+        long apply(long a, int b);
+    }
+
     public long sumLongInt() {
-		FILongLongInt bf = MixedLongParamters::sum;
+        FILongLongInt bf = MixedLongParamters::sum;
         return bf.apply(42l, 24);
     }
 
-	// Return long, parameter int, int
-	@FunctionalInterface
-	public interface FILongIntInt {
-		long apply(int a, int b);
-	}
+    // Return long, parameter int, int
+    @FunctionalInterface public interface FILongIntInt {
+
+        long apply(int a, int b);
+    }
+
     public long sumIntInt() {
-		FILongIntInt bf = MixedLongParamters::sum;
+        FILongIntInt bf = MixedLongParamters::sum;
         return bf.apply(42, 314);
     }
 
-	// Return double, parameter double, long
-	@FunctionalInterface
-	public interface FIDoubleDoubleLong {
-		double apply(double a, long b);
-	}
+    // Return double, parameter double, long
+    @FunctionalInterface public interface FIDoubleDoubleLong {
+
+        double apply(double a, long b);
+    }
+
     public double sumDoubleLong() {
-		FIDoubleDoubleLong bf = MixedLongParamters::sum;
+        FIDoubleDoubleLong bf = MixedLongParamters::sum;
         return bf.apply(5.5d, 42l);
     }
 
-	// Return long, parameter int, long, long
-	@FunctionalInterface
-	public interface FILongIntLongLong {
-		long apply(int a, long b, long c);
-	}
+    // Return long, parameter int, long, long
+    @FunctionalInterface public interface FILongIntLongLong {
+
+        long apply(int a, long b, long c);
+    }
+
     public long sumIntLongLong() {
-		FILongIntLongLong tf = MixedLongParamters::sum;
+        FILongIntLongLong tf = MixedLongParamters::sum;
         return tf.apply(3, 4l, 5l);
     }
 }
