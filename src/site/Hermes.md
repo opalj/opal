@@ -1,13 +1,15 @@
 # Hermes - Building and Evaluating Test Corpora
 
 ## Overview
-Hermes enables you to evaluate a given set of Java (bytecode) projects to comprehend their basic properties and to select those projects that have interesting, distinguishing factors when evaluating and testing your static analysis. For example, when you want to test that your analysis is able to handle all types of bytecode instructions, then you should take a close look at the results of the respective query which reports the usage of Java bytecode instructions for a given project. Alternatively, Hermes can automatically select projects for you such that at all instructions are guaranteed to be in the final corpus and that the overall code base of the selected projects is minimal w.r.t. the overall number of methods.
+Hermes enables you to evaluate a given set of Java (bytecode) projects to comprehend their basic properties and to select those projects that have interesting, distinguishing factors when evaluating and testing your static analysis. 
+
+For example, when you want to test that your analysis is able to handle all types of bytecode instructions, then you should take a close look at the results of the respective query (`BytecodeInstructions`) which reports the usage of Java bytecode instructions for a given project. Additionally, Hermes can automatically select projects for you such that at all instructions are guaranteed to be in the final corpus and that the overall code base of the selected projects is minimal w.r.t. the overall number of methods. This minimal corpus can be computed once all queries are evaluated. To start the computation go to `File` &rightarrow; `Compute Projects for Corpus`.
 
 ![Hermes - Overview](Hermes.png)
 
 
 ## Developing Queries
-A query is basically a mapping between some feature and those elements of a project that implement/provide/have the respective feature. For example, a feature could be the kind of type (*interface*, *class*, *enum*, *annotation*) which is defined by a specific class file. The query would then anlayse all class files of the project and assign each class file to its respective category. In the context of Hermes, we would consider the query as simultanesouly deriving multiple features.
+A query is basically a mapping between some feature and those elements of a project that implement/provide/have the respective feature. For example, a feature could be the kind of type (*interface*, *class*, *enum*, *annotation*) which is defined by a specific class file. The query would then analyze all class files of the project and assign each class file to its respective category. In the context of Hermes, we would consider the query as simultaneously deriving multiple features.
 
 All queries in Hermes have to inherit from `org.opalj.hermes.FeatureQuery` and have to implement the two methods: `featureIDs` and `apply` as seen in the example blow.
 
@@ -19,9 +21,7 @@ All queries in Hermes have to inherit from `org.opalj.hermes.FeatureQuery` and h
 
     object MyQuery extends FeatureQuery {
 
-        override val featureIDs: List[String] = {
-            ???
-        }
+        override val featureIDs: List[String] = { ??? }
 
         override def apply[S](
             projectConfiguration: ProjectConfiguration,
@@ -29,10 +29,9 @@ All queries in Hermes have to inherit from `org.opalj.hermes.FeatureQuery` and h
             rawClassFiles:        Traversable[(da.ClassFile, S)]
         ): TraversableOnce[Feature[S]] = {
             ???
-        }
-    }
+    }   }
 
-Next, we will discuss a complete query for *native* methods.
+Next, we will discuss a complete query which finds *native* methods.
 
     package org.opalj
     package hermes
@@ -47,8 +46,8 @@ Next, we will discuss a complete query for *native* methods.
         // recommended to use short, but descriptive names.
         // Additionally, it is recommend to capitalize the name as used in titles.
         //
-        // The names of the features returned here have to equal to the names used by
-        // the query!
+        // The names of the features returned here have to equal the names used by
+        // the query itself (the `apply` function below)!
         override val featureIDs: List[String] = List("Native Methods")
 
         override def apply[S](
@@ -70,17 +69,17 @@ Next, we will discuss a complete query for *native* methods.
                 (classFile, source) ← project.projectClassFilesWithSources
 
                 // It is highly recommended to regularly check if the query should be aborted;
-                // if so, the reported (partial?) results will always be thrown away.
+                // if so, the reported (intermediate/partial) results will always be thrown away.
                 if !isInterrupted()
 
                 // Locations are immutable and hierarchically organized and therefore it
-                // is generally meaningful to always create instances of location information
-                // that may be shared as soon as possible.
+                // is generally meaningful to always create instances of location information,
+                // which may be shared, as soon as possible.
                 classLocation = ClassFileLocation(source, classFile)
                 m ← classFile.methods
-                if m.isNative
+                if m.isNative // basically "the query" 
             } {
-                // The current method is native and is added to the set of collections..
+                // The current method is native and is added to the set of native methods..
                 nativeMethods += MethodLocation(classLocation, m)
             }
 
@@ -90,9 +89,13 @@ Next, we will discuss a complete query for *native* methods.
         }
     }
 
-In some cases it might be interesting to also derive general project-wide statistic on the fly. In this case, the results should be stored in the project configuration's statistics object. E.g., if you would have computed the average size of the inheritance tree on the fly, you would then store the value in the project's statistics as shown below.
+In some cases it might be interesting to also derive general project-wide statistic on the fly. In this case, the results should be stored in the project configuration's `statistics` object. E.g., if you would have computed the average size of the inheritance tree on the fly, you would then store the value in the project's statistics as shown below.
 
     projectConfiguration.addStatistic("⟨SizeOfInheritanceTree⟩",averageSizeOfInheritanceTree)
+    
+Here, the string `"⟨SizeOfInheritanceTree⟩"` uses the mathematical notation "⟨⟩" to denote the average.
+   
+After implementing the query, it is highly recommended to document the query. The documentation should describe the derived feature and should also give at least one example in which context the query is useful. E.g., the above query would help to select trivial programs for which a pure Java based analysis would be sufficient.    
 
 ## Executing Queries
 
