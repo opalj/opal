@@ -28,46 +28,63 @@
  */
 package lambdas.methodreferences;
 
-import java.util.LinkedHashSet;
-import java.util.function.*;
+import java.util.ArrayList;
 
 /**
- * This class contains examples for method references dealing with proxy class receiver inheritance.
+ * This class contains examples for method references in sink.
  *
  * <!--
  *
+ *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
+ *
  *
  * -->
  *
  * @author Andreas Muttscheller
  */
-public class ReceiverInheritance {
+public class SinkTest {
 
-    public static <T, R> R someBiConsumerParameter(Supplier<R> s,
-            BiConsumer<R, T> bc, BiConsumer<R, R> r, T t) {
-        R state = s.get();
-        bc.accept(state, t);
-        r.accept(state, state);
+    // Copied from java.util.stream.Sink
+    interface Sink<T> extends java.util.function.Consumer<T> {
+        default void begin(long size) {}
+        default void end() {}
+        default boolean cancellationRequested() {
+            return false;
+        }
+        default void accept(int value) {
+            throw new IllegalStateException("called wrong accept method");
+        }
+        default void accept(long value) {
+            throw new IllegalStateException("called wrong accept method");
+        }
+        default void accept(double value) {
+            throw new IllegalStateException("called wrong accept method");
+        }
+        interface OfInt extends Sink<Integer> {
+            @Override
+            void accept(int value);
 
-        return state;
+            @Override
+            default void accept(Integer i) {
+                accept(i.intValue());
+            }
+        }
     }
 
-    public static <T> LinkedHashSet<T> callBiConsumer(T t) {
-        LinkedHashSet<T> lhm = ReceiverInheritance.<T, LinkedHashSet<T>>someBiConsumerParameter(
-                LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll, t);
+    public static class SinkOfInt implements Sink.OfInt {
+        @Override
+        public void accept(int value) {
 
-        return lhm;
+        }
     }
 
-    public static <T> void instanceBiConsumer(T t) {
-        LinkedHashSet<T> lhm = new LinkedHashSet<T>();
-        Consumer<T> bc = lhm::contains;
-        bc.accept(t);
-
-        lhm.contains("foo");
+    public static void downstreamTest() {
+        ArrayList<Integer> list = new ArrayList<Integer>();
+        Sink<Integer> downstream = new SinkOfInt();
+        downstream.begin(list.size());
+        list.forEach(downstream::accept);
+        downstream.end();
     }
 }
-
-

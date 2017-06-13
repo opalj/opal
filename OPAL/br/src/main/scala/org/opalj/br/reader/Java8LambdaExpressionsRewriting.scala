@@ -58,6 +58,7 @@ import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
  *
  * @author Arne Lottmann
  * @author Michael Eichberg
+ * @author Andreas Muttscheller
  */
 trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     this: ClassFileBinding ⇒
@@ -180,12 +181,12 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
             val receiverType =
                 // Check the target method op code.
-                // FIXME Either document why this test is sufficient (in the presence of default methods or fix it...
-                // Only INVOKEVIRTUAL methods have to be changed, e.g.
-                // `LinkedHashSet::contains`.
-                if (invocationInstruction != INVOKEVIRTUAL.opcode)
+                // Only INVOKEVIRTUAL and INVOKEINTERFACE methods have to be changed, e.g.
+                // `LinkedHashSet::contains` or `Sink::accept`.
+                if (invocationInstruction != INVOKEVIRTUAL.opcode &&
+                    invocationInstruction != INVOKEINTERFACE.opcode) {
                     targetMethodOwner
-                else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
+                } else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
                     // If we have an instance of a object and use a method reference,
                     // get the receiver type from the inovkedynamic instruction.
                     // It is the first parameter of the functional interface parameter
@@ -193,8 +194,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                     invokedynamic.methodDescriptor.parameterTypes.head.isObjectType) {
                     invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
                 } else if (functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.nonEmpty &&
-                    // If we get a instance method reference like `LinkedHashSet::addAll`, get the receiver type from
-                    // the functional interface. The first parameter is the instance where the method should be called.
+                    // If we get a instance method reference like `LinkedHashSet::addAll`, get
+                    // the receiver type from the functional interface. The first parameter is
+                    // the instance where the method should be called.
                     functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.isObjectType) {
                     functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.asObjectType
                 } else {
