@@ -1,9 +1,9 @@
 # Hermes - Building and Evaluating Test Corpora
 
 ## Overview
-Hermes enables you to evaluate a given set of Java (bytecode) projects to comprehend their basic properties and to select those projects that have interesting, distinguishing factors when evaluating and testing your static analysis. 
+Hermes enables you to evaluate a given set of Java (bytecode) projects to comprehend their basic properties and to select those projects that have interesting, distinguishing factors when evaluating and testing your static analysis.
 
-For example, when you want to test that your analysis is able to handle all types of bytecode instructions, then you should take a close look at the results of the respective query (`BytecodeInstructions`) which reports the usage of Java bytecode instructions for a given project. Additionally, Hermes can automatically select projects for you such that at all instructions are guaranteed to be in the final corpus and that the overall code base of the selected projects is minimal w.r.t. the overall number of methods. This minimal corpus can be computed once all queries are evaluated. To start the computation go to `File` &rightarrow; `Compute Projects for Corpus`.
+For example, when you want to test that your analysis is able to handle all types of bytecode instructions, then you should take a close look at the results of the respective query (`BytecodeInstructions`) which reports the usage of Java bytecode instructions for a given project. Additionally, Hermes can automatically select projects for you such that at all instructions are guaranteed to be in the final corpus and that the overall code base of the selected projects is minimal w.r.t. the overall number of methods. This minimal corpus can be computed once all queries are evaluated. To start the computation go to `File` &rarr; `Compute Projects for Corpus`.
 
 ![Hermes - Overview](Hermes.png)
 
@@ -77,7 +77,7 @@ Next, we will discuss a complete query which finds *native* methods.
                 // which may be shared, as soon as possible.
                 classLocation = ClassFileLocation(source, classFile)
                 m ← classFile.methods
-                if m.isNative // basically "the query" 
+                if m.isNative // basically "the query"
             } {
                 // The current method is native and is added to the set of native methods..
                 nativeMethods += MethodLocation(classLocation, m)
@@ -92,17 +92,27 @@ Next, we will discuss a complete query which finds *native* methods.
 In some cases it might be interesting to also derive general project-wide statistic on the fly. In this case, the results should be stored in the project configuration's `statistics` object. E.g., if you would have computed the average size of the inheritance tree on the fly, you would then store the value in the project's statistics as shown below.
 
     projectConfiguration.addStatistic("⟨SizeOfInheritanceTree⟩",averageSizeOfInheritanceTree)
-    
+
 Here, the string `"⟨SizeOfInheritanceTree⟩"` uses the mathematical notation "⟨⟩" to denote the average.
-   
-After implementing the query, it is highly recommended to document the query. The documentation should describe the derived feature and should also give at least one example in which context the query is useful. E.g., the above query would help to select trivial programs for which a pure Java based analysis would be sufficient.    
+
+After implementing the query, it is highly recommended to document the query using Markdown. The documentation should describe the derived feature and should also give at least one example in which context the query is useful. E.g., the above query would help to select trivial programs for which a pure Java based analysis would be sufficient. Hermes will use the simple name of the class which implements the query, here *NativeMethods*, to determine the name of the markdown file: *Simple_Name_Of_Class.markdown*. The file will be loaded using the class' `getResource` method. Hence, the markdown file has to be stored along with the class. If you want to document your code in a different way; e.g., using HTML, go to the documentation of [org.opalj.hermes.FeatureQuery](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.hermes.FeatureQuery)
 
 ## Executing Queries
 
-After the development of the query it is necessary to register it to make it possible for Hermes to execute it. For that, it is either necessary to add the query to the `application.conf` file, which is part of Hermes, or to create your own config file and add it over there. In both cases the key has to be:
+After the development of the query, it is necessary to register it, to make it possible for Hermes to execute it. For that, it is either necessary to add the query to the `application.conf` file, which is part of Hermes, or to create your own config file and add it over there. In both cases the config key has to be:
 
     org.opalj.hermes.queries.registered = [
         {query = org.opalj.hermes.queries.NativeMethods, activate = true }
     ]
+    
+The big advantage of registering all queries in the same place is that it is easily possible to order the queries. The recommended ordering is: **descending execution time**. This will reduce the overall runtime. To get an idea of the execution time, just run Hermes and open the window *Feature Execution Times*.
 
-The big advantage of registering all queries in the same place is that it is easily possible to order the queries. The recommended ordering is: **descending execution time**. This will reduce the overall runtime.
+## Contributing to Hermes
+
+### New Queries
+
+If you want to contribute a new query to Hermes, create a pull request that consists of (1) the query - which has to have the package name `org.opalj.hermes.queries` - (2) the user-level documentation, and (3) the updated `application.conf`. The files should be stored in/are found in:
+
+ - The documentation (Markdown file):  **Developing_OPAL/tools/src/main/resources/org/opalj/hermes/queries/&lt;QueryName&gt;.markdown**
+ - The query (Scala file): **Developing_OPAL/tools/src/main/scala/org/opalj/hermes/queries/&lt;QueryName&gt;.scala**
+ - Application.conf: **DEVELOPING_OPAL/tools/src/main/resources/application.conf**
