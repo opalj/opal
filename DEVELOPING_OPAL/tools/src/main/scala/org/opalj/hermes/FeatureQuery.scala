@@ -188,6 +188,6 @@ object FeatureQueries {
     /**
      * The URL of the CSS file which used to style the HTML document.
      */
-    final val MDCSS: URL = getClass().getResource("Queries.css")
+    final val MDCSS: URL = this.getClass.getResource("Queries.css")
 
 }
