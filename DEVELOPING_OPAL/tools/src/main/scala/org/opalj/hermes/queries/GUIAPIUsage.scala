@@ -73,9 +73,9 @@ object GUIAPIUsage extends FeatureQuery {
                 locations(0) += location
             } else if (entry.startsWith("org/eclipse/swt")) {
                 locations(1) += location
-            } else if (entry.startsWith(("javax/swing"))) {
+            } else if (entry.startsWith("javax/swing")) {
                 locations(2) += location
-            } else if (entry.startsWith(("java/awt"))) {
+            } else if (entry.startsWith("java/awt")) {
                 locations(3) += location
             }
         }
