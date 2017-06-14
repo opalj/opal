@@ -36,8 +36,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.Domain
-import org.opalj.ai.SimpleAIKey
 import org.opalj.ai.AIResult
+import org.opalj.ai.common.SimpleAIKey
 
 /**
  * ''Key'' to get the 3-address based code of a method computed using the result of the
