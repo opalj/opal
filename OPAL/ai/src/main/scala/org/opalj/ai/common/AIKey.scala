@@ -28,13 +28,15 @@
  */
 package org.opalj
 package ai
+package common
 
 import scala.collection.concurrent.TrieMap
-import org.opalj.ai.domain.RecordDefUse
+
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.domain.RecordDefUse
 
 /**
  * ''Key'' to get the result of the abstract interpretation of a method.

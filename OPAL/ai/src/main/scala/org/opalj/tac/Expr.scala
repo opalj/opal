@@ -52,6 +52,13 @@ import org.opalj.br.MethodHandle
 import org.opalj.br.PC
 import org.opalj.ai.ValueOrigin
 
+/**
+ * Represents an expression. In general, every expression should be a simple expression, where
+ * the child expression are just `Var`s. However, when the code is going to be transformed to
+ * human readable code (e.g., Java oder Scala), then it is possible to build up complex expressions.
+ *
+ * @tparam V
+ */
 trait Expr[+V <: Var[V]] extends ASTNode[V] {
 
     /**

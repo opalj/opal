@@ -40,6 +40,13 @@ import java.io.File
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.ai.Domain
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Tests that all methods of the JDK can be converted to a three address representation.
@@ -48,12 +55,15 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveTest extends FunSpec with Matchers {
+class TACAIIntegrationTest extends FunSpec with Matchers {
 
     val jreLibFolder: File = JRELibraryFolder
     val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
-    def checkFolder(folder: File): Unit = {
+    def checkFolder(
+        folder:        File,
+        domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse
+    ): Unit = {
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
         val mutex = new Object
@@ -65,15 +75,11 @@ class TACNaiveTest extends FunSpec with Matchers {
             cf ← project.allProjectClassFiles.par
             m ← cf.methods
             body ← m.body
+            aiResult = BaseAI(cf, m, domainFactory(project, cf, m))
         } {
             try {
-                // without using AIResults
-                val (tacNaiveCode, _, _) = TACNaive(
-                    method = m,
-                    classHierarchy = project.classHierarchy,
-                    optimizations = AllTACNaiveOptimizations
-                )
-                ToTxt(tacNaiveCode)
+                val TACode(tacAICode, _, _, _) = TACAI(m, project.classHierarchy, aiResult)(List.empty)
+                ToTxt(tacAICode)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
                     val methodSignature = m.toJava(cf)
@@ -105,20 +111,23 @@ class TACNaiveTest extends FunSpec with Matchers {
         }
     }
 
-    describe("creating the three-address representation using the naive transformation approach") {
+    describe("creating the three-address representation using the results of an abstract interpretation") {
 
-        it("it should be able to convert all methods of the JDK") {
+        val domainFactory = (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
+            new DefaultDomainWithCFGAndDefUse(p, cf, m)
+        }
+
+        it("it should be able to create fully typed TAC for the set of collected class files") {
             time {
-                checkFolder(jreLibFolder)
+                checkFolder(biClassfilesFolder, domainFactory)
             } { t ⇒ info(s"conversion took ${t.toSeconds}") }
         }
 
-        it("it should be able to convert all methods of the set of collected class files") {
+        it("it should be able to create fully typed TAC for the JDK") {
             time {
-                checkFolder(biClassfilesFolder)
+                checkFolder(jreLibFolder, domainFactory)
             } { t ⇒ info(s"conversion took ${t.toSeconds}") }
         }
-
     }
 
 }
