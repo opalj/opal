@@ -40,11 +40,13 @@ case class EscapeEntity(method: Method, newExpr: New) extends Entity
 
 class SimpleEscapeAnalysis private(final val project: SomeProject) extends FPCFAnalysis {
 
+    val DEBUG = false;
+
     private def checkValue(value: Expr[_], p2s: IntSet) = {
         if (value.isInstanceOf[UVar[_]])
             value.asInstanceOf[UVar[_]].definedBy.exists(v ⇒ p2s.contains(v))
         else
-            throw new RuntimeException("ARG")
+            throw new RuntimeException("This should not happen")
     }
 
     private def checkParams(params: Seq[Expr[_]], p2s: IntSet) = {
@@ -57,46 +59,46 @@ class SimpleEscapeAnalysis private(final val project: SomeProject) extends FPCFA
         val TACode(code, _, _, _) = tac(method)
 
         synchronized {
-            println("----------------------------------------------")
-            println("METHOD: " + method.name)
+            if (DEBUG) println("----------------------------------------------")
+            if (DEBUG) println("METHOD: " + method.name)
             var p2s = IntSet.empty
             for (stmt ← code) {
-                println(stmt)
+                if (DEBUG) println(stmt)
                 stmt match {
                     case PutStatic(_, _, _, value) ⇒ if (checkValue(value, p2s)) {
-                        println("ESCAPE")
+                        if (DEBUG) println("ESCAPE")
                         return ImmediateResult(method, GlobalEscape)
                     }
                     case PutField(_, _, _, _, value) ⇒ if (checkValue(value, p2s)) {
-                        println("ESCAPE")
+                        if (DEBUG) println("ESCAPE")
                         return ImmediateResult(method, GlobalEscape)
                     }
                     case ReturnValue(_, value) ⇒ if (checkValue(value, p2s)) {
-                        println("ESCAPE")
+                        if (DEBUG) println("ESCAPE")
                         return ImmediateResult(method, GlobalEscape)
                     }
                     case ArrayStore(_, _, _, value) ⇒ if (checkValue(value, p2s)) {
-                        println("ESCAPE")
+                        if (DEBUG) println("ESCAPE")
                         return ImmediateResult(method, GlobalEscape)
                     }
                     case Throw(_, exception) ⇒ if (checkValue(exception, p2s)) {
-                        println("ESCAPE")
+                        if (DEBUG) println("ESCAPE")
                         return ImmediateResult(method, GlobalEscape)
                     }
                     case StaticMethodCall(_, _, _, _, _, params) ⇒
                         if (checkParams(params, p2s)) {
-                            println("ESCAPE")
+                            if (DEBUG) println("ESCAPE")
                             return ImmediateResult(method, GlobalEscape)
                         }
                     case VirtualMethodCall(_, _, _, _, _, receiver, params) ⇒
                         if (checkValue(receiver, p2s) || checkParams(params, p2s)) {
-                            println("ESCAPE")
+                            if (DEBUG) println("ESCAPE")
                             return ImmediateResult(method, GlobalEscape)
                         }
                     // TODO: should the constructor base local escape?
                     case NonVirtualMethodCall(_, _, _, _, _, _, params) ⇒
                         if (checkParams(params, p2s)) {
-                            println("ESCAPE")
+                            if (DEBUG) println("ESCAPE")
                             return ImmediateResult(method, GlobalEscape)
                         }
                     case Assignment(_, left, right) ⇒ right match {
@@ -104,34 +106,37 @@ class SimpleEscapeAnalysis private(final val project: SomeProject) extends FPCFA
                             p2s = p2s + left.asInstanceOf[DVar[_]].definedBy
                         case NonVirtualFunctionCall(_, _, _, _, _, _, params) ⇒
                             if (params.exists(value ⇒ value.asInstanceOf[UVar[_]].definedBy.exists(v ⇒ p2s.contains(v)))) {
-                                println("ESCAPE")
+                                if (DEBUG) println("ESCAPE")
                                 return ImmediateResult(method, GlobalEscape)
                             }
                         case VirtualFunctionCall(_, _, _, _, _, receiver, params) ⇒
                             if (checkValue(receiver, p2s)
                                 || params.exists(value ⇒ value.asInstanceOf[UVar[_]].definedBy.exists(v ⇒ p2s.contains(v)))) {
-                                println("ESCAPE")
+                                if (DEBUG) println("ESCAPE")
                                 return ImmediateResult(method, GlobalEscape)
                             }
                         case StaticFunctionCall(_, _, _, _, _, params) ⇒
                             if (params.exists(value ⇒ value.asInstanceOf[UVar[_]].definedBy.exists(v ⇒ p2s.contains(v)))) {
-                                println("ESCAPE")
+                                if (DEBUG) println("ESCAPE")
                                 return ImmediateResult(method, GlobalEscape)
                             }
                         case Invokedynamic(_, _, _, _, params) ⇒
                             if (params.exists(value ⇒ value.asInstanceOf[UVar[_]].definedBy.exists(v ⇒ p2s.contains(v)))) {
-                                println("ESCAPE")
+                                if (DEBUG) println("ESCAPE")
                                 return ImmediateResult(method, GlobalEscape)
                             }
+                        case Checkcast(_, value, cmpTpe) => {
+                            if (DEBUG) println(value + " " + cmpTpe)
+                        }
                         case _ ⇒
                     }
                     case _ ⇒
                 }
-                println(p2s)
-                println()
+                if (DEBUG) println(p2s)
+                if (DEBUG) println()
             }
 
-            println("----------------------------------------------")
+            if (DEBUG) println("----------------------------------------------")
         }
         Result(method, NoEscape)
     }
