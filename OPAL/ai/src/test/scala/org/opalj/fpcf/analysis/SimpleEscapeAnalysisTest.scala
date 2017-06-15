@@ -28,10 +28,8 @@
  */
 package org.opalj.fpcf.analysis
 
-import java.net.URL
 
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.test.annotations.EscapeKeys
