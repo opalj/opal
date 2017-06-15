@@ -34,7 +34,8 @@ import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Registry for all domains that can be instantiated given a `Project`, `ClassFile` and `Method` object.
+ * Registry for all domains that can be instantiated given a `Project`, `ClassFile` and
+ * `Method` object.
  *
  * The registry was developed to support tools for debugging purposes that let
  * the user/developer choose between different domains. After choosing a domain,

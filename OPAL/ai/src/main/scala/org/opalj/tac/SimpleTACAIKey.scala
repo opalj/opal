@@ -27,30 +27,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package tac
 
 import scala.collection.concurrent.TrieMap
-import org.opalj.ai.Domain
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.RecordDefUse
+
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
-import org.opalj.tac.TACode
-import org.opalj.tac.DUVar
-import org.opalj.tac.TACAI
-
-import scala.collection.concurrent.TrieMap
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
 
 /**
  * ''Key'' to get the 3-address based code of a method computed using the configured
- * domain/data-flow analysis.
+ * domain/data-flow analysis. This key performs the underlying data-flow analysis on demand using
+ * the configured data-flow analyses; the results of the data-flow analysis are NOT shared. Hence,
+ * this ''key'' should only be used if the result of the underlying analysis is no longer
+ * required after generating the TAC.
  *
- * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
- *
+ * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
+ *          pass in `this` object.
  * @author Michael Eichberg
  */
-object TACAIKey extends ProjectInformationKey[Method ⇒ TACode[DUVar[Domain#DomainValue]]] {
+object SimpleTACAIKey extends TACAIKey {
 
     @volatile var domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse =
         (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
@@ -58,9 +58,7 @@ object TACAIKey extends ProjectInformationKey[Method ⇒ TACode[DUVar[Domain#Dom
         }
 
     /**
-     * This mechanism to get the TACAI code has no special prerequisites.
-     *
-     * @return `Nil`.
+     * TACAI code has no special prerequisites.
      */
     override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
@@ -80,30 +78,28 @@ object TACAIKey extends ProjectInformationKey[Method ⇒ TACode[DUVar[Domain#Dom
 
         val taCodes = TrieMap.empty[Method, TACode[DUVar[Domain#DomainValue]]]
 
-        (m: Method) ⇒ {
-            taCodes.get(m) match {
-                case Some(taCode) ⇒ taCode
-                case None ⇒
-                    val brCode = m.body.get
-                    // Basically, we use double checked locking; we really don't want to
-                    // transform the code more than once!
-                    brCode.synchronized {
-                        taCodes.get(m) match {
-                            case Some(taCode) ⇒ taCode
-                            case None ⇒
-                                val cf = project.classFile(m)
-                                val domain = domainFactory(project, cf, m)
-                                val aiResult = BaseAI(cf, m, domain)
-                                val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
-                                // well... the following cast safe is safe, because the underlying
-                                // datastructure is actually, conceptually immutable
-                                val taCode = code.asInstanceOf[TACode[DUVar[Domain#DomainValue]]]
-                                taCodes.put(m, taCode)
-                                taCode
-                        }
+        (m: Method) ⇒ taCodes.get(m) match {
+            case Some(taCode) ⇒ taCode
+            case None ⇒
+                val brCode = m.body.get
+                // Basically, we use double checked locking; we really don't want to
+                // transform the code more than once!
+                brCode.synchronized {
+                    taCodes.get(m) match {
+                        case Some(taCode) ⇒ taCode
+                        case None ⇒
+                            val cf = project.classFile(m)
+                            val domain = domainFactory(project, cf, m)
+                            val aiResult = BaseAI(cf, m, domain)
+                            val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
+                            // well... the following cast safe is safe, because the underlying
+                            // datastructure is actually, conceptually immutable
+                            val taCode = code.asInstanceOf[TACode[DUVar[Domain#DomainValue]]]
+                            taCodes.put(m, taCode)
+                            taCode
                     }
-            }
+                }
+
         }
     }
 }
-

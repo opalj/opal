@@ -184,7 +184,6 @@ case class CFG(
      * not returned.)
      */
     def allBBs: Iterator[BasicBlock] = {
-        //basicBlocks.view.filter(_ ne null).toSet
         new Iterator[BasicBlock] {
 
             var currentBBPC = 0
@@ -194,12 +193,18 @@ case class CFG(
             def next: BasicBlock = {
                 val current = basicBlocks(currentBBPC)
                 currentBBPC = current.endPC + 1
+                // jump to the end and check if the instruction direct following this bb
+                // actually belongs to a
                 while (currentBBPC < basicBlocks.length && (basicBlocks(currentBBPC) eq null)) {
                     currentBBPC += 1
                 }
                 current
             }
         }
+    }
+
+    def allNodes: Iterator[CFGNode] = {
+        allBBs ++ catchNodes.iterator ++ Iterator(normalReturnNode, abnormalReturnNode)
     }
 
     /**
@@ -209,7 +214,7 @@ case class CFG(
      * instruction that always causes an exception to be thrown that is not handled by
      * a handler of the respective method.
      *
-     * @note If possible the function `foreachSuccessor` should be used as it does not have
+     * @note   If possible the function `foreachSuccessor` should be used as it does not have
      *         to create comparatively expensive intermediate data structures.
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
@@ -436,8 +441,11 @@ case class CFG(
         CFG(code, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
     }
 
+    // ---------------------------------------------------------------------------------------------
     //
-    // Visualization
+    // Visualization & Debugging
+    //
+    // ---------------------------------------------------------------------------------------------
 
     override def toString: String = {
         //        code:                    Code,

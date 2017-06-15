@@ -34,9 +34,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.mutable.AnyRefMap
-
 import org.opalj.log.OPALLogger
-
 import org.opalj.collection.immutable.IntSetBuilder
 import org.opalj.collection.immutable.IntSet
 import org.opalj.br.instructions.FieldReadAccess
@@ -45,6 +43,7 @@ import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.br.instructions.Instruction
 
 /**
  * This analysis determines where each field is accessed.
@@ -72,7 +71,10 @@ object FieldAccessInformationAnalysis {
         val allWriteAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
         val allUnresolved = new ConcurrentLinkedQueue[(Method, PCs)]()
 
-        project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
+        // we don't want to report unresolvable field references multiple times
+        val reportedFieldAccesses = ConcurrentHashMap.newKeySet[Instruction]()
+
+        val errors = project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
             val method = methodInfo.method
 
             val readAccesses = AnyRefMap.empty[Field, IntSetBuilder]
@@ -87,8 +89,10 @@ object FieldAccessInformationAnalysis {
                             case Some(field) ⇒
                                 readAccesses.getOrElseUpdate(field, new IntSetBuilder()) += pc
                             case None ⇒
-                                val message = s"cannot resolve field read access: $instruction"
-                                OPALLogger.warn("project configuration", message)
+                                if (reportedFieldAccesses.add(instruction)) {
+                                    val message = s"cannot resolve field read access: $instruction"
+                                    OPALLogger.warn("project configuration", message)
+                                }
                                 unresolved += pc
                         }
 
@@ -98,8 +102,10 @@ object FieldAccessInformationAnalysis {
                             case Some(field) ⇒
                                 writeAccesses.getOrElseUpdate(field, new IntSetBuilder()) += pc
                             case None ⇒
-                                val message = s"cannot resolve field write access: $instruction"
-                                OPALLogger.warn("project configuration", message)
+                                if (reportedFieldAccesses.add(instruction)) {
+                                    val message = s"cannot resolve field write access: $instruction"
+                                    OPALLogger.warn("project configuration", message)
+                                }
                                 unresolved += pc
                         }
 
@@ -130,6 +136,12 @@ object FieldAccessInformationAnalysis {
             }
 
             if (unresolved.nonEmpty) allUnresolved.add((method, unresolved))
+        }
+
+        if (errors.nonEmpty) {
+            errors.foreach { e ⇒
+                OPALLogger.error("analysis", "failed while deriving field access information", e)
+            }
         }
 
         import scala.collection.JavaConverters._
