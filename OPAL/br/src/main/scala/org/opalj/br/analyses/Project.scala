@@ -1626,7 +1626,8 @@ object Project {
 
         val disclaimer = "(this inconsistency may lead to useless/wrong results)"
 
-        import project.classHierarchy.isInterface
+        import project.classHierarchy
+        import classHierarchy.isInterface
 
         var exs = List.empty[InconsistentProjectException]
         val exsMutex = new Object
@@ -1636,11 +1637,26 @@ object Project {
 
         val exceptions = project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
             val BasicMethodInfo(c: ClassFile, m: Method) = e
+
+            def completeSupertypeInformation =
+                classHierarchy.isSupertypeInformationComplete(c.thisType)
+
+            def missingSupertypeClassFile =
+                classHierarchy.allSupertypes(c.thisType, false).find { t ⇒
+                    project.classFile(t).isEmpty
+                }.map { ot ⇒
+                    (classHierarchy.isInterface(ot) match {
+                        case Yes     ⇒ "interface "
+                        case No      ⇒ "class "
+                        case Unknown ⇒ "interface/class "
+                    }) + ot.toJava
+                }.getOrElse("<None>")
+
             m.body.get.iterate { (pc, instruction) ⇒
                 (instruction.opcode: @switch) match {
 
                     case NEW.opcode ⇒
-                        val objectType = instruction.asInstanceOf[NEW].objectType
+                        val NEW(objectType) = instruction
                         if (isInterface(objectType).isYes) {
                             val ex = InconsistentProjectException(
                                 s"cannot create an instance of interface ${objectType.toJava} in "+
@@ -1653,12 +1669,15 @@ object Project {
                     case INVOKESTATIC.opcode ⇒
                         val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
                         project.staticCall(invokestatic) match {
-                            case Success(_) ⇒ /*OK*/
-                            case Failure    ⇒ /*OK - partial project*/
+                            case _: Success[_] ⇒ /*OK*/
+                            case Failure       ⇒ /*OK - partial project*/
                             case Empty ⇒
                                 val ex = InconsistentProjectException(
-                                    s"target static method cannot be found "+
-                                        m.toJava(c, s"pc=$pc; $invokestatic - $disclaimer"),
+                                    s"target method of invokestatic call in "+
+                                        m.toJava(c, s"pc=$pc; $invokestatic - $disclaimer")+
+                                        "cannot be resolved; supertype information is complete="+
+                                        completeSupertypeInformation+
+                                        "; missing supertype class file: "+missingSupertypeClassFile,
                                     Error
                                 )
                                 addException(ex)
@@ -1667,12 +1686,15 @@ object Project {
                     case INVOKESPECIAL.opcode ⇒
                         val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
                         project.specialCall(invokespecial) match {
-                            case Success(_) ⇒ /*OK*/
-                            case Failure    ⇒ /*OK - partial project*/
+                            case _: Success[_] ⇒ /*OK*/
+                            case Failure       ⇒ /*OK - partial project*/
                             case Empty ⇒
                                 val ex = InconsistentProjectException(
-                                    s"target special method cannot be found "+
-                                        m.toJava(c, s"pc=$pc; $invokespecial - $disclaimer"),
+                                    s"target method of invokespecial call in "+
+                                        m.toJava(c, s"pc=$pc; $invokespecial - $disclaimer")+
+                                        "cannot be resolved; supertype information is complete="+
+                                        completeSupertypeInformation+
+                                        "; missing supertype class file: "+missingSupertypeClassFile,
                                     Error
                                 )
                                 addException(ex)
