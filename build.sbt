@@ -67,7 +67,7 @@ scalacOptions in (ScalaUnidoc, unidoc) ++=
     )
 
 javaOptions in ThisBuild ++= Seq(
-	"-Xmx3G", "-Xms1024m", "-Xnoclassgc",
+	"-Xmx7G", "-Xms1024m", "-Xnoclassgc",
 	"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC","-XX:+AggressiveOpts")
 
 addCommandAlias("compileAll","; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
@@ -357,7 +357,7 @@ lazy val incubation = Project(
   *
   */
 
-// To run the task: OPAL/publish::generateSite
+// To run the task: OPAL/publish::generateSite or compile:generateSite
 val generateSite = taskKey[File]("creates the OPAL website") in Compile
 generateSite := {
 	lazy val disassemblerJar = (assembly in da).value

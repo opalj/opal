@@ -40,12 +40,58 @@ import org.opalj.collection.immutable.Naught
  * and trees.
  *
  * This package supports the following types of graphs:
- *  1. graphs based on explicitly connected nodes ([[Node]]),
- *  1. graphs where the relationship between the nodes are encoded externally ([[Graph]]).
+ *  1.  graphs based on explicitly connected nodes ([[org.opalj.graphs.Node]]),
+ *  1.  graphs where the relationship between the nodes are encoded externally
+ *      ([[org.opalj.graphs.Graph]]).
  *
  * @author Michael Eichberg
  */
 package object graphs {
+
+    /**
+     * Returns the given graph as a CSV encoded adjacency matrix.
+     *
+     * @example
+     * For example, the graph p with the nodes A (id = 0),B (id = 1),C (id =2) and
+     *  - an edge from A to B,
+     *  - an edge from A to C and
+     *  - an edge from C to B
+     * would be encoded as follows:
+     * <pre>
+     * 0,1,1
+     * 0,0,0
+     * 0,1,0
+     * </pre>
+     *
+     * @note Though the function is optimized to handle very large graphs, encoding sparse
+     *       graphs using adjacency matrixes is not recommended.
+     *
+     * @param  maxNodeId The id of the last node. The first node has to have the id 0. I.e.,
+     *                   in case of a graph with just two nodes, the maxNodeId is 1.
+     * @param  successors The successor nodes of the node with the given id; the function has to
+     *                    be defined for every node in the range [0..maxNodeId].
+     * @return an adjacency matrix describing the given graph encoded using CSV. The returned
+     *         byte array an be directly saved and represents a valid CSV file.
+     */
+    def toAdjacencyMatrix(maxNodeId: Int, successors: Int ⇒ Set[Int]): Array[Byte] = {
+        val columns = (maxNodeId + 1) * 2
+        /* <=> nodes + (',' OR '\n') */
+        val rows = maxNodeId + 1
+        val g = new Array[Byte](rows * columns) // pre-allocate final array for CSV data
+        var r = 0
+        while (r <= maxNodeId) {
+            val s = successors(r)
+            var c = 0
+            while (c <= maxNodeId) {
+                val i = r * columns + c * 2
+                g(i) = if (s.contains(c)) '1' else '0'
+                c += 1
+                if (c <= maxNodeId) g(i + 1) = ',' else g(i + 1) = '\n'
+            }
+            r += 1
+        }
+        g
+    }
 
     /**
      * Generates a string that describes a (multi-)graph using the ".dot/.gv" file format

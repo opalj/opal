@@ -36,7 +36,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.cfg.CFGFactory
 
 /**
- * Extracts basic metric information.
+ * Extracts basic metric information (Fields/Methods per Class; Classes per Package; etc.).
  *
  * @author Michael Reif
  */

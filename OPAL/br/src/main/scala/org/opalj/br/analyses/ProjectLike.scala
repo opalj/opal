@@ -145,7 +145,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //
     //
-    // RESOLVING METHOD REFERENCES / DETERMING THE INVOKED METHOD(S)
+    // RESOLVING METHOD REFERENCES / LOCATING THE INVOKED METHOD(S)
     //
     //
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
