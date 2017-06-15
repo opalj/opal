@@ -76,8 +76,6 @@ import scalafx.scene.control.TableCell
 import scalafx.scene.control.Button
 import scalafx.scene.control.Dialog
 import scalafx.scene.control.ButtonType
-import scalafx.scene.control.MenuButton
-import scalafx.scene.control.MenuItem
 import scalafx.scene.layout.HBox
 import scalafx.scene.image.Image
 import scalafx.scene.web.WebView
@@ -98,7 +96,6 @@ import scalafx.scene.chart.CategoryAxis
 import scalafx.scene.chart.NumberAxis
 import scalafx.scene.chart.BarChart
 import scalafx.scene.chart.PieChart
-import scalafx.scene.chart.ScatterChart
 
 import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
@@ -735,136 +732,28 @@ object Hermes extends JFXApp {
         val showAnalysisTimes = new MenuItem("Show Analysis Times...") {
             onAction = handle { analysisTimesStage.show() }
         }
-        val showSatstisticVisualization = new MenuItem("Show Satstistic Visualization...") {
+        val showMethodDistribution = new MenuItem("Show Method Distribution...") {
             // IMPROVE Move it to a "permanent stage" and make the project statistics observable to make it possible to react on changes and to get proper JavaFX behavior
             disable <== analysesFinished.not
             onAction = handle {
-
                 new Stage {
-                    title = "Select Ststistic"
-                    scene = new Scene(150, 300) {
-                        val projectStatisticsList = featureMatrix.get(0).projectConfiguration.statistics.keySet
-
-                        val menuList = ObservableBuffer.empty[scalafx.scene.control.MenuItem]
-
-                        projectStatisticsList.foreach { s ⇒
-
-                            val pieChartStage = new Stage {
-                                title = s
-                                scene = new Scene(600, 600) {
-                                    root = new StackPane {
-                                        val pieChartData = ObservableBuffer.empty[javafx.scene.chart.PieChart.Data]
-                                        val pieChart = new PieChart {
-                                            data = pieChartData
-                                            title = s
-                                        }
-                                        pieChart.legendVisible = true
-                                        children = pieChart
-
-                                        featureMatrix foreach { pf ⇒
-                                            val statistics = pf.projectConfiguration.statistics
-                                            val numberOfMethods = statistics.get(s)
-                                            pieChartData.add(PieChart.Data(pf.id.value, numberOfMethods.get))
-                                        }
-
-                                    }
-                                }
-                                initOwner(stage)
+                    title = "Method Distribution Across All Projects"
+                    scene = new Scene(900, 600) {
+                        root = new StackPane {
+                            val pieChartData = ObservableBuffer.empty[javafx.scene.chart.PieChart.Data]
+                            val pieChart = new PieChart {
+                                data = pieChartData
+                                title = "Method Distribution Across All Projects"
                             }
+                            pieChart.legendVisible = true
+                            children = pieChart
 
-                            menuList.add(new MenuItem(s) {
-                                onAction = handle { pieChartStage.show() }
-                            })
-
-                        }
-
-                        val menu = new MenuButton("Select Feature") {
-                            items = menuList
-                        }
-
-                        content.add(menu)
-
-                    }
-                    initOwner(stage)
-                }.show()
-            }
-        }
-        val showFeatureToMethodCountCorrelation = new MenuItem("Show Feature To Method Count Correlation...") {
-            disable <== analysesFinished.not
-            onAction = handle {
-
-                new Stage {
-                    title = "Select Feature"
-                    scene = new Scene(500, 300) {
-                        var yLayoutOffset = 0
-                        var xLayoutOffset = 0
-                        for (featureQuery ← featureQueries) {
-                            val currentFeature = featureQuery.id
-
-                            val button = new Button(currentFeature)
-                            if (yLayoutOffset >= 10) {
-                                yLayoutOffset = 0
-                                xLayoutOffset += 1
+                            featureMatrix foreach { pf ⇒
+                                val statistics = pf.projectConfiguration.statistics
+                                val numberOfMethods = statistics.get("ProjectMethods")
+                                pieChartData.add(PieChart.Data(pf.id.value, numberOfMethods.get))
                             }
-
-                            button.layoutY = (30 * yLayoutOffset).toDouble
-                            button.layoutX = (250 * xLayoutOffset).toDouble
-
-                            val chartStage = new Stage {
-                                title = "Feature To Method Count Correlation"
-                                scene = new Scene {
-                                    val chartData = ObservableBuffer.empty[javafx.scene.chart.XYChart.Series[Number, Number]]
-
-                                    var highestMethodCount = 0.toDouble
-                                    var highestFeatureCount = 0.toDouble
-
-                                    featureMatrix foreach { pf ⇒
-                                        val statistics = pf.projectConfiguration.statistics
-                                        val numberOfMethods = statistics.get("ProjectMethods").get
-                                        var featureOccurrence = 0
-                                        pf.featureGroups.filter(f ⇒ f._1 == featureQuery).head._2.foreach(f ⇒
-                                            featureOccurrence += f.value.count)
-
-                                        if (highestMethodCount < numberOfMethods) {
-                                            highestMethodCount = numberOfMethods
-                                        }
-                                        if (highestFeatureCount < featureOccurrence) {
-                                            highestFeatureCount = featureOccurrence.toDouble
-                                        }
-
-                                        chartData.add(
-                                            XYChart.Series[Number, Number](
-                                                pf.id.value,
-                                                ObservableBuffer(XYChart.Data[Number, Number](numberOfMethods, featureOccurrence))
-                                            )
-                                        )
-
-                                    }
-                                    val methodAxisLines = highestMethodCount / 10
-                                    val featureAxisLines = highestFeatureCount / 10
-
-                                    root = new ScatterChart(
-                                        NumberAxis(
-                                            "Method count for each project",
-                                            0, highestMethodCount, methodAxisLines
-                                        ),
-                                        NumberAxis(
-                                            "Count for selected feature",
-                                            0, highestFeatureCount, featureAxisLines
-                                        )
-                                    ) {
-                                        title = currentFeature
-
-                                        data = chartData
-
-                                    }
-                                }
-                            }
-                            button.onAction = handle { chartStage.show() }
-                            content.add(button)
-                            yLayoutOffset += 1
                         }
-
                     }
                     initOwner(stage)
                 }.show()
@@ -891,7 +780,7 @@ object Hermes extends JFXApp {
         }
         List(
             showConfig,
-            showAnalysisTimes, showSatstisticVisualization, showFeatureToMethodCountCorrelation,
+            showAnalysisTimes, showMethodDistribution,
             csvExport,
             computeProjectsForCorpus
         )
