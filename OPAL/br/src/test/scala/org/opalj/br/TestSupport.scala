@@ -113,7 +113,8 @@ object TestSupport {
 
     /**
      * @note     Using this method in combination with Scalatest, where the test cases are generated
-     *           inside the loop, may lead to the situation that the project's are not gc'ed!
+     *           inside the loop, may lead to the situation that the project's are not gc'ed before
+     *           the entire test has completed!
      */
     def foreachBIProject(
         projectReader: ClassFileReader         = DefaultJava9Reader,
@@ -125,7 +126,7 @@ object TestSupport {
         while (it.hasNext) {
             val (name, project) = it.next
             f(name, project())
-            gc();
+            gc()
         }
     }
 

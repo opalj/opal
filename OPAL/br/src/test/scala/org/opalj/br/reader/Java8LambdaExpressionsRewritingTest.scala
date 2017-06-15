@@ -52,7 +52,8 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 
 /**
- * Tests the rewriting of Java8 lambda expressions based [[INVOKEDYNAMIC]] instruction.
+ * Tests the rewriting of Java 8 lambda expressions/method references based
+ * [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction.
  *
  * @author Arne Lottmann
  * @author Michael Eichberg
@@ -124,7 +125,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
      * This assumes that in the test cases, there is never more than one [[InvokedMethod]]
      * annotation on a single test method.
      *
-     * The InvokedMethod annotation might have to be revised for use with Java 8 lambdas,
+     * The `InvokedMethod` annotation might have to be revised for use with Java 8 lambdas,
      * or used multiple times (the first time referring to the actual generated
      * invokedynamic instruction, while all other times would refer to invocations of the
      * generated object's single method).
