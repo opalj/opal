@@ -1,9 +1,1 @@
-name := "Incubation"
-
-// INCUBATION CODE IS NEVER EVEN CONSIDERED TO BE ALPHA QUALITY
-version := "ALWAYS-SNAPSHOT"
-
-scalacOptions in (Compile, doc) := Opts.doc.title("Incubation") 
-scalacOptions in (Compile, console) := Seq("-deprecation")
-
-fork in run := true
+// build settings reside in the opal root build.sbt file

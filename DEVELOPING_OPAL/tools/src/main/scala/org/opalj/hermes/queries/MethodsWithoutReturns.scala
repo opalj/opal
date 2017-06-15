@@ -35,7 +35,7 @@ import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.cfg.CFGFactory
 
 /**
- * Counts the number of class files per class file version.
+ * Counts the number of methods without regular returns.
  *
  * @author Michael Eichberg
  */

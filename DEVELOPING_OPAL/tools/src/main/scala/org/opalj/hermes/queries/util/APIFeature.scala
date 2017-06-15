@@ -38,14 +38,14 @@ import org.opalj.collection.immutable.Naught
 import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
- * A common super trait for API related feature such as the usage of common or interesting APIs.
+ * A common super trait for API related features such as the usage of common or interesting APIs.
  *
  * @author Michael Reif
  */
 sealed abstract class APIFeature {
 
     /**
-     * Return the feature id of the the feature.
+     * Returns the feature id of the feature.
      *
      * @note Feature ids have to be unique.
      */

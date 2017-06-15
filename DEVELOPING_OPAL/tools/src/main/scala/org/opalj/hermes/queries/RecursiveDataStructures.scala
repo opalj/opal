@@ -35,7 +35,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 
 /**
- * Indentifies recursive data structures. Such data-structure can often significantly limit
+ * Identifies recursive data structures. Such data-structure can often significantly limit
  * the scalability of analyses.
  *
  * @author Michael Eichberg

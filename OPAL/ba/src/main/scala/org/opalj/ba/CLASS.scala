@@ -38,14 +38,14 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 case class CLASS[T](
-        val version:         UShortPair                        = CLASS.DefaultVersion,
-        val accessModifiers: AccessModifier                    = SUPER,
-        val thisType:        String,
-        val superclassType:  Option[String]                    = Some("java/lang/Object"),
-        val interfaceTypes:  Seq[String]                       = Seq.empty,
-        val fields:          FIELDS                            = FIELDS(),
-        val methods:         METHODS[T]                        = METHODS[Nothing](),
-        val attributes:      Seq[br.ClassFileAttributeBuilder] = Seq.empty
+        version:         UShortPair                        = CLASS.DefaultVersion,
+        accessModifiers: AccessModifier                    = SUPER,
+        thisType:        String,
+        superclassType:  Option[String]                    = Some("java/lang/Object"),
+        interfaceTypes:  Seq[String]                       = Seq.empty,
+        fields:          FIELDS                            = FIELDS(),
+        methods:         METHODS[T]                        = METHODS[Nothing](),
+        attributes:      Seq[br.ClassFileAttributeBuilder] = Seq.empty
 ) {
 
     /**
@@ -74,9 +74,7 @@ case class CLASS[T](
             // know the target!
             superclassType.isEmpty
         )) {
-            brMethods =
-                brMethods :+
-                    br.Method.defaultConstructor(superclassType.get)
+            brMethods = brMethods :+ br.Method.defaultConstructor(superclassType.get)
         }
 
         val attributes = this.attributes map { attributeBuilder ⇒

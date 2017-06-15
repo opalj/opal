@@ -26,45 +26,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
+package call_targets;
 
 /**
- * All standard binary arithmetic operators defined in the Java Virtual Machine/Java
- * Language Specification.
+ * Defines an annotation which basically covers all features an annotation can have.
  *
- * @note The type of a value of this enumeration is [[org.opalj.BinaryArithmeticOperator]].
+ * NOTE<br />
+ * This class is only meant to be (automatically) compiled by OPAL's build script.
  *
  * @author Michael Eichberg
  */
-object BinaryArithmeticOperators extends Enumeration {
-
-    final val Add = Value("+")
-    final val Subtract = Value("-")
-    final val Multiply = Value("*")
-    final val Divide = Value("/")
-    final val Modulo = Value("%")
-
-    final val And = Value("&")
-    final val Or = Value("|")
-    final val XOr = Value("^")
-
-    final val ShiftLeft = Value("<<")
-    final val ShiftRight = Value(">>")
-    final val UnsignedShiftRight = Value(">>>")
+public class SuperCalls {
+    protected String[] stringValues() { return new String[]{ "String 1", "String2" }; }
 }
 
-/**
- * All standard unary arithmetic operators defined in the Java Virtual Machine/Java
- * Language Specification.
- *
- * @note The type of a value of this enumeration is [[org.opalj.UnaryArithmeticOperator]].
- *
- * @author Michael Eichberg
- */
-object UnaryArithmeticOperators extends Enumeration {
+class SubSuperCalls extends SuperCalls {
 
-    final val Negate = Value("-")
+    @Override public String toString() {
+        return "SubSuperClass";
+    }
+}
 
-    final val Not = Value("!")
+class SubSubSuperCalls extends SubSuperCalls {
 
+    @Override protected String[] stringValues() {
+        String[] sv = super.stringValues();
+        sv[0] = "<EMPTY>";
+        return sv;
+    }
+
+    @Override public String toString() {
+        return "SubSuperClass";
+    }
 }
