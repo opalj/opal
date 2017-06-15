@@ -30,7 +30,6 @@ package java8methodresolution;
 
 import static java.lang.System.out;
 
-
 public class SubSub implements ISuper,ISuperAlt {
 
 	public static void main(String[] args) {
