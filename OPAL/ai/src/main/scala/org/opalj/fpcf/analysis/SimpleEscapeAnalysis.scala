@@ -32,7 +32,7 @@ package analysis
 
 import org.opalj.collection.immutable.IntSet
 import org.opalj.br.Method
-import org.opalj.br.analyses.{SomeProject, TACAIKey}
+import org.opalj.br.analyses.{SomeProject}
 import org.opalj.fpcf.properties._
 import org.opalj.tac._
 
@@ -53,7 +53,7 @@ class SimpleEscapeAnalysis private(final val project: SomeProject) extends FPCFA
 
     def determineEscape(e: Method): PropertyComputationResult = {
         val method = e //e.method
-        val tac = project.get(TACAIKey)
+        val tac = project.get(DefaultTACAIKey)
         val TACode(code, _, _, _) = tac(method)
 
         synchronized {
@@ -143,7 +143,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         // TODO this is preperation to extract all allocation sites of a method
         case method: Method => {
             var result: List[EscapeEntity] = List()
-            val TACode(code, _, _, _) = project.get(TACAIKey)(method)
+            val TACode(code, _, _, _) = project.get(DefaultTACAIKey)(method)
             for (stmt <- code) {
                 stmt match {
                     case Assignment(_, _, New(pc, tpe)) => result = EscapeEntity(method, New(pc, tpe)) :: result
@@ -153,6 +153,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
             //result
             method
         }
+        case _: EscapeEntity => throw new RuntimeException()
     }
 
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)

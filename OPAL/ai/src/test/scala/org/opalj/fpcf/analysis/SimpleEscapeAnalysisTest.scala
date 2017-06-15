@@ -28,25 +28,28 @@
  */
 package org.opalj.fpcf.analysis
 
+import java.net.URL
+
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.test.annotations.{EscapeKeys}
+import org.opalj.fpcf.test.annotations.EscapeKeys
 
 class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
-  def analysisName = "SimpleEscapeAnalysis"
+    def analysisName = "SimpleEscapeAnalysis"
 
-  override def testFileName = "classfiles/escape.jar"
+    override def testFileName = "classfiles/escape.jar"
 
-  override def testFilePath = "ai"
+    override def testFilePath = "ai"
 
-  override def analysisRunner = SimpleEscapeAnalysis
+    override def analysisRunner = SimpleEscapeAnalysis
 
-  override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
+    override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
 
-  override def propertyAnnotation: ObjectType = {
-    ObjectType("org/opalj/fpcf/test/annotations/EscapeProperty")
-  }
+    override def propertyAnnotation: ObjectType = {
+        ObjectType("org/opalj/fpcf/test/annotations/EscapeProperty")
+    }
 
-  def defaultValue = EscapeKeys.NoEscape.toString
+    def defaultValue = EscapeKeys.NoEscape.toString
 }
