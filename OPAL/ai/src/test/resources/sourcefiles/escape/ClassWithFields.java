@@ -38,5 +38,4 @@ public class ClassWithFields {
     public ClassWithFields(Object param) {
         this.f = param;
     }
-
 }
