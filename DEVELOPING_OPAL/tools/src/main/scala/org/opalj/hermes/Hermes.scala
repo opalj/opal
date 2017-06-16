@@ -38,19 +38,22 @@ import java.util.prefs.Preferences
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
 import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.fasterxml.jackson.dataformat.csv.CsvFactory
+import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
+
 import javafx.scene.control.TableColumn
 import javafx.scene.control.SelectionMode
 import javafx.scene.layout.Priority
 import javafx.stage.Screen
 
-import com.fasterxml.jackson.core.JsonFactory
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import org.controlsfx.control.PopOver
 import org.controlsfx.control.HiddenSidesPane
 import org.controlsfx.control.PopOver.ArrowLocation
@@ -99,6 +102,7 @@ import scalafx.scene.chart.BarChart
 import scalafx.scene.chart.PieChart
 import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
+
 import org.opalj.util.Nanoseconds
 import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFileReader
