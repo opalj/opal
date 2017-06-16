@@ -496,16 +496,16 @@ object TACAI {
                     }
 
                 case PUTSTATIC.opcode ⇒
-                    val PUTSTATIC(declaringClass, name, _ /*fieldType*/ ) = instruction
+                    val PUTSTATIC(declaringClass, name, fieldType) = instruction
                     val value = operandUse(0)
-                    val putStatic = PutStatic(pc, declaringClass, name, value)
+                    val putStatic = PutStatic(pc, declaringClass, name, fieldType, value)
                     addStmt(putStatic)
 
                 case PUTFIELD.opcode ⇒
-                    val PUTFIELD(declaringClass, name, _ /*fieldType*/ ) = instruction
+                    val PUTFIELD(declaringClass, name, fieldType) = instruction
                     val value = operandUse(0)
                     val objRef = operandUse(1)
-                    val putField = PutField(pc, declaringClass, name, objRef, value)
+                    val putField = PutField(pc, declaringClass, name, fieldType, objRef, value)
                     if (wasExecuted(nextPC)) {
                         addStmt(putField)
                     } else {
@@ -514,13 +514,13 @@ object TACAI {
                     }
 
                 case GETSTATIC.opcode ⇒
-                    val GETSTATIC(declaringClass, name, _ /*fieldType*/ ) = instruction
-                    val getStatic = GetStatic(pc, declaringClass, name)
+                    val GETSTATIC(declaringClass, name, fieldType) = instruction
+                    val getStatic = GetStatic(pc, declaringClass, name, fieldType)
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, getStatic)
 
                 case GETFIELD.opcode ⇒
-                    val GETFIELD(declaringClass, name, _ /*fieldType*/ ) = instruction
-                    val getField = GetField(pc, declaringClass, name, operandUse(0))
+                    val GETFIELD(declaringClass, name, fieldType) = instruction
+                    val getField = GetField(pc, declaringClass, name, fieldType, operandUse(0))
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
                     } else {

@@ -311,9 +311,11 @@ sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
 }
 
 case class PutStatic[+V <: Var[V]](
-        pc:             PC,
-        declaringClass: ObjectType, name: String,
-        value: Expr[V]
+        pc:                PC,
+        declaringClass:    ObjectType,
+        name:              String,
+        declaredFieldType: FieldType,
+        value:             Expr[V]
 ) extends FieldWriteAccessStmt[V] {
 
     final def astID = PutStatic.ASTID
@@ -327,10 +329,12 @@ object PutStatic {
 }
 
 case class PutField[+V <: Var[V]](
-        pc:             PC,
-        declaringClass: ObjectType, name: String,
-        objRef: Expr[V],
-        value:  Expr[V]
+        pc:                PC,
+        declaringClass:    ObjectType,
+        name:              String,
+        declaredFieldType: FieldType,
+        objRef:            Expr[V],
+        value:             Expr[V]
 ) extends FieldWriteAccessStmt[V] {
 
     final def astID = PutField.ASTID
