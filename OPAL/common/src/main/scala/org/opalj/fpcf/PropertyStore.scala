@@ -83,8 +83,8 @@ import org.opalj.collection.UID
  * of an entity and to collect the dependencies on those elements that are relevant.
  * I.e., if some information is not or just not completely available, the analysis should
  * still continue using the provided information and (internally) records the dependency.
- * Later on, when the analysis has computed its result it reports the same and informs the framework
- * about its dependencies.
+ * Later on, when the analysis has computed its result, it reports the same and informs the
+ * framework about its dependencies.
  *
  * ===Core Requirements on Property Computation Functions===
  *  - (One Function per Property Kind) A specific kind of property is always computed

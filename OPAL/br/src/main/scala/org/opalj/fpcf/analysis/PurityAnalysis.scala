@@ -231,9 +231,9 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                     Result(method, Impure)
 
                 case ConditionallyPure ⇒
-                    var newDependees = dependees.filter(_.e ne e)
-                    newDependees += EP(e.asInstanceOf[Method], p.asInstanceOf[Purity])
-                    IntermediateResult(method, ConditionallyPure, newDependees, c)
+                    val newEP = EP(e.asInstanceOf[Method], p.asInstanceOf[Purity])
+                    dependees = dependees.filter(_.e ne e) + newEP
+                    IntermediateResult(method, ConditionallyPure, dependees, c)
 
                 case Pure ⇒
                     dependees = dependees.filter { _.e ne e }
