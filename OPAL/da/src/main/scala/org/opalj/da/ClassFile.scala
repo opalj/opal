@@ -186,13 +186,27 @@ case class ClassFile(
         </details>
     }
 
-    def toXHTML(css: String = ClassFile.TheCSS): Node =
+    /**
+     * Creates an XHTML representation of the ClassFile.
+     *
+     * @param embeddedCSS A string which contains a CSS.
+     * @param cssFile Reference to a(nother) CSS file.
+     * @param jsFile Reference to a JavaScript file.
+     * @return The generatd HTML.
+     */
+    def toXHTML(
+        embeddedCSS: Option[String] = Some(ClassFile.TheCSS),
+        cssFile:     Option[String] = None,
+        jsFile:      Option[String] = None
+    ): Node =
         <html>
             <head>
                 <title>Java Bytecode of { thisType }</title>
                 <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
-                <style type="text/css">{ scala.xml.Unparsed(css) }</style>
+                { if (embeddedCSS.isDefined) <style type="text/css">{ scala.xml.Unparsed(embeddedCSS.get) }</style> }
+                { if (cssFile.isDefined) <link rel="stylesheet" href={ cssFile.get }></link> }
                 <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
+                { if (jsFile.isDefined) <script type="text/javascript" src={ jsFile.get }></script> }
             </head>
             <body>
                 <div id="class_file">
