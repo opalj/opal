@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 package analysis
 
+import scala.annotation.switch
 import scala.util.control.ControlThrowable
 
 import org.opalj.br.PC
@@ -87,34 +88,7 @@ import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.log.OPALLogger
 
 /**
- * This analysis determines whether a method is pure. I.e., whether the method
- * only operates on the given state (i.e., the method is pure) or
- * depends on other state/mutable global state; the given state may include the state of the
- * current object that is the receiver of the call if the object/receiver is immutable.
- *
- * '''This analysis follows the definition found on wikipedia:'''
- *
- * [...] a function may be considered a pure function if both of the following statements about
- * the function hold:
- *  -   The function always evaluates to the same result value given the same argument value(s).
- *      The function result value cannot depend on any hidden information or state that may change
- *      while program execution proceeds or between different executions of the program, nor can it
- *      depend on any external input from I/O devices.
- *
- *      '''Hence, using true constants (e.g., Math.e) is not a problem as well as creating
- *      intermediate (mutable) data structures.
- *      Furthermore, instance method based calls can also be pure if
- *      the receiving object is (effectively final) or was created as part of the evaluation
- *      of the method.'''
- *
- *  -   Evaluation of the result does not cause any semantically observable side effect or output,
- *      such as mutation of mutable objects or output to I/O devices.
- *      The result value need not depend on all (or any) of the argument values. However, it must
- *      depend on nothing other than the argument values. The function may return multiple result
- *      values and these conditions must apply to all returned values for the function to be
- *      considered pure. If an argument is "call-by-reference", any parameter mutation will alter
- *      the value of the argument outside the function, which will render the function impure.
- *      '''However, if the referenced object is immutable it is ok.'''
+ * Analyzes the purity of a method as defined by the Purity property.
  *
  * @author Michael Eichberg
  */
@@ -148,7 +122,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         var currentPC = pc
         while (currentPC < maxPC) {
             val instruction = instructions(currentPC)
-            (instruction.opcode: @scala.annotation.switch) match {
+            (instruction.opcode: @switch) match {
                 case GETSTATIC.opcode ⇒
                     val GETSTATIC(declaringClass, fieldName, fieldType) = instruction
 
@@ -257,8 +231,8 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                     Result(method, Impure)
 
                 case ConditionallyPure ⇒
-                    dependees = dependees.filter { _.e ne e }
-                    val newDependees = dependees + EP(e.asInstanceOf[Method], p.asInstanceOf[Purity])
+                    var newDependees = dependees.filter(_.e ne e)
+                    newDependees += EP(e.asInstanceOf[Method], p.asInstanceOf[Purity])
                     IntermediateResult(method, ConditionallyPure, newDependees, c)
 
                 case Pure ⇒
@@ -272,7 +246,6 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         }
 
         IntermediateResult(method, ConditionallyPure, dependees, c)
-
     }
 
     /**
