@@ -93,8 +93,8 @@ object TAC {
             val ch = project.classHierarchy
 
             if (use == "-ai" || use == "-both") { // USING AI
-                //val d = new domain.l1.DefaultDomainWithCFGAndDefUse(project, classFile, method)
-                val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
+                val d = new domain.l1.DefaultDomainWithCFGAndDefUse(project, classFile, method)
+                // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
                 val aiResult = BaseAI(classFile, method, d)
 
                 val aiCFGFile = writeAndOpen(
