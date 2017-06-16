@@ -38,6 +38,7 @@ import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.br.Type
+import org.opalj.br.FieldType
 import org.opalj.br.IntegerType
 import org.opalj.br.BaseType
 import org.opalj.br.LongType
@@ -52,6 +53,13 @@ import org.opalj.br.MethodHandle
 import org.opalj.br.PC
 import org.opalj.ai.ValueOrigin
 
+/**
+ * Represents an expression. In general, every expression should be a simple expression, where
+ * the child expression are just `Var`s. However, when the code is going to be transformed to
+ * human readable code (e.g., Java oder Scala), then it is possible to build up complex expressions.
+ *
+ * @tparam V
+ */
 trait Expr[+V <: Var[V]] extends ASTNode[V] {
 
     /**
@@ -353,10 +361,11 @@ case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends Expr[V] 
 object ArrayLength { final val ASTID = -20 }
 
 case class GetField[+V <: Var[V]](
-        pc:             PC,
-        declaringClass: ObjectType,
-        name:           String,
-        objRef:         Expr[V]
+        pc:                PC,
+        declaringClass:    ObjectType,
+        name:              String,
+        declaredFieldType: FieldType,
+        objRef:            Expr[V]
 ) extends Expr[V] {
 
     final def astID: Int = GetField.ASTID
@@ -371,7 +380,12 @@ case class GetField[+V <: Var[V]](
 }
 object GetField { final val ASTID = -21 }
 
-case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr[Nothing] {
+case class GetStatic(
+        pc:                PC,
+        declaringClass:    ObjectType,
+        name:              String,
+        declaredFieldType: FieldType
+) extends Expr[Nothing] {
 
     final def astID: Int = GetStatic.ASTID
 
