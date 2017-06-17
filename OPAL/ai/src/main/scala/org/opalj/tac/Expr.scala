@@ -567,7 +567,7 @@ object DVar {
     def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
         d: DVar[Value]
     ): Some[(Value, IntSet)] = {
-        Some(d.value, d.useSites)
+        Some((d.value, d.useSites))
     }
 
 }
@@ -613,7 +613,7 @@ object UVar {
     def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
         u: UVar[Value]
     ): Some[(Value, IntSet)] = {
-        Some(u.value, u.defSites)
+        Some((u.value, u.defSites))
     }
 
 }
