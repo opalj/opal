@@ -564,6 +564,12 @@ object DVar {
         new DVar[d.DomainValue](origin, value, useSites)
     }
 
+    def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
+        d: DVar[Value]
+    ): Some[(Value, IntSet)] = {
+        Some((d.value, d.useSites))
+    }
+
 }
 
 class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
@@ -602,6 +608,12 @@ object UVar {
         value: d.DomainValue, useSites: IntSet
     ): UVar[d.DomainValue] = {
         new UVar[d.DomainValue](value, useSites)
+    }
+
+    def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
+        u: UVar[Value]
+    ): Some[(Value, IntSet)] = {
+        Some((u.value, u.defSites))
     }
 
 }
