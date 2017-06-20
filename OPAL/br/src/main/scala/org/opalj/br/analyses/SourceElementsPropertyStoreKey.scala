@@ -39,8 +39,8 @@ import org.opalj.fpcf.PropertyStore
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
  *
- * @note It is possible to set the project's `debug` flag using the project's
- *      `org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
+ * @note   It is possible to set the project's `debug` flag using the project's
+ *         `org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
  *
  * @author Michael Eichberg
  */
@@ -70,6 +70,9 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
     override protected def compute(project: SomeProject): PropertyStore = {
         val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
         implicit val logContext = project.logContext
+        /*val allocationSites = {
+            project.allMethodsWithBody {}
+        }*/
         PropertyStore(
             project.allSourceElements,
             defaultIsInterrupted,
