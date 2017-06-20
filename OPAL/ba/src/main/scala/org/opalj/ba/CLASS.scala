@@ -37,15 +37,15 @@ import org.opalj.collection.immutable.UShortPair
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-case class CLASS[T](
-        version:         UShortPair                        = CLASS.DefaultVersion,
-        accessModifiers: AccessModifier                    = SUPER,
-        thisType:        String,
-        superclassType:  Option[String]                    = Some("java/lang/Object"),
-        interfaceTypes:  Seq[String]                       = Seq.empty,
-        fields:          FIELDS                            = FIELDS(),
-        methods:         METHODS[T]                        = METHODS[Nothing](),
-        attributes:      Seq[br.ClassFileAttributeBuilder] = Seq.empty
+class CLASS[T](
+        version:                   UShortPair,
+        accessModifiers:           AccessModifier,
+        thisType:                  String,
+        superclassType:            Option[String],
+        interfaceTypes:            Seq[String],
+        fields:                    FIELDS,
+        private[this] var methods: METHODS[T],
+        attributes:                Seq[br.ClassFileAttributeBuilder]
 ) {
 
     /**
@@ -119,5 +119,18 @@ object CLASS {
     final val DefaultMinorVersion = 0
 
     final val DefaultVersion = UShortPair(DefaultMinorVersion, DefaultMajorVersion)
+
+    def apply[T](
+        version:         UShortPair                        = CLASS.DefaultVersion,
+        accessModifiers: AccessModifier                    = SUPER,
+        thisType:        String,
+        superclassType:  Option[String]                    = Some("java/lang/Object"),
+        interfaceTypes:  Seq[String]                       = Seq.empty,
+        fields:          FIELDS                            = FIELDS(),
+        methods:         METHODS[T]                        = METHODS[T](),
+        attributes:      Seq[br.ClassFileAttributeBuilder] = Seq.empty
+    ): CLASS[T] = {
+        new CLASS(version, accessModifiers, thisType, superclassType, interfaceTypes, fields, methods, attributes)
+    }
 
 }
