@@ -26,27 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.analysis
+package escape;
 
+public class ClassWithFields {
+    public static Object global;
+    public Object f;
 
-import org.opalj.br.ObjectType
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.properties.{EscapeProperty, NoEscape}
-
-class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
-    def analysisName = "SimpleEscapeAnalysis"
-
-    override def testFileName = "escape-1.8-g-parameters-genericsignature.jar"
-
-    override def testFilePath = "bi"
-
-    override def analysisRunner = SimpleEscapeAnalysis
-
-    override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
-
-    override def propertyAnnotation: ObjectType = {
-        ObjectType("annotations/target/EscapeProperty")
+    public ClassWithFields() {
     }
 
-    def defaultValue = NoEscape.toString
+    public ClassWithFields(Object param) {
+        this.f = param;
+    }
 }
