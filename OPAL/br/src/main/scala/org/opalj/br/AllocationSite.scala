@@ -43,7 +43,7 @@ package br
  */
 final class AllocationSite( final val method: Method, final val pc: PC) {
 
-    override def equals(other: scala.Any): Boolean = {
+    override def equals(other: Any): Boolean = {
         other match {
             case that: AllocationSite ⇒ (this.method eq that.method) && this.pc == that.pc
             case _                    ⇒ false
