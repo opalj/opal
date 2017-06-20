@@ -191,11 +191,14 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             aiCount.incrementAndGet()
 
             def abort(ai: InstructionCountBoundedAI[_], r: AIResult): Unit = {
-                fail("the abstract interpretation of "+
-                    classFile.thisType.toJava+
-                    "{ "+method.toJava+" } was aborted after evaluating "+
-                    ai.currentEvaluationCount+" instructions.\n "+
-                    r.stateToString)
+                fail(
+                    "the abstract interpretation of "+
+                    method.toJava(
+                        classFile,
+                        "was aborted after evaluating "+
+                            ai.currentEvaluationCount+" instructions;\n"+ r.stateToString
+                    )
+                )
             }
 
             if (r1.wasAborted) abort(a1, r1)
@@ -211,14 +214,14 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                     failed.incrementAndGet()
                     info(
                         classFile.thisType.toJava+"{ "+
-                            method.toJava+"(Instructions "+method.body.get.instructions.size+")}\n"+
+                            method.toJava(false)+"(Instructions "+method.body.get.instructions.size+")}\n"+
                             Console.BLUE+"\t// domain r1 is not deterministic (concurrency bug?)\n"+
                             Console.RESET
                     )
                 } else
                     info(
                         classFile.thisType.toJava+"{ "+
-                            method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
+                            method.toJava(false)+"(Instructions "+method.body.get.instructions.size+")} \n"+
                             "\t// the results of r1 and r2 do not correspond\n"+
                             "\t// "+Console.BOLD + m + Console.RESET+"\n"
                     )
@@ -230,7 +233,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                 failed.incrementAndGet()
                 info(
                     classFile.thisType.toJava+"{ "+
-                        method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
+                        method.toJava(false)+"(Instructions "+method.body.get.instructions.size+")} \n"+
                         "\t// the results of r2 and r3 do not correspond\n"+
                         "\t// "+Console.BOLD + m + Console.RESET+"\n"
                 )

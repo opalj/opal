@@ -50,7 +50,7 @@ case class CallGraphConstructionException(
     import Console._
 
     def toFullString: String = {
-        var message = "While analyzing: "+classFile.thisType.toJava+"{ "+method.toJava+" }\n\t"
+        var message = s"While analyzing: ${method.toJava(classFile)}\n\t"
         val realCause =
             cause match {
                 case ife: InterpretationFailedException ⇒
@@ -83,14 +83,15 @@ case class CallGraphConstructionException(
                 Some(top.getFileName+"["+top.getClassName+":"+top.getLineNumber+"]")
             } else
                 None
-        classFile.thisType.toJava+"{ "+
-            method.toJava+" ⚡ "+
-            RED +
-            realCause.getClass.getSimpleName+": "+
-            realCause.getMessage +
-            stacktraceExcerpt.map(": "+_).getOrElse("") +
-            RESET+
-            " }"
+
+        method.toJava(
+            classFile,
+            " ⚡ "+RED +
+                realCause.getClass.getSimpleName+": "+
+                realCause.getMessage +
+                stacktraceExcerpt.map(": "+_).getOrElse("") +
+                RESET
+        )
     }
 }
 

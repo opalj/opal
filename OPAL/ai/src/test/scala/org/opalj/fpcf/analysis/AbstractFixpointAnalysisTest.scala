@@ -217,10 +217,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         annotation ← method.runtimeVisibleAnnotations
         if annotation.annotationType == propertyAnnotation
     } {
-        analysisName should ("correctly calculate the property of the method "+
-            method.toJava+" in class "+classFile.fqn) in {
-                validatePropertyByMethod(method, annotation)
-            }
+        val doWhat = "correctly calculate the property of  "+method.toJava(classFile)
+        analysisName should (doWhat) in { validatePropertyByMethod(method, annotation) }
     }
 
 }

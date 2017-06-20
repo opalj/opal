@@ -72,7 +72,7 @@ class DefaultIntervalValuesDomain[Source](
     classFile: ClassFile,
     method:    Method
 ) extends DefaultConfigurableIntervalValuesDomain[String, Source](
-    classFile.thisType.toJava+"{ "+method.toJava+"}",
+    method.toJava(classFile),
     project,
     classFile,
     method

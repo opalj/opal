@@ -54,7 +54,7 @@ case class UnresolvedMethodCall(
 
     override def toString: String = {
         callerClass.toJava+"{ "+
-            BOLD + caller.toJava + RESET+":"+pc+" } => "+
+            BOLD + caller.toJava(withVisibility = true) + RESET+":"+pc+" } => "+
             calleeClass.toJava+"{ "+
             BOLD + calleeDescriptor.toJava(calleeName) + RESET+
             " }"

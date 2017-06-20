@@ -203,7 +203,7 @@ object InterpretMethod {
                     val body = method.body.get
                     println("Starting abstract interpretation of: ")
                     println("\t"+classFile.thisType.toJava+"{")
-                    println("\t\t"+method.toJava+
+                    println("\t\t"+method.toJava(true)+
                         "[instructions="+body.instructions.size+
                         "; #max_stack="+body.maxStack+
                         "; #locals="+body.maxLocals+"]")

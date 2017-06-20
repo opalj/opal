@@ -74,7 +74,7 @@ object ClassFileInformation {
             // compile class file.
             sourceFile map { s ⇒ println("\tSOURCEFILE: "+s) }
 
-            module map { m ⇒
+            module foreach { m ⇒
                 println("\tMODULE: ")
                 if (m.requires.nonEmpty) {
                     println(
@@ -121,7 +121,7 @@ object ClassFileInformation {
 
             println(fields.map(_.toJavaSignature).mkString("\tFIELDS:\n\t", "\n\t", ""))
 
-            println(methods.map(_.toJava).mkString("\tMETHODS:\n\t", "\n\t", ""))
+            println(methods.map(_.toJava(false)).mkString("\tMETHODS:\n\t", "\n\t", ""))
 
             println()
         }
