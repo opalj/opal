@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,27 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.analysis
+package annotations.target;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-import org.opalj.br.ObjectType
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.properties.{EscapeProperty, NoEscape}
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
-    def analysisName = "SimpleEscapeAnalysis"
-
-    override def testFileName = "escape-1.8-g-parameters-genericsignature.jar"
-
-    override def testFilePath = "bi"
-
-    override def analysisRunner = SimpleEscapeAnalysis
-
-    override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
-
-    override def propertyAnnotation: ObjectType = {
-        ObjectType("annotations/target/EscapeProperty")
-    }
-
-    def defaultValue = NoEscape.toString
+@Retention(RUNTIME)
+@Target(TYPE_USE)
+public @interface EscapeProperty {
+    EscapeKeys value() default EscapeKeys.NoEscape;
 }
