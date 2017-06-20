@@ -234,8 +234,8 @@ class PropertyStore private (
     @inline final private[this] def accessStore[B](f: ⇒ B) = withWriteLock(StoreLock)(f)
 
     /**
-     * @param entities Conceptually a set of entities for which we will acquire the locks in order
-     *      of the locks' ids.
+     * @param sortedEntityProperties Conceptually a set of entities for which we will
+     *      acquire the locks in order of the locks' ids.
      */
     //    @inline final private[this] def withEntitiesWriteLocks[T](epss: List[EntityProperties])(f: ⇒ T): T = {
     //        val sortedEntities = epss.sortWith((e1, e2) ⇒ e1.id < e2.id)
