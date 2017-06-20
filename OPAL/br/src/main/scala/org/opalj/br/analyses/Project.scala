@@ -918,7 +918,7 @@ class Project[Source] private (
      * (size in length of the method's code array).
      */
     def projectMethodsLengthDistribution: Map[Int, Set[Method]] = {
-        val nonSyntheticMethodsWithBody: Traversable[Method] = methodsWithBody.view.filterNot(_.isSynthetic)
+        val nonSyntheticMethodsWithBody = methodsWithBody.iterator.filterNot(_.isSynthetic)
         val data = SortedMap.empty[Int, Set[Method]]
         nonSyntheticMethodsWithBody.foldLeft(data) { (data, method) ⇒
             val methodLength = method.body.get.instructions.length
