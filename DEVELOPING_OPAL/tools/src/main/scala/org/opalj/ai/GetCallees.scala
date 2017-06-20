@@ -151,9 +151,9 @@ object GetCallees {
             for ((pc, methods) ← callees) {
                 println("\n"+pc+":"+method.body.get.instructions(pc)+" calls: ")
                 for (method ← methods) {
-                    println(Console.GREEN+"\t\t+ "+project.classFile(method).thisType.toJava+"{ "+method.toJava+" }")
+                    println(Console.GREEN+"\t\t+ "+method.toJava(project.classFile(method)))
                 }
-                allUnresolvableMethodCalls.find(_.pc == pc).map { unresolvedCall ⇒
+                allUnresolvableMethodCalls.find(_.pc == pc).foreach { unresolvedCall ⇒
                     println(Console.RED+"\t\t- "+
                         unresolvedCall.calleeClass.toJava+
                         "{ "+unresolvedCall.calleeDescriptor.toJava(unresolvedCall.calleeName)+" }")
