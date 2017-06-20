@@ -193,11 +193,11 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             def abort(ai: InstructionCountBoundedAI[_], r: AIResult): Unit = {
                 fail(
                     "the abstract interpretation of "+
-                    method.toJava(
-                        classFile,
-                        "was aborted after evaluating "+
-                            ai.currentEvaluationCount+" instructions;\n"+ r.stateToString
-                    )
+                        method.toJava(
+                            classFile,
+                            "was aborted after evaluating "+
+                                ai.currentEvaluationCount+" instructions;\n"+r.stateToString
+                        )
                 )
             }
 
