@@ -39,7 +39,7 @@ import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.EnumValue
 import org.opalj.br.ElementValuePair
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
@@ -97,7 +97,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     def loadProject: Project[URL] = org.opalj.br.analyses.Project(file)
 
     val project = loadProject
-    val propertyStore = project.get(SourceElementsPropertyStoreKey)
+    val propertyStore = project.get(PropertyStoreKey)
 
     /*
      * RUN ANALYSIS AND OBTAIN PROPERTY STORE

@@ -29,39 +29,43 @@
 package org.opalj
 package fpcf
 
-import org.opalj.log.LogContext
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
-import AnalysisModes._
+/*
+import java.util.concurrent.{ConcurrentHashMap ⇒ JCHMap}
 
 /**
- * Common super trait of all analyses that use the fixpoint
- * computations framework. In general, an analysis computes a
- * [[org.opalj.fpcf.Property]] by processing some entities, e.g.: ´classes´, ´methods´
- * or ´fields´.
  *
- * @author Michael Reif
- * @author Michael Eichberg
+ * @param data The core array which contains - for each property key - the map of entities to the
+ *             derived property. The map is lazily initialized.
  */
-trait FPCFAnalysis {
+class PropertyStore2 private (
+        val entities:        Set[Entity],
+        private val data:    Array[JCHMap[Entity, EntityCell]] = new Array(1024 /* TODO MAKE IT CONFIGURABLE .. A NUMBER MUCH LARGER THAN THE LARGEST PROPERTY_KEY*/ ),
+        @volatile var debug: Boolean
+) {
 
-    implicit val project: SomeProject
+    /**
+     * Returns a snapshot of the properties with the given kind associated with the given entities.
+     * @note The returned collection can be used to create an [[IntermediateResult]].
+     */
+    def apply[P <: Property](e: Entity, pk: PropertyKey[P]): EOptionP[e.type, P] = {
+        data(pk).get(e) match {
+            case null                 ⇒ EPK(e, pk)
+            case ec: EntityCell[_, _] ⇒ EP(e, ec.p)
+        }
+    }
 
-    final implicit val classHierarchy = project.classHierarchy
+    def set(e: Entity, p: Property): Unit = {
 
-    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    }
 
-    final implicit val logContext: LogContext = project.logContext
+    def run(f: Entity ⇒ PropertyComputationResult): Unit = {
 
-    final def ps = propertyStore
+    }
 
-    // The project type:
-
-    final def isOpenLibrary: Boolean = project.analysisMode eq OPA
-
-    final def isClosedLibrary: Boolean = project.analysisMode eq CPA
-
-    final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
-
-    final def isJEEApplication: Boolean = project.analysisMode eq JEE6WebApplication
 }
+
+private[FPCF] case class EntityCell[+E <: Entity, +P <: Property]() {
+
+    def p: P = ???
+}
+*/

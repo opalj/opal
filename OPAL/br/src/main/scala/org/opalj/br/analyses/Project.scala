@@ -89,7 +89,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
  *     to the list of (concrete/singleton) objects implementing the trait
  *     [[org.opalj.br.analyses.ProjectInformationKey]].
  *     One of the most important project information keys is the
- *     `SourceElementsPropertyStoreKey` which gives access to the property store.
+ *     `PropertyStoreKey` which gives access to the property store.
  *
  * ==Thread Safety==
  * This class is thread-safe.

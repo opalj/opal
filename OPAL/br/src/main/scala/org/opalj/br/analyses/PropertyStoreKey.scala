@@ -44,9 +44,9 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+object PropertyStoreKey extends ProjectInformationKey[PropertyStore] {
 
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.SourceElementsPropertyStore."
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.PropertyStoreKey."
 
     /**
      * Used to specify the number of threads the property store should use. This
@@ -57,8 +57,34 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
      */
     @volatile var parallelismLevel: Int = Math.max(NumberOfThreadsForCPUBoundTasks, 2)
 
+    @volatile private[this] var entityDerivationFunctions: List[SomeProject ⇒ Traversable[AnyRef]] =
+        List(
+            (p: SomeProject) ⇒ p.allMethods,
+            (p: SomeProject) ⇒ p.allFields,
+            (p: SomeProject) ⇒ p.allClassFiles
+        )
+
     /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
+     * Adds the given function to the list of entity derivation functions. An entity derivation
+     * function can be used to add additional entities to the [[PropertyStore]]. An example,
+     * is a function that derives – as additional entities - the set of all allocation sites.
+     *
+     * By default, the set of all method, all fields and all class files are added.
+     *
+     * '''Entity derivation functions must be registered before this key is used for
+     * the first time w.r.t. a specific project.''' In general, it is recommended to add an entity
+     * derivation function before or directly after the project is created.
+     *
+     * @param f
+     */
+    def addEntityDerivationFunction(f: SomeProject ⇒ Traversable[AnyRef]): Unit = {
+        this.synchronized(
+            entityDerivationFunctions ::= f
+        )
+    }
+
+    /**
+     * The [[PropertyStoreKey]] has no special prerequisites.
      *
      * @return `Nil`.
      */
@@ -70,11 +96,10 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
     override protected def compute(project: SomeProject): PropertyStore = {
         val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
         implicit val logContext = project.logContext
-        /*val allocationSites = {
-            project.allMethodsWithBody {}
-        }*/
+
+        val entities = entityDerivationFunctions.flatMap { edf ⇒ edf(project) }
         PropertyStore(
-            project.allSourceElements,
+            entities,
             defaultIsInterrupted,
             parallelismLevel,
             debug,

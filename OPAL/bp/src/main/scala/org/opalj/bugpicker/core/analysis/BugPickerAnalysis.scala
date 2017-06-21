@@ -63,7 +63,7 @@ import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.util.XHTML
 import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesRegistry
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.FieldAccessInformationKey
@@ -196,7 +196,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
 
         val analysesManager = theProject.get(FPCFAnalysesManagerKey)
-        val propertyStore = theProject.get(SourceElementsPropertyStoreKey)
+        val propertyStore = theProject.get(PropertyStoreKey)
         step(7, "[FPCF-Analysis] executing fixpoint analyses") {
             (
                 {

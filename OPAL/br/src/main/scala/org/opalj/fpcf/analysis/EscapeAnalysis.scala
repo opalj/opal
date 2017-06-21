@@ -31,7 +31,7 @@ package fpcf
 package analysis
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
@@ -261,7 +261,7 @@ class EscapeAnalysis(val debug: Boolean) {
 object EscapeAnalysis {
 
     def analyze(implicit project: SomeProject): Unit = {
-        implicit val store = project.get(SourceElementsPropertyStoreKey)
+        implicit val store = project.get(PropertyStoreKey)
         val filter: PartialFunction[Entity, ClassFile] = { case cf: ClassFile ⇒ cf }
         val debug = project.config.as[Option[Boolean]]("org.opalj.fcpf.analysis.escape.debug")
         val analysis = new EscapeAnalysis(debug.getOrElse(false))

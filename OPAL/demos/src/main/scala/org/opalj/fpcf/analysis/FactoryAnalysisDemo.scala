@@ -33,7 +33,7 @@ package analysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import java.net.URL
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.properties.NotFactoryMethod
 import org.opalj.fpcf.properties.IsFactoryMethod
 
@@ -61,7 +61,7 @@ object FactoryAnalysisDemo extends MethodAnalysisDemo {
         // it afterwards, but that doesn't make sense.)
         // ShadowingAnalysis.analyze(project)
 
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val propertyStore = project.get(PropertyStoreKey)
         val executer = project.get(FPCFAnalysesManagerKey)
 
         var analysisTime = org.opalj.util.Seconds.None

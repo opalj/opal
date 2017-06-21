@@ -31,7 +31,7 @@
 //package analyses
 //
 //import org.opalj.br.analyses.ProjectInformationKey
-//import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+//import org.opalj.br.analyses.PropertyStoreKey
 //import org.opalj.fpcf.FPCFAnalysesManagerKey
 //import org.opalj.br.analyses.SomeProject
 //
@@ -52,7 +52,7 @@
 //     *
 //     * @return `Nil`.
 //     */
-//    override protected def requirements = Seq(FPCFAnalysesManagerKey, SourceElementsPropertyStoreKey)
+//    override protected def requirements = Seq(FPCFAnalysesManagerKey, PropertyStoreKey)
 //
 //    /**
 //     * Computes the information which classes are (not) instantiable.

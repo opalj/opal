@@ -32,7 +32,7 @@ package analysis
 
 import java.net.URL
 
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
@@ -108,8 +108,8 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         // reactive async approach developed by P. Haller and Simon Gries.
 
         val projectStore = time {
-            SourceElementsPropertyStoreKey.parallelismLevel = parallelismLevel
-            get(SourceElementsPropertyStoreKey)
+            PropertyStoreKey.parallelismLevel = parallelismLevel
+            get(PropertyStoreKey)
         } { r ⇒ setupTime = r }
         projectStore.debug = false
 

@@ -33,7 +33,7 @@ package cg
 package cha
 
 import java.net.URL
-import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
+import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, PropertyStoreKey}
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -68,9 +68,9 @@ object CHADemo extends DefaultOneStepAnalysis {
         // not supported yet
 
         val oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
-        val cpaStore = cpaProject.get(SourceElementsPropertyStoreKey)
-        val opaStore = opaProject.get(SourceElementsPropertyStoreKey)
-        //        val appStore = appProject.get(SourceElementsPropertyStoreKey)
+        val cpaStore = cpaProject.get(PropertyStoreKey)
+        val opaStore = opaProject.get(PropertyStoreKey)
+        //        val appStore = appProject.get(PropertyStoreKey)
 
         val methodsCount: Double = project.projectMethodsCount.toDouble
         def getPercentage(value: Int): String = "%1.2f" format (value.toDouble / methodsCount * 100d)
