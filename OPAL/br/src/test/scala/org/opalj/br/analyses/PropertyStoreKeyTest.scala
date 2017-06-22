@@ -35,6 +35,8 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
+import org.opalj.collection.immutable.Chain
+
 import org.opalj.br.TestSupport.biProject
 
 /**
@@ -56,11 +58,25 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
         it("should always contain the project's methods") {
             assert(p.allMethods.forall(ps.isKnown))
         }
+
         it("should always contain the project's fields") {
             assert(p.allFields.forall(ps.isKnown))
         }
+
         it("should always contain the project's class files") {
             assert(p.allClassFiles.forall(ps.isKnown))
+        }
+
+        it("the context should always contain the project's methods") {
+            assert(p.allMethods == ps.context[Iterable[Method]])
+        }
+
+        it("the context should always contain the project's fields") {
+            assert(p.allFields == ps.context[Iterable[Field]])
+        }
+
+        it("the context  should always contain the project's class files") {
+            assert(p.allClassFiles == ps.context[Iterable[ClassFile]])
         }
     }
 
@@ -68,38 +84,55 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
         val p: SomeProject = biProject("ai.jar")
 
-        /* make them usable/accessible elsewhere */ var allAs: List[Traversable[AllocationSite]] = Nil
-        PropertyStoreKey.addEntityDerivationFunction(
-            (p: SomeProject) ⇒ p.allMethods.flatMap { m ⇒
-                m.body match {
-                    case None ⇒ Nil
-                    case Some(code) ⇒
-                        val as = code.collectWithIndex {
-                            case (pc, instructions.NEW(_)) ⇒ new AllocationSite(m, pc)
-                        }
-                        if (as.nonEmpty) allAs ::= as
-                        as
+        PropertyStoreKey.addEntityDerivationFunction[Map[Method, Map[PC, AllocationSite]]](
+            (p: SomeProject) ⇒ {
+
+                var allAs: List[Chain[AllocationSite]] = Nil
+
+                // Associate every new instruction in a method with an allocation site object
+                val as = p.allMethods.flatMap { m ⇒
+                    m.body match {
+                        case None ⇒ Nil
+                        case Some(code) ⇒
+                            val as = code.collectWithIndex {
+                                case (pc, instructions.NEW(_)) ⇒ new AllocationSite(m, pc)
+                            }
+                            if (as.nonEmpty) allAs ::= as
+                            as
+                    }
                 }
+
+                // In the context we store a map which makes the set of allocation sites
+                // easily accessible
+                val mToPCToAs = allAs.map { asPerMethod ⇒
+                    val pcToAs = asPerMethod.map(as ⇒ as.pc → as).toMap
+                    val m = pcToAs.head._2.method
+                    m → pcToAs
+                }.toMap
+
+                (as, mToPCToAs)
             }
         )
-        val mToPCToAs = allAs.map { asPerMethod ⇒
-            val pcToAs = asPerMethod.map(as ⇒ as.pc → as).toMap
-            val m = pcToAs.head._2.method
-            m → pcToAs
-        }.toMap
 
+        // WE HAVE TO USE THE KEY TO TRIGGER THE COMPUTATION OF THE ENTITY DERIVATION FUNCTION(S)
         val ps = p.get(PropertyStoreKey)
 
         it("should contain the additionally derived entities") {
-            val allocationSiteCount = allAs.iterator.map(_.size).sum
-            assert(allocationSiteCount > 0)
-            info(s"contains $allocationSiteCount alloocation sites")
 
-            val allAdded: Boolean = allAs.iterator.flatten.forall(ps.isKnown)
+            val allAs: Iterable[AllocationSite] =
+                ps.context[Map[Method, Map[PC, AllocationSite]]].values.flatMap(_.values)
+
+            val allocationSiteCount = allAs.size
+
+            assert(allocationSiteCount > 0)
+            info(s"contains $allocationSiteCount allocation sites")
+
+            val allAdded: Boolean = allAs.forall(ps.isKnown)
             assert(allAdded)
         }
 
         it("should be possible to query the allocation sites") {
+            val mToPCToAs = ps.context[Map[Method, Map[PC, AllocationSite]]]
 
             p.allMethodsWithBody.foreach { m ⇒
                 val code = m.body.get

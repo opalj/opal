@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 
 import scala.language.existentials
-
 import java.util.{IdentityHashMap ⇒ JIDMap}
 import java.util.{Set ⇒ JSet}
 import java.util.concurrent.atomic.AtomicLong
@@ -40,6 +39,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.{ConcurrentHashMap ⇒ JCHMap}
 
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe.TypeTag
+import scala.reflect.runtime.universe.Type
+import scala.reflect.runtime.universe.typeOf
 import scala.collection.mutable
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.{HashSet ⇒ HSet}
@@ -170,7 +172,7 @@ class PropertyStore private (
         // type Properties = OArrayMap[PropertyAndObservers] // the content of the array may be updated
         // class EntityProperties(l: ReentrantReadWriteLock, ps: Properties) // the references are never updated
         private[this] val data:     JIDMap[Entity, EntityProperties],
-        private[this] val ctx:      Map[Class[_], AnyRef],
+        final val ctx:              Map[Type, AnyRef],
         final val ParallelismLevel: Int,
         final val isInterrupted:    () ⇒ Boolean,
         @volatile var debug:        Boolean
@@ -179,9 +181,9 @@ class PropertyStore private (
         val logContext: LogContext
 ) { store ⇒
 
-    def context[T <: AnyRef: ClassTag]: T = {
-        val ctxId = implicitly[ClassTag[T]].runtimeClass
-        ctx.getOrElse(ctxId, { throw new ContextNotAvailableException(ctxId) }).asInstanceOf[T]
+    def context[T: TypeTag]: T = {
+        val t = typeOf[T]
+        ctx.getOrElse(t, { throw ContextNotAvailableException(t, ctx) }).asInstanceOf[T]
     }
 
     /**
@@ -2177,11 +2179,29 @@ class PropertyStore private (
  */
 object PropertyStore {
 
+    def apply[T <: AnyRef: TypeTag](
+        entities:      Traversable[Entity],
+        isInterrupted: () ⇒ Boolean,
+        debug:         Boolean,
+        context:       T
+    )(
+        implicit
+        logContext: LogContext
+    ): PropertyStore = {
+        apply(
+            entities,
+            isInterrupted,
+            Math.max(NumberOfThreadsForCPUBoundTasks, 2),
+            debug,
+            PropertyStoreContext[T](context)
+        )
+    }
+
     def apply(
         entities:      Traversable[Entity],
         isInterrupted: () ⇒ Boolean,
         debug:         Boolean,
-        context:       AnyRef*
+        context:       PropertyStoreContext[_ <: AnyRef]*
     )(
         implicit
         logContext: LogContext
@@ -2218,7 +2238,7 @@ object PropertyStore {
         isInterrupted:    () ⇒ Boolean,
         parallelismLevel: Int,
         debug:            Boolean,
-        context:          AnyRef*
+        context:          PropertyStoreContext[_ <: AnyRef]*
     )(
         implicit
         logContext: LogContext
@@ -2236,7 +2256,7 @@ object PropertyStore {
             entityId += 1
         }
 
-        val contextMap: Map[Class[_], AnyRef] = context.map { c ⇒ (c.getClass, c) }.toMap
+        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
         new PropertyStore(data, contextMap, parallelismLevel, isInterrupted, debug)
     }
 
@@ -2262,6 +2282,23 @@ object PropertyStore {
                 s"EntitySelector(${implicitly[ClassTag[T]].runtimeClass.getName})"
             }
         }
+    }
+
+}
+
+class PropertyStoreContext[T <: AnyRef] private (val t: Type, val data: T) {
+
+    def asTuple: (Type, T) = (t, data)
+}
+
+object PropertyStoreContext {
+
+    def apply[T <: AnyRef](t: Type, data: T): PropertyStoreContext[T] = {
+        new PropertyStoreContext(t, data)
+    }
+
+    def apply[T <: AnyRef: TypeTag](data: T): PropertyStoreContext[T] = {
+        new PropertyStoreContext[T](typeOf[T], data)
     }
 
 }
