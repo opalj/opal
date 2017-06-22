@@ -42,15 +42,17 @@
  import FixtureCompilationSpec._
 
 /**
- * Defines how to discover and compile test fixtures
- * as specified in TestFixtures.scala and
- * as seen in the OPAL/bi project (OPAL/bi/src/test/fixtures-java/Readme.md)
+ * This class discovers and compiles test fixtures in the OPAL project.
+ * See: Test fixtures as seen in the OPAL/bi project (OPAL/bi/src/test/fixtures-java/Readme.md)
  *
  * @author Michael Eichberg
  * @author Simon Leischnig
  */
 object FixtureCompilation {
 
+  /** Returns the produced JAR files, after discovering, compiling and packaging
+   *  the OPAL test fixtures. This is the method sbt calls as task implementation.
+   */
     def compilationTaskRunner(
       streams:         TaskStreams,
       resourceManaged: File,
@@ -72,7 +74,7 @@ object FixtureCompilation {
         compiler.compile(fixtureTask, std, err, log).outputJar
       }
 
-      val createdFiles = createdJARs.toSeq //TODO: high; validate
+      val createdFiles = createdJARs.toSeq
       if (createdFiles.nonEmpty)
           log.info(createdFiles.mkString("Created archives:\n\t", "\n\t", "\n"))
       else
@@ -82,8 +84,9 @@ object FixtureCompilation {
     }
 
 
-    // responsible for discovering test fixtures and parsing their config files
-    // into single fixture compilation tasks
+    /** Returns compilation tasks for test fixtures that were discovered in the
+      * OPAL project.
+      */
     class OPALTestFixtureDiscovery(
       resourceManaged: File,
       sourceDir:       File
@@ -93,7 +96,7 @@ object FixtureCompilation {
       val projectsFolder = sourceDir / "fixtures-java" / "projects"
       val supportFolder = sourceDir / "fixtures-java" / "support"
 
-      // finds all test fixtures in the project
+      /** Finds and returns all test fixtures in the project. */
       def discoverFixtureTasks(): Seq[TestFixtureCompilationTask] = {
         for {
             sourceFolder ← projectsFolder.listFiles
@@ -117,11 +120,16 @@ object FixtureCompilation {
         }
       }
 
-      //retrieves require specifications, and configuration options for a test fixture.
-      //this involves checking if a config file exists (default vaues if not),
-      //filtering comments out, and partitioning by the 'requires' keyword.
-      //configFile: config file of the test fixture (may or may not exist)
-      //returns: pair of mapped requires specs and config options (rest)
+    /** Returns 'require' specifications, and configuration options for a test
+      * fixture as can be (optionally) specified in a "compiler.config" file in the fixture.
+      *
+      * This involves checking if a config file exists (default values if not),
+      * filtering comments out, and partitioning by the 'requires' keyword.
+      *
+      * @param configFile configuration  file of the test fixture (may or
+      * may not exist)
+      * @return: Returns a pair of 'requires' specs and config options for the compiler
+      */
       def parseConfigFile(configFile: File) = {
         if (configFile.exists) {
             val (requires, configurationOptions) = fromFile(configFile).getLines.
@@ -142,8 +150,7 @@ object FixtureCompilation {
         }
       }
 
-      // calculates the name for the target folder from the configuration options
-      // creates it and returns its file object.
+     /** Returns the name for the target folder from the configuration options. */
       def obtainTargetFolder(
             configFile: File, // compiler.config file object
             sourceFolder: File, // source folder object
