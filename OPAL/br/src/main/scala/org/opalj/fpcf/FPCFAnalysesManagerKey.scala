@@ -31,7 +31,7 @@ package fpcf
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 
 /**
  * The ''key'' object to get the [[FPCFAnalysesManager]].
@@ -44,7 +44,7 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
  */
 object FPCFAnalysesManagerKey extends ProjectInformationKey[FPCFAnalysesManager] {
 
-    protected def requirements = List(SourceElementsPropertyStoreKey)
+    protected def requirements = List(PropertyStoreKey)
 
     protected def compute(project: SomeProject): FPCFAnalysesManager = {
         new FPCFAnalysesManager(project)

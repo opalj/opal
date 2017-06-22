@@ -36,7 +36,7 @@ import org.opalj.br.analyses.Project
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.ai.analyses.cg.VTACallGraphKey
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.properties.IsClientCallable
 import org.opalj.fpcf.properties.NotClientCallable
@@ -69,7 +69,7 @@ object RefineableNativeMethods extends DefaultOneStepAnalysis {
                 s"Number of native methods: ${nativeMethods.size} "+
                 f"($nativeMethodsPercentage%2.2f%%).\n"
 
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val propertyStore = project.get(PropertyStoreKey)
         val fpcfManager = project.get(FPCFAnalysesManagerKey)
         fpcfManager.run(CallableFromClassesInOtherPackagesAnalysis)
 

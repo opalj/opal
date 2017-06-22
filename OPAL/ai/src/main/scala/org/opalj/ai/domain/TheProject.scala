@@ -33,7 +33,7 @@ package domain
 import org.opalj.log.LogContext
 import org.opalj.br.{ClassHierarchy ⇒ BRClassHierarchy}
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 
 /**
  * Provides information about the underlying project.
@@ -75,5 +75,5 @@ trait TheProject extends TheClassHierarchy with LogContextProvider with ThePrope
      */
     @inline final override implicit def classHierarchy: BRClassHierarchy = project.classHierarchy
 
-    final override lazy val propertyStore = project.get(SourceElementsPropertyStoreKey)
+    final override lazy val propertyStore = project.get(PropertyStoreKey)
 }

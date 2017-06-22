@@ -152,7 +152,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                             val (_, classFile, method, throwable) = ex
                             <div>
                                 <b>{ classFile.thisType.fqn }</b>
-                                <i>"{ method.toJava }"</i><br/>
+                                <i>"{ method.toJava(false) }"</i><br/>
                                 { "Length: "+method.body.get.instructions.length }
                                 <div>{ XHTML.throwableToXHTML(throwable) }</div>
                             </div>

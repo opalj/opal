@@ -134,7 +134,10 @@ trait StackMapTable_attributeBinding
 
     def UninitializedVariableInfo(offset: Int) = new UninitializedVariableInfo(offset)
 
-    def ObjectVariableInfo(cp: Constant_Pool, type_index: Constant_Pool_Index) = {
+    def ObjectVariableInfo(
+        cp:         Constant_Pool,
+        type_index: Constant_Pool_Index
+    ): ObjectVariableInfo = {
         new ObjectVariableInfo(cp(type_index).asReferenceType(cp))
     }
 

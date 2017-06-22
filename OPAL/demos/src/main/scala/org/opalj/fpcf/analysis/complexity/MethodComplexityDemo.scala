@@ -36,7 +36,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.properties.MethodComplexity
 
 /**
@@ -58,7 +58,7 @@ object MethodComplexityDemo extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
         implicit val theProject = project
-        implicit val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
+        implicit val theProjectStore = theProject.get(PropertyStoreKey)
 
         val analysis = new MethodComplexityAnalysis
         theProjectStore.execute { case m: Method if m.body.isDefined ⇒ m } { m ⇒ Seq(EP(m, analysis(m))) }

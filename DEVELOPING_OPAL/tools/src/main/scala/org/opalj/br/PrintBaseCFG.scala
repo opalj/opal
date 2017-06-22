@@ -96,7 +96,7 @@ object PrintBaseCFG {
                     return ;
                 }
             case None ⇒
-                val allMethods = classFile.methods.map(_.toJava).toSet
+                val allMethods = classFile.methods.map(_.toJava(false)).toSet
                 val altMethods = allMethods.toSeq.sorted.mkString(" Candidates: ", ", ", ".")
                 println(s"$RED[error] Cannot find the method: $methodName.$RESET $altMethods")
                 return ;

@@ -36,7 +36,7 @@
 //import org.opalj.br.analyses.Project
 //import org.opalj.br.analyses.BasicReport
 //import org.opalj.br.ClassFile
-//import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+//import org.opalj.br.analyses.PropertyStoreKey
 //
 ///**
 // * @author Michael Reif
@@ -53,7 +53,7 @@
 //        isInterrupted: () ⇒ Boolean
 //    ): BasicReport = {
 //
-//        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+//        val propertyStore = project.get(PropertyStoreKey)
 //        val executer = project.get(FPCFAnalysesManagerKey)
 //        var analysisTime = org.opalj.util.Seconds.None
 //

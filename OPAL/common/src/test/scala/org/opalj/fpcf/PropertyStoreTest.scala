@@ -49,6 +49,10 @@ import org.opalj.log.GlobalLogContext
 @RunWith(classOf[JUnitRunner])
 class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
+    // The following import is REQUIRED to override the type alias "type (scala.)String = java.lang.String"!
+    // otherwise the type derived by the typeTag used as the context object is not
+    import java.lang.String
+
     final val TestDuration /*in minutes*/ = 3.0d / 60.0d
 
     //**********************************************************************************************

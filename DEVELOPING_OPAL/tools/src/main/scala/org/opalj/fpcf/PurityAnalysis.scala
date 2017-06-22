@@ -31,7 +31,7 @@ package fpcf
 
 import java.net.URL
 
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
@@ -58,7 +58,7 @@ object PurityAnalysis extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val projectStore = project.get(SourceElementsPropertyStoreKey)
+        val projectStore = project.get(PropertyStoreKey)
 
         org.opalj.fpcf.analysis.FieldMutabilityAnalysis.start(project, projectStore)
 

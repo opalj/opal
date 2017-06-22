@@ -33,7 +33,7 @@ import java.net.URL
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 import com.typesafe.config.Config
 
@@ -55,7 +55,7 @@ import org.opalj.br.reader.Java8LambdaExpressionsRewriting.{defaultConfig ⇒ la
 object InvokedynamicPrinter extends DefaultOneStepAnalysis {
 
     // We have to adapt the configuration to ensure that invokedynamic instructions
-    // are nevery rewritten!
+    // are never rewritten!
     override def setupProject(
         cpFiles:                 Iterable[File],
         libcpFiles:              Iterable[File],
@@ -83,16 +83,16 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
             val BasicMethodInfo(classFile, method @ MethodWithBody(body)) = methodInfo
             invokedynamics.addAll(
                 body.collectWithIndex {
-                    case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
-                        classFile.thisType.toJava+" {\n  "+method.toJava()+"{ "+pc+": \n"+
-                            s"    ${bootstrap.toJava}\n"+
-                            bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +
-                            s"    Calling:   ${descriptor.toJava(name)}\n"+
-                            "} }\n"
-                }
+                case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
+                    classFile.thisType.toJava+" {\n  "+method.toJava()+"{ "+pc+": \n"+
+                        s"    ${bootstrap.toJava}\n"+
+                        bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +
+                        s"    Calling:   ${descriptor.toJava(name)}\n"+
+                        "} }\n"
+            }.toList.asJava
             )
         }
-        val result = invokedynamics.toSeq.sorted
+        val result = invokedynamics.asScala.toSeq.sorted
         BasicReport(result.mkString(result.size+" invokedynamic instructions found:\n", "\n", "\n"))
     }
 

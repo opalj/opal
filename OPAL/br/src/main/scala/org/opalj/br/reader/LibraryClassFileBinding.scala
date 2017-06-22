@@ -39,8 +39,9 @@ trait LibraryClassFileBinding extends ClassFileBinding {
     this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding ⇒
 
     override def ClassFile(
-        cp:            Constant_Pool,
-        minor_version: Int, major_version: Int,
+        cp:                Constant_Pool,
+        minor_version:     Int,
+        major_version:     Int,
         access_flags:      Int,
         this_class_index:  Constant_Pool_Index,
         super_class_index: Constant_Pool_Index,
@@ -56,8 +57,8 @@ trait LibraryClassFileBinding extends ClassFileBinding {
             this_class_index,
             super_class_index,
             interfaces,
-            fields.filter { f ⇒ !f.isPrivate },
-            methods.filter { m ⇒ !m.isPrivate },
+            fields.filterNot(_.isPrivate),
+            methods.filterNot(_.isPrivate),
             attributes
         )
     }

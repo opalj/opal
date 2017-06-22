@@ -231,7 +231,7 @@ object CallGraphVisualization {
 
                 val node = new DefaultMutableNode(
                     caller,
-                    (m: Method) ⇒ project.classFile(m).thisType.toJava+" { "+m.toJava+" } ",
+                    (m: Method) ⇒ m.toJava(project.classFile(m)),
                     {
                         if (caller.name == "<init>")
                             Some("darkseagreen1")

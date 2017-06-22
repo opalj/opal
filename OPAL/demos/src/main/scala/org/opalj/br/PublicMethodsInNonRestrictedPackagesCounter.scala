@@ -78,7 +78,7 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
     val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description =
-            "Counts the number of public methods in non-restricted packages."
+            "Counts the number of public/protected methods in non-restricted packages."
 
         def doAnalyze(
             project:       Project[URL],
@@ -94,22 +94,15 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
                         method ← classFile.methods
                         if method.body.isDefined
                         if method.isPublic || (method.isProtected && !classFile.isFinal)
+                        referenceParametersCount = method.parameterTypes.count(_.isReferenceType)
                     } yield {
-                        (
-                            classFile.thisType.toJava,
-                            method.toJava,
-                            method.parameterTypes.filter(_.isReferenceType).size
-                        )
+                        method.toJava(classFile, referenceParametersCount.toString)
                     }
                 ).seq
 
             BasicReport(
-                "Public methods in non-restricted packages found ("+methods.size+"):\n"+
-                    methods.map { t ⇒
-                        val (typeName, methodSignature, count) = t
-                        typeName+" -> "+methodSignature+" ("+count+")"
-                    }.mkString("\t", "\n\t", "\n")+
-                    "Overall non-native method parameters: "+(methods.map(_._3).foldLeft(0)(_ + _))
+                methods.size+" public and protected methods in non-restricted packages found:\n"+
+                    methods.mkString("\t", "\n\t", "\n")
             )
         }
     }

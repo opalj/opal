@@ -46,8 +46,12 @@ package object tac {
 
     def tacToGraph[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): Iterable[Node] = {
         cfg.toDot { bb: BasicBlock ⇒
-            val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1)
-            val txtStmts = bbStmts.map { stmt ⇒ ToTxt.toTxtStmt[V](stmt, false) }
+            val pcRange = bb.startPC to bb.endPC
+            val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1).zip(pcRange)
+            val txtStmts = bbStmts.map { stmtPC ⇒
+                val (stmt, pc) = stmtPC
+                pc+": "+ToTxt.toTxtStmt[V](stmt, false)
+            }
             txtStmts.mkString("", "\\l\\l", "\\l")
         }
     }
