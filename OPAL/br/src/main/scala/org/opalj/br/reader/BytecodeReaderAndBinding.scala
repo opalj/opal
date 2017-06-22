@@ -57,7 +57,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
 
         val bas = new ByteArrayInputStream(source)
         val in = new DataInputStream(bas)
-        val codeLength = source.size
+        val codeLength = source.length
         val instructions = new Array[Instruction](codeLength)
 
         var wide: Boolean = false
