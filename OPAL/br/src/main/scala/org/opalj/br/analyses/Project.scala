@@ -1104,7 +1104,7 @@ class Project[Source] private (
     /**
      * Tests if the information identified by the given [[ProjectInformationKey]]
      * is available. If the information is not (yet) available, the information
-     * will not be computed and `None` will be returned.
+     * will not be computed; `None` will be returned.
      *
      * @see [[ProjectInformationKey]] for further information.
      */
