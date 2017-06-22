@@ -31,16 +31,15 @@ package issues
 
 import scala.xml.Node
 import scala.xml.Group
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
-
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.AIResult
+import org.opalj.collection.immutable.Chain
 
 class MethodReturnValues(
         val classFile: ClassFile,
@@ -52,7 +51,7 @@ class MethodReturnValues(
 
     private[this] def operandsArray = result.operandsArray
 
-    def collectMethodReturnValues: Seq[(PC, String)] = {
+    def collectMethodReturnValues: Chain[(PC, String)] = {
         code.collectWithIndex {
             case (pc, instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor)) if !descriptor.returnType.isVoidType && {
                 val nextPC = instr.indexOfNextInstruction(pc)
