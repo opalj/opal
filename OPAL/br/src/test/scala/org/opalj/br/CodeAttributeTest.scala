@@ -33,12 +33,14 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import org.opalj.collection.immutable.IntSet
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.collection.immutable.Naught
+
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions._
+
+import org.opalj.bi.TestSupport.locateTestResources
 
 /**
  * Tests some of the core methods of the Code attribute.
@@ -95,7 +97,7 @@ class CodeAttributeTest extends FlatSpec with Matchers {
     }
 
     it should "be able to handle the case where no instruction is found" in {
-        codeOfPut.collectWithIndex({ case (pc, IMUL) ⇒ (pc, IMUL) }) should equal(Seq())
+        codeOfPut.collectWithIndex({ case (pc, IMUL) ⇒ (pc, IMUL) }) should equal(Naught)
     }
 
     behavior of "the \"Code\" attribute's collectFirstWithIndex method"
