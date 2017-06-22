@@ -53,7 +53,7 @@ final class AllocationSite( final val method: Method, final val pc: PC) {
     override def hashCode(): Int = method.hashCode() * 111 + pc
 
     override def toString: String = {
-        s"AllocationSite(${method.toJava(withVisibility = false)},pc=$pc"
+        s"AllocationSite(${method.toJava(withVisibility = false)},pc=$pc)"
     }
 
 }
