@@ -64,7 +64,7 @@ case class Issue(
         categories: Set[String],
         kinds:      Set[String],
         locations:  Seq[IssueLocation],
-        details:    Seq[IssueDetails]  = Nil
+        details:    Traversable[IssueDetails] = Nil
 ) extends IssueRepresentations {
 
     assert(!summary.contains('\n'), s"the summary must not contain new lines:\n$summary")

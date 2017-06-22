@@ -109,7 +109,7 @@ class MethodReturnValues(
                     "line" → line(pc),
                     "details" → details
                 )
-            }
+            }.toIterable
         )
     }
 }

@@ -31,12 +31,15 @@ package bugpicker
 package core
 package analysis
 
-import org.opalj.br.{ClassFile, Method}
-import org.opalj.ai.Domain
+import org.opalj.collection.immutable.Chain
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.AIResult
 import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.ai.Domain
+import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.l1.RecordAllThrownExceptions
 import org.opalj.ai.domain.l1.ReferenceValues
@@ -47,7 +50,6 @@ import org.opalj.issues.IssueKind
 import org.opalj.issues.LocalVariables
 import org.opalj.issues.Operands
 import org.opalj.issues.InstructionLocation
-import org.opalj.br.instructions.ReturnInstruction
 
 /**
  * This analysis identifies those instructions (except of ATHROW) that always lead to an exception.
@@ -63,7 +65,7 @@ object ThrowsExceptionAnalysis {
         classFile:  ClassFile,
         method:     Method,
         result:     AIResult { val domain: ThrowsExceptionAnalysisDomain }
-    ): Seq[Issue] = {
+    ): Chain[Issue] = {
 
         val operandsArray = result.operandsArray
         val domain = result.domain
@@ -89,7 +91,7 @@ object ThrowsExceptionAnalysis {
         // Post-Processing
         //
 
-        val exceptionIssues: Seq[Issue] = {
+        val exceptionIssues: Chain[Issue] = {
 
             for { (pc, instruction) ← exceptionThrowingInstructions } yield {
                 val operands = operandsArray(pc)

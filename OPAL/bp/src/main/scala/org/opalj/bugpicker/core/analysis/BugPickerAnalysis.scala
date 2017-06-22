@@ -359,7 +359,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 //
                 // FIND INSTRUCTIONS THAT ALWAYS THROW AN EXCEPTION
                 //
-                addResults(ThrowsExceptionAnalysis(theProject, classFile, method, result))
+                addResults(ThrowsExceptionAnalysis(theProject, classFile, method, result).toIterable)
 
                 //
                 // FIND USELESS COMPUTATIONS
