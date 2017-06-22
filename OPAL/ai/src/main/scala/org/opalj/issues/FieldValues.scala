@@ -31,10 +31,9 @@ package issues
 
 import scala.xml.Node
 import scala.xml.Group
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
-
+import org.opalj.collection.immutable.Chain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.PC
@@ -56,7 +55,7 @@ class FieldValues(
 
     private[this] def operandsArray = result.operandsArray
 
-    def collectReadFieldValues: Seq[(PC, String)] = {
+    def collectReadFieldValues: Chain[(PC, String)] = {
         code.collectWithIndex {
             case (pc, instr @ FieldReadAccess(_ /*declaringClassType*/ , _ /* name*/ , fieldType)) if {
                 val nextPC = instr.indexOfNextInstruction(pc)
@@ -109,7 +108,7 @@ class FieldValues(
                     "line" → line(pc),
                     "details" → details
                 )
-            }
+            }.toIterable
         )
     }
 }

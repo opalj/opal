@@ -37,7 +37,7 @@ import org.opalj.util.Seconds
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.ClassFile
 import org.opalj.fpcf.properties.SelfReferenceLeakage
 import org.opalj.fpcf.properties.DoesNotLeakSelfReference
@@ -61,7 +61,7 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val projectStore = project.get(SourceElementsPropertyStoreKey)
+        val projectStore = project.get(PropertyStoreKey)
 
         var analysisTime = Seconds.None
         time {

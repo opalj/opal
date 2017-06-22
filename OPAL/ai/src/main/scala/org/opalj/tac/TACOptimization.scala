@@ -94,11 +94,13 @@ object SimplePropagation extends TACOptimization[IdBasedVar] {
                             case Assignment(
                                 nextPC,
                                 nextTrgtVar,
-                                GetField(exprPC, declaringClass, name, `trgtVar`)
+                                GetField(exprPC, declaringClass, name, declaredFieldType, `trgtVar`)
                                 ) ⇒
                                 wasTransformed = true
                                 if (nextTrgtVar == trgtVar /*immediate kill*/ ) code(index) = Nop(pc)
-                                val newGetfieldExpr = GetField(exprPC, declaringClass, name, c)
+                                val newGetfieldExpr = GetField(
+                                    exprPC, declaringClass, name, declaredFieldType, c
+                                )
                                 code(index + 1) = Assignment(nextPC, nextTrgtVar, newGetfieldExpr)
 
                             case Assignment(

@@ -36,7 +36,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.properties.Instantiability
 import org.opalj.fpcf.properties.Instantiable
 
@@ -55,7 +55,7 @@ object SimpleInstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val propertyStore = project.get(PropertyStoreKey)
         val executer = project.get(FPCFAnalysesManagerKey)
         var analysisTime = org.opalj.util.Seconds.None
 

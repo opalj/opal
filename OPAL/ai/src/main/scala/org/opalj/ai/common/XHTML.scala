@@ -154,7 +154,7 @@ object XHTML {
     ): Node = {
         import result._
 
-        val title = s"${classFile.thisType.toJava}{ ${method.toJava} }"
+        val title = method.toJava(classFile)
 
         createXHTML(
             Some(title),
@@ -189,12 +189,7 @@ object XHTML {
         localsArray:   TheLocalsArray[domain.Locals]
     ): Node = {
 
-        def methodToString(method: Method): String = {
-            if (method.isStatic)
-                "static "+method.toJava
-            else
-                method.toJava
-        }
+        def methodToString(method: Method): String = method.toJava(withVisibility = false)
 
         val title =
             classFile.

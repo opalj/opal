@@ -30,10 +30,6 @@ package org.opalj
 package ai
 
 import java.net.URL
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
@@ -155,11 +151,7 @@ case class UselessComputation(
 
         val line = this.line.map("(line:"+_+")").getOrElse("")
 
-        "useless computation "+
-            BOLD + BLUE + classFile.thisType.toJava + RESET+
-            "{ "+method.toJava+"{ "+
-            GREEN + pc + line+": "+message +
-            RESET+" }}"
+        "useless computation "+method.toJava(classFile, s"$BLUE$pc$line: $RED$message$RESET")
     }
 
 }

@@ -42,8 +42,7 @@ import org.opalj.hermes.queries.util.InstanceAPIMethod
 import org.opalj.hermes.queries.util.StaticAPIMethod
 
 /**
- *
- * Extracts calls to the ClassLoader API.
+ * Extracts calls to the `java.lang.ClassLoader` API.
  *
  * @author Michael Reif
  */

@@ -52,6 +52,9 @@ object Disassembler {
             "       [-o <File> the name of the file to which the generated html page should be written]\n"+
             "       [-open the generated html page will be opened in a browser]\n"+
             "       [-source <File> a class or jar file or a directory containg jar or class files]*\n"+
+            "       [-noDefaultCSS the generated html page will have on CSS styling]\n"+
+            "       [-css <Source> the path (URL) of a CSS file (\".csss\") which will be referenced from the generated HTML page]\n"+
+            "       [-jss <Source> the path (URL) of a JavaScript file (\".js\") which will be referenced from the generated HTML page]\n"+
             "       <ClassName> name of the class for which we want to create the HTML page\n"+
             "Example:\n       java …Disassembler -source /Library/jre/lib/rt.jar java.util.ArrayList"
     }
@@ -68,6 +71,9 @@ object Disassembler {
         var toFile: Option[String] = None
         var openHTMLFile: Boolean = false
         var sources: List[String] = List.empty
+        var noDefaultCSS: Boolean = false
+        var css: Option[String] = None
+        var js: Option[String] = None
         var className: String = null
 
         // PARSING PARAMETERS
@@ -82,10 +88,13 @@ object Disassembler {
         }
         while (i < args.length) {
             args(i) match {
-                case "-o"      ⇒ { toFile = Some(readNextArg()); toStdOut = false }
-                case "-open"   ⇒ { openHTMLFile = true; toStdOut = false }
-                case "-source" ⇒ sources ::= readNextArg()
-                case cName     ⇒ className = cName.replace('/', '.')
+                case "-o"            ⇒ { toFile = Some(readNextArg()); toStdOut = false }
+                case "-open"         ⇒ { openHTMLFile = true; toStdOut = false }
+                case "-noDefaultCSS" ⇒ noDefaultCSS = true
+                case "-css"          ⇒ css = Some(readNextArg())
+                case "-js"           ⇒ js = Some(readNextArg())
+                case "-source"       ⇒ sources ::= readNextArg()
+                case cName           ⇒ className = cName.replace('/', '.')
             }
             i += 1
         }
@@ -140,7 +149,8 @@ object Disassembler {
         }
 
         // FINAL PROCESSING
-        val xHTML = classFile.toXHTML().toString
+        val htmlCSS = if (noDefaultCSS) None else Some(ClassFile.TheCSS)
+        val xHTML = classFile.toXHTML(htmlCSS, css, js).toString
         targetFile match {
             case Some(f) ⇒
                 Files.write(f.toPath, xHTML.toString.getBytes("UTF-8"))

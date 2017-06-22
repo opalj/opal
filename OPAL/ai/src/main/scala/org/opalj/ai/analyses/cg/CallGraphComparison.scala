@@ -89,7 +89,7 @@ sealed trait CallGraphDifferenceReport {
         val thisClassType = project.classFile(method).thisType
         differenceClassifier+" "+
             project.source(thisClassType).getOrElse("<Source File Not Available>")+": "+
-            thisClassType.toJava+"{ "+method.toJava+"{ "+
+            method.toJava(thisClassType)+
             "pc="+pc+"(line="+method.body.get.lineNumber(pc).getOrElse("NotAvailable")+"): "+
             (
                 callTargets map { method ⇒

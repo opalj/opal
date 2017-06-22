@@ -31,7 +31,7 @@ package br
 
 import java.net.URL
 import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.ThrownExceptionsFallbackAnalysis
 import org.opalj.fpcf.properties.AllThrownExceptions
@@ -51,7 +51,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        val ps = project.get(SourceElementsPropertyStoreKey)
+        val ps = project.get(PropertyStoreKey)
         ps <||< (PropertyStore.entitySelector[Method], new ThrownExceptionsFallbackAnalysis(ps))
         ps.waitOnPropertyComputationCompletion(true)
 

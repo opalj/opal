@@ -112,10 +112,10 @@ object ToTxt {
                 val call = callToTxt(name, params)
                 toTxtExpr[V](receiver)+"/*(non-virtual) "+declClass.toJava+"*/"+call
 
-            case GetStatic(_, declaringClass, name) ⇒
+            case GetStatic(_, declaringClass, name, _) ⇒
                 s"${declaringClass.toJava}.$name"
 
-            case GetField(_, declaringClass, name, receiver) ⇒
+            case GetField(_, declaringClass, name, _, receiver) ⇒
                 s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
         }
     }
@@ -175,11 +175,11 @@ object ToTxt {
                 s"$pc ${toTxtExpr(arrayRef)}[${toTxtExpr(index)}] = ${toTxtExpr(operandVar)}"
 
             case PutStatic.ASTID ⇒
-                val PutStatic(_, declaringClass, name, value) = stmt
+                val PutStatic(_, declaringClass, name, _, value) = stmt
                 s"$pc ${declaringClass.toJava}.$name = ${toTxtExpr(value)}"
 
             case PutField.ASTID ⇒
-                val PutField(_, declaringClass, name, receiver, value) = stmt
+                val PutField(_, declaringClass, name, _, receiver, value) = stmt
                 val field = s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
                 s"$pc $field = ${toTxtExpr(value)}"
 

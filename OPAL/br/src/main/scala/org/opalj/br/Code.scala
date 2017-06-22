@@ -31,6 +31,7 @@ package br
 
 import scala.annotation.tailrec
 import scala.annotation.switch
+import scala.reflect.ClassTag
 
 import java.util.Arrays.fill
 
@@ -1152,18 +1153,18 @@ final class Code private (
      *  }) // .flatten should equal (Seq(...))
      * }}}
      */
-    def collectWithIndex[B](f: PartialFunction[(PC, Instruction), B]): Seq[B] = {
+    def collectWithIndex[B: ClassTag](f: PartialFunction[(PC, Instruction), B]): Chain[B] = {
         val max_pc = instructions.length
         var pc = 0
-        var result: List[B] = List.empty
+        val vs = Chain.newBuilder[B]
         while (pc < max_pc) {
             val params = (pc, instructions(pc))
             if (f.isDefinedAt(params)) {
-                result = f(params) :: result
+                vs += f(params)
             }
             pc = pcOfNextInstruction(pc)
         }
-        result.reverse
+        vs.result()
     }
 
     /**

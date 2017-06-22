@@ -160,7 +160,7 @@ class CallGraph private[opalj] (
                 val (pc, targets) = callSite
                 result ::= ((
                     project.classFile(method).fqn,
-                    "\""+method.toJava+"\"",
+                    "\""+method.toJava(withVisibility = true)+"\"",
                     "\""+method.body.get.instructions(pc).toString(pc).replace('\n', ' ')+"\"",
                     pc,
                     targets.size
@@ -193,9 +193,9 @@ class CallGraph private[opalj] (
                 result =
                     List(
                         project.classFile(method).fqn,
-                        method.toJava,
+                        method.toJava(withVisibility = false),
                         project.classFile(callerMethod).fqn,
-                        callerMethod.toJava,
+                        callerMethod.toJava(withVisibility = false),
                         callingInstructions.size.toString
                     ) :: result
                 resultCount += 1

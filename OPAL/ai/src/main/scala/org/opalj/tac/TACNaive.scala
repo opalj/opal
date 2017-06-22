@@ -585,29 +585,29 @@ object TACNaive {
 
                 case PUTSTATIC.opcode ⇒
                     val value :: rest = stack
-                    val PUTSTATIC = as[PUTSTATIC](instruction)
-                    val putStatic = PutStatic(pc, PUTSTATIC.declaringClass, PUTSTATIC.name, value)
+                    val PUTSTATIC(declaringClass, name, fieldType) = instruction
+                    val putStatic = PutStatic(pc, declaringClass, name, fieldType, value)
                     statements(pc) = List(putStatic)
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case PUTFIELD.opcode ⇒
                     val value :: objRef :: rest = stack
-                    val PUTFIELD = as[PUTFIELD](instruction)
-                    val stmt = PutField(pc, PUTFIELD.declaringClass, PUTFIELD.name, objRef, value)
+                    val PUTFIELD(declaringClass, name, fieldType) = instruction
+                    val stmt = PutField(pc, declaringClass, name, fieldType, objRef, value)
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case GETSTATIC.opcode ⇒
-                    val GETSTATIC = as[GETSTATIC](instruction)
-                    val getStatic = GetStatic(pc, GETSTATIC.declaringClass, GETSTATIC.name)
+                    val GETSTATIC(declaringClass, name, fieldType) = instruction
+                    val getStatic = GetStatic(pc, declaringClass, name, fieldType)
                     val newVal = OperandVar(ComputationalTypeReference, stack)
                     statements(pc) = List(Assignment[IdBasedVar](pc, newVal, getStatic))
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 
                 case GETFIELD.opcode ⇒
                     val objRef :: rest = stack
-                    val GETFIELD = as[GETFIELD](instruction)
-                    val getField = GetField(pc, GETFIELD.declaringClass, GETFIELD.name, objRef)
+                    val GETFIELD(declaringClass, name, fieldType) = instruction
+                    val getField = GetField(pc, declaringClass, name, fieldType, objRef)
                     val newVal = OperandVar(ComputationalTypeReference, rest)
                     statements(pc) = List(Assignment(pc, newVal, getField))
                     schedule(pcOfNextInstruction(pc), newVal :: rest)

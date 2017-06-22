@@ -70,7 +70,7 @@ class DefaultReferenceValuesDomain[Source](
     override val classFile: ClassFile,
     override val method:    Method
 ) extends DefaultConfigurableReferenceValuesDomain[String, Source](
-    classFile.thisType.toJava+"{ "+method.toJava+"}",
+    method.toJava(classFile),
     project,
     classFile,
     method

@@ -4,11 +4,6 @@
             "hermes": {
                 "projects": [
                     {
-                        "id" : "JVM Features",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/jvm_features-1.8-g-parameters-genericsignature.jar",
-                        "libcp_defaults" : "RTJar"
-                    },
-                    {
                         "id": "Apache ANT 1.7.1 - Javac 6",
                         "cp": "../../OPAL/bi/src/test/resources/classfiles/Apache ANT 1.7.1 - javac 6 default target.jar"
                     },
@@ -29,6 +24,11 @@
                         "cp": "../../OPAL/bi/src/test/resources/classfiles/groovy-2.2.1-indy.jar"
                     },
                     {
+                        "id": "Batik 1.7.jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/batik-DOMViewer 1.7.jar",
+                        "libcp": "../../OPAL/bi/src/test/resources/classfiles/batik-util 1.7.jar"
+                    },
+                    {
                         "id": "argouml-excerpt",
                         "cp": "../../OPAL/bi/src/test/resources/classfiles/argouml-excerpt.jar"
                     },
@@ -41,9 +41,17 @@
                         "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-SNAPSHOT-0.3.jar"
                     },
                     {
-                        "id": "OPAL-bytecode-infrastructure_2.11-SNAPSHOT-08-14-2014",
-                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-bytecode-infrastructure_2.11-SNAPSHOT-08-14-2014.jar",
-                        "libcp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-common_2.11-SNAPSHOT-08-14-2014.jar"
+                        "id": "OPAL-AllProjects-MultiJar-SNAPSHOT-08-14-2014.jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-AllProjects-MultiJar-SNAPSHOT-08-14-2014.jar"
+                    },
+                    {
+                        "id": "Multithreaded RPN Calculator ",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.jar"
+                    },
+                    {
+                        "id" : "JVM Features",
+                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/jvm_features-1.8-g-parameters-genericsignature.jar",
+                        "libcp_defaults" : "RTJar"
                     },
                     {
                         "id": "ai",

@@ -51,7 +51,7 @@ package object io {
 
     /**
      * Replaces characters in the given file name (segment) that are (potentially) problematic
-     * on some file system.
+     * on some file system and also shortens the filename
      *
      * @see For more information visit https://en.wikipedia.org/wiki/Filename
      *
@@ -61,7 +61,8 @@ package object io {
      *
      */
     def sanitizeFileName(fileName: String): String = {
-        fileName.replaceAll("[\\/:*?\"<>|\\[\\]=!@,]", "_")
+        // take(128+64) ... to have some space for something else...
+        fileName.filterNot(_ == ' ').replaceAll("[\\/:*?\"<>|\\[\\]=!@,]", "_").take(128 + 64)
     }
 
     /**
