@@ -32,7 +32,7 @@ package analysis
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import java.net.URL
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
@@ -60,7 +60,7 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
 
         OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
 
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val propertyStore = project.get(PropertyStoreKey)
         val executer = project.get(FPCFAnalysesManagerKey)
 
         var analysisTime = org.opalj.util.Seconds.None

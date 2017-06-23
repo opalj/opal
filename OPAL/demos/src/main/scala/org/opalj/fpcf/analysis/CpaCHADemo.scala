@@ -34,7 +34,7 @@ package cha
 
 import java.net.URL
 import org.opalj.ai.analyses.cg.ComputedCallGraph
-import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
+import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, PropertyStoreKey}
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.fpcf.properties.IsEntryPoint
@@ -53,7 +53,7 @@ object CpaCHADemo extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
         val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
-        val cpaStore = cpaProject.get(SourceElementsPropertyStoreKey)
+        val cpaStore = cpaProject.get(PropertyStoreKey)
 
         val methodsCount: Double = project.methodsCount.toDouble
         def getPercentage(value: Double): String = "%1.2f" format (value / methodsCount * 100d)

@@ -65,4 +65,6 @@ object UnaryArithmeticOperators extends Enumeration {
 
     final val Negate = Value("-")
 
+    final val Not = Value("!")
+
 }

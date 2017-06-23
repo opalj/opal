@@ -56,7 +56,7 @@ import scala.collection.mutable
  * The results of this analysis are stored in the property store of the project. You can receive
  * the results as follows:
  * {{{
- * val thePropertyStore = theProject.get(SourceElementsPropertyStoreKey)
+ * val thePropertyStore = theProject.get(PropertyStoreKey)
  * val property = thePropertyStore(method, InheritableByNewTypes.Key)
  * property match {
  *   case Some(IsInheritableByNewTypes) => ...

@@ -33,7 +33,7 @@ package cg
 
 import br.analyses.ProjectInformationKey
 import br.analyses.SomeProject
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.InjectedClassesInformationKey
 
@@ -59,7 +59,7 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
         Seq(
             InjectedClassesInformationKey,
             EntryPointKey,
-            SourceElementsPropertyStoreKey,
+            PropertyStoreKey,
             InstantiableClassesKey,
             FieldValuesKey,
             MethodReturnValuesKey

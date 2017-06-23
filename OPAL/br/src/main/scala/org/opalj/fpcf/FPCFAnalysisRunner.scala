@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 
 /**
  * Provides the generic infrastructure that is implemented by all factories for
@@ -136,7 +136,7 @@ trait FPCFAnalysisRunner {
      * called by the [[FPCFAnalysesManager]].
      */
     final protected[fpcf] def start(project: SomeProject): FPCFAnalysis = {
-        start(project, project.get(SourceElementsPropertyStoreKey))
+        start(project, project.get(PropertyStoreKey))
     }
 
     /**

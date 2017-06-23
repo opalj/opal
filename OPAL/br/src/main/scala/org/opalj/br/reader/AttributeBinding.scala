@@ -42,6 +42,7 @@ import org.opalj.bi.reader.AttributesAbstractions
 trait AttributeBinding extends AttributesAbstractions {
 
     type Attribute = org.opalj.br.Attribute
+
     val AttributeManifest: ClassTag[Attribute] = implicitly
 
 }

@@ -27,53 +27,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-package l1
-
-import org.opalj.br.{ClassFile, Method}
-import org.opalj.br.analyses.Project
+package br
 
 /**
- * This domain uses the l1 level ''stable'' domains which handle primitive values using
- * intervals/ranges.
+ * An allocation site (a new instruction) in the loaded bytecode a method. I.e., the bytecode
+ * as returned after loading it; load-time transformations, such as the rewriting of
+ * invokedynamic instructions, are not considered.
  *
- * @author Michael Eichberg
+ * @param method The method which contains this allocation site.
+ * @param pc     The unique program counter of the allocation site. I.e., the "new" instruction
+ *               in the original bytecode as returned by the configured
+ *               [[org.opalj.bi.reader.ClassFileReader]]. We use the pc to ensure that code
+ *               optimizations/transformations (e.g., to three-address code do not affect
+ *               the information about the allocation site as such.
  */
-class DefaultConfigurableIntervalValuesDomain[I, Source](
-    val id:        I,
-    val project:   Project[Source],
-    val classFile: ClassFile,
-    val method:    Method
-) extends CorrelationalDomain
-        with TheProject
-        with TheMethod
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l0.DefaultReferenceValuesBinding
-        with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
-        with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions {
+final class AllocationSite( final val method: Method, final val pc: PC) {
 
-    type Id = I
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: AllocationSite ⇒ (this.method eq that.method) && this.pc == that.pc
+            case _                    ⇒ false
+        }
+    }
+
+    override def hashCode(): Int = method.hashCode() * 111 + pc
+
+    override def toString: String = {
+        s"AllocationSite(${method.toJava(withVisibility = false)},pc=$pc)"
+    }
 
 }
 
-class DefaultIntervalValuesDomain[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
-) extends DefaultConfigurableIntervalValuesDomain[String, Source](
-    method.toJava(classFile),
-    project,
-    classFile,
-    method
-)
+object AllocationSite {
+
+    def apply(method: Method, pc: PC): AllocationSite = new AllocationSite(method, pc)
+
+    def unapply(as: AllocationSite): Some[(Method, PC)] = Some((as.method, as.pc))
+
+}

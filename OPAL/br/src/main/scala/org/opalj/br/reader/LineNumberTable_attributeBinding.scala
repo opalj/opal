@@ -58,7 +58,7 @@ trait UnpackedLineNumberTable_attributeBinding
         new UnpackedLineNumberTable(line_number_table)
     }
 
-    def LineNumberTableEntry(start_pc: Int, line_number: Int) = {
+    def LineNumberTableEntry(start_pc: Int, line_number: Int): br.LineNumber = {
         new LineNumber(start_pc, line_number)
     }
 

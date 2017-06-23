@@ -33,7 +33,7 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-sealed abstract class EOptionP[+E <: Entity, +P <: Property] {
+abstract class EOptionP[+E <: Entity, +P <: Property] private[fpcf] () {
 
     /**
      * The entity.

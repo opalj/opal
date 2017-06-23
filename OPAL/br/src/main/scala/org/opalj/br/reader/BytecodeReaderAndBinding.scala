@@ -30,6 +30,8 @@ package org.opalj
 package br
 package reader
 
+import scala.annotation.switch
+
 import org.opalj.control.repeat
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.instructions._
@@ -55,7 +57,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
 
         val bas = new ByteArrayInputStream(source)
         val in = new DataInputStream(bas)
-        val codeLength = source.size
+        val codeLength = source.length
         val instructions = new Array[Instruction](codeLength)
 
         var wide: Boolean = false
@@ -71,7 +73,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
         while (in.available > 0) {
             val index = codeLength - in.available
 
-            instructions(index) = (in.readUnsignedByte: @scala.annotation.switch) match {
+            instructions(index) = (in.readUnsignedByte: @switch) match {
                 case 50  ⇒ AALOAD
                 case 83  ⇒ AASTORE
                 case 1   ⇒ ACONST_NULL
@@ -355,7 +357,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                     WIDE
 
                 case opcode ⇒
-                    throw new BytecodeProcessingFailedException("unsupported opcode: "+opcode)
+                    throw BytecodeProcessingFailedException(s"unsupported opcode: $opcode")
             }
 
         }

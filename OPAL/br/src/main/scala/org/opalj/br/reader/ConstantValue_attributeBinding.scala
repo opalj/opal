@@ -46,7 +46,7 @@ trait ConstantValue_attributeBinding
         cp:                 Constant_Pool,
         attributeNameIndex: Constant_Pool_Index,
         constantValueIndex: Constant_Pool_Index
-    ) = {
+    ): ConstantValue_attribute = {
         cp(constantValueIndex).asConstantFieldValue(cp)
     }
 }

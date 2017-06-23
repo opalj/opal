@@ -28,45 +28,62 @@
  */
 package org.opalj
 package fpcf
-package analysis
-package complexity
 
 import java.net.URL
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.BasicReport
+
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.properties.MethodComplexity
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.Method
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.Purity
 
 /**
- * Demonstrates how to use an analysis that was developed using the FPCF framework.
+ * Runs the purity analysis including all analyses that may improve the overall result.
  *
  * @author Michael Eichberg
  */
-object MethodComplexityDemo extends DefaultOneStepAnalysis {
+object PurityAnalysis extends DefaultOneStepAnalysis {
 
-    override def title: String = "assesses the complexity of methods"
+    override def title: String = "assess the purity of methods"
 
-    override def description: String =
-        """|a very simple assessment of a method that primarily serves
-      |the goal to make decisions about those methods that may be inlined""".stripMargin('|')
+    override def description: String = {
+        "assess the purity of some methods"
+    }
 
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        implicit val theProject = project
-        implicit val theProjectStore = theProject.get(PropertyStoreKey)
 
-        val analysis = new MethodComplexityAnalysis
-        theProjectStore.execute { case m: Method if m.body.isDefined ⇒ m } { m ⇒ Seq(EP(m, analysis(m))) }
-        theProjectStore.waitOnPropertyComputationCompletion(true)
-        println(theProjectStore.toString)
-        val ratings = theProjectStore.collect[(String, Property)] {
-            case (e, p @ MethodComplexity(c)) if c < Int.MaxValue ⇒ (e.toString, p)
-        }
-        BasicReport(ratings.mkString("\n", "\n", s"\n${ratings.size} simple methods found - Done."))
+        val projectStore = project.get(PropertyStoreKey)
+
+        org.opalj.fpcf.analysis.FieldMutabilityAnalysis.start(project, projectStore)
+
+        projectStore.debug = true
+        org.opalj.fpcf.analysis.PurityAnalysis.start(project, projectStore)
+
+        projectStore.waitOnPropertyComputationCompletion(true)
+
+        val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
+        val pureMethods: Traversable[(Method, Property)] =
+            pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
+        val pureMethodsAsStrings =
+            pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
+
+        val methodInfo =
+            pureMethodsAsStrings.toList.sorted.mkString(
+                "\nPure methods:\n",
+                "\n",
+                s"\nTotal: ${pureMethods.size}\n"
+            )
+
+        val result = methodInfo +
+            projectStore.toString(false)+
+            "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size
+
+        BasicReport(result)
     }
 }

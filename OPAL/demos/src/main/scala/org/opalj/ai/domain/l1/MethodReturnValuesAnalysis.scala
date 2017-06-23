@@ -153,11 +153,8 @@ case class RefinedReturnType(
 
     override def toString(): String = {
         import Console._
-        val declaringClassOfMethod = classFile.thisType.toJava
-
-        "Refined the return type of "+BOLD + BLUE +
-            declaringClassOfMethod+"{ "+method.toJava+" }"+
-            " => "+GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
+        "Refined the return type of "+BOLD + BLUE + method.toJava(classFile)+" => "+
+            GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
     }
 
 }

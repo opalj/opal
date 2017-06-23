@@ -160,7 +160,7 @@ trait AnnotationsBinding
         cp:                  Constant_Pool,
         type_index:          Constant_Pool_Index,
         element_value_pairs: ElementValuePairs
-    ) = {
+    ): Annotation = {
         new Annotation(cp(type_index).asFieldType, element_value_pairs)
     }
 

@@ -61,7 +61,7 @@ import scalafx.stage.Stage
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.AsQuadruples
 import org.opalj.tac.ToTxt
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.PropertyKey
 
 /**
@@ -423,7 +423,7 @@ class ProjectExplorer(
             hgrow = Priority.Always
         }
 
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val propertyStore = project.get(PropertyStoreKey)
         val properties = propertyStore.properties(classMember.getOrElse(cf))
 
         if (properties.isEmpty) {
