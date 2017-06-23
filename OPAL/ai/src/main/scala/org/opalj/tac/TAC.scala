@@ -43,27 +43,28 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.{Error ⇒ ErrorLogLevel}
 
 /**
- * Creates the three-address representation for some method and prints it to std out.
+ * Creates the three-address representation for some method(s) and prints it to std out or writes
+ * it to a file.
  *
- * @example
- *         To convert all files of a project to TAC you can use:
+ * @example To convert all files of a project to the AI based three-address code, you can use:
  * {{{
  * import org.opalj.io.write
- * import org.opalj.tac._
  * import org.opalj.util.PerformanceEvaluation.time
- * val f = new java.io.File("/Users/eichberg/Downloads/presto-verifier-0.147-executable.zip")
+ * import org.opalj.tac._
+ * val f = new java.io.File("OPAL/bi/target/scala-2.11/resource_managed/test/ai.jar")
  * val p = org.opalj.br.analyses.Project(f)
  * var i = 0
- * time {
- * p.parForeachMethodWithBody(parallelizationLevel=32){ mi =>
- *   val (code,_) = org.opalj.tac.AsQuadruples(mi.method,p.classHierarchy)
- *   val tac = ToTxt(code)
- *   val fileNamePrefix = mi.classFile.thisType.toJava+"."+mi.method.name
- *   val file = write(tac, fileNamePrefix, ".tac.txt")
- *   i+= 1
- *   println(i+":"+file)
- * }
- * }(t => println("Analysis time: "+t.toSeconds))
+ * val errors = time {
+ *   p.parForeachMethodWithBody(parallelizationLevel=32){ mi =>
+ *     val TACode(code,cfg,ehs,_) = org.opalj.tac.TACAI(p,mi.method)()
+ *     val tac = ToTxt(code, Some(cfg))
+ *     val fileNamePrefix = mi.classFile.thisType.toJava+"."+mi.method.name
+ *     val file = write(tac, fileNamePrefix, ".tac.txt")
+ *     i+= 1
+ *     println(i+":"+file)
+ *   }
+ * }(t => println("transformation time: "+t.toSeconds))
+ * if(errors.nonEmpty) println(errors.mkString("\n"))
  * }}}
  *
  * @author Michael Eichberg
@@ -155,30 +156,44 @@ object TAC {
                 if methodSignature.isEmpty || mSig.contains(methodSignature.get)
                 code ← m.body
             } {
-                val (tac: String, cfg: String) = if (naive) {
-                    val (code, Some(cfg), _) =
+                val (tac: String, cfg: String, ehs: Option[String]) = if (naive) {
+                    val (code, Some(cfg), ehs) =
                         TACNaive(m, ch, AllTACNaiveOptimizations, forceCFGCreation = true)
-                    (ToTxt(code), tacToDot(code, cfg))
+                    (
+                        ToTxt(code, Some(cfg)),
+                        tacToDot(code, cfg),
+                        if (ehs.nonEmpty)
+                            Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                        else
+                            None
+                    )
                 } else {
-                    val d: Domain with RecordDefUse =
-                        if (domainName.isEmpty) {
-                            new domain.l1.DefaultDomainWithCFGAndDefUse(project, cf, m)
-                        } else {
-                            // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
-                            Class.
-                                forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
-                                getConstructor(classOf[Project[_]], classOf[ClassFile], classOf[Method]).
-                                newInstance(project, cf, m)
-                        }
+                    val d: Domain with RecordDefUse = if (domainName.isEmpty) {
+                        new domain.l1.DefaultDomainWithCFGAndDefUse(project, cf, m)
+                    } else {
+                        // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
+                        Class.
+                            forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
+                            getConstructor(classOf[Project[_]], classOf[ClassFile], classOf[Method]).
+                            newInstance(project, cf, m)
+                    }
                     // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
                     val aiResult = BaseAI(cf, m, d)
-                    val TACode(code, cfg, _, _) = TACAI(m, project.classHierarchy, aiResult)(Nil)
-                    (ToTxt(code), tacToDot(code, cfg))
+                    val TACode(code, cfg, ehs, _) = TACAI(m, project.classHierarchy, aiResult)(Nil)
+                    (
+                        ToTxt(code, Some(cfg)),
+                        tacToDot(code, cfg),
+                        if (ehs.nonEmpty)
+                            Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                        else
+                            None
+                    )
                 }
 
                 methodsAsTAC.append(mSig)
                 methodsAsTAC.append("{\n")
                 methodsAsTAC.append(tac)
+                ehs.map(methodsAsTAC.append)
                 if (printCFG) {
                     if (doOpen) {
                         Console.println("wrote cfg to: "+writeAndOpen(cfg, m.toJava(cf), "cfg.gv"))
@@ -194,7 +209,8 @@ object TAC {
             if (doOpen) {
                 val prefix = cf.thisType.toJava
                 val suffix = if (naive) ".naive-tac.txt" else ".ai-tax.txt"
-                Console.println("wrote tac code to: "+writeAndOpen(methodsAsTAC.toString(), prefix, suffix))
+                val targetFile = writeAndOpen(methodsAsTAC.toString(), prefix, suffix)
+                Console.println("wrote tac code to: "+targetFile)
             } else {
                 Console.println(methodsAsTAC.toString())
             }

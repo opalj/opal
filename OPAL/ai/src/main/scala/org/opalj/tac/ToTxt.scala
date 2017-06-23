@@ -32,8 +32,13 @@ package tac
 import org.opalj.br.Method
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CatchNode
+import org.opalj.br.cfg.ExitNode
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.Code
+import org.opalj.br.Type
 import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
@@ -120,7 +125,10 @@ object ToTxt {
         }
     }
 
-    @inline final def toTxtStmt[V <: Var[V]](stmt: Stmt[V], includePC: Boolean): String = {
+    @inline final def toTxtStmt[V <: Var[V]](
+        stmt:      Stmt[V],
+        includePC: Boolean
+    ): String = {
         val pc = if (includePC) s"/*pc=${stmt.pc}:*/" else ""
         stmt.astID match {
             case Return.ASTID ⇒ s"$pc return"
@@ -211,8 +219,8 @@ object ToTxt {
     /**
      * Converts the statements to some human readable text.
      */
-    def apply[V <: Var[V]](stmts: Array[Stmt[V]]): String = {
-        apply(stmts, true, true).mkString("\n")
+    def apply[V <: Var[V]](stmts: Array[Stmt[V]], cfg: Option[CFG]): String = {
+        apply(stmts, cfg, true, true).mkString("\n")
     }
 
     /**
@@ -222,12 +230,13 @@ object ToTxt {
      */
     def apply[V <: Var[V]](
         stmts:     Array[Stmt[V]],
+        cfg:       Option[CFG],
         indented:  Boolean,
         includePC: Boolean
-    ): Array[String] = {
+    ): Seq[String] = {
 
         val max = stmts.length
-        val javaLikeCode = new Array[String](max)
+        val javaLikeCode = new scala.collection.mutable.ArrayBuffer[String](stmts.length * 3)
         var index = 0
         while (index < max) {
 
@@ -238,7 +247,38 @@ object ToTxt {
                     s"$index:$javaLikeStmt"
             }
 
-            javaLikeCode(index) = qualify(toTxtStmt(stmts(index), includePC))
+            def catchTypeToString(t: Option[Type]): String = {
+                t.map(_.toJava).getOrElse("<FINALLY>")
+            }
+
+            val bb = cfg.map(_.bb(index))
+            if (bb.isDefined && bb.get.startPC == index) {
+                // we are at the beginning of a basic block
+                if (index > 0) javaLikeCode += "" // an empty line
+                val predecessors = bb.get.predecessors
+                if (predecessors.nonEmpty) {
+                    javaLikeCode +=
+                        predecessors.map {
+                            case bb: BasicBlock ⇒ bb.endPC.toString
+                            case cn: CatchNode  ⇒ catchTypeToString(cn.catchType)
+                        }.mkString((" " * (if (indented) 6 else 0))+"// → ", ", ", "")
+                }
+            }
+
+            javaLikeCode += qualify(toTxtStmt(stmts(index), includePC))
+
+            if (bb.isDefined && bb.get.endPC == index && bb.get.successors.exists(!_.isBasicBlock)) {
+                val successors =
+                    bb.get.successors.map {
+                        case cn: CatchNode   ⇒ s"⚡️ ${catchTypeToString(cn.catchType)} → ${cn.handlerPC}"
+                        case ExitNode(false) ⇒ "⚠️ - uncaught exception/abnormal return"
+                        case _               ⇒ null
+                    }.filterNot(_ == null)
+
+                if (successors.nonEmpty)
+                    javaLikeCode +=
+                        successors.mkString((" " * (if (indented) 6 else 0))+"// → ", ", ", "")
+            }
 
             index += 1
         }
@@ -251,10 +291,11 @@ object ToTxt {
      */
     def apply[V <: Var[V]](
         stmts:     IndexedSeq[Stmt[V]],
+        cfg:       Option[CFG],
         indented:  Boolean,
         includePC: Boolean
-    ): Array[String] = {
-        apply(stmts.toArray, indented, includePC)
+    ): Seq[String] = {
+        apply(stmts.toArray, cfg, indented, includePC)
     }
 
     /**
@@ -267,10 +308,11 @@ object ToTxt {
         aiResult:       Option[AIResult { val domain: RecordDefUse }] = None
     ): String = {
         aiResult map { aiResult ⇒
-            ToTxt(TACAI(method, classHierarchy, aiResult)(Nil).stmts)
+            val taCode = TACAI(method, classHierarchy, aiResult)(Nil)
+            ToTxt(taCode.stmts, Some(taCode.cfg))
         } getOrElse {
-            val (stmts, _, _) = TACNaive(method, classHierarchy, List(SimplePropagation), false)
-            ToTxt(stmts)
+            val (stmts, cfg, _) = TACNaive(method, classHierarchy, List(SimplePropagation), false)
+            ToTxt(stmts, cfg)
         }
     }
 

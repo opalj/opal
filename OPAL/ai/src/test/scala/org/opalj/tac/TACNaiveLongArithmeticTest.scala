@@ -98,7 +98,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect addition") {
             val statements = TACNaive(method = LongAddMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -111,7 +111,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect logical and") {
             val statements = TACNaive(method = LongAndMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -124,7 +124,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect division") {
             val statements = TACNaive(method = LongDivMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -137,7 +137,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect negation") {
             val statements = TACNaive(method = LongNegMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -162,7 +162,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect multiplication") {
             val statements = TACNaive(method = LongMulMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -175,7 +175,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect logical or") {
             val statements = TACNaive(method = LongOrMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -188,7 +188,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect modulo") {
             val statements = TACNaive(method = LongRemMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -201,7 +201,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect shift right") {
             val statements = TACNaive(method = LongShRMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -214,7 +214,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect shift left") {
             val statements = TACNaive(method = LongShLMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -227,7 +227,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect subtraction") {
             val statements = TACNaive(method = LongSubMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -240,7 +240,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect arithmetic shift right") {
             val statements = TACNaive(method = LongAShMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -253,7 +253,7 @@ class TACNaiveLongArithmeticTest extends TACNaiveTest {
 
         it("should correctly reflect logical xor") {
             val statements = TACNaive(method = LongXOrMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
