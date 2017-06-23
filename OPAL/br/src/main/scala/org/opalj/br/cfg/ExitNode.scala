@@ -36,7 +36,7 @@ package org.opalj.br.cfg
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-class ExitNode(normalReturn: Boolean) extends CFGNode {
+class ExitNode( final val normalReturn: Boolean) extends CFGNode {
 
     final override def nodeId: Int = if (normalReturn) Int.MinValue else Int.MinValue + 1
 
@@ -80,4 +80,9 @@ class ExitNode(normalReturn: Boolean) extends CFGNode {
             )
     }
 
+}
+
+object ExitNode {
+
+    def unapply(en: ExitNode): Some[Boolean] = Some(en.normalReturn)
 }
