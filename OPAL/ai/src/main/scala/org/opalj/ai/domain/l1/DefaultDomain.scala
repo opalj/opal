@@ -102,7 +102,13 @@ class DefaultDomainWithCFG[Source](
  * information.
  */
 class DefaultDomainWithCFGAndDefUse[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
-) extends DefaultDomain[Source](project, classFile, method) with RecordDefUse
+        project:   Project[Source],
+        classFile: ClassFile,
+        method:    Method
+) extends DefaultDomain[Source](project, classFile, method) with RecordDefUse {
+
+    def this(project: Project[Source], method: Method) {
+        this(project, project.classFile(method), method)
+    }
+
+}
