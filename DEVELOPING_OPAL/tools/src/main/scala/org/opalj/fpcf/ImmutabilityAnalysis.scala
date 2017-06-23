@@ -32,7 +32,7 @@ package fpcf
 import java.net.URL
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
@@ -68,7 +68,7 @@ object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
 
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
-        val projectStore = time { get(SourceElementsPropertyStoreKey) } { r ⇒ t = r.toSeconds }
+        val projectStore = time { get(PropertyStoreKey) } { r ⇒ t = r.toSeconds }
         //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)

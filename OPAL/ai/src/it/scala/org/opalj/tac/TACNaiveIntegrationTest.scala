@@ -68,12 +68,12 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
         } {
             try {
                 // without using AIResults
-                val (tacNaiveCode, _, _) = TACNaive(
+                val (tacNaiveCode, cfg, _) = TACNaive(
                     method = m,
-                    classHierarchy = project.classHierarchy,
+                    classHierarchy = ch,
                     optimizations = AllTACNaiveOptimizations
                 )
-                ToTxt(tacNaiveCode)
+                ToTxt(tacNaiveCode, cfg)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
                     val methodSignature = m.toJava(cf)

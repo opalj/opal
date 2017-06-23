@@ -50,7 +50,7 @@ import scalafx.scene.layout.BorderPane
 import scalafx.scene.layout.HBox
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 
 object ProjectInfoDialog {
     def toUL(files: Seq[File]): String =
@@ -98,7 +98,7 @@ object ProjectInfoDialog {
 
     private def report(project: Project[URL], preferences: LoadedFiles): String = {
 
-        val propertiesStoreInfo = project.get(SourceElementsPropertyStoreKey).toString()
+        val propertiesStoreInfo = project.get(PropertyStoreKey).toString()
 
         val mlStatistics =
             <table>

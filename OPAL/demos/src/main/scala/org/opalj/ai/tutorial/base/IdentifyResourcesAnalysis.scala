@@ -103,11 +103,11 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
 
         def callSiteToString(callSite: (ClassFile, Method, PC, String)): String = {
             val (cf, m, pc, v) = callSite
-            cf.thisType.toJava+"{ "+m.toJava+"{"+pc+": \""+v+"\" } }"
+            m.toJava(cf, s"$pc: $v")
         }
 
         BasicReport(
-            callSitesWithConstantStringParameter.map(callSiteToString(_)).
+            callSitesWithConstantStringParameter.map(callSiteToString).
                 mkString("Methods:\n", "\n", ".\n")
         )
     }

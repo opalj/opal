@@ -37,7 +37,7 @@ import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
 import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
@@ -106,8 +106,8 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
         val projectStore = time {
-            SourceElementsPropertyStoreKey.parallelismLevel = parallelismLevel
-            get(SourceElementsPropertyStoreKey)
+            PropertyStoreKey.parallelismLevel = parallelismLevel
+            get(PropertyStoreKey)
         } { r ⇒ setupTime = r }
         //projectStore.debug = true
 

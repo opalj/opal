@@ -157,10 +157,9 @@ case class RefinedReturnType[D <: Domain](
             }
 
         import Console._
-        val declaringClassOfMethod = classFile.thisType.toJava
 
         "Refined the return type of "+BOLD + BLUE +
-            declaringClassOfMethod+"{ "+method.toJava+" }"+
+            method.toJava(classFile)+
             " => "+GREEN +
             refinedType.getOrElse("\"NONE\" (the method never returns normally)") +
             RESET + RED + additionalInfo + RESET

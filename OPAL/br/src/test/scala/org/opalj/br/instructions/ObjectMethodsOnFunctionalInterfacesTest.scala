@@ -72,7 +72,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
                     s"the method which is expected to be invoked $annotations is not found"
                 )
 
-            val methodIdentifier = invokedMethod.get.toJava
+            val methodIdentifier = invokedMethod.get.toJava(false)
             it("«"+methodIdentifier+"» should resolve to Object's method") {
                 val declaringClass = invokevirtual.declaringClass
                 declaringClass should be('ObjectType)

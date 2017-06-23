@@ -100,7 +100,6 @@ class MethodDescriptorTest extends FunSuite {
 
     {
         val jvmDescriptors = Seq(
-
             "()V",
             "([[[III)[I",
             "([I)[I",

@@ -180,13 +180,15 @@ object InterpretMethodsAnalysis {
                     if (result.wasAborted) {
                         if (beVerbose)
                             println(
-                                classFile.thisType.toJava+"{ "+method.toJava +
+                                method.toJava(
+                                    classFile,
                                     RED+"[aborted after evaluating "+
-                                    ai.currentEvaluationCount+
-                                    " instructions (size of instructions array="+
-                                    body.instructions.size+
-                                    "; max="+ai.maxEvaluationCount+")]"+
-                                    RESET+" }"
+                                        ai.currentEvaluationCount+
+                                        " instructions (size of instructions array="+
+                                        body.instructions.size+
+                                        "; max="+ai.maxEvaluationCount+")]"+
+                                        RESET
+                                )
                             )
 
                         val message = s"evaluation bound (max=${ai.maxEvaluationCount}) exceeded"
@@ -245,7 +247,7 @@ object InterpretMethodsAnalysis {
                             val (_, classFile, method, throwable) = ex
                             <div>
                                 <b>{ classFile.thisType.fqn }</b>
-                                <i>"{ method.toJava }"</i><br/>
+                                <i>"{ method.toJava(true) }"</i><br/>
                                 { "Length: "+method.body.get.instructions.length }
                                 <div>{ XHTML.throwableToXHTML(throwable) }</div>
                             </div>

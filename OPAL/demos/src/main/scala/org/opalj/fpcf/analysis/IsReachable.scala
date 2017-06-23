@@ -36,7 +36,7 @@
 //import org.opalj.br.Method
 //import org.opalj.br.analyses.DefaultOneStepAnalysis
 //import org.opalj.br.analyses.BasicReport
-//import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+//import org.opalj.br.analyses.PropertyStoreKey
 //
 //case object IsReachable extends SetProperty[Method]
 //
@@ -52,7 +52,7 @@
 //        isInterrupted: () ⇒ Boolean
 //    ): BasicReport = {
 //        implicit val theProject = project
-//        implicit val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
+//        implicit val theProjectStore = theProject.get(PropertyStoreKey)
 //
 //        val isReachableCount = new java.util.concurrent.atomic.AtomicInteger(0)
 //        theProjectStore.onPropertyDerivation(IsReachable) { e ⇒

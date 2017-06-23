@@ -181,7 +181,7 @@ case class CFG(
 
     /**
      * Iterates over the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
-     * not returned.)
+     * not returned.) Always returns the basic block containing the first instruction first.
      */
     def allBBs: Iterator[BasicBlock] = {
         new Iterator[BasicBlock] {
@@ -472,8 +472,17 @@ case class CFG(
 
     def toDot(f: BasicBlock ⇒ String): Iterable[Node] = {
         // 1. create a node foreach cfg node
+        val bbsIterator = allBBs
+        val startBB = bbsIterator.next()
         var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] =
-            allBBs.map(bb ⇒ (bb, new DefaultMutableNode(f(bb)))).toMap
+            Map(
+                startBB →
+                    new DefaultMutableNode(
+                        f(startBB),
+                        theVisualProperties = Map("fillcolor" → "green", "style" → "filled", "shape" → "box")
+                    )
+            )
+        cfgNodeToGNodes ++= bbsIterator.map(bb ⇒ (bb, new DefaultMutableNode(f(bb))))
         cfgNodeToGNodes ++= catchNodes.map(cn ⇒ (cn, new DefaultMutableNode(cn.toString)))
         cfgNodeToGNodes += (
             abnormalReturnNode →
@@ -486,10 +495,6 @@ case class CFG(
             new DefaultMutableNode(
                 "return", theVisualProperties = normalReturnNode.visualProperties
             )
-        )
-        assert(
-            cfgNodeToGNodes.size == allBBs.size + catchNodes.size + 2,
-            s"missing nodes: ${cfgNodeToGNodes.size} < ${allBBs.size + catchNodes.size + 2}"
         )
 
         // 2. reconnect nodes

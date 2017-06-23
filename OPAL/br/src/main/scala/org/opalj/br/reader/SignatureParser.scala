@@ -222,11 +222,11 @@ object SignatureParser {
             typeSignatureParser | 'V' ^^^ { VoidType }
     }
 
-    private def createSignatureParsers() = new SignatureParsers()
+    private def createSignatureParsers(): SignatureParsers = new SignatureParsers()
 
     private val signatureParsers: ThreadLocal[SignatureParsers] =
         new ThreadLocal[SignatureParsers] {
-            override protected def initialValue() = createSignatureParsers()
+            override protected def initialValue(): SignatureParsers = createSignatureParsers()
         }
 
     def parseClassSignature(signature: String): ClassSignature = {

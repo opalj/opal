@@ -30,136 +30,189 @@ package org.opalj
 package tac
 
 import org.opalj.io.writeAndOpen
-import org.opalj.io.OpeningFileFailedException
-import org.opalj.graphs.toDot
+import org.opalj.br.analyses.Project
+import org.opalj.ai.domain
+import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.reader.Java8Framework
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.{domain, BaseAI}
-import org.opalj.br.cfg.CFGFactory
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.OPALLogger
+import org.opalj.log.{Error ⇒ ErrorLogLevel}
 
 /**
- * Creates the three-address representation for some method and prints it.
+ * Creates the three-address representation for some method(s) and prints it to std out or writes
+ * it to a file.
  *
- * @example
- *         To convert all files of a project to TAC you can use:
+ * @example To convert all files of a project to the AI based three-address code, you can use:
  * {{{
  * import org.opalj.io.write
- * import org.opalj.tac._
  * import org.opalj.util.PerformanceEvaluation.time
- * val f = new java.io.File("/Users/eichberg/Downloads/presto-verifier-0.147-executable.zip")
+ * import org.opalj.tac._
+ * val f = new java.io.File("OPAL/bi/target/scala-2.11/resource_managed/test/ai.jar")
  * val p = org.opalj.br.analyses.Project(f)
  * var i = 0
- * time {
- * p.parForeachMethodWithBody(parallelizationLevel=32){ mi =>
- *   val (code,_) = org.opalj.tac.AsQuadruples(mi.method,p.classHierarchy)
- *   val tac = ToTxt(code)
- *   val fileNamePrefix = mi.classFile.thisType.toJava+"."+mi.method.name
- *   val file = write(tac, fileNamePrefix, ".tac.txt")
- *   i+= 1
- *   println(i+":"+file)
- * }
- * }(t => println("Analysis time: "+t.toSeconds))
+ * val errors = time {
+ *   p.parForeachMethodWithBody(parallelizationLevel=32){ mi =>
+ *     val TACode(code,cfg,ehs,_) = org.opalj.tac.TACAI(p,mi.method)()
+ *     val tac = ToTxt(code, Some(cfg))
+ *     val fileNamePrefix = mi.classFile.thisType.toJava+"."+mi.method.name
+ *     val file = write(tac, fileNamePrefix, ".tac.txt")
+ *     i+= 1
+ *     println(i+":"+file)
+ *   }
+ * }(t => println("transformation time: "+t.toSeconds))
+ * if(errors.nonEmpty) println(errors.mkString("\n"))
  * }}}
  *
  * @author Michael Eichberg
  */
 object TAC {
 
-    private final val Usage = {
-        "Usage: java …TAC \n"+
-            "(1) <JAR file containing class files>\n"+
-            "(2) <class file name>\n"+
-            "(3) <method name>\n"+
-            "[(4) -ai|-naive|-both (default: -ai)]"+
-            "Example:\n\tjava …TAC /Library/jre/lib/rt.jar java.util.ArrayList toString"
+    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, ErrorLogLevel))
+
+    def handleError(message: String): Nothing = {
+        Console.err.println(error(message))
+        sys.exit(-1)
     }
 
-    def processMethod(
-        project:   SomeProject,
-        classFile: ClassFile,
-        method:    Method,
-        use:       String
-    ): Unit = {
-        val naiveCFGFile = writeAndOpen(
-            CFGFactory(method.body.get, project.classHierarchy).toDot,
-            "NaiveCFG-"+method.name, ".br.cfg.gv"
-        )
-        println(s"Generated naive CFG (for comparison purposes only) $naiveCFGFile.")
+    def error(message: String): String = s"Error: $message \n$usage"
 
-        try {
-            val ch = project.classHierarchy
-
-            if (use == "-ai" || use == "-both") { // USING AI
-                //val d = new domain.l1.DefaultDomainWithCFGAndDefUse(project, classFile, method)
-                val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
-                val aiResult = BaseAI(classFile, method, d)
-
-                val aiCFGFile = writeAndOpen(
-                    toDot(Set(aiResult.domain.cfgAsGraph())),
-                    "AI-CFG-"+method.name, ".gv"
-                )
-                println(s"Generated ai CFG (input): $aiCFGFile")
-                val prefix = "AI-BR-CFG-"+method.name
-                val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, prefix, ".gv")
-                println(s"Generated the reified ai CFG: $aiBRCFGFile")
-
-                val TACode(code, cfg, _, _) = TACAI(method, project.classHierarchy, aiResult)(Nil)
-                val graph = tacToDot(code, cfg)
-                val tacCFGFile = writeAndOpen(graph, "TACAI-CFG-"+method.name, ".gv")
-                println(s"Generated the tac cfg file $tacCFGFile.")
-
-                val tac = ToTxt(code)
-                val fileNamePrefix = classFile.thisType.toJava+"."+method.name
-                val file = writeAndOpen(tac, fileNamePrefix, ".ai.tac.txt")
-                println(s"Generated the ai tac file $file.")
-            }
-
-            if (use == "-naive" || use == "-both") { // USING NO AI
-                val (code, _, _) =
-                    TACNaive(method, ch, AllTACNaiveOptimizations, forceCFGCreation = true)
-
-                val tac = ToTxt(code)
-                val fileNamePrefix = classFile.thisType.toJava+"."+method.name
-                val file = writeAndOpen(tac, fileNamePrefix, ".naive.tac.txt")
-                println(s"Generated the naive tac file $file.")
-            }
-
-        } catch {
-            case OpeningFileFailedException(file, cause) ⇒
-                println(s"Opening the tac file $file failed: ${cause.getMessage()}")
-        }
+    def usage: String = {
+        "Usage: java …TAC \n"+
+            "-source <JAR file/Folder containing class files>\n"+
+            "[-class <class file name> (filters the set of classes)]\n"+
+            "[-method <method name/signature using Java notation>] (filters the set of methods)\n"+
+            "[-naive (the naive representation is generated) | -domain <class name of the domain>]\n"+
+            "[-cfg] (print control-flow graph)]\n"+
+            "[-open (the generated representations will be written to disk and opened)]\n"+
+            "Example:\n\tjava …TAC -jar /Library/jre/lib/rt.jar -class java.util.ArrayList .method toString"
     }
 
     def main(args: Array[String]): Unit = {
 
-        if (args.length < 3 || args.length > 4) {
-            println(Usage)
-            sys.exit(-1)
-        }
-        /*
-        println("Sleeping for five seconds"); Thread.sleep(5000)
-        */
+        // Parameters:
+        var source: String = null
+        var doOpen: Boolean = false
+        var className: Option[String] = None
+        var methodSignature: Option[String] = None
+        var naive: Boolean = false
+        var domainName: Option[String] = None
+        var printCFG: Boolean = false
 
-        val jarName = args(0)
-        val classFiles = Java8Framework.ClassFiles(new java.io.File(jarName))
-        val project = Project(classFiles)
-        if (classFiles.isEmpty) {
-            println(s"No classfiles found in ${args(0)}")
-        } else {
-            val clazzName = args(1)
-            val methodName = args(2)
-            val useAI = if (args.length == 4) args(3).toLowerCase else "-ai"
+        // PARSING PARAMETERS
+        var i = 0
 
-            val classFile = classFiles.find(e ⇒ e._1.thisType.toJava == clazzName).map(_._1).get
-            val methods = classFile.findMethod(methodName)
-            if (methods.isEmpty) {
-                val methodNames = classFile.methods.map(_.name)
-                println(methodNames.mkString(s"cannot find: $methodName (available: ", ",", ")"))
+        def readNextArg(): String = {
+            i += 1
+            if (i < args.length) {
+                args(i)
             } else {
-                methods.foreach { method ⇒ processMethod(project, classFile, method, useAI) }
+                handleError(s"missing argument: ${args(i - 1)}")
+            }
+        }
+
+        while (i < args.length) {
+            args(i) match {
+                case "-naive" ⇒
+                    naive = true
+                    if (domainName.nonEmpty) handleError("-naive and -domain cannot be combined")
+
+                case "-domain" ⇒
+                    domainName = Some(readNextArg())
+                    if (naive) handleError("-naive and -domain cannot be combined")
+
+                case "-source" ⇒ source = readNextArg()
+                case "-cfg"    ⇒ printCFG = true
+                case "-open"   ⇒ doOpen = true
+                case "-class"  ⇒ className = Some(readNextArg())
+                case "-method" ⇒ methodSignature = Some(readNextArg())
+                case unknown   ⇒ handleError(s"unknown parameter: $unknown")
+            }
+            i += 1
+        }
+
+        if (source == null) {
+            handleError("missing parameters")
+        }
+
+        val project = Project(new java.io.File(source))
+        if (project.projectMethodsCount == 0) {
+            handleError(s"no methods found: $source")
+        }
+
+        val ch = project.classHierarchy
+        for {
+            cf ← project.allClassFiles
+            if className.isEmpty || className.get == cf.thisType.toJava
+        } {
+            val methodsAsTAC = new StringBuilder()
+
+            for {
+                m ← cf.methods
+                mSig = m.descriptor.toJava(m.name)
+                if methodSignature.isEmpty || mSig.contains(methodSignature.get)
+                code ← m.body
+            } {
+                val (tac: String, cfg: String, ehs: Option[String]) = if (naive) {
+                    val (code, Some(cfg), ehs) =
+                        TACNaive(m, ch, AllTACNaiveOptimizations, forceCFGCreation = true)
+                    (
+                        ToTxt(code, Some(cfg)),
+                        tacToDot(code, cfg),
+                        if (ehs.nonEmpty)
+                            Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                        else
+                            None
+                    )
+                } else {
+                    val d: Domain with RecordDefUse = if (domainName.isEmpty) {
+                        new domain.l1.DefaultDomainWithCFGAndDefUse(project, cf, m)
+                    } else {
+                        // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
+                        Class.
+                            forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
+                            getConstructor(classOf[Project[_]], classOf[ClassFile], classOf[Method]).
+                            newInstance(project, cf, m)
+                    }
+                    // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
+                    val aiResult = BaseAI(cf, m, d)
+                    val TACode(code, cfg, ehs, _) = TACAI(m, project.classHierarchy, aiResult)(Nil)
+                    (
+                        ToTxt(code, Some(cfg)),
+                        tacToDot(code, cfg),
+                        if (ehs.nonEmpty)
+                            Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                        else
+                            None
+                    )
+                }
+
+                methodsAsTAC.append(mSig)
+                methodsAsTAC.append("{\n")
+                methodsAsTAC.append(tac)
+                ehs.map(methodsAsTAC.append)
+                if (printCFG) {
+                    if (doOpen) {
+                        Console.println("wrote cfg to: "+writeAndOpen(cfg, m.toJava(cf), "cfg.gv"))
+                    } else {
+                        methodsAsTAC.append("\n/* - CFG")
+                        methodsAsTAC.append(cfg)
+                        methodsAsTAC.append("*/\n")
+                    }
+                }
+                methodsAsTAC.append("\n}\n\n")
+            }
+
+            if (doOpen) {
+                val prefix = cf.thisType.toJava
+                val suffix = if (naive) ".naive-tac.txt" else ".ai-tax.txt"
+                val targetFile = writeAndOpen(methodsAsTAC.toString(), prefix, suffix)
+                Console.println("wrote tac code to: "+targetFile)
+            } else {
+                Console.println(methodsAsTAC.toString())
             }
         }
     }

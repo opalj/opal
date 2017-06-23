@@ -89,7 +89,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
  *     to the list of (concrete/singleton) objects implementing the trait
  *     [[org.opalj.br.analyses.ProjectInformationKey]].
  *     One of the most important project information keys is the
- *     `SourceElementsPropertyStoreKey` which gives access to the property store.
+ *     `PropertyStoreKey` which gives access to the property store.
  *
  * ==Thread Safety==
  * This class is thread-safe.
@@ -918,7 +918,7 @@ class Project[Source] private (
      * (size in length of the method's code array).
      */
     def projectMethodsLengthDistribution: Map[Int, Set[Method]] = {
-        val nonSyntheticMethodsWithBody: Traversable[Method] = methodsWithBody.view.filterNot(_.isSynthetic)
+        val nonSyntheticMethodsWithBody = methodsWithBody.iterator.filterNot(_.isSynthetic)
         val data = SortedMap.empty[Int, Set[Method]]
         nonSyntheticMethodsWithBody.foldLeft(data) { (data, method) ⇒
             val methodLength = method.body.get.instructions.length
@@ -1104,7 +1104,7 @@ class Project[Source] private (
     /**
      * Tests if the information identified by the given [[ProjectInformationKey]]
      * is available. If the information is not (yet) available, the information
-     * will not be computed and `None` will be returned.
+     * will not be computed; `None` will be returned.
      *
      * @see [[ProjectInformationKey]] for further information.
      */

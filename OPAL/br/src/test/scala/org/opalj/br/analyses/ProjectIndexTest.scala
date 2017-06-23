@@ -46,7 +46,10 @@ import org.opalj.br.TestSupport.biProject
 @RunWith(classOf[JUnitRunner])
 class ProjectIndexTest extends FlatSpec with Matchers {
 
-    import ProjectIndexTest._
+    val methodsProjectIndex = biProject("methods.jar").get(ProjectIndexKey)
+
+    val fieldsProjectIndex = biProject("fields-g=none-5.jar").get(ProjectIndexKey)
+
     //
     //
     // Verify
@@ -110,14 +113,4 @@ class ProjectIndexTest extends FlatSpec with Matchers {
         val matches = fieldsProjectIndex.findFields(name, fieldType)
         matches should have size (0)
     }
-}
-
-private object ProjectIndexTest {
-
-    // Fixtures
-
-    val methodsProjectIndex = biProject("methods.jar").get(ProjectIndexKey)
-
-    val fieldsProjectIndex = biProject("fields-g=none-5.jar").get(ProjectIndexKey)
-
 }

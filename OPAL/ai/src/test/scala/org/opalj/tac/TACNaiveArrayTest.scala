@@ -98,7 +98,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
 
         it("should correctly reflect reference array instructions") {
             val statements = TACNaive(method = RefArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -140,7 +140,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
 
         it("should correctly reflect multidimensional array instructions") {
             val statements = TACNaive(method = MultidimArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -171,7 +171,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
 
         it("should correctly reflect double array instructions") {
             val statements = TACNaive(method = DoubleArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -181,7 +181,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
 
         it("should correctly reflect float array instructions") {
             val statements = TACNaive(method = FloatArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -191,7 +191,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
 
         it("should correctly reflect int array instructions") {
             val statements = TACNaive(method = IntArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -201,7 +201,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
 
         it("should correctly reflect long array instructions") {
             val statements = TACNaive(method = LongArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -211,7 +211,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
 
         it("should correctly reflect short array instructions") {
             val statements = TACNaive(method = ShortArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -221,7 +221,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
 
         it("should correctly reflect byte array instructions") {
             val statements = TACNaive(method = ByteArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -231,7 +231,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
 
         it("should correctly reflect char array instructions") {
             val statements = TACNaive(method = CharArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)

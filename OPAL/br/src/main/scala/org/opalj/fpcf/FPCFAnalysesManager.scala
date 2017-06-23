@@ -33,7 +33,7 @@ import scala.collection.mutable
 import net.ceedubs.ficus.Ficus._
 import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 
 /**
  * @author Michael Reif
@@ -41,8 +41,8 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
  */
 class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
-    val propertyStore = project.get(SourceElementsPropertyStoreKey)
-    //  private[this] def propertyStore = project.get(SourceElementsPropertyStoreKey)
+    val propertyStore = project.get(PropertyStoreKey)
+    //  private[this] def propertyStore = project.get(PropertyStoreKey)
 
     final val debug = {
         project.config.as[Option[Boolean]](FPCFAnalysesManager.ConfigKey).getOrElse(false)

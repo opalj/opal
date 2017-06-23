@@ -163,7 +163,7 @@ trait ValuesDomain {
         }
 
         /**
-         * @return The represented reference value if and only if this value represent a reference
+         * @return The represented reference value if and only if this value represents a reference
          *         value.
          */
         def asDomainReferenceValue: DomainReferenceValue = {

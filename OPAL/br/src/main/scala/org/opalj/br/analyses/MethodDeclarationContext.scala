@@ -84,7 +84,7 @@ final class MethodDeclarationContext(
      */
     override def hashCode: Int = method.descriptor.hashCode * 113 + packageName.hashCode()
 
-    override def toString: String = s"MethodDeclarationContext($packageName, ${method.toJava})"
+    override def toString: String = s"MethodDeclarationContext($packageName, ${method.toJava()})"
 
     /**
      * Compares this `MethodDeclarationContext` with the given one. Defines a total order w.r.t.

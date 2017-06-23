@@ -307,8 +307,12 @@ final class Method private (
             this.name.compareTo(otherName)
     }
 
-    def toJava(): String = {
-        val visibility = VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("")
+    def toJava(withVisibility: Boolean = true): String = {
+        val visibility =
+            if (withVisibility)
+                VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("")
+            else
+                ""
         val static = if (isStatic) "static " else ""
         visibility + static + descriptor.toJava(name)
     }
@@ -317,7 +321,7 @@ final class Method private (
 
     def toJava(project: ClassFileRepository): String = toJava(project.classFile(this).thisType)
 
-    def toJava(declaringType: ObjectType): String = s"${declaringType.toJava}{ $toJava }"
+    def toJava(declaringType: ObjectType): String = s"${declaringType.toJava}{ ${toJava()} }"
 
     def toJava(declaringClass: ClassFile, methodInfo: String): String = {
         toJava(declaringClass.thisType, methodInfo)
@@ -328,7 +332,7 @@ final class Method private (
     }
 
     def toJava(declaringType: ObjectType, methodInfo: String): String = {
-        s"${declaringType.toJava}{ $toJava{ $methodInfo } }"
+        s"${declaringType.toJava}{ ${toJava(true)}{ $methodInfo } }"
     }
 
     def fullyQualifiedSignature(declaringClassType: ObjectType): String = {

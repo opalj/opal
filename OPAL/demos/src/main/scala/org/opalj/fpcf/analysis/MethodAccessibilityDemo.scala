@@ -33,7 +33,7 @@ package analysis
 import org.opalj.br.analyses.BasicReport
 
 import java.net.URL
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.ConsoleOPALLogger
@@ -73,7 +73,7 @@ object MethodAccessibilityAnalysisDemo extends MethodAnalysisDemo {
 
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val propertyStore = project.get(PropertyStoreKey)
 
         val global = entitiesByProperty(Global)(propertyStore)
         val packgeLocal = entitiesByProperty(PackageLocal)(propertyStore)
