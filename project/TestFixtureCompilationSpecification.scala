@@ -26,11 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 import sbt._
-import sbt.Keys.TaskStreams
+
 import java.io.File
-import java.io.Writer
 import java.io.PrintWriter
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.Path
@@ -38,7 +36,6 @@ import java.nio.file.Files
 import java.nio.file.FileVisitResult
 import java.nio.file.attribute.FileTime
 import java.nio.file.attribute.BasicFileAttributes
-import scala.io.Source.fromFile
 
 import org.eclipse.jdt.core.compiler.batch.BatchCompiler
 
@@ -48,124 +45,121 @@ import org.eclipse.jdt.core.compiler.batch.BatchCompiler
  *
  * @author Simon Leischnig
  */
-object FixtureCompilationSpec {
+object TestFixtureCompilationSpecification {
 
-  /** Represents the result of a test fixture compilation (JAR file). */
-  case class TestFixtureCompilationResult(outputJar: File)
+    //TODO Use org.eclipse.jdt.internal.formatter.DefaultCodeFormatter for formatting code
+    //TODO JAR file is not actually the result of a compilation but of (optional) packaging.
 
-  //TODO: JAR file is not actually the result of a compilation but of (optional) packaging.
-  //      Further refactoring/abstraction necessary.
+    /** Represents the result of the compilation of a test fixture (JAR file). */
+    case class TestFixtureCompilationResult(outputJar: File)
 
- /**
-  * Represents a test fixture compilation task.
-  * note: one and the same fixture may be subject to compilation
-  * with different configOptions parameters
-  */
-  case class TestFixtureCompilationTask(
-    fixture: TestFixture,
-    targetFolder: File,
-    targetJAR: File,
-    configOptions: String,
-    supportLibraries: String
-  )
+    /**
+     * Represents a test fixture compilation task.
+     *
+     * @note The same fixture may be compiled using different compiler settings.
+     */
+    case class TestFixtureCompilationTask(
+        fixture:          TestFixture,
+        targetFolder:     File,
+        targetJAR:        File,
+        configOptions:    String,
+        supportLibraries: String
+    )
 
-  /** Represents a test fixture. */
-  case class TestFixture(
-    sourceFolder: File
-  )
+    /** Represents a test fixture. */
+    case class TestFixture(sourceFolder: File)
 
-  /** Represents a test fixture compiler abstractly.*/
-  abstract class TestFixtureCompiler {
+    /** Represents a test fixture compiler abstractly.*/
+    abstract class TestFixtureCompiler {
 
-    /** Does a compilation of the given task (regardless of isCompilationNecessary(task)) */
-    def compile(
-      task: TestFixtureCompilationTask,
-      std: PrintWriter,
-      err: PrintWriter,
-      log: Logger): TestFixtureCompilationResult
+        /** Does a compilation of the given task (regardless of isCompilationNecessary(task)) */
+        def compile(
+            task: TestFixtureCompilationTask,
+            std:  PrintWriter,
+            err:  PrintWriter,
+            log:  Logger
+        ): TestFixtureCompilationResult
 
-   /** Returns whether this compiler deems it necessary to do a compilation of the task.
-    * - different compilers may judge this differently
-    * - default implementation looks at the source files dates and the date
-    *   of the target JAR
-    */
-    def isCompilationNecessary(task: TestFixtureCompilationTask): Boolean = {
-      !task.targetJAR.exists ||
-          {
-              val targetJARAsPath = Files.getLastModifiedTime(task.targetJAR.toPath)
-              val wasUpdatedVisitor = new WasUpdatedFileVisitor(targetJARAsPath)
-              Files.walkFileTree(task.fixture.sourceFolder.toPath, wasUpdatedVisitor)
-              wasUpdatedVisitor.wasUpdated
-          }
+        /**
+         * Returns true if a source file is younger than the jar containing the compiled class
+         * files.
+         */
+        def isCompilationNecessary(task: TestFixtureCompilationTask): Boolean = {
+            !task.targetJAR.exists || {
+                val targetJARAsPath = Files.getLastModifiedTime(task.targetJAR.toPath)
+                val wasUpdatedVisitor = new WasUpdatedFileVisitor(targetJARAsPath)
+                Files.walkFileTree(task.fixture.sourceFolder.toPath, wasUpdatedVisitor)
+                wasUpdatedVisitor.wasUpdated
+            }
+        }
     }
-  }
 
-  /** This class is the test fixture compiler OPAL uses. */
-  class OPALTestFixtureCompiler extends TestFixtureCompiler {
+    /** Compiles the Java test fixtures using the Eclipse compiler. */
+    class EclipseTestFixtureCompiler extends TestFixtureCompiler {
 
-   /** Compiles a test fixture with the eclipse jdt compiler. */
-    def compile(
-      //TODO: Use org.eclipse.jdt.internal.formatter.DefaultCodeFormatter for formatting code
+        /** Compiles a test fixture with the eclipse jdt compiler. */
+        def compile(
+            task: TestFixtureCompilationTask,
+            std:  PrintWriter,
+            err:  PrintWriter,
+            log:  Logger
+        ): TestFixtureCompilationResult = {
 
-      task: TestFixtureCompilationTask,
-      std: PrintWriter,
-      err: PrintWriter,
-      log: Logger): TestFixtureCompilationResult = {
+            val standardConfiguration = s"${task.fixture.sourceFolder} "+
+                s"${task.supportLibraries} -d ${task.targetFolder} -Xemacs -encoding utf8 "
+            val commandLine = s"$standardConfiguration ${task.configOptions}"
 
-      val standardConfiguration = s"${task.fixture.sourceFolder} " +
-        s"${task.supportLibraries} -d ${task.targetFolder} -Xemacs -encoding utf8 "
-      val commandLine = s"$standardConfiguration ${task.configOptions}"
+            IO.createDirectory(task.targetFolder)
+            val compilationResult = BatchCompiler.compile(commandLine, std, err, null);
 
-      IO.createDirectory(task.targetFolder)
-      val compilationResult = BatchCompiler.compile(commandLine, std, err, null);
+            log.info(s"Compiling test fixtures: $commandLine")
+            if (!compilationResult) {
+                throw new IllegalStateException("compiling the test fixtures failed")
+            }
 
-      log.info(s"Compiling test fixtures: $commandLine")
-      if (!compilationResult) {
-          throw new IllegalStateException("Compiling the test fixtures failed")
-      }
+            val targetFolderLength = task.targetFolder.toString.length + 1
+            val classFiles: Traversable[(File, String)] =
+                (task.targetFolder ** "*.class").get map { classFile ⇒
+                    (classFile, classFile.toString.substring(targetFolderLength))
+                }
 
-      val targetFolderLength = task.targetFolder.toString.length + 1
-      val classFiles: Traversable[(File, String)] =
-          (task.targetFolder ** "*.class").get map { classFile ⇒
-              ((classFile, classFile.toString.substring(targetFolderLength)))
-          }
+            log.info(
+                classFiles.toIterator.map(_._2).mkString(s"Creating archive ${task.targetJAR} for compiled test fixtures:\n\t", "\n\t", "\n")
+            )
+            IO.zip(classFiles, task.targetJAR)
 
-      log.info(
-          classFiles.view.map(_._2).mkString(s"Creating archive ${task.targetJAR} for compiled test fixtrues:\n\t", "\n\t", "\n")
-      )
-      IO.zip(classFiles, task.targetJAR)
-
-      TestFixtureCompilationResult(task.targetJAR)
+            TestFixtureCompilationResult(task.targetJAR)
+        }
     }
-  }
 
-  /** Utility class for validating a compilation task for necessity of actual compilation. */
-  class WasUpdatedFileVisitor(val archiveDate: FileTime) extends SimpleFileVisitor[Path] {
+    /**
+     * Utility class which checks if a file/directory needs to be processed again, because
+     * some changes were made when compared to the specified date.
+     */
+    class WasUpdatedFileVisitor(val archiveDate: FileTime) extends SimpleFileVisitor[Path] {
 
-      var wasUpdated: Boolean = false // will be initialized as a sideeffect
+        var wasUpdated: Boolean = false // will be initialized as a sideeffect
 
-      private def checkDate(nextFileAttributes: BasicFileAttributes): FileVisitResult = {
-          if (archiveDate.compareTo(nextFileAttributes.lastModifiedTime) < 0) {
-              wasUpdated = true
-              FileVisitResult.TERMINATE
-          } else {
-              FileVisitResult.CONTINUE
-          }
-      }
+        private def checkDate(nextFileAttributes: BasicFileAttributes): FileVisitResult = {
+            if (archiveDate.compareTo(nextFileAttributes.lastModifiedTime) < 0) {
+                wasUpdated = true
+                FileVisitResult.TERMINATE
+            } else {
+                FileVisitResult.CONTINUE
+            }
+        }
 
-      override def visitFile(
-          path:           Path,
-          fileAttributes: BasicFileAttributes
-      ): FileVisitResult = {
-          checkDate(fileAttributes)
-      }
-      override def preVisitDirectory(
-          path:           Path,
-          fileAttributes: BasicFileAttributes
-      ): FileVisitResult = {
-          checkDate(fileAttributes)
-      }
-  }
+        override def visitFile(path: Path, fileAttributes: BasicFileAttributes): FileVisitResult = {
+            checkDate(fileAttributes)
+        }
+
+        override def preVisitDirectory(
+            path:           Path,
+            fileAttributes: BasicFileAttributes
+        ): FileVisitResult = {
+            checkDate(fileAttributes)
+        }
+    }
 }
 
 // Doc of the eclipse compiler:
