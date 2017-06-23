@@ -35,12 +35,12 @@ package ba
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-case class METHOD[T](
+class METHOD[T](
         accessModifiers: AccessModifier,
         name:            String,
         descriptor:      String,
-        code:            Option[br.CodeAttributeBuilder[T]] = None,
-        attributes:      Seq[br.MethodAttributeBuilder]     = Seq.empty
+        code:            Option[br.CodeAttributeBuilder[T]],
+        attributes:      Seq[br.MethodAttributeBuilder]
 ) {
 
     /**
@@ -61,6 +61,20 @@ case class METHOD[T](
             val method = br.Method(accessFlags, name, methodDescriptor, attributes)
             (method, None)
         }
+    }
+
+}
+
+object METHOD {
+
+    def apply[T](
+        accessModifiers: AccessModifier,
+        name:            String,
+        descriptor:      String,
+        code:            Option[br.CodeAttributeBuilder[T]] = None,
+        attributes:      Seq[br.MethodAttributeBuilder]     = Seq.empty
+    ): METHOD[T] = {
+        new METHOD(accessModifiers, name, descriptor, code, attributes)
     }
 
 }

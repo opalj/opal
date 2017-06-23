@@ -181,10 +181,9 @@ case class CFG(
 
     /**
      * Iterates over the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
-     * not returned.)
+     * not returned.) Always returns the basic block containing the first instruction first.
      */
     def allBBs: Iterator[BasicBlock] = {
-        //basicBlocks.view.filter(_ ne null).toSet
         new Iterator[BasicBlock] {
 
             var currentBBPC = 0
@@ -194,12 +193,18 @@ case class CFG(
             def next: BasicBlock = {
                 val current = basicBlocks(currentBBPC)
                 currentBBPC = current.endPC + 1
+                // jump to the end and check if the instruction direct following this bb
+                // actually belongs to a
                 while (currentBBPC < basicBlocks.length && (basicBlocks(currentBBPC) eq null)) {
                     currentBBPC += 1
                 }
                 current
             }
         }
+    }
+
+    def allNodes: Iterator[CFGNode] = {
+        allBBs ++ catchNodes.iterator ++ Iterator(normalReturnNode, abnormalReturnNode)
     }
 
     /**
@@ -209,7 +214,7 @@ case class CFG(
      * instruction that always causes an exception to be thrown that is not handled by
      * a handler of the respective method.
      *
-     * @note If possible the function `foreachSuccessor` should be used as it does not have
+     * @note   If possible the function `foreachSuccessor` should be used as it does not have
      *         to create comparatively expensive intermediate data structures.
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
@@ -436,8 +441,11 @@ case class CFG(
         CFG(code, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
     }
 
+    // ---------------------------------------------------------------------------------------------
     //
-    // Visualization
+    // Visualization & Debugging
+    //
+    // ---------------------------------------------------------------------------------------------
 
     override def toString: String = {
         //        code:                    Code,
@@ -464,8 +472,17 @@ case class CFG(
 
     def toDot(f: BasicBlock ⇒ String): Iterable[Node] = {
         // 1. create a node foreach cfg node
+        val bbsIterator = allBBs
+        val startBB = bbsIterator.next()
         var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] =
-            allBBs.map(bb ⇒ (bb, new DefaultMutableNode(f(bb)))).toMap
+            Map(
+                startBB →
+                    new DefaultMutableNode(
+                        f(startBB),
+                        theVisualProperties = Map("fillcolor" → "green", "style" → "filled", "shape" → "box")
+                    )
+            )
+        cfgNodeToGNodes ++= bbsIterator.map(bb ⇒ (bb, new DefaultMutableNode(f(bb))))
         cfgNodeToGNodes ++= catchNodes.map(cn ⇒ (cn, new DefaultMutableNode(cn.toString)))
         cfgNodeToGNodes += (
             abnormalReturnNode →
@@ -478,10 +495,6 @@ case class CFG(
             new DefaultMutableNode(
                 "return", theVisualProperties = normalReturnNode.visualProperties
             )
-        )
-        assert(
-            cfgNodeToGNodes.size == allBBs.size + catchNodes.size + 2,
-            s"missing nodes: ${cfgNodeToGNodes.size} < ${allBBs.size + catchNodes.size + 2}"
         )
 
         // 2. reconnect nodes

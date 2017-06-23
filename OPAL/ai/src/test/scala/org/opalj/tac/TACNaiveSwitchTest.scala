@@ -54,7 +54,7 @@ class TACNaiveSwitchTest extends TACNaiveTest {
     describe("the naive TAC of switch instructions") {
         it("should correctly reflect tableswitch case") {
             val statements = TACNaive(method = TableSwitchMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, true)
+            val javaLikeCode = ToTxt(statements, None, false, true)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -93,7 +93,7 @@ class TACNaiveSwitchTest extends TACNaiveTest {
 
         it("should correctly reflect lookupswitch case") {
             val statements = TACNaive(method = LookupSwitchMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, true)
+            val javaLikeCode = ToTxt(statements, None, false, true)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)

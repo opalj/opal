@@ -33,7 +33,7 @@ package analysis
 import org.opalj.br.analyses.BasicReport
 
 import java.net.URL
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.log.OPALLogger
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext
@@ -106,8 +106,8 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
         /* Analysis Execution done*/
 
-        val cpaStore = cpaProject.get(SourceElementsPropertyStoreKey)
-        val opaStore = opaProject.get(SourceElementsPropertyStoreKey)
+        val cpaStore = cpaProject.get(PropertyStoreKey)
+        val opaStore = opaProject.get(PropertyStoreKey)
 
         val cpaEps = entitiesByProperty(IsEntryPoint)(cpaStore)
         val opaEps = entitiesByProperty(IsEntryPoint)(opaStore)

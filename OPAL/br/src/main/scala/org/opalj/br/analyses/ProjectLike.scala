@@ -145,7 +145,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //
     //
-    // RESOLVING METHOD REFERENCES / DETERMING THE INVOKED METHOD(S)
+    // RESOLVING METHOD REFERENCES / LOCATING THE INVOKED METHOD(S)
     //
     //
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -352,7 +352,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      * @note    This method just resolves a method reference. Additional checks,
      *          such as whether the resolved method is accessible, may be necessary.
      *
-     * @param   receiverType The type of the object that receives the method call. The
+     * @param   declaringClass The type of the object that receives the method call. The
      *          type must be a class type and must not be an interface type.
      *          No check w.r.t. a potential `IncompatibleClassChangeError` is done
      *          by this method.

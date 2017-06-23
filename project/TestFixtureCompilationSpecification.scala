@@ -27,10 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 import sbt._
-import sbt.Keys.TaskStreams
 
 import java.io.File
-import java.io.Writer
 import java.io.PrintWriter
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.Path
@@ -39,27 +37,105 @@ import java.nio.file.FileVisitResult
 import java.nio.file.attribute.FileTime
 import java.nio.file.attribute.BasicFileAttributes
 
-import scala.io.Source.fromFile
-
 import org.eclipse.jdt.core.compiler.batch.BatchCompiler
 
 /**
- * Defines the logic necessary to compile the test fixtures with a fixed java compiler.
+ * Describes classes and methods to specify test fixtures
+ * as seen in the OPAL/bi project (OPAL/bi/src/test/fixtures-java/Readme_md).
  *
- * @author Michael Eichberg
  * @author Simon Leischnig
  */
-// TODO USE org.eclipse.jdt.internal.formatter.DefaultCodeFormatter for formatting code
-object FixtureCompilation {
+object TestFixtureCompilationSpecification {
 
-    class LogWriter(println: String ⇒ Unit) extends Writer {
-        override def flush(): Unit = {}
-        override def close(): Unit = ??? // not expected to be called
-        override def write(chars: Array[Char], offset: Int, length: Int): Unit = {
-            println(new String(chars, offset, length))
+    //TODO Use org.eclipse.jdt.internal.formatter.DefaultCodeFormatter for formatting code
+    //TODO JAR file is not actually the result of a compilation but of (optional) packaging.
+
+    /** Represents the result of the compilation of a test fixture (JAR file). */
+    case class TestFixtureCompilationResult(outputJar: File)
+
+    /**
+     * Represents a test fixture compilation task.
+     *
+     * @note The same fixture may be compiled using different compiler settings.
+     */
+    case class TestFixtureCompilationTask(
+        fixture:          TestFixture,
+        targetFolder:     File,
+        targetJAR:        File,
+        configOptions:    String,
+        supportLibraries: String
+    )
+
+    /** Represents a test fixture. */
+    case class TestFixture(sourceFolder: File)
+
+    /** Represents a test fixture compiler abstractly.*/
+    abstract class TestFixtureCompiler {
+
+        /** Does a compilation of the given task (regardless of isCompilationNecessary(task)) */
+        def compile(
+            task: TestFixtureCompilationTask,
+            std:  PrintWriter,
+            err:  PrintWriter,
+            log:  Logger
+        ): TestFixtureCompilationResult
+
+        /**
+         * Returns true if a source file is younger than the jar containing the compiled class
+         * files.
+         */
+        def isCompilationNecessary(task: TestFixtureCompilationTask): Boolean = {
+            !task.targetJAR.exists || {
+                val targetJARAsPath = Files.getLastModifiedTime(task.targetJAR.toPath)
+                val wasUpdatedVisitor = new WasUpdatedFileVisitor(targetJARAsPath)
+                Files.walkFileTree(task.fixture.sourceFolder.toPath, wasUpdatedVisitor)
+                wasUpdatedVisitor.wasUpdated
+            }
         }
     }
 
+    /** Compiles the Java test fixtures using the Eclipse compiler. */
+    class EclipseTestFixtureCompiler extends TestFixtureCompiler {
+
+        /** Compiles a test fixture with the eclipse jdt compiler. */
+        def compile(
+            task: TestFixtureCompilationTask,
+            std:  PrintWriter,
+            err:  PrintWriter,
+            log:  Logger
+        ): TestFixtureCompilationResult = {
+
+            val standardConfiguration = s"${task.fixture.sourceFolder} "+
+                s"${task.supportLibraries} -d ${task.targetFolder} -Xemacs -encoding utf8 "
+            val commandLine = s"$standardConfiguration ${task.configOptions}"
+
+            IO.createDirectory(task.targetFolder)
+            val compilationResult = BatchCompiler.compile(commandLine, std, err, null);
+
+            log.info(s"Compiling test fixtures: $commandLine")
+            if (!compilationResult) {
+                throw new IllegalStateException("compiling the test fixtures failed")
+            }
+
+            val targetFolderLength = task.targetFolder.toString.length + 1
+            val classFiles: Traversable[(File, String)] =
+                (task.targetFolder ** "*.class").get map { classFile ⇒
+                    (classFile, classFile.toString.substring(targetFolderLength))
+                }
+
+            log.info(
+                classFiles.toIterator.map(_._2).mkString(s"Creating archive ${task.targetJAR} for compiled test fixtures:\n\t", "\n\t", "\n")
+            )
+            IO.zip(classFiles, task.targetJAR)
+
+            TestFixtureCompilationResult(task.targetJAR)
+        }
+    }
+
+    /**
+     * Utility class which checks if a file/directory needs to be processed again, because
+     * some changes were made when compared to the specified date.
+     */
     class WasUpdatedFileVisitor(val archiveDate: FileTime) extends SimpleFileVisitor[Path] {
 
         var wasUpdated: Boolean = false // will be initialized as a sideeffect
@@ -73,116 +149,16 @@ object FixtureCompilation {
             }
         }
 
-        override def visitFile(
-            path:           Path,
-            fileAttributes: BasicFileAttributes
-        ): FileVisitResult = {
+        override def visitFile(path: Path, fileAttributes: BasicFileAttributes): FileVisitResult = {
             checkDate(fileAttributes)
         }
+
         override def preVisitDirectory(
             path:           Path,
             fileAttributes: BasicFileAttributes
         ): FileVisitResult = {
             checkDate(fileAttributes)
         }
-    }
-
-    def doCompilationTask(
-        streams:         TaskStreams,
-        resourceManaged: File,
-        sourceDir:       File
-    ): Seq[File] = {
-
-        val s: TaskStreams = streams
-        val log = s.log
-        val std = new PrintWriter(new LogWriter((s: String) ⇒ log.info(s)))
-        val err = new PrintWriter(new LogWriter((s: String) ⇒ log.error(s)))
-
-        val resourceManagedFolder = resourceManaged
-        val projectsFolder = sourceDir / "fixtures-java" / "projects"
-        val supportFolder = sourceDir / "fixtures-java" / "support"
-        val createdJARs = for {
-            sourceFolder ← projectsFolder.listFiles
-            if sourceFolder.isDirectory
-            configFile = sourceFolder.getAbsoluteFile / "compiler.config"
-        } yield {
-            val hasConfigFile = configFile.exists
-            val (supportLibraries, defaultConfigurationOptions) =
-                if (hasConfigFile) {
-                    val (requires, configurationOptions) = fromFile(configFile).getLines.
-                        map(_.trim).
-                        filter(l ⇒ l.nonEmpty && !l.startsWith("#")).toList.
-                        partition(_.startsWith("requires"))
-                    (
-                        requires.
-                        map(librarySpec ⇒ librarySpec.substring(librarySpec.indexOf('=') + 1)). /* support library name */
-                        map(libraryName ⇒ supportFolder / libraryName). /* support library folder */
-                        mkString(" "),
-                        configurationOptions
-                    )
-                } else {
-                    ("", Seq("-g -8 -parameters -genericsignature"))
-                }
-
-            for { configurationOptions ← defaultConfigurationOptions } yield {
-                val selectedOptionsIdentification =
-                    if (hasConfigFile)
-                        configurationOptions.replace(" ", "").replace(':', '=')
-                    else
-                        ""
-                val targetFolder =
-                    resourceManagedFolder.getAbsoluteFile / (
-                        sourceFolder.getName + selectedOptionsIdentification
-                    )
-                IO.createDirectory(targetFolder)
-                val targetJAR = new File(targetFolder+".jar")
-
-                // Let's figure out if we actually have to run the compiler
-                val requiresCompilation =
-                    !targetJAR.exists ||
-                        {
-                            val targetJARAsPath = Files.getLastModifiedTime(targetJAR.toPath)
-                            val wasUpdatedVisitor = new WasUpdatedFileVisitor(targetJARAsPath)
-                            Files.walkFileTree(sourceFolder.toPath, wasUpdatedVisitor)
-                            wasUpdatedVisitor.wasUpdated
-                        }
-                if (requiresCompilation) {
-                    val standardConfiguration = s"$sourceFolder $supportLibraries -d $targetFolder -Xemacs -encoding utf8 "
-                    val commandLine = s"$standardConfiguration $configurationOptions"
-                    log.info(s"Compiling test fixtures: $commandLine")
-                    if (!BatchCompiler.compile(commandLine, std, err, null)) {
-                        throw new IllegalStateException("Compiling the test fixtures failed")
-                    }
-
-                    val targetFolderLength = targetFolder.toString.length + 1
-                    val classFiles: Traversable[(File, String)] =
-                        (targetFolder ** "*.class").get map { classFile ⇒
-                            ((classFile, classFile.toString.substring(targetFolderLength)))
-                        }
-
-                    log.info(
-                        classFiles.view.map(_._2).
-                            mkString(
-                                s"Creating archive $targetJAR for compiled test fixtrues:\n\t",
-                                "\n\t",
-                                "\n"
-                            )
-                    )
-                    IO.zip(classFiles, targetJAR)
-                    Some(targetJAR)
-                } else {
-                    None
-                }
-            }
-        }
-
-        val createdFiles = createdJARs.flatten.flatten.toSeq // We only collect the created JARs
-        if (createdFiles.nonEmpty)
-            log.info(createdFiles.mkString("Created archives:\n\t", "\n\t", "\n"))
-        else
-            log.info("The test fixtures were already compiled.")
-
-        createdFiles
     }
 }
 

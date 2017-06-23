@@ -41,7 +41,7 @@ case class SpecificationViolation(message: String) extends Exception(message)
 
 /**
  * Specification of the properties of a fix-point computation (FPC) that are relevant
- * when determing the correct scheduling order.
+ * when computing the correct scheduling order.
  */
 abstract class ComputationSpecification(
         val name:    String,
@@ -192,7 +192,6 @@ case class Schedule(
         batches.foreach { batch ⇒
             batch.foreach { fpc ⇒ fpc.schedule(ps) }
             ps.waitOnPropertyComputationCompletion(true)
-            // ps.freeze
         }
     }
 

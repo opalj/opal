@@ -31,7 +31,7 @@ package fpcf
 
 import org.opalj.log.LogContext
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.PropertyStoreKey
 import AnalysisModes._
 
 /**
@@ -49,7 +49,7 @@ trait FPCFAnalysis {
 
     final implicit val classHierarchy = project.classHierarchy
 
-    final implicit val propertyStore: PropertyStore = project.get(SourceElementsPropertyStoreKey)
+    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
 
     final implicit val logContext: LogContext = project.logContext
 

@@ -35,7 +35,7 @@ package ba
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-case class METHODS[T](methods: METHOD[T]*) {
+class METHODS[T](private[this] var methods: Seq[METHOD[T]]) {
 
     /**
      * Returns the build [[org.opalj.br.Method]] and its code annotations.
@@ -44,4 +44,8 @@ case class METHODS[T](methods: METHOD[T]*) {
         IndexedSeq.empty ++ methods.iterator.map(m ⇒ m.result())
     }
 
+}
+
+object METHODS {
+    def apply[T](methods: METHOD[T]*): METHODS[T] = new METHODS(methods)
 }

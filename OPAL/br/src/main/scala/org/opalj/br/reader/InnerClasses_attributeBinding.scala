@@ -61,7 +61,7 @@ trait InnerClasses_attributeBinding
         outer_class_info_index:   Constant_Pool_Index,
         inner_name_index:         Constant_Pool_Index,
         inner_class_access_flags: Int
-    ) = {
+    ): InnerClassesEntry = {
         new InnerClassesEntry(
             cp(inner_class_info_index).asObjectType(cp),
             if (outer_class_info_index == 0)

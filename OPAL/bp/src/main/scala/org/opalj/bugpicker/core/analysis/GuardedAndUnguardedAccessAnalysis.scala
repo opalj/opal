@@ -180,8 +180,10 @@ object GuardedAndUnguardedAccessAnalysis {
             }
 
         val unguardedAccessesIssues =
-            for ((guardPC, unguardedAccesses) ← unguardedAccesses.groupBy(f ⇒ f._1 /*by guard*/ )) yield {
-                val relevance = unguardedAccesses.map(_._2.value).max
+            for {
+                (guardPC, unguardedAccesses) ← unguardedAccesses.groupBy(f ⇒ f._1 /*by guard*/ )
+            } yield {
+                val relevance = unguardedAccesses.toIterator.map(_._2.value).max
 
                 val unguardedLocations: Seq[IssueLocation] =
                     unguardedAccesses.map { ua ⇒
@@ -189,7 +191,7 @@ object GuardedAndUnguardedAccessAnalysis {
                         new InstructionLocation(
                             Some("unguarded access"), theProject, classFile, method, unguardedAccessPC
                         )
-                    }
+                    }.toSeq
 
                 val locations =
                     unguardedLocations :+

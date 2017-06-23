@@ -38,12 +38,16 @@ import java.util.prefs.Preferences
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
 import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.fasterxml.jackson.dataformat.csv.CsvFactory
+import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 
 import javafx.scene.control.TableColumn
 import javafx.scene.control.SelectionMode
@@ -96,7 +100,6 @@ import scalafx.scene.chart.CategoryAxis
 import scalafx.scene.chart.NumberAxis
 import scalafx.scene.chart.BarChart
 import scalafx.scene.chart.PieChart
-
 import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
 
@@ -274,6 +277,61 @@ object Hermes extends JFXApp {
             csvGenerator.writeEndArray()
         }
         csvGenerator.close()
+    }
+
+    def exportFlare(file: File): Unit = {
+        val writer = new BufferedWriter(new FileWriter(file))
+        val jsonGenerator = new JsonFactory().createGenerator(writer)
+        jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter())
+        // create root
+        jsonGenerator.writeStartObject()
+        jsonGenerator.writeStringField("name", "flare")
+        jsonGenerator.writeArrayFieldStart("children")
+        featureMatrix foreach { project ⇒
+            // create node for each project
+            jsonGenerator.writeStartObject()
+            jsonGenerator.writeStringField("name", project.id.value)
+            jsonGenerator.writeArrayFieldStart("children")
+            // statistics
+            jsonGenerator.writeStartObject()
+            jsonGenerator.writeStringField("name", "statistics")
+            jsonGenerator.writeArrayFieldStart("children")
+            project.projectConfiguration.statistics foreach { stat ⇒
+                jsonGenerator.writeStartObject()
+                jsonGenerator.writeStringField("name", stat.getKey)
+                jsonGenerator.writeNumberField("value", stat.getValue)
+                jsonGenerator.writeEndObject()
+            }
+            jsonGenerator.writeEndArray()
+            jsonGenerator.writeEndObject()
+            // sort features by feature groups
+            jsonGenerator.writeStartObject()
+            jsonGenerator.writeStringField("name", "features")
+            jsonGenerator.writeArrayFieldStart("children")
+            project.featureGroups foreach {
+                case (group, features) ⇒
+                    jsonGenerator.writeStartObject()
+                    jsonGenerator.writeStringField("name", group.id)
+                    jsonGenerator.writeArrayFieldStart("children")
+                    features foreach { f ⇒
+                        jsonGenerator.writeStartObject()
+                        jsonGenerator.writeStringField("name", f.value.id)
+                        jsonGenerator.writeNumberField("value", f.value.count)
+                        jsonGenerator.writeEndObject()
+                    }
+                    jsonGenerator.writeEndArray()
+                    jsonGenerator.writeEndObject()
+            }
+            jsonGenerator.writeEndArray()
+            jsonGenerator.writeEndObject()
+            jsonGenerator.writeEndArray()
+            jsonGenerator.writeEndObject()
+            jsonGenerator.flush()
+        }
+        jsonGenerator.writeEndArray()
+        jsonGenerator.writeEndObject()
+
+        jsonGenerator.close()
     }
 
     /* @stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
@@ -759,17 +817,26 @@ object Hermes extends JFXApp {
                 }.show()
             }
         }
-        val csvExport = new MenuItem("Export As CVS...") {
+        val fileExport = new MenuItem("Export As...") {
             disable <== analysesFinished.not
             accelerator = KeyCombination.keyCombination("Ctrl +Alt +S")
             onAction = handle {
                 val fileChooser = new FileChooser {
                     title = "Open Class File"
-                    extensionFilters ++= Seq(new ExtensionFilter("Comma Separated Values", "*.csv"))
+                    extensionFilters ++= Seq(
+                        new ExtensionFilter("Comma Separated Values", "*.csv"),
+                        new ExtensionFilter("Flare JSON", "*.json")
+                    )
                 }
                 val selectedFile = fileChooser.showSaveDialog(stage)
                 if (selectedFile != null) {
-                    exportCSV(selectedFile)
+                    val filename = selectedFile.getName
+                    val extension = filename.substring(filename.lastIndexOf("."), filename.length())
+                    if (extension.equals(".csv")) {
+                        exportCSV(selectedFile)
+                    } else if (extension.equals(".json")) {
+                        exportFlare(selectedFile)
+                    }
                 }
             }
         }
@@ -781,7 +848,7 @@ object Hermes extends JFXApp {
         List(
             showConfig,
             showAnalysisTimes, showMethodDistribution,
-            csvExport,
+            fileExport,
             computeProjectsForCorpus
         )
     }

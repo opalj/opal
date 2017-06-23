@@ -115,7 +115,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
         project:           SomeProject,
         classFile:         ClassFile,
         method:            Method,
-        pcs:               Seq[PC]
+        pcs:               Chain[PC]
     ): Option[InfiniteRecursion] = {
 
         assert(maxRecursionDepth > 1)

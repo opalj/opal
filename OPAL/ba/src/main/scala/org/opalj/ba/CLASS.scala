@@ -37,15 +37,15 @@ import org.opalj.collection.immutable.UShortPair
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-case class CLASS[T](
-        val version:         UShortPair                        = CLASS.DefaultVersion,
-        val accessModifiers: AccessModifier                    = SUPER,
-        val thisType:        String,
-        val superclassType:  Option[String]                    = Some("java/lang/Object"),
-        val interfaceTypes:  Seq[String]                       = Seq.empty,
-        val fields:          FIELDS                            = FIELDS(),
-        val methods:         METHODS[T]                        = METHODS[Nothing](),
-        val attributes:      Seq[br.ClassFileAttributeBuilder] = Seq.empty
+class CLASS[T](
+        version:                   UShortPair,
+        accessModifiers:           AccessModifier,
+        thisType:                  String,
+        superclassType:            Option[String],
+        interfaceTypes:            Seq[String],
+        fields:                    FIELDS,
+        private[this] var methods: METHODS[T],
+        attributes:                Seq[br.ClassFileAttributeBuilder]
 ) {
 
     /**
@@ -74,9 +74,7 @@ case class CLASS[T](
             // know the target!
             superclassType.isEmpty
         )) {
-            brMethods =
-                brMethods :+
-                    br.Method.defaultConstructor(superclassType.get)
+            brMethods = brMethods :+ br.Method.defaultConstructor(superclassType.get)
         }
 
         val attributes = this.attributes map { attributeBuilder ⇒
@@ -121,5 +119,18 @@ object CLASS {
     final val DefaultMinorVersion = 0
 
     final val DefaultVersion = UShortPair(DefaultMinorVersion, DefaultMajorVersion)
+
+    def apply[T](
+        version:         UShortPair                        = CLASS.DefaultVersion,
+        accessModifiers: AccessModifier                    = SUPER,
+        thisType:        String,
+        superclassType:  Option[String]                    = Some("java/lang/Object"),
+        interfaceTypes:  Seq[String]                       = Seq.empty,
+        fields:          FIELDS                            = FIELDS(),
+        methods:         METHODS[T]                        = METHODS[T](),
+        attributes:      Seq[br.ClassFileAttributeBuilder] = Seq.empty
+    ): CLASS[T] = {
+        new CLASS(version, accessModifiers, thisType, superclassType, interfaceTypes, fields, methods, attributes)
+    }
 
 }

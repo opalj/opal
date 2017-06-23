@@ -113,7 +113,7 @@ object CallBySignatureResolution {
 
         new CallBySignatureResolution(
             project,
-            project.get(SourceElementsPropertyStoreKey)
+            project.get(PropertyStoreKey)
         )
     }
 }

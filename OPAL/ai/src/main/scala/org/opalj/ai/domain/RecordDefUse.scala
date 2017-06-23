@@ -935,7 +935,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         // 1. create set of all def sites
         var defSites: Set[ValueOrigin] = Set.empty
-        defOps.filter(_ ne null).foreach { _.foreach { _.foreach { defSites += _ } } }
+        defOps.iterator.filter(_ ne null).foreach { _.foreach { _.foreach { defSites += _ } } }
         for {
             defLocalsPerPC ← this.defLocals
             if defLocalsPerPC ne null

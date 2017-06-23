@@ -178,10 +178,12 @@ case class ExceptionUsage(
     override def toString: String = {
         val lineNumber = method.body.get.lineNumber(definitionSite).map("line="+_+";").getOrElse("")
         import Console._
-        RED + classFile.thisType.toJava + RESET+"{ "+GREEN + method.toJava + RESET+"{ "+
-            BOLD+"["+lineNumber+"pc="+definitionSite+"] "+exceptionType+" => "+
-            usageInformation.mkString(", ") +
-            RESET+" }"+" }"
+        method.toJava(
+            classFile,
+            usageInformation.mkString(
+                s"$BOLD[$lineNumber;pc=$definitionSite]$exceptionType => ", ", ", RESET
+            )
+        )
     }
 
     def compare(that: ExceptionUsage): Int = this.toString.compare(that.toString)

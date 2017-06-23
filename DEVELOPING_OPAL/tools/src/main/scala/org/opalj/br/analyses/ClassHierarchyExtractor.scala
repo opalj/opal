@@ -42,6 +42,33 @@ import org.opalj.log.GlobalLogContext
  */
 object ClassHierarchyExtractor {
 
+    def deriveSpecification(
+        types: Traversable[ObjectType]
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
+    ): String = {
+        val specLines = types.map { aType ⇒
+            var specLine =
+                (
+                    if (classHierarchy.isInterface(aType).isYes)
+                        "interface "
+                    else
+                        "class "
+                ) + aType.fqn
+            val superclassType = classHierarchy.superclassType(aType)
+            if (superclassType.isDefined) {
+                specLine += " extends "+superclassType.get.fqn
+                val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
+                if (superinterfaceTypes.isDefined && superinterfaceTypes.get.nonEmpty) {
+                    specLine += superinterfaceTypes.get.map(_.fqn).mkString(" implements ", ", ", "")
+                }
+            }
+            specLine
+        }
+        specLines.mkString("\n")
+    }
+
     def main(args: Array[String]): Unit = {
 
         import Console.err
@@ -63,7 +90,7 @@ object ClassHierarchyExtractor {
             (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
                 cfs ++ ClassFiles(new File(filename))
             }
-        val classHierarchy = ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
+        implicit val classHierarchy = ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
         val supertype = ObjectType(supertypeName)
         if (classHierarchy.isUnknown(supertype)) {
             err.println(s"The type: $supertypeName is not defined in the specified jar(s).")
@@ -80,24 +107,7 @@ object ClassHierarchyExtractor {
             classHierarchy.allSubtypes(supertype, true).filter { candidateType ⇒
                 candidateType.fqn.startsWith(filterPrefix)
             }
-        val specLines = allRelevantSubtypes.map { aType ⇒
-            var specLine =
-                (
-                    if (classHierarchy.isInterface(aType).isYes)
-                        "interface "
-                    else
-                        "class "
-                ) + aType.fqn
-            val superclassType = classHierarchy.superclassType(aType)
-            if (superclassType.isDefined) {
-                specLine += " extends "+superclassType.get.fqn
-                val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
-                if (superinterfaceTypes.isDefined && superinterfaceTypes.get.nonEmpty) {
-                    specLine += superinterfaceTypes.get.map(_.fqn).mkString(" implements ", ", ", "")
-                }
-            }
-            specLine
-        }
-        println(specLines.mkString("\n"))
+        val spec = deriveSpecification(allRelevantSubtypes)
+        println(spec)
     }
 }

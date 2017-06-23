@@ -128,7 +128,7 @@ object NoResult extends PropertyComputationResult {
  *
  * @param c
  *      The function which is called if a property of any of the dependees is updated.
- *      `c` does not have to be thread safe unless the same instance of c is returned multiple
+ *      `c` does not have to be thread safe unless the same instance of `c` is returned multiple
  *      times for different entities (`e`).
  *
  * @note All elements on which the result declares to be dependent on must have been queried
@@ -220,9 +220,9 @@ private[fpcf] object Results {
 /**
  * Encapsulates the incremental result of the computation of a property that may have
  * been computed concurrently. I.e., it may be the case that multiple analyses did derive some
- * knowledge concurrently; this generally happens if during the analysis of an
- * entity A some knowledge may be derived about an entity B and if there maybe an entity
- * C, which, when analyzed, will also derive the some knowledge about B.
+ * knowledge concurrently; this generally happens if - during the analysis of an
+ * entity A - some knowledge may be derived about an entity B and if there maybe an entity
+ * C, which, when analyzed, will also derive the same knowledge about B.
  *
  * @note    In simple cases, i.e., where a property is always unknown or has one specific
  *          value, it may be easier and more efficient to just `set` or `put` the value directly.

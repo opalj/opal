@@ -48,7 +48,7 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveTest extends FunSpec with Matchers {
+class TACNaiveIntegrationTest extends FunSpec with Matchers {
 
     val jreLibFolder: File = JRELibraryFolder
     val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
@@ -68,12 +68,12 @@ class TACNaiveTest extends FunSpec with Matchers {
         } {
             try {
                 // without using AIResults
-                val (tacNaiveCode, _, _) = TACNaive(
+                val (tacNaiveCode, cfg, _) = TACNaive(
                     method = m,
-                    classHierarchy = project.classHierarchy,
+                    classHierarchy = ch,
                     optimizations = AllTACNaiveOptimizations
                 )
-                ToTxt(tacNaiveCode)
+                ToTxt(tacNaiveCode, cfg)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
                     val methodSignature = m.toJava(cf)
@@ -84,7 +84,13 @@ class TACNaiveTest extends FunSpec with Matchers {
                             println("\tcause:")
                             e.getCause.printStackTrace()
                         }
-                        println(body.instructions.zipWithIndex.filter(_._1 != null).map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n"))
+                        println(
+                            body.instructions.
+                                zipWithIndex.
+                                filter(_._1 != null).
+                                map(_.swap).
+                                mkString("Instructions:\n\t", "\n\t", "\n")
+                        )
                         errors ::= ((file+":"+methodSignature, e))
                     }
                 }

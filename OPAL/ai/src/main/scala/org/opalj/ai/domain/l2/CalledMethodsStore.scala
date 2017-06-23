@@ -43,24 +43,27 @@ import scala.util.control.ControlThrowable
  * ==Thread Safety==
  * "CalledMethodsStore" are immutable.
  *
- * @param domain The domain that is used as the target domain for the adaptation of
- *      the operand values to make them comparable. '''The domain object is not used
- *      at construction time which enables the creation of the store along with/ as
- *      part of the creation of "its" domain.
- *
- * @param frequentEvaluationWarningLevel Determines when we issue a frequent evaluation
- *      warning because the same method is called with different parameters more than
- *      `frequentEvaluationWarningLevel` times. The default is `10`.
- *
  * @author Michael Eichberg
  */
 trait CalledMethodsStore { rootStore ⇒
 
     implicit val logContext: LogContext
 
+    /**
+     * The domain that is used as the target domain for the adaptation of
+     * the operand values to make them comparable. '''The domain object is not used
+     * at construction time which enables the creation of the store along with/ as
+     * part of the creation of "its" domain.
+     */
     // domain MUST NOT BE USED at initialization time
     val domain: CalledMethodsStore.BaseDomain
 
+    /**
+     * Determines when we issue a frequent evaluation warning because the same method is
+     * called with different parameters more than `frequentEvaluationWarningLevel` times.
+     *
+     * The default is `10`.
+     */
     val frequentEvaluationWarningLevel: Int
 
     val calledMethods: Map[Method, List[Array[domain.DomainValue]]]
@@ -129,11 +132,11 @@ trait CalledMethodsStore { rootStore ⇒
     ): Unit = {
         OPALLogger.info(
             "analysis configuration",
-            "the method "+
-                definingClass.thisType.toJava+
-                "{ "+method.toJava+" } "+
+            method.toJava(
+                definingClass,
                 "is frequently evaluated using different operands ("+operandsSet.size+"): "+
-                operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
+                    operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
+            )
         )
     }
 }

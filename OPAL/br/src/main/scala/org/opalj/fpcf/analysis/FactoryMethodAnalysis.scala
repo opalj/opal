@@ -61,7 +61,7 @@ import org.opalj.fpcf.PropertyStore
  * The results of this analysis are stored in the property store of the project. You can receive
  * the results as follows:
  * {{{
- * val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
+ * val theProjectStore = theProject.get(PropertyStoreKey)
  * val factoryMethods = theProjectStore.entities { (p: Property) ⇒
  * p == IsFactoryMethod
  * }

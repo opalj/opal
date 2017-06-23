@@ -55,7 +55,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACAITest extends FunSpec with Matchers {
+class TACAIIntegrationTest extends FunSpec with Matchers {
 
     val jreLibFolder: File = JRELibraryFolder
     val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
@@ -78,8 +78,8 @@ class TACAITest extends FunSpec with Matchers {
             aiResult = BaseAI(cf, m, domainFactory(project, cf, m))
         } {
             try {
-                val TACode(tacAICode, _, _, _) = TACAI(m, project.classHierarchy, aiResult)(List.empty)
-                ToTxt(tacAICode)
+                val TACode(tacAICode, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
+                ToTxt(tacAICode, Some(cfg))
             } catch {
                 case e: Throwable ⇒ this.synchronized {
                     val methodSignature = m.toJava(cf)

@@ -87,7 +87,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
 
         println("Identify native methods with integer parameters")
         val calledNativeMethods: scala.collection.parallel.ParIterable[Method] =
-            (theProject.allClassFiles.par.map { classFile ⇒
+            theProject.allClassFiles.par.flatMap { classFile ⇒
                 classFile.methods.filter { m ⇒
                     m.isNative &&
                         m.descriptor.parameterTypes.exists(_.isIntegerType) &&
@@ -97,9 +97,9 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
                         // E.g., typical use case: System.arraycopy(A,0,B,0,...)
                         !(m.name == "arraycopy" && classFile.thisType == ObjectType("java/lang/System"))
                 }
-            }).flatten
+            }
         println(
-            calledNativeMethods.map(_.toJava).toList.sorted.
+            calledNativeMethods.map(_.toJava(false)).toList.sorted.
                 mkString("Called Native Methods ("+calledNativeMethods.size+"):\n", "\n", "")
         )
 
@@ -205,13 +205,11 @@ case class NativeCallWithBoundedMethodParameter(
 
     override def toString: String = {
         import Console._
-        val declaringClassOfNativeMethod = project.classFile(nativeMethod).thisType.toJava
-        val declaringClassOfCaller = project.classFile(caller).thisType.toJava
 
         "The method "+
-            BOLD + declaringClassOfCaller+"{ "+caller.toJava+" }"+RESET+
+            BOLD + caller.toJava(project.classFile(caller)) + RESET+
             " calls in line "+caller.body.get.lineNumber(callSite).getOrElse("N/A")+" the native method "+
-            BOLD + BLUE + declaringClassOfNativeMethod+"{ "+nativeMethod.toJava+" }"+RESET+
+            BOLD + BLUE + nativeMethod.toJava(project.classFile(nativeMethod)) + RESET+
             " and passes in as the "+parameterIndex+
             ". parameter a bounded value: ["+lowerBound+","+upperBound+"]."
     }

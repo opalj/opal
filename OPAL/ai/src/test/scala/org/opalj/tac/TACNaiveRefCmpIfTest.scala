@@ -107,7 +107,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
 
         it("should correctly reflect the equals case") {
             val statements = TACNaive(method = IfACMPEQMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -119,7 +119,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
 
         it("should correctly reflect the not-equals case") {
             val statements = TACNaive(method = IfACMPNEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -131,7 +131,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
 
         it("should correctly reflect the non-null case") {
             val statements = TACNaive(method = IfNonNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -143,7 +143,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
 
         it("should correctly reflect the is-null case") {
             val statements = TACNaive(method = IfNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
