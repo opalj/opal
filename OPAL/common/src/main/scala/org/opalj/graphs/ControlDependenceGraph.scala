@@ -69,8 +69,8 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
     def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit = {
         val maxNodeId = dominanceFrontiers.maxNode
 
+        // TODO Evaluate if a typed chain or an IntSet is more efficient...
         val seen = new BitSet(dominanceFrontiers.maxNode)
-        //var seen = mutable.SmallValuesSet.empty(maxNodeId)
         val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
         worklist.push(x)
 
