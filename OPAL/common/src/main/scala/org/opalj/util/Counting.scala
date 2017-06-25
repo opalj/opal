@@ -34,7 +34,7 @@ import org.opalj.concurrent.Locking
 import scala.collection.mutable
 
 /**
- * A simple class that enable the counting of something.
+ * A simple class that enables the counting of something.
  *
  * Examples:
  *   - How often is a function called during runtime?
