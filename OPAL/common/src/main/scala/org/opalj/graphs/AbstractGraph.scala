@@ -34,7 +34,7 @@ package graphs
  *
  * @author Michael Eichberg
  */
-abstract class AbstractGraph[N] extends (N ⇒ TraversableOnce[N]) {
+trait AbstractGraph[@specialized(Int) N] extends (N ⇒ TraversableOnce[N]) {
 
     def vertices: Traversable[N]
 
