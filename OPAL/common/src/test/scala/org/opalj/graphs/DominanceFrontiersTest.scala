@@ -77,7 +77,6 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
     ): DominanceFrontiers = {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
-        val isValidNode = (n: Int) ⇒ n >= startNode && n <= maxNode
         val dominatorTreeFactory =
             DominatorTreeFactory(
                 startNode, startNodeHasPredecesssors,

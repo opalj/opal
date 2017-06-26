@@ -23,8 +23,8 @@ licenses        in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org
 
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
-scalaVersion    in ThisBuild := "2.11.11"
-//scalaVersion  in ThisBuild := "2.12.2"
+//scalaVersion    in ThisBuild := "2.11.11"
+scalaVersion  in ThisBuild := "2.12.2"
 
 scalacOptions 	in ThisBuild ++= Seq(
     "-target:jvm-1.8",

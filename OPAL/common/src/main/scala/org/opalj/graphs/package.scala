@@ -341,7 +341,7 @@ package object graphs {
 
                             case someCSCCId ⇒
                                 /*nothing to do*/
-                                assert(nDFSNum == 0 || nCSCCId == cSCCId(path.last))
+                                assert(nDFSNum == 0 || someCSCCId == cSCCId(path.last))
 
                         }
                     } else {

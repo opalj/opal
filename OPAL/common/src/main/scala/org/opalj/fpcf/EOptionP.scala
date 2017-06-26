@@ -210,6 +210,6 @@ object EPK {
 
 object NoProperty {
 
-    def unapply(epk: EPK[_, _]): Boolean = true
+    def unapply(eOptP: EOptionP[_, _]): Boolean = eOptP.hasNoProperty
 
 }

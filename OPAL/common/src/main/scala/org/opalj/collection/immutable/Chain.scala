@@ -313,7 +313,7 @@ sealed trait Chain[@specialized(Int) +T]
     def :&:[X >: T](x: X): Chain[X] = new :&:(x, this)
 
     def :&:(x: Int)(implicit ev: this.type <:< Chain[Int]): Chain[Int] = {
-        new :&:[Int](x, this.asInstanceOf[Chain[Int]])
+        new :&:[Int](x, ev(this))
     }
 
     def :&::[X >: T](x: Chain[X]): Chain[X]

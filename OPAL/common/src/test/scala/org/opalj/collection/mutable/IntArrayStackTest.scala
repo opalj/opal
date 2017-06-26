@@ -111,7 +111,7 @@ class IntArrayStackTest extends FlatSpec with Matchers {
             val v = stack.pop()
             fail(s"unexpectedly popped $v from a presumably empty stack")
         } catch {
-            case t: Throwable ⇒ // everything is OK 
+            case _: Throwable ⇒ // everything is OK
         }
     }
 

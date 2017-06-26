@@ -398,7 +398,10 @@ object ChainProperties extends Properties("Chain") {
         val fl2 = Chain(l2: _*)
         val fl3 = fl1 ++ fl2
         val l3 = l1 ++ l2
-        fl3.toList == l3 && isSpecialized(fl3)
+        isSpecialized(fl1) :| "specialization of fl1" &&
+            isSpecialized(fl2) :| "specialization of fl2" &&
+            isSpecialized(fl3) :| "specialization of fl3" &&
+            fl3.toList == l3
     }
 
     property("copy") = forAll { (l1: List[Int]) ⇒

@@ -709,8 +709,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     val store = PropertyStore(allNodes, () ⇒ false, debug = false)(GlobalLogContext)
 
                     // 3. lets add the analysis
-                    def onUpdate(node: Node)(e: Entity, p: Property, u: UserUpdateType): PropertyComputationResult = {
-                        purityAnalysis(node)
+                    def onUpdate(node: Node) = {
+                        (_: Entity, _: Property, _: UserUpdateType) ⇒ purityAnalysis(node)
                     }
                     def purityAnalysis(node: Node): PropertyComputationResult = {
                         val nextNode = node.targets.head // HER: we always only have ony successor
@@ -867,43 +867,47 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             return ImmediateResult(n, NoReachableNodes);
 
                         val remainingDependees: mutable.Set[Node] = nTargets.clone - n
-                        def c(
-                            dependeeE:  Entity,
-                            dependeeP:  Property,
-                            updateType: UpdateType
-                        ): PropertyComputationResult = {
-                            // Get the set of currently reachable nodes.
-                            val alreadyReachableNodes: SomeSet[Node] =
-                                ps(n, ReachableNodesKey) match {
-                                    case EP(_, ReachableNodes(reachableNodes)) ⇒ reachableNodes
-                                    case _                                     ⇒ Set.empty
-                                }
-                            // Whenever we continue a computation we have have to query
-                            // all relevant entities about their "current" properties.
-                            // This is strictly necessary to ensure termination because the
-                            // property store uses this information to decide whether to immediately
-                            // continue the computation or not.
-                            val dependeePs = ps(remainingDependees, ReachableNodesKey)
-                            val dependeesReachableNodes =
-                                dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
-                                    if (dependee.hasProperty)
-                                        reachableNodes ++ dependee.p.nodes
+                        val c = new Function3[Entity, Property, UpdateType, PropertyComputationResult] {
+                            def apply(
+                                dependeeE:  Entity,
+                                dependeeP:  Property,
+                                updateType: UpdateType
+                            ): PropertyComputationResult = {
+                                // Get the set of currently reachable nodes.
+                                val alreadyReachableNodes: SomeSet[Node] =
+                                    ps(n, ReachableNodesKey) match {
+                                        case EP(_, ReachableNodes(reachableNodes)) ⇒ reachableNodes
+                                        case _                                     ⇒ Set.empty
+                                    }
+                                // Whenever we continue a computation we have have to query
+                                // all relevant entities about their "current" properties.
+                                // This is strictly necessary to ensure termination because the
+                                // property store uses this information to decide whether to immediately
+                                // continue the computation or not.
+                                val dependeePs = ps(remainingDependees, ReachableNodesKey)
+                                val dependeesReachableNodes =
+                                    dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
+                                        if (dependee.hasProperty)
+                                            reachableNodes ++ dependee.p.nodes
+                                        else
+                                            reachableNodes
+                                    }
+
+                                val newReachableNodes = alreadyReachableNodes ++ dependeesReachableNodes
+                                val newP = ReachableNodes(newReachableNodes)
+
+                                if (updateType == FinalUpdate) {
+                                    remainingDependees -= dependeeE.asInstanceOf[Node]
+                                    val filteredDependeePs = dependeePs.filter {
+                                        _.e ne dependeeE
+                                    }
+                                    if (filteredDependeePs.nonEmpty)
+                                        IntermediateResult(n, newP, filteredDependeePs, this)
                                     else
-                                        reachableNodes
+                                        Result(n, newP)
+                                } else {
+                                    IntermediateResult(n, newP, dependeePs, this)
                                 }
-
-                            val newReachableNodes = alreadyReachableNodes ++ dependeesReachableNodes
-                            val newP = ReachableNodes(newReachableNodes)
-
-                            if (updateType == FinalUpdate) {
-                                remainingDependees -= dependeeE.asInstanceOf[Node]
-                                val filteredDependeePs = dependeePs.filter { _.e ne dependeeE }
-                                if (filteredDependeePs.nonEmpty)
-                                    IntermediateResult(n, newP, filteredDependeePs, c)
-                                else
-                                    Result(n, newP)
-                            } else {
-                                IntermediateResult(n, newP, dependeePs, c)
                             }
                         }
 

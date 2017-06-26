@@ -166,8 +166,6 @@ final class DominatorTree private (
  */
 object DominatorTree {
 
-    def fornone(g: Int ⇒ Unit): Unit = { (f: (Int ⇒ Unit)) ⇒ { /*nothing to to*/ } }
-
     /**
      * Computes the immediate dominators for each node of a given graph. Each node of the graph
      * is identified using a unique int value (e.g. the pc of an instruction) in the range

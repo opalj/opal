@@ -91,7 +91,7 @@ package object opalj {
             scala.Predef.assert(false)
             info("OPAL", "Common - Production Build")
         } catch {
-            case ae: AssertionError ⇒
+            case _: AssertionError ⇒
                 info("OPAL", "Common - Development Build (Assertions are enabled)")
         }
     }
