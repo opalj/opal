@@ -131,12 +131,11 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         if (!performJava8LambdaExpressionsRewriting)
             return updatedClassFile;
 
-        val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
+        val invokedynamic @ INVOKEDYNAMIC(
+            bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
+            ) = instructions(pc)
         if (isJava8LambdaExpression(invokedynamic)) {
 
-            val INVOKEDYNAMIC(
-                bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
-                ) = invokedynamic
             val bootstrapArguments = bootstrapMethod.arguments
             // apparently there are cases in the JRE where there are more than just those
             // three parameters
