@@ -13,7 +13,7 @@ addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "1.5.0")
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.0")
 
 // to make it possible to check for outdated dependencies
-addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.0")
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.1")
 
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
 

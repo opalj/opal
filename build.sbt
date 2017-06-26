@@ -140,7 +140,7 @@ lazy val common = Project(
       //library dependencies
 			libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
 			libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-			libraryDependencies += "com.typesafe.play" %% "play-json" % "2.5.15",
+			libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.0",
 			libraryDependencies += "com.iheart" %% "ficus" % "1.4.1"
 		)
 ).configs(IntegrationTest)
@@ -156,7 +156,8 @@ lazy val bi = Project(
       scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure"),
       scalacOptions in (Compile, console) := Seq("-deprecation"),
       //library dependencies
-      libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
+      //libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.6"
+		libraryDependencies += "org.apache.commons" % "commons-text" % "1.1"
     )
 ).dependsOn(common % "it->test;test->test;compile->compile")
  .configs(IntegrationTest)
@@ -172,8 +173,8 @@ lazy val br = Project(
 			// standard compiler settings!
 			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation"),
 			scalacOptions in (Compile, console) := Seq("-deprecation"),
-      //library dependencies
-			libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"
+      		//library dependencies
+			libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6"
 		)
 ).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
  .configs(IntegrationTest)
@@ -288,8 +289,8 @@ lazy val DeveloperTools = Project(
       libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.102-R11" withSources() withJavadoc(),
       libraryDependencies += "org.controlsfx" % "controlsfx" % "8.40.12" withJavadoc(),
       libraryDependencies += "es.nitaur.markdown" % "txtmark" % "0.16" withJavadoc(),
-      libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % "2.8.8" withJavadoc(),
-      libraryDependencies += "org.choco-solver" % "choco-solver" % "4.0.3" withSources() withJavadoc(),
+      libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % "2.8.9" withJavadoc(),
+      libraryDependencies += "org.choco-solver" % "choco-solver" % "4.0.4" withSources() withJavadoc(),
       // Required by Java/ScalaFX
       fork := true
     )

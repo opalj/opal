@@ -47,7 +47,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.Future
 
-import org.apache.commons.lang3.StringUtils.getLevenshteinDistance
+import org.apache.commons.text.similarity.LevenshteinDistance
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
@@ -336,6 +336,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         if (jarFile.length() == 0)
             throw new IOException(s"the file $jarFile is empty");
 
+        val levenshteinDistance = new LevenshteinDistance()
+
         process(new ZipFile(jarFile)) { zf ⇒
             val jarEntry = zf.getEntry(jarFileEntryName)
             if (jarEntry == null) {
@@ -344,7 +346,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 while (zfEntries.hasMoreElements) {
                     val zfEntry = zfEntries.nextElement()
                     val zfEntryName = zfEntry.getName
-                    val distance = getLevenshteinDistance(zfEntryName, jarFileEntryName)
+                    val distance = levenshteinDistance(zfEntryName, jarFileEntryName).intValue()
                     names = (distance, zfEntryName) :: names
                 }
                 val mostRelatedNames = names.sortWith((l, r) ⇒ l._1 < r._1).map(_._2).take(15)
