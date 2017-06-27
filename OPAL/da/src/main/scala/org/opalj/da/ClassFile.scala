@@ -203,10 +203,19 @@ case class ClassFile(
             <head>
                 <title>Java Bytecode of { thisType }</title>
                 <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
-                { if (embeddedCSS.isDefined) <style type="text/css">{ scala.xml.Unparsed(embeddedCSS.get) }</style> }
-                { if (cssFile.isDefined) <link rel="stylesheet" href={ cssFile.get }></link> }
+                {
+                    if (embeddedCSS.isDefined)
+                        <style type="text/css">{ scala.xml.Unparsed(embeddedCSS.get) }</style>
+                }
+                {
+                    if (cssFile.isDefined)
+                        <link rel="stylesheet" href={ cssFile.get }></link>
+                }
                 <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
-                { if (jsFile.isDefined) <script type="text/javascript" src={ jsFile.get }></script> }
+                {
+                    if (jsFile.isDefined)
+                        <script type="text/javascript" src={ jsFile.get }></script>
+                }
             </head>
             <body>
                 <div id="class_file">

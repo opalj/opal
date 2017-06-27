@@ -51,8 +51,8 @@ import org.opalj.collection.mutable.IntArrayStack
 final class ControlDependencies private[graphs] (val dominanceFrontiers: DominanceFrontiers) {
 
     /**
-     * @return  The of nodes/basic block on which the given node/basic block is '''directly'''
-     *          control dependent on. That is, the set of node which directly control whether x is
+     * @return  The nodes/basic blocks on which the given node/basic block is '''directly'''
+     *          control dependent on. That is, the set of nodes which directly control whether x is
      *          executed or not.
      *          '''Directly''' means that there is at least one path  between a node Y in
      *          `Control(X)/*the returned set*/` and X, whose selection is controlled by Y and
@@ -69,8 +69,8 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
     def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit = {
         val maxNodeId = dominanceFrontiers.maxNode
 
+        // TODO Evaluate if a typed chain or an IntSet is more efficient...
         val seen = new BitSet(dominanceFrontiers.maxNode)
-        //var seen = mutable.SmallValuesSet.empty(maxNodeId)
         val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
         worklist.push(x)
 

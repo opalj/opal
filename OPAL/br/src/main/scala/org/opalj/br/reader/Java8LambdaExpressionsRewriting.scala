@@ -131,12 +131,12 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         if (!performJava8LambdaExpressionsRewriting)
             return updatedClassFile;
 
-        val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
+        val invokedynamic @
+            INVOKEDYNAMIC(bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor) =
+            instructions(pc)
+
         if (isJava8LambdaExpression(invokedynamic)) {
 
-            val INVOKEDYNAMIC(
-                bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
-                ) = invokedynamic
             val bootstrapArguments = bootstrapMethod.arguments
             // apparently there are cases in the JRE where there are more than just those
             // three parameters
@@ -180,38 +180,114 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 }
 
             val receiverType =
-                // Check the target method op code.
-                // Only INVOKEVIRTUAL and INVOKEINTERFACE methods have to be changed, e.g.
-                // `LinkedHashSet::contains` or `Sink::accept`.
-                if (invocationInstruction != INVOKEVIRTUAL.opcode &&
-                    invocationInstruction != INVOKEINTERFACE.opcode) {
+                /*
+                The receiver type is determined based on the type and/or parameters of the
+                underlying invoke instruction.
+
+                `targetMethodOwner` identifies the class which actually implements the target method.
+                But, in case of INVOKEVIRTUAL and INVOKEINTERFACE the call to the proxy class
+                is done with the actual class, not the class where the method is implemented.
+                Therefore, the receiverType must be the class from the caller, not where the to-
+                be-called method is eventually implemented. E.g. LinkedHashSet.contains() is
+                implemented in HashSet, but the receiverType and constructor parameter must
+                 be LinkedHashSet instead of HashSet.
+
+                *** INVOKEVIRTUAL ***
+                An INVOKEVIRTUAL is used when the method is defined by a class type
+                (not an interface type). (e.g. LinkedHashSet.addAll()).
+                This instruction requires a receiver object when the method reference uses a
+                non-null object as a receiver.
+                E.g.: LinkedHashSet<T> lhs = new LinkedHashSet<>();
+                      lhs::container()
+
+                It does not have a receiver field in case of a class based method reference,
+                e.g. LinkedHashSet::container()
+
+                *** INVOKEINTERFACE ***
+                It is similar to INVOKEVIRTUAL, but the method definition is defined in an
+                interface. Therefore, the same rule like INVOKEVIRTUAL applies.
+
+                *** INVOKESTATIC ***
+                When a static method is called, we will not have a "receiver".
+
+                *** INVOKESPECIAL ***
+                INVOKESPECIAL is used for:
+                - instance initialization methods (i.e. constructors) -> Method is implemented
+                  in called class -> no rewrite necessary
+                - private method invocation: The private method must be in the same class as
+                  the callee -> no rewrite needed
+                - Invokation of methods using super keyword -> Not needed, because a synthetic
+                  method in the callee class is created which handles the INVOKESPECIAL.
+                  Therefore the receiverType is also the callee class.
+
+                  E.g.
+                      public static class Superclass {
+                          protected String someMethod() {
+                              return "someMethod";
+                          }
+                      }
+
+                      public static class Subclass extends Superclass {
+                          public String callSomeMethod() {
+                              Supplier<String> s = super::someMethod;
+                              return s.get();
+                          }
+                      }
+
+                  The class Subclass contains a synthetic method `access`, which has an
+                  INVOKESPECIAL instruction calling Superclass.someMethod. The generated
+                  Lambda Proxyclass calls Subclass.access, so the receiverType must be
+                  Subclass instead of Superclass.
+
+                More information:
+                http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
+                */
+                if (invocationInstruction == INVOKESPECIAL.opcode ||
+                    invocationInstruction == INVOKESTATIC.opcode) {
                     targetMethodOwner
-                } else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
-                    // If we have an instance of a object and use a method reference,
-                    // get the receiver type from the inovkedynamic instruction.
-                    // It is the first parameter of the functional interface parameter
-                    // list.
-                    invokedynamic.methodDescriptor.parameterTypes.head.isObjectType) {
+                } else if ({
+                    val parameters = invokedynamic.methodDescriptor.parameterTypes
+                    parameters.nonEmpty && parameters.head.isObjectType
+                }) {
+                    // If we have an instance-based method reference,
+                    // get the receiver type from the invokedynamic instruction.
+                    // It is the first parameter of the method defined by the functional interface.
                     invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
-                } else if (functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.nonEmpty &&
-                    // If we get a instance method reference like `LinkedHashSet::addAll`, get
+                } else if ({
+                    val parameters = functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes
+                    parameters.nonEmpty && parameters.head.isObjectType
+                }) {
+                    // In case of an instance method reference like `LinkedHashSet::addAll`, get
                     // the receiver type from the functional interface. The first parameter is
-                    // the instance where the method should be called.
-                    functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.isObjectType) {
+                    // the receiver of the method call.
                     functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.asObjectType
                 } else {
                     targetMethodOwner
+                }
+
+            /*
+            It is possible for the receiverType to be different from the current classFile.
+            In this case, check if the receiverType is an interface instead of the classFile.
+
+            The Proxy Factory must get the correct value to build the correct variant of the
+            INVOKESTATIC instruction.
+             */
+            val receiverIsInterface =
+                invokeTargetMethodHandle match {
+                    case handle: InvokeStaticMethodHandle ⇒
+                        handle.isInterface
+                    case _ ⇒
+                        classFile.isInterfaceDeclaration
                 }
 
             val proxy: ClassFile = ClassFileFactory.Proxy(
                 typeDeclaration,
                 functionalInterfaceMethodName,
                 functionalInterfaceDescriptorBeforeTypeErasure,
-                //targetMethodOwner,
                 receiverType,
                 // Note a static lambda method in an interface needs
                 // to be called using the correct variant of an invokestatic.
-                receiverIsInterface = classFile.isInterfaceDeclaration,
+                receiverIsInterface = receiverIsInterface,
                 targetMethodName,
                 receiverDescriptor,
                 invocationInstruction,

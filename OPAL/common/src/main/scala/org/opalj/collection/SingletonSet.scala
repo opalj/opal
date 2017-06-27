@@ -32,7 +32,7 @@ package collection
 import scala.collection.Set
 
 /**
- * Facilitates the matching of a scala collection set that contains a single value.
+ * Facilitates the matching of a Scala collection set that contains a single value.
  *
  * @author Michael Eichberg
  */

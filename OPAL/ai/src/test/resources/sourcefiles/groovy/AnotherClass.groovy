@@ -38,7 +38,7 @@ import org.opalj.ai.test.invokedynamic.annotations.*;
  * 
  * 
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
- * SPECIFIED LINE NUMBERS ARE STABLE.
+ * SPECIFIED LINE NUMBERS ARE STABLE).
  * 
  * 
  * -->

@@ -34,6 +34,8 @@ import scala.reflect.ClassTag
 import scala.collection.immutable.Vector
 
 /**
+ * '''THIS DATASTRUCTURE WILL BE REPLACED IN THE FUTURE, DON'T USE IT.'''
+ *
  * Conceptually, an array that enables random access and which is heavily optimized for
  * small(er) collections (up to 12 elements) that are frequently compared and updated
  * and where sharing is beneficial.

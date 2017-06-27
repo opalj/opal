@@ -54,7 +54,7 @@ object Disassembler {
             "       [-source <File> a class or jar file or a directory containg jar or class files]*\n"+
             "       [-noDefaultCSS the generated html page will have on CSS styling]\n"+
             "       [-css <Source> the path (URL) of a CSS file (\".csss\") which will be referenced from the generated HTML page]\n"+
-            "       [-jss <Source> the path (URL) of a JavaScript file (\".js\") which will be referenced from the generated HTML page]\n"+
+            "       [-js <Source> the path (URL) of a JavaScript file (\".js\") which will be referenced from the generated HTML page]\n"+
             "       <ClassName> name of the class for which we want to create the HTML page\n"+
             "Example:\n       java …Disassembler -source /Library/jre/lib/rt.jar java.util.ArrayList"
     }
