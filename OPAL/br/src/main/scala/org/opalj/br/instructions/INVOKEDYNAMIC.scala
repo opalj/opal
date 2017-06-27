@@ -70,7 +70,7 @@ object INVOKEDYNAMIC {
     /**
      * General extractor for objects of type `INVOKEDYNAMIC`.
      */
-    def unapply(instruction: INVOKEDYNAMIC): Option[(BootstrapMethod, String, MethodDescriptor)] = {
+    def unapply(instruction: INVOKEDYNAMIC): Some[(BootstrapMethod, String, MethodDescriptor)] = {
         Some((instruction.bootstrapMethod, instruction.name, instruction.methodDescriptor))
     }
 }
