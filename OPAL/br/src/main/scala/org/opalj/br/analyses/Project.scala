@@ -1416,7 +1416,7 @@ object Project {
             import scala.collection.mutable.Set
             import scala.concurrent.{Future, Await, ExecutionContext}
             import scala.concurrent.duration.Duration
-            import ExecutionContext.Implicits.global
+            import ExecutionContext.Implicits.{global ⇒ ScalaExecutionContext}
 
             val classHierarchyFuture: Future[ClassHierarchy] = Future {
                 val typeHierarchyDefinitions =
@@ -1438,7 +1438,7 @@ object Project {
                         virtualClassFiles,
                     typeHierarchyDefinitions
                 )
-            }
+            }(ScalaExecutionContext)
 
             var projectClassFiles = List.empty[ClassFile]
             val projectTypes = Set.empty[ObjectType]
