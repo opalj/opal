@@ -31,13 +31,11 @@ package fpcf
 package analysis
 
 import org.opalj.ai.Domain
-import org.opalj.collection.immutable.IntSet
-import org.opalj.br.Method
+import org.opalj.br.AllocationSite
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.IntSet
 import org.opalj.fpcf.properties._
 import org.opalj.tac._
-
-case class EscapeEntity[+V <: Var[V]](method: Method, escape: Expr[V]) extends Entity
 
 class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     type V = DUVar[Domain#DomainValue]
@@ -54,8 +52,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
         params.exists(value ⇒ checkValue(value, p2s))
     }
 
-    def determineEscapeStmt(stmt: Stmt[V], e: EscapeEntity[V], p2sparam: IntSet): (IntSet, Option[PropertyComputationResult]) = {
-        val n = e.escape
+    def determineEscapeStmt(stmt: Stmt[V], e: AllocationSite, p2sparam: IntSet): (IntSet, Option[PropertyComputationResult]) = {
         var p2s = p2sparam
         val result: Option[PropertyComputationResult] = stmt match {
             case PutStatic(_, _, _, _, value) if checkValue(value, p2s) ⇒
@@ -77,7 +74,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 Some(Result(e, GlobalEscape))
             case FailingStatement(_, failingStmt) ⇒
                 return determineEscapeStmt(failingStmt, e, p2s)
-            case Assignment(_, left, `n`) ⇒
+            case Assignment(_, left, New(e.pc, _)) ⇒
                 val dvar = left.asInstanceOf[DVar[_]].definedBy
                 p2s = p2s + dvar
                 None
@@ -103,7 +100,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
         (p2s, result)
     }
 
-    def determineEscape(e: EscapeEntity[V]): PropertyComputationResult = {
+    def determineEscape(e: AllocationSite): PropertyComputationResult = {
         val method = e.method
         val TACode(code, _, _, _) = project.get(DefaultTACAIKey)(method)
         var p2s = IntSet.empty
@@ -121,14 +118,8 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
 object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
     type V = DUVar[Domain#DomainValue]
 
-    def collectEntities(project: SomeProject): Iterable[EscapeEntity[V]] = {
-        for {
-            method ← project.allMethodsWithBody
-            Assignment(_, _, New(pc, tpe)) ← project.get(DefaultTACAIKey)(method).stmts
-
-        } yield {
-            EscapeEntity(method, New(pc, tpe))
-        }
+    def entitySelector: PartialFunction[Entity, AllocationSite] = {
+        case as: AllocationSite ⇒ as
     }
 
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
@@ -137,7 +128,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new SimpleEscapeAnalysis(project)
-        propertyStore <|<< (collectEntities(project), analysis.determineEscape)
+        propertyStore <||< (entitySelector, analysis.determineEscape)
         analysis
     }
 }
