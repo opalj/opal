@@ -34,7 +34,7 @@ package collection
  *
  * @author Michael Eichberg
  */
-sealed trait SetRelation
+sealed abstract class SetRelation
 
 final object StrictSubset extends SetRelation
 final object EqualSets extends SetRelation

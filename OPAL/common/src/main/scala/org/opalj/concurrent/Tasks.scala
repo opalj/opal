@@ -37,7 +37,7 @@ import scala.collection.JavaConverters._
 
 /**
  * Executes the given function `process` for each submitted value of
- * type `T`. The `process` function can, add further further values that should be processed.
+ * type `T`. The `process` function can add further values that should be processed.
  *
  * @example
  * {{{

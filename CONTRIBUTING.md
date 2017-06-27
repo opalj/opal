@@ -2,11 +2,6 @@
 Everybody is welcome to contribute to OPAL and to submit pull requests. However, a pull request is only taken into consideration if you follow these guidelines. A recommended read (to speed up the process of getting your pull request pulled):
  [The Twitter Scala Style Guide](http://twitter.github.io/effectivescala/)
 
-## Just One Commit
-___The pull request consists of the **implementation of a single feature** and either consists of a single (squashed) commit or is done w.r.t. a specifically targeted feature branch___
-
-If you have problems creating a pull-request that has only one commit, create the pull request w.r.t. some new (articial) branch. However, you always have to ensure that the pull request is minimal!
-
 ## Do not create pull requests w.r.t. the master branch
 A pull request w.r.t. the master branch will directly be rejected. Integration with the master branch is always only done afer thourough testing by the main developer.
 

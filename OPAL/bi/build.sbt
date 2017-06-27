@@ -6,15 +6,13 @@
 
 unmanagedResourceDirectories in Test += (sourceDirectory in Test).value / "fixtures-java"
 
-val fixtureCompile = taskKey[Seq[File]]("compilation of java projects against fixed eclipse compiler") in Test
-fixtureCompile := {
-
-    FixtureCompilation.doCompilationTask(
+val compileTestFixtures = taskKey[Seq[File]]("compiles the Java test projects using Eclipse") in Test
+compileTestFixtures := {
+    TestFixtureCompilation.run(
 			streams.value,
 			(resourceManaged in Test).value,
 			(sourceDirectory in Test).value
 		)
-
 }
 
-resourceGenerators in Test += fixtureCompile.taskValue
+resourceGenerators in Test += compileTestFixtures.taskValue

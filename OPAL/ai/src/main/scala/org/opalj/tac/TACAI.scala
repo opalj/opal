@@ -30,14 +30,19 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
+
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.cfg.CFG
+import org.opalj.ai.BaseAI
 import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -54,6 +59,16 @@ import org.opalj.ai.domain.RecordDefUse
  * @author Michael Eichberg
  */
 object TACAI {
+
+    def apply(
+        project: SomeProject,
+        method:  Method
+    )(
+        domain: Domain with RecordDefUse = new DefaultDomainWithCFGAndDefUse(project, method)
+    ): TACode[DUVar[domain.DomainValue]] = {
+        val aiResult = BaseAI(project.classFile(method), method, domain)
+        TACAI(method, project.classHierarchy, aiResult)(Nil)
+    }
 
     /**
      * Converts the bytecode of a method into a three address representation using

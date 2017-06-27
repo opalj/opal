@@ -87,7 +87,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
 
         it("should correctly reflect the not-equals case") {
             val statements = TACNaive(method = ICMPNEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -99,7 +99,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
 
         it("should correctly reflect the equals case") {
             val statements = TACNaive(method = ICMPEQMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -111,7 +111,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
 
         it("should correctly reflect the greater-equals case") {
             val statements = TACNaive(method = ICMPGEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -123,7 +123,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
 
         it("should correctly reflect the less-then case") {
             val statements = TACNaive(method = ICMPLTMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -135,7 +135,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
 
         it("should correctly reflect the less-equals case") {
             val statements = TACNaive(method = ICMPLEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -147,7 +147,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
 
         it("should correctly reflect the greater-then case") {
             val statements = TACNaive(method = ICMPGTMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, false, false)
+            val javaLikeCode = ToTxt(statements, None, false, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
