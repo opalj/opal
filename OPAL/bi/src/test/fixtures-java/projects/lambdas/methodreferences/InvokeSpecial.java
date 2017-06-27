@@ -28,14 +28,10 @@
  */
 package lambdas.methodreferences;
 
-import java.util.LinkedHashSet;
-import java.util.function.*;
-
-import annotations.target.InvokedMethod;
-import static annotations.target.TargetResolution.DYNAMIC;
+import java.util.function.Supplier;
 
 /**
- * This class contains examples for method references dealing with proxy class receiver inheritance.
+ * This class contains examples for method references dealing with INVOKESPECIAL instructions
  *
  * <!--
  *
@@ -46,30 +42,38 @@ import static annotations.target.TargetResolution.DYNAMIC;
  *
  * @author Andreas Muttscheller
  */
-public class ReceiverInheritance {
+public class InvokeSpecial {
 
-    public static <T, R> R someBiConsumerParameter(Supplier<R> s,
-            BiConsumer<R, T> bc, BiConsumer<R, R> r, T t) {
-        R state = s.get();
-        bc.accept(state, t);
-        r.accept(state, state);
+    public static class Superclass {
+        private String interestingMethod() {
+            return "Superclass";
+        }
 
-        return state;
+        public void exampleMethodTest() {
+            Supplier<String> s = this::interestingMethod;
+            s.get();
+        }
+
+        protected String someMethod() {
+            return "someMethod";
+        }
     }
 
-    public static <T> LinkedHashSet<T> callBiConsumer(T t) {
-        LinkedHashSet<T> lhm = ReceiverInheritance.<T, LinkedHashSet<T>>someBiConsumerParameter(
-                LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll, t);
+    public static class Subclass extends Superclass {
 
-        return lhm;
+        String interestingMethod() {
+            return "Subclass";
+        }
+
+        public String callSomeMethod() {
+            Supplier<String> s = super::someMethod;
+            return s.get();
+        }
     }
 
-    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "contains", line = 69)
-    public static <T> void instanceBiConsumer(T t) {
-        LinkedHashSet<T> lhm = new LinkedHashSet<T>();
-        Consumer<T> bc = lhm::contains;
-        bc.accept(t);
+    public static void staticInheritanceWithParameter() {
+        Subclass sc = new Subclass();
+        sc.exampleMethodTest();
+        sc.callSomeMethod();
     }
 }
-
-

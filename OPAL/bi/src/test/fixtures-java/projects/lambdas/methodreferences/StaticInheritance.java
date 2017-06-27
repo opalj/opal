@@ -28,14 +28,11 @@
  */
 package lambdas.methodreferences;
 
-import java.util.LinkedHashSet;
-import java.util.function.*;
-
-import annotations.target.InvokedMethod;
-import static annotations.target.TargetResolution.DYNAMIC;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
- * This class contains examples for method references dealing with proxy class receiver inheritance.
+ * This class contains examples for method references dealing with proxy class static method inheritance.
  *
  * <!--
  *
@@ -46,30 +43,28 @@ import static annotations.target.TargetResolution.DYNAMIC;
  *
  * @author Andreas Muttscheller
  */
-public class ReceiverInheritance {
+public class StaticInheritance {
 
-    public static <T, R> R someBiConsumerParameter(Supplier<R> s,
-            BiConsumer<R, T> bc, BiConsumer<R, R> r, T t) {
-        R state = s.get();
-        bc.accept(state, t);
-        r.accept(state, state);
+    public static class A {
+        public static String foo() {
+            return "bar";
+        }
+        public static void bar(String s) {
 
-        return state;
+        }
     }
 
-    public static <T> LinkedHashSet<T> callBiConsumer(T t) {
-        LinkedHashSet<T> lhm = ReceiverInheritance.<T, LinkedHashSet<T>>someBiConsumerParameter(
-                LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll, t);
+    public static class B extends A {
 
-        return lhm;
     }
 
-    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "contains", line = 69)
-    public static <T> void instanceBiConsumer(T t) {
-        LinkedHashSet<T> lhm = new LinkedHashSet<T>();
-        Consumer<T> bc = lhm::contains;
-        bc.accept(t);
+    public static String staticInheritanceTest() {
+        Supplier<String> s = B::foo;
+        return s.get();
+    }
+
+    public static void staticInheritanceWithParameter() {
+        Consumer<String> c = B::bar;
+        c.accept("foo");
     }
 }
-
-
