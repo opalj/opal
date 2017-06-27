@@ -72,6 +72,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      */
     def analysisRunner: FPCFAnalysisRunner
 
+    def init(): Unit = {}
+
     def runAnalysis(project: Project[URL]): Unit = {
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         analysesManager.runWithRecommended(analysisRunner)(waitOnCompletion = true)
@@ -96,13 +98,14 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     def loadProject: Project[URL] = org.opalj.br.analyses.Project(file)
 
-    val project = loadProject
-    val propertyStore = project.get(PropertyStoreKey)
+    lazy val project = loadProject
+    lazy val propertyStore = project.get(PropertyStoreKey)
 
     /*
      * RUN ANALYSIS AND OBTAIN PROPERTY STORE
      */
 
+    init()
     runAnalysis(project)
 
     /*
