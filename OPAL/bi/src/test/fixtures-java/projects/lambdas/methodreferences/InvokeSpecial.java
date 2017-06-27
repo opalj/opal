@@ -31,12 +31,14 @@ package lambdas.methodreferences;
 import java.util.function.Supplier;
 
 /**
- * This class contains examples for method references dealing with INVOKESPECIAL instructions
+ * This class contains examples for method references which result in INVOKESPECIAL calls.
  *
  * <!--
  *
+ *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
- * SPECIFIED LINE NUMBERS ARE STABLE.
+ * SPECIFIED LINE NUMBERS ARE STABLE).
+ *
  *
  * -->
  *
@@ -50,7 +52,7 @@ public class InvokeSpecial {
         }
 
         public void exampleMethodTest() {
-            Supplier<String> s = this::interestingMethod;
+            Supplier<String> s = this::interestingMethod; // reference of a private method
             s.get();
         }
 
@@ -66,7 +68,7 @@ public class InvokeSpecial {
         }
 
         public String callSomeMethod() {
-            Supplier<String> s = super::someMethod;
+            Supplier<String> s = super::someMethod; // reference of a super method
             return s.get();
         }
     }
