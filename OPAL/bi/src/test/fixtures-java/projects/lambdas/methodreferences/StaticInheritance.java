@@ -32,7 +32,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * This class contains examples for method references dealing with proxy class static method inheritance.
+ * This class contains method references to static methods.
  *
  * <!--
  *
@@ -50,7 +50,6 @@ public class StaticInheritance {
             return "bar";
         }
         public static void bar(String s) {
-
         }
     }
 
