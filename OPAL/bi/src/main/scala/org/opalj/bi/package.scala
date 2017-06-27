@@ -56,7 +56,7 @@ package object bi {
             scala.Predef.assert(false)
             info("OPAL", "Bytecode Infrastructure - Production Build")
         } catch {
-            case ae: AssertionError ⇒
+            case _: AssertionError ⇒
                 info("OPAL", "Bytecode Infrastructure - Development Build (Assertions are enabled)")
         }
     }
@@ -114,7 +114,7 @@ package object bi {
                 false // we were not able to detect/derive enough information!
             }
         } catch {
-            case t: Throwable ⇒
+            case _: Throwable ⇒
                 OPALLogger.error(
                     "system configuration", s"could not interpret JRE version: $versionString"
                 )(GlobalLogContext)

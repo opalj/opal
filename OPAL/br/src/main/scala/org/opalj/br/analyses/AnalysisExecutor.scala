@@ -198,7 +198,7 @@ trait AnalysisExecutor {
             def splitLibCPath(path: String) = path.substring(7).split(File.pathSeparator)
 
             args1.partition(_.startsWith("-libcp=")) match {
-                case noLibs @ (Array(), args2) ⇒
+                case noLibs @ (Array(), _) ⇒
                     noLibs
                 case (Array(libParam), args2) ⇒
                     (splitLibCPath(libParam), args2)

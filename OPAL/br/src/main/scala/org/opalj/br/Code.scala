@@ -333,7 +333,8 @@ final class Code private (
 
             remainingExceptionHandlers =
                 for {
-                    eh @ ExceptionHandler(startPC, endPC, handlerPC, _) ← remainingExceptionHandlers
+                    eh ← remainingExceptionHandlers
+                    ExceptionHandler(startPC, endPC, handlerPC, _) = eh
                     if subroutineIds(handlerPC) == -1 // we did not already analyze the handler
                     if !belongsToCurrentSubroutine(startPC, endPC, handlerPC)
                 } yield {
@@ -999,8 +1000,8 @@ final class Code private (
                     case lv @ LocalVariable(
                         startPC,
                         length,
-                        name,
-                        fieldType,
+                        _ /*name*/ ,
+                        _ /*fieldType*/ ,
                         index
                         ) if startPC <= pc && startPC + length > pc ⇒
                         (index, lv)

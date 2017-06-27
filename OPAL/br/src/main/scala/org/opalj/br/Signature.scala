@@ -689,8 +689,8 @@ object GenericType {
         cts match {
 
             case ClassTypeSignature(
-                cpn,
-                SimpleClassTypeSignature(csn, typeArgs),
+                _,
+                SimpleClassTypeSignature(_, typeArgs),
                 Nil) if typeArgs.nonEmpty ⇒
                 Some((cts.objectType, typeArgs))
 
@@ -717,8 +717,8 @@ object GenericTypeWithClassSuffix {
         cts match {
 
             case ClassTypeSignature(
-                cpn,
-                SimpleClassTypeSignature(csn, typeArgs),
+                _,
+                SimpleClassTypeSignature(_, typeArgs),
                 suffix) if suffix.nonEmpty ⇒
                 Some((cts.objectType, typeArgs, suffix))
 
