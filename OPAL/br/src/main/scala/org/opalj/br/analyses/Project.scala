@@ -1458,10 +1458,7 @@ object Project {
             val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
             val sources = OpenHashMap.empty[ObjectType, Source]
 
-            def processProjectClassFile(
-                classFile: ClassFile,
-                source:    Option[Source]
-            ): Unit = {
+            def processProjectClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
                 val projectType = classFile.thisType
                 if (projectTypes.contains(projectType)) {
                     handleInconsistentProject(
@@ -1516,7 +1513,7 @@ object Project {
                         logContext,
                         InconsistentProjectException(
                             s"${libraryType.toJava} is defined by the project and a library: "+
-                                sources.get(libraryType).getOrElse("<VIRTUAL>")+" and "+
+                                sources.getOrElse(libraryType, "<VIRTUAL>")+" and "+
                                 source.toString+"; keeping the project class file."
                         )
                     )
@@ -1537,7 +1534,7 @@ object Project {
                         logContext,
                         InconsistentProjectException(
                             s"${libraryType.toJava} is defined multiple times in the project's lbraries: "+
-                                sources.get(libraryType).getOrElse("<VIRTUAL>")+" and "+
+                                sources.getOrElse(libraryType, "<VIRTUAL>")+" and "+
                                 source.toString+"; keeping the first one."
                         )
                     )
