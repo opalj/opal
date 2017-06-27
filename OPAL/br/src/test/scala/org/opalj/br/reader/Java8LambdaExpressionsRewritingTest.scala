@@ -42,11 +42,6 @@ import org.opalj.log.LogContext
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassFile
-import org.opalj.br.ElementValuePair
-import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
-import org.opalj.br.StringValue
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
@@ -57,23 +52,24 @@ import org.opalj.br.instructions.INVOKESTATIC
  *
  * @author Arne Lottmann
  * @author Michael Eichberg
+ * @author Andreas Muttscheller
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 
-    val testResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+    val lambda18TestResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
         var successFull = false
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
-            factoryCall ← body.collectInstructions { case i: INVOKESTATIC ⇒ i }
+            (_, factoryCall @ INVOKESTATIC(_, _, _, _)) ← body
             if factoryCall.declaringClass.fqn.matches("^Lambda\\$[A-Fa-f0-9]+:[A-Fa-f0-9]+$")
-            if { successFull = true; successFull }
             annotations = method.runtimeVisibleAnnotations
         } {
+            successFull = true
             val expectedTarget = getInvokedMethod(project, annotations)
             if (expectedTarget.isEmpty) {
                 val message =
@@ -113,8 +109,11 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             } else {
                 invocationInstruction.methodDescriptor
             }
-        project.classFile(declaringType).flatMap(
-            _.findMethod(targetMethodName, targetMethodDescriptor)
+
+        project.resolveMethodReference(
+            declaringType.asObjectType,
+            targetMethodName,
+            targetMethodDescriptor
         )
     }
 
@@ -141,16 +140,49 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             if (classFileOpt.isEmpty) {
                 throw new IllegalStateException(s"the class file $receiverType cannot be found")
             }
-            val methodOpt = classFileOpt.get.findMethod(methodName)
-            if (methodOpt.isEmpty) {
-                throw new IllegalStateException(
-                    s"$receiverType does not define $methodName"
-                )
-            }
-            methodOpt.head
+            findMethodRecursive(project, classFileOpt.get, methodName, receiverType)
         }
 
         Some(method.head)
+    }
+
+    /**
+     * Get the method definition recursively -> if the method isn't implemented in `classFile`, check if
+     * the super class has an implementation.
+     *
+     * @param project The project where to look for the classfile
+     * @param classFile The classfile to check the method
+     * @param methodName The name of the method to find
+     * @param receiverType The type of the receiver, which was defined in the fixture annotation
+     * @return The `Method` with the name `methodName`
+     */
+    def findMethodRecursive(
+        project:      SomeProject,
+        classFile:    ClassFile,
+        methodName:   String,
+        receiverType: String
+    ): Method = {
+        /**
+         * Get the method definition recursively -> if the method isn't implemented in `classFile`, check if
+         * the super class has an implementation.
+         *
+         * @param classFile The classfile to check the method
+         * @return An Option of the `Method`
+         */
+        def findMethodRecursiveInner(classFile: ClassFile): Method = {
+            val methodOpt = classFile.findMethod(methodName)
+            if (methodOpt.isEmpty) {
+                classFile.superclassType match {
+                    case Some(superType) ⇒ findMethodRecursiveInner(project.classFile(superType).get)
+                    case None ⇒ throw new IllegalStateException(
+                        s"$receiverType does not define $methodName"
+                    )
+                }
+            } else {
+                methodOpt.head
+            }
+        }
+        findMethodRecursiveInner(classFile)
     }
 
     def testProject(project: SomeProject): Unit = {
@@ -185,6 +217,12 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         it("should resolve a reference to a constructor") {
             testMethod(project, MethodReferences, "newValue")
         }
+
+        val ReceiverInheritance = project.classFile(ObjectType("lambdas/methodreferences/ReceiverInheritance")).get
+
+        it("should resolve a reference to a method implemented in a superclass") {
+            testMethod(project, ReceiverInheritance, "instanceBiConsumer")
+        }
     }
 
     describe("rewriting of Java 8 lambda expressions") {
@@ -201,7 +239,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
         val framework = new Framework()
         val project = Project(
-            framework.ClassFiles(testResources),
+            framework.ClassFiles(lambda18TestResources),
             Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JRELibraryFolder),
             true,
             Traversable.empty,

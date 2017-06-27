@@ -5,7 +5,7 @@
 addSbtPlugin("com.eed3si9n" % "sbt-dirty-money" % "0.1.0")
 
 // to build fat-jars
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.4")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.5")
 
 resolvers += Resolver.url("scoverage-bintray", url("https://dl.bintray.com/sksamuel/sbt-plugins/"))(Resolver.ivyStylePatterns)
 addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "1.5.0")
