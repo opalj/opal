@@ -515,9 +515,9 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 //
                 // We now have to determine the maximally specific method.
 
-                // both, the set of `currentMethods` and also the set of `methods`
+                // Both, the set of `currentMethods` and also the set of `methods`
                 // each only contains maximally specific methods w.r.t. their
-                // set
+                // set.
                 var currentMaximallySpecificMethods = currentMethods
                 var additionalMaximallySpecificMethods = Set.empty[Method]
                 methods.view.filter(!currentMethods.contains(_)) foreach { method ⇒
@@ -525,10 +525,10 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                     var addNewMethod = true
                     currentMaximallySpecificMethods = currentMaximallySpecificMethods.filter { method ⇒
                         val specificMethodDeclaringClassType = project.classFile(method).thisType
-                        if ((specificMethodDeclaringClassType isSubtyeOf newMethodDeclaringClassType).isYes) {
+                        if ((specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType).isYes) {
                             addNewMethod = false
                             true
-                        } else if ((newMethodDeclaringClassType isSubtyeOf specificMethodDeclaringClassType).isYes) {
+                        } else if ((newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType).isYes) {
                             false
                         } else {
                             //... we have an incomplete class hierarchy; let's keep both methods
@@ -666,7 +666,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     }
 
     def specialCall(i: INVOKESPECIAL): Result[Method] = {
-        specialCall(i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
+        specialCall(i.declaringClass /*, i.isInterface*/ , i.name, i.methodDescriptor)
     }
 
     /**
@@ -674,10 +674,8 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      *
      * @note    Virtual method call resolution is not necessary; the call target is
      *          either a constructor, a private method or a super method/constructor. However, in
-     *          the last case it may be possible that we can't find the method because
-     *          of an incomplete project. In that case the result will be [[Empty$]]. If the
-     *          project is complete, but we can't find the class the result is [[Failure$]]; this
-     *          is indicative of an inconsistent project.
+     *          the first and in the last case it may be possible that we can't find the method
+     *          because of an incomplete project.
      *
      * @return  One of the following three values:
      *           - [[org.opalj.Success]] `(method)` if the method was found;
@@ -689,20 +687,21 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      */
     def specialCall(
         declaringClass: ObjectType, // an interface or class type to be precise
-        isInterface:    Boolean,
-        name:           String, // an interface or class type to be precise
-        descriptor:     MethodDescriptor
+        // isInterface is not neeed, because it is already implicitly contained in "instanceMethods"
+        // isInterface:    Boolean,
+        name:       String, // an interface or class type to be precise
+        descriptor: MethodDescriptor
     ): Result[Method] = {
         // ...  default methods cannot override methods from java.lang.Object
         // ...  in case of super method calls (not initializers), we can use
         //      "instanceMethods" to find the method, because the method has to
         //      be an instance method, must not be abstract and must not be private.
-        // ...  the receiver type of super initialzizer calls is always explicitly given
+        // ...  the receiver type of super initializer calls is always explicitly given
         classFile(declaringClass) match {
             case Some(classFile) ⇒
                 classFile.findMethod(name, descriptor) match {
                     case Some(method)             ⇒ Success(method)
-                    case None if name == "<init>" ⇒ Empty // the initialzizer is not found...
+                    case None if name == "<init>" ⇒ Empty // the initializer is not found...
                     case _ ⇒
                         // We have to find the (maximally specific) super method, which is,
                         // unless we have an inconsistent code base, unique (compared to
@@ -796,11 +795,11 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                     // This is an overapproximation, if the inherited concrete method is
                     // always overridden by all concrete subtypes and subtypeCF
                     // is an abstract class in a closed package/module
-                    methods ++= (
+                    methods ++=
                         overriddenBy(mdc.method).iterator.filter { m ⇒
-                            (classFile(m).thisType isSubtyeOf subtype).isYes
+                            (classFile(m).thisType isSubtypeOf subtype).isYes
                         }
-                    )
+
                     // for interfaces we have to continue, because we may have inherited a
                     // a concrete method from a class type which is not in the set of
                     // overriddenBy methods
