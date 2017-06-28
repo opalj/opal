@@ -90,11 +90,9 @@ object ParameterUsageAnalysis extends DefaultOneStepAnalysis {
                             unusedParameters.add(methodSignature + use)
                         } else {
                             usedBy.foreach { usage ⇒
-                                instructions(usage) match {
-                                    case r: ReturnInstruction ⇒
-                                        val use = s" the argument with origin $valueOrigin is returned by $usage"
-                                        returnedParameters.add(methodSignature + use)
-                                    case _ ⇒ // we don't care about other usages..
+                                if (ReturnInstruction.isReturnInstruction(instructions(usage))) {
+                                    val use = s" the argument with origin $valueOrigin is returned by $usage"
+                                    returnedParameters.add(methodSignature + use)
                                 }
                             }
                         }

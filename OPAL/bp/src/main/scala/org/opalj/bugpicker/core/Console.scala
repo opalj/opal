@@ -297,28 +297,28 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                         (factor >= 0.1d && factor < 100.0d) ||
                             factor == Double.PositiveInfinity
                     } catch {
-                        case nfe: NumberFormatException ⇒ false
+                        case _: NumberFormatException ⇒ false
                     }
                 case MaxEvalTimePattern(l) ⇒
                     try {
                         val maxTime = java.lang.Long.parseLong(l).toLong
                         maxTime >= 10L && maxTime <= 1000000L
                     } catch {
-                        case nfe: NumberFormatException ⇒ false
+                        case _: NumberFormatException ⇒ false
                     }
                 case MaxCardinalityOfIntegerRangesPattern(i) ⇒
                     try {
                         val cardinality = java.lang.Long.parseLong(i).toLong
                         cardinality >= 1L && cardinality <= 4294967295L
                     } catch {
-                        case nfe: NumberFormatException ⇒ false
+                        case _: NumberFormatException ⇒ false
                     }
                 case MaxCardinalityOfLongSetsPattern(i) ⇒
                     try {
                         val cardinality = java.lang.Integer.parseInt(i).toInt
                         cardinality >= 1 && cardinality <= 1024
                     } catch {
-                        case nfe: NumberFormatException ⇒ false
+                        case _: NumberFormatException ⇒ false
                     }
                 case MaxCallChainLengthPattern(_) ⇒
                     // the pattern ensures that the value is legal...

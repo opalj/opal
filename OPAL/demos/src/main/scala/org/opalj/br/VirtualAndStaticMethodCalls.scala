@@ -58,8 +58,9 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
         time {
             for {
                 classFile ← project.allClassFiles
-                MethodWithBody(code) ← classFile.methods
-                instruction @ MethodInvocationInstruction(_, _, _, _) ← code.instructions
+                method ← classFile.methods
+                code ← method.body
+                instruction: MethodInvocationInstruction ← code.instructions
             } {
                 if (instruction.isVirtualMethodCall)
                     virtualCalls += 1

@@ -97,10 +97,9 @@ package object ba { ba ⇒
         try {
             scala.Predef.assert(false)
             // when we reach this point assertions are off...
-            info("OPAL", s"$name - Production Build")
+            info(name, s"Production Build")
         } catch {
-            case ae: AssertionError ⇒
-                info("OPAL", s"$name - Development Build (Assertions are enabled)")
+            case _: AssertionError ⇒ info(name, "Development Build (Assertions are enabled)")
         }
     }
 
@@ -536,8 +535,7 @@ package object ba { ba ⇒
         exceptionHandler: br.ExceptionHandler
     )(
         implicit
-        constantsBuffer: ConstantsBuffer,
-        config:          ToDAConfig
+        constantsBuffer: ConstantsBuffer
     ): da.ExceptionTableEntry = {
         val index = if (exceptionHandler.catchType.isDefined) {
             constantsBuffer.CPEClass(exceptionHandler.catchType.get, false)
@@ -630,10 +628,6 @@ package object ba { ba ⇒
 
     def toDA(
         localvarTableEntry: br.LocalvarTableEntry
-    )(
-        implicit
-        constantsBuffer: ConstantsBuffer,
-        config:          ToDAConfig
     ): da.LocalvarTableEntry = {
         val br.LocalvarTableEntry(startPC, length, index) = localvarTableEntry
         da.LocalvarTableEntry(startPC, length, index)
@@ -641,10 +635,6 @@ package object ba { ba ⇒
 
     def toDA(
         typeAnnotationTarget: br.TypeAnnotationTarget
-    )(
-        implicit
-        constantsBuffer: ConstantsBuffer,
-        config:          ToDAConfig
     ): da.TypeAnnotationTarget = {
         (typeAnnotationTarget.typeId: @switch) match {
 
@@ -735,10 +725,6 @@ package object ba { ba ⇒
 
     def toDA(
         typeAnnotationPathElement: br.TypeAnnotationPathElement
-    )(
-        implicit
-        constantsBuffer: ConstantsBuffer,
-        config:          ToDAConfig
     ): da.TypeAnnotationPathElement = {
         (typeAnnotationPathElement.kindId: @switch) match {
             case br.TADeeperInArrayType.KindId     ⇒ da.TypeAnnotationDeeperInArrayType
@@ -752,10 +738,6 @@ package object ba { ba ⇒
 
     def toDA(
         typeAnnotationPath: br.TypeAnnotationPath
-    )(
-        implicit
-        constantsBuffer: ConstantsBuffer,
-        config:          ToDAConfig
     ): da.TypeAnnotationPath = {
         typeAnnotationPath match {
             case br.TADirectlyOnType     ⇒ da.TypeAnnotationDirectlyOnType

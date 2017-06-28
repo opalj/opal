@@ -85,7 +85,8 @@ object UselessComputations extends DefaultOneStepAnalysis {
         val results = {
             val results = for {
                 classFile ← theProject.allProjectClassFiles.par
-                method @ MethodWithBody(body) ← classFile.methods
+                method ← classFile.methods
+                body ← method.body.toSeq
                 result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
             } yield {
                 import result._

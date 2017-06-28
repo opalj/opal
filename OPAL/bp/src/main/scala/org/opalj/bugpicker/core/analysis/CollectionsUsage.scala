@@ -83,7 +83,7 @@ object CollectionsUsage {
         code iterate { (pc, instruction) ⇒
             instruction match {
 
-                case INVOKESTATIC(Collections, false, "unmodifiableCollection", unmodifiableCollectionMethodDescriptor) ⇒
+                case INVOKESTATIC(Collections, false, "unmodifiableCollection", UnmodifiableCollectionMethodDescriptor) ⇒
                     val origins = domain.operandOrigin(pc, 0)
                     if ((origins ne null) && // the instruction is not dead
                         origins.size == 1 &&
@@ -172,6 +172,6 @@ object CollectionsUsage {
     }
 
     final val Collection = ObjectType("java/util/Collection")
-    final val unmodifiableCollectionMethodDescriptor = MethodDescriptor(Collection, Collection)
+    final val UnmodifiableCollectionMethodDescriptor = MethodDescriptor(Collection, Collection)
     final val Collections = ObjectType("java/util/Collections")
 }

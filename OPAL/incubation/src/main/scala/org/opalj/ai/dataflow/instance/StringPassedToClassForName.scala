@@ -84,7 +84,7 @@ abstract class StringPassedToClassForName[Source]
         case Invoke(
             ObjectType.String,
             _, // methodName
-            MethodDescriptor(_, rt: ObjectType.String.type), // the called method returns a string
+            MethodDescriptor(_, _ /*rt*/ : ObjectType.String.type), // the called method returns a string
             _, // calling context (Method,...)
             _, // the caller
             receiver @ Tainted(_ /*String*/ ), // receiver type
@@ -106,7 +106,7 @@ abstract class StringPassedToClassForName[Source]
             _,
             _, // the caller
             Tainted(value: IsReferenceValue[_]), // receiver type
-            receiver
+            _ //receiver
             ) if value.isValueSubtypeOf(ObjectType.String).isYesOrUnknown ⇒
             ValueIsTainted
     }

@@ -45,7 +45,8 @@ case class MethodsMatcher(
         val map = scala.collection.mutable.AnyRefMap.empty[Method, Set[Int]]
         for {
             classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(_) ← classFile.methods
+            method ← classFile.methods
+            if method.body.isDefined
         } {
             if (matcher.isDefinedAt(method))
                 map.update(method, matcher(method))
@@ -53,4 +54,3 @@ case class MethodsMatcher(
         map
     }
 }
-

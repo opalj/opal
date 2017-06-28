@@ -140,12 +140,12 @@ object UselessComputationsAnalysis {
             case (pc, IAND, Seq(_, ConcreteIntegerValue(-1), _*)) ⇒
                 createIssue(pc, s"x & -1 will always evaluate to x", Relevance.High)
 
-            case (pc, instr @ INEG, Seq(ConcreteIntegerValue(a), _*)) ⇒
+            case (pc, INEG, Seq(ConcreteIntegerValue(a), _*)) ⇒
                 createIssue(pc, s"constant computation: -${a}", defaultRelevance)
 
             case (
                 pc,
-                instr @ IINC(index, increment),
+                IINC(index, increment),
                 _
                 ) if domain.intValueOption(result.localsArray(pc)(index)).isDefined ⇒
                 val v = domain.intValueOption(result.localsArray(pc)(index)).get

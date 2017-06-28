@@ -62,7 +62,8 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
 
         val usages = (for {
             classFile ← theProject.allProjectClassFiles.par
-            method @ MethodWithBody(body) ← classFile.methods
+            method ← classFile.methods
+            body ← method.body.toSeq
             result = BaseAI(classFile, method, new ExceptionUsageAnalysisDomain(theProject, method))
         } yield {
             import scala.collection.mutable._
@@ -135,7 +136,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
                             if (i.isVirtualMethodCall) {
                                 updateUsageKind(operands.drop(parametersCount).head, UsageKind.UsedAsReceiver)
                             }
-                        case i: FieldWriteAccess ⇒
+                        case _: FieldWriteAccess ⇒
                             updateUsageKind(operands.head, UsageKind.StoredInField)
                         case ARETURN ⇒
                             updateUsageKind(operands.head, UsageKind.IsReturned)
@@ -148,7 +149,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
             }
 
             val usages =
-                for { (key @ (pc, typeName), exceptionUsage) ← exceptionUsages }
+                for { ((pc, typeName), exceptionUsage) ← exceptionUsages }
                     yield ExceptionUsage(classFile, method, pc, typeName, exceptionUsage)
 
             if (usages.isEmpty)

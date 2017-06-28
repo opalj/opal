@@ -188,7 +188,7 @@ object DeadEdgesAnalysis {
             if opcode != ATHROW.opcode
 
             // Let's check if a path is never taken:
-            (nextPC: PC) ← instruction.nextInstructions(pc, regularSuccessorsOnly = true).toIterator
+            nextPC ← instruction.nextInstructions(pc, regularSuccessorsOnly = true).toIterator
             if !regularSuccessorsOf(pc).contains(nextPC)
 
             // If we are in a subroutine, we don't have sufficient information
@@ -219,7 +219,7 @@ object DeadEdgesAnalysis {
                 val finallyHandler = mostSpecificFinallyHandlerOfPC(pc)
                 val lvIndex = lvIndexOption.get
                 val correspondingPCs = body.collectWithIndex {
-                    case (otherPC, cbi: ConditionalBranchInstruction) if otherPC != pc &&
+                    case (otherPC, ConditionalBranchInstruction) if otherPC != pc &&
                         (operandsArray(otherPC) ne null) &&
                         (operandsArray(otherPC).head eq localsArray(otherPC)(lvIndex)) &&
                         body.haveSameLineNumber(pc, otherPC).getOrElse(true) &&

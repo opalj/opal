@@ -77,7 +77,8 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
             // for every method that calls itself ...
             for {
                 classFile ← project.allClassFiles.par
-                method @ MethodWithBody(body) ← classFile.methods
+                method ← classFile.methods
+                body ← method.body
                 descriptor = method.descriptor
                 if descriptor.parameterTypes.forall { t ⇒
                     // we don't have (as of Jan 1st 2015) a domain that enables a meaningful

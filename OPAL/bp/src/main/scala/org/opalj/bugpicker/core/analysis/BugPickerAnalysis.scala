@@ -51,7 +51,6 @@ import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.ProgressManagement
@@ -213,7 +212,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
         //
 
-        val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
+        val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted _
 
         val filteredResults = new ConcurrentLinkedQueue[Issue]()
         val issuesPackageFilterString = config.as[String]("org.opalj.bugpicker.issues.packages")
@@ -428,7 +427,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     // Analyses of the methods
                     // ---------------------------------------------------------------------------
 
-                    for (method @ MethodWithBody(body) ← classFile.methods) {
+                    for (method ← classFile.methods; body ← method.body) {
                         try {
                             analyzeMethod(classFile, method, body)
                         } catch {

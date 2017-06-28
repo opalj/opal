@@ -60,7 +60,8 @@ object CountClassForNameCalls extends DefaultOneStepAnalysis {
                 // Let's traverse all methods of all class files that have a
                 // concrete (non-native) implementation.
                 classFile ← project.allProjectClassFiles.par
-                method @ MethodWithBody(code) ← classFile.methods
+                method ← classFile.methods
+                code ← method.body.toSeq
                 // Match all invocations of the method:
                 // Class.forName(String) : Class<?>
                 (pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) ← code

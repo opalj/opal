@@ -83,7 +83,8 @@ case class Calls(
         val result = mutable.HashMap.empty[Method, mutable.HashSet[PC]]
         for {
             classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
+            method ← classFile.methods
+            body ← method.body
             pc ← body collectWithIndex {
                 case (pc, MethodInvocationInstruction(receiver, _ /*isInterface*/ , name, descriptor)) if properties.isDefinedAt((receiver, name, descriptor)) &&
                     properties((receiver, name, descriptor)) ⇒ pc
@@ -95,4 +96,3 @@ case class Calls(
     }
 
 }
-

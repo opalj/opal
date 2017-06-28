@@ -72,7 +72,7 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
             classFile ← theProject.allProjectClassFiles.par
             classType = classFile.thisType
             arrayFields = classFile.fields.collect {
-                case f @ Field(Private___Not_Static(), name, ArrayType(_)) ⇒ name
+                case Field(Private___Not_Static(), name, ArrayType(_)) ⇒ name
             }
             if arrayFields.nonEmpty
             publicAndProtectedMethods = classFile.methods.filter(m ⇒ m.body.isDefined && (m.isPublic || m.isProtected))
@@ -112,7 +112,7 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
                                             ANEWARRAY(_) |
                                             MULTIANEWARRAY(_, _) ⇒
                                             true
-                                        case invoke: MethodInvocationInstruction ⇒
+                                        case _ /*invoke*/ : MethodInvocationInstruction ⇒
                                             // here we need to call this analysis
                                             // again... we may call a private method that
                                             // returns the array...

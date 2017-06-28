@@ -29,8 +29,6 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
-
 import java.net.URL
 
 import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project, SomeProject}
@@ -128,7 +126,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             result = BaseAI(callerClassFile, caller, domain)
         } {
             val pcs: org.opalj.collection.immutable.IntSet = callerPCs //.iterable.toSeq
-            for { pc: Int ← pcs } {
+            for { pc ← pcs } {
                 val operands = result.operandsArray(pc)
                 if (operands != null)
                     for {

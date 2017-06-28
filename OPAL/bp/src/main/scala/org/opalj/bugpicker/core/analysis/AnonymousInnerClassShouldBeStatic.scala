@@ -134,7 +134,7 @@ object AnonymousInnerClassShouldBeStatic {
      * Checks whether a class has any constructors with multiple ALOAD_1 instructions.
      */
     private def hasConstructorsWithMultipleALOAD_1s(classFile: ClassFile): Boolean = {
-        for (method @ MethodWithBody(body) ← classFile.constructors) {
+        for (method ← classFile.constructors; body ← method.body) {
             var count = 0
             body.instructions.foreach {
                 case ALOAD_1 ⇒
