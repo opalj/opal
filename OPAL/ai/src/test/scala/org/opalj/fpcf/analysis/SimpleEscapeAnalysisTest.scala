@@ -30,7 +30,6 @@ package org.opalj.fpcf.analysis
 
 import org.opalj.br._
 import org.opalj.br.analyses.{PropertyStoreKey, SomeProject}
-import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.properties.{EscapeProperty, NoEscape}
@@ -92,20 +91,16 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
         annotation.elementValuePairs collectFirst { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
     }
 
-    def validateProperyByTypeAnnotation(method: Method, annotation: TypeAnnotation): Unit = {
-        val instructions = method.body.get.instructions
-        val annotatedOProperty = propertyExtraction(annotation)
+    def validatePropertyByTypeAnnotation(m: Method, annon: TypeAnnotation, pcToAs: Map[PC, AllocationSite]): Unit = {
+        val annotatedOProperty = propertyExtraction(annon)
         val annotatedProperty = annotatedOProperty getOrElse defaultValue
 
-        assert(method ne null, "method is empty")
+        assert(m ne null, "method is empty")
 
-        val expr = annotation.target match {
-            case TAOfNew(pc) ⇒ {
-                instructions(pc) match {
-                    case NEW(_) ⇒ Some(AllocationSite(method, pc))
-                }
-            }
-            case TAOfFormalParameter(index) ⇒
+        val expr = annon.target match {
+            case TAOfNew(pc) ⇒ Some(pcToAs(pc))
+
+            case TAOfFormalParameter(_) ⇒
                 throw new RuntimeException("Not yet implemented")
             case _ ⇒ None
         }
@@ -114,9 +109,9 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
             val computedOProperty = propertyStore(entity, propertyKey)
 
             if (computedOProperty.hasNoProperty) {
-                val className = project.classFile(method).fqn
+                val className = project.classFile(m).fqn
                 val message =
-                    "Entity has no property: " + s"$className $method $entity  for: $propertyKey;" +
+                    "Entity has no property: " + s"$className $m $entity  for: $propertyKey;" +
                         s"\nexpected property: $annotatedProperty"
                 fail(message)
             }
@@ -124,10 +119,10 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
             val computedProperty = computedOProperty.p.toString
 
             if (computedProperty != annotatedProperty) {
-                val className = project.classFile(method).fqn
+                val className = project.classFile(m).fqn
                 val message =
                     "Wrong property computed: " +
-                        s"$className $method $entity" +
+                        s"$className $m $entity" +
                         s"has the property $computedProperty for $propertyKey;" +
                         s"\n\tactual property:   $computedProperty" +
                         s"\n\texpected property: $annotatedProperty"
@@ -145,8 +140,10 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
         annotation ← code.runtimeVisibleTypeAnnotations
         if annotation.annotationType == propertyAnnotation
     } {
-        analysisName should ("correctly calculate the property of the expression " + annotation.target + "in method " + method + " in class " + classFile.fqn) in {
-            validateProperyByTypeAnnotation(method, annotation)
+        val mToPCToAs = propertyStore.context[Map[Method, Map[PC, AllocationSite]]]
+        analysisName should ("correctly calculate the property of the expression " +
+            annotation.target + "in method " + method.name + " in class " + classFile.fqn) in {
+            validatePropertyByTypeAnnotation(method, annotation, mToPCToAs(method))
         }
     }
 
