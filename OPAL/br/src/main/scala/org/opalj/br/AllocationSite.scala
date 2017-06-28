@@ -30,16 +30,23 @@ package org.opalj
 package br
 
 /**
- * An allocation site (a new instruction) in the loaded bytecode a method. I.e., the bytecode
+ * An allocation site (a new instruction) in the raw bytecode of a method. I.e., the bytecode
  * as returned after loading it; load-time transformations, such as the rewriting of
- * invokedynamic instructions, are not considered.
+ * invokedynamic instructions, happen before the identification of the allocation sites and
+ * are therefore the foundation.
  *
  * @param method The method which contains this allocation site.
  * @param pc     The unique program counter of the allocation site. I.e., the "new" instruction
  *               in the original bytecode as returned by the configured
  *               [[org.opalj.bi.reader.ClassFileReader]]. We use the pc to ensure that code
- *               optimizations/transformations (e.g., to three-address code do not affect
- *               the information about the allocation site as such.
+ *               optimizations/transformations (e.g., transforamtion to three-address code)
+ *               do not affect the information about the allocation site as such.
+ *               However, if an allocation site is defined in dead code, it may happen that the
+ *               transformed/optimized code no longer contains it.
+ *
+ * @note   Information about a program's allocation sites can be made available.
+ *
+ * @author Michael Eichberg
  */
 final class AllocationSite( final val method: Method, final val pc: PC) {
 

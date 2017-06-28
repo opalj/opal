@@ -84,10 +84,10 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore] {
      *
      * @param f A function that takes a project and which computes (1) the set of of entities and
      *          (2) (optionally) a data structure – which typically makes the set of computed
-     *          properties available – which is added as a context value to the property store; the
-     *          key is the specified generic type. E.g., `Iterable[Method]` for the set of
-     *          methods, `Iterable[Field]` for the set of fields and `Iterable[ClassFile]` for the
-     *          default set of class files.
+     *          properties available. This data structure is added as a context value to the
+     *          property store; the key is the specified generic type. E.g., `Iterable[Method]`
+     *          for the set of methods, `Iterable[Field]` for the set of fields and
+     *          `Iterable[ClassFile]` for the default set of class files.
      *
      */
     def addEntityDerivationFunction[T <: AnyRef: TypeTag](
