@@ -27,11 +27,13 @@ licenses        in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org
 scalaVersion  in ThisBuild := "2.12.2"
 
 scalacOptions 	in ThisBuild ++= Seq(
-    "-target:jvm-1.8",
-    "-deprecation", "-feature", "-unchecked",
-    "-Xlint", "-Xfuture", "-Xfatal-warnings",
+    "-Xfuture", "-feature",
+    "-target:jvm-1.8", "-opt:l:method",
+    "-deprecation", "-unchecked",
+    "-Xlint", "-Xfatal-warnings",
     "-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
-    "-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code"
+    "-Ywarn-unused:-params,_", "-Ywarn-unused-import", "-Ywarn-infer-any",
+    "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
 )
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
