@@ -195,11 +195,11 @@ package object br {
                     <span class="type object_type">{ ot.toJava }</span>
             case at: ArrayType ⇒
                 <span class="type array_type">
-                    { typeToXHTML(at.elementType, abbreviateType) }{ (1 to at.dimensions).map(i ⇒ "[]") }
+                    { typeToXHTML(at.elementType, abbreviateType) }{ "[]" * at.dimensions }
                 </span>
             case bt: BaseType ⇒
                 <span class="type base_type">{ bt.toJava }</span>
-            case vt: VoidType ⇒
+            case VoidType ⇒
                 <span class="type void_type">void</span>
         }
     }
