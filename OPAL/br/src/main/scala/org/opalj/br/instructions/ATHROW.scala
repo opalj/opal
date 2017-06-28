@@ -83,4 +83,5 @@ case object ATHROW extends Instruction {
 
     final def expressionResult: NoExpression.type = NoExpression
 
+    final override def toString(currentPC: Int): String = toString()
 }

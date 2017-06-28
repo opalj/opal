@@ -707,7 +707,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 it("should be correctly identified") {
                     val newValueMethod = MethodReferences.findMethod("newValue").head
                     val body = newValueMethod.body.get
-                    val indy = body.collectFirstWithIndex { case (pc, i: INVOKEDYNAMIC) ⇒ i } match {
+                    val indy = body.collectFirstWithIndex { case (_, i: INVOKEDYNAMIC) ⇒ i } match {
                         case Some(i) ⇒ i
                         case None ⇒
                             fail(s"couldn't find invokedynamic instruction:\n$body")

@@ -41,12 +41,7 @@ import org.opalj.io.writeAndOpen
  */
 trait CFGTests extends FunSpec with Matchers {
 
-    def cfgNodesCheck(
-        methodName:     String,
-        code:           Code,
-        cfg:            CFG,
-        classHierarchy: ClassHierarchy
-    ): Unit = {
+    def cfgNodesCheck(code: Code, cfg: CFG, classHierarchy: ClassHierarchy): Unit = {
         // validate that cfPCs returns the same information as the CFG
         val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs(classHierarchy)
         val (allPredecessorPCs, exitPCs, cfJoinsAlt) = code.predecessorPCs(classHierarchy)
@@ -54,7 +49,7 @@ trait CFGTests extends FunSpec with Matchers {
         assert(cfJoins == cfJoinsAlt)
 
         exitPCs foreach { pc ⇒
-            assert(cfg.bb(pc).successors.filterNot(_.isExitNode).isEmpty)
+            assert(cfg.bb(pc).successors.forall(_.isExitNode))
         }
 
         cfJoins foreach { pc ⇒
@@ -84,7 +79,7 @@ trait CFGTests extends FunSpec with Matchers {
                 }
             }
 
-            if (bb.successors.filter(!_.isExitNode).size > 1) {
+            if (bb.successors.count(!_.isExitNode) > 1) {
                 assert(
                     cfForks.contains(bb.endPC),
                     s"; a basic block's end PC(${bb.endPC}}) is not a fork PC"
@@ -105,7 +100,7 @@ trait CFGTests extends FunSpec with Matchers {
         f: ⇒ Unit
     ): Unit = {
         try {
-            cfgNodesCheck(methodName, code, cfg, classHierarchy)
+            cfgNodesCheck(code, cfg, classHierarchy)
             f
         } catch {
             case t: Throwable ⇒ writeAndOpen(cfg.toDot, methodName+"-CFG", ".gv"); throw t

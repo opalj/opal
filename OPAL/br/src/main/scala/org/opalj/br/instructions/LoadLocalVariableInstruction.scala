@@ -77,6 +77,7 @@ abstract class LoadLocalVariableInstruction extends Instruction {
 
     final def expressionResult: NoExpression.type = NoExpression
 
+    final override def toString(currentPC: Int): String = toString()
 }
 /**
  * Defines a factory method for `LoadLocalVariableInstruction`s.

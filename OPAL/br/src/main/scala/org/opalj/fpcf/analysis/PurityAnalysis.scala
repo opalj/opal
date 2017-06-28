@@ -33,6 +33,26 @@ package analysis
 import scala.annotation.switch
 import scala.util.control.ControlThrowable
 
+import org.opalj.log.OPALLogger
+
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EP
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.OnUpdateContinuation
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.UserUpdateType
+import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.properties.EffectivelyFinalField
+import org.opalj.fpcf.properties.Impure
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.MaybePure
+import org.opalj.fpcf.properties.ConditionallyPure
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.ImmutableType
+import org.opalj.fpcf.properties.TypeImmutability
+
 import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -68,24 +88,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EP
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.UpdateType
-import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.EffectivelyFinalField
-import org.opalj.fpcf.properties.Impure
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.MaybePure
-import org.opalj.fpcf.properties.ConditionallyPure
 import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.log.OPALLogger
 
 /**
  * Analyzes the purity of a method as defined by the Purity property.
@@ -225,8 +228,8 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         if (dependees.isEmpty)
             return ImmediateResult(method, Pure);
 
-        val c: (Entity, Property, UpdateType) ⇒ PropertyComputationResult =
-            (e: Entity, p: Property, _: UpdateType) ⇒ {
+        val c = new OnUpdateContinuation { c ⇒
+            def apply(e: Entity, p: Property, ut: UserUpdateType) = {
                 p match {
                     case Impure | MaybePure ⇒
                         Result(method, Impure)
@@ -237,14 +240,16 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                         IntermediateResult(method, ConditionallyPure, dependees, c)
 
                     case Pure ⇒
-                        dependees = dependees.filter { _.e ne e }
+                        dependees = dependees.filter {
+                            _.e ne e
+                        }
                         if (dependees.isEmpty)
                             Result(method, Pure)
                         else
                             IntermediateResult(method, ConditionallyPure, dependees, c)
-
                 }
             }
+        }
 
         IntermediateResult(method, ConditionallyPure, dependees, c)
     }

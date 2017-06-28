@@ -84,6 +84,7 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 
     override def toString: String = "NEW "+objectType.toJava
 
+    final override def toString(currentPC: Int): String = toString()
 }
 
 /**

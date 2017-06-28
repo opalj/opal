@@ -103,6 +103,7 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
+    final override def toString(currentPC: Int): String = toString()
 }
 object RET {
 

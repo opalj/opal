@@ -66,6 +66,7 @@ abstract class CreateNewArrayInstruction extends Instruction with ConstantLength
 
     override final def expressionResult: Stack.type = Stack
 
+    final override def toString(currentPC: Int): String = toString()
 }
 
 object CreateNewArrayInstruction {

@@ -42,7 +42,7 @@ import org.opalj.log.LogContext
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestSupport.{locateTestResources ⇒ locate}
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 
@@ -59,17 +59,18 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 
-    val lambda18TestResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+    val lambdas18Project = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
-        var successFull = false
+        var successful = false
+        val methods = classFile.findMethod(name)
         for {
-            method @ MethodWithBody(body) ← classFile.findMethod(name)
-            (_, factoryCall @ INVOKESTATIC(_, _, _, _)) ← body
+            (method, body) ← methods.collect { case method @ MethodWithBody(body) ⇒ (method, body) }
+            factoryCall ← body.collectInstructions { case i: INVOKESTATIC ⇒ i }
             if factoryCall.declaringClass.fqn.matches("^Lambda\\$[A-Fa-f0-9]+:[A-Fa-f0-9]+$")
             annotations = method.runtimeVisibleAnnotations
         } {
-            successFull = true
+            successful = true
             val expectedTarget = getInvokedMethod(project, annotations)
             if (expectedTarget.isEmpty) {
                 val message =
@@ -77,7 +78,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
                         filter(_.annotationType == InvokedMethod).
                         mkString("\n\t", "\n\t", "\n")
                 fail(
-                    s"the specified invoked method ${message} is not defined "+
+                    s"the specified invoked method $message is not defined "+
                         classFile.methods.map(_.name).mkString("; defined methods = {", ",", "}")
                 )
             }
@@ -87,7 +88,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
                 s"failed to resolve $factoryCall in ${method.toJava(classFile)}"
             }(actualTarget should be(expectedTarget))
         }
-        assert(successFull, s"couldn't find factory method call in $name")
+        assert(successful, s"couldn't find factory method call in $name")
     }
 
     private def getCallTarget(project: SomeProject, factoryCall: INVOKESTATIC): Option[Method] = {
@@ -239,7 +240,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
         val framework = new Framework()
         val project = Project(
-            framework.ClassFiles(lambda18TestResources),
+            framework.ClassFiles(lambdas18Project),
             Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JRELibraryFolder),
             true,
             Traversable.empty,

@@ -69,6 +69,8 @@ abstract class StoreLocalVariableInstruction extends Instruction {
     final def indexOfWrittenLocal: Int = lvIndex
 
     final def expressionResult: NoExpression.type = NoExpression
+
+    final override def toString(currentPC: Int): String = toString()
 }
 
 /**

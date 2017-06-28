@@ -87,7 +87,8 @@ class JRELambdaExpressionsRewritingTest extends FunSuite {
         val missingProxyClassFiles =
             for {
                 classFile ← jreProject.allProjectClassFiles.par
-                method @ MethodWithBody(body) ← classFile.methods
+                method  ← classFile.methods
+                body <- method.body.toSeq
                 proxyFactoryCall ← body.instructions.collect { case i: INVOKESTATIC ⇒ i }
                 if isProxyFactoryCall(proxyFactoryCall)
                 proxy = jreProject.classFile(proxyFactoryCall.declaringClass)

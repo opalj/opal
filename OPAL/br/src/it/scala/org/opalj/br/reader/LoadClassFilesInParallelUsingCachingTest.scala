@@ -38,22 +38,21 @@ import org.opalj.bi.TestSupport.allBITestJARs
 
 class LoadClassFilesInParallelUsingCachingTest extends FlatSpec with Matchers {
 
-    behavior of "OPAL"
+    behavior of "OPAL when reading class files using caching"
 
     val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
 
-    private[this] def validate(classFile: ClassFile, source: java.net.URL): Unit = {
+    private[this] def validate(classFile: ClassFile): Unit = {
         classFile.thisType.fqn should not be null
     }
 
     for {
         file ← Iterator(JRELibraryFolder) ++ allBITestJARs()
         if file.isFile && file.canRead && file.getName.endsWith(".jar")
+        path = file.getPath
     } {
-        val path = file.getPath
-        val testName = s"should be able to read all classes in $path in parallel using caching"
-        it should (testName) in {
-            reader.ClassFiles(file) foreach { cs ⇒ val (cf, s) = cs; validate(cf, s) }
+        it should s"should be able to read all classes in $path" in {
+            reader.ClassFiles(file) foreach { cs ⇒ val (cf, _) = cs; validate(cf) }
         }
     }
 }

@@ -30,8 +30,6 @@ package org.opalj
 package br
 package reader
 
-import java.net.URL
-
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.opalj.bytecode.JRELibraryFolder
@@ -41,12 +39,12 @@ class LoadClassFilesInParallelTest extends FlatSpec with Matchers {
 
     behavior of "OPAL when reading class files (in parallel)"
 
-    private[this] def commonValidator(classFile: ClassFile, source: URL): Unit = {
+    private[this] def commonValidator(classFile: ClassFile): Unit = {
         classFile.thisType should not be null
     }
 
-    private[this] def publicInterfaceValidator(classFile: ClassFile, source: URL): Unit = {
-        commonValidator(classFile, source)
+    private[this] def publicInterfaceValidator(classFile: ClassFile): Unit = {
+        commonValidator(classFile)
         // the body of no method should be available
         classFile.methods.forall(m ⇒ m.body.isEmpty)
     }
@@ -56,14 +54,14 @@ class LoadClassFilesInParallelTest extends FlatSpec with Matchers {
         if file.isFile && file.canRead && file.getName.endsWith(".jar")
         path = file.getPath
     } {
-        it should (s"it should be able to reify all class files in $path") in {
-            Java8Framework.ClassFiles(file) foreach { e ⇒ val (cf, s) = e; commonValidator(cf, s) }
+        it should s"it should be able to reify all class files in $path" in {
+            Java8Framework.ClassFiles(file) foreach { e ⇒ val (cf, _) = e; commonValidator(cf ) }
         }
 
-        it should (s"it should be able to reify only the signatures of all methods in $path") in {
+        it should s"it should be able to reify only the signatures of all methods in $path" in {
             Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
-                val (cf, s) = cs
-                publicInterfaceValidator(cf, s)
+                val (cf, _) = cs
+                publicInterfaceValidator(cf)
             }
         }
     }

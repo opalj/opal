@@ -47,12 +47,12 @@ import org.opalj.br.instructions.LocalVariableAccess
  */
 class CodePropertiesTest extends FunSuite {
 
-    def analyzeProject(name: String, project: SomeProject): String = {
-        val (t, analyzedMethodsCount) = timed { doAnalyzeProject(name, project) }
-        s"$name: the analysis of $analyzedMethodsCount methods took ${t.toSeconds}"
+    def analyzeProject( project: SomeProject): String = {
+        val (t, analyzedMethodsCount) = timed { doAnalyzeProject(project) }
+        s"the analysis of $analyzedMethodsCount methods took ${t.toSeconds}"
     }
 
-    def doAnalyzeProject(name: String, project: SomeProject): Int = {
+    def doAnalyzeProject(project: SomeProject): Int = {
 
         val ch = project.classHierarchy
 
@@ -112,13 +112,13 @@ class CodePropertiesTest extends FunSuite {
     allBIProjects() foreach { biProject ⇒
         val (name, createProject) = biProject
         test(s"computation of maxStack/maxLocals for all methods of $name") {
-            val count = analyzeProject(name, createProject())
+            val count = analyzeProject(createProject())
             info(s"computation of maxStack/maxLocals succeeded for $count methods")
         }
     }
 
     test(s"computation of maxStack/maxLocals for all methods of the JDK ($JRELibraryFolder)") {
-        analyzeProject("JDK", TestSupport.createJREProject)
+        analyzeProject(TestSupport.createJREProject)
     }
 
 }

@@ -71,8 +71,9 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             case EP(_, NotExtensibleType) ⇒ step2(cf)
             case epk /* either MaybeExtensibleType or not yet available at all... */ ⇒
                 val dependees = Traversable(epk)
-                val c: (Entity, Property, UserUpdateType) ⇒ PropertyComputationResult =
-                    (_: Entity, p: Property, _: UserUpdateType) ⇒ {
+                val c = new OnUpdateContinuation {
+                    c ⇒
+                    def apply(e: Entity, p: Property, ut: UserUpdateType) = {
                         p match {
                             case ExtensibleType    ⇒ ImmediateResult(cf, MutableType)
                             case NotExtensibleType ⇒ step2(cf)
@@ -83,6 +84,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             )
                         }
                     }
+                }
                 IntermediateResult(cf, UnknownTypeImmutability, dependees, c)
         }
     }
@@ -93,8 +95,8 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
         if (cf.isFinal || /*APP:*/ directSubtypes.isEmpty) {
 
-            val c: (Entity, Property, UserUpdateType) ⇒ PropertyComputationResult =
-                (e: Entity, p: Property, _: UserUpdateType) ⇒ {
+            val c = new OnUpdateContinuation { c ⇒
+                def apply(e: Entity, p: Property, ut: UserUpdateType) = {
                     p match {
                         case UnknownObjectImmutability ⇒
                             val dependees = Traversable(EP(e, p))
@@ -107,6 +109,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             Result(cf, p.correspondingTypeImmutability)
                     }
                 }
+            }
 
             ps(cf, ObjectImmutability.key) match {
                 case ep @ EP(_, p) ⇒
@@ -184,8 +187,9 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 // when we reach this point, we have dependencies to types for which
                 // we have no further information (so far) or which are
                 // AtLeastConditionallyImmutableType
-                val c: (Entity, Property, UserUpdateType) ⇒ PropertyComputationResult =
-                    (e: Entity, p: Property, _: UserUpdateType) ⇒ {
+
+                val c = new OnUpdateContinuation { c ⇒
+                    def apply(e: Entity, p: Property, ut: UserUpdateType) = {
 
                         ///*debug*/ val previousDependencies = dependencies
                         ///*debug*/ val previousJoinedImmutability = joinedImmutability
@@ -271,7 +275,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 nextResult()
                         }
                     }
-
+                }
                 //[DEBUG] assert(joinedImmutability.isRefineable)
                 IntermediateResult(cf, joinedImmutability, dependencies, c)
             }

@@ -36,7 +36,6 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestSupport.allBITestJARs
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.MethodInfo
 
 /**
  * Just reads a lot of classfiles and builds CFGs for all methods with a body to
@@ -47,18 +46,18 @@ import org.opalj.br.analyses.MethodInfo
  */
 class CFGFactoryTest extends CFGTests {
 
-    def analyzeProject(name: String, project: SomeProject): Unit = {
-        time { doAnalyzeProject(name, project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+    def analyzeProject(project: SomeProject): Unit = {
+        time { doAnalyzeProject(project) } { t ⇒ info("the analysis took "+t.toSeconds) }
     }
 
-    def doAnalyzeProject(name: String, project: SomeProject): Unit = {
+    def doAnalyzeProject(project: SomeProject): Unit = {
         implicit val classHierarchy = project.classHierarchy
         val methodsWithBodyCount = project.allMethodsWithBody.size
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
         val executionTime = new java.util.concurrent.atomic.AtomicLong(0L)
 
         val errors = project.parForeachMethodWithBody() { m ⇒
-            val MethodInfo(_, classFile, method) = m
+            val method = m.method
             implicit val code = method.body.get
 
             val cfg = time { CFGFactory(code) } { t ⇒ executionTime.addAndGet(t.timeSpan) }
@@ -91,7 +90,7 @@ class CFGFactoryTest extends CFGTests {
                 else
                     allEndPCs += bb.endPC
             }
-            cfgNodesCheck(method.toJava(classFile), code, cfg, classHierarchy)
+            cfgNodesCheck(code, cfg, classHierarchy)
 
             // check the wiring
             cfg.allBBs.foreach { bb ⇒
@@ -178,12 +177,12 @@ class CFGFactoryTest extends CFGTests {
     describe("computing the cfg") {
 
         it(s"it should be possible for all methods of the JDK ($JRELibraryFolder)") {
-            analyzeProject("JDK", TestSupport.createJREProject)
+            analyzeProject( TestSupport.createJREProject)
         }
 
         allBITestJARs() foreach { jarFile ⇒
-            it(s"it should be possible for all methods of $jarFile") {
-                analyzeProject(jarFile.getName(), Project(jarFile))
+            it(s"it should be possible for all methods of ${jarFile.getName}") {
+                analyzeProject( Project(jarFile))
             }
         }
     }
