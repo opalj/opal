@@ -224,6 +224,10 @@ final class ClassFile private (
         )
     }
 
+    def methodsWithBody: Iterator[(Method, Code)] = {
+        methods.iterator.filter(_.body.isDefined).map(m ⇒ (m, m.body.get))
+    }
+
     import ClassFile._
 
     final def minorVersion: UShort = version.minor
