@@ -91,9 +91,7 @@ case class Code_attribute(
             <div>
                 <details>
                     <summary>Exception Table:</summary>
-                    <ol class="exception_table">
-                        { exceptionTable.map(_.toXHTML(cp, code)) }
-                    </ol>
+                    <ol class="exception_table">{ exceptionTable.map(_.toXHTML(cp)) }</ol>
                 </details>
             </div>
         else

@@ -59,6 +59,8 @@ abstract class SynchronizationInstruction
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def expressionResult: NoExpression.type = NoExpression
+
+    final override def toString(currentPC: Int): String = toString()
 }
 
 object SynchronizationInstruction {

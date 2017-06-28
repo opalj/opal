@@ -174,11 +174,11 @@ object SignatureParser {
             // '+' ^^ { _ ⇒ CovariantIndicator } | '-' ^^ { _ ⇒ ContravariantIndicator }
             new Parser[VarianceIndicator] {
                 def apply(in: Input): ParseResult[VarianceIndicator] = {
-                    if (in.atEnd) Failure("signature incomplete", in);
+                    if (in.atEnd) Failure("signature incomplete", in)
                     else (in.first: @scala.annotation.switch) match {
                         case '+' ⇒ Success(CovariantIndicator, in.rest)
                         case '-' ⇒ Success(ContravariantIndicator, in.rest)
-                        case x   ⇒ Failure("unknown wildcard indicator", in.rest)
+                        case x   ⇒ Failure(s"unknown wildcard indicator: $x", in.rest)
                     }
                 }
             }
@@ -201,7 +201,7 @@ object SignatureParser {
             new Parser[BaseType] {
                 def apply(in: Input): ParseResult[BaseType] = {
                     if (in.atEnd) {
-                        Failure("signature is incomplete, base type identifier expected", in);
+                        Failure("signature is incomplete, base type identifier expected", in)
                     } else {
                         (in.first: @scala.annotation.switch) match {
                             case 'B' ⇒ Success(ByteType, in.rest)
@@ -212,7 +212,7 @@ object SignatureParser {
                             case 'J' ⇒ Success(LongType, in.rest)
                             case 'S' ⇒ Success(ShortType, in.rest)
                             case 'Z' ⇒ Success(BooleanType, in.rest)
-                            case x   ⇒ Failure("unknown base type identifier: "+x, in.rest)
+                            case x   ⇒ Failure(s"unknown base type identifier: $x", in.rest)
                         }
                     }
                 }

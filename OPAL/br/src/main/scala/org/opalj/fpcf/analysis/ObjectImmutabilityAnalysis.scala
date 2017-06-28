@@ -143,7 +143,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
         var hasFieldsWithUnknownMutability = false
         val nonFinalInstanceFields = cf.fields.filter { f ⇒ !f.isStatic && !f.isFinal }
         dependees ++= propertyStore(nonFinalInstanceFields, FieldMutability) collect {
-            case EP(e, p) if !p.isEffectivelyFinal ⇒
+            case EP(_, p) if !p.isEffectivelyFinal ⇒
                 // <=> The class is definitively mutable and therefore also all subclasses.
                 return createResultForAllSubtypes(cf.thisType, MutableObjectByAnalysis);
 

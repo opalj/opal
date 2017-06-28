@@ -263,7 +263,7 @@ case class ClassSignature(
         superInterfacesSignature: List[ClassTypeSignature]
 ) extends Signature {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def kindId: Int = ClassSignature.KindId
 
@@ -273,10 +273,10 @@ case class ClassSignature(
             superInterfacesSignature.map(_.toJVMSignature).mkString("")
     }
 
-    override def toString(): String = {
+    override def toString: String = {
         "ClassSignature("+
             formalTypeParameters.mkString("typeParameters=List(", ",", ")")+
-            ",superClass="+superClassSignature.toString() +
+            ",superClass="+superClassSignature.toString +
             superInterfacesSignature.mkString(",superInterfaces=List(", ",", "))")
     }
 }
@@ -296,7 +296,7 @@ case class MethodTypeSignature(
         throwsSignature:          List[ThrowsSignature]
 ) extends Signature {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def kindId: Int = MethodTypeSignature.KindId
 
@@ -315,11 +315,11 @@ object MethodTypeSignature {
 /**
  * @see For matching signatures see [[Signature]].
  */
-sealed abstract trait FieldTypeSignature extends Signature with TypeSignature
+sealed trait FieldTypeSignature extends Signature with TypeSignature
 
 object FieldTypeSignature {
 
-    def unapply(signature: FieldTypeSignature): Boolean = true
+    def unapply(signature: AnyRef): Boolean = signature.isInstanceOf[FieldTypeSignature]
 
 }
 
@@ -334,7 +334,7 @@ object FieldTypeJVMSignature {
  */
 case class ArrayTypeSignature(typeSignature: TypeSignature) extends FieldTypeSignature {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def kindId: Int = ArrayTypeSignature.KindId
 
@@ -401,7 +401,7 @@ case class TypeVariableSignature(
         identifier: String
 ) extends FieldTypeSignature with ThrowsSignature {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def kindId: Int = TypeVariableSignature.KindId
 
@@ -422,7 +422,7 @@ case class SimpleClassTypeSignature(
         typeArguments: List[TypeArgument]
 ) {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     def toJVMSignature: String = {
         simpleName +
@@ -442,7 +442,7 @@ case class FormalTypeParameter(
         interfaceBound: List[FieldTypeSignature]
 ) {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     def toJVMSignature: String = {
         identifier +
@@ -470,7 +470,7 @@ case class ProperTypeArgument(
         fieldTypeSignature: FieldTypeSignature
 ) extends TypeArgument {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def toJVMSignature: String = {
         (varianceIndicator match {
@@ -480,7 +480,7 @@ case class ProperTypeArgument(
             fieldTypeSignature.toJVMSignature
     }
 
-    override def toString(): String = {
+    override def toString: String = {
         "ProperTypeArgument"+
             "(variance="+varianceIndicator+
             ",signature="+fieldTypeSignature+
@@ -501,7 +501,7 @@ sealed abstract class VarianceIndicator extends SignatureElement
  */
 sealed abstract class CovariantIndicator extends VarianceIndicator {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def toJVMSignature: String = "+"
 
@@ -516,7 +516,7 @@ case object CovariantIndicator extends CovariantIndicator
  */
 sealed abstract class ContravariantIndicator extends VarianceIndicator {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def toJVMSignature: String = "-"
 
@@ -532,7 +532,7 @@ case object ContravariantIndicator extends ContravariantIndicator
  */
 sealed abstract class Wildcard extends TypeArgument {
 
-    def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def toJVMSignature: String = "*"
 

@@ -81,6 +81,7 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
 
     final def expressionResult: NoExpression.type = NoExpression
 
+    final override def toString(currentPC: Int): String = toString()
 }
 
 /**

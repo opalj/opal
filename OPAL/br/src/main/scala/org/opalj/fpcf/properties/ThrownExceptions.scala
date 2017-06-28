@@ -32,7 +32,6 @@ package properties
 
 //import scala.collection.Set
 import org.opalj.fpcf.PropertyComputation
-import org.opalj.fpcf.PropertyKey.CycleResolutionStrategy
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.br.PC
@@ -74,20 +73,20 @@ sealed abstract class ThrownExceptions extends Property {
 
 object ThrownExceptions {
 
-    def cycleResolutionStrategy(
-        ps:   PropertyStore,
+    private[this] final val cycleResolutionStrategy = (
+        _: PropertyStore,
         epks: Iterable[SomeEPK]
-    ): Iterable[PropertyComputationResult] = {
+    ) ⇒ {
         val e = epks.find(_.pk == Key).get
         val p = ThrownExceptionsAreUnknown.UnableToComputeThrownException
         Iterable(Result(e, p))
     }
 
-    final val Key = {
+    final val Key: PropertyKey[ThrownExceptions] = {
         PropertyKey.create[ThrownExceptions](
             "ThrownExceptions",
             ThrownExceptionsFallbackAnalysis,
-            cycleResolutionStrategy: CycleResolutionStrategy
+            cycleResolutionStrategy
         )
     }
 }
@@ -303,7 +302,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                         true
                     }
 
-                case i ⇒
+                case _ /* all other instructions */ ⇒
                     exceptions ++= instruction.jvmExceptions
                     true
             }

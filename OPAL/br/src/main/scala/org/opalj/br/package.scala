@@ -66,8 +66,11 @@ package object br {
             scala.Predef.assert(false) // <= test whether assertions are turned on or off...
             OPALLogger.info("OPAL", "Bytecode Representation - Production Build")
         } catch {
-            case ae: AssertionError ⇒
-                OPALLogger.info("OPAL", "Bytecode Representation - Development Build (Assertions are enabled)")
+            case _: AssertionError ⇒
+                OPALLogger.info(
+                    "OPAL",
+                    "Bytecode Representation - Development Build (Assertions are enabled)"
+                )
         }
         true
     }

@@ -77,11 +77,9 @@ object FPCFAnalysesRegistry {
             idToDescription += ((analysisID, analysisDescription))
         } else {
             OPALLogger.error(
-                "setup",
-                s"Unknown fix-point analysis. Analysis runner could not be instantiated: $analysisFactory"
-            )(
-                    GlobalLogContext
-                )
+                "FPCF registry",
+                s"analysis runner could not be instantiated: $analysisFactory"
+            )(GlobalLogContext)
         }
     }
 
@@ -93,13 +91,15 @@ object FPCFAnalysesRegistry {
             val module = mirror.staticModule(fqn)
             result = Some(mirror.reflectModule(module).instance.asInstanceOf[FPCFAnalysisRunner])
         } catch {
-            case e: ScalaReflectionException ⇒
-            case c: ClassCastException       ⇒
+            case sre: ScalaReflectionException ⇒
+                OPALLogger.error("FPCF registry", "resolve failed", sre)(GlobalLogContext)
+            case cce: ClassCastException ⇒
+                OPALLogger.error("FPCF registry", "resolve failed", cce)(GlobalLogContext)
         }
         result
     }
 
-    private[this] case class AnalysisFactory(val id: String, val description: String, val factory: String)
+    private[this] case class AnalysisFactory(id: String, description: String, factory: String)
 
     def registerFromConfig(): Unit = {
         val config = ConfigFactory.load().as[Config]("org.opalj.fpcf.registry.analyses")
@@ -118,7 +118,8 @@ object FPCFAnalysesRegistry {
         } catch {
             case e: Exception ⇒ OPALLogger.error(
                 "setup",
-                "Error creating the FixpointRegistry. Invalid config. (org.opalj.fcpf.registry.analyses)"
+                "creating the FPCFRegistry failed; invalid config: org.opalj.fcpf.registry.analyses",
+                e
             )(GlobalLogContext)
         }
     }

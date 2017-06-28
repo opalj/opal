@@ -114,4 +114,6 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
             indexOfNextInstruction(currentPC) :&: exceptionHandlerPCs
         }
     }
+
+    final override def toString(currentPC: Int): String = toString()
 }

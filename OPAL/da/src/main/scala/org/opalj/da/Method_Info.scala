@@ -64,9 +64,10 @@ case class Method_Info(
     def descriptor(implicit cp: Constant_Pool): String = cp(descriptor_index).asString
 
     /**
-     * @param definingType The name of the class defining this field.
+     * @param methodIndex The index of the methodn in the methods table. Required to create unique
+     *                    ids/anchors.
      */
-    def toXHTML(definingType: String, methodIndex: Int)(implicit cp: Constant_Pool): Node = {
+    def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
         val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, METHOD)
 
         val name = this.name

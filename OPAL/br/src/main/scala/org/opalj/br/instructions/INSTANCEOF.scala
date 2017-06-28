@@ -81,7 +81,9 @@ case class INSTANCEOF(
 
     final def expressionResult: Stack.type = Stack
 
-    override def toString: String = "INSTANCEOF("+referenceType.toJava+")"
+    override def toString: String = s"INSTANCEOF(${referenceType.toJava})"
+
+    final override def toString(currentPC: Int): String = toString()
 }
 
 /**

@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.ProjectInformationKey
@@ -58,6 +57,6 @@ object CallBySignatureResolutionKey extends ProjectInformationKey[CallBySignatur
      * Computes the [[CallBySignatureResolution]] for the given project.
      */
     override protected def compute(project: SomeProject): CallBySignatureResolution = {
-        CallBySignatureResolution(project, defaultIsInterrupted)
+        CallBySignatureResolution(project)
     }
 }

@@ -45,7 +45,7 @@ case class CONSTANT_MethodHandle_info(
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_MethodHandle
 
-    def refrenceKindAsNode(implicit cp: Constant_Pool): Node = {
+    def refrenceKindAsNode(): Node = {
         <span class="method_handle_reference_kind">{
             reference_kind match {
                 case 1 ⇒ "REF_getField getfield C.f: T"
@@ -66,7 +66,7 @@ case class CONSTANT_MethodHandle_info(
             { this.getClass().getSimpleName }
             (reference_kind={ reference_kind }
             /*
-            { refrenceKindAsNode }
+            { refrenceKindAsNode() }
             */,
             reference_index={ reference_index }
             /*

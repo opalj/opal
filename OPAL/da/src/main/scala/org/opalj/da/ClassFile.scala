@@ -149,7 +149,7 @@ case class ClassFile(
     }
 
     def methodsToXHTML: Seq[Node] = {
-        methods.zipWithIndex map { mi ⇒ val (method, index) = mi; method.toXHTML(thisType, index) }
+        methods.zipWithIndex map { mi ⇒ val (method, index) = mi; method.toXHTML(index) }
     }
 
     protected def accessFlags: Node = {

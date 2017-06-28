@@ -225,25 +225,26 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         if (dependees.isEmpty)
             return ImmediateResult(method, Pure);
 
-        def c(e: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
-            p match {
-                case Impure | MaybePure ⇒
-                    Result(method, Impure)
+        val c: (Entity, Property, UpdateType) ⇒ PropertyComputationResult =
+            (e: Entity, p: Property, _: UpdateType) ⇒ {
+                p match {
+                    case Impure | MaybePure ⇒
+                        Result(method, Impure)
 
-                case ConditionallyPure ⇒
-                    val newEP = EP(e.asInstanceOf[Method], p.asInstanceOf[Purity])
-                    dependees = dependees.filter(_.e ne e) + newEP
-                    IntermediateResult(method, ConditionallyPure, dependees, c)
-
-                case Pure ⇒
-                    dependees = dependees.filter { _.e ne e }
-                    if (dependees.isEmpty)
-                        Result(method, Pure)
-                    else
+                    case ConditionallyPure ⇒
+                        val newEP = EP(e.asInstanceOf[Method], p.asInstanceOf[Purity])
+                        dependees = dependees.filter(_.e ne e) + newEP
                         IntermediateResult(method, ConditionallyPure, dependees, c)
 
+                    case Pure ⇒
+                        dependees = dependees.filter { _.e ne e }
+                        if (dependees.isEmpty)
+                            Result(method, Pure)
+                        else
+                            IntermediateResult(method, ConditionallyPure, dependees, c)
+
+                }
             }
-        }
 
         IntermediateResult(method, ConditionallyPure, dependees, c)
     }

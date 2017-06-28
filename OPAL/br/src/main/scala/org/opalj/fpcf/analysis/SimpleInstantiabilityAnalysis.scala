@@ -93,9 +93,9 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
             val instantiatedClasses = new Array[EP[ClassFile, Instantiability]](classFiles.length)
             val seenConstructors = mutable.Set.empty[ClassFile]
 
-            var pos = 0
-            while (pos < classFiles.length) {
-                val classFile = classFiles(pos)
+            var i = 0
+            while (i < classFiles.length) {
+                val classFile = classFiles(i)
                 if (project.libraryClassFilesAreInterfacesOnly && project.isLibraryType(classFile)) {
                     if (classFile.isAbstract) {
                         val hasInstantiableSubtype = allSubclassTypes(classFile.thisType, reflexive = false).exists {
@@ -106,11 +106,11 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
                                 }
                         }
                         if (hasInstantiableSubtype)
-                            instantiatedClasses(pos) = EP(classFile, Instantiable)
+                            instantiatedClasses(i) = EP(classFile, Instantiable)
                         else
-                            instantiatedClasses(pos) = EP(classFile, NotInstantiable)
+                            instantiatedClasses(i) = EP(classFile, NotInstantiable)
                     } else
-                        instantiatedClasses(pos) = EP(classFile, Instantiable)
+                        instantiatedClasses(i) = EP(classFile, Instantiable)
                 } else {
                     classFile.methods foreach { method ⇒
                         if (method.isNative && method.isStatic) {
@@ -150,25 +150,29 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
                         } else {
                             // we dont know what happens, be conservative
                             if (!method.isAbstract)
-                                instantiatedClasses(pos) = EP(classFile, Instantiable)
+                                instantiatedClasses(i) = EP(classFile, Instantiable)
                         }
                     }
                 }
-                pos += 1
+                i += 1
             }
 
-            pos = 0
-            while (pos < classFiles.length) {
-                val resultClassFile = instantiatedClasses(pos)
+            i = 0
+            while (i < classFiles.length) {
+                val resultClassFile = instantiatedClasses(i)
                 if (resultClassFile eq null) {
-                    val entityClassFile = classFiles(pos)
-                    val constructorInvoked = seenConstructors.collectFirst { case cf: ClassFile if (cf eq entityClassFile) ⇒ cf }
+                    val entityClassFile = classFiles(i)
+                    val constructorInvoked = seenConstructors.collectFirst {
+                        case cf: ClassFile if (cf eq entityClassFile) ⇒ cf
+                    }
                     constructorInvoked match {
-                        case Some(cf) ⇒ instantiatedClasses(pos) = EP(entityClassFile, Instantiable)
-                        case None     ⇒ instantiatedClasses(pos) = determineClassInstantiability(entityClassFile)
+                        case Some(_) ⇒
+                            instantiatedClasses(i) = EP(entityClassFile, Instantiable)
+                        case None ⇒
+                            instantiatedClasses(i) = determineClassInstantiability(entityClassFile)
                     }
                 }
-                pos += 1
+                i += 1
             }
 
             instantiatedClasses

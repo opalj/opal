@@ -125,18 +125,13 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         if (isPublicClass && (isPublicMethod || (!isFinalClass && isProtectedMethod)))
             return ImmediateResult(method, Global);
 
-        def c(dependeeE: Entity, dependeeP: Property) = {
-            if (dependeeP == NotClientCallable)
-                Result(method, PackageLocal)
-            else
-                Result(method, Global)
-        }
-
-        propertyStore.require(
-            method, ProjectAccessibility.Key,
-            method, ClientCallable.Key
-        )(
-            c
+        propertyStore.require(method, ProjectAccessibility.Key, method, ClientCallable.Key)(
+            (dependeeE: Entity, dependeeP: Property) ⇒ {
+                if (dependeeP == NotClientCallable)
+                    Result(method, PackageLocal)
+                else
+                    Result(method, Global)
+            }
         )
     }
 }

@@ -58,7 +58,7 @@ object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses]
     override protected def compute(project: SomeProject): InstantiableClasses = {
         val isLibrary = AnalysisModes.isLibraryLike(project.analysisMode)
         if (isLibrary)
-            LibraryInstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
+            LibraryInstantiableClassesAnalysis.doAnalyze(project)
         else
             InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
     }

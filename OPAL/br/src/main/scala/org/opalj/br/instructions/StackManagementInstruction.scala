@@ -70,4 +70,6 @@ abstract class StackManagementInstruction extends Instruction with ConstantLengt
 
     final def expressionResult: NoExpression.type = NoExpression
 
+    final override def toString(currentPC: Int): String = toString()
+
 }

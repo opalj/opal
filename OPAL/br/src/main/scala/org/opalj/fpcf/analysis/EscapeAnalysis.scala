@@ -87,7 +87,7 @@ class EscapeAnalysis(val debug: Boolean) {
         immediateResult: Boolean
     )(
         implicit
-        project: SomeProject, store: PropertyStore
+        project: SomeProject
     ): PropertyComputationResult = {
 
         import project.logContext
@@ -144,14 +144,17 @@ class EscapeAnalysis(val debug: Boolean) {
         // (`this`) is eventually leaked.
         def leaksSelfReference(method: Method): Boolean = {
             //    AI()
-            return true;
+            return method ne null; // always true... just done to shut up the compiler w.r.t. method is unused
         }
 
         val doesLeakSelfReference =
             classFile.methods exists { m ⇒
                 if (m.isNative ||
-                    (m.isNotStatic && m.isNotAbstract &&
-                        (potentiallyLeaksSelfReference(m) && leaksSelfReference(m)))) {
+                    (
+                        m.isNotStatic && m.isNotAbstract &&
+                        potentiallyLeaksSelfReference(m) && // <= quick check
+                        leaksSelfReference(m)
+                    )) {
                     if (debug)
                         OPALLogger.debug(
                             "analysis result",

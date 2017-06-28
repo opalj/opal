@@ -37,13 +37,13 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class ExceptionTableEntry(
-        val start_pc:   Int,
-        val end_pc:     Int,
-        val handler_pc: Int,
-        val catch_type: Int
+        start_pc:   Int,
+        end_pc:     Int,
+        handler_pc: Int,
+        catch_type: Int
 ) {
 
-    def toXHTML(implicit cp: Constant_Pool, code: Code): Node = {
+    def toXHTML(implicit cp: Constant_Pool): Node = {
 
         if (catch_type != 0) {
             val catchType: Node = <span class="fqn">{ cp(catch_type).toString(cp) }</span>;

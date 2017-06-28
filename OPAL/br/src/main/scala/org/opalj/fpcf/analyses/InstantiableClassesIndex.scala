@@ -48,7 +48,7 @@ import org.opalj.br.ClassFile
  */
 object LibraryInstantiableClassesAnalysis {
 
-    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
+    def doAnalyze(project: SomeProject): InstantiableClasses = {
         val fpcfManager = project.get(FPCFAnalysesManagerKey)
         if (!fpcfManager.isDerived(Instantiability))
             fpcfManager.run(SimpleInstantiabilityAnalysis, true)
