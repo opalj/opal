@@ -49,10 +49,9 @@ trait UnpackedLineNumberTable_attributeBinding
 
     type LineNumberTable_attribute = br.UnpackedLineNumberTable
 
-    def LineNumberTable_attribute(
+    override def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         line_number_table:    LineNumbers
     ): UnpackedLineNumberTable = {
         new UnpackedLineNumberTable(line_number_table)
