@@ -102,18 +102,18 @@ object ToTxt {
                         ("[]" * (dimensions - initializedDimensions))
                 s"new ${arrayType.drop(initializedDimensions).toJava}$initializer"
 
-            case Invokedynamic(_, bootstrapMethod, name, descriptor, params) ⇒
+            case Invokedynamic(_, bootstrapMethod, name, _ /*descriptor*/ , params) ⇒
                 s"invokedynamic[${bootstrapMethod.toJava}]${callToTxt(name, params)}"
 
-            case StaticFunctionCall(_, declClass, _, name, descriptor, params) ⇒
+            case StaticFunctionCall(_, declClass, _, name, _ /*descriptor*/ , params) ⇒
                 declClass.toJava + callToTxt[V](name, params)
 
-            case VirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
+            case VirtualFunctionCall(_, declClass, _, name, _ /*descriptor*/ , receiver, params) ⇒
                 val callAsTxt = callToTxt(name, params)
                 val receiverAsTxt = toTxtExpr[V](receiver)
                 s"$receiverAsTxt/*${declClass.toJava}*/$callAsTxt"
 
-            case NonVirtualFunctionCall(_, declClass, _, name, descriptor, receiver, params) ⇒
+            case NonVirtualFunctionCall(_, declClass, _, name, _ /*descriptor*/ , receiver, params) ⇒
                 val call = callToTxt(name, params)
                 toTxtExpr[V](receiver)+"/*(non-virtual) "+declClass.toJava+"*/"+call
 

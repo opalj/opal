@@ -87,9 +87,8 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
             pc,
             declaringClass, name, descriptor,
             operands,
-            handleVirtualInvokeFallback
+            handleVirtualInvokeFallback _
         )
     }
 
 }
-

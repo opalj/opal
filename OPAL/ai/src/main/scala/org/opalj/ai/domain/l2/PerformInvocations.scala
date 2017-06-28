@@ -306,7 +306,7 @@ trait PerformInvocations extends MethodCallsHandling {
         operands:       Operands
     ): MethodCallResult = {
         def fallback() = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
-        doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback)
+        doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback _)
     }
 
     abstract override def invokeinterface(
@@ -317,7 +317,7 @@ trait PerformInvocations extends MethodCallsHandling {
         operands:       Operands
     ): MethodCallResult = {
         def fallback() = super.invokeinterface(pc, declaringClass, name, descriptor, operands)
-        doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback)
+        doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback _)
     }
 
     abstract override def invokespecial(
@@ -328,7 +328,7 @@ trait PerformInvocations extends MethodCallsHandling {
         operands:       Operands
     ): MethodCallResult = {
         def fallback() = super.invokespecial(pc, declaringClass, name, descriptor, operands)
-        doInvokeNonVirtual(pc, declaringClass, name, descriptor, operands, fallback)
+        doInvokeNonVirtual(pc, declaringClass, name, descriptor, operands, fallback _)
     }
 
     /**
@@ -346,7 +346,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
         def fallback() = super.invokestatic(pc, declaringClass, name, descriptor, operands)
 
-        doInvokeNonVirtual(pc, declaringClass, name, descriptor, operands, fallback)
+        doInvokeNonVirtual(pc, declaringClass, name, descriptor, operands, fallback _)
     }
 
 }

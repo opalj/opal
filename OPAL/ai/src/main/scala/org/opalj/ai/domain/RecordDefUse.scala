@@ -631,7 +631,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
             case 91 /*dup_x2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 /*@ CTC1()*/ ) :&: (v2 @ CTC1()) :&: _ ⇒
+                    case (_ /*v1 @ CTC1()*/ ) :&: (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
                     case _ ⇒
@@ -640,7 +640,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 }
             case 92 /*dup2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :&: _ ⇒
+                    case (_@ CTC1()) :&: _ ⇒
                         val currentDefOps = defOps(currentPC)
                         val (v1 :&: v2 :&: _) = currentDefOps
                         propagate(v1 :&: v2 :&: currentDefOps, defLocals(currentPC))
@@ -650,7 +650,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 }
             case 93 /*dup2_x1*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :&: _ ⇒
+                    case (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
                     case _ ⇒
@@ -659,13 +659,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 }
             case 94 /*dup2_x2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: _ ⇒
+                    case (_@ CTC1()) :&: (_@ CTC1()) :&: (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: v4 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
-                    case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: _ ⇒
+                    case (_@ CTC1()) :&: (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
-                    case (v1 /* @ CTC2()*/ ) :&: (v2 @ CTC1()) :&: _ ⇒
+                    case (_ /*v1 @ CTC2()*/ ) :&: (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
                     case _ ⇒

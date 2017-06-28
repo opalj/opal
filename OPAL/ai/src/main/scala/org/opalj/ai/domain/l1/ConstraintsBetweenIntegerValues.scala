@@ -34,6 +34,7 @@ package l1
 import java.util.{IdentityHashMap ⇒ IDMap}
 
 import scala.collection.BitSet
+import scala.collection.JavaConverters._
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.br.instructions.Instruction
@@ -74,7 +75,7 @@ trait ConstraintsBetweenIntegerValues
         constraints = new Array[ConstraintsStore](theInstructions.size)
     }
 
-    private[this] var lastConstraint: Option[(IntegerLikeValue, IntegerLikeValue, Constraint)] = {
+    private[this] var lastConstraint: Option[(PC, IntegerLikeValue, IntegerLikeValue, Constraint)] = {
         None
     }
 
@@ -130,9 +131,8 @@ trait ConstraintsBetweenIntegerValues
         v2: IntegerLikeValue,
         c:  Constraint
     ): Unit = {
-
         // let's collect the constraint(s)
-        this.lastConstraint = Some((v1, v2, c))
+        this.lastConstraint = Some((pc, v1, v2, c))
     }
 
     private[this] def addConstraint(
@@ -237,7 +237,7 @@ trait ConstraintsBetweenIntegerValues
                 constraints(successorPC) = clone(constraints(currentPC))
             val lastConstraintOption = this.lastConstraint
             if (lastConstraintOption.isDefined) {
-                val (v1, v2, c) = lastConstraintOption.get
+                val (_, v1, v2, c) = lastConstraintOption.get
                 val constraintsStore = establishConstraint(successorPC, v1, v2, c)
                 putConstraintInStore(constraintsStore, v2, v1, NumericConstraints.inverse(c))
             }
@@ -273,8 +273,8 @@ trait ConstraintsBetweenIntegerValues
     ): (Operands, Locals) = {
 
         oldValue match {
-            case iv: IntegerLikeValue ⇒ updatedValues.put(oldValue, newValue)
-            case _                    ⇒ /*nothing special to do*/
+            case _: IntegerLikeValue ⇒ updatedValues.put(oldValue, newValue)
+            case _                   ⇒ /*nothing special to do*/
         }
 
         super.updateMemoryLayout(oldValue, newValue, operands, locals)
@@ -609,9 +609,9 @@ trait ConstraintsBetweenIntegerValues
         if (constraints(pc) == null)
             return "No constraints found."
 
-        val cs = (scala.collection.JavaConversions.mapAsScalaMap(constraints(pc)).map { e ⇒
+        val cs = (constraints(pc).asScala.map { e ⇒
             val (v1, v2c) = e
-            val jv2c = scala.collection.JavaConversions.mapAsScalaMap(v2c)
+            val jv2c = v2c.asScala
             for ((v2, c) ← jv2c)
                 yield s"${valueToString(v1)} $c ${valueToString(v2)}"
         }).flatten

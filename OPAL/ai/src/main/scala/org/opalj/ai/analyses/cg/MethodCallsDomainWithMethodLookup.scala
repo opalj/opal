@@ -205,7 +205,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                 pc,
                 declaringClass.asObjectType, methodName, methodDescriptor,
                 operands,
-                fallback
+                fallback _
             )
     }
 
@@ -220,7 +220,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         def fallback() =
             super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        doVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback)
+        doVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback _)
     }
 
     abstract override def invokespecial(
@@ -234,7 +234,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         def fallback() =
             super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        doNonVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback)
+        doNonVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback _)
     }
 
     /**
@@ -253,7 +253,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         def fallback() =
             super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        doNonVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback)
+        doNonVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback _)
     }
 
 }

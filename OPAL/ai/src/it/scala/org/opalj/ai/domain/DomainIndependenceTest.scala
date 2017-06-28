@@ -35,7 +35,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.opalj.br.Code
-import org.opalj.br.MethodWithBody
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -176,7 +175,8 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
 
         for {
             (classFile, source) ← org.opalj.br.reader.readJREClassFiles().par
-            method @ MethodWithBody(body) ← classFile.methods
+            method  ← classFile.methods
+            body <- method.body
         } {
             def TheAI() = new InstructionCountBoundedAI[Domain](body)
 

@@ -70,6 +70,8 @@ trait ArrayValues
         with PostEvaluationMemoryManagement {
     domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with TheClassHierarchy with LogContextProvider ⇒
 
+    private[this] val debug: Boolean = false
+
     /**
      * Determines the maximum size of those arrays for which we track the content.
      * The default value is 16.
@@ -119,6 +121,9 @@ trait ArrayValues
      *          possible to track those arrays.
      */
     protected def reifyArray(pc: PC, count: Int, arrayType: ArrayType): Boolean = {
+        if (debug)
+            OPALLogger.info("array values", s"$pc: reify ${arrayType.toJava} $count dimension(s)?")
+
         count <= maxTrackedArraySize && (
             arrayType.componentType.isBaseType ||
             (

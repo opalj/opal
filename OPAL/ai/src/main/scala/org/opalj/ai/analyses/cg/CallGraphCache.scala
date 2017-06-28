@@ -74,7 +74,7 @@ class CallGraphCache[Contour, Value] private[this] (
             project.classFile(ObjectType.NullPointerException) match {
                 case Some(classFile) ⇒
                     classFile.findMethod("<init>", MethodDescriptor.NoArgsAndReturnVoid) match {
-                        case c @ Some(defaultConstructor) ⇒ c
+                        case c @ Some(_ /*defaultConstructor*/ ) ⇒ c
 
                         case _ ⇒
                             throw new UnknownError("java.lang.NullPointerException does not define a default constructor")

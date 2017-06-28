@@ -219,8 +219,7 @@ trait DefaultTypeLevelReferenceValues
                             StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                     }
 
-                case that: NullValue ⇒
-                    NoUpdate
+                case _: NullValue ⇒ NoUpdate
             }
         }
 
@@ -344,7 +343,7 @@ trait DefaultTypeLevelReferenceValues
                             asStructuralUpdate(pc, newUpperTypeBound)
                     }
 
-                case that: ArrayValue ⇒
+                case _: ArrayValue ⇒
                     classHierarchy.joinAnyArrayTypeWithObjectType(thisUpperTypeBound) match {
                         case UIDSet1(newUpperTypeBound) ⇒
                             if (newUpperTypeBound eq `thisUpperTypeBound`)
@@ -355,8 +354,7 @@ trait DefaultTypeLevelReferenceValues
                             StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
                     }
 
-                case that: NullValue ⇒
-                    NoUpdate
+                case _: NullValue ⇒ NoUpdate
             }
         }
 
@@ -364,15 +362,17 @@ trait DefaultTypeLevelReferenceValues
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
-                case that: NullValue ⇒
-                    true
+
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+
                 case MObjectValue(thatUpperTypeBound) ⇒
                     classHierarchy.isSubtypeOf(
                         thatUpperTypeBound.asInstanceOf[UIDSet[ReferenceType]],
                         this.theUpperTypeBound
                     ).isYes
+
+                case _: NullValue ⇒ true
             }
         }
 
@@ -460,14 +460,13 @@ trait DefaultTypeLevelReferenceValues
                         case newUTB    ⇒ asStructuralUpdate(pc, newUTB)
                     }
 
-                case ArrayValue(_) ⇒
+                case _: ArrayValue ⇒
                     classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thisUTB) match {
                         case `thisUTB` ⇒ NoUpdate
                         case newUTB    ⇒ asStructuralUpdate(pc, newUTB)
                     }
 
-                case that: NullValue ⇒
-                    NoUpdate
+                case _: NullValue ⇒ NoUpdate
             }
         }
 
