@@ -40,14 +40,14 @@ import org.opalj.concurrent.defaultIsInterrupted
  *
  * @author Michael Reif
  */
-object InjectedClassesInformationKey extends ProjectInformationKey[InjectedClassesInformation] {
+object InjectedClassesInformationKey extends ProjectInformationKey[InjectedClassesInformation, Nothing] {
 
     /**
      * The [[InjectedClassesInformation]] has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the information which types are injected at a field.

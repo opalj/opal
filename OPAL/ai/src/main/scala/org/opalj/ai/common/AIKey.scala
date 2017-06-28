@@ -43,10 +43,10 @@ import org.opalj.ai.domain.RecordDefUse
  *
  * @author Michael Eichberg
  */
-trait AIKey extends ProjectInformationKey[Method ⇒ AIResult { val domain: RecordDefUse }]
+trait AIKey extends ProjectInformationKey[Method ⇒ AIResult { val domain: RecordDefUse }, Nothing]
 
 /**
- * Key to get the result of the abstract interpreation of a method using a configured domain
+ * Key to get the result of the abstract interpretation of a method using a configured domain
  * factory.
  *
  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
@@ -64,7 +64,7 @@ object SimpleAIKey extends AIKey {
     /**
      * The SimpleAIKey has no special prerequisites.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an object which performs and caches the result of the abstract interpretation of a

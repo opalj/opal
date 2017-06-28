@@ -40,9 +40,9 @@ import org.opalj.br.analyses.ProjectInformationKey
  *
  * @author Michael Eichberg
  */
-object DependencyStoreKey extends ProjectInformationKey[DependencyStore] {
+object DependencyStoreKey extends ProjectInformationKey[DependencyStore, Nothing] {
 
-    override protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
 
     override protected def compute(project: SomeProject): DependencyStore = {
         DependencyStore(project.allClassFiles)(project.logContext)

@@ -70,11 +70,12 @@ package analyses
  * [[Project]] takes care of the caching of the result of the computation of the
  * information.
  *
- * @param T The type of the information object that is derived.
+ * @tparam T The type of the information object that is derived.
+ * @tparam I The type of information used at initialization time.
  *
  * @author Michael Eichberg
  */
-trait ProjectInformationKey[T <: AnyRef] {
+trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
 
     /**
      * The unique id of this key. The key is used to enable efficient access and

@@ -40,31 +40,30 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-object FieldValuesKey extends ProjectInformationKey[FieldValueInformation] {
+object FieldValuesKey extends ProjectInformationKey[FieldValueInformation, Nothing] {
 
     /**
      * The FieldTypesKey has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the field type information.
      */
     override protected def compute(project: SomeProject): FieldValueInformation = {
-        // TODO Introduce the concept of a "configuration to a project"
-
         implicit val logContext = project.logContext
 
-        OPALLogger.info(
-            "progress",
-            "computing field value information"
-        )
+        OPALLogger.info("progress", "computing field value information")
 
         val result = FieldValuesAnalysis.doAnalyze(
             project,
-            (project: SomeProject, classFile: ClassFile) ⇒ new BaseFieldValuesAnalysisDomain(project, classFile),
+            (project: SomeProject, classFile: ClassFile) ⇒ {
+
+                // TODO Make the analyses which computes the information configurable.
+                new BaseFieldValuesAnalysisDomain(project, classFile)
+            },
             () ⇒ false // make it configurable
         )
 

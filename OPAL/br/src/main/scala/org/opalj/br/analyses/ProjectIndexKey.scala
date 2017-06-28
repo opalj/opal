@@ -39,14 +39,14 @@ package analyses
  *
  * @author Michael Eichberg
  */
-object ProjectIndexKey extends ProjectInformationKey[ProjectIndex] {
+object ProjectIndexKey extends ProjectInformationKey[ProjectIndex, Nothing] {
 
     /**
      * The [[ProjectIndex]] has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the [[ProjectIndex]] for the given project.

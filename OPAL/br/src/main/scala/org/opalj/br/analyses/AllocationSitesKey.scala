@@ -30,26 +30,35 @@ package org.opalj
 package br
 package analyses
 
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
-import org.opalj.collection.immutable.ConstArray
-import org.opalj.br.instructions.LDCString
 import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.br.instructions.LDC
-import org.opalj.br.instructions.LDC_W
 import org.opalj.log.OPALLogger
 
 /**
- * The ''key'' object to get information about all string constants found in the project's code.
+ * The set of all allocation sites in a project. The set also contains allocation sites
+ * in libraries, if the bodies of the libraries are loaded.
+ *
+ * @author Michael Eichberg
+ */
+class AllocationSites private[analyses] (val data: Map[Method, Map[PC, AllocationSite]]) {
+
+    def apply(m: Method): Map[PC, AllocationSite] = data.getOrElse(m, Map.empty)
+
+    def allocationSites: Iterable[AllocationSite] = data.values.flatMap(_.values)
+}
+
+/**
+ * The ''key'' object to get information about all allocation sites.
+ *
+ * @note    See [[org.opalj.br.AllocationSite]] for further details.
  *
  * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
  * @author Michael Eichberg
  */
-object StringConstantsInformationKey
-        extends ProjectInformationKey[StringConstantsInformation, Nothing] {
+object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing] {
 
     /**
      * The analysis has no special prerequisites.
@@ -59,47 +68,40 @@ object StringConstantsInformationKey
     override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
-     * Computes the field access information.
+     * Collects all allocation sites.
      *
      * @note  This analysis is internally parallelized. I.e., it is advantageous to run this
      *        analysis in isolation.
      */
-    override protected def compute(project: SomeProject): Map[String, ConstArray[(Method, PC)]] = {
+    override protected def compute(p: SomeProject): AllocationSites = {
+        implicit val logContext = p.logContext
+        val sites = new ConcurrentLinkedQueue[(Method, Map[PC, AllocationSite])]
 
-        val estimatedSize = project.methodsCount
-        val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[(Method, PC)]](estimatedSize)
-
-        val errors = project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
-            val method = methodInfo.method
-
-            method.body.get.iterate { (pc, instruction) ⇒
-                instruction.opcode match {
-
-                    case LDC.opcode | LDC_W.opcode ⇒
-                        val LDCString(value) = instruction
-                        var list: ConcurrentLinkedQueue[(Method, PC)] = map.get(value)
-                        if (list eq null) {
-                            list = new ConcurrentLinkedQueue[(Method, PC)]()
-                            val previousList = map.putIfAbsent(value, list)
-                            if (previousList != null) list = previousList
-                        }
-                        list.add((method, pc))
-
-                    case _ ⇒ // we don't care
-                }
-            }
+        val errors = p.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
+            val m = methodInfo.method
+            val code = m.body.get
+            val as = code.collectWithIndex {
+                case (pc, instructions.NEW(_)) ⇒ (pc, new AllocationSite(m, pc))
+            }.toMap
+            if (as.nonEmpty) sites.add((m, as))
         }
+
         errors foreach { e ⇒
-            OPALLogger.error(
-                "string constants information", "collecting string constants information failed", e
-            )(project.logContext)
+            OPALLogger.error("allocation sites", "collecting all allocation sites failed", e)
         }
 
-        var result: Map[String, ConstArray[(Method, PC)]] = Map.empty
-        map.asScala foreach { kv ⇒
-            val (name, locations) = kv
-            result += ((name, ConstArray.from(locations.asScala.toArray)))
-        }
-        result
+        new AllocationSites(Map.empty ++ sites.asScala)
     }
+
+    //
+    // HELPER FUNCTION TO MAKE IT EASILY POSSIBLE TO ADD ALLOCATION SITES TO A PROPERTYSTORE
+    // AND TO ENSURE THAT ALLOCATIONSITES AND THE PROPERTYSTORE CONTAIN THE SAME OBJECTS!
+    //
+
+    final val entityDerivationFunction: (SomeProject) ⇒ (Traversable[AnyRef], AllocationSites) =
+        (p: SomeProject) ⇒ {
+            // this will collect the allocations sites of the project if not yet collected...
+            val allocationsSites = p.get(AllocationSitesKey)
+            (allocationsSites.data.values.flatMap(_.values), allocationsSites)
+        }
 }

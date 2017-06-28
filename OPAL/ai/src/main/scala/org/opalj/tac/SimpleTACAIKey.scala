@@ -60,7 +60,7 @@ object SimpleTACAIKey extends TACAIKey {
     /**
      * TACAI code has no special prerequisites.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an object which computes and caches the 3-address code of a method when required.

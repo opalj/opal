@@ -449,17 +449,17 @@ class ProjectTest extends FlatSpec with Matchers {
     }
 }
 
-private class TestProjectInformationKey extends ProjectInformationKey[Object] {
+private class TestProjectInformationKey extends ProjectInformationKey[Object, Nothing] {
 
     val theResult = new Object()
 
     protected def compute(project: SomeProject): Object = theResult
 
-    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
+    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
 
 }
 
-private class TestProjectInformationWithDependenciesKey extends ProjectInformationKey[Object] {
+private class TestProjectInformationWithDependenciesKey extends ProjectInformationKey[Object, Nothing] {
 
     val theResult = new Object()
 
@@ -467,7 +467,7 @@ private class TestProjectInformationWithDependenciesKey extends ProjectInformati
 
     protected def compute(project: SomeProject): Object = theResult
 
-    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = depdencies
+    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = depdencies
 
 }
 
