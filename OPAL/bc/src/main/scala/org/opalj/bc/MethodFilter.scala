@@ -66,7 +66,7 @@ object MethodFilter {
         if (classFiles.isEmpty) {
             OPALLogger.error("setup", s"no classfiles found in ${args(0)}")
         } else {
-            classFiles.filter(_.thisType == className).map { cf ⇒
+            classFiles.filter(_.thisType == className) foreach  { cf ⇒
                 val filteredMethods = cf.methods.filter { m ⇒
                     implicit val cp = cf.constant_pool
                     val matches = m.name == methodName
