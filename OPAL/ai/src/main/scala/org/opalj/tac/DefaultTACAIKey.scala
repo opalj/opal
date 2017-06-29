@@ -47,7 +47,7 @@ import org.opalj.ai.common.SimpleAIKey
  *          pass in `this` object.
  * @author Michael Eichberg
  */
-object DefaultTACAIKey extends TACAIKey {
+object DefaultTACAIKey extends TACKey {
 
     /**
      * TACAI code has no special prerequisites.
@@ -65,10 +65,10 @@ object DefaultTACAIKey extends TACAIKey {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[DUVar[_ <: Domain#DomainValue]] = {
+    ): Method ⇒ TACode[DUVar[_ <: (Domain with RecordDefUse)#DomainValue]] = {
         val aiResults = project.get(SimpleAIKey)
 
-        val taCodes = TrieMap.empty[Method, TACode[DUVar[Domain#DomainValue]]]
+        val taCodes = TrieMap.empty[Method, TACode[DUVar[(Domain with RecordDefUse)#DomainValue]]]
 
         (m: Method) ⇒ {
             taCodes.get(m) match {
@@ -85,7 +85,7 @@ object DefaultTACAIKey extends TACAIKey {
                                 val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
                                 // well... the following cast safe is safe, because the underlying
                                 // datastructure is actually, conceptually immutable
-                                val taCode = code.asInstanceOf[TACode[DUVar[Domain#DomainValue]]]
+                                val taCode = code.asInstanceOf[TACode[DUVar[(Domain with RecordDefUse)#DomainValue]]]
                                 taCodes.put(m, taCode)
                                 taCode
                         }
