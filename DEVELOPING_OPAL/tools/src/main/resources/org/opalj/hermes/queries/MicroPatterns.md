@@ -1,6 +1,6 @@
 # Micro Patterns
-Micro Patterns define a special usage of class, their fields and methods.
-For details look  https://pdfs.semanticscholar.org/ddb5/037b14518890040a170a0fa5199e1d360e18.pdf
+Micro Patterns identify special usages of classes, their fields and methods
+(cf. [Micro Patterns in Java Code](https://pdfs.semanticscholar.org/ddb5/037b14518890040a170a0fa5199e1d360e18.pdf)).
 
 ### Designator
 An interface with absolutely no members.
@@ -57,7 +57,7 @@ A class where all methods are either setters or getters.
 A class whose methods do not propagate calls to any other class.
 
 ### Outline
-A class where at least two methods invoke an abstract method on “this”.
+A class where at least two methods invoke an abstract method on `this`.
 
 ### Trait
 An abstract class which has no state.
