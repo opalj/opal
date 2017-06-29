@@ -53,9 +53,13 @@ object Disassembler {
             "       [-open the generated html page will be opened in a browser]\n"+
             "       [-source <File> a class or jar file or a directory containg jar or class files]*\n"+
             "       [-noDefaultCSS the generated html page will have on CSS styling]\n"+
-            "       [-css <Source> the path (URL) of a CSS file (\".csss\") which will be referenced from the generated HTML page]\n"+
-            "       [-js <Source> the path (URL) of a JavaScript file (\".js\") which will be referenced from the generated HTML page]\n"+
-            "       <ClassName> name of the class for which we want to create the HTML page\n"+
+            "       [-css <Source> the path (URL) of a CSS file (\".csss\")\n"+
+            "                      which will be referenced from the generated HTML page]\n"+
+            "       [-js <Source> the path (URL) of a JavaScript file (\".js\")\n"+
+            "                     which will be referenced from the generated HTML page]\n"+
+            "       [<ClassName> name of the class for which we want to create the HTML page;\n"+
+            "                    if not specified the first class that is found on the given path is taken;\n"+
+            "                    this is particularly useful if the source is a particular \".class\" file]\n"+
             "Example:\n       java …Disassembler -source /Library/jre/lib/rt.jar java.util.ArrayList"
     }
 
@@ -100,8 +104,6 @@ object Disassembler {
         }
 
         // VALIDATING PARAMETERS
-        if (className == null) handleError("missing class name")
-
         if (sources.isEmpty) sources = List(System.getProperty("user.dir"))
         val sourceFiles = sources map { src ⇒
             val f = new File(src)
@@ -110,7 +112,35 @@ object Disassembler {
             f
         }
 
-        val classNameAsFileName: String = org.opalj.io.sanitizeFileName(className)
+        val classFiles = ClassFileReader.AllClassFiles(sourceFiles)
+        if (classFiles.isEmpty) handleError(sources.mkString("cannot find class files in: ", ", ", ""))
+
+        val classFile: ClassFile =
+            if (className != null) {
+                val classFileOption = classFiles find { e ⇒
+                    val (cf, _) = e
+                    cf.thisType == className
+                }
+                classFileOption match {
+                    case None ⇒
+                        val allClassNames: List[(Int, String)] =
+                            classFiles.map { cf ⇒
+                                (getLevenshteinDistance(className, cf._1.thisType), cf._1.thisType)
+                            }.toList
+
+                        val mostRelated = allClassNames.sortWith((l, r) ⇒ l._1 < r._1).map(_._2).take(15)
+                        val ending = if (mostRelated.length > 15) ", ...)" else ")"
+                        val messageHeader = "can't find: "+className
+                        val message = mostRelated.mkString(s"$messageHeader (similar: ", ", ", ending)
+                        handleError(message)
+
+                    case Some((cf, _)) ⇒ cf
+                }
+            } else {
+                classFiles.head._1
+            }
+
+        val classNameAsFileName: String = org.opalj.io.sanitizeFileName(classFile.thisType)
 
         val targetFile: Option[File] =
             if (openHTMLFile) {
@@ -128,25 +158,6 @@ object Disassembler {
             } else {
                 None
             }
-
-        val classFiles = ClassFileReader.AllClassFiles(sourceFiles)
-        if (classFiles.isEmpty) handleError(sources.mkString("cannot find class files in: ", ", ", ""))
-        val classFileOption = classFiles find { e ⇒ val (cf, _) = e; cf.thisType == className }
-        val classFile: ClassFile = classFileOption match {
-            case None ⇒
-                val allClassNames: List[(Int, String)] =
-                    classFiles.map { cf ⇒
-                        (getLevenshteinDistance(className, cf._1.thisType), cf._1.thisType)
-                    }.toList
-
-                val mostRelated = allClassNames.sortWith((l, r) ⇒ l._1 < r._1).map(_._2).take(15)
-                val ending = if (mostRelated.length > 15) ", ...)" else ")"
-                val messageHeader = "can't find: "+className
-                val message = mostRelated.mkString(s"$messageHeader (similar: ", ", ", ending)
-                handleError(message)
-
-            case Some((cf, _)) ⇒ cf
-        }
 
         // FINAL PROCESSING
         val htmlCSS = if (noDefaultCSS) None else Some(ClassFile.TheCSS)
