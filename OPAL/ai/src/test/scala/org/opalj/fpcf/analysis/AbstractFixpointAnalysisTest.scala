@@ -187,6 +187,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             val className = project.classFile(method).fqn
             val message =
                 "Method has no property: "+className + s"  for: $propertyKey;"+
+                    s"\n\tmethod name:     ${method.name}"+
                     s"\nexpected property: $annotatedProperty"
             fail(message)
         }
@@ -198,7 +199,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             val message =
                 "Wrong property computed: "+
                     className +
-                    s"has the property $computedProperty for $propertyKey;"+
+                    s" has the property $computedProperty for $propertyKey;"+
+                    s"\n\tmethod name:       ${method.name}"+
                     s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $annotatedProperty"
             fail(message)
