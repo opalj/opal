@@ -30,10 +30,12 @@ package org.opalj
 package hermes
 package queries
 
-import org.controlsfx.control.spreadsheet.SpreadsheetCellType.ObjectType
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.Field
 import org.opalj.br.ObjectType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
@@ -49,6 +51,7 @@ import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 import org.opalj.ai.BaseAI
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
+import org.opalj.br.LongType
 
 /**
  * Counts which kinds of micro patterns are actually available.
@@ -90,10 +93,11 @@ object MicroPatterns extends FeatureQuery {
     }
 
     override def apply[S](
-                             projectConfiguration: ProjectConfiguration,
-                             project: Project[S],
-                             rawClassFiles: Traversable[(org.opalj.da.ClassFile, S)]
-                         ): TraversableOnce[Feature[S]] = {
+        projectConfiguration: ProjectConfiguration,
+        project:              Project[S],
+        rawClassFiles:        Traversable[(org.opalj.da.ClassFile, S)]
+    ): TraversableOnce[Feature[S]] = {
+        implicit val theProject = project
 
         val fa = project.get(FieldAccessInformationKey)
 
@@ -104,7 +108,7 @@ object MicroPatterns extends FeatureQuery {
         } {
             val location = ClassFileLocation(source, classFile)
 
-            if (isDesignator(classFile, project)) microPatternLocations(0) += location
+            if (isDesignator(classFile)) microPatternLocations(0) += location
             if (isTaxonomy(classFile)) microPatternLocations(1) += location
             if (isJoiner(classFile)) microPatternLocations(2) += location
             if (isPool(classFile)) microPatternLocations(3) += location
@@ -120,7 +124,7 @@ object MicroPatterns extends FeatureQuery {
             if (isCompoundBox(classFile, fa)) microPatternLocations(13) += location
             if (isCanopy(classFile, fa)) microPatternLocations(14) += location
             if (isRecord(classFile)) microPatternLocations(15) += location
-            if (isDataManager(classFile, project)) microPatternLocations(16) += location
+            if (isDataManager(classFile)) microPatternLocations(16) += location
             if (isSink(classFile)) microPatternLocations(17) += location
             if (isOutline(classFile)) microPatternLocations(18) += location
             if (isTrait(classFile)) microPatternLocations(19) += location
@@ -130,52 +134,115 @@ object MicroPatterns extends FeatureQuery {
             if (isPseudoClass(classFile)) microPatternLocations(23) += location
             if (isImplementor(classFile, project)) microPatternLocations(24) += location
             if (isOverrider(classFile, project)) microPatternLocations(25) += location
-            if (isExtender(classFile: ClassFile, project)) microPatternLocations(26) += location
+            if (isExtender(classFile)) microPatternLocations(26) += location
         }
-        for {(featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex} yield {
+        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, microPatternLocations(featureIDIndex))
         }
     }
 
-    def isDesignator[S](cl: ClassFile, theProject: Project[S]): Boolean = {
-        cl.interfaceTypes.isEmpty &&
-            (cl.thisType.fqn.endsWith("/Object") ||
-                (cl.methods.isEmpty &&
-                    cl.fields.isEmpty &&
-                    (!hasSuperType(cl) || theProject.classFile(cl.superclassType.get).isEmpty ||
-                        isDesignator(theProject.classFile(cl.superclassType.get).
-                            get, theProject)) &&
-                    (cl.interfaceTypes.isEmpty || cl.interfaceTypes.forall(i ⇒ theProject.classFile(i).isEmpty ||
-                        isDesignator(theProject.classFile(i).get, theProject)))))
+    def hasExplicitSuperType(cl: ClassFile): Boolean = cl.superclassType.exists(_ ne ObjectType.Object)
+
+    /**
+     * [From the paper] Thus, a Designator micro pattern is an interface which does not
+     *  declare any methods, does not define any static fields or methods, and does not
+     *  inherit such members from any of its superinterfaces.
+     *
+     *  A class can also be Designator if its definition, as well as the definitions of
+     *  all of its ancestors (other than Object), are empty.
+     *
+     * A class can also be Designator if its definition, as well as the definitions of
+     * all of its ancestors (other than Object), are empty.
+     */
+    def isDesignator(cl: ClassFile)(implicit project: SomeProject): Boolean = {
+        if (cl.thisType == ObjectType.Object)
+            return false;
+
+        // IMPROVE Cache the results of super interfaces to avoid recomputations or compute it top-down starting with top-level interfaces.
+
+        def isDesignatorType(ot: ObjectType): Boolean = {
+            project.classFile(ot).exists(this.isDesignator)
+        }
+
+        cl.fields.isEmpty && {
+            if (cl.isInterfaceDeclaration)
+                cl.methods.isEmpty && cl.interfaceTypes.forall(isDesignatorType)
+            else
+                // we have to filter the always present default constructor (compiler generated,
+                // if not user defined)
+                cl.methods.size == 1 && cl.methods.head.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
+                    cl.interfaceTypes.forall(isDesignatorType) &&
+                    isDesignatorType(cl.superclassType.get)
+        }
+
     }
 
+    /**
+     * [From the paper:] An empty interface which extends a single interface is
+     * called a Taxonomy, since it is included, in the subtyping sense, in its parent,
+     * but otherwise identical to it.
+     *
+     * There are also classes which are Taxonomy. Such a class must similarly be empty,
+     * i.e., add no fields nor methods to its parent. Since constructors are not inherited,
+     * an empty class may contain constructors. A Taxonomy class may not implement any interfaces.
+     */
     def isTaxonomy(cl: ClassFile): Boolean = {
-        cl.methods.isEmpty &&
-            cl.fields.isEmpty && ((cl.interfaceTypes.size == 1 && !hasSuperType(cl)) ||
-            (cl.interfaceTypes.isEmpty && hasSuperType(cl)))
+        cl.fields.isEmpty && {
+            if (cl.isInterfaceDeclaration) {
+                cl.interfaceTypes.size == 1 && cl.methods.isEmpty
+            } else {
+                cl.thisType != ObjectType.Object /*this test is not necessary, but is fast */ &&
+                    cl.interfaceTypes.isEmpty &&
+                    cl.methods.forall(_.isInitializer)
+            }
+        }
     }
 
+    /**
+     * [From the paper:] An empty interface which extends more than one interface is called a
+     * Joiner, since in effect, it joins together the sets of members of its parents.
+     *
+     * An empty class which implements one or more interfaces is also a Joiner.
+     * ''Here, empty means that the we can have constructors and (optionally) a serialVersionUID
+     * field.''
+     */
     def isJoiner(cl: ClassFile): Boolean = {
-        (cl.methods.isEmpty || (!cl.isInterfaceDeclaration &&
-            cl.methods.forall(m ⇒ isInitMethod(m)))) &&
-            cl.fields.isEmpty && (cl.interfaceTypes.size > 1 || (hasSuperType(cl) && cl.interfaceTypes.nonEmpty))
+        if (cl.isInterfaceDeclaration) {
+            cl.interfaceTypes.size > 1 && cl.fields.isEmpty && cl.methods.isEmpty
+        } else {
+            cl.interfaceTypes.nonEmpty &&
+                cl.methods.forall(m ⇒ m.isInitializer) && (
+                    cl.fields match {
+                        case Seq() | Seq(Field(_, "serialVersionUID", LongType)) ⇒ true
+                        case _                                                   ⇒ false
+                    }
+                )
+        }
     }
 
+    /**
+     * [From the paper:] The most degenerate classes are those which have neither state
+     * nor behavior. Such a class is distinguished by the requirement that it declares
+     * no instance fields. Moreover, all of its declared static fields must be final.
+     * Another requirement is that the class has no methods (other than those inherited
+     * from Object, or automatically generated constructors).
+     */
     def isPool(cl: ClassFile): Boolean = {
-        cl.methods.forall { m ⇒
-            (m.isConstructor && m.descriptor.parametersCount == 0) || isObjectMethod(m)
-        } &&
-            cl.fields.nonEmpty && cl.fields.forall { f ⇒ f.isFinal && f.isStatic }
+        cl.fields.nonEmpty && cl.fields.forall(f ⇒ f.isFinal && f.isStatic) &&
+            // We also (have to) accept a static initializer, because that one will
+            // initialize the final static fields!
+            cl.methods.forall(m ⇒ m.isInitializer && m.descriptor.parametersCount == 0)
     }
+
+    private final val javaLangObjectMethods: Set[String] = Set(
+        "hashCode", "equals",
+        "notify", "notifyAll", "wait",
+        "getClass", "clone", "toString", "finalize"
+    )
 
     def isObjectMethod(method: Method): Boolean = {
-        val name = method.name
-        name == "hashCode" ||            name == "equals" ||
-                        name =="notify" || name == "notifyAll" ||            name =="wait" ||
-                name =="getClass" ||
-                name =="clone" ||
-                name == "toString" ||
-            name == "finalize"
+        // TODO This just checks the name, why don't we check the full signature?
+        javaLangObjectMethods.contains(method.name)
     }
 
     def isFunctionPointer(cl: ClassFile): Boolean = {
@@ -274,20 +341,145 @@ object MicroPatterns extends FeatureQuery {
             cl.fields.forall { f ⇒ f.isPublic } && cl.fields.exists(f ⇒ !f.isStatic) && cl.methods.forall(m ⇒ isInitMethod(m) || isObjectMethod(m))
     }
 
-    def isDataManager[S](cl: ClassFile, theProject: Project[S]): Boolean = {
+    def isSink(cl: ClassFile): Boolean = {
+        !cl.isInterfaceDeclaration &&
+            cl.methods.exists { m ⇒ !isInitMethod(m) } &&
+            cl.methods.forall { m ⇒
+                m.body.isEmpty ||
+                    m.body.get.instructions.filter(i ⇒ i.isInstanceOf[MethodInvocationInstruction]).forall { i ⇒
+                        !i.asInstanceOf[MethodInvocationInstruction].declaringClass.isObjectType ||
+                            i.asInstanceOf[MethodInvocationInstruction].declaringClass.asObjectType.equals(cl.thisType)
+                    }
+            }
+    }
+
+    def isOutline(cl: ClassFile): Boolean = {
+        !cl.isInterfaceDeclaration && cl.isAbstract && cl.methods.count { m ⇒
+            m.body.isDefined &&
+                m.body.get.instructions.exists { i ⇒
+                    i.isInstanceOf[VirtualMethodInvocationInstruction] &&
+                        i.asInstanceOf[VirtualMethodInvocationInstruction].declaringClass.equals(cl.thisType) &&
+                        cl.methods.filter { x ⇒ x.isAbstract }.exists { x ⇒
+                            x.name.equals(i.asInstanceOf[VirtualMethodInvocationInstruction].name) &&
+                                x.descriptor.equals(i.asInstanceOf[VirtualMethodInvocationInstruction].methodDescriptor)
+                        }
+                }
+        } > 1
+    }
+
+    def isTrait(cl: ClassFile): Boolean = {
+        !cl.isInterfaceDeclaration && cl.isAbstract &&
+            cl.fields.isEmpty &&
+            cl.methods.exists(m ⇒ m.isAbstract)
+    }
+
+    def isStateMachine(cl: ClassFile): Boolean = {
+        cl.methods.count(m ⇒ !isInitMethod(m)) > 1 &&
+            cl.fields.nonEmpty &&
+            cl.methods.forall { m ⇒ m.descriptor.parametersCount == 0 }
+    }
+
+    def isPureType(cl: ClassFile): Boolean = {
+        (
+            (
+                cl.isAbstract && cl.methods.nonEmpty &&
+                cl.methods.forall { m ⇒ m.isAbstract && !m.isStatic }
+            ) ||
+                (
+                    cl.isInterfaceDeclaration && cl.methods.nonEmpty && cl.methods.forall { m ⇒ !m.isStatic }
+                )
+        ) &&
+                    cl.fields.isEmpty
+    }
+
+    def isAugmentedType(cl: ClassFile): Boolean = {
+        !cl.isInterfaceDeclaration && cl.isAbstract &&
+            cl.methods.forall { m ⇒ m.isAbstract } && cl.fields.size >= 3 &&
+            cl.fields.forall { f ⇒ f.isFinal && f.isStatic } &&
+            cl.fields.map { f ⇒ f.fieldType }.toSet.size == 1
+    }
+
+    def isPseudoClass(cl: ClassFile): Boolean = {
+        !cl.isInterfaceDeclaration &&
+            cl.fields.forall { f ⇒ f.isStatic } && cl.methods.nonEmpty &&
+            cl.methods.forall { m ⇒ m.isAbstract || m.isStatic }
+    }
+
+    def isImplementor[S](cl: ClassFile, theProject: Project[S]): Boolean = {
+        !cl.isInterfaceDeclaration &&
+            !cl.isAbstract && cl.methods.exists { m ⇒
+                m.isPublic &&
+                    !isInitMethod(m)
+            } && cl.methods.forall { m ⇒
+                isInitMethod(m) || !m.isPublic ||
+                    (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
+                        case Some(a) ⇒ (a.isAbstract || a.body.isEmpty) && (
+                            (hasExplicitSuperType(cl) && theProject.classFile(a) != null &&
+                                theProject.classFile(a).thisType == cl.superclassType.get) ||
+                                cl.interfaceTypes.exists(it ⇒ theProject.classFile(a) != null && theProject.classFile(a).thisType == it)
+                        )
+                        case None ⇒ false
+                    })
+            }
+    }
+
+    def isInitMethod(method: Method): Boolean = method.isInitializer
+
+    def isOverrider[S](cl: ClassFile, theProject: Project[S]): Boolean = {
+        !cl.isInterfaceDeclaration && !cl.isAbstract &&
+            cl.methods.exists { m ⇒
+                !isInitMethod(m)
+            } && cl.methods.forall { m ⇒
+                m.isInitializer ||
+                    (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
+                        case Some(a) ⇒ (!a.isAbstract && a.body.isDefined && m.body.nonEmpty) && (
+                            (hasExplicitSuperType(cl) && theProject.classFile(a) != null &&
+                                theProject.classFile(a).thisType == cl.superclassType.get) ||
+                                cl.interfaceTypes.exists(it ⇒ theProject.classFile(a) != null && theProject.classFile(a).thisType == it)
+                        )
+                        case None ⇒ false
+                    })
+            }
+    }
+
+    def isExtender[S](cl: ClassFile)(implicit theProject: Project[S]): Boolean = {
+        !cl.isInterfaceDeclaration &&
+            cl.methods.exists(m ⇒ !isInitMethod(m)) && hasExplicitSuperType(cl) && cl.methods.forall { m ⇒
+                isInitMethod(m) ||
+                    theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor).isEmpty
+            }
+    }
+
+    def isDataManager[S](cl: ClassFile)(implicit theProject: Project[S]): Boolean = {
         !cl.isInterfaceDeclaration &&
             !cl.isAbstract &&
             cl.fields.nonEmpty &&
             cl.methods.count(m ⇒ !isInitMethod(m) && !isObjectMethod(m)) > 1 &&
             cl.methods.filter(m ⇒ !isInitMethod(m) && !isObjectMethod(m)).forall { m ⇒
-                isSetter(m, cl, theProject) ||
-                    isGetter(m, cl, theProject)
+                isSetter(m, cl) || isGetter(m, cl)
             }
     }
 
-    def isGetter[S](method: Method, cf: ClassFile, theProject: Project[S]): Boolean = {
+    class AnalysisDomain[S](val project: Project[S], val method: Method)
+        extends CorrelationalDomain
+        with domain.DefaultHandlingOfMethodResults
+        with domain.IgnoreSynchronization
+        with domain.ThrowAllPotentialExceptionsConfiguration
+        with domain.l0.DefaultTypeLevelFloatValues
+        with domain.l0.DefaultTypeLevelDoubleValues
+        with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.TypeLevelInvokeInstructions
+        with domain.l1.DefaultReferenceValuesBinding
+        with domain.l1.DefaultIntegerRangeValues
+        with domain.l1.DefaultLongValues
+        with domain.l1.ConcretePrimitiveValuesConversions
+        with domain.l1.LongValuesShiftOperators
+        with domain.TheProject
+        with domain.TheMethod
+        with domain.RecordDefUse
+
+    def isGetter[S](method: Method, cf: ClassFile)(implicit theProject: Project[S]): Boolean = {
         if (!method.isPublic || method.returnType.isVoidType || method.body.isEmpty ||
-            (method.body.isDefined && method.body.isEmpty) ||
             !method.body.get.instructions.exists { i ⇒ i.isInstanceOf[FieldReadAccess] }) {
             return false
         }
@@ -303,7 +495,7 @@ object MicroPatterns extends FeatureQuery {
         })
     }
 
-    def isSetter[S](method: Method, cf: ClassFile, theProject: Project[S]): Boolean = {
+    def isSetter[S](method: Method, cf: ClassFile)(implicit theProject: Project[S]): Boolean = {
         if (!method.isPublic || !method.returnType.isVoidType ||
             method.descriptor.parametersCount == 0 || method.body.isEmpty ||
             (method.body.isDefined && method.body.isEmpty) ||
@@ -326,126 +518,5 @@ object MicroPatterns extends FeatureQuery {
                         instructions(x).isInstanceOf[LoadConstantInstruction[_]])
                 }))
     }
-
-    def isSink(cl: ClassFile): Boolean = {
-        !cl.isInterfaceDeclaration &&
-            cl.methods.exists { m ⇒ !isInitMethod(m) } &&
-            cl.methods.forall { m ⇒
-                m.body.isEmpty ||
-                    m.body.get.instructions.filter(i ⇒ i.isInstanceOf[MethodInvocationInstruction]).forall { i ⇒
-                        !i.asInstanceOf[MethodInvocationInstruction].declaringClass.isObjectType ||
-                            i.asInstanceOf[MethodInvocationInstruction].declaringClass.asObjectType.equals(cl.thisType)
-                    }
-            }
-    }
-
-    def isOutline(cl: ClassFile): Boolean = {
-        !cl.isInterfaceDeclaration && cl.isAbstract && cl.methods.count { m ⇒
-            m.body.isDefined && m.body.nonEmpty &&
-                m.body.get.instructions.exists { i ⇒
-                    i.isInstanceOf[VirtualMethodInvocationInstruction] &&
-                        i.asInstanceOf[VirtualMethodInvocationInstruction].declaringClass.equals(cl.thisType) &&
-                        cl.methods.filter { x ⇒ x.isAbstract }.exists { x ⇒
-                            x.name.equals(i.asInstanceOf[VirtualMethodInvocationInstruction].name) &&
-                                x.descriptor.equals(i.asInstanceOf[VirtualMethodInvocationInstruction].methodDescriptor)
-                        }
-                }
-        } > 1
-    }
-
-    def isTrait(cl: ClassFile): Boolean = {
-        !cl.isInterfaceDeclaration && cl.isAbstract &&
-            cl.fields.isEmpty && cl.methods.count(m ⇒ m.isAbstract) > 0
-    }
-
-    def isStateMachine(cl: ClassFile): Boolean = {
-        cl.methods.count(m ⇒ !isInitMethod(m)) > 1 &&
-            cl.methods.forall { m ⇒ m.descriptor.parametersCount == 0 } && cl.fields.nonEmpty
-    }
-
-    def isPureType(cl: ClassFile): Boolean = {
-        ((cl.isAbstract && cl.methods.nonEmpty &&
-            cl.methods.forall { m ⇒ m.isAbstract && !m.isStatic }) || (cl.isInterfaceDeclaration && cl.methods.nonEmpty &&
-            cl.methods.forall { m ⇒ !m.isStatic })) &&
-            cl.fields.isEmpty
-    }
-
-    def isAugmentedType(cl: ClassFile): Boolean = {
-        !cl.isInterfaceDeclaration && cl.isAbstract &&
-            cl.methods.forall { m ⇒ m.isAbstract } && cl.fields.size >= 3 &&
-            cl.fields.forall { f ⇒ f.isFinal && f.isStatic } &&
-            cl.fields.map { f ⇒ f.fieldType }.toSet.size == 1
-    }
-
-    def isPseudoClass(cl: ClassFile): Boolean = {
-        !cl.isInterfaceDeclaration &&
-            cl.fields.forall { f ⇒ f.isStatic } && cl.methods.nonEmpty &&
-            cl.methods.forall { m ⇒ m.isAbstract || m.isStatic }
-    }
-
-    def isImplementor[S](cl: ClassFile, theProject: Project[S]): Boolean = {
-        !cl.isInterfaceDeclaration &&
-            !cl.isAbstract && cl.methods.exists { m ⇒
-            m.isPublic &&
-                !isInitMethod(m)
-        } && cl.methods.forall { m ⇒
-            isInitMethod(m) || !m.isPublic ||
-                (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
-                    case Some(a) ⇒ (a.isAbstract || a.body.isEmpty) && (
-                        (hasSuperType(cl) && theProject.classFile(a) != null &&
-                            theProject.classFile(a).thisType == cl.superclassType.get) ||
-                            cl.interfaceTypes.exists(it ⇒ theProject.classFile(a) != null && theProject.classFile(a).thisType == it)
-                        )
-                    case None ⇒ false
-                })
-        }
-    }
-
-    def isInitMethod(method: Method): Boolean = method.isInitializer
-
-    def hasSuperType(cl: ClassFile): Boolean = cl.superclassType.exists(_ ne ObjectType.Object)
-
-    def isOverrider[S](cl: ClassFile, theProject: Project[S]): Boolean = {
-        !cl.isInterfaceDeclaration && !cl.isAbstract &&
-            cl.methods.exists { m ⇒
-                !isInitMethod(m)
-            } && cl.methods.forall { m ⇒
-            m.isInitializer ||
-                (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
-                    case Some(a) ⇒ (!a.isAbstract && a.body.isDefined && m.body.nonEmpty) && (
-                        (hasSuperType(cl) && theProject.classFile(a) != null &&
-                            theProject.classFile(a).thisType == cl.superclassType.get) ||
-                            cl.interfaceTypes.exists(it ⇒ theProject.classFile(a) != null && theProject.classFile(a).thisType == it)
-                        )
-                    case None ⇒ false
-                })
-        }
-    }
-
-    def isExtender[S](cl: ClassFile, theProject: Project[S]): Boolean = {
-        !cl.isInterfaceDeclaration &&
-            cl.methods.exists (m ⇒ !isInitMethod(m)) && hasSuperType(cl) && cl.methods.forall { m ⇒
-            isInitMethod(m) ||
-                theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor).isEmpty
-        }
-    }
-
-    class AnalysisDomain[S](val project: Project[S], val method: Method)
-        extends CorrelationalDomain
-            with domain.DefaultHandlingOfMethodResults
-            with domain.IgnoreSynchronization
-            with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelFloatValues
-            with domain.l0.DefaultTypeLevelDoubleValues
-            with domain.l0.TypeLevelFieldAccessInstructions
-            with domain.l0.TypeLevelInvokeInstructions
-            with domain.l1.DefaultReferenceValuesBinding
-            with domain.l1.DefaultIntegerRangeValues
-            with domain.l1.DefaultLongValues
-            with domain.l1.ConcretePrimitiveValuesConversions
-            with domain.l1.LongValuesShiftOperators
-            with domain.TheProject
-            with domain.TheMethod
-            with domain.RecordDefUse
 
 }
