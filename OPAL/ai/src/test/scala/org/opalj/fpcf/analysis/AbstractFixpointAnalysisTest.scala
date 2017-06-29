@@ -72,6 +72,10 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      */
     def analysisRunner: FPCFAnalysisRunner
 
+    /**
+      * This method can be overridden in a subclass to execute code before the
+      * {@link AbstractFixpointAnalysisTest#runAnalysis} method is called in the test.
+      */
     def init(): Unit = {}
 
     def runAnalysis(project: Project[URL]): Unit = {
@@ -97,8 +101,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     def file = org.opalj.bi.TestSupport.locateTestResources(testFileName, testFilePath)
 
     def loadProject: Project[URL] = org.opalj.br.analyses.Project(file)
-
-    lazy val project = loadProject
+    
+    val project = loadProject
     lazy val propertyStore = project.get(PropertyStoreKey)
 
     /*
