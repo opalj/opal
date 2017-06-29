@@ -42,7 +42,7 @@ import org.opalj.log.OPALLogger
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesKey extends ProjectInformationKey[MethodReturnValueInformation] {
+object MethodReturnValuesKey extends ProjectInformationKey[MethodReturnValueInformation, Nothing] {
 
     override protected def requirements = Seq(FieldValuesKey)
 
@@ -50,7 +50,7 @@ object MethodReturnValuesKey extends ProjectInformationKey[MethodReturnValueInfo
      * Computes the return value information.
      */
     override protected def compute(project: SomeProject): MethodReturnValueInformation = {
-        // TODO Introduce the concept of a "configuration to a project"
+
         implicit val logContext = project.logContext
 
         val fieldValueInformation = project.get(FieldValuesKey)
@@ -60,16 +60,13 @@ object MethodReturnValuesKey extends ProjectInformationKey[MethodReturnValueInfo
             project,
             () ⇒ false, // make it configurable
             (ai: InterruptableAI[Domain], method: Method) ⇒
+                // TODO Make the used domain configurable... delegate to the TACAIKey???
                 new BaseMethodReturnValuesAnalysisDomain(
                     project, fieldValueInformation, ai, method
                 )
         )
 
-        OPALLogger.info(
-            "progress",
-            "computed the method return value information; "+
-                s"refined the return type of ${result.size} methods"
-        )
+        OPALLogger.info("progress", s"refined the return type of ${result.size} methods")
         result
     }
 }

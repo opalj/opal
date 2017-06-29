@@ -30,12 +30,18 @@ package org.opalj
 package br
 package analyses
 
+/**
+ * Encapsulated the defining context of a method.
+ */
 case class MethodInfo[Source](
     source:    Source,
     classFile: ClassFile,
     method:    Method
 )
 
+/**
+ * Defines a simplified extractor for a MethodInfo object.
+ */
 object BasicMethodInfo {
 
     def unapply(methodInfo: MethodInfo[_]): Some[(ClassFile, Method)] = {

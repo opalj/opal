@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,63 +22,48 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package callgraph.accessFields;
+package lambdas.methodreferences;
 
-import callgraph.base.AlternateBase;
-import callgraph.base.ConcreteBase;
-import org.opalj.ai.test.invokedynamic.annotations.AccessedField;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
- * This class was used to create a class file with some well defined attributes. The
- * created class is subsequently used by several tests.
- * 
- * NOTE<br />
- * This class is not meant to be (automatically) recompiled; it just serves documentation
- * purposes.
- * 
+ * This class contains method references to static methods.
+ *
  * <!--
- * 
- * 
- * 
- * 
+ *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE).
- * 
- * 
- * 
- * 
+ *
  * -->
- * 
- * @author Marco Jacobasch
+ *
+ * @author Andreas Muttscheller
  */
-public class AccessFields {
+public class StaticInheritance {
 
-    ConcreteBase concreteBase = new ConcreteBase();
-    AlternateBase alternerateBase = new AlternateBase();
-
-    @AccessedField(declaringType = ConcreteBase.class, fieldType = Integer.class, name = "integer", line = 65)
-    public int accessFieldInClass() {
-        return concreteBase.integer;
+    public static class A {
+        public static String foo() {
+            return "bar";
+        }
+        public static void bar(String s) {
+        }
     }
 
-    @AccessedField(declaringType = ConcreteBase.class, fieldType = String.class, name = "string", line = 70)
-    public String accessFieldInSuperClass() {
-        return concreteBase.string;
+    public static class B extends A {
+
     }
 
-    @AccessedField(declaringType = AlternateBase.class, fieldType = String.class, name = "string", line = 75)
-    public String accessFieldInClassSameFieldNameInSuperClass() {
-        return alternerateBase.string;
+    public static String staticInheritanceTest() {
+        Supplier<String> s = B::foo;
+        return s.get();
     }
 
-    @AccessedField(declaringType = ConcreteBase.class, fieldType = Double.class, name = "DOUBLE_FIELD", line = 80)
-    public double accessStaticField() {
-        return ConcreteBase.DOUBLE_FIELD;
+    public static void staticInheritanceWithParameter() {
+        Consumer<String> c = B::bar;
+        c.accept("foo");
     }
-
-    // TODO static super
 }

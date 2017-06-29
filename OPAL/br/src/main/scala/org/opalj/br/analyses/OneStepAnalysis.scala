@@ -57,7 +57,6 @@ trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, Analysis
             wasKilled = pm.isInterrupted()
             wasKilled
         }
-
         val result = doAnalyze(project, parameters, isInterrupted)
 
         if (wasKilled)
