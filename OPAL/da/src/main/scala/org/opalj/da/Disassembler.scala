@@ -49,9 +49,12 @@ object Disassembler {
 
     private final val Usage = {
         "Usage: java …Disassembler \n"+
+            "       [-help will print this help and terminate.]\n"+
             "       [-o <File> the name of the file to which the generated html page should be written]\n"+
             "       [-open the generated html page will be opened in a browser]\n"+
-            "       [-source <File> a class or jar file or a directory containg jar or class files]*\n"+
+            "       [-source <File>* a class or jar file or a directory containg jar or class files;\n"+
+            "                        if no source files/folders are specified the current folder will be\n"+
+            "                        searched for class files]\n"+
             "       [-noDefaultCSS the generated html page will have no CSS styling]\n"+
             "       [-noMethodsFilter the generated html page will have no embedded means to filter methods\n"+
             "                         (as a whole, the file will not contain any JavaScript code)]\n"+
@@ -65,6 +68,9 @@ object Disassembler {
             "       [<ClassName> name of the class for which we want to create the HTML page;\n"+
             "                    if not specified the first class that is found on the given path is taken;\n"+
             "                    this is particularly useful if the source is a particular \".class\" file]\n"+
+            "\n"+
+            "Note:   \n       If no parameters are specified, the first class file found in the current folder\n"+
+            "       or any subfolder of it will be disassembled.\n"+
             "Example:\n       java …Disassembler -source /Library/jre/lib/rt.jar java.util.ArrayList"
     }
 
@@ -99,6 +105,7 @@ object Disassembler {
         }
         while (i < args.length) {
             args(i) match {
+                case "-help" | "--help" ⇒ { Console.out.println(Usage); return }
                 case "-o"               ⇒ { toFile = Some(readNextArg()); toStdOut = false }
                 case "-open"            ⇒ { openHTMLFile = true; toStdOut = false }
                 case "-noDefaultCSS"    ⇒ noDefaultCSS = true
