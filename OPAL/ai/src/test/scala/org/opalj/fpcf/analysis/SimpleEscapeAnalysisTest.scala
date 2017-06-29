@@ -29,8 +29,7 @@
 package org.opalj.fpcf.analysis
 
 import org.opalj.br._
-import org.opalj.br.analyses.{PropertyStoreKey, SomeProject}
-import org.opalj.collection.immutable.Chain
+import org.opalj.br.analyses.{AllocationSites, PropertyStoreKey}
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.properties.{EscapeProperty, NoEscape}
 
@@ -55,34 +54,7 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
       * stores created with the PropertyStoreKey.
       */
     override def init(): Unit = {
-        PropertyStoreKey.addEntityDerivationFunction[Map[Method, Map[PC, AllocationSite]]](
-            (p: SomeProject) ⇒ {
-                var allAs: List[Chain[AllocationSite]] = Nil
-
-                // Associate every new instruction in a method with an allocation site object
-                val as = p.allMethods.flatMap { m ⇒
-                    m.body match {
-                        case None ⇒ Nil
-                        case Some(code) ⇒
-                            val as = code.collectWithIndex {
-                                case (pc, instructions.NEW(_)) ⇒ new AllocationSite(m, pc)
-                            }
-                            if (as.nonEmpty) allAs ::= as
-                            as
-                    }
-                }
-
-                // In the context we store a map which makes the set of allocation sites
-                // easily accessible
-                val mToPCToAs = allAs.map { asPerMethod ⇒
-                    val pcToAs = asPerMethod.map(as ⇒ as.pc → as).toMap
-                    val m = pcToAs.head._2.method
-                    m → pcToAs
-                }.toMap
-
-                (as, mToPCToAs)
-            }
-        )
+        PropertyStoreKey.makeAllocationSitesAvailable(project)
     }
 
     def defaultValue = NoEscape.toString
@@ -140,10 +112,10 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
         annotation ← code.runtimeVisibleTypeAnnotations
         if annotation.annotationType == propertyAnnotation
     } {
-        val mToPCToAs = propertyStore.context[Map[Method, Map[PC, AllocationSite]]]
+        val allocationSites = propertyStore.context[AllocationSites]
         analysisName should ("correctly calculate the property of the expression " +
             annotation.target + "in method " + method.name + " in class " + classFile.fqn) in {
-            validatePropertyByTypeAnnotation(method, annotation, mToPCToAs(method))
+            validatePropertyByTypeAnnotation(method, annotation, allocationSites(method))
         }
     }
 
