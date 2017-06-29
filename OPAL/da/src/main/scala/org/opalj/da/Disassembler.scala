@@ -52,7 +52,12 @@ object Disassembler {
             "       [-o <File> the name of the file to which the generated html page should be written]\n"+
             "       [-open the generated html page will be opened in a browser]\n"+
             "       [-source <File> a class or jar file or a directory containg jar or class files]*\n"+
-            "       [-noDefaultCSS the generated html page will have on CSS styling]\n"+
+            "       [-noDefaultCSS the generated html page will have no CSS styling]\n"+
+            "       [-noMethodsFilter the generated html page will have no embedded means to filter methods\n"+
+            "                         (as a whole, the file will not contain any JavaScript code)]\n"+
+            "       [-noHeader the generated output will have no header; \n"+
+            "                  the top level element will be <div class=\"class_file\">...</div>\n"+
+            "                  (automatically activates \"-noMethodsFilter\" and \"-noDefaultCSS\")]\n"+
             "       [-css <Source> the path (URL) of a CSS file (\".csss\")\n"+
             "                      which will be referenced from the generated HTML page]\n"+
             "       [-js <Source> the path (URL) of a JavaScript file (\".js\")\n"+
@@ -76,6 +81,8 @@ object Disassembler {
         var openHTMLFile: Boolean = false
         var sources: List[String] = List.empty
         var noDefaultCSS: Boolean = false
+        var noHeader: Boolean = false
+        var noMethodsFilter: Boolean = false
         var css: Option[String] = None
         var js: Option[String] = None
         var className: String = null
@@ -92,18 +99,25 @@ object Disassembler {
         }
         while (i < args.length) {
             args(i) match {
-                case "-o"            ⇒ { toFile = Some(readNextArg()); toStdOut = false }
-                case "-open"         ⇒ { openHTMLFile = true; toStdOut = false }
-                case "-noDefaultCSS" ⇒ noDefaultCSS = true
-                case "-css"          ⇒ css = Some(readNextArg())
-                case "-js"           ⇒ js = Some(readNextArg())
-                case "-source"       ⇒ sources ::= readNextArg()
-                case cName           ⇒ className = cName.replace('/', '.')
+                case "-o"               ⇒ { toFile = Some(readNextArg()); toStdOut = false }
+                case "-open"            ⇒ { openHTMLFile = true; toStdOut = false }
+                case "-noDefaultCSS"    ⇒ noDefaultCSS = true
+                case "-noMethodsFilter" ⇒ noMethodsFilter = true
+                case "-noHeader"        ⇒ { noHeader = true; noMethodsFilter = true; noDefaultCSS = true }
+                case "-css"             ⇒ css = Some(readNextArg())
+                case "-js"              ⇒ js = Some(readNextArg())
+                case "-source"          ⇒ sources ::= readNextArg()
+                case cName              ⇒ className = cName.replace('/', '.')
             }
             i += 1
         }
 
         // VALIDATING PARAMETERS
+        if (noHeader) {
+            if (css.nonEmpty) handleError("specifying -noHeader and a css file is not supported")
+            if (js.nonEmpty) handleError("specifying -noHeader and a js file is not supported")
+        }
+
         if (sources.isEmpty) sources = List(System.getProperty("user.dir"))
         val sourceFiles = sources map { src ⇒
             val f = new File(src)
@@ -161,7 +175,12 @@ object Disassembler {
 
         // FINAL PROCESSING
         val htmlCSS = if (noDefaultCSS) None else Some(ClassFile.TheCSS)
-        val xHTML = classFile.toXHTML(htmlCSS, css, js).toString
+        val xHTML =
+            if (noHeader)
+                classFile.classFileToXHTML().toString
+            else
+                classFile.toXHTML(htmlCSS, css, js, !noMethodsFilter).toString
+
         targetFile match {
             case Some(f) ⇒
                 Files.write(f.toPath, xHTML.toString.getBytes("UTF-8"))
