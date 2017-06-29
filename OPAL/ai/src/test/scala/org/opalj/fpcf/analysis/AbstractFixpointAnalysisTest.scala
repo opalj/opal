@@ -72,12 +72,6 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      */
     def analysisRunner: FPCFAnalysisRunner
 
-    /**
-      * This method can be overridden in a subclass to execute code before the
-      * {@link AbstractFixpointAnalysisTest#runAnalysis} method is called in the test.
-      */
-    def init(): Unit = {}
-
     def runAnalysis(project: Project[URL]): Unit = {
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         analysesManager.runWithRecommended(analysisRunner)(waitOnCompletion = true)
@@ -101,9 +95,18 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     def file = org.opalj.bi.TestSupport.locateTestResources(testFileName, testFilePath)
 
     def loadProject: Project[URL] = org.opalj.br.analyses.Project(file)
-    
+
     val project = loadProject
+    // The property stored initialization has to be lazy to ensure that subclasses have a
+    // chance to configure the project before project information is actually derived.
     lazy val propertyStore = project.get(PropertyStoreKey)
+
+    /**
+     * This method is intended to be overridden by subclass to execute code before
+     * {@link AbstractFixpointAnalysisTest#runAnalysis} called. The `project` is already
+     * initialized and can be queried.
+     */
+    def init(): Unit = {}
 
     /*
      * RUN ANALYSIS AND OBTAIN PROPERTY STORE
