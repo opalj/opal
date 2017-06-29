@@ -47,7 +47,7 @@ import org.opalj.fpcf.PropertyStoreContext
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
  *
  * @note   It is possible to set the project's `debug` flag using the project's
- *         `org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
+ *         `org.opalj.br.analyses.PropertyStore.debug` config key.
  *
  * @author Michael Eichberg
  */
