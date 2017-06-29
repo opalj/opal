@@ -72,7 +72,8 @@ class ProjectIndex private (
     }
 
     /**
-     * Returns a map of some basic statistical information, such as the most often used field/method name.
+     * Returns a map of some basic statistical information, such as the most often used
+     * field/method name.
      */
     def statistics(): Map[String, Any] = {
 
@@ -102,16 +103,16 @@ class ProjectIndex private (
             "number of field names that are used more than once" →
                 fieldsWithSharedName.size,
             "number of fields that share the same name and type" →
-                fieldsWithSharedName.filter(_._2.size > 2).size,
+                fieldsWithSharedName.count(_._2.size > 2),
             "number of usages of the most often used field name" →
                 mostOftenUsedFieldName._1,
             "the most often used field name" →
                 mostOftenUsedFieldName._2.mkString(", "),
-            "number of method names that are used more than once (constructors are filtered)" →
+            "number of method names that are used more than once (initializers are filtered)" →
                 methodsWithSharedName.size,
-            "number of methods that share the same signature (constructors are filtered)" →
-                methodsWithSharedName.filter(_._2.size > 2).size,
-            "number of usages of the most often used method name (constructors are filtered)" →
+            "number of methods that share the same signature (initializers are filtered)" →
+                methodsWithSharedName.count(_._2.size > 2),
+            "number of usages of the most often used method name (initializers are filtered)" →
                 mostOftenUsedMethodName._1,
             "the most often used method name (initializers are filtered)" →
                 mostOftenUsedMethodName._2.mkString(", ")
