@@ -100,14 +100,14 @@ object FormalParametersKey extends ProjectInformationKey[FormalParameters, Nothi
     }
 
     //
-    // HELPER FUNCTION TO MAKE IT EASILY POSSIBLE TO ADD ALLOCATION SITES TO A PROPERTYSTORE
-    // AND TO ENSURE THAT ALLOCATIONSITES AND THE PROPERTYSTORE CONTAIN THE SAME OBJECTS!
+    // HELPER FUNCTION TO MAKE IT EASILY POSSIBLE TO ADD FORMAL PARAMETERS TO A PROPERTYSTORE
+    // AND TO ENSURE THAT FORMAL PARAMETERS AND THE PROPERTYSTORE CONTAIN THE SAME OBJECTS!
     //
 
     final val entityDerivationFunction: (SomeProject) ⇒ (Traversable[AnyRef], FormalParameters) =
         (p: SomeProject) ⇒ {
-            // this will collect the allocations sites of the project if not yet collected...
-            val allocationsSites = p.get(FormalParametersKey)
-            (allocationsSites.data.values.flatMap(_.values), allocationsSites)
+            // this will collect the formal parameters of the project if not yet collected...
+            val formalParameters = p.get(FormalParametersKey)
+            (formalParameters.data.values.flatMap(_.values), formalParameters)
         }
 }
