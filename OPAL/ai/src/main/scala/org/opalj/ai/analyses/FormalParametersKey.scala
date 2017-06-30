@@ -39,8 +39,8 @@ import org.opalj.log.OPALLogger
 import scala.collection.JavaConverters._
 
 /**
-  * The set of all formal parameters in a project. The set also contains formal parameters of methods
-  * in libraries, if the bodies of the libraries are loaded.
+  * The set of all formal parameters in a project. The set also contains formal parameters of
+  * methods in libraries, if the bodies of the libraries are loaded.
   *
   * @author Florian Kuebler
   */
@@ -55,7 +55,8 @@ class FormalParameters private[analyses](val data: Map[Method, Map[Int, FormalPa
   * The ''key'' object to get information about all formal parameters.
   *
   * @note See [[org.opalj.ai.FormalParameter]] for further details.
-  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and pass in `this` object.
+  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and pass in
+  *          `this` object.
   * @author Florian Kuebler
   */
 object FormalParametersKey extends ProjectInformationKey[FormalParameters, Nothing] {
