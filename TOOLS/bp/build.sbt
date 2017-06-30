@@ -13,7 +13,7 @@ organization	in ThisBuild := "de.opal-project"
 homepage 		in ThisBuild := Some(url("http://www.opal-project.de/"))
 licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 version 		in ThisBuild := "1.3.0-Snapshot"
-scalaVersion 	in ThisBuild := "2.11.11"
+scalaVersion 	in ThisBuild := "2.12.2"
 
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
