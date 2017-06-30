@@ -37,9 +37,9 @@ import org.opalj.util.IntStatistics
  *
  * @author Michael Reif
  */
-object IntStatisticsKey extends ProjectInformationKey[IntStatistics] {
+object IntStatisticsKey extends ProjectInformationKey[IntStatistics, Nothing] {
 
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     override protected def compute(project: SomeProject): IntStatistics = {
         new IntStatistics

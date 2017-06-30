@@ -41,14 +41,14 @@ import org.opalj.fpcf.analyses.LibraryInstantiableClassesAnalysis
  *
  * @author Michael Eichberg
  */
-object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses] {
+object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses, Nothing] {
 
     /**
      * The [[InstantiableClasses]] has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the information which classes are (not) instantiable.
