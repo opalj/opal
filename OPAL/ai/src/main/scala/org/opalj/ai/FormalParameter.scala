@@ -39,8 +39,8 @@ import org.opalj.br.Method
   *               This value corresponds to the def/use information provided by the
   *               [[org.opalj.tac.TACAI]] transformation. I.e., a UVar with a defSite containing -1,
   *               corresponds to the formal parameter object with origin -1.
-  * @note 'this' locals have always an origin of -1.
-  *       To get the origin of a parameter with index i use [[org.opalj.ai.parameterIndexToValueOrigin()]].
+  * @note 'this' locals have always an origin of -1. To get the origin of a parameter with index
+  *       i use [[org.opalj.ai.parameterIndexToValueOrigin()]].
   * @author Florian Kuebler
   */
 final class FormalParameter(final val method: Method, final val origin: ValueOrigin) {
@@ -62,7 +62,8 @@ final class FormalParameter(final val method: Method, final val origin: ValueOri
 
 object FormalParameter {
 
-    def apply(method: Method, origin: ValueOrigin): FormalParameter = new FormalParameter(method, origin)
+    def apply(method: Method, origin: ValueOrigin): FormalParameter =
+        new FormalParameter(method, origin)
 
     def unapply(fp: FormalParameter): Some[(Method, ValueOrigin)] = Some((fp.method, fp.origin))
 
