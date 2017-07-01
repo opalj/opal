@@ -97,15 +97,24 @@ Here, the string `"⟨SizeOfInheritanceTree⟩"` uses the mathematical notation 
 
 After implementing the query, it is highly recommended to document the query using Markdown. The documentation should describe the derived feature and should also give at least one example in which context the query is useful. E.g., the above query would help to select trivial programs for which a pure Java based analysis would be sufficient. Hermes will use the simple name of the class which implements the query, here *NativeMethods*, to determine the name of the markdown file: *Simple_Name_Of_Class.markdown*. The file will be loaded using the class' `getResource` method. Hence, the markdown file has to be stored along with the class. If you want to document your code in a different way; e.g., using HTML, go to the documentation of [org.opalj.hermes.FeatureQuery](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.hermes.FeatureQuery)
 
-## Executing Queries
+## Activating Queries
 
 After the development of the query, it is necessary to register it, to make it possible for Hermes to execute it. For that, it is either necessary to add the query to the `application.conf` file, which is part of Hermes, or to create your own config file and add it over there. In both cases the config key has to be:
 
     org.opalj.hermes.queries.registered = [
         {query = org.opalj.hermes.queries.NativeMethods, activate = true }
     ]
-    
+
 The big advantage of registering all queries in the same place is that it is easily possible to order the queries. The recommended ordering is: **descending execution time**. This will reduce the overall runtime. To get an idea of the execution time, just run Hermes and open the window *Feature Execution Times*.
+
+## Starting Hermes
+
+Hermes can be be started by specifying the json file which contains the configured projects that should be analysed. If you have checked out OPAL/Hermes from BitBucket you can use the `sbt` console to start Hermes (the main class is: `org.opalj.hermes.Hermes`). For example, to get an overview of the properties of some of the test projects which are part of OPAL, you can use the preconfigured project configuration:
+
+    project OPAL-DeveloperTools
+    ~runMain org.opalj.hermes.Hermes src/main/resources/hermes-test-fixtures.json
+
+If you want to analyze your own library, just use the above file as a template for your project configuration.
 
 ## Contributing to Hermes
 
