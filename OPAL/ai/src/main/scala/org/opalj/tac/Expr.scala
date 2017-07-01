@@ -29,14 +29,12 @@
 package org.opalj
 package tac
 
-import org.opalj.collection.immutable.IntSet
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeReference
-import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.br.Type
 import org.opalj.br.FieldType
 import org.opalj.br.IntegerType
@@ -51,7 +49,6 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.MethodHandle
 import org.opalj.br.PC
-import org.opalj.ai.ValueOrigin
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
@@ -501,119 +498,5 @@ object Var {
     final val ASTID = -27
 
     def unapply[V <: Var[V]](variable: Var[V]): Some[String] = Some(variable.name)
-
-}
-
-//
-//
-// VAR DEFINITIONS USED BY THE AI BASED TAC
-//
-//
-
-/**
- * Identifies a variable which has a single static definition/initialization site.
- */
-abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Var[DUVar[Value]] {
-
-    def value: Value
-
-    final def cTpe: ComputationalType = value.computationalType
-
-}
-
-/**
- * Identifies the single index(pc) of the instruction which initialized
- * the variable. I.e., per method there must be at most one D variable which
- * has the given origin.
- * Initially, the pc of the underlying bytecode instruction is used.
- */
-class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
-        private[tac] var origin:   ValueOrigin,
-        val value:                 Value,
-        private[tac] var useSites: IntSet
-) extends DUVar[Value] {
-
-    assert(useSites != null, s"no uses (null) for $origin: $value")
-    assert(value != null)
-    assert(value.computationalType != ComputationalTypeReturnAddress, s"value has unexpected computational type: $value")
-
-    def definedBy: ValueOrigin = origin
-
-    def usedBy: IntSet = useSites
-
-    def name: String = s"lv${origin.toHexString}/*:$value*/"
-
-    final def isSideEffectFree: Boolean = true
-
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        origin = pcToIndex(origin)
-        useSites = useSites.map(pcToIndex.apply) // use site are always positive...
-    }
-
-    override def toString: String = s"DVar(useSites=$useSites,value=$value,origin=$origin)"
-
-}
-
-object DVar {
-
-    def apply(
-        d: org.opalj.ai.ValuesDomain
-    )(
-        origin: ValueOrigin, value: d.DomainValue, useSites: IntSet
-    ): DVar[d.DomainValue] = {
-        new DVar[d.DomainValue](origin, value, useSites)
-    }
-
-    def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
-        d: DVar[Value]
-    ): Some[(Value, IntSet)] = {
-        Some((d.value, d.useSites))
-    }
-
-}
-
-class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
-        val value:                 Value,
-        private[tac] var defSites: IntSet
-) extends DUVar[Value] {
-
-    def name: String = {
-        defSites.iterator.map { defSite ⇒
-            if (defSite < 0)
-                s"param${(-defSite).toHexString}/*:$value*/"
-            else
-                "lv"+defSite.toHexString
-        }.mkString("{", ", ", s"}/*:$value*/")
-    }
-
-    def definedBy: IntSet = defSites
-
-    final def isSideEffectFree: Boolean = true
-
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        defSites = defSites.map { defSite ⇒
-            if (defSite >= 0) pcToIndex(defSite) else defSite /* <= it is a parameter */
-        }
-    }
-
-    override def toString: String = s"UVar(defSites=$defSites,value=$value)"
-
-}
-
-object UVar {
-
-    def apply(
-        d: org.opalj.ai.ValuesDomain
-    )(
-        value: d.DomainValue, useSites: IntSet
-    ): UVar[d.DomainValue] = {
-        new UVar[d.DomainValue](value, useSites)
-    }
-
-    def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
-        u: UVar[Value]
-    ): Some[(Value, IntSet)] = {
-        Some((u.value, u.defSites))
-    }
 
 }
