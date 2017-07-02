@@ -87,9 +87,9 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
 trait ValueExpr[+V <: Var[V]] extends Expr[V]
 
 /**
- * Explicit reference to a parameter. Parameter statements are only used by the naive
- * representation ([[TACNaive]]) where it is necessary to perform an initial initialization of the
- * register values.
+ * Explicit reference to a parameter. Parameter statements '''are only used by the naive
+ * representation ([[TACNaive]])''' where it is necessary to perform an initial initialization
+ * of the register values.
  */
 case class Param(cTpe: ComputationalType, name: String) extends ValueExpr[Nothing] {
 
