@@ -64,17 +64,16 @@ import org.opalj.br.instructions.Instruction
  */
 package object ai {
 
-    final val FrameworkName = "Abstract Interpretation Framework"
+    final val FrameworkName = "OPAL - Abstract Interpretation Framework"
 
     {
         implicit val logContext = GlobalLogContext
         try {
             scala.Predef.assert(false) // <= tests whether assertions are on or off...
-            OPALLogger.info("OPAL", s"$FrameworkName - Production Build")
+            OPALLogger.info(FrameworkName, "Production Build")
         } catch {
             case _: AssertionError ⇒
-                val message = s"$FrameworkName - Development Build (Assertions are enabled)"
-                OPALLogger.info("OPAL", message)
+                OPALLogger.info(FrameworkName, "Development Build (Assertions are enabled)")
         }
     }
 
