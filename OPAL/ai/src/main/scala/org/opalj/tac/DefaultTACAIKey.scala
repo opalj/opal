@@ -52,7 +52,9 @@ object DefaultTACAIKey extends TACAIKey {
     /**
      * TACAI code has no special prerequisites.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Method ⇒ AIResult { val domain: RecordDefUse }, _ <: AnyRef]] = Seq(SimpleAIKey)
+    override protected def requirements: Seq[ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
+        Seq(SimpleAIKey)
+    }
 
     /**
      * Returns an object which computes and caches the 3-address code of a method when required.

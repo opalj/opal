@@ -83,7 +83,7 @@ object TACAI {
     def apply(
         method:         Method,
         classHierarchy: ClassHierarchy,
-        aiResult:       AIResult { val domain: RecordDefUse }
+        aiResult:       AIResult { val domain: Domain with RecordDefUse }
     )(
         optimizations: List[TACOptimization[DUVar[aiResult.domain.DomainValue]]]
     ): TACode[DUVar[aiResult.domain.DomainValue]] = {
@@ -107,7 +107,6 @@ object TACAI {
         // uses, we do not have to create multiple instructions, therefore, we
         // can directly create the "final list" of statements (which will include nops
         // for all useless instructions).
-
         val statements = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](codeSize)
         val pcToIndex = new Array[Int](codeSize + 1 /* +1 if the try block includes the last inst. */ )
 

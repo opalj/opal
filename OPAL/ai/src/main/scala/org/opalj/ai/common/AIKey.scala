@@ -43,7 +43,7 @@ import org.opalj.ai.domain.RecordDefUse
  *
  * @author Michael Eichberg
  */
-trait AIKey extends ProjectInformationKey[Method ⇒ AIResult { val domain: RecordDefUse }, Nothing]
+trait AIKey extends ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, Nothing]
 
 /**
  * Key to get the result of the abstract interpretation of a method using a configured domain
@@ -78,10 +78,10 @@ object SimpleAIKey extends AIKey {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ AIResult { val domain: RecordDefUse } = {
+    ): Method ⇒ AIResult { val domain: Domain with RecordDefUse } = {
         val domainFactory = this.domainFactory
 
-        val aiResults = TrieMap.empty[Method, AIResult { val domain: RecordDefUse }]
+        val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
 
         (m: Method) ⇒ {
             aiResults.get(m) match {
