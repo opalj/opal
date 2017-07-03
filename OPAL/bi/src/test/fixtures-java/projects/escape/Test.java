@@ -49,14 +49,10 @@ public class Test {
         param.f = new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
         Object local = new @EscapeProperty(EscapeKeys.NoEscape) Object();
         Object noLocal = new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
-        if (!local.equals(noLocal)) {
-            bar(noLocal);
+        if (local != null) {
+            formalParamEscape(noLocal);
         }
         return new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
-    }
-
-    public static void bar(Object param) {
-        ClassWithFields.global = param;
     }
 
     public static void globalFieldEscape() {
@@ -74,7 +70,7 @@ public class Test {
     }
 
     public static void staticMethodEscape() {
-        bar(new @EscapeProperty(EscapeKeys.GlobalEscape) Object());
+        formalParamEscape(new @EscapeProperty(EscapeKeys.GlobalEscape) Object());
     }
 
     public static void localNoEscape(boolean b) {
@@ -95,5 +91,23 @@ public class Test {
             return 1;
         }
         return 0;
+    }
+
+    public static int nonObjectLocalNoEscape(boolean b) {
+        ClassWithFields x = new @EscapeProperty(EscapeKeys.NoEscape) ClassWithFields();
+        if (b)
+            x = null;
+        if (x != null) {
+            return 1;
+        }
+        return 0;
+    }
+
+    public static void constructorEscape() {
+        new @EscapeProperty(EscapeKeys.GlobalEscape) ClassWithFields(1);
+    }
+
+    public static void formalParamEscape(@EscapeProperty(EscapeKeys.GlobalEscape) Object param) {
+        ClassWithFields.global = param;
     }
 }

@@ -38,4 +38,9 @@ public class ClassWithFields {
     public ClassWithFields(Object param) {
         this.f = param;
     }
+
+    public ClassWithFields(int i) {
+        global = this;
+        System.out.println(i);
+    }
 }
