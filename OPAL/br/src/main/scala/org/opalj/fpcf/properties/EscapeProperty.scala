@@ -41,7 +41,7 @@ sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInf
 object EscapeProperty extends EscapePropertyMetaInforation {
     final val key: PropertyKey[EscapeProperty] = PropertyKey.create(
         "EscapeProperty",
-        NoEscape,
+        GlobalEscape,
         NoEscape
     )
 }

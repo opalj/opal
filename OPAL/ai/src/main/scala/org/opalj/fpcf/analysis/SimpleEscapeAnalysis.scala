@@ -30,60 +30,75 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.ai.Domain
+import org.opalj.ai.analyses.FormalParameters
+import org.opalj.ai.{Domain, FormalParameter}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{AllocationSite, ObjectType}
 import org.opalj.collection.immutable.IntSet
 import org.opalj.fpcf.properties._
 import org.opalj.tac._
 
-class SimpleEscapeAnalysis private(final val project: SomeProject) extends FPCFAnalysis {
+class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     type V = DUVar[Domain#DomainValue]
 
     private def checkParams(params: Seq[Expr[V]], defSite: Int) = {
         params.exists { case UVar(_, defSites) ⇒ defSites.contains(defSite) }
     }
 
-    private def determineEscapeStmt(stmt: Stmt[V], e: AllocationSite): Option[PropertyComputationResult] = {
-        val defSite = e.pc
+    private def determineEscapeStmt(stmt: Stmt[V], e: Entity, defSite: Int): Option[PropertyComputationResult] = {
         stmt match {
             case PutStatic(_, _, _, _, UVar(_, defSites)) if defSites.contains(defSite) ⇒
                 Some(ImmediateResult(e, GlobalEscape))
             case PutField(_, _, _, _, _, UVar(_, defSites)) if defSites.contains(defSite) ⇒
-                Some(Result(e, GlobalEscape))
+                Some(ImmediateResult(e, GlobalEscape))
             case ReturnValue(_, UVar(_, defSites)) if defSites.contains(defSite) ⇒
-                Some(Result(e, GlobalEscape))
+                Some(ImmediateResult(e, GlobalEscape))
             case ArrayStore(_, _, _, UVar(_, defSites)) if defSites.contains(defSite) ⇒
-                Some(Result(e, GlobalEscape))
+                Some(ImmediateResult(e, GlobalEscape))
             case Throw(_, UVar(_, defSites)) if defSites.contains(defSite) ⇒
-                Some(Result(e, GlobalEscape))
+                Some(ImmediateResult(e, GlobalEscape))
             case StaticMethodCall(_, _, _, _, _, params) if checkParams(params, defSite) ⇒
-                Some(Result(e, GlobalEscape))
-            case VirtualMethodCall(_, _, _, _, _, UVar(_, defSites), params)
-                if defSites.contains(defSite) || checkParams(params, defSite) ⇒ Some(Result(e, GlobalEscape))
+                Some(ImmediateResult(e, GlobalEscape))
+            case VirtualMethodCall(_, _, _, _, _, UVar(_, defSites), params) if defSites.contains(defSite) || checkParams(params, defSite) ⇒
+                Some(ImmediateResult(e, GlobalEscape))
             // TODO: base local constructor chain!
-            case NonVirtualMethodCall(_, ObjectType.Object, _, "<init>", _, UVar(_, defSites), _)
-                if defSites.contains(defSite) => None
-            case NonVirtualMethodCall(_, _, _, _, _, _, params) if checkParams(params, defSite) ⇒
-                Some(Result(e, GlobalEscape))
+            case NonVirtualMethodCall(_, ObjectType.Object, _, "<init>", _, UVar(_, defSites), _) if defSites.contains(defSite) ⇒ None
+            case NonVirtualMethodCall(_, dc, interface, "<init>", descriptor, UVar(_, defSites), _) if defSites.contains(defSite) ⇒
+                val mresult = project.specialCall(dc.asObjectType, interface, "<init>", descriptor)
+                mresult match {
+                    case Success(m) ⇒ {
+                        val formalParameters = propertyStore.context[FormalParameters]
+                        val escapeState = propertyStore(formalParameters(m)(-1), EscapeProperty.key)
+                        escapeState match {
+                            case EP(_, NoEscape)     ⇒ None
+                            case EP(_, GlobalEscape) ⇒ Some(ImmediateResult(e, GlobalEscape))
+                            // This case should not occur
+                            case _                   ⇒ Some(ImmediateResult(e, GlobalEscape))
+                        }
+                    }
+                    case /* method is unknown */ _ ⇒ Some(ImmediateResult(e, GlobalEscape))
+                }
+            case NonVirtualMethodCall(_, _, _, _, _, UVar(_, defSites), params) if defSites.contains(defSite) || checkParams(params, defSite) ⇒
+                Some(ImmediateResult(e, GlobalEscape))
             case FailingStatement(_, failingStmt) ⇒
-                determineEscapeStmt(failingStmt, e)
+                determineEscapeStmt(failingStmt, e, defSite)
             case Assignment(_, _, right) ⇒ right match {
                 //TODO chain
-                case NonVirtualFunctionCall(_, ObjectType.Object, _, "<init>", _, UVar(_, defSites), _)
-                    if defSites.contains(defSite) => None
-                case NonVirtualFunctionCall(_, _, _, _, _, UVar(_, defSites), params)
-                    if defSites.contains(defSite) || checkParams(params, defSite) ⇒ Some(Result(e, GlobalEscape))
-                case VirtualFunctionCall(_, _, _, _, _, UVar(_, defSites), params)
-                    if defSites.contains(defSite) || checkParams(params, defSite) ⇒ Some(Result(e, GlobalEscape))
+                case NonVirtualFunctionCall(_, ObjectType.Object, _, "<init>", _, UVar(_, defSites), _) if defSites.contains(defSite) ⇒ None
+                case NonVirtualFunctionCall(_, _, _, _, _, UVar(_, defSites), params) if defSites.contains(defSite) || checkParams(params, defSite) ⇒
+                    Some(ImmediateResult(e, GlobalEscape))
+                case VirtualFunctionCall(_, _, _, _, _, UVar(_, defSites), params) if defSites.contains(defSite) || checkParams(params, defSite) ⇒
+                    Some(ImmediateResult(e, GlobalEscape))
                 case StaticFunctionCall(_, _, _, _, _, params) if checkParams(params, defSite) ⇒
-                    Some(Result(e, GlobalEscape))
-                //TODO
-                //throw new RuntimeException("Requires Invokedynamic resolution (see java8LambdaExpressions...")
-                case Invokedynamic(_, _, _, _, params) if checkParams(params, defSite) =>
-                    Some(Result(e, GlobalEscape))
+                    Some(ImmediateResult(e, GlobalEscape))
 
-                // TODO on standard javac this won't happen
+                // see Java8LambdaExpressionsRewriting
+                case Invokedynamic(_, _, _, _, params) if checkParams(params, defSite) ⇒
+                    Some(ImmediateResult(e, GlobalEscape))
+
+                // on standard javac this won't happen as the concrete types are know by the
+                // allocation site.
+                // TODO special handling may be required for parameters
                 case Checkcast(_, UVar(_, defSites), _) if defSites.contains(defSite) ⇒
                     throw new RuntimeException("Not yet implemented")
                 case _ ⇒ None
@@ -92,24 +107,43 @@ class SimpleEscapeAnalysis private(final val project: SomeProject) extends FPCFA
         }
     }
 
-    private def doDetermineEscape(e: AllocationSite, uses: IntSet, code: Array[Stmt[V]]): PropertyComputationResult = {
-        for (use <- uses) {
-            determineEscapeStmt(code(use), e).map(return _)
+    private def doDetermineEscape(e: Entity, defSite: Int, uses: IntSet,
+                                  code: Array[Stmt[V]]): PropertyComputationResult = {
+        val as = e.asInstanceOf[AllocationSite]
+        println(as)
+        for (use ← uses) {
+            determineEscapeStmt(code(use), e, defSite) match {
+                case Some(result) ⇒ return result
+                case _            ⇒
+            }
         }
         Result(e, NoEscape)
     }
 
-    def determineEscape(e: AllocationSite): PropertyComputationResult = {
-        val TACode(code, _, _, _) = project.get(DefaultTACAIKey)(e.method)
+    def determineEscape(e: Entity): PropertyComputationResult = {
+        e match {
+            case AllocationSite(m, pc) ⇒
+                val TACode(code, _, _, _) = project.get(DefaultTACAIKey)(m)
 
-        val allocation = code.find(stmt => stmt.pc == e.pc).get
+                val index = code.indexWhere(stmt ⇒ stmt.pc == pc)
+                assert(index != -1)
 
-        allocation match {
-            case Assignment(e.pc, DVar(_, uses), New(e.pc, _)) =>
-                doDetermineEscape(e, uses, code)
-            case Assignment(e.pc, DVar(_, uses), NewArray(e.pc, _, _)) =>
-                doDetermineEscape(e, uses, code)
-            case stmt => throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
+                code(index) match {
+                    case Assignment(`pc`, DVar(_, uses), New(`pc`, _)) ⇒
+                        doDetermineEscape(e, index, uses, code)
+                    case Assignment(`pc`, DVar(_, uses), NewArray(`pc`, _, _)) ⇒
+                        doDetermineEscape(e, index, uses, code)
+                    case stmt ⇒
+                        throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
+                }
+            case FormalParameter(m, -1) if m.name == "<init>" ⇒
+                val TACode(code, _, _, _) = project.get(DefaultTACAIKey)(m)
+
+                println(code)
+
+                Result(e, GlobalEscape)
+
+            case fp: FormalParameter ⇒ Result(fp, GlobalEscape)
         }
 
     }
@@ -118,8 +152,9 @@ class SimpleEscapeAnalysis private(final val project: SomeProject) extends FPCFA
 object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
     type V = DUVar[Domain#DomainValue]
 
-    def entitySelector: PartialFunction[Entity, AllocationSite] = {
-        case as: AllocationSite ⇒ as
+    def entitySelector: PartialFunction[Entity, Entity] = {
+        case as: AllocationSite  ⇒ as
+        case fp: FormalParameter ⇒ fp
     }
 
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
