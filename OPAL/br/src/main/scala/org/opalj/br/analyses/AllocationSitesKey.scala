@@ -37,11 +37,11 @@ import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.log.OPALLogger
 
 /**
- * A set of all allocation sites. 
+ * A set of all allocation sites.
  *
  * To initialize the set of allocation sites for an entire project use the respective
- * project information key: [[AllocationSitesKey]]. The key also provides further 
- * information regarding the concrete allocation site objects and their relation 
+ * project information key: [[AllocationSitesKey]]. The key also provides further
+ * information regarding the concrete allocation site objects and their relation
  * to the underlying method.
  *
  * @author Michael Eichberg
@@ -57,13 +57,13 @@ class AllocationSites private[analyses] (val data: Map[Method, Map[PC, Allocatio
  * The ''key'' object to collect all allocation sites in a project. If the library methods
  * also contain bodies, the allocation sites for those methods are also made available.
  *
- * @note    An allocation site object is created for each `NEW` instruction found in a 
+ * @note    An allocation site object is created for each `NEW` instruction found in a
  *          method's body. However, this does not guarantee that the allocation site
  *          will ever be reached or is found in code derived from the method's bytecode.
- *          In particular the JDK is known for containing a lot of dead code 
+ *          In particular the JDK is known for containing a lot of dead code
  *          [[http://dl.acm.org/citation.cfm?id=2786865 Hidden Truths in Dead Software Paths]]
- *          and this code is automatically filtered when OPAL creates the 3-address code 
- *          representation. The default analysis done when creating the 3-address code is 
+ *          and this code is automatically filtered when OPAL creates the 3-address code
+ *          representation. The default analysis done when creating the 3-address code is
  *          basically equivalent to the one described in the above paper.
  *
  * @note    See [[org.opalj.br.AllocationSite]] for additional details.
