@@ -421,6 +421,22 @@ sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V]
     def receiver: Expr[V]
 }
 
+/**
+ * An instance based method call which does not require virtual method lookup. In other
+ * words the target method is either directly found in the specified class or a super
+ * class thereof. (Basically corresponds to an invokespecial at bytecode level.)
+ *
+ * @param pc The pc of the underlying, original bytecode instruction. Primarily useful to
+ *           do a lookup in the line-/local-variable tables.
+ * @param declaringClass The declaring class of the target method.
+ * @param isInterface `true` if the declaring class defines an interface type.
+ *                   (Required since Java 8.)
+ * @param name The name of the target method.
+ * @param descriptor The descriptor.
+ * @param receiver The receiver object.
+ * @param params The parameters of the method call (including the implicit `this` reference.)
+ * @tparam V The type of the Var used by this representation.
+ */
 case class NonVirtualFunctionCall[+V <: Var[V]](
         pc:             PC,
         declaringClass: ReferenceType,
@@ -482,6 +498,18 @@ case class StaticFunctionCall[+V <: Var[V]](
 }
 object StaticFunctionCall { final val ASTID = -26 }
 
+/**
+ * Represents a variable. Depending on the concrete usage, it is possible to distinguish between
+ * a use and/or definition site. Typically, `V` is directly bound by the direct subtypes of Var.
+ *
+ * @example
+ * {{{
+ *     trait MyVar extends Var[MyVar]
+ * }}}
+ *
+ * @tparam V Specifies the type of `Var` used by the three address representation. `V` is also
+ *           the self type.
+ */
 trait Var[+V <: Var[V]] extends ValueExpr[V] { this: V ⇒
 
     final def astID: Int = Var.ASTID
