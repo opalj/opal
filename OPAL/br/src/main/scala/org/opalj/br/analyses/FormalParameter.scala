@@ -26,29 +26,45 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.ai
-
-import org.opalj.br.Method
+package org.opalj
+package br
+package analyses
 
 /**
-  * A formal parameter in the TAC representation of a method. For non static methods,
-  * the 'this' local is also represented as a formal parameter with origin -1.
-  *
-  * @param method The method which contains the formal parameter.
-  * @param origin The value origin representing the formal parameter.
-  *               This value corresponds to the def/use information provided by the
-  *               [[org.opalj.tac.TACAI]] transformation. I.e., a UVar with a defSite containing -1,
-  *               corresponds to the formal parameter object with origin -1.
-  * @note 'this' locals have always an origin of -1. To get the origin of a parameter with index
-  *       i use [[org.opalj.ai.parameterIndexToValueOrigin()]].
-  * @author Florian Kuebler
-  */
-final class FormalParameter(final val method: Method, final val origin: ValueOrigin) {
+ * Explicitly models a formal parameter of a method to make it possible to store it in the
+ * property store and to compute properties for it. The first parameter explicitly defined by
+ * the method will have the origin `-2`, the second one will have the origin `-3` and so on.
+ * That is, the origin of an explicitly declared parameter is always `-(p_index + 2)`.
+ * In case of an instance method the origin of the this parameter is `-1`.
+ *
+ * @note The computational type category of the parameters is ignored to ease the mapping.
+ *
+ * @note This encoding is also used by the default three address code representation
+ *       generated using a local data-flow analysis (see [[org.opalj.tac.TACAI]]).
+ *
+ *       '''In case of the bytecode based data-flow analysis the origin used by the analysis
+ *       reflects the position of the parameter value on the tac; see
+ *       [[org.opalj.ai.parameterIndexToValueOrigin]].'''
+ *
+ *
+ * @param method The method which contains the formal parameter.
+ * @param origin The origin associated with the parameter. See the general description for
+ *               further details.
+ *
+ * @author Florian Kuebler
+ */
+final class FormalParameter( final val method: Method, final val origin: Int) {
+
+    /**
+     * @return The index of the parameter or -1 if this Formal Parameter reflects the
+     *         implicit `this` value.
+     */
+    def parameterIndex = -origin - 2
 
     override def equals(other: Any): Boolean = {
         other match {
             case that: FormalParameter ⇒ (this.method eq that.method) && this.origin == that.origin
-            case _ ⇒ false
+            case _                     ⇒ false
         }
     }
 
@@ -62,10 +78,8 @@ final class FormalParameter(final val method: Method, final val origin: ValueOri
 
 object FormalParameter {
 
-    def apply(method: Method, origin: ValueOrigin): FormalParameter =
-        new FormalParameter(method, origin)
+    def apply(method: Method, origin: Int): FormalParameter = new FormalParameter(method, origin)
 
-    def unapply(fp: FormalParameter): Some[(Method, ValueOrigin)] = Some((fp.method, fp.origin))
+    def unapply(fp: FormalParameter): Some[(Method, Int)] = Some((fp.method, fp.origin))
 
 }
-

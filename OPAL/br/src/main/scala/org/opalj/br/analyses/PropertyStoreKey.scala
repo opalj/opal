@@ -113,10 +113,19 @@ object PropertyStoreKey
     /**
      * Makes the set of [[AllocationSite]]s available to the property store that is created
      * for the respective project later on. I.e., this method must be called, before this key
-     * is used to get the respective project information.
+     * is used to get the project's property store.
      */
     def makeAllocationSitesAvailable(p: SomeProject): Unit = {
         addEntityDerivationFunction(p)(AllocationSitesKey.entityDerivationFunction)
+    }
+
+    /**
+     * Makes the set of [[FormalParameters]]s available to the property store that is created
+     * for the respective project later on. I.e., this method must be called, before this key
+     * is used to get the project's property store.
+     */
+    def makeFormalParametersAvailable(p: SomeProject): Unit = {
+        addEntityDerivationFunction(p)(FormalParametersKey.entityDerivationFunction)
     }
 
     /**
