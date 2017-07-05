@@ -32,12 +32,14 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+
 import scala.collection.JavaConverters._
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.br.instructions.LDCString
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LDC_W
+import org.opalj.log.OPALLogger
 
 /**
  * The ''key'' object to get information about all string constants found in the project's code.
@@ -46,27 +48,28 @@ import org.opalj.br.instructions.LDC_W
  *
  * @author Michael Eichberg
  */
-object StringConstantsInformationKey extends ProjectInformationKey[StringConstantsInformation] {
+object StringConstantsInformationKey
+        extends ProjectInformationKey[StringConstantsInformation, Nothing] {
 
     /**
      * The analysis has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the field access information.
      *
-     * @note This analysis is internally parallelized. I.e., it is advantageous to run this
-     *      analysis in isolation.
+     * @note  This analysis is internally parallelized. I.e., it is advantageous to run this
+     *        analysis in isolation.
      */
     override protected def compute(project: SomeProject): Map[String, ConstArray[(Method, PC)]] = {
 
         val estimatedSize = project.methodsCount
         val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[(Method, PC)]](estimatedSize)
 
-        project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
+        val errors = project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val method = methodInfo.method
 
             method.body.get.iterate { (pc, instruction) ⇒
@@ -85,6 +88,11 @@ object StringConstantsInformationKey extends ProjectInformationKey[StringConstan
                     case _ ⇒ // we don't care
                 }
             }
+        }
+        errors foreach { e ⇒
+            OPALLogger.error(
+                "string constants information", "collecting string constants information failed", e
+            )(project.logContext)
         }
 
         var result: Map[String, ConstArray[(Method, PC)]] = Map.empty

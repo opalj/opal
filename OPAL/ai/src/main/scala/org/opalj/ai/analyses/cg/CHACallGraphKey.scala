@@ -48,7 +48,7 @@ import org.opalj.br.analyses._
  *      `this` object.
  * @author Michael Reif
  */
-object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
+object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph, Nothing] {
 
     /**
      * The CHACallGraph has no special prerequisites.W

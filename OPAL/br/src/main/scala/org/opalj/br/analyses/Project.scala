@@ -35,6 +35,7 @@ import java.io.File
 import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicIntegerArray
+import java.util.concurrent.atomic.AtomicReferenceArray
 
 import scala.annotation.switch
 import scala.collection.JavaConverters._
@@ -999,7 +1000,37 @@ class Project[Source] private (
     //
     // --------------------------------------------------------------------------------------------
 
-    import java.util.concurrent.atomic.AtomicReferenceArray
+    /**
+     * Here, the usage of the project information key does not lead to its initialization!
+     */
+    private[this] val projectInformationKeyInitializationData = {
+        new ConcurrentHashMap[ProjectInformationKey[AnyRef, AnyRef], AnyRef]()
+    }
+
+    def getProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
+        key: ProjectInformationKey[T, I]
+    ): Option[I] = {
+        Option(projectInformationKeyInitializationData.get(key).asInstanceOf[I])
+    }
+
+    /**
+     * Gets the project information key specific initialization object. If an object is already
+     * registered that object will be used otherwise `info` will be evaluated and that value
+     * will be added and also returned.
+     *
+     * @note    Initialization data is discarded once the key is used.
+     */
+    def getOrCreateProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
+        key:  ProjectInformationKey[T, I],
+        info: ⇒ I
+    ): I = {
+        projectInformationKeyInitializationData.computeIfAbsent(
+            key.asInstanceOf[ProjectInformationKey[AnyRef, AnyRef]],
+            new java.util.function.Function[ProjectInformationKey[AnyRef, AnyRef], I] {
+                def apply(key: ProjectInformationKey[AnyRef, AnyRef]): I = info
+            }
+        ).asInstanceOf[I]
+    }
 
     // Note that the referenced array will never shrink!
     @volatile
@@ -1039,7 +1070,7 @@ class Project[Source] private (
      *
      * @see     [[ProjectInformationKey]] for further information.
      */
-    def get[T <: AnyRef](pik: ProjectInformationKey[T]): T = {
+    def get[T <: AnyRef](pik: ProjectInformationKey[T, _]): T = {
         val pikUId = pik.uniqueId
 
         /* synchronization is done by the caller! */
@@ -1054,10 +1085,11 @@ class Project[Source] private (
                 get(requiredProjectInformationKey)
             }
             val pi = time {
-                pik.doCompute(this)
-            } { t ⇒
-                info("project", s"initialization of $className took ${t.toSeconds}")
-            }
+                val pi = pik.doCompute(this)
+                // we don't need the initialization data anymore
+                projectInformationKeyInitializationData.remove(pik)
+                pi
+            } { t ⇒ info("project", s"initialization of $className took ${t.toSeconds}") }
             projectInformation.set(pikUId, pi)
             pi
         }
@@ -1108,7 +1140,7 @@ class Project[Source] private (
      *
      * @see [[ProjectInformationKey]] for further information.
      */
-    def has[T <: AnyRef](pik: ProjectInformationKey[T]): Option[T] = {
+    def has[T <: AnyRef](pik: ProjectInformationKey[T, _]): Option[T] = {
         val pikUId = pik.uniqueId
 
         if (pikUId < this.projectInformation.length())

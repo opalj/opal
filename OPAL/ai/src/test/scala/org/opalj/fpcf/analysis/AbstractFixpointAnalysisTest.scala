@@ -97,12 +97,22 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     def loadProject: Project[URL] = org.opalj.br.analyses.Project(file)
 
     val project = loadProject
-    val propertyStore = project.get(PropertyStoreKey)
+    // The property stored initialization has to be lazy to ensure that subclasses have a
+    // chance to configure the project before project information is actually derived.
+    lazy val propertyStore = project.get(PropertyStoreKey)
+
+    /**
+     * This method is intended to be overridden by subclass to execute code before
+     * {@link AbstractFixpointAnalysisTest#runAnalysis} called. The `project` is already
+     * initialized and can be queried.
+     */
+    def init(): Unit = {}
 
     /*
      * RUN ANALYSIS AND OBTAIN PROPERTY STORE
      */
 
+    init()
     runAnalysis(project)
 
     /*
@@ -180,6 +190,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             val className = project.classFile(method).fqn
             val message =
                 "Method has no property: "+className + s"  for: $propertyKey;"+
+                    s"\n\tmethod name:     ${method.name}"+
                     s"\nexpected property: $annotatedProperty"
             fail(message)
         }
@@ -191,7 +202,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             val message =
                 "Wrong property computed: "+
                     className +
-                    s"has the property $computedProperty for $propertyKey;"+
+                    s" has the property $computedProperty for $propertyKey;"+
+                    s"\n\tmethod name:       ${method.name}"+
                     s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $annotatedProperty"
             fail(message)

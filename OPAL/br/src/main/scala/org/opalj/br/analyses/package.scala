@@ -29,6 +29,8 @@
 package org.opalj
 package br
 
+import scala.reflect.runtime.universe.{Type ⇒ ScalaReflectType}
+
 import scala.collection.Map
 
 import org.opalj.collection.QualifiedCollection
@@ -50,7 +52,7 @@ package object analyses {
 
     type DeclaredMethods = Map[ObjectType, QualifiedCollection[Set[Method]]]
 
-    type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef]]
+    type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]]
 
     type StringConstantsInformation = Map[String, ConstArray[(Method, PC)]]
 
@@ -69,4 +71,5 @@ package object analyses {
         def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = x compare y
     }
 
+    type EntityDerivationFunction = SomeProject ⇒ (Traversable[AnyRef] /*Entities*/ , ScalaReflectType /*Context Key*/ , AnyRef /* Context Value*/ )
 }

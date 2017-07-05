@@ -54,9 +54,7 @@ trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, Analysis
         pm.progress(1, ProgressEvents.Start, Some(title))
         var wasKilled = false
         val result = doAnalyze(
-            project,
-            parameters,
-            () ⇒ { wasKilled = pm.isInterrupted(); wasKilled }
+            project, parameters, () ⇒ { wasKilled = pm.isInterrupted(); wasKilled }
         )
 
         if (wasKilled)

@@ -30,9 +30,12 @@ package org.opalj
 package br
 package analyses
 
+import java.util.concurrent.ConcurrentLinkedQueue
+
 import scala.reflect.runtime.universe.TypeTag
-import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.universe.typeOf
+
+import scala.collection.JavaConverters._
 
 import net.ceedubs.ficus.Ficus._
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
@@ -48,7 +51,8 @@ import org.opalj.fpcf.PropertyStoreContext
  *
  * @author Michael Eichberg
  */
-object PropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+object PropertyStoreKey
+        extends ProjectInformationKey[PropertyStore, ConcurrentLinkedQueue[EntityDerivationFunction]] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.PropertyStoreKey."
 
@@ -61,46 +65,67 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore] {
      */
     @volatile var parallelismLevel: Int = Math.max(NumberOfThreadsForCPUBoundTasks, 2)
 
-    // NOTE: the returned type specifies the type of the ctx value (the last AnyRef)
-    @volatile private[this] var entityDerivationFunctions: List[SomeProject ⇒ (Traversable[AnyRef], Type, AnyRef)] =
-        List(
-            (p: SomeProject) ⇒ (p.allMethods, typeOf[Iterable[Method]], p.allMethods),
-            (p: SomeProject) ⇒ (p.allFields, typeOf[Iterable[Field]], p.allFields),
-            (p: SomeProject) ⇒ (p.allClassFiles, typeOf[Iterable[ClassFile]], p.allClassFiles)
-        )
+    def defaultEntityDerivationFunctions(): ConcurrentLinkedQueue[EntityDerivationFunction] = {
+        val edfs = new ConcurrentLinkedQueue[EntityDerivationFunction]()
+        edfs.add((p: SomeProject) ⇒ (p.allMethods, typeOf[Iterable[Method]], p.allMethods))
+        edfs.add((p: SomeProject) ⇒ (p.allFields, typeOf[Iterable[Field]], p.allFields))
+        edfs.add((p: SomeProject) ⇒ (p.allClassFiles, typeOf[Iterable[ClassFile]], p.allClassFiles))
+        edfs
+    }
 
     /**
-     * Adds the given function to the list of entity derivation functions which – given a project –
-     * compute a set of entities, which should be managed by the store; i.e., an entity derivation
-     * function can be used to add additional entities to the [[org.opalj.fpcf.PropertyStore]].
-     * An example, is a function that derives – as additional entities - the set of all #
+     * Adds the given function to the list of entity derivation functions for the given project.
+     * The set of entities is computed on demand when this key's value is requested.
+     *
+     * An example, is a function that derives – as additional entities - the set of all
      * allocation sites.
      *
      * By default, the set of all method, all fields and all class files are added.
      *
      * '''Entity derivation functions must be registered before this key is used for
      * the first time w.r.t. a specific project.''' In general, it is recommended to add an entity
-     * derivation function before or directly after the project is created.
+     * derivation function before or directly after the project is created. Furthermore, it
+     * is generally recommended to use a(nother) key to add the entities and to use that key's
+     * entities to drive the entity derivation function. (See [[makeAllocationSitesAvailable]] for
+     * further details.)
      *
      * @param f A function that takes a project and which computes (1) the set of of entities and
      *          (2) (optionally) a data structure – which typically makes the set of computed
-     *          properties available – which is added as a context value to the property store; the
-     *          key is the specified generic type. E.g., `Iterable[Method]` for the set of
-     *          methods, `Iterable[Field]` for the set of fields and `Iterable[ClassFile]` for the
-     *          default set of class files.
+     *          properties available. This data structure is added as a context value to the
+     *          property store; the key is the specified generic type. E.g., `Iterable[Method]`
+     *          for the set of methods, `Iterable[Field]` for the set of fields and
+     *          `Iterable[ClassFile]` for the default set of class files.
      *
      */
     def addEntityDerivationFunction[T <: AnyRef: TypeTag](
+        project: SomeProject
+    )(
         f: SomeProject ⇒ (Traversable[AnyRef], T)
-    ): Unit = {
-        this.synchronized(
-            entityDerivationFunctions ::= (
-                (p: SomeProject) ⇒ {
-                    val (es, ctxValue) = f(p)
-                    (es, typeOf[T], ctxValue)
-                }
-            )
-        )
+    ): Unit = this.synchronized {
+        project.getOrCreateProjectInformationKeyInitializationData(
+            this, defaultEntityDerivationFunctions
+        ).add((p: SomeProject) ⇒ {
+            val (es, ctxValue) = f(p)
+            (es, typeOf[T], ctxValue)
+        })
+    }
+
+    /**
+     * Makes the set of [[AllocationSite]]s available to the property store that is created
+     * for the respective project later on. I.e., this method must be called, before this key
+     * is used to get the project's property store.
+     */
+    def makeAllocationSitesAvailable(p: SomeProject): Unit = {
+        addEntityDerivationFunction(p)(AllocationSitesKey.entityDerivationFunction)
+    }
+
+    /**
+     * Makes the set of [[FormalParameters]]s available to the property store that is created
+     * for the respective project later on. I.e., this method must be called, before this key
+     * is used to get the project's property store.
+     */
+    def makeFormalParametersAvailable(p: SomeProject): Unit = {
+        addEntityDerivationFunction(p)(FormalParametersKey.entityDerivationFunction)
     }
 
     /**
@@ -108,7 +133,7 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore] {
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Creates a new empty property store using the current [[parallelismLevel]].
@@ -117,8 +142,12 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore] {
         val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
         implicit val logContext = project.logContext
 
+        val entityDerivationFunctions = project.
+            getProjectInformationKeyInitializationData(this).
+            getOrElse(defaultEntityDerivationFunctions)
+
         var context: List[PropertyStoreContext[AnyRef]] = Nil
-        val entities = entityDerivationFunctions.flatMap { edf ⇒
+        val entities = entityDerivationFunctions.asScala.flatMap { edf ⇒
             val (entities, ctxKey, ctxValue) = edf(project)
             if (ctxKey != typeOf[Nothing]) {
                 context ::= PropertyStoreContext[AnyRef](ctxKey, ctxValue)

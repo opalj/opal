@@ -77,7 +77,8 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
     def +<:=(tpe: ObjectType): Unit = {
         if (theConcreteTypes.contains(tpe)) {
             theConcreteTypes -= tpe
-            theUpperTypeBounds = theUpperTypeBounds.filter(utb ⇒ isSubtypeOf(utb, tpe).isNoOrUnknown) + tpe
+            theUpperTypeBounds =
+                theUpperTypeBounds.filter(utb ⇒ isSubtypeOf(utb, tpe).isNoOrUnknown) + tpe
         } else {
             var doNotAddTPE: Boolean = false
             var newUpperTypeBounds = theUpperTypeBounds.filter { utb ⇒

@@ -36,8 +36,8 @@ import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PRIVATE
 
 /**
- * Encapsulates the information about  '''non-abstract''', '''non-private''', '''non-static''
- * methods which are '''not initializers''' (`<(cl)init>`) and which is required when determining
+ * Encapsulates the information about a  '''non-abstract''', '''non-private''', '''non-static'''
+ * method which is '''not an initializer''' (`<(cl)init>`) and which is required when determining
  * potential call targets.
  *
  * @note    A class may have -- w.r.t. a given package name -- at most one package
@@ -59,7 +59,7 @@ final class MethodDeclarationContext(
     assert(!method.isStatic)
     assert(!method.isInitializer)
 
-    def packageName = declaringClass.packageName
+    def packageName: String = declaringClass.packageName
     def isPublic: Boolean = method.isPublic
     def name: String = method.name
     def descriptor: MethodDescriptor = method.descriptor
@@ -80,7 +80,7 @@ final class MethodDeclarationContext(
 
     /**
      * The hash code is equal to the ``"hashCode of the descriptor of the underlying method"
-     * * 113 + "the hashCode of the package of the declaring class".
+     * * 113 + "the hashCode of the package of the declaring class"``.
      */
     override def hashCode: Int = method.descriptor.hashCode * 113 + packageName.hashCode()
 
@@ -124,7 +124,7 @@ final class MethodDeclarationContext(
     }
 
     /**
-     * Returns true if this method directly overrides the given method.
+     * Returns `true` if this method directly overrides the given method.
      *
      * (Note: indirect overriding can only be determined if all intermediate methods
      * are known; only in that case it is possible to test if, e.g., a public method
@@ -174,8 +174,8 @@ final class MethodDeclarationContext(
     ): Boolean = {
         visibility match {
             case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) ⇒ true
-            case None                                   ⇒ this.packageName == packageName
             case Some(ACC_PRIVATE)                      ⇒ false
+            case None                                   ⇒ this.packageName == packageName
         }
     }
 }

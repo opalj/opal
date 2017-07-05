@@ -33,5 +33,8 @@ import org.opalj.ai.Domain
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 
-trait TACAIKey extends ProjectInformationKey[Method ⇒ TACode[DUVar[Domain#DomainValue]]]
+/**
+ * @author Michael Eichberg
+ */
+trait TACAIKey extends ProjectInformationKey[Method ⇒ TACode[DUVar[Domain#DomainValue]], Nothing]
 

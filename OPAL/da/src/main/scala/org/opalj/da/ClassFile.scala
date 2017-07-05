@@ -195,9 +195,10 @@ case class ClassFile(
      * @return The generatd HTML.
      */
     def toXHTML(
-        embeddedCSS: Option[String] = Some(ClassFile.TheCSS),
-        cssFile:     Option[String] = None,
-        jsFile:      Option[String] = None
+        embeddedCSS:       Option[String] = Some(ClassFile.TheCSS),
+        cssFile:           Option[String] = None,
+        jsFile:            Option[String] = None,
+        withMethodsFilter: Boolean        = true
     ): Node =
         <html>
             <head>
@@ -210,55 +211,65 @@ case class ClassFile(
                 {
                     if (cssFile.isDefined)
                         <link rel="stylesheet" href={ cssFile.get }></link>
+                }{
+                    if (withMethodsFilter)
+                        <script>                { scala.xml.Unparsed(ClassFile.FilterJS) }            </script>
                 }
-                <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
                 {
                     if (jsFile.isDefined)
                         <script type="text/javascript" src={ jsFile.get }></script>
                 }
             </head>
             <body>
-                <div id="class_file">
-                    { accessFlags }
-                    &nbsp;<b id="defining_class">{ thisType }</b>
-                    &nbsp;{ superTypes }
-                    <div id="class_file_version">
-                        Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }
-                    </div>
-                    <div>
-                        Size:&nbsp;{ size }
-                        bytes
-                    </div>
-                </div>
-                <div class="constant_pool">
-                    <details>
-                        <summary>Constant Pool</summary>
-                        { cpToXHTML }
-                    </details>
-                </div>
-                <div class="members">
-                    <div class="attributes">
-                        <details>
-                            <summary>Attributes</summary>
-                            { attributesToXHTML }
-                        </details>
-                    </div>
-                    <div class="fields">
-                        <details>
-                            <summary>Fields</summary>
-                            { fieldsToXHTML }
-                        </details>
-                    </div>
-                    <div class="methods">
-                        <details>
-                            <summary>Methods</summary>
-                            { filter }
-                            { methodsToXHTML }
-                        </details>
-                    </div>
-                </div>
+                { classFileToXHTML(withMethodsFilter) }
             </body>
         </html>
+
+    def classFileToXHTML(): Node = classFileToXHTML(false)
+
+    private[this] def classFileToXHTML(withMethodsFilter: Boolean): Node =
+        <div class="class_file">
+            <div id="class_file_header">
+                { accessFlags }
+                &nbsp;<b id="defining_class">{ thisType }</b>
+                &nbsp;{ superTypes }
+                <div id="class_file_version">
+                    Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }
+                </div>
+                <div>
+                    Size:&nbsp;{ size }
+                    bytes
+                </div>
+            </div>
+            <div class="constant_pool">
+                <details>
+                    <summary>Constant Pool</summary>
+                    { cpToXHTML }
+                </details>
+            </div>
+            <div class="members">
+                <div class="attributes">
+                    <details>
+                        <summary>Attributes</summary>
+                        { attributesToXHTML }
+                    </details>
+                </div>
+                <div class="fields">
+                    <details>
+                        <summary>Fields</summary>
+                        { fieldsToXHTML }
+                    </details>
+                </div>
+                <div class="methods">
+                    <details>
+                        <summary>Methods</summary>
+                        { if (withMethodsFilter) filter else NodeSeq.Empty }
+                        { methodsToXHTML }
+                    </details>
+                </div>
+            </div>
+        </div>
+
 }
 
 object ClassFile {

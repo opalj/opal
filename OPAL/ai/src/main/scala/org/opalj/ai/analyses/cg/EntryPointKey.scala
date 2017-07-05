@@ -88,7 +88,7 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Michael Reif
  */
-object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
+object EntryPointKey extends ProjectInformationKey[EntryPointInformation, Nothing] {
 
     override protected def requirements = Seq(
         FPCFAnalysesManagerKey,
@@ -139,7 +139,7 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
                     return entryPoints;
             }
 
-        configEntryPoints map { ep ⇒
+        configEntryPoints foreach { ep ⇒
             val EntryPointContainer(declClass, name, descriptor) = ep
 
             project.classFile(ObjectType(declClass)) match {

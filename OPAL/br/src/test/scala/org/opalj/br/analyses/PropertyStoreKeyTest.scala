@@ -80,11 +80,14 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
         }
     }
 
-    describe("using EntityDerivationFunctions PropertyStoreKey") {
+    describe("using EntityDerivationFunctions") {
 
         val p: SomeProject = biProject("ai.jar")
 
         PropertyStoreKey.addEntityDerivationFunction[Map[Method, Map[PC, AllocationSite]]](
+            p
+        )(
+            // Callback function which is called, when the information is actually required
             (p: SomeProject) ⇒ {
 
                 var allAs: List[Chain[AllocationSite]] = Nil
@@ -157,4 +160,54 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
         }
     }
+
+    describe("using makeFormalParametersAvailable") {
+
+        val p: SomeProject = biProject("ai.jar")
+
+        PropertyStoreKey.makeFormalParametersAvailable(p)
+
+        // WE HAVE TO USE THE KEY TO TRIGGER THE COMPUTATION OF THE ENTITY DERIVATION FUNCTION(S)
+        val ps = p.get(PropertyStoreKey)
+
+        assert(p.has(FormalParametersKey).isDefined)
+
+        it("should contain the formal parameters") {
+
+            val allFPs: Iterable[FormalParameter] = ps.context[FormalParameters].formalParameters
+
+            val formalParametersCount = allFPs.size
+
+            assert(formalParametersCount >= p.allMethods.map(m ⇒ m.descriptor.parametersCount).sum)
+            info(s"contains $formalParametersCount formal parameters")
+
+            assert(allFPs.forall(ps.isKnown))
+        }
+    }
+
+    describe("using makeAllocationSitesAvailable") {
+
+        val p: SomeProject = biProject("ai.jar")
+
+        PropertyStoreKey.makeAllocationSitesAvailable(p)
+
+        // WE HAVE TO USE THE KEY TO TRIGGER THE COMPUTATION OF THE ENTITY DERIVATION FUNCTION(S)
+        val ps = p.get(PropertyStoreKey)
+
+        assert(p.has(AllocationSitesKey).isDefined)
+
+        it("should contain the allocation sites") {
+
+            val allAs: Iterable[AllocationSite] = ps.context[AllocationSites].allocationSites
+
+            val allocationSiteCount = allAs.size
+
+            assert(allocationSiteCount > 0)
+            info(s"contains $allocationSiteCount allocation sites")
+
+            val allAdded: Boolean = allAs.forall(ps.isKnown)
+            assert(allAdded)
+        }
+    }
+
 }
