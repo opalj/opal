@@ -206,12 +206,12 @@ object ToTxt {
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(rec)}/*(non-virtual) ${declClass.toJava}*/$call"
 
-            case FailingExpression.ASTID ⇒
-                val FailingExpression(_, fExpr) = stmt
+            case FailingExpr.ASTID ⇒
+                val FailingExpr(_, fExpr) = stmt
                 s"$pc expression evaluation will throw exception: ${toTxtExpr(fExpr)}"
 
-            case FailingStatement.ASTID ⇒
-                val FailingStatement(_, fStmt) = stmt
+            case FailingStmt.ASTID ⇒
+                val FailingStmt(_, fStmt) = stmt
                 s"$pc statement always throws an exception: ${toTxtStmt(fStmt, includePC)}"
 
         }
@@ -232,6 +232,10 @@ object ToTxt {
             val (stmt, index) = stmtWithIndex
             qualify(index, toTxtStmt(stmt, includePC), indented = false)
         }.mkString("\n")
+    }
+
+    def apply[P <: AnyRef, V <: Var[V]](tac: TACode[P, V]): Seq[String] = {
+        apply(tac.params, tac.stmts, tac.cfg, false, true, false)
     }
 
     /**
@@ -303,14 +307,14 @@ object ToTxt {
                         case cn: CatchNode ⇒
                             s"⚡️ ${catchTypeToString(cn.catchType)} → ${cn.handlerPC}"
                         case ExitNode(false) ⇒
-                            "⚠️ - uncaught exception/abnormal return"
+                            "⚠️ - potentially uncaught exception/abnormal return"
 
                         case _ ⇒ null
                     }.filterNot(_ == null)
 
                 if (successors.nonEmpty)
                     javaLikeCode +=
-                        successors.mkString((" " * (if (indented) 6 else 0))+"// → ", ", ", "")
+                        successors.mkString((" " * (if (indented) 6 else 0))+"// ", ", ", "")
             }
 
             index += 1
