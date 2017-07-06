@@ -60,6 +60,15 @@ public class Test {
                 @EscapeProperty(EscapeKeys.GlobalEscape) Object();
     }
 
+    public static void instanceFieldEscape(ClassWithFields param) {
+        param.f = new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+    }
+
+    public static void arrayEscape(Object[] param) {
+        if (param.length > 0)
+            param[0] = new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+    }
+
     public static void parameterEscape(ClassWithFields param) {
         param.f = new
                 @EscapeProperty(EscapeKeys.GlobalEscape) Object();
@@ -71,6 +80,15 @@ public class Test {
 
     public static void staticMethodEscape() {
         formalParamEscape(new @EscapeProperty(EscapeKeys.GlobalEscape) Object());
+    }
+
+    public void virtualMethodEscape() {
+        formalNonStaticParamEscape(new @EscapeProperty(EscapeKeys.GlobalEscape) Object());
+    }
+
+    public void virtualMethodInExprStmtEscape() {
+        formalNonStaticParamEscapeWithReturn(new @EscapeProperty(EscapeKeys.GlobalEscape) Object(),
+                new @EscapeProperty(EscapeKeys.GlobalEscape) ClassWithFields());
     }
 
     public static void localNoEscape(boolean b) {
@@ -109,5 +127,16 @@ public class Test {
 
     public static void formalParamEscape(@EscapeProperty(EscapeKeys.GlobalEscape) Object param) {
         ClassWithFields.global = param;
+    }
+
+    public void formalNonStaticParamEscape(@EscapeProperty(EscapeKeys.GlobalEscape) Object param) {
+        ClassWithFields.global = param;
+    }
+
+    public ClassWithFields formalNonStaticParamEscapeWithReturn(@EscapeProperty(EscapeKeys
+            .GlobalEscape) Object p1, @EscapeProperty(EscapeKeys.GlobalEscape) ClassWithFields p2) {
+        p2.f = new Object();
+        ClassWithFields.global = p1;
+        return p2;
     }
 }
