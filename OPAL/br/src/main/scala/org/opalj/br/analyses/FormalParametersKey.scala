@@ -53,8 +53,8 @@ class FormalParameters private[analyses] (val data: Map[Method, ConstArray[Forma
 
     /**
      * Returns the formal parameters array for the given method. If the method is not known,
-     * `null` is returned. If the method is known a non-null (but potentially empty) [[ConstArray]]
-     * is returned.
+     * `null` is returned. If the method is known a non-null (but potentially empty)
+     * [[org.opalj.collection.immutable.ConstArray]] is returned.
      */
     def apply(m: Method): ConstArray[FormalParameter] = data.getOrElse(m, null)
 
@@ -64,7 +64,7 @@ class FormalParameters private[analyses] (val data: Map[Method, ConstArray[Forma
 /**
  * The ''key'' object to get information about all formal parameters.
  *
- * @note See [[org.opalj.ai.FormalParameter]] and [[FormalParameters]] for further details.
+ * @note See [[org.opalj.br.analyses.FormalParameter]] and [[FormalParameters]] for further details.
  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and pass in
  *          `this` object.
  * @author Florian Kuebler
