@@ -114,6 +114,8 @@ case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceTyp
         value.remapIndexes(pcToIndex)
     }
 
+    override def toString: String = s"InstanceOf(pc=$pc,$value,${cmpTpe.toJava})"
+
 }
 object InstanceOf { final val ASTID = -2 }
 
@@ -131,6 +133,8 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
     }
+
+    override def toString: String = s"Checkcast(pc=$pc,$value,${cmpTpe.toJava})"
 }
 object Checkcast { final val ASTID = -3 }
 
@@ -151,6 +155,8 @@ case class Compare[+V <: Var[V]](
         left.remapIndexes(pcToIndex)
         right.remapIndexes(pcToIndex)
     }
+
+    override def toString: String = s"Compare(pc=$pc,$left,$condition,$right)"
 }
 object Compare { final val ASTID = -4 }
 
@@ -169,6 +175,7 @@ case class IntConst(pc: PC, value: Int) extends SimpleValueConst {
     final def astID: Int = IntConst.ASTID
     final def tpe = IntegerType
     final def cTpe: ComputationalType = ComputationalTypeInt
+    override def toString: String = s"IntConst(pc=$pc,$value)"
 }
 object IntConst { final val ASTID = -5 }
 
@@ -176,6 +183,7 @@ case class LongConst(pc: PC, value: Long) extends SimpleValueConst {
     final def astID: Int = LongConst.ASTID
     final def tpe = LongType
     final def cTpe: ComputationalType = ComputationalTypeLong
+    override def toString: String = s"LongConst(pc=$pc,$value)"
 }
 object LongConst { final val ASTID = -6 }
 
@@ -183,6 +191,7 @@ case class FloatConst(pc: PC, value: Float) extends SimpleValueConst {
     final def astID: Int = FloatConst.ASTID
     final def tpe = FloatType
     final def cTpe: ComputationalType = ComputationalTypeFloat
+    override def toString: String = s"FloatConst(pc=$pc,$value)"
 }
 object FloatConst { final val ASTID = -7 }
 
@@ -190,6 +199,7 @@ case class DoubleConst(pc: PC, value: Double) extends SimpleValueConst {
     final def astID: Int = DoubleConst.ASTID
     final def tpe = DoubleType
     final def cTpe: ComputationalType = ComputationalTypeDouble
+    override def toString: String = s"DoubleConst(pc=$pc,$value)"
 }
 object DoubleConst { final val ASTID = -8 }
 
@@ -197,6 +207,7 @@ case class StringConst(pc: PC, value: String) extends SimpleValueConst {
     final def astID: Int = StringConst.ASTID
     final def tpe = ObjectType.String
     final def cTpe: ComputationalType = ComputationalTypeReference
+    override def toString: String = s"StringConst(pc=$pc,$value)"
 }
 object StringConst { final val ASTID = -9 }
 
@@ -204,6 +215,7 @@ case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
     final def astID: Int = MethodTypeConst.ASTID
     final def tpe = ObjectType.MethodType
     final def cTpe: ComputationalType = ComputationalTypeReference
+    override def toString: String = s"MethodTypeConst(pc=$pc,${value.toJava})"
 }
 object MethodTypeConst { final val ASTID = -10 }
 
@@ -211,6 +223,7 @@ case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
     final def astID: Int = MethodHandleConst.ASTID
     final def tpe = ObjectType.MethodHandle
     final def cTpe: ComputationalType = ComputationalTypeReference
+    override def toString: String = s"MethodHandleConst(pc=$pc,${value.toJava})"
 }
 object MethodHandleConst { final val ASTID = -11 }
 
@@ -218,6 +231,7 @@ case class ClassConst(pc: PC, value: ReferenceType) extends SimpleValueConst {
     final def astID: Int = ClassConst.ASTID
     final def tpe = ObjectType.Class
     final def cTpe: ComputationalType = ComputationalTypeReference
+    override def toString: String = s"ClassConst(pc=$pc,${value.toJava})"
 }
 object ClassConst { final val ASTID = -12 }
 
@@ -225,6 +239,7 @@ case class NullExpr(pc: PC) extends SimpleValueConst {
     final def astID: Int = NullExpr.ASTID
     final def tpe = ObjectType.Object // TODO Should we introduce a fake type such as "java.null"
     final def cTpe: ComputationalType = ComputationalTypeReference
+    override def toString: String = s"NullExpr(pc=$pc)"
 }
 object NullExpr { final val ASTID = -13 }
 
@@ -246,6 +261,8 @@ case class BinaryExpr[+V <: Var[V]](
         left.remapIndexes(pcToIndex)
         right.remapIndexes(pcToIndex)
     }
+
+    override def toString: String = s"BinaryExpr(pc=$pc,$cTpe,$left,$op,$right)"
 }
 object BinaryExpr { final val ASTID = -14 }
 
@@ -266,6 +283,8 @@ case class PrefixExpr[+V <: Var[V]](
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
     }
+
+    override def toString: String = s"PrefixExpr(pc=$pc,$cTpe,$op,$operand)"
 }
 object PrefixExpr { final val ASTID = -15 }
 
@@ -283,6 +302,7 @@ case class PrimitiveTypecastExpr[+V <: Var[V]](
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
     }
+    override def toString: String = s"PrimitiveTypecastExpr(pc=$pc,$targetTpe,$operand)"
 }
 object PrimitiveTypecastExpr { final val ASTID = -16 }
 
@@ -304,6 +324,7 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
      */
     final def isSideEffectFree: Boolean = true
 
+    override def toString: String = s"New(pc=$pc,${tpe.toJava})"
 }
 object New { final val ASTID = -17 }
 
@@ -325,6 +346,10 @@ case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         counts.foreach { c ⇒ c.remapIndexes(pcToIndex) }
     }
+
+    override def toString: String = {
+        s"NewArray(pc=$pc,${counts.mkString("[", ",", "]")},${tpe.toJava})"
+    }
 }
 object NewArray { final val ASTID = -18 }
 
@@ -340,6 +365,8 @@ case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) ex
         index.remapIndexes(pcToIndex)
         arrayRef.remapIndexes(pcToIndex)
     }
+
+    override def toString: String = s"ArrayLoad(pc=$pc,$index,$arrayRef)"
 }
 object ArrayLoad { final val ASTID = -19 }
 
@@ -354,6 +381,8 @@ case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends Expr[V] 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
     }
+
+    override def toString: String = s"ArrayLength(pc=$pc,$arrayRef)"
 }
 object ArrayLength { final val ASTID = -20 }
 
@@ -374,6 +403,10 @@ case class GetField[+V <: Var[V]](
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         objRef.remapIndexes(pcToIndex)
     }
+
+    override def toString: String = {
+        s"GetField(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$objRef)"
+    }
 }
 object GetField { final val ASTID = -21 }
 
@@ -390,6 +423,9 @@ case class GetStatic(
 
     final def isSideEffectFree: Boolean = true
 
+    override def toString: String = {
+        s"GetStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava})"
+    }
 }
 object GetStatic { final val ASTID = -22 }
 
@@ -409,6 +445,12 @@ case class Invokedynamic[+V <: Var[V]](
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    }
+
+    override def toString: String = {
+        val sig = descriptor.toJava(name)
+        val params = this.params.mkString("(", ",", ")")
+        s"Invokedynamic(pc=$pc,$bootstrapMethod,$sig,$params)"
     }
 }
 object Invokedynamic { final val ASTID = -23 }
@@ -455,6 +497,13 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
         receiver.remapIndexes(pcToIndex)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
     }
+
+    override def toString: String = {
+        val sig = descriptor.toJava(name)
+        val declClass = declaringClass.toJava
+        val params = this.params.mkString("(", ",", ")")
+        s"NonVirtualFunctionCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$receiver,$params)"
+    }
 }
 object NonVirtualFunctionCall { final val ASTID = -24 }
 
@@ -476,6 +525,13 @@ case class VirtualFunctionCall[+V <: Var[V]](
         receiver.remapIndexes(pcToIndex)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
     }
+
+    override def toString: String = {
+        val sig = descriptor.toJava(name)
+        val declClass = declaringClass.toJava
+        val params = this.params.mkString("(", ",", ")")
+        s"VirtualFunctionCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$receiver,$params)"
+    }
 }
 object VirtualFunctionCall { final val ASTID = -25 }
 
@@ -494,6 +550,13 @@ case class StaticFunctionCall[+V <: Var[V]](
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    }
+
+    override def toString: String = {
+        val sig = descriptor.toJava(name)
+        val declClass = declaringClass.toJava
+        val params = this.params.mkString("(", ",", ")")
+        s"StaticFunctionCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
     }
 }
 object StaticFunctionCall { final val ASTID = -26 }
