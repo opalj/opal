@@ -45,6 +45,12 @@ abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Va
 
 }
 
+object DUVar {
+
+    @volatile var printDomainValue: Boolean = false
+
+}
+
 /**
  * Identifies the single index(pc) of the instruction which initialized
  * the variable. I.e., per method there must be at most one D variable which
@@ -67,10 +73,8 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
     def usedBy: IntSet = useSites
 
     def name: String = {
-        if (origin < 0)
-            s"param${(-origin - 1).toHexString}/*:$value*/"
-        else
-            s"lv${origin.toHexString}/*:$value*/"
+        val n = if (origin < 0) s"param${(-origin - 1).toHexString}" else s"lv${origin.toHexString}"
+        if (DUVar.printDomainValue) s"$n/*:$value*/" else n
     }
 
     final def isSideEffectFree: Boolean = true
@@ -80,7 +84,9 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         useSites = useSites.map(pcToIndex.apply) // use site are always positive...
     }
 
-    override def toString: String = s"DVar(useSites=$useSites,value=$value,origin=$origin)"
+    override def toString: String = {
+        s"DVar(useSites=${useSites.mkString("{", ",", "}")},value=$value,origin=$origin)"
+    }
 
 }
 
@@ -116,12 +122,16 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
 ) extends DUVar[Value] {
 
     def name: String = {
-        defSites.iterator.map { defSite ⇒
-            if (defSite < 0)
-                s"param${(-defSite - 1).toHexString}/*:$value*/"
-            else
-                "lv"+defSite.toHexString
-        }.mkString("{", ", ", s"}/*:$value*/")
+        val n =
+            defSites.iterator.map { defSite ⇒
+                val n =
+                    if (defSite < 0)
+                        "param"+(-defSite - 1).toHexString
+                    else
+                        "lv"+defSite.toHexString
+                if (DUVar.printDomainValue) s"$n/*:$value*/" else n
+            }.mkString("{", ", ", "}")
+        if (DUVar.printDomainValue) s"$n/*:$value*/" else n
     }
 
     def definedBy: IntSet = defSites
@@ -134,7 +144,9 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         }
     }
 
-    override def toString: String = s"UVar(defSites=$defSites,value=$value)"
+    override def toString: String = {
+        s"UVar(defSites=${defSites.mkString("{", ",", "}")},value=$value)"
+    }
 
 }
 
