@@ -37,7 +37,6 @@ import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
-import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.collection.immutable.IntSet
@@ -83,11 +82,10 @@ object TACNaive {
      * @return The array with the generated statements.
      */
     def apply(
-        method:           Method,
-        classHierarchy:   ClassHierarchy,
-        optimizations:    List[TACOptimization[IdBasedVar]] = List.empty,
-        forceCFGCreation: Boolean                           = false
-    ): (Array[Stmt[IdBasedVar]], Option[CFG], ExceptionHandlers) = {
+        method:         Method,
+        classHierarchy: ClassHierarchy,
+        optimizations:  List[TACOptimization[Param, IdBasedVar]] = List.empty
+    ): TACode[Param, IdBasedVar] = {
 
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -98,12 +96,8 @@ object TACNaive {
         val instructions = code.instructions
         val codeSize = instructions.length
 
-        // used if we find jsr/ret instructions or want to do optimizations
-        var theCFG: CFG = null
-        def cfg(): CFG = {
-            if (theCFG eq null) theCFG = CFGFactory(code, classHierarchy)
-            theCFG
-        }
+        // (only) used if the code contains jsr/ret instructions or if an optimization requires it
+        val cfg = CFGFactory(code, classHierarchy)
 
         // Used to determine if we have already transformed the respective instruction.
         val processed = new BitSet(codeSize)
@@ -806,22 +800,32 @@ object TACNaive {
         // However, before we can do that we first add the register initialization
         // statements.
         var index = 0
-        val finalStatements = new ArrayBuffer[Stmt[IdBasedVar]](codeSize)
         var registerIndex = 0
-        if (!method.isStatic) {
+        val finalStatements = new ArrayBuffer[Stmt[IdBasedVar]](codeSize)
+        val descriptor = method.descriptor
+        val isStatic = method.isStatic
+        val parameterTypes = descriptor.parameterTypes
+        val paramsCount = descriptor.parametersCount + 1
+        val tacParams = new Array[Param](paramsCount)
+
+        if (!isStatic) {
             val targetVar = RegisterVar(ComputationalTypeReference, 0)
             val sourceParam = Param(ComputationalTypeReference, "this")
+            tacParams(0) = sourceParam
             finalStatements += Assignment[IdBasedVar](-1, targetVar, sourceParam)
             index += 1
             registerIndex += 1
         }
-        method.descriptor.parameterTypes foreach { parameterType ⇒
-            val varName = code.localVariable(0, registerIndex).map(_.name).getOrElse("p_"+index)
+        var tacIndex = 1
+        parameterTypes foreach { parameterType ⇒
+            val varName = code.localVariable(0, registerIndex).map(_.name).getOrElse("p_"+tacIndex)
             val cTpe = parameterType.computationalType
             val targetVar = RegisterVar(cTpe, registerIndex)
             val sourceParam = Param(cTpe, varName)
+            tacParams(tacIndex) = sourceParam
             finalStatements += Assignment[IdBasedVar](-1, targetVar, sourceParam)
             index += 1
+            tacIndex += 1
             registerIndex += cTpe.operandSize
         }
 
@@ -847,8 +851,7 @@ object TACNaive {
         // add the artificial lastPC + 1 instruction to enable the mapping of exception handlers
         pcToIndex(currentPC /* == codeSize +1 */ ) = index
 
-        if (forceCFGCreation || optimizations.nonEmpty) cfg()
-        val tacCFG = Option(theCFG).map(cfg ⇒ cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1))
+        val tacCFG = cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1)
 
         finalStatements.foreach(_.remapIndexes(pcToIndex))
         val tacCode = finalStatements.toArray
@@ -856,12 +859,11 @@ object TACNaive {
         val tacEHs = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
 
         if (optimizations.nonEmpty) {
-            val initialTACode = TACode(tacCode, tacCFG.get, tacEHs, code.lineNumberTable)
-            val base = TACOptimizationResult[IdBasedVar](initialTACode, wasTransformed = false)
-            val result = optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac))
-            (result.code.stmts, Some(result.code.cfg), result.code.exceptionHandlers)
+            val initialTACode = TACode(new Parameters(tacParams), tacCode, tacCFG, tacEHs, code.lineNumberTable)
+            val base = TACOptimizationResult[Param, IdBasedVar](initialTACode, wasTransformed = false)
+            optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac)).code
         } else {
-            (tacCode, tacCFG, tacEHs)
+            TACode(new Parameters(tacParams), tacCode, tacCFG, tacEHs, code.lineNumberTable)
         }
     }
 

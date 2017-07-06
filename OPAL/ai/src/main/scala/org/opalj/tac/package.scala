@@ -40,7 +40,7 @@ import org.opalj.graphs.Node
  */
 package object tac {
 
-    final val AllTACNaiveOptimizations: List[TACOptimization[IdBasedVar]] = {
+    final val AllTACNaiveOptimizations: List[TACOptimization[Param, IdBasedVar]] = {
         List(SimplePropagation)
     }
 

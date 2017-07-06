@@ -29,12 +29,18 @@
 package org.opalj
 package tac
 
-import org.opalj.ai.Domain
-import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.ai.ValueOrigin
+import org.opalj.collection.immutable.IntSet
 
 /**
+ * Captures essential information about a method's parameter.
+ *
  * @author Michael Eichberg
  */
-trait TACAIKey extends ProjectInformationKey[Method ⇒ TACode[TACMethodParameter, DUVar[Domain#DomainValue]], Nothing]
+case class TACMethodParameter(
+        val origin:   ValueOrigin,
+        val useSites: IntSet
+) {
+    override def toString: String = s"orign=$origin; "+useSites.mkString("useSites={", ",", "}")
+}
 

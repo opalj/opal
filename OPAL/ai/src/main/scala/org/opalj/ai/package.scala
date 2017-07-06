@@ -31,7 +31,6 @@ package org.opalj
 import scala.language.existentials
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
@@ -285,52 +284,95 @@ package object ai {
     }
 
     /**
-     * Extracts the domain variables (register values) related to the method's parameters. Recall
-     * that long and double values use two register values, but only the first index is actually
-     * used to store the reference. Furthermore, the returned array will contain the self 
-     * reference (`this`) at index 0 if the method is an instance method.
+     * Extracts the domain variables (register values) related to the method's parameters;
+     * see [[org.opalj.tac.Parameters]] for the detailed layout of the returned array.
      *
-     * @note   If a parameter (variable) is used as a variable and updated, 
-     *         then the returned domain value will reflect this behavior. 
+     * Recall that at the bytecode level long and double values use two register values. The
+     * returned array will, however, abstract over the difference between so-called computational
+     * type category I and II values. Furthermore, the explicitly specified parameters are
+     * always stored in the indexes [1..parametersCount] to enable unifor access to a method's
+     * parameters whether the method is static or not. Furthermore, the returned array will
+     * contain the self reference (`this`) at index 0 if the method is an instance method;
+     * otherwise index 0 will be `null`.
+     *
+     * @note   If a parameter (variable) is used as a variable and updated,
+     *         then the returned domain value will reflect this behavior.
      *         For example, given the following code:
      *         {{{
      *         // Given: class X extends Object
      *         foo(X x) { do { x = new Y(); System.out.println(x) } while(true;)}
      *         }}}
      *         The type of the domain value will be (as expected) x; however - depending on the
-     *         domain - it may contain the information that x may also reference the created 
-     *         object Y
+     *         domain - it may contain the information that x may also reference the created
+     *         object Y.
      *
      * @param  isStatic `true` if the method is static (we have no `this` reference).
      * @param  descriptor The method descriptor.
-     * @param  locals The register values before the first instruction was evaluated.
-     * @tparam D The domain used for the interpretation of the code.
+     *
      * @return The local variables which represent the parameters. The size of the returned array
      *         is the sum of the operand sizes of the parameters + 1 if the method is an instance
      *         method. (@see [[parameterIndexToValueOrigin]] and [[mapOperandsToParameters]]
      *         for further details.)
      */
-    def parameterValues(
-        domain: Domain
+    def parameterVariables(
+        aiResult: AIResult
     )(
         isStatic:   Boolean,
-        descriptor: MethodDescriptor,
-        locals:     Locals[domain.DomainValue]
-    ): ConstArray[domain.DomainValue] = {
-        val parameterTypes = descriptor.parameterTypes
-        val paramsCount =
-            (if (isStatic) 0 else 1) +
-                parameterTypes.foldLeft(0) { _ + _.computationalType.operandSize }
+        descriptor: MethodDescriptor
+    ): Array[aiResult.domain.DomainValue] = {
+        val locals: Locals[aiResult.domain.DomainValue] = aiResult.localsArray(0)
+        // To enable uniform access, we always reserve space for the `this` parameter;
+        // even if it is not used.
+        val parametersCount = descriptor.parametersCount + 1
+        val params = aiResult.domain.DomainValue.newArray(parametersCount)
 
-        val params = domain.DomainValue.newArray(paramsCount)
-
-        var index = 0
-        if (!isStatic) { params(0) = locals(0); index += 1 }
-        parameterTypes.foreach { t ⇒
-            params(index) = locals(index)
-            index += t.computationalType.operandSize
+        var localsIndex = 0
+        if (!isStatic) {
+            params(0) = locals(0)
+            localsIndex = 1
         }
-        ConstArray(params.asInstanceOf[Array[domain.DomainValue]])
+        var paramIndex = 1
+        descriptor.parameterTypes.foreach { t ⇒
+            params(paramIndex) = locals(localsIndex)
+            localsIndex += t.computationalType.operandSize
+            paramIndex += 1
+        }
+        params
+    }
+
+    /**
+     * Iterates over all im-/explicit parameter related variables.
+     *
+     * @param isStatic Has to be `true` iff the method for which the abstract interpretation was
+     *                 performed is static.
+     */
+    def parameterVariablesIterator(
+        aiResult: AIResult
+    )(
+        isStatic:   Boolean,
+        descriptor: MethodDescriptor
+    ): Iterator[aiResult.domain.DomainValue] = {
+        new Iterator[aiResult.domain.DomainValue] {
+
+            private[this] var parameterIndex = 0
+            private[this] val totalParameters = descriptor.parametersCount + (if (isStatic) 0 else 1)
+            private[this] var localsIndex = 0
+
+            override def hasNext: Boolean = parameterIndex < totalParameters
+
+            override def next(): aiResult.domain.DomainValue = {
+                if (parameterIndex == 0 && !isStatic) {
+                    parameterIndex = 1
+                    localsIndex = 1
+                    aiResult.localsArray(0)(0)
+                } else {
+                    val v = aiResult.localsArray(0)(localsIndex)
+                    parameterIndex += 1
+                    localsIndex += v.computationalType.operandSize
+                    v
+                }
+            }
+        }
     }
 
     /**

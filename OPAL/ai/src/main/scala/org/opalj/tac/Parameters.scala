@@ -29,90 +29,50 @@
 package org.opalj
 package tac
 
+import org.opalj.ai.ValueOrigin
+
 /**
  * Information about a method's explicit and implicit parameters.
  *
+ * @param parameters The (non-null) array with the information about the explicit method parameters.
+ *         The array must not be mutated. The first explicit parameter is ''always'' stored at
+ *         location 1 (also in case of static methods) to enable a unified access to a
+ *         method's parameters whether the method is static or not.
  * @author Michael Eichberg
  */
-sealed abstract class Parameters[V <: Var[V]] {
+class Parameters[P <: AnyRef](
+        val parameters: Array[P] // CONST // TODO Define and check an @const annotation.
+) {
+
+    /**
+     * Returns the parameter with the respective value origin.
+     *
+     * @param vo The origin of the associated parameter. The origin is used in the 3-address code
+     *           to identify parameters. The origin `-1` always identifies the `this` parameter in
+     *           case of an instance method and is unused otherwise. The origins
+     *           [-2..(-2-parametersCount)] correspond to the explicitly specified method
+     *           parameters.
+     *
+     * @return The parameter with the respective value origin.
+     */
+    def parameter(vo: ValueOrigin): P = parameters(-vo - 1)
 
     /**
      * The instance method's implicit `this` parameter.
      *
-     * @return If the underlying methods is static `None` is returned, else `Some[V]`.
-      */
-    def thisParameter : Option[V]
-
-    /**
-     * @return The (non-null) array with the information about the method parameters.
-     *         The array must not be mutated. The first parameter is ''always'' stored at
-     *         location 1 (also in case of static methods) to enable a unified access to a
-     *         method's parameters whether the method is static or not.
+     * @return The variable capturing information about the `this` parameter;
+     *         if the underlying methods is static an `UnsupportedOperationException` is thrown.
      */
-    // TODO Define and check an @const annotation.
-    def parameters : Array[V] // CONST
+    def thisParameter: P = {
+        val p = parameters(0)
+        if (p eq null) throw new UnsupportedOperationException()
+        p
+    }
 
     override def toString: String = {
-        val thisTxt = thisParameter.map(self => s"\n\tthis: $self").getOrElse("")
-        val parametersTxt = parameters.iterator.zipWithIndex.map { e ⇒val (p, i) = e; s"$i: $p"}
-        parametersTxt.mkString(s"Parameters($thisTxt\n\t", ",\n\t", "\n)")
+        val parametersWithIndex = parameters.iterator.zipWithIndex
+        val parametersTxt = parametersWithIndex.filter(_._1 ne null).map { e ⇒ val (p, i) = e; s"$i: $p" }
+        parametersTxt.mkString(s"Parameters(\n\t", ",\n\t", "\n)")
     }
 }
-
-object Parameters{
-    private[tac] final val noParameters = new Array[Nothing](0)
-
-    /**
-     * Creates a new Parameters instance which encapsulates the information about a method's
-     * parameters.
-     *
-     * @param thisParameter The (optional) this reference.
-     * @param parameters The array with the parameters. Can be `null` if the method has no
-     *                   parameters.
-     * @tparam V
-     * @return
-     */
-    def apply[V <: Var[V]] (thisParameter : Option[V] ,                parameters : Array[V]): Parameters[V] = {
-        thisParameter match {
-            case thisParameter @ Some(_) =>
-                if(parameters eq null || parameters.isEmpty)
-                    new InstanceMethodNoParameters(thisParameter)
-                else
-                    new InstanceMethodParameters[V](thisParameter,parameters)
-            case None =>
-                if(parameters eq null || parameters.isEmpty)
-                    StaticMethodNoParameters.asInstanceOf[Parameters[V]]
-                else
-                   new  StaticMethodParameters(parameters)
-        }
-    }
-             }
-
-// THE FOLLOWING CLASSES ENABLE THE MEMORY EFFICIENT STORING OF THE PARAMETERS !!!
-
-private[tac] object StaticMethodNoParameters extends Parameters[Nothing] {
-    def thisParameter : None.type = None
-    def parameters : Array[Nothing] = Parameters.noParameters
-}
-
-private[tac] class StaticMethodParameters[V <: Var[V]](
-                                                      val parameters: Array[V]
-                                                      ) extends Parameters[V] {
-    def thisParameter : Option[V] =  None
-}
-
-private[tac] class InstanceMethodNoParameters[V <: Var[V]](
-                                                          val thisParameter : Some[V]
-                                                          ) extends Parameters[V] {
-
-    def parameters : Array[V] = Parameters.noParameters.asInstanceOf[Array[V]]
-
-
-}
-
-private[tac] class InstanceMethodParameters[V <: Var[V]](
-                                                            val thisParameter : Some[V],
-                                                            val parameters: Array[V]
-                                                        ) extends Parameters[V]
-
 

@@ -48,18 +48,19 @@ abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Va
 /**
  * Identifies the single index(pc) of the instruction which initialized
  * the variable. I.e., per method there must be at most one D variable which
- * has the given origin.
- * Initially, the pc of the underlying bytecode instruction is used.
+ * has the given origin. Initially, the pc of the underlying bytecode instruction is used.
+ *
+ * @param value The value information; the value may be "illegal" if the value is not used
+ * at all and an optimization is performed that identifies unused code and marks the
+ * corresponding values as such. In that case, the value also has no
+ * usages!
+ *
  */
 class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         private[tac] var origin:   ValueOrigin,
         val value:                 Value,
         private[tac] var useSites: IntSet
 ) extends DUVar[Value] {
-
-    assert(useSites != null, s"no uses (null) for $origin: $value")
-    assert(value != null)
-    assert(value.computationalType != ComputationalTypeReturnAddress, s"value has unexpected computational type: $value")
 
     def definedBy: ValueOrigin = origin
 
@@ -90,6 +91,14 @@ object DVar {
     )(
         origin: ValueOrigin, value: d.DomainValue, useSites: IntSet
     ): DVar[d.DomainValue] = {
+
+        assert(useSites != null, s"no uses (null) for $origin: $value")
+        assert(value != null)
+        assert(
+            value == d.TheIllegalValue || value.computationalType != ComputationalTypeReturnAddress,
+            s"value has unexpected computational type: $value"
+        )
+
         new DVar[d.DomainValue](origin, value, useSites)
     }
 

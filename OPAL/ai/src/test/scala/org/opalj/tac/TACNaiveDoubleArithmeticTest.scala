@@ -69,7 +69,7 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
             "4: op_2 = r_3",
             strg,
             "6: return op_0"
-        )
+        ).mkString("\n")
 
         def binaryAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
@@ -82,8 +82,8 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
         )
 
         it("should correctly reflect addition") {
-            val statements = TACNaive(method = DoubleAddMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = DoubleAddMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -95,8 +95,8 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect division") {
-            val statements = TACNaive(method = DoubleDivMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = DoubleDivMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -108,8 +108,8 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect negation") {
-            val statements = TACNaive(method = DoubleNegMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = DoubleNegMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -128,13 +128,13 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
                     "2: op_0 = r_1",
                     "3: op_0 = - op_0",
                     "4: return op_0"
-                )
+                ).mkString("\n")
             )
         }
 
         it("should correctly reflect multiplication") {
-            val statements = TACNaive(method = DoubleMulMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = DoubleMulMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -146,8 +146,8 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect modulo") {
-            val statements = TACNaive(method = DoubleRemMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = DoubleRemMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -159,8 +159,8 @@ class TACNaiveDoubleArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect subtraction") {
-            val statements = TACNaive(method = DoubleSubMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = DoubleSubMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
