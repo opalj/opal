@@ -28,10 +28,11 @@
  */
 package org.opalj.fpcf.analysis
 
-import org.opalj.ai.analyses.{FormalParameters, FormalParametersKey}
-import org.opalj.ai.{FormalParameter, ValueOrigin}
+import java.net.URL
+
+import org.opalj.AnalysisModes
 import org.opalj.br._
-import org.opalj.br.analyses.{AllocationSites, PropertyStoreKey}
+import org.opalj.br.analyses.{AllocationSites, AnalysisModeConfigFactory, FormalParameter, FormalParameters, FormalParametersKey, Project, PropertyStoreKey}
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.properties.{EscapeProperty, NoEscape}
 
@@ -60,20 +61,25 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
         PropertyStoreKey.addEntityDerivationFunction(project)(FormalParametersKey.entityDerivationFunction)
     }
 
+    override def loadProject: Project[URL] = {
+        val project = org.opalj.br.analyses.Project(file)
+        val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
+        Project.recreate(project, testConfig)
+    }
+
     def defaultValue = NoEscape.toString
 
     def propertyExtraction(annotation: TypeAnnotation): Option[String] = {
         annotation.elementValuePairs collectFirst { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
     }
 
-    def validatePropertyByParameterAnnotation(m: Method, annotation: Annotation, index: Int,
-                                              oToFP: Map[ValueOrigin, FormalParameter]): Unit = {
+    def validatePropertyByParameterAnnotation(m: Method, annotation: Annotation, fp: FormalParameter): Unit
+    = {
         val annotatedOProperty = propertyExtraction(annotation)
         val annotatedProperty = annotatedOProperty getOrElse defaultValue
 
         assert(m ne null, "method is empty")
 
-        val fp = oToFP(org.opalj.ai.parameterIndexToValueOrigin(m.isStatic, m.descriptor, index))
         val computedOProperty = propertyStore(fp, propertyKey)
 
         if (computedOProperty.hasNoProperty) {
@@ -162,10 +168,12 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
             annotation <- annotations
             if annotation.annotationType == propertyAnnotation
         } {
-            val doWhat = "correctly calculate the property of  " + method.toJava(classFile)
+            val doWhat = "correctly calculate the property of  " + method.toJava(classFile) +
+                " for parameter " + i
             val fps = propertyStore.context[FormalParameters]
+            val fp = fps(method)(i+1)
             analysisName should doWhat in {
-                validatePropertyByParameterAnnotation(method, annotation, i, fps(method))
+                validatePropertyByParameterAnnotation(method, annotation, fp)
             }
         }
     }
