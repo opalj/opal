@@ -111,7 +111,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                             val UVar(_, defSites) = value
                             if (defSites.contains(defSite))
                                 Some(ImmediateResult(e, GlobalEscape))
-                                // TODO spawn new analysis, conditionally purity
+                            // TODO spawn new analysis, conditionally purity
                         }
                         None
                     } else
@@ -250,7 +250,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             case as @ AllocationSite(m, pc) ⇒
-                val TACode(code, _, _, _) = project.get(DefaultTACAIKey)(m)
+                val TACode(_, code, _, _, _) = project.get(DefaultTACAIKey)(m)
 
                 val index = code.indexWhere(stmt ⇒ stmt.pc == pc)
 
@@ -265,10 +265,9 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     }
                 else /* the allocation site is part of dead code */ Result(e, NoEscape)
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
-                //val TACode(code, _, _, _) = project.get(DefaultTACAIKey)(m)
-
-                Result(e, GlobalEscape)
-
+                val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
+                val thisParam = params.thisParameter
+                doDetermineEscape(e, thisParam.origin, thisParam.useSites, code)
             case fp: FormalParameter ⇒ Result(fp, GlobalEscape)
         }
 
