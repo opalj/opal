@@ -444,9 +444,9 @@ class Project[Source] private (
         // we have complete supertype information
         val typesToProcess = classHierarchy.rootInterfaceTypes(ArrayStack.empty[ObjectType])
 
-        // the given interface type is either a non-functional interface or an interface
+        // the given interface type is either not a functional interface or an interface
         // for which we have not enough information
-        def nonFunctionalInterface(interfaceType: ObjectType): Unit = {
+        def noSAMInterface(interfaceType: ObjectType): Unit = {
             // println("non-functional interface: "+interfaceType.toJava)
             // assert(!irrelevantInterfaces.contains(interfaceType))
             // assert(!functionalInterfaces.contains(interfaceType))
@@ -491,18 +491,32 @@ class Project[Source] private (
             if (!classFile.isInterfaceDeclaration) {
                 // This may happen for "broken" projects (which we finde,e.g., in case of
                 // the JDK/Qualitas Corpus).
-                nonFunctionalInterface(classFile.thisType)
+                noSAMInterface(classFile.thisType)
                 return ;
             }
             val interfaceType = classFile.thisType
 
-            val abstractMethods = classFile.methods.filter(_.isAbstract)
+            val selectAbstractNonObjectMethods = (m: Method) ⇒ {
+                m.isAbstract && (
+                    ObjectClassFile.isEmpty /* in case of doubt we keep it ... */ || {
+                        // Does not (re)define a method declared by java.lang.Object;
+                        // see java.util.Comparator for an example!
+                        // From the spec.: ... The definition of functional interface
+                        // excludes methods in an interface that are also public methods
+                        // in Object.
+                        val objectMethod = ObjectClassFile.get.findMethod(m.name, m.descriptor)
+                        objectMethod.isEmpty || !objectMethod.get.isPublic
+                    }
+                )
+            }
+
+            val abstractMethods = classFile.methods.filter(selectAbstractNonObjectMethods)
             val abstractMethodsCount = abstractMethods.size
             val isPotentiallyIrrelevant: Boolean = abstractMethodsCount == 0
             val isPotentiallyFunctionalInterface: Boolean = abstractMethodsCount == 1
 
             if (!isPotentiallyIrrelevant && !isPotentiallyFunctionalInterface) {
-                nonFunctionalInterface(interfaceType)
+                noSAMInterface(interfaceType)
             } else {
                 var sharedFunctionalMethod: MethodSignature = null
                 if (classFile.interfaceTypes.forall { i ⇒
@@ -518,12 +532,12 @@ class Project[Source] private (
                                     true
                                 } else {
                                     // the super interface types define different abstract methods
-                                    nonFunctionalInterface(interfaceType)
+                                    noSAMInterface(interfaceType)
                                     false
                                 }
                             case None ⇒
                                 // we have a partial type hierarchy...
-                                nonFunctionalInterface(interfaceType)
+                                noSAMInterface(interfaceType)
                                 false
                         }
                     } else {
@@ -531,7 +545,7 @@ class Project[Source] private (
                         true
                     }
                 }) {
-                    // all super interfaces are either irrelevant or least share the same
+                    // all super interfaces are either irrelevant or share the same
                     // functionalMethod
                     if (sharedFunctionalMethod == null) {
                         if (isPotentiallyIrrelevant)
@@ -548,7 +562,7 @@ class Project[Source] private (
                         processSubinterfaces(interfaceType)
                     } else {
                         // different methods are defined...
-                        nonFunctionalInterface(interfaceType)
+                        noSAMInterface(interfaceType)
                     }
                 }
             }
@@ -563,7 +577,7 @@ class Project[Source] private (
 
                 classFile(interfaceType) match {
                     case Some(classFile) ⇒ classifyPotentiallyFunctionalInterface(classFile)
-                    case None            ⇒ nonFunctionalInterface(interfaceType)
+                    case None            ⇒ noSAMInterface(interfaceType)
                 }
             }
         }

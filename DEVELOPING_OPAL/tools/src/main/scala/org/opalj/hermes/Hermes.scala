@@ -147,6 +147,7 @@ object Hermes extends JFXApp {
         import Console.err
         if (!configFile.exists || !configFile.canRead()) {
             err.println(s"The config file cannot be found or read: $configFile")
+            err.println("The current folder is: "+System.getProperty("user.dir"))
             System.exit(2)
         }
         try {

@@ -49,7 +49,7 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Tests that all methods of the JDK can be converted to a three address representation.
+ * Tests that all methods of the JDK can be converted to the ai-based three address representation.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -78,8 +78,8 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
             aiResult = BaseAI(cf, m, domainFactory(project, cf, m))
         } {
             try {
-                val TACode(tacAICode, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
-                ToTxt(tacAICode, Some(cfg))
+                val TACode(params, tacAICode, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
+                ToTxt(params, tacAICode, cfg, false, true, true)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
                     val methodSignature = m.toJava(cf)
@@ -88,9 +88,10 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                         e.printStackTrace(Console.out)
                         if (e.getCause != null) {
                             println("\tcause:")
-                            e.getCause.printStackTrace()
+                            e.getCause.printStackTrace(Console.out)
                         }
-                        println(body.instructions.zipWithIndex.filter(_._1 != null).map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n"))
+                        val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
+                        println(instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n"))
                         errors ::= ((file+":"+methodSignature, e))
                     }
                 }

@@ -73,10 +73,10 @@ object SimpleTACAIKey extends TACAIKey {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[DUVar[_ <: Domain#DomainValue]] = {
+    ): Method ⇒ TACode[TACMethodParameter, DUVar[_ <: Domain#DomainValue]] = {
         val domainFactory = this.domainFactory
 
-        val taCodes = TrieMap.empty[Method, TACode[DUVar[Domain#DomainValue]]]
+        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[Domain#DomainValue]]]
 
         (m: Method) ⇒ taCodes.get(m) match {
             case Some(taCode) ⇒ taCode
@@ -94,7 +94,7 @@ object SimpleTACAIKey extends TACAIKey {
                             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
                             // well... the following cast safe is safe, because the underlying
                             // datastructure is actually, conceptually immutable
-                            val taCode = code.asInstanceOf[TACode[DUVar[Domain#DomainValue]]]
+                            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[Domain#DomainValue]]]
                             taCodes.put(m, taCode)
                             taCode
                     }

@@ -32,8 +32,8 @@ package tac
 import org.opalj.br._
 
 /**
- * Id based variables are named based on the position of the stack/register they were
- * defined.
+ * Id based variables are named based on the position of the corresponding stack/register value.
+ *
  * @author Roberts Kolosovs
  * @author Michael Eichberg
  */

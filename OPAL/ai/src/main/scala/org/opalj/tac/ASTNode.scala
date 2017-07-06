@@ -31,6 +31,8 @@ package tac
 
 /**
  * Defines nodes used by statements and expressions.
+ *
+ * @author Michael Eichberg
  */
 trait ASTNode[+V <: Var[V]] {
 
