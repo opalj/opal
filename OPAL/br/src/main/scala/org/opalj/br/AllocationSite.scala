@@ -30,10 +30,9 @@ package org.opalj
 package br
 
 /**
- * An allocation site (a new instruction) in the raw bytecode of a method. I.e., the bytecode
- * as returned after loading it; load-time transformations, such as the rewriting of
- * invokedynamic instructions, happen before the identification of the allocation sites and
- * are therefore the foundation.
+ * An allocation site (a new instruction) in a method's bytecode.
+ * (Please see [[org.opalj.br.analyses.AllocationSitesKey]] for further details regarding
+ * the default set of allocation sites.)
  *
  * @param method The method which contains this allocation site.
  * @param pc     The unique program counter of the allocation site. I.e., the "new" instruction
