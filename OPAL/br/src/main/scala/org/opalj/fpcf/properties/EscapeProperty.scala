@@ -31,9 +31,9 @@ package fpcf
 package properties
 
 /**
-  *
-  * @author Florian Kuebler
-  */
+ *
+ * @author Florian Kuebler
+ */
 sealed trait EscapePropertyMetaInforation extends PropertyMetaInformation {
     final type Self = EscapeProperty
 }
@@ -54,22 +54,22 @@ object EscapeProperty extends EscapePropertyMetaInforation {
 }
 
 /**
-  * An object that does not leaf the scope of the method it was allocated in.
-  */
+ * An object that does not leaf the scope of the method it was allocated in.
+ */
 case object NoEscape extends EscapeProperty {
     final val isRefineable = false
 }
 
 /**
-  * An object that is passed into a method but is not accessible from another thread.
-  */
+ * An object that is passed into a method but is not accessible from another thread.
+ */
 case object MethodEscape extends EscapeProperty {
     final val isRefineable = false
 }
 
 /**
-  * An object that is accessible from another thread.
-  */
+ * An object that is accessible from another thread.
+ */
 case object GlobalEscape extends EscapeProperty {
     final val isRefineable = false
 }
