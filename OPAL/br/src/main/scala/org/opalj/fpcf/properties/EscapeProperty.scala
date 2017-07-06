@@ -61,6 +61,13 @@ case object NoEscape extends EscapeProperty {
 }
 
 /**
+ *
+ */
+case object ConditionallyNoEscape extends EscapeProperty {
+    final val isRefineable: Boolean = true
+}
+
+/**
  * An object that is passed into a method but is not accessible from another thread.
  */
 case object MethodEscape extends EscapeProperty {
