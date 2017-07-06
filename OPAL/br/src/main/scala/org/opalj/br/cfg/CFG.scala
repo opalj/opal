@@ -461,7 +461,7 @@ case class CFG(
 
         bbIds.map { bbId ⇒
             val (bb, id) = bbId
-            bb.successors.map(bbIds).mkString(s"$id: $bb=>{", ", ", "}")
+            bb.successors.map(bbIds).mkString(s"$id: $bb → {", ",", "}")
         }.mkString("CFG(\n\t", "\n\t", "\n)")
     }
 
