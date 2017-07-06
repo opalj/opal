@@ -58,8 +58,8 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
     describe("the naive TAC of stack manipulation and synchronization instructions") {
 
         it("should correctly reflect pop") {
-            val statements = TACNaive(PopMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(PopMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -95,12 +95,12 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnInt()",
                 "3: ;",
                 "4: return"
-            ))
+            ).mkString("\n"))
         }
 
         it("should correctly reflect pop2 mode 2") {
-            val statements = TACNaive(method = Pop2Case2Method, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = Pop2Case2Method, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -129,12 +129,12 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnDouble()",
                 "3: ;",
                 "4: return"
-            ))
+            ).mkString("\n"))
         }
 
         it("should correctly reflect dup") {
-            val statements = TACNaive(method = DupMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = DupMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -153,12 +153,12 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 "3: op_0/*(non-virtual) java.lang.Object*/.<init>()",
                 "4: r_1 = op_0",
                 "5: return"
-            ))
+            ).mkString("\n"))
         }
 
         it("should correctly reflect monitorenter and -exit") {
-            val statements = TACNaive(method = MonitorEnterAndExitMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = MonitorEnterAndExitMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -192,12 +192,12 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 "11: monitorexit op_1",
                 "12: throw op_0",
                 "13: return"
-            ))
+            ).mkString("\n"))
         }
 
         it("should correctly reflect invokestatic") {
-            val statements = TACNaive(method = InvokeStaticMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = InvokeStaticMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -226,12 +226,12 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_0, op_1)",
                 "4: r_1 = op_0",
                 "5: return"
-            ))
+            ).mkString("\n"))
         }
 
         it("should correctly reflect invokeinterface") {
-            val statements = TACNaive(method = InvokeInterfaceMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = InvokeInterfaceMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -274,7 +274,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 "9: op_0 = op_0/*java.util.List*/.add(op_1)",
                 "10: ;",
                 "11: return"
-            ))
+            ).mkString("\n"))
         }
     }
 }

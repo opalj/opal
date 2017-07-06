@@ -37,6 +37,5 @@ import org.opalj.br.analyses.ProjectInformationKey
 /**
  * @author Michael Eichberg
  */
-trait TACKey
-    extends ProjectInformationKey[Method ⇒ TACode[DUVar[(Domain with RecordDefUse)#DomainValue]], Nothing]
+trait TACAIKey extends ProjectInformationKey[Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]], Nothing]
 

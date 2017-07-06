@@ -29,18 +29,18 @@
 package org.opalj
 package tac
 
+import org.opalj.ai.ValueOrigin
+import org.opalj.collection.immutable.IntSet
+
 /**
- * Defines nodes used by statements and expressions.
+ * Captures essential information about a method's parameter.
  *
  * @author Michael Eichberg
  */
-trait ASTNode[+V <: Var[V]] {
-
-    /**
-     * Each type of node is assigned a different id to make it easily possible
-     * to do a switch over all nodes.
-     */
-    def astID: Int
-
+case class TACMethodParameter(
+        val origin:   ValueOrigin,
+        val useSites: IntSet
+) {
+    override def toString: String = s"orign=$origin; "+useSites.mkString("useSites={", ",", "}")
 }
 

@@ -44,9 +44,14 @@ case class Unknown_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         val attributeName = cp(attribute_name_index).toString
         <div class="simple_attribute">
-            <span class="attribute_name">{ attributeName } (Size: { attribute_length }bytes)</span>
-            :<br/>
-            { byteArrayToNode(info) }
+            <span class="attribute_name">{ attributeName }</span>
+            {
+                if (attribute_length > 0) {
+                    <span>(Size:{ attribute_length }bytes)</span>
+                    <br/>
+                    <div>{ byteArrayToNode(info) }</div>
+                }
+            }
         </div>
     }
 }

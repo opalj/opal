@@ -56,7 +56,8 @@ class ConstArray[T <: AnyRef] private (
 
     override def apply(idx: Int): T = data(idx)
 
-    override def length: Int = data.length
+    final override def length: Int = data.length
+    final override def size: Int = data.length
 
     override def equals(other: Any): Boolean = {
         other match {

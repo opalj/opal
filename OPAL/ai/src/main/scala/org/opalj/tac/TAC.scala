@@ -152,43 +152,47 @@ object TAC {
 
             for {
                 m ← cf.methods
-                mSig = m.descriptor.toJava(m.name)
+                mSig = (if (m.isStatic) "static " else "") + m.descriptor.toJava(m.name)
                 if methodSignature.isEmpty || mSig.contains(methodSignature.get)
                 code ← m.body
             } {
-                val (tac: String, cfg: String, ehs: Option[String]) = if (naive) {
-                    val (code, Some(cfg), ehs) =
-                        TACNaive(m, ch, AllTACNaiveOptimizations, forceCFGCreation = true)
-                    (
-                        ToTxt(code, Some(cfg)),
-                        tacToDot(code, cfg),
-                        if (ehs.nonEmpty)
-                            Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
-                        else
-                            None
-                    )
-                } else {
-                    val d: Domain with RecordDefUse = if (domainName.isEmpty) {
-                        new domain.l1.DefaultDomainWithCFGAndDefUse(project, cf, m)
+                val (tac: String, cfg: String, ehs: Option[String]) =
+                    if (naive) {
+                        val TACode(params, code, cfg, ehs, _) =
+                            TACNaive(m, ch, AllTACNaiveOptimizations)
+                        (
+                            ToTxt(params, code, cfg, skipParams = true, true, true).mkString("\n"),
+                            tacToDot(code, cfg),
+                            if (ehs.nonEmpty)
+                                Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                            else
+                                None
+                        )
                     } else {
-                        // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
-                        Class.
-                            forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
-                            getConstructor(classOf[Project[_]], classOf[ClassFile], classOf[Method]).
-                            newInstance(project, cf, m)
+                        val d: Domain with RecordDefUse = if (domainName.isEmpty) {
+                            new domain.l1.DefaultDomainWithCFGAndDefUse(project, cf, m)
+                        } else {
+                            // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
+                            Class.
+                                forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
+                                getConstructor(classOf[Project[_]], classOf[ClassFile], classOf[Method]).
+                                newInstance(project, cf, m)
+                        }
+                        // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
+                        val aiResult = BaseAI(cf, m, d)
+                        val TACode(params, code, cfg, ehs, _) =
+                            TACAI(m, project.classHierarchy, aiResult)(Nil)
+
+                        // RETURN VALUE:
+                        (
+                            ToTxt(params, code, cfg, skipParams = false, true, true).mkString("\n"),
+                            tacToDot(code, cfg),
+                            if (ehs.nonEmpty)
+                                Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                            else
+                                None
+                        )
                     }
-                    // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
-                    val aiResult = BaseAI(cf, m, d)
-                    val TACode(code, cfg, ehs, _) = TACAI(m, project.classHierarchy, aiResult)(Nil)
-                    (
-                        ToTxt(code, Some(cfg)),
-                        tacToDot(code, cfg),
-                        if (ehs.nonEmpty)
-                            Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
-                        else
-                            None
-                    )
-                }
 
                 methodsAsTAC.append(mSig)
                 methodsAsTAC.append("{\n")
@@ -196,7 +200,7 @@ object TAC {
                 ehs.map(methodsAsTAC.append)
                 if (printCFG) {
                     if (doOpen) {
-                        Console.println("wrote cfg to: "+writeAndOpen(cfg, m.toJava(cf), "cfg.gv"))
+                        Console.println("wrote cfg to: "+writeAndOpen(cfg, m.toJava(cf), ".cfg.gv"))
                     } else {
                         methodsAsTAC.append("\n/* - CFG")
                         methodsAsTAC.append(cfg)
@@ -208,7 +212,7 @@ object TAC {
 
             if (doOpen) {
                 val prefix = cf.thisType.toJava
-                val suffix = if (naive) ".naive-tac.txt" else ".ai-tax.txt"
+                val suffix = if (naive) ".naive-tac.txt" else ".ai-tac.txt"
                 val targetFile = writeAndOpen(methodsAsTAC.toString(), prefix, suffix)
                 Console.println("wrote tac code to: "+targetFile)
             } else {
