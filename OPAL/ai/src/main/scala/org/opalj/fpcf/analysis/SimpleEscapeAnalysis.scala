@@ -32,15 +32,19 @@ package analysis
 
 import java.io.File
 
-import org.opalj.ai.analyses.{FormalParameters, FormalParametersKey}
-import org.opalj.ai.{Domain, FormalParameter}
-import org.opalj.br.analyses.{Project, PropertyStoreKey, SomeProject}
+import org.opalj.ai.Domain
+import org.opalj.br.analyses.{FormalParameter, FormalParameters, Project, PropertyStoreKey, SomeProject}
 import org.opalj.br.{AllocationSite, MethodDescriptor, ObjectType, ReferenceType}
 import org.opalj.collection.immutable.IntSet
 import org.opalj.fpcf.properties._
 import org.opalj.tac.{NonVirtualMethodCall, _}
 import org.opalj.util.PerformanceEvaluation.time
 
+/**
+ * A very simple (mostly) intra-procedural escape analysis.
+ *
+ * @author Florian Kuebler
+ */
 class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     type V = DUVar[Domain#DomainValue]
 
@@ -80,38 +84,52 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             case FailingStatement.ASTID ⇒
                 val FailingStatement(_, failingStmt) = stmt
                 determineEscapeStmt(failingStmt, e, defSite)
+            case ExprStmt.ASTID ⇒
+                val ExprStmt(_, expr) = stmt
+                examineCallOrCheckCastExpr(e, defSite, expr)
+
             case Assignment.ASTID ⇒
                 val Assignment(_, _, right) = stmt
-                right.astID match {
-                    case NonVirtualFunctionCall.ASTID ⇒
-                        val NonVirtualFunctionCall(_, dc, interface, name, descr, receiver, params) = right
-                        handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
-                    case VirtualFunctionCall.ASTID ⇒
-                        val VirtualFunctionCall(_, _, _, _, _, receiver, params) = right
-                        examineExpr(receiver, e, defSite).orElse(examineParameters(params, e,
-                            defSite))
-                    case StaticFunctionCall.ASTID ⇒
-                        val StaticFunctionCall(_, _, _, _, _, params) = right
-                        examineParameters(params, e, defSite)
-                    // see Java8LambdaExpressionsRewriting
-                    case Invokedynamic.ASTID ⇒
-                        val Invokedynamic(_, _, _, _, params) = right
-                        examineParameters(params, e, defSite)
-                    // on standard javac this won't happen as the concrete types are know by the
-                    // allocation site.
-                    case Checkcast.ASTID ⇒
-                        val Checkcast(_, value, _) = right
-                        if (value.astID == Var.ASTID) {
-                            val UVar(_, defSites) = value
-                            if (defSites.contains(defSite))
-                                throw new RuntimeException("not yet implemented")
-                        }
-                        None
-                    case _ ⇒ None
-                }
+                examineCallOrCheckCastExpr(e, defSite, right)
             case _ ⇒ None
         }
 
+    }
+
+    /**
+     * For a given entity with defSite, check whether the expression is a function call or a
+     * CheckCast. For function call mark parameters and receiver objects that use the defSite as
+     * GlobalEscape. CheckCasts with a value using the defSite should not be possible as the
+     * concrete type is known. Therefore an RuntimeException is thrown.
+     */
+    private def examineCallOrCheckCastExpr(e: Entity, defSite: Int, expr: Expr[V]) = {
+        expr.astID match {
+            case NonVirtualFunctionCall.ASTID ⇒
+                val NonVirtualFunctionCall(_, dc, interface, name, descr, receiver, params) = expr
+                handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
+            case VirtualFunctionCall.ASTID ⇒
+                val VirtualFunctionCall(_, _, _, _, _, receiver, params) = expr
+                examineExpr(receiver, e, defSite).orElse(examineParameters(params, e,
+                    defSite))
+            case StaticFunctionCall.ASTID ⇒
+                val StaticFunctionCall(_, _, _, _, _, params) = expr
+                examineParameters(params, e, defSite)
+            // see Java8LambdaExpressionsRewriting
+            case Invokedynamic.ASTID ⇒
+                val Invokedynamic(_, _, _, _, params) = expr
+                examineParameters(params, e, defSite)
+            // on standard javac this won't happen as the concrete types are know by the
+            // allocation site.
+            case Checkcast.ASTID ⇒
+                val Checkcast(_, value, _) = expr
+                if (value.astID == Var.ASTID) {
+                    val UVar(_, defSites) = value
+                    if (defSites.contains(defSite))
+                        throw new RuntimeException("not yet implemented")
+                }
+                None
+            case _ ⇒ None
+        }
     }
 
     /**
@@ -147,8 +165,8 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
      * For non constructor calls, GlobalEscape of e will be returned whenever the receiver or a
      * parameter is a use of defSite.
      */
-    private def handleNonVirtualCall(e: Entity, defSite: PropertyKeyID, dc: ReferenceType,
-                                     interface: Boolean, name: String, descr: MethodDescriptor,
+    private def handleNonVirtualCall(e: Entity, defSite: Int, dc: ReferenceType, interface: Boolean,
+                                     name: String, descr: MethodDescriptor,
                                      receiver: Expr[V], params: Seq[Expr[V]]) = {
         // we only allow special (inter-procedural) handling for constructors
         if (name == "<init>")
@@ -160,10 +178,9 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     val mresult = project.specialCall(dc.asObjectType, interface, "<init>", descr)
                     mresult match {
                         case Success(m) ⇒
-                            val formalParameters = propertyStore.context[FormalParameters]
+                            val fp = propertyStore.context[FormalParameters]
                             // check if the this local escapes in the callee
-                            val escapeState =
-                                propertyStore(formalParameters(m)(-1), EscapeProperty.key)
+                            val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
                             escapeState match {
                                 case EP(_, NoEscape) ⇒ None
                                 case EP(_, GlobalEscape) ⇒
@@ -184,7 +201,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
      * Determines whether the given entity on the given definition site with given uses of that
      * allocation/parameter escapes in the given code.
      */
-    private def doDetermineEscape(e: Entity, defSite: Int, uses: IntSet,
+    private def doDetermineEscape(e: AllocationSite, defSite: Int, uses: IntSet,
                                   code: Array[Stmt[V]]): PropertyComputationResult = {
         for (use ← uses) {
             determineEscapeStmt(code(use), e, defSite) match {
@@ -201,7 +218,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
      */
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
-            case AllocationSite(m, pc) ⇒
+            case as @ AllocationSite(m, pc) ⇒
                 val TACode(code, _, _, _) = project.get(DefaultTACAIKey)(m)
 
                 val index = code.indexWhere(stmt ⇒ stmt.pc == pc)
@@ -209,13 +226,13 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 if (index != -1)
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _)) ⇒
-                            doDetermineEscape(e, index, uses, code)
+                            doDetermineEscape(as, index, uses, code)
                         case Assignment(`pc`, DVar(_, uses), NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(e, index, uses, code)
+                            doDetermineEscape(as, index, uses, code)
                         case stmt ⇒
                             throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
                     }
-                else /* TODO Why does this case exists? */ Result(e, GlobalEscape)
+                else /* the allocation site is part of dead code */ Result(e, NoEscape)
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
                 //val TACode(code, _, _, _) = project.get(DefaultTACAIKey)(m)
 
@@ -249,7 +266,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         val project = Project(new File("/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre/lib/rt.jar"))
 
         PropertyStoreKey.makeAllocationSitesAvailable(project)
-        PropertyStoreKey.addEntityDerivationFunction(project)(FormalParametersKey.entityDerivationFunction)
+        PropertyStoreKey.makeFormalParametersAvailable(project)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         time {
             analysesManager.runWithRecommended(SimpleEscapeAnalysis)(waitOnCompletion = true)
