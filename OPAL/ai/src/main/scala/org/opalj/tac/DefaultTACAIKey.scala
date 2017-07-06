@@ -47,7 +47,7 @@ import org.opalj.ai.common.SimpleAIKey
  *          pass in `this` object.
  * @author Michael Eichberg
  */
-object DefaultTACAIKey extends TACKey {
+object DefaultTACAIKey extends TACAIKey {
 
     /**
      * TACAI code has no special prerequisites.

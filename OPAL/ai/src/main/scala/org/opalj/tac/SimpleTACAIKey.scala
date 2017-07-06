@@ -50,7 +50,7 @@ import org.opalj.ai.Domain
  *          pass in `this` object.
  * @author Michael Eichberg
  */
-object SimpleTACAIKey extends TACKey {
+object SimpleTACAIKey extends TACAIKey {
 
     @volatile var domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse =
         (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
