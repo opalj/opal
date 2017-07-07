@@ -30,39 +30,36 @@ package org.opalj
 package br
 package analyses
 
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+
+import org.opalj.br.TestSupport.biProject
+
 /**
- * An analysis that performs all computations in one step. Only very short-running
- * analyses should use this interface as reporting progress is not supported.
+ * Tests the `FormalParameters`.
  *
  * @author Michael Eichberg
  */
-trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, AnalysisResult] {
+@RunWith(classOf[JUnitRunner])
+class FormalParametersTest extends FlatSpec with Matchers {
 
-    /*abstract*/ def doAnalyze(
-        project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
-    ): AnalysisResult
+    //
+    //
+    // Verify
+    //
+    //
 
-    override final def analyze(
-        project:                Project[Source],
-        parameters:             Seq[String]                = List.empty,
-        initProgressManagement: (Int) ⇒ ProgressManagement = ProgressManagement.None
-    ): AnalysisResult = {
+    behavior of "the FormalParametersKey"
 
-        val pm = initProgressManagement(1 /* number of steps */ )
-        pm.progress(1, ProgressEvents.Start, Some(title))
-        var wasKilled = false
-        val result = doAnalyze(
-            project, parameters, () ⇒ { wasKilled = pm.isInterrupted(); wasKilled }
-        )
+    it should ("add for each method parameter a formal parameter") in {
+        val methodsProject = biProject("methods.jar")
 
-        if (wasKilled)
-            pm.progress(-1, ProgressEvents.Killed, None)
-        else
-            pm.progress(1, ProgressEvents.End, None)
-
-        result
+        val fps = methodsProject.get(FormalParametersKey)
+        methodsProject.allMethods foreach { m ⇒
+            assert(m.isStatic || fps(m)(0) != null)
+            assert(fps(m).size >= m.descriptor.parametersCount + (if (m.isStatic) 0 else 1))
+        }
     }
-
 }
