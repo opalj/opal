@@ -41,8 +41,7 @@ import org.opalj.br.instructions._
  */
 object ExceptionUsage extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "Intraprocedural Usage of Exceptions"
+    override def title: String =        "Intra-procedural Usage of Exceptions"
 
     override def description: String = "Analyses the usage of exceptions."
 
