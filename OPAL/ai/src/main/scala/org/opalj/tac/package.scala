@@ -93,7 +93,7 @@ package object tac {
             val newEH = oldEH.copy(
                 startPC = newIndexes(oldEH.startPC),
                 endPC = newIndexes(oldEH.endPC),
-                handlerPC = newIndexes(oldEH.endPC)
+                handlerPC = newIndexes(oldEH.handlerPC)
             )
             assert(
                 {
@@ -107,7 +107,9 @@ package object tac {
             )
 
             newEH
-        } filter { eh ⇒ eh.endPC > eh.startPC }
+        } filter { eh ⇒
+            eh.endPC > eh.startPC
+        }
     }
 
     /**
@@ -136,7 +138,7 @@ package object tac {
             old.copy(
                 startPC = newIndexes(old.startPC),
                 endPC = newIndexes(old.endPC),
-                handlerPC = newIndexes(old.endPC)
+                handlerPC = newIndexes(old.handlerPC)
             )
         }
     }
