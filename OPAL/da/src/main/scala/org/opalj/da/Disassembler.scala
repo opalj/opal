@@ -67,7 +67,7 @@ object Disassembler {
             "                     which will be referenced from the generated HTML page]\n"+
             "       [<ClassName> name of the class for which we want to create the HTML page;\n"+
             "                    if not specified the first class that is found on the given path is taken;\n"+
-            "                    this is particularly useful if the source is a particular \".class\" file]\n"+
+            "                    this is particularly useful if the source identifies a particular \".class\" file]\n"+
             "\n"+
             "Note:   \n       If no parameters are specified, the first class file found in the current folder\n"+
             "       or any subfolder of it will be disassembled.\n"+
