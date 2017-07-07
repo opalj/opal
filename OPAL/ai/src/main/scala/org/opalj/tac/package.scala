@@ -32,6 +32,7 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ExceptionHandlers
+import org.opalj.br.ExceptionHandler
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.graphs.Node
@@ -66,6 +67,28 @@ package object tac {
         )
     }
 
+    @inline private def getStartAndEndPC(
+        oldEH:      ExceptionHandler,
+        newIndexes: Array[Int]
+    ): (Int, Int) = {
+        val newStartPC = newIndexes(oldEH.startPC)
+        var newEndPC = newIndexes(oldEH.endPC)
+        if (newEndPC <= 0) {
+            // The end of the try-block is dead and therefore the end instruction maps to "0"
+            // E.g.,
+            // try - start
+            //      invoke => ALWAYS THROWS AS IDENTIFIED BY THE AI
+            //      if... // DEAD => no mapping for endPC
+            // try - end
+            var lastPC = oldEH.endPC - 1
+            while (lastPC >= newStartPC && newEndPC <= 0) {
+                newEndPC = newIndexes(lastPC)
+                lastPC -= 1
+            }
+        }
+        (newStartPC, newEndPC)
+    }
+
     /**
      * Updates the exception handlers by adjusting the start, end and handler index (pc).
      *
@@ -90,21 +113,7 @@ package object tac {
             // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
             // included in the handler block, the endPC is equal to `(pc of last instruction) +
             // instruction.size`; however, this is already handled by the caller!
-            val newStartPC = newIndexes(oldEH.startPC)
-            var newEndPC = newIndexes(oldEH.endPC)
-            if (newEndPC == 0) {
-                // The end of the try-block is dead and therefore the end instruction maps to "0"
-                // E.g.,
-                // try - start
-                //      invoke => ALWAYS THROWS AS IDENTIFIED BY THE AI
-                //      if... // DEAD => no mapping for endPC
-                // try - end
-                var lastPC = oldEH.endPC - 1
-                while (lastPC >= newStartPC && newEndPC == 0) {
-                    newEndPC = newIndexes(lastPC)
-                    lastPC -= 1
-                }
-            }
+            val (newStartPC, newEndPC) = getStartAndEndPC(oldEH, newIndexes)
             val newEH = oldEH.copy(
                 startPC = newStartPC,
                 endPC = newEndPC,
@@ -153,13 +162,17 @@ package object tac {
             // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
             // included in the handler block, the endPC is equal to `(pc of last instruction) +
             // instruction.size`; however, this is already handled by the caller!
+            val (newStartPC, newEndPC) = getStartAndEndPC(old, newIndexes)
 
             val newEH = old.copy(
-                startPC = newIndexes(old.startPC),
-                endPC = newIndexes(old.endPC),
+                startPC = newStartPC,
+                endPC = newEndPC,
                 handlerPC = newIndexes(old.handlerPC)
             )
-            assert(newEH.startPC <= newEH.endPC)
+            assert(
+                newEH.startPC <= newEH.endPC,
+                s"startPC=${old.startPC} => ${newEH.startPC};endPC=${old.endPC} => ${newEH.endPC}"
+            )
             newEH
         }
     }

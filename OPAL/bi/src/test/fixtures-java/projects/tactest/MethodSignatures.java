@@ -33,7 +33,7 @@ package tactest;
  *
  * @author Michael Eichberg
  */
-@SuppressWarnings("unused") public class MethodSignatures {
+public class MethodSignatures {
 
     static void empty() {
         ;
