@@ -237,7 +237,7 @@ object TACAI {
                 if (wasExecuted(nextPC)) {
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, source)
                 } else {
-                    addStmt(FailingExpression(pc, source))
+                    addStmt(FailingExpr(pc, source))
                 }
             }
 
@@ -250,7 +250,7 @@ object TACAI {
                 if (wasExecuted(nextPC)) {
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, binExpr)
                 } else {
-                    addStmt(FailingExpression(pc, binExpr))
+                    addStmt(FailingExpr(pc, binExpr))
                 }
             }
 
@@ -366,7 +366,7 @@ object TACAI {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpression(pc, lengthExpr))
+                        addStmt(FailingExpr(pc, lengthExpr))
                     }
 
                 case BIPUSH.opcode | SIPUSH.opcode ⇒
@@ -515,7 +515,7 @@ object TACAI {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
                             // IMPROVE Encode information about the failing exception!
-                            addStmt(FailingExpression(pc, expr))
+                            addStmt(FailingExpr(pc, expr))
                         }
                     }
 
@@ -543,7 +543,7 @@ object TACAI {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
                             // IMPROVE Encode information about the failing exception!
-                            addStmt(FailingExpression(pc, expr))
+                            addStmt(FailingExpr(pc, expr))
                         }
                     }
 
@@ -556,7 +556,7 @@ object TACAI {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpression(pc, expr))
+                        addStmt(FailingExpr(pc, expr))
                     }
 
                 case PUTSTATIC.opcode ⇒
@@ -574,7 +574,7 @@ object TACAI {
                         addStmt(putField)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingStatement(pc, putField))
+                        addStmt(FailingStmt(pc, putField))
                     }
 
                 case GETSTATIC.opcode ⇒
@@ -589,7 +589,7 @@ object TACAI {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpression(pc, getField))
+                        addStmt(FailingExpr(pc, getField))
                     }
 
                 case NEW.opcode ⇒
@@ -599,7 +599,7 @@ object TACAI {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, newObject)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpression(pc, newObject))
+                        addStmt(FailingExpr(pc, newObject))
                     }
 
                 case NEWARRAY.opcode ⇒
@@ -640,7 +640,7 @@ object TACAI {
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, checkcast)
                     } else {
-                        addStmt(FailingExpression(pc, checkcast))
+                        addStmt(FailingExpr(pc, checkcast))
                     }
 
                 case MONITORENTER.opcode ⇒ addStmt(MonitorEnter(pc, operandUse(0)))

@@ -151,7 +151,7 @@ class BasicBlock(
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
-    override def toString: String = s"BasicBlock(startPC=$startPC, endPC=$endPC)"
+    override def toString: String = s"BasicBlock(start=$startPC,end=$endPC)"
 
     override def toHRR: Option[String] = Some(s"[$startPC,$endPC]#=${endPC - startPC + 1}")
 

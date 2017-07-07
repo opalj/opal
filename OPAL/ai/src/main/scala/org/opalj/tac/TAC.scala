@@ -83,10 +83,11 @@ object TAC {
     def usage: String = {
         "Usage: java …TAC \n"+
             "-source <JAR file/Folder containing class files>\n"+
+            "[-domainValueInformation (prints detailed information about domain values)\n"+
             "[-class <class file name> (filters the set of classes)]\n"+
             "[-method <method name/signature using Java notation>] (filters the set of methods)\n"+
             "[-naive (the naive representation is generated) | -domain <class name of the domain>]\n"+
-            "[-cfg] (print control-flow graph)]\n"+
+            "[-cfg (print control-flow graph)]\n"+
             "[-open (the generated representations will be written to disk and opened)]\n"+
             "Example:\n\tjava …TAC -jar /Library/jre/lib/rt.jar -class java.util.ArrayList .method toString"
     }
@@ -120,6 +121,7 @@ object TAC {
                     naive = true
                     if (domainName.nonEmpty) handleError("-naive and -domain cannot be combined")
 
+                case "-domainValueInformation" ⇒ DUVar.printDomainValue = true
                 case "-domain" ⇒
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")

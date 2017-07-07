@@ -29,37 +29,28 @@
 package org.opalj
 package tac
 
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.BasicReport
 
 /**
- * Common supertrait of statements and expressions calling a method.
+ * Prints the 3-address code for all methods of all classes found in the given jar/folder.
+ *
+ * @author Michael Eichberg
  */
-trait Call[+V <: Var[V]] {
-    def declaringClass: ReferenceType
-    def isInterface: Boolean
-    def name: String
-    def descriptor: MethodDescriptor
-    def params: Seq[Expr[V]] // TODO IndexedSeq
-}
+object PrintTAC {
 
-object Call {
-
-    def unapply[V <: Var[V]](
-        call: Call[V]
-    ): Some[(ReferenceType, Boolean, String, MethodDescriptor)] = {
-        Some((call.declaringClass, call.isInterface, call.name, call.descriptor))
-    }
-}
-
-object MethodCallParameters {
-
-    def unapply[V <: Var[V]](astNode: ASTNode[V]): Option[Seq[Expr[V]]] = {
-        astNode match {
-            case c: Call[V @unchecked]                   ⇒ Some(c.params)
-            case Assignment(_, _, c: Call[V @unchecked]) ⇒ Some(c.params)
-            case _                                       ⇒ None
+    def main(args: Array[String]): Unit = {
+        val p = Project(new java.io.File(args(0)))
+        val tacProvider = p.get(SimpleTACAIKey) // TAC = Three-address code...
+        for {
+            cf ← p.allProjectClassFiles
+            m ← cf.methods
+            if m.body.isDefined
+        } {
+            val tac = tacProvider(m)
+            println(m.toJava(cf, ToTxt(tac).mkString("\n", "\n", "\n"))+"\n\n")
         }
-    }
 
+        BasicReport("Done.")
+    }
 }

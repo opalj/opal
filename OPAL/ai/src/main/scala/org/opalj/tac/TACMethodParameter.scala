@@ -41,6 +41,6 @@ case class TACMethodParameter(
         val origin:   ValueOrigin,
         val useSites: IntSet
 ) {
-    override def toString: String = s"orign=$origin; "+useSites.mkString("useSites={", ",", "}")
+    override def toString: String = useSites.mkString("useSites={", ",", s"} (internal origin=$origin)")
 }
 
