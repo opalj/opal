@@ -28,6 +28,9 @@
  */
 package org.opalj
 
+import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
@@ -66,10 +69,57 @@ package object tac {
     /**
      * Updates the exception handlers by adjusting the start, end and handler index (pc).
      *
+     * @note   This method can only be used in cases where the order of instructions remains
+     *         the same and/or instructions are deleted. If instructions are reordered this method
+     *         cannot be used!
+     *
+     * @param aiResult The result of the abstract interpretation of the method. (We use the aiResult
+     *                 for verification purposes only (`assert`s)).
+     * @param newIndexes A map that contains for each previous index the new index
+     *                   that should be used.
+     * @return The new exception handlers.
+     */
+    def updateExceptionHandlers(
+        aiResult:   AIResult { val domain: Domain with RecordDefUse },
+        newIndexes: Array[Int]
+    ): ExceptionHandlers = {
+        val code = aiResult.code
+        val exceptionHandlers = code.exceptionHandlers
+
+        exceptionHandlers map { oldEH ⇒
+            // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
+            // included in the handler block, the endPC is equal to `(pc of last instruction) +
+            // instruction.size`; however, this is already handled by the caller!
+            val newEH = oldEH.copy(
+                startPC = newIndexes(oldEH.startPC),
+                endPC = newIndexes(oldEH.endPC),
+                handlerPC = newIndexes(oldEH.endPC)
+            )
+            assert(
+                {
+                    newEH.endPC > newEH.startPC || {
+                        (oldEH.startPC until oldEH.endPC) forall { tryPC ⇒
+                            aiResult.domain.exceptionHandlerSuccessorsOf(tryPC).isEmpty
+                        }
+                    }
+                },
+                s"exception handler collapsed: $oldEH ⇒ $newEH"
+            )
+
+            newEH
+        } filter { eh ⇒ eh.endPC > eh.startPC }
+    }
+
+    /**
+     * Updates the exception handlers by adjusting the start, end and handler index (pc).
+     *
      * This method can only be used in simple cases where the order of instructions remains
      * the same - deleting instructions is supported.
      *
-     * @param exceptionHandlers
+     * @note You should use `updateExceptionHandlers(AIResult,Array[Int])` whenever possible
+     *       since that method performs additional checks!
+     *
+     * @param exceptionHandlers The code's exception handlers.
      * @param newIndexes A map that contains for each previous index the new index
      *                   that should be used.
      * @return The new exception handler.
@@ -90,5 +140,4 @@ package object tac {
             )
         }
     }
-
 }
