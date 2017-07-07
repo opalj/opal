@@ -115,9 +115,7 @@ sealed abstract class MethodDescriptor
     //
 
     def toJava(methodName: String): String = {
-        returnType.toJava+" "+
-            methodName +
-            parameterTypes.view.map(_.toJava).mkString("(", ",", ")")
+        parameterTypes.view.map(_.toJava).mkString(s"${returnType.toJava} $methodName(", ",", ")")
     }
 
     def toJava(declaringClassName: String, methodName: String): String = {

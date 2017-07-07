@@ -30,7 +30,7 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
-
+import org.opalj.collection.immutable.IntSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
@@ -60,12 +60,49 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  */
 object TACAI {
 
+    /**
+     * Returns a map which maps an ai-based value origin for a parameter to the tac value origin;
+     * to lookup the tac based origin, the ai-based origin aiVO has to be negated and 1 has to
+     * be subtracted.
+     *
+     * @return An implicit map (keys are aiVOKey = `-aiVo-1`) from `aiVO` to `tacVo`.
+     */
+    def normalizeParameterOriginsMap(
+        descriptor: MethodDescriptor,
+        isStatic:   Boolean
+    ): Array[Int] = {
+        val parameterTypes = descriptor.parameterTypes
+        val parametersCount = descriptor.parametersCount
+
+        // we need this `map` only temporarily; and this is always large enough...
+        val aiVOToTACVo = new Array[Int](parametersCount * 2 + 1)
+        var aiVO = -1 // initialized for the static method case
+        var tacVO = -2 // initialized for the static method case
+
+        if (!isStatic) {
+            aiVOToTACVo(0) = -1 // basically vo -1 is mapped to tacVO -1
+            aiVO = -2
+        }
+
+        var i = 0 // initialized for the static method case
+        while (i < parametersCount) {
+            aiVOToTACVo(-aiVO - 1) = tacVO
+            tacVO -= 1
+            aiVO -= parameterTypes(0).computationalType.operandSize
+            i += 1
+        }
+
+        aiVOToTACVo
+    }
+
+    private[this] final val NoParameters = new Parameters(new Array[DUVar[_]](0))
+
     def apply(
         project: SomeProject,
         method:  Method
     )(
         domain: Domain with RecordDefUse = new DefaultDomainWithCFGAndDefUse(project, method)
-    ): TACode[DUVar[domain.DomainValue]] = {
+    ): TACode[TACMethodParameter, DUVar[domain.DomainValue]] = {
         val aiResult = BaseAI(project.classFile(method), method, domain)
         TACAI(method, project.classHierarchy, aiResult)(Nil)
     }
@@ -83,10 +120,10 @@ object TACAI {
     def apply(
         method:         Method,
         classHierarchy: ClassHierarchy,
-        aiResult:       AIResult { val domain: RecordDefUse }
+        aiResult:       AIResult { val domain: Domain with RecordDefUse }
     )(
-        optimizations: List[TACOptimization[DUVar[aiResult.domain.DomainValue]]]
-    ): TACode[DUVar[aiResult.domain.DomainValue]] = {
+        optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue]]]
+    ): TACode[TACMethodParameter, DUVar[aiResult.domain.DomainValue]] = {
 
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -107,9 +144,21 @@ object TACAI {
         // uses, we do not have to create multiple instructions, therefore, we
         // can directly create the "final list" of statements (which will include nops
         // for all useless instructions).
-
         val statements = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](codeSize)
-        val pcToIndex = new Array[Int](codeSize + 1 /* +1 if the try block includes the last inst. */ )
+        val pcToIndex = new Array[Int](codeSize + 1 /* +1 if the try includes the last inst. */ )
+
+        // The map which we use to map an ai based value origin (vo) for a parameter to a tac origin.
+        // To get the target value the ai based vo has to be negated and we have to add -1.
+        // E.g., if the ai-based vo is -1 then the index which needs to be used is -(-1)-1 ==> 0
+        // which will contain (for -1 only) the value -1.
+        val aiVOToTACVo: Array[Int] = normalizeParameterOriginsMap(method.descriptor, method.isStatic)
+        def normalizeParameterOrigins(aiVOs: IntSet): IntSet = {
+            if (aiVOs eq null) {
+                IntSet.empty
+            } else {
+                aiVOs.map { aiVO ⇒ if (aiVO < 0) aiVOToTACVo(-aiVO - 1) else aiVO }
+            }
+        }
 
         var pc: PC = 0
         var index: Int = 0
@@ -148,14 +197,14 @@ object TACAI {
             def operandUse(index: Int): UVar[aiResult.domain.DomainValue] = {
                 val operands = operandsArray(pc)
                 // get the definition site; recall: negative pcs refer to parameters
-                val defSites = domain.operandOrigin(pc, index)
+                val defSites = normalizeParameterOrigins(domain.operandOrigin(pc, index))
                 UVar(aiResult.domain)(operands(index), defSites)
             }
 
             def registerUse(index: Int): UVar[aiResult.domain.DomainValue] = {
                 val locals = localsArray(pc)
                 // get the definition site; recall: negative pcs refer to parameters
-                val defSites = domain.localOrigin(pc, index)
+                val defSites = normalizeParameterOrigins(domain.localOrigin(pc, index))
                 UVar(aiResult.domain)(locals(index), defSites)
             }
 
@@ -168,7 +217,7 @@ object TACAI {
                 v:    aiResult.domain.DomainValue,
                 expr: Expr[DUVar[aiResult.domain.DomainValue]]
             ): Unit = {
-                val uses = domain.usedBy(pc)
+                val uses = normalizeParameterOrigins(domain.usedBy(pc))
                 if (uses ne null) {
                     val localVal = DVar(aiResult.domain)(pc, v, uses)
                     addStmt(Assignment(pc, localVal, expr))
@@ -188,7 +237,7 @@ object TACAI {
                 if (wasExecuted(nextPC)) {
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, source)
                 } else {
-                    addStmt(FailingExpression(pc, source))
+                    addStmt(FailingExpr(pc, source))
                 }
             }
 
@@ -201,7 +250,7 @@ object TACAI {
                 if (wasExecuted(nextPC)) {
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, binExpr)
                 } else {
-                    addStmt(FailingExpression(pc, binExpr))
+                    addStmt(FailingExpr(pc, binExpr))
                 }
             }
 
@@ -317,7 +366,7 @@ object TACAI {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpression(pc, lengthExpr))
+                        addStmt(FailingExpr(pc, lengthExpr))
                     }
 
                 case BIPUSH.opcode | SIPUSH.opcode ⇒
@@ -466,7 +515,7 @@ object TACAI {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
                             // IMPROVE Encode information about the failing exception!
-                            addStmt(FailingExpression(pc, expr))
+                            addStmt(FailingExpr(pc, expr))
                         }
                     }
 
@@ -494,7 +543,7 @@ object TACAI {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
                             // IMPROVE Encode information about the failing exception!
-                            addStmt(FailingExpression(pc, expr))
+                            addStmt(FailingExpr(pc, expr))
                         }
                     }
 
@@ -507,7 +556,7 @@ object TACAI {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpression(pc, expr))
+                        addStmt(FailingExpr(pc, expr))
                     }
 
                 case PUTSTATIC.opcode ⇒
@@ -525,7 +574,7 @@ object TACAI {
                         addStmt(putField)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingStatement(pc, putField))
+                        addStmt(FailingStmt(pc, putField))
                     }
 
                 case GETSTATIC.opcode ⇒
@@ -540,7 +589,7 @@ object TACAI {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpression(pc, getField))
+                        addStmt(FailingExpr(pc, getField))
                     }
 
                 case NEW.opcode ⇒
@@ -550,7 +599,7 @@ object TACAI {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, newObject)
                     } else {
                         // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpression(pc, newObject))
+                        addStmt(FailingExpr(pc, newObject))
                     }
 
                 case NEWARRAY.opcode ⇒
@@ -591,7 +640,7 @@ object TACAI {
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, checkcast)
                     } else {
-                        addStmt(FailingExpression(pc, checkcast))
+                        addStmt(FailingExpr(pc, checkcast))
                     }
 
                 case MONITORENTER.opcode ⇒ addStmt(MonitorEnter(pc, operandUse(0)))
@@ -649,6 +698,35 @@ object TACAI {
         // add the artificial lastPC + 1 instruction to enable the mapping of exception handlers
         pcToIndex(pc /* == codeSize +1 */ ) = index
 
+        val tacParams: Parameters[TACMethodParameter] = {
+            import method.descriptor
+            import descriptor.parameterTypes
+            if (method.descriptor.parametersCount == 0 && method.isStatic)
+                NoParameters.asInstanceOf[Parameters[TACMethodParameter]]
+            else {
+                val paramCount = method.descriptor.parametersCount + 1
+                val paramDVars = new Array[TACMethodParameter](paramCount)
+
+                var usesOrigin = -1
+                if (!method.isStatic) {
+                    var uses = domain.usedBy(-1)
+                    if (uses eq null) { uses = IntSet.empty } else { uses = uses.map(pcToIndex) }
+                    paramDVars(0) = TACMethodParameter(-1, uses)
+                    usesOrigin = -2
+                }
+                var pIndex = 1
+                while (pIndex < paramCount) {
+                    var uses = domain.usedBy(usesOrigin)
+                    // the uses for parameters never refer to parameters => have negative values!
+                    if (uses eq null) { uses = IntSet.empty } else { uses = uses.map(pcToIndex) }
+                    paramDVars(pIndex) = TACMethodParameter(-pIndex - 1, uses)
+                    usesOrigin -= parameterTypes(pIndex - 1).operandSize
+                    pIndex += 1
+                }
+                new Parameters(paramDVars)
+            }
+        }
+
         val tacStmts = {
             val tacStmts = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](index)
             var s = 0
@@ -661,8 +739,9 @@ object TACAI {
             tacStmts
         }
         val taCodeCFG = cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1)
-        val taExceptionHanders = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
-        val taCode = TACode(tacStmts, taCodeCFG, taExceptionHanders, code.lineNumberTable)
+        val taExceptionHanders = updateExceptionHandlers(aiResult, pcToIndex)
+        val lnt = code.lineNumberTable
+        val taCode = TACode(tacParams, tacStmts, taCodeCFG, taExceptionHanders, lnt)
 
         if (optimizations.nonEmpty) {
             val base = TACOptimizationResult(taCode, wasTransformed = false)

@@ -92,7 +92,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
             "7: return op_0",
             "8: op_0 = r_2",
             "9: return op_0"
-        )
+        ).mkString("\n")
 
         def unaryJLC(strg: String) = Array(
             "0: r_0 = this",
@@ -103,11 +103,11 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
             "5: return op_0",
             "6: op_0 = null",
             "7: return op_0"
-        )
+        ).mkString("\n")
 
         it("should correctly reflect the equals case") {
-            val statements = TACNaive(method = IfACMPEQMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = IfACMPEQMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -118,8 +118,8 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the not-equals case") {
-            val statements = TACNaive(method = IfACMPNEMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = IfACMPNEMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -130,8 +130,8 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the non-null case") {
-            val statements = TACNaive(method = IfNonNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = IfNonNullMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -142,8 +142,8 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the is-null case") {
-            val statements = TACNaive(method = IfNullMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = IfNullMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)

@@ -33,6 +33,7 @@ package l0
 
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.Project
 
 /**
@@ -105,3 +106,19 @@ class BaseDomainWithDefUse[S](
     classFile: ClassFile,
     method:    Method
 ) extends BaseDomain[S](project, classFile, method) with RecordDefUse
+
+/**
+ * This is the most primitive domain that can be used to transform the bytecode to the
+ * three address representation which is build upon the result of an abstract interpretation.
+ */
+class PrimitiveTACAIDomain(
+    val classHierarchy: ClassHierarchy,
+    val classFile:      ClassFile,
+    val method:         Method
+) extends TypeLevelDomain
+        with ThrowAllPotentialExceptionsConfiguration
+        with IgnoreSynchronization
+        with DefaultTypeLevelHandlingOfMethodResults
+        with TheClassHierarchy
+        with TheMethod
+        with RecordDefUse

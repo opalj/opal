@@ -29,18 +29,13 @@
 package org.opalj
 package tac
 
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKey
+
 /**
- * Defines nodes used by statements and expressions.
- *
  * @author Michael Eichberg
  */
-trait ASTNode[+V <: Var[V]] {
-
-    /**
-     * Each type of node is assigned a different id to make it easily possible
-     * to do a switch over all nodes.
-     */
-    def astID: Int
-
-}
+trait TACAIKey extends ProjectInformationKey[Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]], Nothing]
 

@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.ai
+package org.opalj.tac
 
 import java.net.URL
 import java.io.File
@@ -38,7 +38,6 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.BasicReport
-import org.opalj.tac.DefaultTACAIKey
 
 /**
  * Creates for all methods of a given project the Control-flow Graph and the DefUse Graph.

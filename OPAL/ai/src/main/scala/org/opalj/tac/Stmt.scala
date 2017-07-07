@@ -94,6 +94,10 @@ case class If[+V <: Var[V]](
         right.remapIndexes(pcToIndex)
         target = pcToIndex(target)
     }
+
+    override def toString: String = {
+        s"If(pc=$pc,$left,$condition,$right,target=$target)"
+    }
 }
 object If {
     final val ASTID = 0
@@ -119,6 +123,10 @@ case class Goto(pc: PC, private var target: Int) extends Stmt[Nothing] {
      */
     def targetStmt: Int = target
 
+    override def toString: String = {
+        s"Goto(pc=$pc,target=$target)"
+    }
+
 }
 object Goto {
     final val ASTID = 1
@@ -140,6 +148,10 @@ case class Ret(pc: PC, private var returnAddresses: PCs) extends Stmt[Nothing] {
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         returnAddresses = returnAddresses map { pcToIndex }
+    }
+
+    override def toString: String = {
+        s"Ret(pc=$pc,returnAddresses=${returnAddresses.mkString("(", ",", ")")})"
     }
 
 }
@@ -173,6 +185,10 @@ case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt[N
      */
     def targetStmt: Int = target
 
+    override def toString: String = {
+        s"JumpToSubroutine(pc=$pc,target=$target)"
+    }
+
 }
 object JumpToSubroutine {
     final val ASTID = 3
@@ -199,6 +215,11 @@ case class Switch[+V <: Var[V]](
     // Calling this method is only supported after the quadruples representation
     // is created and the remapping of pcs to instruction indexes has happened!
     def defaultStmt: Int = defaultTarget
+
+    override def toString: String = {
+        val npairs = this.npairs.mkString("(", ",", ")")
+        s"Switch(pc=$pc,defaultTarget=$defaultTarget,index=$index,npairs=$npairs"
+    }
 }
 object Switch {
     final val ASTID = 4
@@ -214,6 +235,9 @@ case class Assignment[+V <: Var[V]](pc: PC, targetVar: V, expr: Expr[V]) extends
         targetVar.remapIndexes(pcToIndex)
         expr.remapIndexes(pcToIndex)
     }
+
+    override def toString: String = s"Assignment(pc=$pc,$targetVar,$expr)"
+
 }
 object Assignment {
     final val ASTID = 5
@@ -224,6 +248,8 @@ case class ReturnValue[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
     final def astID = ReturnValue.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+
+    override def toString: String = s"ReturnValue(pc=$pc,$expr)"
 }
 object ReturnValue {
     final val ASTID = 6
@@ -235,10 +261,13 @@ sealed abstract class SimpleStmt[+V <: Var[V]] extends Stmt[V] {
      * Nothing to do.
      */
     final private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+
 }
 
 case class Return(pc: PC) extends SimpleStmt[Nothing] {
     final def astID = Return.ASTID
+
+    override def toString: String = s"Return(pc=$pc)"
 }
 object Return {
     final val ASTID = 7
@@ -246,6 +275,8 @@ object Return {
 
 case class Nop(pc: PC) extends SimpleStmt[Nothing] {
     final def astID = Nop.ASTID
+
+    override def toString: String = s"Nop(pc=$pc)"
 }
 object Nop {
     final val ASTID = 8
@@ -262,6 +293,7 @@ sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
 
 case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
     final def astID = MonitorEnter.ASTID
+    override def toString: String = s"MonitorEnter(pc=$pc,$objRef)"
 }
 object MonitorEnter {
     final val ASTID = 9
@@ -269,6 +301,7 @@ object MonitorEnter {
 
 case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
     final def astID = MonitorExit.ASTID
+    override def toString: String = s"MonitorExit(pc=$pc,$objRef)"
 }
 object MonitorExit {
     final val ASTID = 10
@@ -288,6 +321,8 @@ case class ArrayStore[+V <: Var[V]](
         index.remapIndexes(pcToIndex)
         value.remapIndexes(pcToIndex)
     }
+
+    override def toString: String = s"ArrayStore(pc=$pc,$arrayRef,$index,$value)"
 }
 object ArrayStore {
     final val ASTID = 11
@@ -299,6 +334,7 @@ case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = exception.remapIndexes(pcToIndex)
 
+    override def toString: String = s"Throw(pc=$pc,$exception)"
 }
 object Throw {
     final val ASTID = 12
@@ -320,8 +356,10 @@ case class PutStatic[+V <: Var[V]](
 
     final def astID = PutStatic.ASTID
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        value.remapIndexes(pcToIndex)
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
+
+    override def toString: String = {
+        s"PutStatic(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$value)"
     }
 }
 object PutStatic {
@@ -344,6 +382,9 @@ case class PutField[+V <: Var[V]](
         value.remapIndexes(pcToIndex)
     }
 
+    override def toString: String = {
+        s"PutField(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$objRef,$value)"
+    }
 }
 object PutField {
     final val ASTID = 14
@@ -359,6 +400,7 @@ sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
         receiver.remapIndexes(pcToIndex)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
     }
+
 }
 
 object InstanceMethodCall {
@@ -371,6 +413,10 @@ object InstanceMethodCall {
     }
 }
 
+/**
+ * Call of an instance method for which no virtual method call resolution has to happen.
+ * I.e., it is either a super-call, a private instance method call or a constructor call.
+ */
 case class NonVirtualMethodCall[+V <: Var[V]](
         pc:             PC,
         declaringClass: ReferenceType,
@@ -383,6 +429,12 @@ case class NonVirtualMethodCall[+V <: Var[V]](
 
     final def astID = NonVirtualMethodCall.ASTID
 
+    override def toString: String = {
+        val sig = descriptor.toJava(name)
+        val declClass = declaringClass.toJava
+        val params = this.params.mkString("(", ",", ")")
+        s"NonVirtualMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$receiver,$params)"
+    }
 }
 object NonVirtualMethodCall {
     final val ASTID = 15
@@ -398,6 +450,12 @@ case class VirtualMethodCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends InstanceMethodCall[V] {
     final def astID = VirtualMethodCall.ASTID
+    override def toString: String = {
+        val sig = descriptor.toJava(name)
+        val declClass = declaringClass.toJava
+        val params = this.params.mkString("(", ",", ")")
+        s"VirtualMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$receiver,$params)"
+    }
 }
 object VirtualMethodCall {
     final val ASTID = 16
@@ -415,6 +473,12 @@ case class StaticMethodCall[+V <: Var[V]](
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
     }
+    override def toString: String = {
+        val sig = descriptor.toJava(name)
+        val declClass = declaringClass.toJava
+        val params = this.params.mkString("(", ",", ")")
+        s"NonVirtualMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
+    }
 }
 object StaticMethodCall {
     final val ASTID = 17
@@ -425,9 +489,10 @@ case class ExprStmt[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
 
     final def astID = ExprStmt.ASTID
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        expr.remapIndexes(pcToIndex)
-    }
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+
+    override def toString: String = s"ExprStmt(pc=$pc,$expr)"
+
 }
 object ExprStmt {
     final val ASTID = 18
@@ -440,22 +505,26 @@ sealed abstract class FailingInstruction[+V <: Var[V]] extends Stmt[V] {
 /**
  * The underlying expression will always throw an exception.
  */
-case class FailingExpression[+V <: Var[V]](pc: PC, expr: Expr[V]) extends FailingInstruction[V] {
+case class FailingExpr[+V <: Var[V]](pc: PC, expr: Expr[V]) extends FailingInstruction[V] {
 
-    final def astID = FailingExpression.ASTID
+    final def astID = FailingExpr.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+
+    override def toString: String = s"FailingExpr(pc=$pc,$expr)"
 }
-object FailingExpression {
+object FailingExpr {
     final val ASTID = 19
 }
 
-case class FailingStatement[+V <: Var[V]](pc: PC, stmt: Stmt[V]) extends FailingInstruction[V] {
+case class FailingStmt[+V <: Var[V]](pc: PC, stmt: Stmt[V]) extends FailingInstruction[V] {
 
-    final def astID = FailingStatement.ASTID
+    final def astID = FailingStmt.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = stmt.remapIndexes(pcToIndex)
+
+    override def toString: String = s"FailingStmt(pc=$pc,$stmt)"
 }
-object FailingStatement {
+object FailingStmt {
     final val ASTID = 20
 }

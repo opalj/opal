@@ -42,6 +42,15 @@ public class IntegerValuesFrenzy {
         return i;
     }
 
+    // uses the parameter as a variable
+    static int countDown(int i) {
+        do {
+            id(i);
+            i = i - 1;
+        } while (i > 0);
+        return i;
+    }
+
     // the return value is either i or j
     static int max(int i, int j) {
         if (i < j)

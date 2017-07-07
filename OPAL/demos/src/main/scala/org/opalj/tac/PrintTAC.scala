@@ -29,18 +29,28 @@
 package org.opalj
 package tac
 
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.BasicReport
+
 /**
- * Defines nodes used by statements and expressions.
+ * Prints the 3-address code for all methods of all classes found in the given jar/folder.
  *
  * @author Michael Eichberg
  */
-trait ASTNode[+V <: Var[V]] {
+object PrintTAC {
 
-    /**
-     * Each type of node is assigned a different id to make it easily possible
-     * to do a switch over all nodes.
-     */
-    def astID: Int
+    def main(args: Array[String]): Unit = {
+        val p = Project(new java.io.File(args(0)))
+        val tacProvider = p.get(SimpleTACAIKey) // TAC = Three-address code...
+        for {
+            cf ← p.allProjectClassFiles
+            m ← cf.methods
+            if m.body.isDefined
+        } {
+            val tac = tacProvider(m)
+            println(m.toJava(cf, ToTxt(tac).mkString("\n", "\n", "\n"))+"\n\n")
+        }
 
+        BasicReport("Done.")
+    }
 }
-

@@ -70,7 +70,7 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
             "4: op_1 = r_2",
             strg,
             "6: return op_0"
-        )
+        ).mkString("\n")
 
         def binaryAST(stmt: Stmt[IdBasedVar]) = Array(
             Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
@@ -83,8 +83,8 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
         )
 
         it("should correctly reflect addition") {
-            val statements = TACNaive(method = FloatAddMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = FloatAddMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -96,8 +96,8 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect division") {
-            val statements = TACNaive(method = FloatDivMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = FloatDivMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -109,8 +109,8 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect negation") {
-            val statements = TACNaive(method = FloatNegMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = FloatNegMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -129,13 +129,13 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
                     "2: op_0 = r_1",
                     "3: op_0 = - op_0",
                     "4: return op_0"
-                )
+                ).mkString("\n")
             )
         }
 
         it("should correctly reflect multiplication") {
-            val statements = TACNaive(method = FloatMulMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = FloatMulMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -147,8 +147,8 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect modulo") {
-            val statements = TACNaive(method = FloatRemMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = FloatRemMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -160,8 +160,8 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect subtraction") {
-            val statements = TACNaive(method = FloatSubMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = FloatSubMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -173,8 +173,8 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
         }
 
         it("should correctly reflect comparison") {
-            val statements = TACNaive(method = FloatCmpMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val statements = TACNaive(method = FloatCmpMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -203,7 +203,7 @@ class TACNaiveFloatArithmeticTest extends TACNaiveTest {
                 "8: return op_0",
                 "9: op_0 = 0",
                 "10: return op_0"
-            ))
+            ).mkString("\n"))
         }
     }
 }

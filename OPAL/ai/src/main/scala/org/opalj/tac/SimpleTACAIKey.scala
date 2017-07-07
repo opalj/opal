@@ -42,7 +42,7 @@ import org.opalj.ai.Domain
 /**
  * ''Key'' to get the 3-address based code of a method computed using the configured
  * domain/data-flow analysis. This key performs the underlying data-flow analysis on demand using
- * the configured data-flow analyses; the results of the data-flow analysis are NOT shared. Hence,
+ * the configured data-flow analyses; the results of the data-flow analyses are NOT shared. Hence,
  * this ''key'' should only be used if the result of the underlying analysis is no longer
  * required after generating the TAC.
  *
@@ -73,10 +73,9 @@ object SimpleTACAIKey extends TACAIKey {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[DUVar[_ <: Domain#DomainValue]] = {
+    ): Method ⇒ TACode[TACMethodParameter, DUVar[_ <: (Domain with RecordDefUse)#DomainValue]] = {
         val domainFactory = this.domainFactory
-
-        val taCodes = TrieMap.empty[Method, TACode[DUVar[Domain#DomainValue]]]
+        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
 
         (m: Method) ⇒ taCodes.get(m) match {
             case Some(taCode) ⇒ taCode
@@ -94,7 +93,7 @@ object SimpleTACAIKey extends TACAIKey {
                             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
                             // well... the following cast safe is safe, because the underlying
                             // datastructure is actually, conceptually immutable
-                            val taCode = code.asInstanceOf[TACode[DUVar[Domain#DomainValue]]]
+                            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
                             taCodes.put(m, taCode)
                             taCode
                     }
