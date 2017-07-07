@@ -739,7 +739,7 @@ object TACAI {
             tacStmts
         }
         val taCodeCFG = cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1)
-        val taExceptionHanders = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
+        val taExceptionHanders = updateExceptionHandlers(aiResult, pcToIndex)
         val lnt = code.lineNumberTable
         val taCode = TACode(tacParams, tacStmts, taCodeCFG, taExceptionHanders, lnt)
 
