@@ -96,6 +96,14 @@ div.methods,div.fields,div.attributes,div.constant_pool {
 	border-top: 1px solid #cccccc;
 }
 
+div#source {
+    margin: 0 0;
+    background: rgb(20,20,20);
+    color: #DDD;
+    padding: 0.25em 1em 0.25em 1em;
+    font-size : smaller;
+}
+
 td.exception {
 	position: relative;
 }

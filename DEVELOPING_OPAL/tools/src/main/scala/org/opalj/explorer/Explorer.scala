@@ -113,7 +113,9 @@ object Explorer extends JFXApp {
                     if (selectedFile != null) {
                         preferences.put(LastClassFileKey, selectedFile.getAbsoluteFile.toString)
                         preferences.flush()
-                        webEngine.loadContent(loadClassFile(selectedFile).toXHTML().toString)
+                        webEngine.loadContent(
+                            loadClassFile(selectedFile).toXHTML(Some(selectedFile)).toString
+                        )
                     }
                 }
             }
@@ -136,7 +138,7 @@ object Explorer extends JFXApp {
                     ("<b>Load new class file.</b>", None)
                 } else {
                     val classFile = loadClassFile(file)
-                    (classFile.toXHTML().toString, Some(classFile))
+                    (classFile.toXHTML(Some(file)).toString, Some(classFile))
                 }
             } catch {
                 case t: Throwable ⇒
