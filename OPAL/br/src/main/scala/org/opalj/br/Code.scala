@@ -90,37 +90,79 @@ final class Code private (
         }
     }
 
+    /*
+     * We need this overloaded method to add a default value,
+     * otherwise the call in the above method will call itself
+     * instead of the one below.
+     */
     def similar(other: Code): Boolean = {
+        similar(other, DefaultSimilarityTestConfig)
+    }
+
+    def similar(other: Code, config: SimilarityTestConfig): Boolean = {
+
         if (!(this.maxStack == other.maxStack && this.maxLocals == other.maxLocals)) {
             return false;
         }
-        if (this.exceptionHandlers != other.exceptionHandlers) {
+        if (config.testExceptionHandlers(exceptionHandlers) &&
+            this.exceptionHandlers != other.exceptionHandlers) {
             return false;
         }
 
-        if (!(
-            this.instructions.length == other.instructions.length && {
+        if ((config.testInstructionsLength(instructions)
+            && this.instructions.length != other.instructions.length) ||
+            !{
                 var areEqual = true
                 val max = instructions.length
-                var i = 0
-                while (i < max && areEqual) {
-                    val thisI = this.instructions(i)
-                    val otherI = other.instructions(i)
-                    areEqual = (thisI == null && otherI == null) ||
-                        (thisI != null && otherI != null && thisI.similar(otherI))
-                    i += 1
+                // if we don't compare sizes,
+                // we need to check the bound of the other as well
+                val maxOther = other.instructions.length
+                // go through both instruction lists
+                var indexThis = 0
+                var indexOther = 0
+                while (indexThis < max && indexOther < maxOther && areEqual) {
+                    val thisI = this.instructions(indexThis)
+                    if (config.testInstruction(thisI)) {
+                        val otherI = other.instructions(indexOther)
+                        if (config.testInstruction(otherI)) {
+                            areEqual = (thisI == null && otherI == null) ||
+                                (thisI != null && otherI != null &&
+                                    thisI.similar(otherI))
+                            // both checked, so increase both
+                            indexThis += 1
+                            indexOther += 1
+                        } else {
+                            // other skipped
+                            indexOther += 1
+                        }
+                    } else {
+                        // this skipped
+                        indexThis += 1
+                    }
+                }
+                // if either this or other have more elements,
+                // check that they would all have been ignored
+                while (indexThis < max && areEqual) {
+                    areEqual = !config.testInstruction(this.instructions(indexThis))
+                    indexThis += 1
+                }
+                while (indexOther < maxOther && areEqual) {
+                    areEqual = !config.testInstruction(other.instructions(indexOther))
+                    indexOther += 1
                 }
                 areEqual
-            }
-        )) {
+            }) {
             return false;
         }
 
-        if (this.attributes.size != other.attributes.size) {
+        if (config.testAttributesSize(attributes) &&
+            this.attributes.size != other.attributes.size) {
             return false;
         }
 
-        if (!this.attributes.forall(a ⇒ other.attributes.exists(a.similar))) {
+        if (!this.attributes
+            .filter(config.testAttribute)
+            .forall(a ⇒ other.attributes.exists(a.similar))) {
             return false;
         }
 

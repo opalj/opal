@@ -80,11 +80,19 @@ final class Field private (
      * Two fields are structurlly equaly if they have the same names, flags, type and attributes.
      * In the latter case, the order doesn't matter!
      */
-    def similar(other: Field): Boolean = {
-        this.accessFlags == other.accessFlags && (this.fieldType eq other.fieldType) &&
+    def similar(
+        other:  Field,
+        config: SimilarityTestConfig = DefaultSimilarityTestConfig
+    ): Boolean = {
+
+        (!config.testAccessFlags(accessFlags) || this.accessFlags == other.accessFlags) &&
+            (this.fieldType eq other.fieldType) &&
             this.name == other.name &&
-            this.attributes.size == other.attributes.size &&
-            this.attributes.forall { a ⇒ other.attributes.find(a.similar).isDefined }
+            (!config.testAttributesSize(attributes) ||
+                this.attributes.size == other.attributes.size) &&
+                this.attributes
+                .filter(config.testAttribute)
+                .forall { a ⇒ other.attributes.exists(a.similar) }
     }
 
     def copy(
