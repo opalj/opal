@@ -72,8 +72,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
                 method,
                 // "in real code" a specially tailored domain should be used.
                 new domain.l1.DefaultDomain(
-                    theProject,
-                    classFile, method
+                    theProject, classFile, method
                 ) with RecordLastReturnedValues
             )
             if result.domain.allReturnedValues.forall(_ match {

@@ -42,7 +42,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 
 /**
- * A shallow analysis that tries to identify useless computations.
+ * A shallow analysis that identifies useless computations.
  *
  * @author Michael Eichberg
  */

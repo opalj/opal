@@ -304,7 +304,9 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      */
     def ClassFile(create: () ⇒ InputStream): List[ClassFile] = {
         process(create()) {
-            case null                      ⇒ throw new IllegalArgumentException("the created stream is null")
+            case null ⇒
+                throw new IllegalArgumentException("the created stream is null")
+
             case dis: DataInputStream      ⇒ ClassFile(dis)
             case bis: BufferedInputStream  ⇒ ClassFile(new DataInputStream(bis))
             case bas: ByteArrayInputStream ⇒ ClassFile(new DataInputStream(bas))

@@ -28,7 +28,11 @@
  */
 package org.opalj
 
+import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ExceptionHandlers
+import org.opalj.br.ExceptionHandler
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.graphs.Node
@@ -63,13 +67,89 @@ package object tac {
         )
     }
 
+    @inline private def getStartAndEndPC(
+        oldEH:      ExceptionHandler,
+        newIndexes: Array[Int]
+    ): (Int, Int) = {
+        val newStartPC = newIndexes(oldEH.startPC)
+        var newEndPC = newIndexes(oldEH.endPC)
+        if (newEndPC <= 0) {
+            // The end of the try-block is dead and therefore the end instruction maps to "0"
+            // E.g.,
+            // try - start
+            //      invoke => ALWAYS THROWS AS IDENTIFIED BY THE AI
+            //      if... // DEAD => no mapping for endPC
+            // try - end
+            var lastPC = oldEH.endPC - 1
+            while (lastPC >= newStartPC && newEndPC <= 0) {
+                newEndPC = newIndexes(lastPC)
+                lastPC -= 1
+            }
+        }
+        (newStartPC, newEndPC)
+    }
+
+    /**
+     * Updates the exception handlers by adjusting the start, end and handler index (pc).
+     *
+     * @note   This method can only be used in cases where the order of instructions remains
+     *         the same and/or instructions are deleted. If instructions are reordered this method
+     *         cannot be used!
+     *
+     * @param aiResult The result of the abstract interpretation of the method. (We use the aiResult
+     *                 for verification purposes only (`assert`s)).
+     * @param newIndexes A map that contains for each previous index the new index
+     *                   that should be used.
+     * @return The new exception handlers.
+     */
+    def updateExceptionHandlers(
+        aiResult:   AIResult { val domain: Domain with RecordDefUse },
+        newIndexes: Array[Int]
+    ): ExceptionHandlers = {
+        val code = aiResult.code
+        val exceptionHandlers = code.exceptionHandlers
+
+        exceptionHandlers map { oldEH ⇒
+            // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
+            // included in the handler block, the endPC is equal to `(pc of last instruction) +
+            // instruction.size`; however, this is already handled by the caller!
+            val (newStartPC, newEndPC) = getStartAndEndPC(oldEH, newIndexes)
+            val newEH = oldEH.copy(
+                startPC = newStartPC,
+                endPC = newEndPC,
+                handlerPC = newIndexes(oldEH.handlerPC)
+            )
+            assert(
+                newEH.endPC >= newEH.startPC,
+                s"the end of the try block ${newEH.endPC} is before the start ${newEH.startPC}"
+            )
+            assert(
+                {
+                    newEH.endPC > newEH.startPC || {
+                        (oldEH.startPC until oldEH.endPC) forall { tryPC ⇒
+                            aiResult.domain.exceptionHandlerSuccessorsOf(tryPC).isEmpty
+                        }
+                    }
+                },
+                s"exception handler collapsed: $oldEH ⇒ $newEH"
+            )
+            newEH
+        } filter { eh ⇒
+            eh.endPC > eh.startPC
+        }
+    }
+
     /**
      * Updates the exception handlers by adjusting the start, end and handler index (pc).
      *
      * This method can only be used in simple cases where the order of instructions remains
-     * the same - deleting instructions is supported.
+     * the same and the start and end still map to valid exception handlers -
+     * deleting/adding instructions is supported.
      *
-     * @param exceptionHandlers
+     * @note You should use `updateExceptionHandlers(AIResult,Array[Int])` whenever possible
+     *       since that method performs additional checks!
+     *
+     * @param exceptionHandlers The code's exception handlers.
      * @param newIndexes A map that contains for each previous index the new index
      *                   that should be used.
      * @return The new exception handler.
@@ -82,13 +162,18 @@ package object tac {
             // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
             // included in the handler block, the endPC is equal to `(pc of last instruction) +
             // instruction.size`; however, this is already handled by the caller!
+            val (newStartPC, newEndPC) = getStartAndEndPC(old, newIndexes)
 
-            old.copy(
-                startPC = newIndexes(old.startPC),
-                endPC = newIndexes(old.endPC),
-                handlerPC = newIndexes(old.endPC)
+            val newEH = old.copy(
+                startPC = newStartPC,
+                endPC = newEndPC,
+                handlerPC = newIndexes(old.handlerPC)
             )
+            assert(
+                newEH.startPC <= newEH.endPC,
+                s"startPC=${old.startPC} => ${newEH.startPC};endPC=${old.endPC} => ${newEH.endPC}"
+            )
+            newEH
         }
     }
-
 }

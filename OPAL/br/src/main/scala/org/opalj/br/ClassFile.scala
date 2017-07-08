@@ -500,7 +500,7 @@ final class ClassFile private (
         classFileRepository: ClassFileRepository
     ): Unit = {
         nestedClasses(classFileRepository) foreach { nestedType ⇒
-            classFileRepository.classFile(nestedType) map { nestedClassFile ⇒
+            classFileRepository.classFile(nestedType) foreach { nestedClassFile ⇒
                 f(nestedClassFile)
                 nestedClassFile.foreachNestedClass(f)
             }
@@ -552,7 +552,7 @@ final class ClassFile private (
     /**
      * All constructors/instance initialization methods (`<init>`) defined by this class.
      *
-     * (This does not include static initializers.)
+     * (This does not include the static initializer.)
      */
     def constructors: Iterator[Method] = {
         new Iterator[Method] {
