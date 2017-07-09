@@ -60,7 +60,7 @@ case class TypeAnnotation(
             else
                 NodeSeq.Empty
 
-        val at = parseFieldType(type_index).asJavaType /* TODO as xhtml node */
+        val at = parseFieldType(type_index).asJava /* TODO as xhtml node */
 
         // main tag
         <div class="type_annotation">

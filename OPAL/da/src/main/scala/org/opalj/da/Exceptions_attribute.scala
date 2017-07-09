@@ -57,9 +57,9 @@ case class Exceptions_attribute(
 
     def exceptionsToXHTML(implicit cp: Constant_Pool): Node = {
         <span>{
-            val head = Seq(cp(exception_index_table.head).asInlineNode)
+            val head = Seq(cp(exception_index_table.head).asInstructionParameter)
             exception_index_table.tail.foldLeft(head) { (c, i) ⇒
-                c ++ Seq(Text(", "), cp(i).asInlineNode)
+                c ++ Seq(Text(", "), cp(i).asInstructionParameter)
             }
         }</span>
     }

@@ -30,8 +30,9 @@ package org.opalj
 package da
 
 import scala.xml.Node
-
 import org.opalj.bi.AccessFlagsContexts.METHOD
+
+import scala.xml.Text
 
 /**
  * @author Michael Eichberg
@@ -63,29 +64,65 @@ case class Method_Info(
      */
     def descriptor(implicit cp: Constant_Pool): String = cp(descriptor_index).asString
 
-    /**
-     * @param definingType The name of the class defining this field.
-     */
-    def toXHTML(definingType: String, methodIndex: Int)(implicit cp: Constant_Pool): Node = {
+    def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
         val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, METHOD)
 
         val name = this.name
-        val jvmDescriptor = descriptor
-        val javaDescriptor = methodDescriptorAsJavaSignature(name, jvmDescriptor)
+        val jvmDescriptor = this.descriptor
         val index = methodIndex.toString
-        <div class="method" id={ name + jvmDescriptor } data-name={ name } data-index={ index } data-access-flags={ explicitAccessFlags }>
-            <div class="method_signature">
-                { accessFlags }
-                <span>{ javaDescriptor }</span>
-            </div>
-            { attributesToXHTML(methodIndex) }
-        </div>
-    }
 
-    private[this] def attributesToXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Seq[Node] = {
-        attributes map {
-            case codeAttribute: Code_attribute ⇒ codeAttribute.toXHTML(methodIndex)
-            case attribute                     ⇒ attribute.toXHTML
-        }
+        val declarationNode =
+            <span class="method_declaration">
+                { accessFlags }{ methodDescriptorAsInlineNode(name, jvmDescriptor) }
+            </span>
+
+        val (codeAttributes, attributes1) = attributes.partition(_.isInstanceOf[Code_attribute])
+        val (signatureAttributes, attributes2) = attributes1.partition(_.isInstanceOf[Signature_attribute])
+        <div class="method" id={ name + jvmDescriptor } data-name={ name } data-index={ index } data-access-flags={ explicitAccessFlags }>
+            {
+                if (codeAttributes.nonEmpty) {
+                    val codeAttribute = codeAttributes.head.asInstanceOf[Code_attribute]
+
+                    val code = codeAttribute.code
+                    val codeSize = code.instructions.length
+                    val maxStack = codeAttribute.max_stack
+                    val maxLocals = codeAttribute.max_locals
+                    val methodBodyHeader =
+                        s"(size: $codeSize bytes, max Stack: $maxStack, max Locals: $maxLocals)"
+                    <details open="">
+                        <summary>
+                            { Seq(declarationNode, Text(methodBodyHeader)) }
+                            {
+                                if (signatureAttributes.nonEmpty) {
+                                    val signatureAttribute = signatureAttributes.head.asInstanceOf[Signature_attribute]
+                                    Seq(<br/>, signatureAttribute.signatureSpan)
+                                }
+                            }
+                        </summary>
+                        <div>
+                            {
+                                code.toXHTML(
+                                    methodIndex,
+                                    codeAttribute.exceptionTable,
+                                    codeAttribute.attributes.collectFirst {
+                                        case LineNumberTable_attribute(_, lnt)⇒ lnt
+                                    }
+                                )
+                            }
+                            { codeAttribute.exception_handlersAsXHTML }
+                            {
+                                codeAttribute.attributes.
+                                    filterNot(_.isInstanceOf[LineNumberTable_attribute]).
+                                    map(_.toXHTML)
+                            }
+                        </div>
+                    </details>
+                } else {
+                    <div>
+                        { declarationNode }
+                    </div>
+                }
+            }{ attributes2.map(_.toXHTML) }
+        </div>
     }
 }

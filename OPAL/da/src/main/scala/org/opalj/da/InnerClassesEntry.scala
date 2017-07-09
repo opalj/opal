@@ -46,10 +46,13 @@ case class InnerClassesEntry(
         inner_class_access_flags: Int
 ) {
 
-    def toXHTML(definingClassFQN: String)(implicit cp: Constant_Pool): Node = {
+    def toXHTML(definingClass: FieldTypeInfo)(implicit cp: Constant_Pool): Node = {
+
+        val definingClassFQN = definingClass.asJava
         val accessFlags =
             AccessFlags.toString(inner_class_access_flags, AccessFlagsContexts.INNER_CLASS)
 
+        // IMPROVE Use ObjectTypeInfo
         val definedType = cp(inner_class_info_index).toString
         val outerClassFQN =
             if (outer_class_info_index != 0)

@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  * Encapsulates basic type information.
  *
@@ -36,7 +38,7 @@ package da
  */
 sealed abstract class TypeInfo {
 
-    def asJavaType: String
+    def asJava: String
 
     /**
      * `true` if the underlying type (in case of an array the element type) is a base type/
@@ -44,27 +46,41 @@ sealed abstract class TypeInfo {
      * an exception is thrown.
      */
     def elementTypeIsBaseType: Boolean
+
     def isVoid: Boolean
+
+    def asSpan(baseClass: String): Node
 }
 
 object TypeInfo {
     def unapply(ti: TypeInfo): Some[(String, Boolean)] = {
-        Some((ti.asJavaType, ti.elementTypeIsBaseType))
+        Some((ti.asJava, ti.elementTypeIsBaseType))
     }
 }
 
 case object VoidTypeInfo extends TypeInfo {
-    final val asJavaType: String = "void"
-    def elementTypeIsBaseType: Boolean = throw new UnsupportedOperationException
-    def isVoid: Boolean = true
+
+    override def asJava: String = "void"
+
+    override def elementTypeIsBaseType: Boolean = throw new UnsupportedOperationException
+
+    override def isVoid: Boolean = true
+
+    override def asSpan(baseClass: String): Node = <span class={ s"$baseClass void_type" }>void</span>
+
 }
 
 sealed abstract class FieldTypeInfo extends TypeInfo {
-    def isVoid: Boolean = false
+    override final def isVoid: Boolean = false
 }
 
-sealed abstract class PrimitiveTypeInfo protected (val asJavaType: String) extends FieldTypeInfo {
-    final def elementTypeIsBaseType: Boolean = true
+sealed abstract class PrimitiveTypeInfo protected (val asJava: String) extends FieldTypeInfo {
+
+    override final def elementTypeIsBaseType: Boolean = true
+
+    override def asSpan(baseClass: String): Node = {
+        <span class={ s"$baseClass primitive_type" }>{ asJava }</span>
+    }
 }
 
 case object BooleanTypeInfo extends PrimitiveTypeInfo("boolean")
@@ -76,17 +92,28 @@ case object LongTypeInfo extends PrimitiveTypeInfo("long")
 case object FloatTypeInfo extends PrimitiveTypeInfo("float")
 case object DoubleTypeInfo extends PrimitiveTypeInfo("double")
 
-case class ObjectTypeInfo(asJavaType: String) extends FieldTypeInfo {
-    def elementTypeIsBaseType: Boolean = false
+case class ObjectTypeInfo(asJava: String) extends FieldTypeInfo {
+    override final def elementTypeIsBaseType: Boolean = false
+
+    override def asSpan(baseClass: String): Node = {
+        <span class={ s"$baseClass object_type" }>{ asJava }</span>
+    }
 }
 
 case class ArrayTypeInfo(
-        elementTypeAsJavaType: String,
+        elementTypeAsJava:     String,
         dimensions:            Int,
         elementTypeIsBaseType: Boolean
 ) extends FieldTypeInfo {
 
     assert(dimensions > 0)
 
-    def asJavaType: String = elementTypeAsJavaType + ("[]" * dimensions)
+    def asJava: String = elementTypeAsJava + ("[]" * dimensions)
+
+    override def asSpan(baseClass: String): Node = {
+        if (elementTypeIsBaseType)
+            <span class={ s"$baseClass array primitive_type" }>{ asJava }</span>
+        else
+            <span class={ s"$baseClass array object_type" }>{ asJava }</span>
+    }
 }

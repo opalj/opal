@@ -30,6 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.Text
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -47,14 +49,23 @@ case class Annotation(
     }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val element_value_pairsAsXHTML = this.element_value_pairs.map(_.toXHTML(cp))
-        val annotationType = parseFieldType(cp(type_index).toString).asJavaType
+        val annotationType = parseFieldType(cp(type_index).toString)
+
+        val evps: NodeSeq =
+            if (element_value_pairs.nonEmpty) {
+                val evpsAsXHTML = this.element_value_pairs.map(_.toXHTML)
+                Seq(
+                    Text("("),
+                    <ol class="element_value_pairs">{ evpsAsXHTML }</ol>,
+                    Text(")")
+                )
+            } else {
+                NodeSeq.Empty
+            }
 
         <div class="annotation">
-            <span class="type">{ annotationType }</span>
-            (
-            <span class="element_value_pairs">{ element_value_pairsAsXHTML }</span>
-            )
+            { annotationType.asSpan("annotation_type") }
+            { evps }
         </div>
     }
 }

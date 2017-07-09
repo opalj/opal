@@ -47,7 +47,7 @@ case class Unknown_attribute(
             <span class="attribute_name">{ attributeName }</span>
             {
                 if (attribute_length > 0) {
-                    <span>(Size:{ attribute_length }bytes)</span>
+                    <span>({ attribute_length }bytes):</span>
                     <br/>
                     <div>{ byteArrayToNode(info) }</div>
                 }

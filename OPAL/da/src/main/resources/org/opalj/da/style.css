@@ -36,8 +36,8 @@ body{
 }
 
 div{
-	margin-bottom:0.25em;
-	margin-top:0.25em;
+	margin-bottom:0em;
+	margin-top:0em;
 }
 
 ul {
@@ -100,8 +100,9 @@ div#source {
     margin: 0 0;
     background: rgb(20,20,20);
     color: #DDD;
-    padding: 0.25em 1em 0.25em 1em;
+    padding: 0.4em 1em 0.4em 1em;
     font-size : smaller;
+    ext-align: center ;
 }
 
 td.exception {
@@ -202,10 +203,27 @@ div#class_file_header {
 	background-color: #f4e8e8;
 }
 
+div.method {
+    background-color: #F6F6F6;
+    padding: 0px 0px 0px 0px;
+    border-top-color: BBB;
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
 .method_body {
 	background-color:#F7F7F7;
 	margin:0 0 0 0;
 	padding:0 0 0 0;
+}
+
+span.signature {
+    display: block;
+    margin-top: 0.5em;
+    font-family: monospace;
+    font-size: smaller;
 }
 
 .method_signature {

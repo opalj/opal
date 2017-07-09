@@ -33,6 +33,8 @@ import scala.xml.Node
 import scala.xml.Text
 import org.opalj.bi.ConstantPoolTag
 
+import scala.xml.NodeSeq
+
 /**
  *
  * @author Michael Eichberg
@@ -50,7 +52,7 @@ case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
             )
         </span>
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node = {
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
         val repr =
             if (value < 0 || value >= 10)
                 Seq(
