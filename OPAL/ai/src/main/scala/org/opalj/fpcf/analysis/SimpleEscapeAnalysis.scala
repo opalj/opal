@@ -32,6 +32,7 @@ package analysis
 
 import java.io.File
 
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.Domain
 import org.opalj.br._
 import org.opalj.br.analyses.{AnalysisModeConfigFactory, FormalParameter, FormalParameters, Project, PropertyStoreKey, SomeProject}
@@ -41,12 +42,12 @@ import org.opalj.tac.{NonVirtualMethodCall, _}
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
- * A very simple (mostly) intra-procedural escape analysis.
+ * A very simple flow-sensitive (mostly) intra-procedural escape analysis.
  *
  * @author Florian Kuebler
  */
 class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
-    type V = DUVar[Domain#DomainValue]
+    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     /**
      * Determines whether the given entity on the given definition site with given uses of that
@@ -250,7 +251,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             case as @ AllocationSite(m, pc) ⇒
-                val TACode(_, code, _, _, _) = project.get(DefaultTACAIKey)(m)
+                val code = project.get(DefaultTACAIKey)(m).stmts
 
                 val index = code.indexWhere(stmt ⇒ stmt.pc == pc)
 
