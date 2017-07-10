@@ -191,7 +191,10 @@ object Hermes extends JFXApp with HermesCore {
     override def updateProjectData(f: ⇒ Unit): Unit = Platform.runLater { f }
 
     override def reportProgress(f: ⇒ Double): Unit = {
-        Platform.runLater { f; rootPane.getChildren().remove(progressBar) }
+        Platform.runLater {
+            val progress = f
+            if (progress >= 1.0d) rootPane.getChildren().remove(progressBar)
+        }
     }
 
     // Must only be called after all features were computed.
@@ -645,7 +648,7 @@ object Hermes extends JFXApp with HermesCore {
             title = "Hermes - "+parameters.unnamed.head
             root = rootPane
 
-            analyzeCorpus()
+            analyzeCorpus(runAsDaemons = true)
         }
         icons += new Image(getClass.getResource("OPAL-Logo-Small.png").toExternalForm)
 

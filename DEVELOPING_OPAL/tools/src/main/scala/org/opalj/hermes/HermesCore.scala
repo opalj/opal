@@ -185,7 +185,7 @@ trait HermesCore {
      *
      * @note This method is only intended to be called once!
      */
-    def analyzeCorpus(): Thread = {
+    def analyzeCorpus(runAsDaemons: Boolean): Thread = {
 
         def isValid(
             projectFeatures:          ProjectFeatures[URL],
@@ -245,7 +245,7 @@ trait HermesCore {
                 }
             }
         }
-        t.setDaemon(true)
+        t.setDaemon(runAsDaemons)
         t.start()
         t
     }
