@@ -60,7 +60,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
             var proxy: ClassFile = null
 
             describe(s"generating a valid proxy for ${t.toJava} { ${m.toJava(false)} }") {
-                val typeName = "ProxyValidation$"+t.fqn+":"+m.name+m.descriptor.toJVMDescriptor+"$"
+                val typeName = "ProxyValidation$"+t.fqn+":"+m.name + m.descriptor.toJVMDescriptor+"$"
                 val definingType =
                     TypeDeclaration(
                         ObjectType(typeName),
