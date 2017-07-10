@@ -89,29 +89,31 @@ final class Method private (
      * The bodies and attributes are recursively checked for structural equality. In case of the
      * attributes, the order doesn't matter!
      */
-    def similar(other: Method): Boolean = {
-        if (!(
-            this.accessFlags == other.accessFlags &&
-            this.name == other.name &&
-            this.descriptor == other.descriptor
-        )) {
+    def similar(
+        other:  Method,
+        config: SimilarityTestConfig = DefaultSimilarityTestConfig
+    ): Boolean = {
+        if ((config.testAccessFlags(accessFlags) && this.accessFlags != other.accessFlags) ||
+            (this.name != other.name) ||
+            (this.descriptor != other.descriptor)) {
             return false;
         }
 
-        if (!(
+        if (config.checkBody(body) && !(
             (this.body.isEmpty && other.body.isEmpty) ||
             (
                 this.body.nonEmpty && other.body.nonEmpty &&
-                this.body.get.similar(other.body.get)
+                this.body.get.similar(other.body.get, config)
             )
         )) {
             return false;
         }
 
-        if (!(
-            this.attributes.size == other.attributes.size &&
-            this.attributes.forall { a ⇒ other.attributes.find(a.similar).isDefined }
-        )) {
+        if ((config.testAttributesSize(attributes) &&
+            this.attributes.size != other.attributes.size) ||
+            !this.attributes
+                .filter(config.testAttribute)
+                .forall { a ⇒ other.attributes.exists(a.similar) }) {
             return false;
         }
 

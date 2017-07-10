@@ -37,6 +37,7 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.io.IOException
+import java.io.FilenameFilter
 import java.util.zip.{ZipEntry, ZipFile}
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -46,9 +47,7 @@ import scala.util.control.ControlThrowable
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.Future
-
 import org.apache.commons.text.similarity.LevenshteinDistance
-
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.control.repeat
@@ -305,7 +304,9 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      */
     def ClassFile(create: () ⇒ InputStream): List[ClassFile] = {
         process(create()) {
-            case null                      ⇒ throw new IllegalArgumentException("the created stream is null")
+            case null ⇒
+                throw new IllegalArgumentException("the created stream is null")
+
             case dis: DataInputStream      ⇒ ClassFile(dis)
             case bis: BufferedInputStream  ⇒ ClassFile(new DataInputStream(bis))
             case bas: ByteArrayInputStream ⇒ ClassFile(new DataInputStream(bas))
@@ -504,6 +505,34 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         }
     }
 
+    private[this] def processJar(
+        file:             File,
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler
+    ): List[(ClassFile, URL)] = {
+        try {
+            process(new ZipFile(file)) { zf ⇒ ClassFiles(zf, exceptionHandler) }
+        } catch {
+            case e: Exception ⇒
+                exceptionHandler(file, new IOException("cannot process: "+file, e))
+                Nil
+        }
+    }
+
+    private[this] def processClassFile(
+        file:             File,
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler
+    ): List[(ClassFile, URL)] = {
+        try {
+            process(
+                new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
+            ) { in ⇒ ClassFile(in).map(classFile ⇒ (classFile, file.toURI.toURL)) }
+        } catch {
+            case e: Exception ⇒
+                exceptionHandler(file, new IOException(s"cannot process $file", e))
+                Nil
+        }
+    }
+
     /**
      * Loads class files from the given file location. If the file denotes
      * a single ".class" file this class file is loaded. If the file
@@ -518,28 +547,6 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         file:             File,
         exceptionHandler: ExceptionHandler = defaultExceptionHandler
     ): List[(ClassFile, URL)] = {
-
-        def processJar(file: File): List[(ClassFile, URL)] = {
-            try {
-                process(new ZipFile(file)) { zf ⇒ ClassFiles(zf, exceptionHandler) }
-            } catch {
-                case e: Exception ⇒
-                    exceptionHandler(file, new IOException("cannot process: "+file, e))
-                    Nil
-            }
-        }
-
-        def processClassFile(file: File): List[(ClassFile, URL)] = {
-            try {
-                process(
-                    new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
-                ) { in ⇒ ClassFile(in).map(classFile ⇒ (classFile, file.toURI.toURL)) }
-            } catch {
-                case e: Exception ⇒
-                    exceptionHandler(file, new IOException(s"cannot process $file", e))
-                    Nil
-            }
-        }
 
         if (!file.exists()) {
             Nil
@@ -603,6 +610,65 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         exceptionHandler: ExceptionHandler  = defaultExceptionHandler
     ): Traversable[(ClassFile, URL)] = {
         files.flatMap(file ⇒ ClassFiles(file, exceptionHandler))
+    }
+
+    /**
+     * Searches for the first class file that is accepted by the filter. If no class file
+     * can be found that is accepted by the filter the set of all class names is returned.
+     *
+     * @param files Some file. If the file names a .jar file the .jar file is opened and
+     *              searched for a corresponding class file. If the file identifies a "directory"
+     *              then, all files in that directory are processed.
+     */
+    def findClassFile(
+        files:            Traversable[File],
+        progressReporter: File ⇒ Unit,
+        classFileFilter:  ClassFile ⇒ Boolean,
+        className:        ClassFile ⇒ String,
+        exceptionHandler: ExceptionHandler    = defaultExceptionHandler
+    ): Either[(ClassFile, URL), Set[String]] = {
+        var classNames = Set.empty[String]
+        files.filter(_.exists()) foreach { file ⇒
+            if (file.isFile && file.length() > 0) {
+                val filename = file.getName
+                (
+                    if (isClassFileRepository(filename)) {
+                        if (!filename.endsWith("-javadoc.jar") && !filename.endsWith("-sources.jar")) {
+                            progressReporter(file)
+                            processJar(file)
+                        } else {
+                            Nil
+                        }
+                    } else if (filename.endsWith(".class")) {
+                        progressReporter(file)
+                        processClassFile(file)
+                    } else {
+                        Nil
+                    }
+                ) filter { cfSource ⇒
+                        val (cf, _) = cfSource
+                        classNames += className(cf)
+                        classFileFilter(cf)
+                    } foreach { e ⇒ return Left(e); }
+            } else if (file.isDirectory) {
+                file.listFiles(new FilenameFilter {
+                    override def accept(dir: File, name: String): Boolean = {
+                        dir.isDirectory || isClassFileRepository(file.toString)
+                    }
+                }) foreach { f ⇒
+                    findClassFile(
+                        List(f), progressReporter, classFileFilter, className, exceptionHandler
+                    ) match {
+                            case Left(cf) ⇒
+                                return Left(cf);
+                            case Right(moreClassNames) ⇒
+                                classNames ++= moreClassNames
+                            /*nothing else to do... let's continue*/
+                        }
+                }
+            }
+        }
+        Right(classNames)
     }
 }
 /**

@@ -29,29 +29,27 @@
 package org.opalj
 package br
 
-import scala.annotation.tailrec
-
-import org.opalj.log.OPALLogger
+import org.opalj.bi.ACC_ABSTRACT
+import org.opalj.bi.ACC_ANNOTATION
+import org.opalj.bi.ACC_ENUM
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_INTERFACE
+import org.opalj.bi.ACC_MODULE
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.AccessFlagsMatcher
+import org.opalj.bi.VisibilityModifier
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.UShortPair
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogMessage
 import org.opalj.log.Warn
 
-import org.opalj.bi.ACC_ABSTRACT
-import org.opalj.bi.ACC_ANNOTATION
-import org.opalj.bi.ACC_INTERFACE
-import org.opalj.bi.ACC_ENUM
-import org.opalj.bi.ACC_FINAL
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_SUPER
-import org.opalj.bi.AccessFlagsContexts
-import org.opalj.bi.VisibilityModifier
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsMatcher
-import org.opalj.bi.ACC_MODULE
-
-import org.opalj.collection.immutable.UShortPair
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
+import scala.annotation.tailrec
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -121,68 +119,78 @@ final class ClassFile private (
      * are irrelevant at load / runtime, such as the order in which the attributes are defined,
      * are ignored.
      *
+     * Specify a SimilarityTestConfig to turn specific tests on or off.
+     * The default is DefaultSimilarityTestConfig, which turns all tests on.
+     *
      * @return `None` if this class file and the other are equal - i.e., if both
      *          effectively implement the same class.
      */
-    final def findDissimilarity(other: ClassFile): Option[AnyRef] = {
+    final def findDissimilarity(
+        other:  ClassFile,
+        config: SimilarityTestConfig = DefaultSimilarityTestConfig
+    ): Option[AnyRef] = {
         if (this.version != other.version) {
             return Some(("class file version", this.version, other.version));
         }
 
-        if (this.accessFlags != other.accessFlags) {
+        if (config.testAccessFlags(accessFlags) && this.accessFlags != other.accessFlags) {
             return Some(("class file access flags", this.accessFlags, other.accessFlags));
         }
 
-        if (this.thisType != other.thisType) {
+        if (config.testType(thisType) && this.thisType != other.thisType) {
             return Some(("declared type", this.thisType.toJava, other.thisType.toJava));
         }
 
-        if (this.superclassType != other.superclassType) {
+        if (config.testSuperclassType(superclassType) &&
+            this.superclassType != other.superclassType) {
             return Some(("declared supertype", this.superclassType, other.superclassType));
         }
 
-        if (this.interfaceTypes != other.interfaceTypes) {
+        if (config.testInterfaceTypes(interfaceTypes) &&
+            this.interfaceTypes != other.interfaceTypes) {
             return Some(("inherited interfaces", this.interfaceTypes, other.interfaceTypes));
         }
 
-        if (this.fields.size != other.fields.size) {
+        if (config.testFieldsSize(fields) && this.fields.size != other.fields.size) {
             return Some(("declared number of fields", this.fields.size, other.fields.size));
         }
 
-        if (this.methods.size != other.methods.size) {
+        if (config.testMethodsSize(methods) && this.methods.size != other.methods.size) {
             return Some(("declared number of methods", this.methods.size, other.methods.size));
         }
 
-        if (this.attributes.size != other.attributes.size) {
+        if (config.testAttributesSize(attributes) &&
+            this.attributes.size != other.attributes.size) {
             return Some((
                 "declared number of attributes",
                 this.attributes.size, other.attributes.size
             ));
         }
 
-        if (!this.attributes.forall(a ⇒ other.attributes.find(a.similar).isDefined)) {
+        if (!this.attributes.filter(config.testAttribute)
+            .forall(a ⇒ other.attributes.exists(a.similar))) {
             // this.attributes.find{ a => !other.attributes.exists(a.similar) }
             return Some(("different attributes", this.attributes, other.attributes));
         }
 
         // RECALL The fields are always strictly ordered in the same way!
-        val thisFieldIt = this.fields.iterator
-        val otherFieldIt = other.fields.iterator
+        val thisFieldIt = this.fields.filter(config.testField).iterator
+        val otherFieldIt = other.fields.filter(config.testField).iterator
         while (thisFieldIt.hasNext) {
             val thisField = thisFieldIt.next
             val otherField = otherFieldIt.next
-            if (!thisField.similar(otherField)) {
+            if (!thisField.similar(otherField, config)) {
                 return Some(("different fields", thisField, otherField));
             }
         }
 
         // RECALL The methods are always strictly ordered in the same way!
-        val thisMethodIt = this.methods.iterator
-        val otherMethodIt = other.methods.iterator
+        val thisMethodIt = this.methods.filter(config.testMethod).iterator
+        val otherMethodIt = other.methods.filter(config.testMethod).iterator
         while (thisMethodIt.hasNext) {
             val thisMethod = thisMethodIt.next
             val otherMethod = otherMethodIt.next
-            if (!thisMethod.similar(otherMethod)) {
+            if (!thisMethod.similar(otherMethod, config)) {
                 return Some(("different methods", thisMethod, otherMethod));
             }
         }
@@ -197,7 +205,10 @@ final class ClassFile private (
      * are irrelevant at load-/runtime, such as the order in which the attributes are defined,
      * are ignored.
      */
-    def similar(other: ClassFile): Boolean = findDissimilarity(other).isEmpty
+    def similar(
+        other:  ClassFile,
+        config: SimilarityTestConfig = DefaultSimilarityTestConfig
+    ): Boolean = findDissimilarity(other, config).isEmpty
 
     /**
      * Creates a shallow copy of this class file object.
@@ -500,7 +511,7 @@ final class ClassFile private (
         classFileRepository: ClassFileRepository
     ): Unit = {
         nestedClasses(classFileRepository) foreach { nestedType ⇒
-            classFileRepository.classFile(nestedType) map { nestedClassFile ⇒
+            classFileRepository.classFile(nestedType) foreach { nestedClassFile ⇒
                 f(nestedClassFile)
                 nestedClassFile.foreachNestedClass(f)
             }
@@ -552,7 +563,7 @@ final class ClassFile private (
     /**
      * All constructors/instance initialization methods (`<init>`) defined by this class.
      *
-     * (This does not include static initializers.)
+     * (This does not include the static initializer.)
      */
     def constructors: Iterator[Method] = {
         new Iterator[Method] {

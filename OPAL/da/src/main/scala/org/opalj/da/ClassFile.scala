@@ -195,6 +195,7 @@ case class ClassFile(
      * @return The generatd HTML.
      */
     def toXHTML(
+        source:            Option[AnyRef],
         embeddedCSS:       Option[String] = Some(ClassFile.TheCSS),
         cssFile:           Option[String] = None,
         jsFile:            Option[String] = None,
@@ -221,14 +222,17 @@ case class ClassFile(
                 }
             </head>
             <body>
-                { classFileToXHTML(withMethodsFilter) }
+                { classFileToXHTML(source, withMethodsFilter) }
             </body>
         </html>
 
-    def classFileToXHTML(): Node = classFileToXHTML(false)
+    def classFileToXHTML(source: Option[AnyRef]): Node = classFileToXHTML(source, false)
 
-    private[this] def classFileToXHTML(withMethodsFilter: Boolean): Node =
+    // this file is private to ensure that no meaningless html files are generated
+    // (i.e. with the fields for the filter, but without the necessary logic)
+    private[this] def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node =
         <div class="class_file">
+            { if (source.isDefined) <div id="source">{ source.get }</div> }
             <div id="class_file_header">
                 { accessFlags }
                 &nbsp;<b id="defining_class">{ thisType }</b>

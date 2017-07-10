@@ -731,7 +731,7 @@ object Hermes extends JFXApp {
                 val classFile = ClassFileReader.ClassFile(
                     () ⇒ newLocation.source.get.openConnection().getInputStream
                 )(0)
-                webView.engine.loadContent(classFile.toXHTML().toString())
+                webView.engine.loadContent(classFile.toXHTML(newLocation.source).toString())
             } catch { case t: Throwable ⇒ t.printStackTrace() }
         }
     }

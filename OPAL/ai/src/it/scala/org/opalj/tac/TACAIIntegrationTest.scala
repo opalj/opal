@@ -45,6 +45,7 @@ import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.analyses.SomeProject
 
@@ -112,19 +113,38 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         }
     }
 
-    describe("creating the three-address representation using the results of an abstract interpretation") {
+    describe("creating the 3-address code using an abstract interpretation using the default domain") {
 
         val domainFactory = (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
             new DefaultDomainWithCFGAndDefUse(p, cf, m)
         }
 
-        it("it should be able to create fully typed TAC for the set of collected class files") {
+        it("it should be able to create the fully typed TAC for the set of collected class files") {
             time {
                 checkFolder(biClassfilesFolder, domainFactory)
             } { t ⇒ info(s"conversion took ${t.toSeconds}") }
         }
 
-        it("it should be able to create fully typed TAC for the JDK") {
+        it("it should be able to create the fully typed TAC for the JDK") {
+            time {
+                checkFolder(jreLibFolder, domainFactory)
+            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+        }
+    }
+
+    describe("creating the 3-address code using the most basic domain") {
+
+        val domainFactory = (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
+            new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
+        }
+
+        it("it should be able to create the fully typed TAC for the set of collected class files") {
+            time {
+                checkFolder(biClassfilesFolder, domainFactory)
+            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+        }
+
+        it("it should be able to create the fully typed TAC for the JDK") {
             time {
                 checkFolder(jreLibFolder, domainFactory)
             } { t ⇒ info(s"conversion took ${t.toSeconds}") }
