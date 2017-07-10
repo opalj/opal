@@ -95,8 +95,8 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 case NonVirtualMethodCall.ASTID ⇒
                     val NonVirtualMethodCall(_, dc, interface, name, descr, receiver, params) = stmt
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
-                case FailingStatement.ASTID ⇒
-                    val FailingStatement(_, failingStmt) = stmt
+                case FailingStmt.ASTID ⇒
+                    val FailingStmt(_, failingStmt) = stmt
                     determineEscapeStmt(failingStmt, e, defSite)
                 case ExprStmt.ASTID ⇒
                     val ExprStmt(_, expr) = stmt
