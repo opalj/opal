@@ -70,7 +70,7 @@ sealed trait BaseTypeElementValue extends ElementValue {
 
     def baseType: BaseType
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 }
 
 case class ByteValue(value: Byte) extends BaseTypeElementValue {
@@ -201,7 +201,7 @@ case class StringValue(value: String) extends ElementValue {
 
     override def kindId: Int = StringValue.KindId
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
 object StringValue {
@@ -218,7 +218,7 @@ case class ClassValue(value: Type) extends ElementValue {
 
     override def kindId: Int = ClassValue.KindId
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
 object ClassValue {
@@ -235,7 +235,7 @@ case class EnumValue(enumType: ObjectType, constName: String) extends ElementVal
 
     override def kindId: Int = EnumValue.KindId
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
 object EnumValue {
@@ -253,7 +253,7 @@ case class ArrayValue(values: IndexedSeq[ElementValue]) extends ElementValue {
 
     override def kindId: Int = ArrayValue.KindId
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
 object ArrayValue {
@@ -270,7 +270,7 @@ case class AnnotationValue(annotation: Annotation) extends ElementValue {
 
     override def kindId: Int = AnnotationValue.KindId
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case AnnotationValue(thatAnnotation) ⇒
                 this.annotation.similar(thatAnnotation)

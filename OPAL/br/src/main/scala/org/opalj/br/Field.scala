@@ -82,17 +82,13 @@ final class Field private (
      */
     def similar(
         other:  Field,
-        config: SimilarityTestConfig = DefaultSimilarityTestConfig
+        config: SimilarityTestConfiguration
     ): Boolean = {
 
-        (!config.testAccessFlags(accessFlags) || this.accessFlags == other.accessFlags) &&
+        this.accessFlags == other.accessFlags &&
             (this.fieldType eq other.fieldType) &&
             this.name == other.name &&
-            (!config.testAttributesSize(attributes) ||
-                this.attributes.size == other.attributes.size) &&
-                this.attributes
-                .filter(config.testAttribute)
-                .forall { a ⇒ other.attributes.exists(a.similar) }
+            compareAttributes(other.attributes, config).isEmpty
     }
 
     def copy(

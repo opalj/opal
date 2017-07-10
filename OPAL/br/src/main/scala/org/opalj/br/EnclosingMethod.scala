@@ -49,7 +49,7 @@ case class EnclosingMethod(
 
     override def kindId: Int = EnclosingMethod.KindId
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
 object EnclosingMethod {

@@ -39,7 +39,7 @@ case class ExceptionTable(exceptions: Exceptions) extends Attribute {
 
     override def kindId: Int = ExceptionTable.KindId
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: ExceptionTable ⇒ this.similar(that)
             case _                    ⇒ false

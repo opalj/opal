@@ -26,68 +26,90 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-package org.opalj.br
-
-import org.opalj.br.instructions.Instruction
+package org.opalj
+package br
 
 /**
+ * Specifies which parts of a class file should be compared with another one.
  *
- * Specify which tests to turn on and off when comparing for similarity.
- * Returning true turns the corresponding test, false turns it off.
- * When filtering methods, instructions or attributes the size
- * comparison needs to be turned of as well.
+ * @see [[org.opalj.br.ClassFile#findDissimilarity(ClassFile,SimilarityTestConfig)]]
  *
  * @author Timothy Earley
  */
+abstract class SimilarityTestConfiguration {
 
-trait SimilarityTestConfig {
-    def testAccessFlags(accessFlags: Int): Boolean
+    /**
+     * Selects those fields which should be compared. By default all fields are selected.
+     */
+    def compareFields(leftContext: ClassFile, left: Fields, right: Fields): (Fields, Fields)
+    /**
+     * Selects those methods which should be compared. By default all methods are selected.
+     *
+     * If, e.g., the `left` methods belong to the class which is derived from the `right` one
+     * and should contain all methods except of the default constructor, then the default
+     * constructor should be filtered from the right set of methods.
+     */
+    def compareMethods(
+        leftContext: ClassFile,
+        left:        Methods,
+        right:       Methods
+    ): (Methods, Methods)
 
-    def testType(thisType: ObjectType): Boolean
-    def testInterfaceTypes(interfaceTypes: Seq[ObjectType]): Boolean
-    def testSuperclassType(superClassType: Option[ObjectType]): Boolean
+    /**
+     * Selects the attributes which should be compared.
+     */
+    def compareAttributes(
+        leftContext: CommonAttributes,
+        left:        Attributes,
+        right:       Attributes
+    ): (Attributes, Attributes)
 
-    def testFieldsSize(fields: Fields): Boolean
-    def testField(field: Field): Boolean
-
-    def testInstructionsLength(instructions: Instructions): Boolean
-    def testInstruction(instruction: Instruction): Boolean
-
-    def testMethodsSize(methods: Methods): Boolean
-    def testMethod(method: Method): Boolean
-
-    def testAttributesSize(attributes: Attributes): Boolean
-    def testAttribute(attribute: Attribute): Boolean
-
-    def checkBody(body: Option[Code]): Boolean
-
-    def testExceptionHandlers(exceptionHandlers: ExceptionHandlers): Boolean
+    def compareCode(
+        leftContext: Method,
+        left:        Option[Code],
+        right:       Option[Code]
+    ): (Option[Code], Option[Code])
 
 }
 
-class DefaultSimilarityTestConfig extends SimilarityTestConfig {
-    def testAccessFlags(accessFlags: Int) = true
+class CompareAllConfiguration extends SimilarityTestConfiguration {
 
-    def testType(thisType: ObjectType) = true
-    def testInterfaceTypes(interfaceTypes: Seq[ObjectType]) = true
-    def testSuperclassType(superClassType: Option[ObjectType]) = true
+    override def compareFields(
+        leftContext: ClassFile,
+        left:        Fields,
+        right:       Fields
+    ): (Fields, Fields) = {
+        (left, right)
+    }
 
-    def testFieldsSize(fields: Fields) = true
-    def testField(field: Field) = true
+    override def compareMethods(
+        leftContext: ClassFile,
+        left:        Methods,
+        right:       Methods
+    ): (Methods, Methods) = {
+        (left, right)
+    }
 
-    def testInstructionsLength(instructions: Instructions) = true
-    def testInstruction(instruction: Instruction) = true
+    /**
+     * Selects the attributes which should be compared. By default all attributes except
+     * of unknown ones are selected.
+     */
+    override def compareAttributes(
+        leftContext: CommonAttributes,
+        left:        Attributes,
+        right:       Attributes
+    ): (Attributes, Attributes) = {
+        val newLeft = left.filterNot(a ⇒ a.isInstanceOf[UnknownAttribute])
+        val newRight = right.filterNot(a ⇒ a.isInstanceOf[UnknownAttribute])
+        (newLeft, newRight)
+    }
 
-    def testMethodsSize(methods: Methods) = true
-    def testMethod(method: Method) = true
-
-    def testAttributesSize(attributes: Attributes) = true
-    def testAttribute(attribute: Attribute) = true
-
-    def checkBody(body: Option[Code]) = true
-
-    def testExceptionHandlers(exceptionHandlers: ExceptionHandlers) = true
+    override def compareCode(
+        leftContext: Method,
+        left:        Option[Code],
+        right:       Option[Code]
+    ): (Option[Code], Option[Code]) = {
+        (left, right)
+    }
 }
-
-object DefaultSimilarityTestConfig extends DefaultSimilarityTestConfig
+object CompareAllConfiguration extends CompareAllConfiguration

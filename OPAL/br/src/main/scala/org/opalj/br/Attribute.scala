@@ -87,10 +87,11 @@ trait Attribute {
     def kindId: Int
 
     /**
-     * Returns true if this attribute and the given one are jvm equal.
+     * Returns true if this attribute and the given one will is guaranteed to be indistinguishable
+     * at runtime.
      *
      * @note   If this class is implemented as a proper `case class`, this method can often be
      *         implemented by forwarding to the default `equals` method.
      */
-    def similar(other: Attribute): Boolean
+    def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean
 }

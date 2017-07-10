@@ -40,7 +40,7 @@ case class SourceDebugExtension(debug_extension: Array[Byte]) extends Attribute 
 
     override def kindId: Int = SourceDebugExtension.KindId
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: SourceDebugExtension ⇒ this.similar(that)
             case _                          ⇒ false

@@ -32,6 +32,7 @@ package tac
 import org.opalj.br.Attribute
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.LineNumberTable
+import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.cfg.CFG
 
 /**
@@ -61,9 +62,11 @@ case class TACode[P <: AnyRef, V <: Var[V]](
 // TODO Support the rewriting of TypeAnnotations etc.
 ) extends Attribute {
 
-    def kindId: Int = TACode.KindId
+    override def kindId: Int = TACode.KindId
 
-    def similar(other: Attribute): Boolean = this equals other
+    override def similar(other: Attribute, config : SimilarityTestConfiguration): Boolean = {
+        this equals other
+    }
 
     def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber())
 

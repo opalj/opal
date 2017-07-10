@@ -142,7 +142,8 @@ case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
     def tag: Int = VerificationTypeInfo.ITEM_Object
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="verification">{ cp(cpool_index).toString(cp) } |</span>
+        val referenceType = asJavaReferenceType(cpool_index)
+        referenceType.asSpan("")
     }
 }
 

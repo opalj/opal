@@ -38,7 +38,7 @@ case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute {
 
     override def kindId: Int = BootstrapMethodTable.KindId
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: BootstrapMethodTable ⇒ this.similar(that)
             case _                          ⇒ false
