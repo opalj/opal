@@ -56,7 +56,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-abstract class HermesCore {
+trait HermesCore {
 
     /** Creates the initial, overall configuration. */
     def initialize(configFile: File): Unit = {

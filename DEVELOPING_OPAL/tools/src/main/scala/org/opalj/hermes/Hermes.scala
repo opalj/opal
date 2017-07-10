@@ -33,19 +33,11 @@ import java.io.File
 import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.prefs.Preferences
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-import com.fasterxml.jackson.dataformat.csv.CsvSchema
-import com.fasterxml.jackson.dataformat.csv.CsvFactory
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 
@@ -85,15 +77,12 @@ import scalafx.scene.image.Image
 import scalafx.scene.web.WebView
 import scalafx.scene.layout.VBox
 import scalafx.scene.layout.GridPane
-import scalafx.beans.property.BooleanProperty
-import scalafx.beans.property.IntegerProperty
 import scalafx.scene.control.MenuItem
 import scalafx.stage.FileChooser
 import scalafx.stage.FileChooser.ExtensionFilter
 import scalafx.scene.control.MenuBar
 import scalafx.scene.control.Menu
 import scalafx.scene.input.KeyCombination
-import scalafx.beans.property.LongProperty
 import scalafx.scene.layout.StackPane
 import scalafx.scene.chart.XYChart
 import scalafx.scene.chart.CategoryAxis
@@ -104,7 +93,6 @@ import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
 
 import org.opalj.util.Nanoseconds
-import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFileReader
 
 /**
@@ -112,7 +100,7 @@ import org.opalj.da.ClassFileReader
  *
  * @author Michael Eichberg
  */
-object Hermes extends JFXApp {
+object Hermes extends JFXApp with HermesCore {
 
     if (parameters.unnamed.size != 1 ||
         parameters.named.size > 1 || (
@@ -130,155 +118,20 @@ object Hermes extends JFXApp {
         System.exit(1)
     }
 
-    // ---------------------------------------------------------------------------------------------
-    //
-    //
-    // STATIC CONFIGURATION
-    //
-    //
-    // ---------------------------------------------------------------------------------------------
+    initialize(new File(parameters.unnamed(0)))
+
+    if (parameters.named.size == 1) {
+        analysesFinished onChange { (_, _, isFinished) ⇒
+            if (isFinished) {
+                exportCSV(new File(parameters.named("csv")))
+                stage.close()
+            }
+        }
+    }
 
     // We use standard preferences for saving the state of the application only; not for
     // permanent configuration settings!
     val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
-
-    /** Creates the initial, overall configuration. */
-    private[this] def initConfig(configFile: File): Config = {
-        import Console.err
-        if (!configFile.exists || !configFile.canRead()) {
-            err.println(s"The config file cannot be found or read: $configFile")
-            err.println("The current folder is: "+System.getProperty("user.dir"))
-            System.exit(2)
-        }
-        try {
-            ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
-        } catch {
-            case t: Throwable ⇒
-                err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
-                System.exit(3)
-                //... if System.exit does not terminate the app; this will at least kill the
-                // the current call.
-                throw t;
-
-        }
-    }
-
-    /** The base configuration of OPAL and Hermes. */
-    Globals.setConfig(initConfig(new File(parameters.unnamed(0))))
-
-    /** The list of all registered feature queries. */
-    val registeredQueries: List[Query] = {
-        Globals.Config.as[List[Query]]("org.opalj.hermes.queries.registered")
-    }
-
-    /** The list of enabled feature queries. */
-    val featureQueries: List[FeatureQuery] = {
-        registeredQueries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
-    }
-
-    /**
-     * The list of unique features derived by enabled feature queries; one ''feature query'' may
-     * be referenced by multiple unique feature queries.
-     */
-    val featureIDs: List[(String, FeatureQuery)] = {
-        var featureIDs: List[(String, FeatureQuery)] = List.empty
-
-        for {
-            featureQuery ← featureQueries
-            featureID ← featureQuery.featureIDs
-        } {
-            if (!featureIDs.exists(_._1 == featureID))
-                featureIDs :+= ((featureID, featureQuery))
-            else
-                throw DuplicateFeatureIDException(
-                    featureID,
-                    featureQuery,
-                    featureIDs.collectFirst { case (`featureID`, fq) ⇒ fq }.get
-                )
-        }
-
-        featureIDs
-    }
-
-    /** The set of all project configurations. */
-    val projectConfigurations = {
-        val pcs = Globals.Config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
-        if (pcs.map(_.id).toSet.size != pcs.size) {
-            throw new RuntimeException("some project names are not unique")
-        }
-        pcs
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    //
-    //
-    // FIELDS FOR STORING QUERY RESULTS
-    //
-    //
-    // ---------------------------------------------------------------------------------------------
-
-    /** The matrix containing for each project the extensions of all features. */
-    private[this] val featureMatrix: ObservableBuffer[ProjectFeatures[URL]] = {
-        val featureMatrix = ObservableBuffer.empty[ProjectFeatures[URL]]
-        for { projectConfiguration ← projectConfigurations } {
-            val features = featureQueries map { fe ⇒ (fe, fe.createInitialFeatures[URL]) }
-            featureMatrix += ProjectFeatures(projectConfiguration, features)
-        }
-        featureMatrix
-    }
-
-    /** Summary of the number of occurrences of a feature across all projects. */
-    val perFeatureCounts: Array[IntegerProperty] = {
-        val perFeatureCounts = Array.fill(featureIDs.size)(IntegerProperty(0))
-        featureMatrix.foreach { projectFeatures ⇒
-            projectFeatures.features.view.zipWithIndex foreach { fi ⇒
-                val (feature, index) = fi
-                feature.onChange { (_, oldValue, newValue) ⇒
-                    val change = newValue.count - oldValue.count
-                    if (change != 0) {
-                        perFeatureCounts(index).value = perFeatureCounts(index).value + change
-                    }
-                }
-            }
-        }
-        perFeatureCounts
-    }
-
-    def exportCSV(file: File): Unit = {
-        // Create the set of all names of all project-wide statistics
-        var projectStatisticsIDs = Set.empty[String]
-        featureMatrix.foreach { pf ⇒
-            projectStatisticsIDs ++= pf.projectConfiguration.statistics.keySet
-        }
-
-        // Logic to create the csv file:
-        val csvSchemaBuilder = CsvSchema.builder().addColumn("Project")
-        projectStatisticsIDs.foreach { id ⇒ csvSchemaBuilder.addColumn(id) }
-        val csvSchema =
-            featureIDs.
-                foldLeft(csvSchemaBuilder) { (schema, feature) ⇒
-                    schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
-                }.
-                setUseHeader(true).
-                build()
-        val writer = new BufferedWriter(new FileWriter(file))
-        val csvGenerator = new CsvFactory().createGenerator(writer)
-        csvGenerator.setSchema(csvSchema)
-        featureMatrix.foreach { pf ⇒
-            csvGenerator.writeStartArray()
-            csvGenerator.writeString(pf.id.value)
-            projectStatisticsIDs.foreach { id ⇒
-                pf.projectConfiguration.statistics.get(id) match {
-                    case Some(number) ⇒ csvGenerator.writeNumber(number)
-                    case None         ⇒ csvGenerator.writeString("N/A")
-                }
-            }
-            pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.value.count) }
-            csvGenerator.flush()
-            csvGenerator.writeEndArray()
-        }
-        csvGenerator.close()
-    }
 
     def exportFlare(file: File): Unit = {
         val writer = new BufferedWriter(new FileWriter(file))
@@ -335,88 +188,10 @@ object Hermes extends JFXApp {
         jsonGenerator.close()
     }
 
-    /* @stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
-    if (parameters.named.size == 1) {
-        analysesFinished onChange { (_, _, isFinished) ⇒
-            if (isFinished) {
-                exportCSV(new File(parameters.named("csv")))
-                stage.close()
-            }
-        }
-    }
+    override def updateProjectData(f: ⇒ Unit): Unit = Platform.runLater { f }
 
-    // some statistics
-    val corpusAnalysisTime = new LongProperty
-
-    /**
-     * Executes the queries for all projects. Basically, the queries are executed in parallel
-     * for each project.
-     */
-    private[this] def analyzeCorpus(): Thread = {
-
-        def isValid(
-            projectFeatures:          ProjectFeatures[URL],
-            project:                  Project[URL],
-            projectAnalysisStartTime: Long
-        ): Boolean = {
-            if (project.projectClassFilesCount == 0) {
-                Platform.runLater { projectFeatures.id.value = "! "+projectFeatures.id.value }
-                false
-            } else {
-                true
-            }
-        }
-
-        val analysesStartTime = System.nanoTime()
-        val t = new Thread {
-            override def run(): Unit = {
-                val totalSteps = (featureQueries.size * projectConfigurations.size).toDouble
-                val stepsDone = new AtomicInteger(0)
-                for {
-                    // Using an iterator is required to avoid eager initialization of all projects!
-                    projectFeatures ← featureMatrix.toIterator
-                    if !Thread.currentThread.isInterrupted()
-                    projectConfiguration = projectFeatures.projectConfiguration
-                    projectAnalysisStartTime = System.nanoTime()
-                    projectInstantiation = projectConfiguration.instantiate
-                    project = projectInstantiation.project
-                    rawClassFiles = projectInstantiation.rawClassFiles
-                    if isValid(projectFeatures, project, projectAnalysisStartTime)
-                    (featureQuery, features) ← projectFeatures.featureGroups.par
-                    featuresMap = features.map(f ⇒ (f.value.id, f)).toMap
-                    if !Thread.currentThread.isInterrupted()
-                } {
-                    val featureAnalysisStartTime = System.nanoTime()
-                    val features = featureQuery(projectConfiguration, project, rawClassFiles)
-                    val featureAnalysisEndTime = System.nanoTime()
-                    val featureAnalysisTime = featureAnalysisEndTime - featureAnalysisStartTime
-
-                    Platform.runLater {
-                        featureQuery.accumulatedAnalysisTime.value =
-                            featureQuery.accumulatedAnalysisTime.value + featureAnalysisTime
-                        corpusAnalysisTime.value = featureAnalysisEndTime - analysesStartTime
-                        // (implicitly) update the feature matrix
-                        features.foreach { f ⇒ featuresMap(f.id).value = f }
-
-                        val progress = stepsDone.incrementAndGet() / totalSteps
-                        if (progressBar.getProgress < progress) {
-                            progressBar.setProgress(progress)
-                        }
-                    }
-                }
-
-                // we are done with everything
-                Platform.runLater {
-                    rootPane.getChildren().remove(progressBar)
-                    analysesFinished.value = true
-                    val analysesEndTime = System.nanoTime()
-                    corpusAnalysisTime.value = analysesEndTime - analysesStartTime
-                }
-            }
-        }
-        t.setDaemon(true)
-        t.start()
-        t
+    override def reportProgress(f: ⇒ Double): Unit = {
+        Platform.runLater { f; rootPane.getChildren().remove(progressBar) }
     }
 
     // Must only be called after all features were computed.
