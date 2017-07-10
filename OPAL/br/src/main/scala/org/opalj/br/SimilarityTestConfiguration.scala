@@ -32,8 +32,6 @@ package br
 /**
  * Specifies which parts of a class file should be compared with another one.
  *
- * @see [[org.opalj.br.ClassFile#findDissimilarity(ClassFile,SimilarityTestConfig)]]
- *
  * @author Timothy Earley
  */
 abstract class SimilarityTestConfiguration {

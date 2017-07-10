@@ -93,6 +93,11 @@ case object FloatTypeInfo extends PrimitiveTypeInfo("float")
 case object DoubleTypeInfo extends PrimitiveTypeInfo("double")
 
 case class ObjectTypeInfo(asJava: String) extends FieldTypeInfo {
+
+    assert(asJava.indexOf('/') == -1)
+
+    def asJVMType: String = asJava.replace('.', '/')
+
     override final def elementTypeIsBaseType: Boolean = false
 
     override def asSpan(baseClass: String): Node = {

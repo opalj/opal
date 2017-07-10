@@ -64,7 +64,7 @@ case class TACode[P <: AnyRef, V <: Var[V]](
 
     override def kindId: Int = TACode.KindId
 
-    override def similar(other: Attribute, config : SimilarityTestConfiguration): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         this equals other
     }
 
