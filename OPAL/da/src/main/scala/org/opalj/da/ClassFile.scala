@@ -108,20 +108,18 @@ case class ClassFile(
     final val superTypes = {
         {
             if (super_class != 0)
-                Seq(Text("extends"), asJavaObjectType(cp(super_class).toString).asSpan("extends"))
+                Seq(Text("extends "), asJavaObjectType(cp(super_class).toString).asSpan("extends"))
             else
                 NodeSeq.Empty
         } ++ {
             if (interfaces.nonEmpty)
-                <span class="implements">
-                    implements
-                    { asJavaObjectType(cp(interfaces.head).toString).asSpan("implements") }
-                    {
-                        interfaces.tail.map { i ⇒
-                            Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements"))
-                        }
+                Seq(
+                    Text("implements "),
+                    asJavaObjectType(cp(interfaces.head).toString).asSpan("implements"),
+                    interfaces.tail.map { i ⇒
+                        Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements"))
                     }
-                </span>
+                )
             else
                 NodeSeq.Empty
         }
@@ -245,9 +243,7 @@ case class ClassFile(
             { if (source.isDefined) <div id="source">            { source.get }        </div> }
             <div id="class_file_header">
                 { accessFlags }
-                &nbsp;
                 <span id="defined_class">{ thisType.asJava }</span>
-                &nbsp;
                 { superTypes }
                 {
                     if (signatureAttributes.nonEmpty) {
