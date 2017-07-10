@@ -31,7 +31,13 @@ package fpcf
 package properties
 
 /**
- *
+ * Describes lifetime of allocated objects. If the lifetime of an object 'o' that is
+ * allocated in a method 'm' and in thread 't' exceeds the lifetime of 'm', we say 'o' has the
+ * property MethodEscape. Whereas if the lifetime of 'o' exceeds the lifetime of 't', 'o' has
+ * the property GlobalEscape. Otherwise it has the property NoEscape.
+ * The property values are ordered as follows: NoEscape < MethodEscape < ThreadEscape.
+ * Algorithms can improve their efficiency by over approximating this property, i.e. for object
+ * 'o' with actual property 'p' it is okay to say 'o' has property 'p*' if 'p'<'p*'.
  * @author Florian Kuebler
  */
 sealed trait EscapePropertyMetaInforation extends PropertyMetaInformation {
@@ -42,6 +48,10 @@ sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInf
     final def key = EscapeProperty.key
 }
 
+/**
+ * Refers to the EscapeProperties mentioned by Kotzmann and Moessenboeck: Escape Analysis in the
+ * Context of Dynamic Compilation and Deoptimization (2005)
+ */
 object EscapeProperty extends EscapePropertyMetaInforation {
     final val key: PropertyKey[EscapeProperty] = PropertyKey.create(
         // Name of the property
@@ -49,7 +59,7 @@ object EscapeProperty extends EscapePropertyMetaInforation {
         // Fallback value
         GlobalEscape,
         // cycle-resolution strategy
-        NoEscape
+        GlobalEscape
     )
 }
 
