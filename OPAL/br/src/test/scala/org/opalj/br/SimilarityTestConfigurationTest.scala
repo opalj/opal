@@ -29,11 +29,15 @@
 package org.opalj
 package br
 
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STATIC
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PROTECTED
+import org.scalatest.FunSuite
+import org.scalatest.Matchers
 import org.opalj.br.instructions.IADD
 import org.opalj.br.instructions.ICONST_1
 import org.opalj.br.instructions.IRETURN
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
 
 /**
  * Tests the configuration of the similarity test.
@@ -50,21 +54,18 @@ class SimilarityTestConfigurationTest extends FunSuite with Matchers {
     // Test Fixtures
     // (The following classes do NOT represent valid class files!)
     //
-    def simpleAttributes = Vector(SourceFile("abc"), Deprecated)
-    def simpleField = Field(1, "test", ByteType, simpleAttributes)
-    def simpleFields = Vector(simpleField, Field(2, "field 2", BooleanType, simpleAttributes))
+    def simpleFieldAttributes = List(Synthetic, Deprecated)
+    def simpleField = Field(ACC_PUBLIC.mask, "test", ByteType, simpleFieldAttributes)
+    def simpleFields = Vector(simpleField, Field(ACC_PROTECTED.mask, "field 2", BooleanType, simpleFieldAttributes))
     def simpleCode = Code(2, 0, Array(ICONST_1, ICONST_1, IADD, IRETURN))
     def simpleMethod = Method(
-        1,
+        ACC_PUBLIC.mask,
         "simple_method",
         MethodDescriptor.JustReturnsBoolean,
-        Vector(
-            simpleCode,
-            Deprecated
-        )
+        Vector(simpleCode, Deprecated)
     )
     def simpleMethod2 = Method(
-        2,
+        ACC_STATIC.mask | ACC_PRIVATE.mask,
         "simple_method_2",
         MethodDescriptor.NoArgsAndReturnVoid,
         Vector(Code(0, 0, Array()))
@@ -73,13 +74,13 @@ class SimilarityTestConfigurationTest extends FunSuite with Matchers {
     def simpleClass = ClassFile(
         minorVersion = 1,
         majorVersion = 2,
-        accessFlags = 3,
+        accessFlags = ACC_PUBLIC.mask,
         thisType = ObjectType.Boolean,
         superclassType = Some(ObjectType.Object),
         interfaceTypes = List(ObjectType.Byte, ObjectType.Float),
         fields = simpleFields,
         methods = simpleMethods,
-        attributes = simpleAttributes
+        attributes = List(SourceFile("abc"), Deprecated)
     )
 
     //
@@ -167,10 +168,9 @@ class SimilarityTestConfigurationTest extends FunSuite with Matchers {
             ): (Attributes, Attributes) = {
                 val (superNewLeft, superNewRight) = super.compareAttributes(leftContext, left, right)
                 val (newLeft, newRight) = (
-                    superNewLeft.filterNot(a ⇒ a.isInstanceOf[Deprecated]),
-                    superNewRight.filterNot(a ⇒ a.isInstanceOf[Deprecated])
+                    superNewLeft.filter(a ⇒ a != Deprecated),
+                    superNewRight.filter(a ⇒ a != Deprecated)
                 )
-                println(newLeft+" vs "+newRight)
                 (newLeft, newRight)
             }
         }
