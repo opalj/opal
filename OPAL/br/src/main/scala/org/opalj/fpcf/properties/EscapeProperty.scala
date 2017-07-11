@@ -35,7 +35,7 @@ package properties
  * allocated in a method 'm' and in thread 't' exceeds the lifetime of 'm', we say 'o' has the
  * property MethodEscape. Whereas if the lifetime of 'o' exceeds the lifetime of 't', 'o' has
  * the property GlobalEscape. Otherwise it has the property NoEscape.
- * The property values are ordered as follows: NoEscape < MethodEscape < ThreadEscape.
+ * The property values are ordered as follows: NoEscape < MethodEscape < GlobalEscape.
  * Algorithms can improve their efficiency by over approximating this property, i.e. for object
  * 'o' with actual property 'p' it is okay to say 'o' has property 'p*' if 'p'<'p*'.
  * @author Florian Kuebler
