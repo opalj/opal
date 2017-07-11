@@ -80,6 +80,8 @@ abstract class IntSet {
 
     def -(i: Int): IntSet
 
+    def --(is: Traversable[Int]): IntSet = this.foldLeft(this)(_ - _)
+
     def +(i: Int): IntSet
 
     def subsetOf(other: IntSet): Boolean = {
@@ -171,7 +173,14 @@ case class IntSet1(i: Int) extends IntSet {
     def max: Int = this.i
     def min: Int = this.i
     def withFilter(p: (Int) ⇒ Boolean): IntSet = if (p(i)) this else EmptyIntSet
-    def map(f: Int ⇒ Int): IntSet = new IntSet1(f(i))
+    def map(f: Int ⇒ Int): IntSet = {
+        val i = this.i
+        val newI = f(i)
+        if (newI != i)
+            new IntSet1(newI)
+        else
+            this
+    }
     def -(i: Int): IntSet = {
         if (this.i != i) this else EmptyIntSet
     }
@@ -222,7 +231,16 @@ case class IntSet2(i1: Int, i2: Int) extends IntSet {
                 EmptyIntSet
         }
     }
-    def map(f: Int ⇒ Int): IntSet = IntSet(f(i1), f(i2)) // ensures invariant
+    def map(f: Int ⇒ Int): IntSet = {
+        val i1 = this.i1
+        val newI1 = f(i1)
+        val i2 = this.i2
+        val newI2 = f(i2)
+        if (newI1 != i1 || newI2 != i2)
+            IntSet(newI1, newI2) // ensures invariant
+        else
+            this
+    }
     def -(i: Int): IntSet = {
         if (i <= i1) {
             if (i == i1) new IntSet1(i2)
@@ -262,14 +280,17 @@ case class IntSet2(i1: Int, i2: Int) extends IntSet {
     override def hashCode: Int = 31 * (31 + i1) + i2 // compatible to Arrays.hashCode
 }
 
+// IMPROVE Add Int(Array)Set3 and Int(Array)Set4
+
 case class IntArraySet private[immutable] (private[immutable] val is: Array[Int]) extends IntSet {
 
     require(is.length > 2)
+
     def size: Int = is.length
     def isSingletonSet: Boolean = false
     def hasMultipleElements: Boolean = true
     def isEmpty: Boolean = false
-    def max: Int = is(size - 1)
+    def max: Int = is(is.length - 1)
     def min: Int = is(0)
     def foreach[U](f: Int ⇒ U): Unit = {
         val max = is.length
@@ -282,9 +303,21 @@ case class IntArraySet private[immutable] (private[immutable] val is: Array[Int]
     def withFilter(p: (Int) ⇒ Boolean): IntSet = new FilteredIntArraySet(p, this)
 
     def map(f: Int ⇒ Int): IntSet = {
-        val isb = new IntSetBuilder
+        // let's check if all values are mapped to their original values; if so return "this"
         val max = is.length
         var i = 0
+        var f_is_i: Int = 0 // the initial value is never used!
+        while (i < max && {
+            val is_i = is(i)
+            f_is_i = f(is_i)
+            is_i == f_is_i
+        }) { i += 1 }
+        if (i == max)
+            return this;
+
+        val isb = new IntSetBuilder
+        var l = 0
+        while (l < i) { isb += is(l) /*the values were unchanged*/ ; l += 1 }
         while (i < max) {
             isb += f(is(i))
             i += 1
