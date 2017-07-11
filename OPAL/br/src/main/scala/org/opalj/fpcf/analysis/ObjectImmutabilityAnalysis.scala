@@ -57,7 +57,7 @@ import org.opalj.br.Field
  * Determines the mutability of instances of a specific class. In case the class
  * is abstract the (implicit) assumption is made that all abstract methods (if any) are/can
  * be implemented without necessarily/always requiring additional state; i.e., only the currently
- * defined fields are take into consideration. An interfaces is always considered to be immutable.
+ * defined fields are taken into consideration. An interfaces is always considered to be immutable.
  * If you need to know if all possible instances of an interface or some type; i.e., all instances
  * of the classes that implement the respective interface/inherit from some class are immutable,
  * you can query the [[org.opalj.fpcf.properties.TypeImmutability]] property.
@@ -68,6 +68,8 @@ import org.opalj.br.Field
  *
  * This analysis uses the [[org.opalj.fpcf.properties.FieldMutability]] property to determine
  * those fields which could be final, but which are not declared as final.
+ *
+ * TODO Discuss the case if a constructor calls an instance method which is overrideable (See Verifiable Functional Purity Paper for some arguements.)
  *
  * @author Michael Eichberg
  */
@@ -109,7 +111,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
                 case None ⇒
                     OPALLogger.warn(
                         "project configuration - object immutability analysis",
-                        s"the class file of ${t.toJava} is not available; setting all subtypes to mutable"
+                        s"missing class file of ${t.toJava}; setting all subtypes to mutable"
                     )
                     results ::= createResultForAllSubtypes(t, MutableObjectDueToUnknownSupertypes)
             }

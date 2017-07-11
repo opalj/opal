@@ -95,9 +95,8 @@ case class If[+V <: Var[V]](
         target = pcToIndex(target)
     }
 
-    override def toString: String = {
-        s"If(pc=$pc,$left,$condition,$right,target=$target)"
-    }
+    override def toString: String = s"If(pc=$pc,$left,$condition,$right,target=$target)"
+
 }
 object If {
     final val ASTID = 0
@@ -112,20 +111,15 @@ case class Goto(pc: PC, private var target: Int) extends Stmt[Nothing] {
 
     final def astID = Goto.ASTID
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        target = pcToIndex(target)
-    }
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = target = pcToIndex(target)
 
     /**
      * @note Calling this method is only supported after the quadruples representation
      *         is created and the re-mapping of `pc`s to instruction indexes has happened!
-     *
      */
     def targetStmt: Int = target
 
-    override def toString: String = {
-        s"Goto(pc=$pc,target=$target)"
-    }
+    override def toString: String = s"Goto(pc=$pc,target=$target)"
 
 }
 object Goto {
@@ -185,9 +179,7 @@ case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt[N
      */
     def targetStmt: Int = target
 
-    override def toString: String = {
-        s"JumpToSubroutine(pc=$pc,target=$target)"
-    }
+    override def toString: String = s"JumpToSubroutine(pc=$pc,target=$target)"
 
 }
 object JumpToSubroutine {
@@ -255,7 +247,7 @@ object ReturnValue {
     final val ASTID = 6
 }
 
-sealed abstract class SimpleStmt[+V <: Var[V]] extends Stmt[V] {
+sealed abstract class SimpleStmt extends Stmt[Nothing] {
 
     /**
      * Nothing to do.
@@ -264,7 +256,7 @@ sealed abstract class SimpleStmt[+V <: Var[V]] extends Stmt[V] {
 
 }
 
-case class Return(pc: PC) extends SimpleStmt[Nothing] {
+case class Return(pc: PC) extends SimpleStmt {
     final def astID = Return.ASTID
 
     override def toString: String = s"Return(pc=$pc)"
@@ -273,7 +265,7 @@ object Return {
     final val ASTID = 7
 }
 
-case class Nop(pc: PC) extends SimpleStmt[Nothing] {
+case class Nop(pc: PC) extends SimpleStmt {
     final def astID = Nop.ASTID
 
     override def toString: String = s"Nop(pc=$pc)"
@@ -449,7 +441,9 @@ case class VirtualMethodCall[+V <: Var[V]](
         receiver:       Expr[V],
         params:         Seq[Expr[V]]
 ) extends InstanceMethodCall[V] {
+
     final def astID = VirtualMethodCall.ASTID
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
@@ -469,10 +463,13 @@ case class StaticMethodCall[+V <: Var[V]](
         descriptor:     MethodDescriptor,
         params:         Seq[Expr[V]]
 ) extends MethodCall[V] {
+
     final def astID = StaticMethodCall.ASTID
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
     }
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
