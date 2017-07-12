@@ -108,7 +108,11 @@ case class ClassFile(
     final val superTypes = {
         {
             if (super_class != 0)
-                Seq(Text("extends "), asJavaObjectType(cp(super_class).toString).asSpan("extends"))
+                Seq(
+                    Text("extends "),
+                    asJavaObjectType(cp(super_class).toString).asSpan("extends"),
+                    Text(" ")
+                )
             else
                 NodeSeq.Empty
         } ++ {

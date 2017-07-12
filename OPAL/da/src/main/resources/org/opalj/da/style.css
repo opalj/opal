@@ -96,6 +96,14 @@ div.methods,div.fields,div.attributes,div.constant_pool {
 	border-top: 1px solid #cccccc;
 }
 
+div.field {
+    padding: 0.5em 0.5em 0.5em 0.5em;
+}
+
+span.throws {
+    color : red;
+}
+
 div#source {
     margin: 0 0;
     background: rgb(20,20,20);
@@ -166,10 +174,10 @@ td.exception span{
 }
 
 details {
-	padding-left: 1em;
-	padding-right: 1em;
-	padding-top: 1em;
-	padding-bottom: 1em;
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
 }
 
 summary {
@@ -179,7 +187,8 @@ summary {
 
 div#class_file_header {
 	background-color:#fcfcec;
-	padding: 1em 1em 1em 1em;
+	padding: 0.5em 1em 0.5em 1em;
+	line-height: 1.5em;
 }
 
 .selfref {
@@ -211,6 +220,10 @@ div.method {
     border-top-style: solid;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
+}
+
+div.native_or_abstract_method {
+    padding: 0.5em 0.5em 0.5em 0.5em ;
 }
 
 .method_body {

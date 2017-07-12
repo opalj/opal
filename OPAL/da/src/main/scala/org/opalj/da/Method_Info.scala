@@ -33,6 +33,7 @@ import scala.xml.Node
 import org.opalj.bi.AccessFlagsContexts.METHOD
 
 import scala.xml.Text
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -71,12 +72,17 @@ case class Method_Info(
         val jvmDescriptor = this.descriptor
         val index = methodIndex.toString
 
+        val (exceptionsAttributes, attributes0) = attributes.partition(_.isInstanceOf[Exceptions_attribute])
         val declarationNode =
             <span class="method_declaration">
-                { accessFlags }{ methodDescriptorAsInlineNode(name, jvmDescriptor) }
+                { accessFlags }{ methodDescriptorAsInlineNode(name, jvmDescriptor) }{
+                    exceptionsAttributes.headOption.map { ea ⇒
+                        ea.asInstanceOf[Exceptions_attribute].exceptionsSpan
+                    }.getOrElse(NodeSeq.Empty)
+                }
             </span>
 
-        val (codeAttributes, attributes1) = attributes.partition(_.isInstanceOf[Code_attribute])
+        val (codeAttributes, attributes1) = attributes0.partition(_.isInstanceOf[Code_attribute])
         val (signatureAttributes, attributes2) = attributes1.partition(_.isInstanceOf[Signature_attribute])
         <div class="method" id={ name + jvmDescriptor } data-name={ name } data-index={ index } data-access-flags={ explicitAccessFlags }>
             {
@@ -88,7 +94,7 @@ case class Method_Info(
                     val maxStack = codeAttribute.max_stack
                     val maxLocals = codeAttribute.max_locals
                     val methodBodyHeader =
-                        s"(size: $codeSize bytes, max Stack: $maxStack, max Locals: $maxLocals)"
+                        s"[size: $codeSize bytes, max Stack: $maxStack, max Locals: $maxLocals]"
                     <details open="">
                         <summary>
                             { Seq(declarationNode, Text(methodBodyHeader)) }
@@ -118,7 +124,7 @@ case class Method_Info(
                         </div>
                     </details>
                 } else {
-                    <div>
+                    <div class="native_or_abstract_method">
                         { declarationNode }
                     </div>
                 }

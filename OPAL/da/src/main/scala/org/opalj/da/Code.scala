@@ -359,10 +359,9 @@ case class Code(instructions: Array[Byte]) {
                 case 104 ⇒ <span class="instruction imul">imul</span>
                 case 116 ⇒ <span class="instruction ineg">ineg</span>
                 case 193 ⇒
-                    val referenceType = cp(in.readUnsignedShort).toString(cp)
                     <span>
                         <span class="instruction instanceof">instanceof </span>
-                        <span class="type_parameter fqn">{ referenceType }</span>
+                        { asJavaReferenceType(in.readUnsignedShort()).asSpan("") }
                     </span>
                 case 186 ⇒
                     val c = in.readUnsignedShort()

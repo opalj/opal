@@ -54,6 +54,19 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
         asJavaObjectType(cp(name_index).asConstantUTF8.value)
     }
 
+    override def asCPNode(implicit cp: Constant_Pool): Node = {
+        <span class="cp_entry">
+            CONSTANT_Class_info(name_index=
+            { name_index }
+            &laquo;
+            <span class="cp_ref">
+                { cp(name_index).asCPNode }
+            </span>
+            &raquo;
+            )
+        </span>
+    }
+
     // OLD CONVERSION METHODS
 
     def asJavaType(implicit cp: Constant_Pool): String = {
@@ -63,14 +76,6 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
         else
             classInfo
     }
-
-    override def asCPNode(implicit cp: Constant_Pool): Node =
-        <span class="cp_entry">
-            CONSTANT_Class_info(name_index={ name_index }
-            &laquo;
-            <span class="cp_ref">{ cp(name_index).asCPNode }</span>
-            &raquo;)
-        </span>
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
         asJavaReferenceType(name_index).asSpan("")
