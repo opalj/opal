@@ -123,6 +123,9 @@ object ToTxt {
 
             case GetField(_, declaringClass, name, _, receiver) ⇒
                 s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
+
+            case CaughtException(_, exceptionType) ⇒
+                s"caught ${exceptionType.map(_.toJava).getOrElse("<ANY>")}"
         }
     }
 
