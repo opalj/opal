@@ -96,6 +96,10 @@ div.methods,div.fields,div.attributes,div.constant_pool {
 	border-top: 1px solid #cccccc;
 }
 
+div.field {
+    padding: 0.5em 0.5em 0.5em 0.5em;
+}
+
 div#source {
     margin: 0 0;
     background: rgb(20,20,20);
