@@ -34,6 +34,8 @@ import java.io.File
 
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.Domain
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br._
 import org.opalj.br.analyses.{AnalysisModeConfigFactory, FormalParameter, FormalParameters, Project, PropertyStoreKey, SomeProject}
 import org.opalj.collection.immutable.IntSet
@@ -210,7 +212,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                 }
                             case /* unknown method */ _ ⇒ Some(ImmediateResult(e, GlobalEscape))
                         }
-                    } else None
+                    } else examineParameters(params, e, defSite)
                 } else None
             else {
                 examineExpr(receiver, e, defSite).orElse(examineParameters(params, e, defSite))
@@ -311,6 +313,18 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
         Project.recreate(project, testConfig)
 
+        SimpleAIKey.domainFactory = (p: SomeProject, cf: ClassFile, m: Method) ⇒ new PrimitiveTACAIDomain(
+            p.classHierarchy, cf, m
+        )
+        time {
+            val tacai = project.get(DefaultTACAIKey)
+            for {
+                m ← project.allMethodsWithBody.par
+            } {
+                tacai(m)
+            }
+        } { t ⇒ println(s"tac took ${t.toSeconds}") }
+
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -320,7 +334,12 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
 
         val propertyStore = project.get(PropertyStoreKey)
         val globalEscapes = propertyStore.entities(GlobalEscape).filter(_.isInstanceOf[AllocationSite])
-        val noEscape = propertyStore.entities(NoEscape).filter(_.isInstanceOf[AllocationSite])
+        val noEscape = propertyStore.entities(NoEscape).collect { case as: AllocationSite ⇒ as }
+        for {
+            as ← noEscape
+        } {
+            println(as.pc+":"+as.method.toJava(project.classFile(as.method)))
+        }
 
         println(s"# of global escaping objects: ${globalEscapes.size}")
         println(s"# of local objects: ${noEscape.size}")
