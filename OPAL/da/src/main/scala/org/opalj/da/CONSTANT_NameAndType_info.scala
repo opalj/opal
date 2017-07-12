@@ -31,8 +31,9 @@ package da
 
 import scala.xml.Node
 import scala.xml.NodeSeq
-
 import org.opalj.bi.ConstantPoolTag
+
+import scala.xml.Text
 
 /**
  *
@@ -71,6 +72,7 @@ case class CONSTANT_NameAndType_info(
         if (descriptor.charAt(0) != '(') {
             Seq(
                 parseFieldType(cp(descriptor_index).asString).asSpan(""),
+                Text(" "),
                 <span class="name">{ cp(name_index).toString(cp) } </span>
             )
         } else {
