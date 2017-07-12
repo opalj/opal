@@ -454,15 +454,24 @@ case class CFG(
         //        catchNodes:              Seq[CatchNode],
         //        private val basicBlocks: Array[BasicBlock]
 
-        val cfgNodes: Seq[CFGNode] =
-            basicBlocks.filter(_ ne null) ++ catchNodes :+ normalReturnNode :+ abnormalReturnNode
+        val cfgNodes: Set[CFGNode] =
+            basicBlocks.filter(_ ne null).toSet[CFGNode] ++
+                catchNodes +
+                normalReturnNode +
+                abnormalReturnNode
 
         val bbIds: Map[CFGNode, Int] = cfgNodes.zipWithIndex.toMap
 
         bbIds.map { bbId ⇒
             val (bb, id) = bbId
-            bb.successors.map(bbIds).mkString(s"$id: $bb → {", ",", "}")
-        }.mkString("CFG(\n\t", "\n\t", "\n)")
+            if (bb.isExitNode) {
+                s"BB_${id.toHexString}: $bb"
+            } else {
+                bb.successors.map { succBB ⇒
+                    "BB_"+bbIds(succBB).toHexString
+                }.mkString(s"BB_${id.toHexString}: $bb → {", ",", "}")
+            }
+        }.toList.sorted.mkString("CFG(\n\t", "\n\t", "\n)")
     }
 
     def toDot: String = {
