@@ -81,6 +81,7 @@ object TACNaive {
      *          `Code.BasicClassHierarchy`.
      * @return The array with the generated statements.
      */
+    // IMPROVE Make it explicit that op0 is the thrown exception in case of an exception handler! (Currently, op0 just exists and only by checking the exception handler table it becomes obvious where op0 is comming from.)
     def apply(
         method:         Method,
         classHierarchy: ClassHierarchy,
