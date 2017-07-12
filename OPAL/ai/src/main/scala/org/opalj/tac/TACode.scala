@@ -88,7 +88,7 @@ case class TACode[P <: AnyRef, V <: Var[V]](
                 case Some(lnt) ⇒ lnt.lineNumbers.mkString(",lineNumberTable=(\n\t", ",\n\t", "\n)")
                 case None      ⇒ ""
             }
-        s"TACode($txtParams,$txtStmts,$cfg$txtExceptionHandlers$txtLineNumbers)"
+        s"TACode($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers$txtLineNumbers)"
     }
 
 }
