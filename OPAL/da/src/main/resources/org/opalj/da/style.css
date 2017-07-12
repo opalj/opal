@@ -213,6 +213,10 @@ div.method {
     border-top-right-radius: 5px;
 }
 
+div.native_or_abstract_method {
+    padding: 0.5em 0.5em 0.5em 0.5em ;
+}
+
 .method_body {
 	background-color:#F7F7F7;
 	margin:0 0 0 0;

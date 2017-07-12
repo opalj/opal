@@ -118,7 +118,7 @@ case class Method_Info(
                         </div>
                     </details>
                 } else {
-                    <div>
+                    <div class="native_or_abstract_method">
                         { declarationNode }
                     </div>
                 }
