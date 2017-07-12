@@ -100,6 +100,10 @@ div.field {
     padding: 0.5em 0.5em 0.5em 0.5em;
 }
 
+span.throws {
+    color : red;
+}
+
 div#source {
     margin: 0 0;
     background: rgb(20,20,20);
