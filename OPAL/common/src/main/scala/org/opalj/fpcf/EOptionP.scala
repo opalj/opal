@@ -61,6 +61,11 @@ abstract class EOptionP[+E <: Entity, +P <: Property] private[fpcf] () {
     final def hasNoProperty: Boolean = !hasProperty
 
     /**
+     * Combines the test if we have a property and if we have one if it is equal to the given one.
+     */
+    final def is[T >: P](p: T): Boolean = this.hasProperty && p == this.p
+
+    /**
      * Returns the property if it is available otherwise an `UnsupportedOperationException` is
      * thrown.
      */
