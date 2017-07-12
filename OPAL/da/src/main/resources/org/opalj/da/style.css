@@ -179,7 +179,8 @@ summary {
 
 div#class_file_header {
 	background-color:#fcfcec;
-	padding: 1em 1em 1em 1em;
+	padding: 0.5em 1em 0.5em 1em;
+	line-height: 1.5em;
 }
 
 .selfref {
