@@ -85,7 +85,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
      */
     def isSideEffectFree: Boolean
 
-    def isVar : Boolean
+    def isVar: Boolean
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 }
@@ -101,7 +101,7 @@ case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceTyp
 
     final def isSideEffectFree: Boolean = true
 
-    final def  isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
@@ -126,7 +126,7 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
         false
     }
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
@@ -151,11 +151,11 @@ case class Compare[+V <: Var[V]](
     final def cTpe: ComputationalType = ComputationalTypeInt
 
     final def isSideEffectFree: Boolean = {
-        assert (left.isVar && right.isVar)
+        assert(left.isVar && right.isVar)
         true
     }
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
@@ -177,7 +177,7 @@ case class Param(cTpe: ComputationalType, name: String) extends ValueExpr[Nothin
 
     final def astID: Int = Param.ASTID
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     final def isSideEffectFree: Boolean = true
 }
@@ -189,7 +189,7 @@ object Param { final val ASTID = -1 }
  */
 sealed abstract class Const extends ValueExpr[Nothing] {
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     final def isSideEffectFree: Boolean = true
 
@@ -210,7 +210,6 @@ case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
     override def toString: String = s"MethodHandleConst(pc=$pc,${value.toJava})"
 }
 object MethodHandleConst { final val ASTID = -11 }
-
 
 sealed abstract class SimpleValueConst extends Const {
 
@@ -288,11 +287,11 @@ case class BinaryExpr[+V <: Var[V]](
     final def isSideEffectFree: Boolean = {
         // For now, we have to consider a potential "div by zero exception";
         // a better handling is only possible if we know that the value is not zero (0).
-            op != BinaryArithmeticOperators.Divide ||
-                (right.cTpe != ComputationalTypeInt && right.cTpe != ComputationalTypeLong)
+        op != BinaryArithmeticOperators.Divide ||
+            (right.cTpe != ComputationalTypeInt && right.cTpe != ComputationalTypeLong)
     }
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
@@ -315,9 +314,9 @@ case class PrefixExpr[+V <: Var[V]](
 
     final def astID: Int = PrefixExpr.ASTID
 
-    final def isSideEffectFree: Boolean = {assert(operand.isVar) ; true }
+    final def isSideEffectFree: Boolean = { assert(operand.isVar); true }
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
@@ -336,9 +335,9 @@ case class PrimitiveTypecastExpr[+V <: Var[V]](
 
     final def cTpe: ComputationalType = targetTpe.computationalType
 
-    final def isSideEffectFree: Boolean = {assert(operand.isVar) ; true }
+    final def isSideEffectFree: Boolean = { assert(operand.isVar); true }
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
@@ -365,7 +364,7 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
      */
     final def isSideEffectFree: Boolean = true
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     override def toString: String = s"New(pc=$pc,${tpe.toJava})"
 }
@@ -382,9 +381,9 @@ case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) 
 
     final def cTpe: ComputationalType = ComputationalTypeReference
 
-    final def isSideEffectFree: Boolean = {assert(counts.forall(_.isVar)) ; true }
+    final def isSideEffectFree: Boolean = { assert(counts.forall(_.isVar)); true }
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         counts.foreach { c ⇒ c.remapIndexes(pcToIndex) }
@@ -402,9 +401,9 @@ case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) ex
 
     final def cTpe: ComputationalType = ComputationalTypeReference
 
-    final def isSideEffectFree: Boolean = { assert(index.isVar && arrayRef.isVar) ; true}
+    final def isSideEffectFree: Boolean = { assert(index.isVar && arrayRef.isVar); true }
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         index.remapIndexes(pcToIndex)
@@ -421,9 +420,9 @@ case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends Expr[V] 
 
     final def cTpe: ComputationalType = ComputationalTypeInt
 
-    final def isSideEffectFree: Boolean = {assert(arrayRef.isVar) ; true}
+    final def isSideEffectFree: Boolean = { assert(arrayRef.isVar); true }
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
@@ -435,11 +434,11 @@ object ArrayLength { final val ASTID = -20 }
 
 abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
 
-    def declaredFieldType : FieldType
+    def declaredFieldType: FieldType
 
     final def cTpe: ComputationalType = declaredFieldType.computationalType
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
 }
 
@@ -499,7 +498,7 @@ case class Invokedynamic[+V <: Var[V]](
         false
     }
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -517,7 +516,7 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 
     final def cTpe: ComputationalType = descriptor.returnType.computationalType
 
-    final def isVar : Boolean = false
+    final def isVar: Boolean = false
 
 }
 
@@ -624,6 +623,33 @@ case class StaticFunctionCall[+V <: Var[V]](
 object StaticFunctionCall { final val ASTID = -26 }
 
 /**
+ * A caught exception is essential to ensure that the local variable that stores the exception
+ * is reified in the 3-address code.
+ */
+case class CaughtException[+V <: Var[V]](pc: PC, exceptionType: Option[ObjectType]) extends Expr[V] {
+
+    final def astID: Int = CaughtException.ASTID
+
+    final def cTpe: ComputationalType = ComputationalTypeReference
+
+    final def isVar: Boolean = false
+
+    final def isSideEffectFree: Boolean = false
+
+    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = { /*nothing to do*/ }
+
+    override def toString: String = {
+        s"CaughtException(pc=$pc,${exceptionType.map(_.toJava).getOrElse("<ANY>")})"
+    }
+}
+
+object CaughtException {
+
+    final val ASTID = -27
+
+}
+
+/**
  * Represents a variable. Depending on the concrete usage, it is possible to distinguish between
  * a use and/or definition site. Typically, `V` is directly bound by the direct subtypes of Var.
  *
@@ -644,13 +670,13 @@ trait Var[+V <: Var[V]] extends ValueExpr[V] { this: V ⇒
      */
     def name: String
 
-    final def isVar : Boolean = true
+    final def isVar: Boolean = true
 
 }
 
 object Var {
 
-    final val ASTID = -27
+    final val ASTID = -28
 
     def unapply[V <: Var[V]](variable: Var[V]): Some[String] = Some(variable.name)
 
