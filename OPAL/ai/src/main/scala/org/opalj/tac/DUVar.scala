@@ -79,9 +79,24 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
 
     final def isSideEffectFree: Boolean = true
 
+    /**
+     * @inheritdoc
+     *
+     * DVars additionally remap self-uses (which don't make sense, but can be a result
+     * of the transformation of exception handlers) to uses of the next statement.
+     */
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        if (origin > 0 /* <=> it is not a parameter*/ ) origin = pcToIndex(origin)
-        useSites = useSites.map(pcToIndex.apply) // use site are always positive...
+        assert(origin >= 0, s"DVars are not intended to be used to model parameters (origin=$origin)")
+        val newOrigin = pcToIndex(origin)
+        origin = newOrigin
+        useSites = useSites.map { useSite ⇒
+            // use site are always positive...
+            val newUseSite = pcToIndex(useSite)
+            if (newUseSite == newOrigin)
+                newUseSite + 1
+            else
+                newUseSite
+        }
     }
 
     override def toString: String = {

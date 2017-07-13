@@ -489,29 +489,29 @@ object TACAI {
                 case IFEQ.opcode | IFNE.opcode |
                     IFLT.opcode | IFLE.opcode |
                     IFGT.opcode | IFGE.opcode ⇒
-                    /*ifXInstruction(
-
-                        condition,
-                        branch
-                    )*/
-
+                    val IF0Instruction(condition, branchoffset) = instruction
                     val pcBB = cfg.bb(pc)
-                    if (pcBB.endPC != pc) {
-                        // This "if" always falls through... => replace it by a NOP
-                        addNOP()
-                        obsoleteUseSites :&:= ((pc, domain.operandOrigin(pc, 0)))
-                    } else {
-                        val IF0Instruction(condition, branchoffset) = instruction
-                        val targetPC = pc + branchoffset
-                        if (pcBB.successors.size == 1) {
-                            // This "if" is just a goto...
-                            addStmt(Goto(pc, targetPC))
+                    val targetPC = pc + branchoffset
+                    val successors = pcBB.successors
+                    if (successors.size == 1) {
+                        // HERE(!), the successor can also be an ExitNode/CatchNode if the if
+                        // falls through. In this case the block may end with, e.g., a return
+                        // instruction, and therefore the successor is the ExitNode.
+                        if (cfg.successors(pc).head == nextPC) {
+                            // This "if" always either falls through or "jumps" to the next
+                            // instruction ... => replace it by a NOP
+                            addNOP()
                             obsoleteUseSites :&:= ((pc, domain.operandOrigin(pc, 0)))
                         } else {
-                            val value = operandUse(0)
-                            val cmpVal = IntConst(ai.ValueOriginForVMLevelValue(pc), 0)
-                            addStmt(If(pc, value, condition, cmpVal, targetPC))
+                            // This "if" is just a goto...
+                            assert(targetPC != nextPC)
+                            addStmt(Goto(pc, targetPC))
+                            obsoleteUseSites :&:= ((pc, domain.operandOrigin(pc, 0)))
                         }
+                    } else {
+                        val value = operandUse(0)
+                        val cmpVal = IntConst(ai.ValueOriginForVMLevelValue(pc), 0)
+                        addStmt(If(pc, value, condition, cmpVal, targetPC))
                     }
 
                 case IFNONNULL.opcode | IFNULL.opcode ⇒

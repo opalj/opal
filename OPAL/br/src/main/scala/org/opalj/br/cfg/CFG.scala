@@ -319,8 +319,23 @@ case class CFG(
      * @param  lastIndex The index of the last instruction of the underlying (non-empty) code array.
      *         I.e., if the instruction array contains one instruction then the `lastIndex` has
      *         to be `0`.
+     * @param  singletonBBsExpander Function called for each basic block which encompasses a single
+     *         instruction to expand the BB to encompass more instructions. This supports the
+     *         case where an instruction was transformed in a way that resulted in multiple
+     *         instructions/statements, but which all belong to the same basic block.
+     *         ''This situation cannot be handled using pcToIndex.''
+     *         This information is used to ensure that - if a basic block which currently just
+     *         encompasses a single instruction will encompass the new and the old instruction afterwards.
+     *         The returned value will be used as the `endIndex.`
+     *         `endIndex = singletonBBsExpander(pcToIndex(pc of singleton bb))`
+     *         Hence, the function is given the mapped index has to return that value if the index
+     *         does not belong to the expanded instruction.
      */
-    def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
+    def mapPCsToIndexes(
+        pcToIndex:            Array[PC],
+        singletonBBsExpander: PC ⇒ Int,
+        lastIndex:            Int
+    ): CFG = {
 
         /*
         // [USED FOR DEBUGGING PURPOSES] *********************************************************
@@ -362,7 +377,14 @@ case class CFG(
         do {
             val oldBB = basicBlocks(startPC)
             val startIndex = pcToIndex(startPC)
-            val endIndex = pcToIndex(oldBB.endPC)
+            val endIndex = {
+                val endIndexCandidate = pcToIndex(oldBB.endPC)
+                if (startIndex == endIndexCandidate) {
+                    singletonBBsExpander(startIndex)
+                } else {
+                    endIndexCandidate
+                }
+            }
             lastNewBB = new BasicBlock(startIndex, endIndex)
             bbMapping.put(oldBB, lastNewBB)
             Arrays.fill(newBasicBlocksArray, startIndex, endIndex + 1, lastNewBB)

@@ -280,11 +280,13 @@ object ToTxt {
         var index = 0
         while (index < max) {
 
-            def catchTypeToString(t: Option[Type]): String = {
-                t.map(_.toJava).getOrElse("<FINALLY>")
-            }
+            def catchTypeToString(t: Option[Type]): String = t.map(_.toJava).getOrElse("<FINALLY>")
 
             val bb = cfg.bb(index)
+            assert(
+                bb ne null,
+                s"index: $index; max: $max; catchNodes:${cfg.catchNodes.mkString("{", ", ", "}")}"
+            )
             if (bb.startPC == index) {
                 // we are at the beginning of a basic block
                 if (index > 0) javaLikeCode += "" // an empty line

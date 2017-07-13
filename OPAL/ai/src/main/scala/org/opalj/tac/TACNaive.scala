@@ -852,7 +852,13 @@ object TACNaive {
         // add the artificial lastPC + 1 instruction to enable the mapping of exception handlers
         pcToIndex(currentPC /* == codeSize +1 */ ) = index
 
-        val tacCFG = cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1)
+        // HERE, we accept that the boundaries of the exception handlers may not cover
+        // all instructions which conceptually belong in the try block if the additional
+        // instruction cannot throw exceptions. I.e., if the try block just encompassed a
+        // single instruction and that instruction was transformed such that we have multiple
+        // instructions now. In such a case (e.g., the rewriting of swap...) the additional
+        // instructions will never cause any exceptions.
+        val tacCFG = cfg.mapPCsToIndexes(pcToIndex, (i) ⇒ i, lastIndex = index - 1)
 
         finalStatements.foreach(_.remapIndexes(pcToIndex))
         val tacCode = finalStatements.toArray
