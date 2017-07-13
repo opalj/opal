@@ -87,8 +87,7 @@ object SignatureParser {
             opt(formalTypeParametersParser) ~
                 superclassSignatureParser ~
                 rep(superinterfaceSignatureParser) ^^ {
-                    case ftps ~ scs ~ siss ⇒
-                        ClassSignature(ftps.getOrElse(Nil), scs, siss)
+                    case ftps ~ scs ~ siss ⇒ ClassSignature(ftps.getOrElse(Nil), scs, siss)
                 }
 
         protected val fieldTypeSignatureParser: Parser[FieldTypeSignature] =
