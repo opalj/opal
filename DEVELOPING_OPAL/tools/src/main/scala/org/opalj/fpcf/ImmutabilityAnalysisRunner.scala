@@ -50,7 +50,7 @@ import org.opalj.fpcf.analysis.TypeImmutabilityAnalysis
  *
  * @author Michael Eichberg
  */
-object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
+object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
 
     override def title: String = "determines the immutability of objects and types"
 
@@ -105,9 +105,7 @@ object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
         val immutableTypes =
             projectStore.entities(TypeImmutability.key).
                 filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
-                groupBy { _.p }.map { kv ⇒
-                    (kv._1, kv._2.size)
-                }
+                groupBy { _.p }.map { kv ⇒ (kv._1, kv._2.size) }
         val immutableTypesPerCategory =
             immutableTypes.map(kv ⇒ "\t\t"+kv._1+": "+kv._2).toList.sorted.mkString("\n")
 
