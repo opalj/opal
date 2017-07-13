@@ -10,6 +10,8 @@
  - the parameters are now explicitly represented in TACAI
  - fixed a bug in TACAI where the handled exceptions are swallowed
  - fixed several minor bugs and issues
+ - removed the Eclipse Plug-in sub-project; it wasn't maintained anymore and is now replaced by the ATOM plug-in.
+ - removed the Viz sub-project; it wasn't maintained anymore and OPAL already has the possibility to generate SVGs using [Graphviz compiled to JavaScript](https://github.com/mdaines/viz.js) and executed using JDK Nashorn 
  - renamed the immutability analyses to reflect the names used in our upcomming paper
 
 ## 0.8.14
