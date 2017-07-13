@@ -1,9 +1,8 @@
 # Facilitating the Development of Static Analyses
 OPAL comes with a large number of tools to analyze and visualize various aspects related to *Java Bytecode* projects. These tools can be used as is or can be embedded into other tools. Some of the tools require Graphviz to visualize graphs which depict control- and data-flow information.
 
-## Standalone Tools
 
-### Java Bytecode Disassembler / Java Class File Finder
+## Java Bytecode Disassembler / Java Class File Finder
 OPAL has a built-in Java Bytecode Disassembler which is also made available as a [standalone tool](https://bitbucket.org/delors/opal/downloads/) and also as a plug-in for the [ATOM](https://atom.io) text editor ([ATOM - Java Bytecode Disassembler](https://atom.io/packages/java-bytecode-disassembler)) .
 
 In contrast to most existing Java disassemblers, OPAL generates an HTML document to provide better syntax highlighting and advanced interaction. 
@@ -13,7 +12,7 @@ Screenshot of the OPAL Java Bytecode Disassembler in action:
 
 *To use the OPAL Java Bytecode Disassembler Java 8 is required.*
 
-####Command Line Tool
+### Command Line Tool
 
 <pre>
 Usage: java org.opalj.da.Disassembler 
@@ -42,8 +41,16 @@ Usage: java org.opalj.da.Disassembler
 
 Note, that the OPAL Disassembler is fast and can scan thousands of class files per second; this makes it also possible to use it to locate a certain class file. For example, if you want to find the jar which defines a specific class, e.g., `java.util.HashMap$Entry`, it is sufficient to specify the root folder of the JDK and let it automatically find the class for you. The generated HTML file will contain precise information where the class file was found. This also works if you specify the root of your `.ivy` or `.m2` folders.  
 
-####ATOM Plug-in
+### ATOM Plug-in
 Using the ATOM plug-in, it is in particular possible to click on a type in a disassembled file to also disassemble the target type. This enable you to quickls navigate between ".class" files.
+
+### Integrated
+The bytecode Disassembler can be run programmatically as shown next:
+
+    val classFile : org.opalj.da.ClassFile = ...;
+    val html = classFile.toXHTML()
+    // println(html)
+    // org.opalj.io.writeAndOpen(classFile.toXHTML().toString, "ClassFile", ".html")
 
 ## Running Tools which are part of the OPAL Suite
 To use the tools, start `sbt`, change to the `project OPAL-DeveloperTools` project and call `run`. Afterwards, you'll see the list of tools which can be run.

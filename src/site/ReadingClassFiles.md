@@ -34,3 +34,9 @@ In most cases, an explicit representation of the constant pool actually complica
         process(new DataInputStream(new FileInputStream(classFileName))){ in =>
             org.opalj.br.reader.Java8Framework.ClassFile(in)
         }
+
+### Representing entire Java Projects
+Instead of reading the class files on your own it is also possible to directly create a `Project` which also directly makes the class hierarchy available and offers many methods related to resolving method calls and the like. A `Project` is usually at the core of implementing static analyses on top of OPAL. To read more about it go [here](Projects.html). 
+
+### 3-Address Code Representation
+On top/based on the object oriented representation OPAL provides a third representation based on 3-address code/quadruples in single static assignment (SSA) form. This representation is directly made available by a `Project` on-demand. To read more about it go [here](TAC.html). 
