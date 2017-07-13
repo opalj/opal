@@ -31,12 +31,11 @@ package org.opalj
 import scala.annotation.switch
 import scala.xml.Node
 import scala.xml.Text
+// import scala.xml.Text
 import scala.xml.NodeSeq
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContext
 import org.opalj.bi.VisibilityModifier
-
-import scala.xml.Text
 
 /**
  * Defines convenience methods related to representing certain class file elements.
@@ -151,7 +150,14 @@ package object da {
 
     }
 
-    def methodDescriptorAsInlineNode(methodName: String, descriptor: String): Node = {
+    def methodDescriptorAsInlineNode(
+        methodName:       String,
+        descriptor:       String,
+        methodParameters: Option[IndexedSeq[MethodParameter]]
+    )(
+        implicit
+        cp: Constant_Pool
+    ): Node = {
         var index = 1 // we are not interested in the leading '('
         var parameters: IndexedSeq[FieldTypeInfo] = IndexedSeq.empty
         while (descriptor.charAt(index) != ')') {
@@ -164,11 +170,20 @@ package object da {
             { returnType }
             <span class="name">{ methodName }</span>
             <span class="parameters">({
-                if (parameters.nonEmpty)
-                    parameters.head.asSpan("parameter") ++
-                        parameters.tail.map { fti ⇒ Seq(Text(", "), fti.asSpan("parameter")) }
-                else
+                if (parameters.nonEmpty) {
+                    val spanParameters: Seq[Node] =
+                        if (methodParameters.isEmpty) {
+                            parameters map { p ⇒ p.asSpan("parameter") }
+                        } else {
+                            parameters.zip(methodParameters.get) map { parameter ⇒
+                                val (fti, methodParameter) = parameter
+                                methodParameter.toXHTML(fti)
+                            }
+                        }
+                    spanParameters.tail.foldLeft(List(spanParameters.head))((r, n) ⇒ r ++ List(Text(", "), n))
+                } else {
                     NodeSeq.Empty
+                }
             })</span>
         </span>
     }

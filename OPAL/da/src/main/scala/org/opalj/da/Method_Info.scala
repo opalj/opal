@@ -73,17 +73,24 @@ case class Method_Info(
         val index = methodIndex.toString
 
         val (exceptionsAttributes, attributes0) = attributes.partition(_.isInstanceOf[Exceptions_attribute])
+        val (methodParametersAttributes, attributes1) = attributes0.partition(_.isInstanceOf[MethodParameters_attribute])
         val declarationNode =
             <span class="method_declaration">
-                { accessFlags }{ methodDescriptorAsInlineNode(name, jvmDescriptor) }{
+                { accessFlags }{
+                    methodDescriptorAsInlineNode(
+                        name,
+                        jvmDescriptor,
+                        methodParametersAttributes.headOption.map(_.asInstanceOf[MethodParameters_attribute].parameters)
+                    )
+                }{
                     exceptionsAttributes.headOption.map { ea ⇒
                         ea.asInstanceOf[Exceptions_attribute].exceptionsSpan
                     }.getOrElse(NodeSeq.Empty)
                 }
             </span>
 
-        val (codeAttributes, attributes1) = attributes0.partition(_.isInstanceOf[Code_attribute])
-        val (signatureAttributes, attributes2) = attributes1.partition(_.isInstanceOf[Signature_attribute])
+        val (codeAttributes, attributes2) = attributes1.partition(_.isInstanceOf[Code_attribute])
+        val (signatureAttributes, attributes3) = attributes2.partition(_.isInstanceOf[Signature_attribute])
         <div class="method" id={ name + jvmDescriptor } data-name={ name } data-index={ index } data-access-flags={ explicitAccessFlags }>
             {
                 if (codeAttributes.nonEmpty) {
@@ -122,13 +129,15 @@ case class Method_Info(
                                     map(_.toXHTML)
                             }
                         </div>
+                        { attributes3.map(_.toXHTML) }
                     </details>
                 } else {
-                    <div class="native_or_abstract_method">
-                        { declarationNode }
-                    </div>
+                    <details class="native_or_abstract_method">
+                        <summary>{ declarationNode }</summary>
+                        { attributes3.map(_.toXHTML) }
+                    </details>
                 }
-            }{ attributes2.map(_.toXHTML) }
+            }
         </div>
     }
 }

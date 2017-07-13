@@ -76,7 +76,9 @@ case class CONSTANT_NameAndType_info(
                 <span class="name">{ cp(name_index).toString(cp) } </span>
             )
         } else {
-            methodDescriptorAsInlineNode(cp(name_index).asString, cp(descriptor_index).asString)
+            val name = cp(name_index).asString
+            val descriptor = cp(descriptor_index).asString
+            methodDescriptorAsInlineNode(name, descriptor, None)
         }
     }
 

@@ -62,8 +62,7 @@ case class Exceptions_attribute(
         </span>
     }
 
-    // Primarily implemented to handle the case if the signature attribute is not
-    // found in an expected case.
+    // Primarily implemented to handle the case if the attribute is not found in an expected place.
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
             <summary>Exceptions</summary>

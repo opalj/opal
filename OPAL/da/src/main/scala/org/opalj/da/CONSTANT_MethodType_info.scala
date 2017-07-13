@@ -55,7 +55,7 @@ case class CONSTANT_MethodType_info(
         </span>
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
-        <span>MethodType({ methodDescriptorAsInlineNode("", cp(descriptor_index).toString) })</span>
+        <span>MethodType({ methodDescriptorAsInlineNode("", cp(descriptor_index).toString, None) })</span>
     }
 
     override def toString(implicit cp: Constant_Pool): String = {
