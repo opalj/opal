@@ -65,15 +65,19 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         folder:        File,
         domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse
     ): Unit = {
+        if (Thread.currentThread().isInterrupted) return;
+
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
         val mutex = new Object
         for {
             file ← folder.listFiles()
+            if !Thread.currentThread().isInterrupted
             if file.isFile && file.canRead && file.getName.endsWith(".jar")
             project = Project(file)
             ch = project.classHierarchy
             cf ← project.allProjectClassFiles.par
+            if !Thread.currentThread().isInterrupted
             m ← cf.methods
             body ← m.body
             aiResult = BaseAI(cf, m, domainFactory(project, cf, m))
@@ -132,7 +136,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         }
     }
 
-    describe("creating the 3-address code using the most basic domain") {
+    describe("creating the 3-address code using the PrimitiveTACAIDomain") {
 
         val domainFactory = (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
             new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
