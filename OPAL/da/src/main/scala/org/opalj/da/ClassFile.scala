@@ -40,6 +40,7 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
 
 import scala.xml.Text
+import scala.xml.Unparsed
 
 /**
  * @author Michael Eichberg
@@ -240,11 +241,13 @@ case class ClassFile(
     // (i.e. with the fields for the filter, but without the necessary logic)
     private[this] def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node = {
 
+        val (sourceFileAttributes, attributes0) =
+            attributes.partition(_.isInstanceOf[SourceFile_attribute])
         val (signatureAttributes, attributes1) =
-            attributes.partition(_.isInstanceOf[Signature_attribute])
+            attributes0.partition(_.isInstanceOf[Signature_attribute])
 
         <div class="class_file">
-            { if (source.isDefined) <div id="source">            { source.get }        </div> }
+            { if (source.isDefined) <div id="source">{ source.get }</div> }
             <div id="class_file_header">
                 { accessFlags }
                 <span id="defined_class">{ thisType.asJava }</span>
@@ -256,6 +259,15 @@ case class ClassFile(
                     }
                 }
                 <br/>
+                {
+                    sourceFileAttributes.headOption.map { a ⇒
+                        Seq(
+                            Text("Source file: "),
+                            <span class="source_file">{ a.asInstanceOf[SourceFile_attribute].sourceFile } </span>,
+                            Unparsed("&nbsp; &mdash; &nbsp;")
+                        )
+                    }.getOrElse(NodeSeq.Empty)
+                }
                 <span id="class_file_version">Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }</span>
                 &nbsp; &mdash; &nbsp;
                 <span>Size:&nbsp;{ size }bytes</span>
@@ -267,25 +279,31 @@ case class ClassFile(
                 </details>
             </div>
             <div class="members">
-                <div class="attributes">
-                    <details>
-                        <summary>Attributes</summary>
-                        { attributes1.map(attributeToXHTML) }
-                    </details>
-                </div>
-                <div class="fields">
-                    <details open="">
-                        <summary>Fields</summary>
-                        { fieldsToXHTML }
-                    </details>
-                </div>
-                <div class="methods">
-                    <details open="">
-                        <summary>Methods</summary>
-                        { if (withMethodsFilter) filter else NodeSeq.Empty }
-                        { methodsToXHTML }
-                    </details>
-                </div>
+                {
+                    if (attributes1.nonEmpty)
+                        <div class="attributes">
+                            <details>
+                                <summary>Attributes</summary>{ attributes1.map(attributeToXHTML) }
+                            </details>
+                        </div>
+                }{
+                    if (fields.nonEmpty) {
+                        <div class="fields">
+                            <details open="">
+                                <summary>Fields</summary>{ fieldsToXHTML }
+                            </details>
+                        </div>
+                    }
+                }
+                {
+                    if (methods.nonEmpty) {
+                        <div class="methods">
+                            <details open="">
+                                <summary>Methods</summary>{ if (withMethodsFilter) filter else NodeSeq.Empty }{ methodsToXHTML }
+                            </details>
+                        </div>
+                    }
+                }
             </div>
         </div>
     }
