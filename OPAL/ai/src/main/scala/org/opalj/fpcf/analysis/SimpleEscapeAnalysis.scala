@@ -32,10 +32,8 @@ package analysis
 
 import java.io.File
 
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.Domain
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br._
 import org.opalj.br.analyses.{AnalysisModeConfigFactory, FormalParameter, FormalParameters, Project, PropertyStoreKey, SomeProject}
 import org.opalj.collection.immutable.IntSet
@@ -58,8 +56,10 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
     private def doDetermineEscape(e: Entity, defSite: Int, uses: IntSet,
                                   code: Array[Stmt[V]]): PropertyComputationResult = {
         var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
+        var newUses = IntSet.empty
         for (use ← uses) {
             determineEscapeStmt(code(use), e, defSite) match {
+                // if we found a result it must be the top value GlobalEscape and we are done
                 case Some(result) ⇒ return result
                 case _            ⇒
             }
@@ -108,13 +108,15 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 case Assignment.ASTID ⇒
                     val Assignment(_, left, right) = stmt
                     if (left.astID == Var.ASTID && right.astID == Checkcast.ASTID) {
+                        val DVar(_, useSites) = left
                         val Checkcast(_, value, _) = right
                         // val DVar(_, newUses) = left
                         if (value.astID == Var.ASTID) {
                             val UVar(_, defSites) = value
-                            if (defSites.contains(defSite))
-                                Some(ImmediateResult(e, GlobalEscape))
-                            // TODO spawn new analysis, conditionally purity
+                            if (defSites.contains(defSite)) {
+                                return Some(ImmediateResult(e, GlobalEscape))
+                                // TODO spawn new analysis, conditionally purity
+                            }
                         }
                         None
                     } else
@@ -202,7 +204,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                     case EP(_, NoEscape) ⇒ None
                                     case EP(_, GlobalEscape) ⇒
                                         Some(ImmediateResult(e, GlobalEscape))
-                                    case EP(_, MethodEscape) ⇒
+                                    case EP(_, ArgEscape) ⇒
                                         throw new RuntimeException("not yet implemented")
                                     // result not yet finished
                                     case epk ⇒
@@ -221,24 +223,24 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
 
         // Every entity that is not identified as escaping is (conditionally) not escaping
         if (dependees.isEmpty)
-            return ImmediateResult(e, NoEscape);
+            return ImmediateResult(e, NoEscape)
 
         def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
             p match {
-                case GlobalEscape | MethodEscape ⇒
+                case GlobalEscape | ArgEscape ⇒
                     Result(e, GlobalEscape)
 
                 case ConditionallyNoEscape ⇒
                     val newEP = EP(other, p.asInstanceOf[EscapeProperty])
                     dependees = dependees.filter(_.e ne other) + newEP
-                    IntermediateResult(e, ConditionallyPure, dependees, c)
+                    IntermediateResult(e, ConditionallyNoEscape, dependees, c)
 
                 case NoEscape ⇒
                     dependees = dependees.filter { _.e ne other }
                     if (dependees.isEmpty)
                         Result(e, NoEscape)
                     else
-                        IntermediateResult(e, ConditionallyPure, dependees, c)
+                        IntermediateResult(e, ConditionallyNoEscape, dependees, c)
 
             }
         }
@@ -313,9 +315,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
         Project.recreate(project, testConfig)
 
-        SimpleAIKey.domainFactory = (p: SomeProject, cf: ClassFile, m: Method) ⇒ new PrimitiveTACAIDomain(
-            p.classHierarchy, cf, m
-        )
+        //SimpleAIKey.domainFactory = (p, cf, m) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
         time {
             val tacai = project.get(DefaultTACAIKey)
             for {

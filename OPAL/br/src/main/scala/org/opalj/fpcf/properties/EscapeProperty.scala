@@ -36,6 +36,8 @@ sealed trait EscapePropertyMetaInforation extends PropertyMetaInformation {
 
 sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInforation {
     final def key = EscapeProperty.key
+
+    abstract def <(other: EscapeProperty): Boolean
 }
 
 /**
@@ -109,6 +111,11 @@ object EscapeProperty extends EscapePropertyMetaInforation {
  */
 case object NoEscape extends EscapeProperty {
     final val isRefineable = false
+
+    override def <(other: EscapeProperty): Boolean = other match {
+        case NoEscape ⇒ false
+        case _        ⇒ true
+    }
 }
 
 /**
@@ -120,6 +127,12 @@ case object NoEscape extends EscapeProperty {
  */
 case object ConditionallyNoEscape extends EscapeProperty {
     final val isRefineable: Boolean = true
+
+    override def <(other: EscapeProperty): Boolean = other match {
+        case NoEscape              ⇒ false
+        case ConditionallyNoEscape ⇒ false
+        case _                     ⇒ true
+    }
 }
 
 /**
@@ -130,6 +143,12 @@ case object ConditionallyNoEscape extends EscapeProperty {
  */
 case object ArgEscape extends EscapeProperty {
     final val isRefineable = false
+
+    override def <(other: EscapeProperty): Boolean = other match {
+        case GlobalEscape ⇒ true
+        case ConditionallyArgEscape => true
+        case _            ⇒ false
+    }
 }
 
 /**
@@ -141,6 +160,11 @@ case object ArgEscape extends EscapeProperty {
  */
 case object ConditionallyArgEscape extends EscapeProperty {
     final val isRefineable: Boolean = true
+
+    override def <(other: EscapeProperty): Boolean = other match {
+        case GlobalEscape ⇒ true
+        case _            ⇒ false
+    }
 }
 
 /**
@@ -151,5 +175,7 @@ case object ConditionallyArgEscape extends EscapeProperty {
  */
 case object GlobalEscape extends EscapeProperty {
     final val isRefineable = false
+
+    override def <(other: EscapeProperty): Boolean = false
 }
 
