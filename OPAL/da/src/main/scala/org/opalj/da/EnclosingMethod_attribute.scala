@@ -46,17 +46,11 @@ case class EnclosingMethod_attribute(
     final override def attribute_length = 2 + 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>
-            <span class="fqn">
-                { cp(class_index).toString }
-            </span>
+        <div class="details enclosing_method_attribute">
+            Enclosing method:
+            { asJavaObjectType(class_index).asSpan("") }
             {{
-            {
-                if (method_index != 0)
-                    cp(method_index).toString
-                else
-                    "<not immediately enclosed>"
-            }
+            { if (method_index != 0) cp(method_index).toString else "<not immediately enclosed>" }
             }}
         </div>
     }
