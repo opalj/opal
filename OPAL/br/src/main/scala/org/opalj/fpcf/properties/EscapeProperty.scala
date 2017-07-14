@@ -99,10 +99,9 @@ object EscapeProperty extends EscapePropertyMetaInforation {
         "EscapeProperty",
         MaybeNoEscape,
         // cycle-resolution strategy
-        GlobalEscape
+        MaybeNoEscape
     )
 }
-
 
 /**
  * Used, when we know nothing about the escape property so far or the analysis
@@ -112,7 +111,6 @@ object EscapeProperty extends EscapePropertyMetaInforation {
 case object MaybeNoEscape extends EscapeProperty {
     final val isRefineable = true
 }
-
 
 /**
  * ''The object is accessible only from within the method of creation. Objects with this
@@ -141,7 +139,7 @@ case object ConditionallyNoEscape extends EscapeProperty {
  * ''The object escapes the current method but not the current thread, e.g. because it is passed
  * to a callee which does not let the argument escape.''
  *
-  * @see [[EscapeProperty]] for further details.
+ * @see [[EscapeProperty]] for further details.
  *
  * @author Florian Kuebler
  */
@@ -215,7 +213,6 @@ case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape
  * TODO Concrete example.
  */
 case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape
-
 
 // TODO Do we need further case object to classify GlocalEscapes
 
