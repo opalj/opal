@@ -139,4 +139,19 @@ public class Test {
         ClassWithFields.global = p1;
         return p2;
     }
+
+    public int castEscape(Object param) {
+        if (param == null) {
+            param = new @EscapeProperty(EscapeKeys.GlobalEscape)ClassWithFields();
+        }
+        if (!(param instanceof ClassWithFields))
+            throw new IllegalArgumentException("Unsupported type!");
+
+        Object o = ((ClassWithFields) param).f;
+
+        if (o == null) {
+            return -1;
+        }
+        return 1;
+    }
 }

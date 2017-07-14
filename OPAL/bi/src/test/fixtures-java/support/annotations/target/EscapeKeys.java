@@ -31,6 +31,6 @@ package annotations.target;
 
 public enum EscapeKeys {
     GlobalEscape,
-    MethodEscape,
+    ArgEscape,
     NoEscape
 }
