@@ -42,4 +42,5 @@ To get a good, first idea what the abstract interpretation framework can do, you
 ## BugPicker
 Find bugs in your Java project using [BugPicker](tools/bugpicker/index.php).
 
-## Explorer
+## OPAL Java Bytecode Disassembler
+[Disassembles](DeveloperTools.html) your Java bytecode.

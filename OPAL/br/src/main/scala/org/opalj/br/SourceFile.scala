@@ -42,7 +42,7 @@ case class SourceFile(sourceFile: String) extends Attribute {
 
     override def kindId: Int = SourceFile.KindId
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
 object SourceFile {

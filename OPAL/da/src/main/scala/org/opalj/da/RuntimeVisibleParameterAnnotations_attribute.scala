@@ -44,11 +44,11 @@ case class RuntimeVisibleParameterAnnotations_attribute(
         parameters_annotations: IndexedSeq[IndexedSeq[Annotation]]
 ) extends ParametersAnnotations_attribute {
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="attribute parameter_annotations runtime_visible">
-            <span>Runtime Visible Parameter Annotations</span>
+    final override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <details class="attribute parameter_annotations runtime_visible">
+            <summary>Runtime Visible Parameter Annotations</summary>
             { parametersAnnotationstoXHTML(cp) }
-        </div>
+        </details>
     }
 
 }

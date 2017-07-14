@@ -144,12 +144,12 @@ object Disassembler {
             if (className == null)
                 (cf: ClassFile) ⇒ true // just take the first one...
             else
-                (cf: ClassFile) ⇒ cf.thisType == className
+                (cf: ClassFile) ⇒ cf.thisType.asJava == className
 
         val (classFile, source) =
             ClassFileReader.findClassFile(
                 sourceFiles, (if (showProgress) println else (f) ⇒ {}),
-                classFileFilter, (cf: ClassFile) ⇒ cf.thisType
+                classFileFilter, (cf: ClassFile) ⇒ cf.thisType.asJava
             ) match {
                 case Left(cfSource) ⇒ cfSource
                 case Right(altClassNames) ⇒
@@ -168,7 +168,7 @@ object Disassembler {
                     }
             }
 
-        val classNameAsFileName: String = org.opalj.io.sanitizeFileName(classFile.thisType)
+        val classNameAsFileName: String = org.opalj.io.sanitizeFileName(classFile.thisType.asJava)
 
         val targetFile: Option[File] =
             if (openHTMLFile) {

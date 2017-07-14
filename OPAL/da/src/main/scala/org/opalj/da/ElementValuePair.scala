@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.Text
 
 /**
  * @author Michael Eichberg
@@ -46,8 +47,11 @@ case class ElementValuePair(
     final def attribute_length: Int = 2 + element_value.attribute_length
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val en = cp(element_name_index).toString(cp)
-        <span class="element_value_pair"><span class="element_name">{ en }</span>: { element_value.toXHTML }</span>
+        val name = cp(element_name_index).toString(cp)
+
+        <li class="element_value_pair">
+            { Seq(<span class="element_name">{ name }</span>, Text("="), element_value.toXHTML) }
+        </li>
     }
 
 }

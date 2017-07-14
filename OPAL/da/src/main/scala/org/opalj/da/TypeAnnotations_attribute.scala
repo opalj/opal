@@ -43,7 +43,7 @@ trait TypeAnnotations_attribute extends Attribute {
     }
 
     def typeAnnotationsToXHTML(implicit cp: Constant_Pool): Node = {
-        <ul>
+        <ul class="annotations">
             { typeAnnotations.map(ta ⇒ <li>{ ta.toXHTML }</li>) }
         </ul>
     }

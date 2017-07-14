@@ -38,7 +38,7 @@ case class MethodParameterTable(parameters: MethodParameters) extends Attribute 
 
     override def kindId: Int = MethodParameterTable.KindId
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
 

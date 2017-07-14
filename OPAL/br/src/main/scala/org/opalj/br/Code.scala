@@ -83,90 +83,41 @@ final class Code private (
         with InstructionsContainer
         with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case that: Code ⇒ this.similar(that)
+            case that: Code ⇒ this.similar(that, config)
             case _          ⇒ false
         }
     }
 
-    /*
-     * We need this overloaded method to add a default value,
-     * otherwise the call in the above method will call itself
-     * instead of the one below.
-     */
-    def similar(other: Code): Boolean = {
-        similar(other, DefaultSimilarityTestConfig)
-    }
-
-    def similar(other: Code, config: SimilarityTestConfig): Boolean = {
+    def similar(other: Code, config: SimilarityTestConfiguration): Boolean = {
 
         if (!(this.maxStack == other.maxStack && this.maxLocals == other.maxLocals)) {
             return false;
         }
-        if (config.testExceptionHandlers(exceptionHandlers) &&
-            this.exceptionHandlers != other.exceptionHandlers) {
+        if (this.exceptionHandlers != other.exceptionHandlers) {
             return false;
         }
 
-        if ((config.testInstructionsLength(instructions)
-            && this.instructions.length != other.instructions.length) ||
-            !{
+        if (!(
+            this.instructions.length == other.instructions.length && {
                 var areEqual = true
                 val max = instructions.length
-                // if we don't compare sizes,
-                // we need to check the bound of the other as well
-                val maxOther = other.instructions.length
-                // go through both instruction lists
-                var indexThis = 0
-                var indexOther = 0
-                while (indexThis < max && indexOther < maxOther && areEqual) {
-                    val thisI = this.instructions(indexThis)
-                    if (config.testInstruction(thisI)) {
-                        val otherI = other.instructions(indexOther)
-                        if (config.testInstruction(otherI)) {
-                            areEqual = (thisI == null && otherI == null) ||
-                                (thisI != null && otherI != null &&
-                                    thisI.similar(otherI))
-                            // both checked, so increase both
-                            indexThis += 1
-                            indexOther += 1
-                        } else {
-                            // other skipped
-                            indexOther += 1
-                        }
-                    } else {
-                        // this skipped
-                        indexThis += 1
-                    }
-                }
-                // if either this or other have more elements,
-                // check that they would all have been ignored
-                while (indexThis < max && areEqual) {
-                    areEqual = !config.testInstruction(this.instructions(indexThis))
-                    indexThis += 1
-                }
-                while (indexOther < maxOther && areEqual) {
-                    areEqual = !config.testInstruction(other.instructions(indexOther))
-                    indexOther += 1
+                var i = 0
+                while (i < max && areEqual) {
+                    val thisI = this.instructions(i)
+                    val otherI = other.instructions(i)
+                    areEqual = (thisI == null && otherI == null) ||
+                        (thisI != null && otherI != null && thisI.similar(otherI))
+                    i += 1
                 }
                 areEqual
-            }) {
+            }
+        )) {
             return false;
         }
 
-        if (config.testAttributesSize(attributes) &&
-            this.attributes.size != other.attributes.size) {
-            return false;
-        }
-
-        if (!this.attributes
-            .filter(config.testAttribute)
-            .forall(a ⇒ other.attributes.exists(a.similar))) {
-            return false;
-        }
-
-        true
+        compareAttributes(other.attributes, config).isEmpty
     }
 
     import Code.BasicClassHierarchy

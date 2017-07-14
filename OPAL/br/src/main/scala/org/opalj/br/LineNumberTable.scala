@@ -44,7 +44,7 @@ trait LineNumberTable extends Attribute {
 
     override def kindId: Int = LineNumberTable.KindId
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: LineNumberTable ⇒ this.similar(that)
             case _                     ⇒ false

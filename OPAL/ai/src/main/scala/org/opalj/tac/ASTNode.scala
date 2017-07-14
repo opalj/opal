@@ -37,7 +37,7 @@ package tac
 trait ASTNode[+V <: Var[V]] {
 
     /**
-     * Each type of node is assigned a different id to make it easily possible
+     * Each type of node is assigned a different `id` to make it easily possible
      * to do a switch over all nodes.
      */
     def astID: Int

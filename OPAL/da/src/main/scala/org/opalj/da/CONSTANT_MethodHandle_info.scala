@@ -30,6 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
+
 import org.opalj.bi.ConstantPoolTag
 
 /**
@@ -74,11 +76,11 @@ case class CONSTANT_MethodHandle_info(
             */)
         </span>
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq =
         <span class="method_handle">MethodHandle(kind={
             refrenceKindAsNode
         }, {
-            cp(reference_index).asInlineNode
+            cp(reference_index).asInstructionParameter
         })</span>
 
     override def toString(implicit cp: Constant_Pool): String = {

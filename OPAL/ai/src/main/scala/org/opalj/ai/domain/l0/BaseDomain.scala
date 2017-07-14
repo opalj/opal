@@ -121,4 +121,9 @@ class PrimitiveTACAIDomain(
         with DefaultTypeLevelHandlingOfMethodResults
         with TheClassHierarchy
         with TheMethod
-        with RecordDefUse
+        with RecordDefUse {
+
+    def this(project: Project[_], classFile: ClassFile, method: Method) {
+        this(project.classHierarchy, classFile, method)
+    }
+}

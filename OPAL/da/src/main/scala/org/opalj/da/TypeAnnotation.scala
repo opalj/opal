@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -44,7 +43,7 @@ case class TypeAnnotation(
         target_path:         TypeAnnotationPath,
         type_index:          Constant_Pool_Index,
         element_value_pairs: IndexedSeq[ElementValuePair]
-) {
+) extends AbstractAnnotation {
 
     final def attribute_length: Int = {
         target_type.attribute_length +
@@ -54,21 +53,14 @@ case class TypeAnnotation(
     }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val evps =
-            if (element_value_pairs.nonEmpty)
-                <ul class="element_value_pairs">{ element_value_pairs.map(evp ⇒ <li>{ evp.toXHTML }</li>) }</ul>
-            else
-                NodeSeq.Empty
-
-        val at = parseFieldType(type_index).asJavaType /* TODO as xhtml node */
-
-        // main tag
         <div class="type_annotation">
-            { target_type.toXHTML }<br/>
-            { target_path.toXHTML }<br/>
-            <b>Annotation Type</b>
-            { at }<br/>
-            { evps }
+            { target_type.toXHTML }
+            <div>
+                { target_path.toXHTML }
+                <b>Annotation Type</b>
+                { parseFieldType(type_index).asSpan("") }<br/>
+                { evps }
+            </div>
         </div>
     }
 }

@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.Text
 import scala.xml.NodeSeq
 import scala.io.Source
 import org.opalj.io.process
@@ -37,6 +38,9 @@ import org.opalj.bi.AccessFlags
 import org.opalj.bi.reader.Constant_PoolAbstractions
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
+
+import scala.xml.Text
+import scala.xml.Unparsed
 
 /**
  * @author Michael Eichberg
@@ -100,20 +104,27 @@ case class ClassFile(
      * The fully qualified name of this class in Java notation (i.e., using dots
      * to seperate packages.)
      */
-    final val thisType: String = cp(this_class).asConstantClass.asJavaClassOrInterfaceType
+    final val thisType: ObjectTypeInfo = cp(this_class).asConstantClass.asJavaClassOrInterfaceType
 
     final val superTypes = {
         {
             if (super_class != 0)
-                <span class="extends">extends <span class="super_class type">{ cp(super_class).toString }</span></span>
+                Seq(
+                    Text("extends "),
+                    asJavaObjectType(cp(super_class).toString).asSpan("extends"),
+                    Text(" ")
+                )
             else
                 NodeSeq.Empty
         } ++ {
             if (interfaces.nonEmpty)
-                <span class="implements">
-                    { "implements " }<span class="interface">{ cp(interfaces.head).toString }</span>
-                    { interfaces.tail.map(i ⇒ <span class="interface">{ ", "+cp(i).toString }</span>) }
-                </span>
+                Seq(
+                    Text("implements "),
+                    asJavaObjectType(cp(interfaces.head).toString).asSpan("implements"),
+                    interfaces.tail.map { i ⇒
+                        Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements"))
+                    }
+                )
             else
                 NodeSeq.Empty
         }
@@ -135,8 +146,6 @@ case class ClassFile(
         <ol class="cp_entries">{ cpEntries }</ol>
     }
 
-    def attributesToXHTML: Seq[Node] = attributes.map(attributeToXHTML(_))
-
     def attributeToXHTML(attribute: Attribute): Node = {
         attribute match {
             case ica: InnerClasses_attribute ⇒ ica.toXHTML(thisType)
@@ -149,7 +158,7 @@ case class ClassFile(
     }
 
     def methodsToXHTML: Seq[Node] = {
-        methods.zipWithIndex map { mi ⇒ val (method, index) = mi; method.toXHTML(thisType, index) }
+        methods.zipWithIndex map { mi ⇒ val (method, index) = mi; method.toXHTML(index) }
     }
 
     protected def accessFlags: Node = {
@@ -203,7 +212,7 @@ case class ClassFile(
     ): Node =
         <html>
             <head>
-                <title>Java Bytecode of { thisType }</title>
+                <title>Java Bytecode of { thisType.asJava }</title>
                 <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
                 {
                     if (embeddedCSS.isDefined)
@@ -214,7 +223,7 @@ case class ClassFile(
                         <link rel="stylesheet" href={ cssFile.get }></link>
                 }{
                     if (withMethodsFilter)
-                        <script>                { scala.xml.Unparsed(ClassFile.FilterJS) }            </script>
+                        <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
                 }
                 {
                     if (jsFile.isDefined)
@@ -230,20 +239,38 @@ case class ClassFile(
 
     // this file is private to ensure that no meaningless html files are generated
     // (i.e. with the fields for the filter, but without the necessary logic)
-    private[this] def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node =
+    private[this] def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node = {
+
+        val (sourceFileAttributes, attributes0) =
+            attributes.partition(_.isInstanceOf[SourceFile_attribute])
+        val (signatureAttributes, attributes1) =
+            attributes0.partition(_.isInstanceOf[Signature_attribute])
+
         <div class="class_file">
             { if (source.isDefined) <div id="source">{ source.get }</div> }
             <div id="class_file_header">
                 { accessFlags }
-                &nbsp;<b id="defining_class">{ thisType }</b>
-                &nbsp;{ superTypes }
-                <div id="class_file_version">
-                    Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }
-                </div>
-                <div>
-                    Size:&nbsp;{ size }
-                    bytes
-                </div>
+                <span id="defined_class">{ thisType.asJava }</span>
+                { superTypes }
+                {
+                    if (signatureAttributes.nonEmpty) {
+                        val signatureAttribute = signatureAttributes.head.asInstanceOf[Signature_attribute]
+                        Seq(<br/>, signatureAttribute.signatureSpan)
+                    }
+                }
+                <br/>
+                {
+                    sourceFileAttributes.headOption.map { a ⇒
+                        Seq(
+                            Text("Source file: "),
+                            <span class="source_file">{ a.asInstanceOf[SourceFile_attribute].sourceFile } </span>,
+                            Unparsed("&nbsp; &mdash; &nbsp;")
+                        )
+                    }.getOrElse(NodeSeq.Empty)
+                }
+                <span id="class_file_version">Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }</span>
+                &nbsp; &mdash; &nbsp;
+                <span>Size:&nbsp;{ size }bytes</span>
             </div>
             <div class="constant_pool">
                 <details>
@@ -252,27 +279,34 @@ case class ClassFile(
                 </details>
             </div>
             <div class="members">
-                <div class="attributes">
-                    <details>
-                        <summary>Attributes</summary>
-                        { attributesToXHTML }
-                    </details>
-                </div>
-                <div class="fields">
-                    <details>
-                        <summary>Fields</summary>
-                        { fieldsToXHTML }
-                    </details>
-                </div>
-                <div class="methods">
-                    <details>
-                        <summary>Methods</summary>
-                        { if (withMethodsFilter) filter else NodeSeq.Empty }
-                        { methodsToXHTML }
-                    </details>
-                </div>
+                {
+                    if (attributes1.nonEmpty)
+                        <div class="attributes">
+                            <details>
+                                <summary>Attributes</summary>{ attributes1.map(attributeToXHTML) }
+                            </details>
+                        </div>
+                }{
+                    if (fields.nonEmpty) {
+                        <div class="fields">
+                            <details open="">
+                                <summary>Fields</summary>{ fieldsToXHTML }
+                            </details>
+                        </div>
+                    }
+                }
+                {
+                    if (methods.nonEmpty) {
+                        <div class="methods">
+                            <details open="">
+                                <summary>Methods</summary>{ if (withMethodsFilter) filter else NodeSeq.Empty }{ methodsToXHTML }
+                            </details>
+                        </div>
+                    }
+                }
             </div>
         </div>
+    }
 
 }
 

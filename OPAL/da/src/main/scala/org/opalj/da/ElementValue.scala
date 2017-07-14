@@ -58,7 +58,7 @@ trait BaseElementValue extends ElementValue {
     def const_value_index: Constant_Pool_Index
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="constant_value">{ cp(const_value_index).asInlineNode(cp) }</span>
+        <span class="constant_value">{ cp(const_value_index).asInstructionParameter }</span>
     }
 
 }
@@ -139,7 +139,7 @@ case class EnumValue(
     final override def tag: Int = EnumValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val et = parseFieldType(type_name_index).asJavaType
+        val et = parseFieldType(type_name_index).asJava
         val ec = cp(const_name_index).toString
 
         <span class="constant_value"><span class="type">{ et }</span>.<span class="field_name">{ ec }</span></span>
@@ -148,7 +148,7 @@ case class EnumValue(
 }
 object EnumValue { final val tag: Int = 'e' }
 
-case class AnnotationValue(val annotation: Annotation) extends StructuredElementValue {
+case class AnnotationValue(annotation: Annotation) extends StructuredElementValue {
 
     final override def attribute_length: Int = 1 + annotation.attribute_length
 
@@ -161,7 +161,7 @@ case class AnnotationValue(val annotation: Annotation) extends StructuredElement
 }
 object AnnotationValue { final val tag: Int = '@' }
 
-case class ArrayValue(val values: Seq[ElementValue]) extends StructuredElementValue {
+case class ArrayValue(values: Seq[ElementValue]) extends StructuredElementValue {
 
     final override def attribute_length: Int = {
         1 + values.foldLeft(2 /*num_values*/ )((c, n) ⇒ c + n.attribute_length)

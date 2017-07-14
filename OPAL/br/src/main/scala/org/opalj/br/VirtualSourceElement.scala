@@ -38,7 +38,9 @@ import scala.math.Ordered
  * @author Michael Eichberg
  * @author Marco Torsello
  */
-sealed abstract class VirtualSourceElement extends SourceElement with Ordered[VirtualSourceElement] {
+sealed abstract class VirtualSourceElement
+        extends SourceElement
+        with Ordered[VirtualSourceElement] {
 
     override def attributes = Nil
 

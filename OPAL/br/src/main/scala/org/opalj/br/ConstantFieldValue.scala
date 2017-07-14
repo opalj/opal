@@ -36,7 +36,7 @@ package br
  */
 sealed abstract class ConstantFieldValue[T >: Nothing] extends Attribute with ConstantValue[T] {
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 }
 
 final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] {

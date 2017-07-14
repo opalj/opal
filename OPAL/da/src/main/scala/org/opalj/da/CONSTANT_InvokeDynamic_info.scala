@@ -33,6 +33,8 @@ import scala.xml.Node
 import scala.xml.Text
 import org.opalj.bi.ConstantPoolTag
 
+import scala.xml.NodeSeq
+
 /**
  *
  * @author Michael Eichberg
@@ -62,8 +64,8 @@ case class CONSTANT_InvokeDynamic_info(
         </div>
     }
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node = {
-        val ntiNode = cp(name_and_type_index).asInlineNode
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+        val ntiNode = cp(name_and_type_index).asInstructionParameter
         val paramsNode =
             Seq(
                 ntiNode,

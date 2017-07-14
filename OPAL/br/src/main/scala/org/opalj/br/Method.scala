@@ -91,33 +91,27 @@ final class Method private (
      */
     def similar(
         other:  Method,
-        config: SimilarityTestConfig = DefaultSimilarityTestConfig
+        config: SimilarityTestConfiguration
     ): Boolean = {
-        if ((config.testAccessFlags(accessFlags) && this.accessFlags != other.accessFlags) ||
-            (this.name != other.name) ||
-            (this.descriptor != other.descriptor)) {
+        // IMPROVE Define a method "findDissimilarity" as in case of ClassFile to report the difference
+        if (this.accessFlags != other.accessFlags ||
+            this.name != other.name ||
+            this.descriptor != other.descriptor) {
             return false;
         }
 
-        if (config.checkBody(body) && !(
-            (this.body.isEmpty && other.body.isEmpty) ||
+        val (thisBody, otherBody) = config.compareCode(this, this.body, other.body)
+        if (!(
+            (thisBody.isEmpty && otherBody.isEmpty) ||
             (
-                this.body.nonEmpty && other.body.nonEmpty &&
-                this.body.get.similar(other.body.get, config)
+                thisBody.nonEmpty && otherBody.nonEmpty &&
+                thisBody.get.similar(otherBody.get, config)
             )
         )) {
             return false;
         }
 
-        if ((config.testAttributesSize(attributes) &&
-            this.attributes.size != other.attributes.size) ||
-            !this.attributes
-                .filter(config.testAttribute)
-                .forall { a ⇒ other.attributes.exists(a.similar) }) {
-            return false;
-        }
-
-        true
+        compareAttributes(other.attributes, config).isEmpty
     }
 
     def copy(
