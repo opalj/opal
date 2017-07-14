@@ -110,7 +110,7 @@ div#source {
     color: #DDD;
     padding: 0.4em 1em 0.4em 1em;
     font-size : smaller;
-    ext-align: center ;
+    text-align: center ;
 }
 
 td.exception {
@@ -174,10 +174,10 @@ td.exception span{
 }
 
 details {
-	padding-left: 0.5em;
-	padding-right: 0.5em;
-	padding-top: 0.5em;
-	padding-bottom: 0.5em;
+	padding-left: 0.35em;
+	padding-right: 0.35em;
+	padding-top: 0.35em;
+	padding-bottom: 0.35em;
 }
 
 summary {
