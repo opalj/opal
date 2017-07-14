@@ -335,7 +335,7 @@ trait RecordCFG
             exitPCs.contains(pc)
     }
 
-    final def wasExecuted(pc: PC): Boolean = pc < code.instructions.size && unsafeWasExecuted(pc)
+    final def wasExecuted(pc: PC): Boolean = pc < code.instructions.length && unsafeWasExecuted(pc)
 
     /**
      * Returns true if the exception handler may handle at least one exception thrown
