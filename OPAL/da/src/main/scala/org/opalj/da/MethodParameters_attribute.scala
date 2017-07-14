@@ -68,7 +68,7 @@ case class MethodParameter(
 
     def toXHTML(parameterTypeInfo: FieldTypeInfo)(implicit cp: Constant_Pool): Node = {
         val (accessFlags, _) = accessFlagsToXHTML(access_flags, METHOD_PARAMETERS)
-        val parameterName = if (name_index == 0) "_" else cp(name_index).toString(cp)
+        val parameterName = if (name_index == 0) "<_>" else cp(name_index).toString(cp)
         <span>{ List(accessFlags, parameterTypeInfo.asSpan(""), <span> { parameterName }</span>) }</span>
     }
 }

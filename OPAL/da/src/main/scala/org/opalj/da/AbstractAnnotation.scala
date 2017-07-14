@@ -29,19 +29,25 @@
 package org.opalj
 package da
 
-import scala.xml.Node
+import scala.xml.Text
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
  */
-case class Deprecated_attribute(attribute_name_index: Constant_Pool_Index) extends Attribute {
+abstract class AbstractAnnotation {
 
-    final override def attribute_length = 0
+    def element_value_pairs: IndexedSeq[ElementValuePair]
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="details deprecated_attribute">Deprecated</div>
-    }
+    def evps(implicit cp: Constant_Pool): NodeSeq =
+        if (element_value_pairs.nonEmpty) {
+            val evpsAsXHTML = this.element_value_pairs.map(_.toXHTML)
+            Seq(
+                Text("("),
+                <ol class="element_value_pairs">{ evpsAsXHTML }</ol>,
+                Text(")")
+            )
+        } else {
+            NodeSeq.Empty
+        }
 }

@@ -30,6 +30,9 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
+
+import scala.collection.mutable.Queue
+
 import org.opalj.collection.immutable.IntSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
@@ -43,8 +46,6 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntSetBuilder
 
 /**
@@ -128,6 +129,16 @@ object TACAI {
         optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue]]]
     ): TACode[TACMethodParameter, DUVar[aiResult.domain.DomainValue]] = {
 
+        def allDead(fromPC: PC, untilPC: PC): Boolean = {
+            val a = aiResult.operandsArray
+            var i = fromPC
+            while (i < untilPC) {
+                if (a(i) ne null) return false;
+                i += 1
+            }
+            return true;
+        }
+
         import BinaryArithmeticOperators._
         import RelationalOperators._
         import UnaryArithmeticOperators._
@@ -197,7 +208,7 @@ object TACAI {
 
         // The list of bytecode instructions which were killed (=>NOP), and for which we now have to
         // clear the usages.
-        var obsoleteUseSites: Chain[(Int /*UseSite*/ , IntSet /*DefSites*/ )] = Naught
+        val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntSet /*DefSites*/ )] = Queue.empty
         // The catch handler statements which were added to the code that do not take up
         // the slot of an empty load/store statement.
         var addedHandlerStmts: IntSet = IntSet.empty
@@ -333,20 +344,20 @@ object TACAI {
                 }
             }
 
-            def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {
+            @inline def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {
                 val value = operandUse(0)
                 val cTpe = operandsArray(nextPC).head.computationalType
                 val preExpr = PrefixExpr(pc, cTpe, operator, value)
                 addInitLocalValStmt(pc, operandsArray(nextPC).head, preExpr)
             }
 
-            def primitiveCastOperation(targetTpe: BaseType): Unit = {
+            @inline def primitiveCastOperation(targetTpe: BaseType): Unit = {
                 val value = operandUse(0)
                 val castExpr = PrimitiveTypecastExpr(pc, targetTpe, value)
                 addInitLocalValStmt(pc, operandsArray(nextPC).head, castExpr)
             }
 
-            def newArray(arrayType: ArrayType): Unit = {
+            @inline def newArray(arrayType: ArrayType): Unit = {
                 val count = operandUse(0)
                 val newArray = NewArray(pc, List(count), arrayType)
                 addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
@@ -386,11 +397,73 @@ object TACAI {
                 }
             }
 
-            def compareValues(op: RelationalOperator): Unit = {
+            @inline def compareValues(op: RelationalOperator): Unit = {
                 val value2 = operandUse(0)
                 val value1 = operandUse(1)
                 val compare = Compare(pc, value1, op, value2)
                 addInitLocalValStmt(pc, operandsArray(nextPC).head, compare)
+            }
+
+            @inline def ifCMPXXX(condition: RelationalOperator, branchoffset: Int): Unit = {
+                val pcBB = cfg.bb(pc)
+                val targetPC = pc + branchoffset
+                val successors = pcBB.successors
+                if (successors.size == 1) {
+                    val successorPC = cfg.successors(pc).head
+                    // HERE(!), the successor can also be an ExitNode/CatchNode if the if
+                    // falls through. In this case the block may end with, e.g., a return
+                    // instruction, and therefore the successor is the ExitNode.
+                    if (successorPC == nextPC || allDead(nextPC, successorPC)) {
+                        // This "if" always either falls through or "jumps" to the next
+                        // instruction ... => replace it by a NOP
+                        addNOP()
+                        obsoleteUseSites enqueue (
+                            (pc, domain.operandOrigin(pc, 0) ++ domain.operandOrigin(pc, 1))
+                        )
+                    } else {
+                        // This "if" is just a goto...
+                        assert(targetPC != nextPC)
+                        addStmt(Goto(pc, targetPC))
+                        obsoleteUseSites enqueue (
+                            (pc, domain.operandOrigin(pc, 0) ++ domain.operandOrigin(pc, 1))
+                        )
+                    }
+                } else {
+                    val value2 = operandUse(0)
+                    val value1 = operandUse(1)
+                    addStmt(If(pc, value1, condition, value2, targetPC))
+                }
+            }
+
+            @inline def ifXXX(
+                condition:    RelationalOperator,
+                branchoffset: Int,
+                cmpVal:       ⇒ Expr[DUVar[aiResult.domain.DomainValue]]
+            ): Unit = {
+                val pcBB = cfg.bb(pc)
+                val targetPC = pc + branchoffset
+                val successors = pcBB.successors
+                if (successors.size == 1) {
+                    val successorPC = cfg.successors(pc).head
+                    // HERE(!), the successor can also be an ExitNode/CatchNode if the if
+                    // falls through. In this case the block may end with, e.g., a return
+                    // instruction, and therefore the successor is the ExitNode.
+                    if (successorPC == nextPC || allDead(nextPC, successorPC)) {
+                        // This "if" always either falls through or "jumps" to the next
+                        // instruction ... => replace it by a NOP
+                        addNOP()
+                        obsoleteUseSites enqueue ((pc, domain.operandOrigin(pc, 0)))
+                    } else {
+                        // This "if" is just a goto...
+                        assert(targetPC != nextPC)
+                        addStmt(Goto(pc, targetPC))
+                        obsoleteUseSites enqueue ((pc, domain.operandOrigin(pc, 0)))
+                    }
+                } else {
+                    val value = operandUse(0)
+                    val cmpVal = IntConst(ai.ValueOriginForVMLevelValue(pc), 0)
+                    addStmt(If(pc, value, condition, cmpVal, targetPC))
+                }
             }
 
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
@@ -455,71 +528,22 @@ object TACAI {
                 case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
                     IF_ICMPLT.opcode | IF_ICMPLE.opcode |
                     IF_ICMPGT.opcode | IF_ICMPGE.opcode ⇒
-                    val pcBB = cfg.bb(pc)
-                    if (pcBB.endPC != pc) {
-                        // This "if" __always__ falls through... => replace it by a NOP
-                        addNOP()
-                        obsoleteUseSites :&:= (
-                            (pc, domain.operandOrigin(pc, 0) ++ domain.operandOrigin(pc, 1))
-                        )
-                    } else {
-                        val ifInstr = as[IFICMPInstruction](instruction)
-                        val targetPC = pc + ifInstr.branchoffset
-                        if (pcBB.successors.size == 1) {
-                            // This "if" is just a goto...
-                            addStmt(Goto(pc, targetPC))
-                            obsoleteUseSites :&:= (
-                                (pc, domain.operandOrigin(pc, 0) ++ domain.operandOrigin(pc, 1))
-                            )
-                        } else {
-                            val value2 = operandUse(0)
-                            val value1 = operandUse(1)
-                            addStmt(If(pc, value1, ifInstr.condition, value2, targetPC))
-                        }
-                    }
+                    val IFICMPInstruction(condition, branchoffset) = instruction
+                    ifCMPXXX(condition, branchoffset)
 
                 case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
                     val IFACMPInstruction(condition, branchoffset) = instruction
-                    val value2 = operandUse(0)
-                    val value1 = operandUse(1)
-                    // let's calculate the final address
-                    val targetPC = pc + branchoffset
-                    addStmt(If(pc, value1, condition, value2, targetPC))
+                    ifCMPXXX(condition, branchoffset)
 
                 case IFEQ.opcode | IFNE.opcode |
                     IFLT.opcode | IFLE.opcode |
                     IFGT.opcode | IFGE.opcode ⇒
                     val IF0Instruction(condition, branchoffset) = instruction
-                    val pcBB = cfg.bb(pc)
-                    val targetPC = pc + branchoffset
-                    val successors = pcBB.successors
-                    if (successors.size == 1) {
-                        // HERE(!), the successor can also be an ExitNode/CatchNode if the if
-                        // falls through. In this case the block may end with, e.g., a return
-                        // instruction, and therefore the successor is the ExitNode.
-                        if (cfg.successors(pc).head == nextPC) {
-                            // This "if" always either falls through or "jumps" to the next
-                            // instruction ... => replace it by a NOP
-                            addNOP()
-                            obsoleteUseSites :&:= ((pc, domain.operandOrigin(pc, 0)))
-                        } else {
-                            // This "if" is just a goto...
-                            assert(targetPC != nextPC)
-                            addStmt(Goto(pc, targetPC))
-                            obsoleteUseSites :&:= ((pc, domain.operandOrigin(pc, 0)))
-                        }
-                    } else {
-                        val value = operandUse(0)
-                        val cmpVal = IntConst(ai.ValueOriginForVMLevelValue(pc), 0)
-                        addStmt(If(pc, value, condition, cmpVal, targetPC))
-                    }
+                    ifXXX(condition, branchoffset, IntConst(ai.ValueOriginForVMLevelValue(pc), 0))
 
                 case IFNONNULL.opcode | IFNULL.opcode ⇒
                     val IFXNullInstruction(condition, branchoffset) = instruction
-                    val value = operandUse(0)
-                    val targetPC = pc + branchoffset
-                    val cmpVal = NullExpr(ai.ValueOriginForVMLevelValue(pc))
-                    addStmt(If(pc, value, condition, cmpVal, targetPC))
+                    ifXXX(condition, branchoffset, NullExpr(ai.ValueOriginForVMLevelValue(pc)))
 
                 case DCMPG.opcode | FCMPG.opcode ⇒ compareValues(CMPG)
                 case DCMPL.opcode | FCMPL.opcode ⇒ compareValues(CMPL)

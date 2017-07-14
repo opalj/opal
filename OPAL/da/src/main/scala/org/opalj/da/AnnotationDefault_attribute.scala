@@ -45,6 +45,10 @@ case class AnnotationDefault_attribute(
     final def attribute_length: Int = element_value.attribute_length
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">default { element_value.toXHTML(cp) }</div>
+        <details class="attribute">
+            <summary>AnnotationDefault</summary>
+            { element_value.toXHTML }
+        </details>
     }
+
 }

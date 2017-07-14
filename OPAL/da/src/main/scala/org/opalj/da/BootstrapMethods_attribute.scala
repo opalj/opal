@@ -44,7 +44,7 @@ case class BootstrapMethods_attribute(
     }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details>
+        <details class="attribute">
             <summary>BootstrapMethods</summary>
             { methodsToXHTML(cp) }
         </details>
