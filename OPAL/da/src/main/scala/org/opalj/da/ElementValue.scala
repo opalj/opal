@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 import scala.xml.Text
 
 /**
@@ -171,8 +172,12 @@ case class ArrayValue(values: Seq[ElementValue]) extends StructuredElementValue 
     final override def tag: Int = ArrayValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val values = this.values.map(v ⇒ Seq(v.toXHTML)).reduce((c, n) ⇒ c ++: (Text(", ") +: n))
-        <div class="constant_value">[{ values }]</div>
+        val valueNodes =
+            if (values.nonEmpty)
+                this.values.map(v ⇒ Seq(v.toXHTML)).reduce((c, n) ⇒ c ++: (Text(", ") +: n))
+            else
+                NodeSeq.Empty
+        <div class="constant_value">[{ valueNodes }]</div>
     }
 
 }
