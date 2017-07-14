@@ -30,7 +30,10 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 import org.opalj.bi.ConstantPoolTag
+
+import scala.xml.Text
 
 /**
  *
@@ -64,25 +67,38 @@ case class CONSTANT_NameAndType_info(
             )
         </div>
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
-        <span class="cp_name_and_type">
-            {
-                val descriptor = cp(descriptor_index).toString(cp)
-                if (descriptor.charAt(0) != '(') {
-                    <span class="fqn">{ parseFieldType(cp(descriptor_index).asString).asJavaType } </span>
-                    <span class="identifier">{ cp(name_index).toString(cp) } </span>
-                } else {
-                    methodDescriptorAsInlineNode(cp(name_index).asString, cp(descriptor_index).asString)
-                }
-            }
-        </span>
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+        val descriptor = cp(descriptor_index).toString(cp)
+        if (descriptor.charAt(0) != '(') {
+            Seq(
+                parseFieldType(cp(descriptor_index).asString).asSpan(""),
+                Text(" "),
+                <span class="name">{ cp(name_index).toString(cp) } </span>
+            )
+        } else {
+            val name = cp(name_index).asString
+            val descriptor = cp(descriptor_index).asString
+            methodDescriptorAsInlineNode(name, descriptor, None)
+        }
+    }
 
     override def toString(implicit cp: Constant_Pool): String = {
         val descriptor = cp(descriptor_index).toString(cp)
         if (descriptor.charAt(0) != '(')
-            parseFieldType(cp(descriptor_index).asString).asJavaType+" "+cp(name_index).toString(cp)
-        else
-            methodDescriptorAsJavaSignature(cp(name_index).asString, cp(descriptor_index).asString)
+            parseFieldType(cp(descriptor_index).asString).asJava+" "+cp(name_index).toString(cp)
+        else {
+            val methodName = cp(name_index).asString
+            var index = 1 // we are not interested in the leading '('
+            var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
+            while (descriptor.charAt(index) != ')') {
+                val (ft, nextIndex) = parseParameterType(descriptor, index)
+                parameterTypes = parameterTypes :+ ft.asJava
+                index = nextIndex
+            }
+            val returnType = parseReturnType(descriptor.substring(index + 1)).asJava
+
+            parameterTypes.mkString(s"$returnType $methodName(", ", ", ")")
+        }
     }
 
 }

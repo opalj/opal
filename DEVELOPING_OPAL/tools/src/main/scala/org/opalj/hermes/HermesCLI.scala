@@ -27,31 +27,57 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
+package hermes
 
-import scala.xml.Node
+import java.io.File
 
 /**
+ * Executes all analyses to determine the representativeness of the given projects.
+ *
  * @author Michael Eichberg
  */
-case class Unknown_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        info:                 Array[Byte]
-) extends Attribute {
+object HermesCLI {
 
-    final override def attribute_length: Int = info.size
+    object Hermes extends HermesCore {
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        val attributeName = cp(attribute_name_index).toString
-        <div class="simple_attribute">
-            <span class="attribute_name">{ attributeName }</span>
-            {
-                if (attribute_length > 0) {
-                    <span>({ attribute_length }bytes):</span>
-                    <br/>
-                    <div>{ byteArrayToNode(info) }</div>
-                }
-            }
-        </div>
+        override def updateProjectData(f: ⇒ Unit): Unit = Hermes.synchronized { f }
+
+        override def reportProgress(f: ⇒ Double): Unit = Hermes.synchronized { f }
     }
+
+    def main(args: Array[String]): Unit = {
+
+        var configFile: String = null
+        var csvFile: String = null
+
+        var i = 0
+        while (i < args.length) {
+            args(i) match {
+                case "--csv" ⇒
+                    i += 1; csvFile = args(i)
+                case s ⇒ configFile = s
+            }
+            i += 1
+        }
+        if (configFile == null || csvFile == null) {
+            import Console.err
+            err.println("OPAL - Hermes")
+            err.println("Parameters 1) the configuration which lists a corpus' projects")
+            err.println("           2) the file to which the results should be exported")
+            err.println("              --csv=<FileName>")
+            err.println()
+            err.println("java org.opalj.hermes.HermesCLI <ConfigFile.json> --csv=<FileName>")
+            System.exit(1)
+        }
+
+        Hermes.analysesFinished onChange { (_, _, isFinished) ⇒
+            if (isFinished) {
+                Hermes.exportCSV(new File(csvFile))
+                System.exit(0)
+            }
+        }
+        Hermes.initialize(new File(configFile))
+        Hermes.analyzeCorpus(runAsDaemons = false)
+    }
+
 }

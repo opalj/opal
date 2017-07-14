@@ -49,7 +49,7 @@ case object TypeAnnotationDirectlyOnType extends TypeAnnotationPath {
     final override def attribute_length: Int = 1
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path"><b>Path</b> DirectlyOnType</span>
+        <div class="type_annotation_path"><b>Path</b> DirectlyOnType</div>
     }
 }
 
@@ -86,7 +86,7 @@ case object TypeAnnotationDeeperInArrayType extends TypeAnnotationPathElement {
     final override def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path_element">DeeperInArrayType</span>
+        <div class="type_annotation_path_element">DeeperInArrayType</div>
     }
 }
 
@@ -97,7 +97,7 @@ case object TypeAnnotationDeeperInNestedType extends TypeAnnotationPathElement {
     final override def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path_element">DeeperInNestedType</span>
+        <div class="type_annotation_path_element">DeeperInNestedType</div>
     }
 }
 
@@ -108,7 +108,7 @@ case object TypeAnnotationOnBoundOfWildcardType extends TypeAnnotationPathElemen
     final override def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path_element">OnBoundOfWildcardType</span>
+        <div class="type_annotation_path_element">OnBoundOfWildcardType</div>
     }
 }
 
@@ -117,6 +117,6 @@ case class TypeAnnotationOnTypeArgument(type_argument_index: Int) extends TypeAn
     final override def type_path_kind: Int = 3
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path_element">OnTypeArgument: { type_argument_index }</span>
+        <div class="type_annotation_path_element">OnTypeArgument: { type_argument_index }</div>
     }
 }

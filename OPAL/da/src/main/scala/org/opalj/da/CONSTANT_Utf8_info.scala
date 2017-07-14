@@ -29,9 +29,11 @@
 package org.opalj
 package da
 
-import scala.xml.Node
 import java.io.DataOutputStream
 import java.io.ByteArrayOutputStream
+
+import scala.xml.Node
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -54,8 +56,9 @@ case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_
         <span class="cp_entry">CONSTANT_Utf8_info("<span class="constant_value">{ value }</span>")</span>
     }
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
         throw new UnsupportedOperationException
+    }
 
     override def toString(implicit cp: Constant_Pool): String = value
 }

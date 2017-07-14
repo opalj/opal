@@ -45,10 +45,10 @@ case class RuntimeInvisibleAnnotations_attribute(
     final override def attribute_length = annotations.foldLeft(2 /*count*/ )(_ + _.attribute_length)
 
     final override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="attribute annotations runtime_invisible">
-            <span>Runtime Invisible Annotations</span>
+        <details class="attribute annotations runtime_invisible">
+            <summary>Runtime Invisible Annotations</summary>
             { annotationsToXHTML(cp) }
-        </div>
+        </details>
     }
 
 }

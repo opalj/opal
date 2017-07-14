@@ -31,27 +31,27 @@ package br
 
 import scala.annotation.tailrec
 
-import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogMessage
 import org.opalj.log.Warn
 
-import org.opalj.bi.ACC_ABSTRACT
-import org.opalj.bi.ACC_ANNOTATION
-import org.opalj.bi.ACC_INTERFACE
-import org.opalj.bi.ACC_ENUM
-import org.opalj.bi.ACC_FINAL
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_SUPER
-import org.opalj.bi.AccessFlagsContexts
-import org.opalj.bi.VisibilityModifier
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsMatcher
-import org.opalj.bi.ACC_MODULE
-
-import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.UShortPair
+
+import org.opalj.bi.ACC_ABSTRACT
+import org.opalj.bi.ACC_ANNOTATION
+import org.opalj.bi.ACC_ENUM
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_INTERFACE
+import org.opalj.bi.ACC_MODULE
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.AccessFlagsMatcher
+import org.opalj.bi.VisibilityModifier
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -115,16 +115,27 @@ final class ClassFile private (
 ) extends ConcreteSourceElement {
 
     /**
-     * Compares this class file with the given one to find (the first) differences which may lead
-     * to a different '''load or runtime behavior'''.
-     * I.e., differences between this class and the given class which
-     * are irrelevant at load / runtime, such as the order in which the attributes are defined,
-     * are ignored.
+     * Compares this class file with the given one; returns (the first) differences if any. The
+     * comparison tries to be stable in the presence of difference that are not runtime relevant.
+     * For example, the precise structure of the constant pool is completely irrelevant.
+     * Additionally, some variance in the bytecode (e.g., `bipush(2)` vs `iconst_2`) is generally
+     * irrelevant and also the order in which [[Attribute]]s are found.
+     * However, the order in which methods/fields is visible in Java programs and
+     * therefore, in general, runtime relevant.
+     *
+     * The degree to which the two class files have to be similar can be configured using
+     * a [[SimilarityTestConfiguration]] object. By default, all parts will be compared and have to
+     * be equal except of irrelevant differences.
+     * The default ([[CompareAllConfiguration]]) compares all parts.
      *
      * @return `None` if this class file and the other are equal - i.e., if both
      *          effectively implement the same class.
      */
-    final def findDissimilarity(other: ClassFile): Option[AnyRef] = {
+    final def findDissimilarity(
+        other:  ClassFile,
+        config: SimilarityTestConfiguration = CompareAllConfiguration
+    ): Option[AnyRef] = {
+
         if (this.version != other.version) {
             return Some(("class file version", this.version, other.version));
         }
@@ -142,62 +153,58 @@ final class ClassFile private (
         }
 
         if (this.interfaceTypes != other.interfaceTypes) {
-            return Some(("inherited interfaces", this.interfaceTypes, other.interfaceTypes));
+            return Some(("inherited interface types", this.interfaceTypes, other.interfaceTypes));
         }
 
-        if (this.fields.size != other.fields.size) {
-            return Some(("declared number of fields", this.fields.size, other.fields.size));
+        val (thisFields, otherFields) = config.compareFields(this, this.fields, other.fields)
+        if (thisFields.size != otherFields.size) {
+            val message = "number of (filtered) fields differ"
+            return Some((message, thisFields.size, otherFields.size));
         }
-
-        if (this.methods.size != other.methods.size) {
-            return Some(("declared number of methods", this.methods.size, other.methods.size));
-        }
-
-        if (this.attributes.size != other.attributes.size) {
-            return Some((
-                "declared number of attributes",
-                this.attributes.size, other.attributes.size
-            ));
-        }
-
-        if (!this.attributes.forall(a ⇒ other.attributes.find(a.similar).isDefined)) {
-            // this.attributes.find{ a => !other.attributes.exists(a.similar) }
-            return Some(("different attributes", this.attributes, other.attributes));
-        }
-
         // RECALL The fields are always strictly ordered in the same way!
-        val thisFieldIt = this.fields.iterator
-        val otherFieldIt = other.fields.iterator
+        val thisFieldIt = thisFields.iterator
+        val otherFieldIt = otherFields.iterator
         while (thisFieldIt.hasNext) {
             val thisField = thisFieldIt.next
             val otherField = otherFieldIt.next
-            if (!thisField.similar(otherField)) {
-                return Some(("different fields", thisField, otherField));
+            if (!thisField.similar(otherField, config)) {
+                return Some(("the fields are different", thisField, otherField));
             }
         }
 
+        val (thisMethods, otherMethods) = config.compareMethods(this, this.methods, other.methods)
+        if (thisMethods.size != otherMethods.size) {
+            val message = "number of (filtered) methods differ"
+            return Some((message, thisMethods.size, otherMethods.size));
+        }
         // RECALL The methods are always strictly ordered in the same way!
-        val thisMethodIt = this.methods.iterator
-        val otherMethodIt = other.methods.iterator
+        val thisMethodIt = thisMethods.iterator
+        val otherMethodIt = otherMethods.iterator
         while (thisMethodIt.hasNext) {
             val thisMethod = thisMethodIt.next
             val otherMethod = otherMethodIt.next
-            if (!thisMethod.similar(otherMethod)) {
-                return Some(("different methods", thisMethod, otherMethod));
+            if (!thisMethod.similar(otherMethod, config)) {
+                return Some(("the methods are different", thisMethod, otherMethod));
             }
         }
 
-        None
+        compareAttributes(other.attributes, config)
     }
 
     /**
-     * Compares this class file with the given one to check for differences which may lead to a
-     * different '''load or runtime behavior'''.
-     * I.e., differences between this class and the given class which
-     * are irrelevant at load-/runtime, such as the order in which the attributes are defined,
-     * are ignored.
+     * Compares this class file with the given one to check if both define the same class modulo
+     * those parts which are not considered relevant.
+     *
+     * @see [[findDissimilarity]] for further information.
+     *
+     *     @param config Configures which parts of the class files should be compared.
      */
-    def similar(other: ClassFile): Boolean = findDissimilarity(other).isEmpty
+    def similar(
+        other:  ClassFile,
+        config: SimilarityTestConfiguration = CompareAllConfiguration
+    ): Boolean = {
+        findDissimilarity(other, config).isEmpty
+    }
 
     /**
      * Creates a shallow copy of this class file object.

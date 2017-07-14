@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,29 +26,44 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.eclipse.propertyTester
-import org.eclipse.core.expressions.PropertyTester
-
-import org.eclipse.jdt.core.IJavaElement
+package cornercases;
 
 /**
- * @author Lukas Becker
- * @author Simon Bohlender
- * @author Simon Guendling
- * @author Felix Zoeller
+ * This class was used to create a class file with some well defined properties. The
+ * created class is subsequently used by several tests.
+ *
+ * NOTE<br />
+ * This class is only meant to be (automatically) compiled by OPAL's build script.
+ *
+ * @author Michael Eichberg
  */
-class IJavaElementExtensionTest extends PropertyTester {
+public class ShortMethods {
 
-    def test(
-        receiver: Object,
-        property: String,
-        args: Array[Object],
-        expectedValue: Object): Boolean = {
-        receiver match {
-            case ije: IJavaElement ⇒
-                val ext: String = ije.getElementName.split('.')(1)
-                (ext == expectedValue)
-            case _ ⇒ false
-        }
+	public static void staticMethodWhichJustThrowsAnException (Exception e) throws Exception {
+        throw e;
+    }
+
+    public void instanceMethodWhichJustThrowsAnException (Exception e) throws Exception {
+        throw e;
+    }
+
+    public void endlessWhileLoop (Exception e) {
+        while (true) ;
+    }
+
+    public void endlessForLoop (Exception e) {
+        for(;true;) {;}
+    }
+
+    public void justReturns (Exception e) {
+        return;
+    }
+
+    public int justReturnsGivenInt (int e) {
+        return e;
+    }
+
+    public double justReturnsGivenDouble (double e) {
+        return e;
     }
 }

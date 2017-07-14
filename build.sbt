@@ -36,6 +36,8 @@ scalacOptions 	in ThisBuild ++= Seq(
     "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
 )
 
+scalacOptions in ThisBuild += "-Xdisable-assertions"
+
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 

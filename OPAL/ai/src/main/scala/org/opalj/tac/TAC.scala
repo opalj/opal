@@ -182,18 +182,20 @@ object TAC {
                         }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
                         val aiResult = BaseAI(cf, m, d)
-                        val TACode(params, code, cfg, ehs, _) =
+                        val tac @ TACode(params, code, cfg, ehs, _) =
                             TACAI(m, project.classHierarchy, aiResult)(Nil)
 
-                        // RETURN VALUE:
-                        (
-                            ToTxt(params, code, cfg, skipParams = false, true, true).mkString("\n"),
-                            tacToDot(code, cfg),
-                            if (ehs.nonEmpty)
-                                Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
-                            else
-                                None
-                        )
+                        try {
+                            // RETURN VALUE:
+                            (
+                                ToTxt(params, code, cfg, skipParams = false, true, true).mkString("\n"),
+                                tacToDot(code, cfg),
+                                if (ehs.nonEmpty)
+                                    Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                                else
+                                    None
+                            )
+                        } catch { case t: Throwable ⇒ Console.err.println(tac); throw t }
                     }
 
                 methodsAsTAC.append(mSig)

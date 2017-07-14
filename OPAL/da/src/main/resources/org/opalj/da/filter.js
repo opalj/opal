@@ -108,7 +108,7 @@ function toggleUnusedFlags() {
 */
 function trimPackageNames() {
 	// get defining class name and split for packages
-	var definingClassNameFQN = document.querySelector("#defining_class").innerHTML;
+	var definingClassNameFQN = document.querySelector("#defined_class").innerHTML;
 	var definingPackages = definingClassNameFQN.split(".");
 	// splice removes the class name from the package array and returns it:
 	var definingClassName = definingPackages.splice(definingPackages.length-1);
@@ -116,7 +116,7 @@ function trimPackageNames() {
 	for(var i=1;i<definingPackages.length;i++) {
 		definingPackages[i] = definingPackages[i-1] + "." + definingPackages[i];
 	}
-	document.querySelectorAll(".fqn").forEach(function(e) {
+	document.querySelectorAll(".object_type").forEach(function(e) {
 		for(var i=definingPackages.length-1;i>=0;i--) {
 			while (e.innerHTML.indexOf(definingPackages[i]+".") >= 0) {
 				e.innerHTML = e.innerHTML.replace(definingPackages[i], new Array(i + 1).join( "." ));

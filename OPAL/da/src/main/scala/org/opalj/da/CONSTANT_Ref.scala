@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -60,11 +61,12 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
             )
         </div>
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
-        <span class="cp_string">
-            { cp(class_index).asInlineNode }
-            <span>{{ { cp(name_and_type_index).asInlineNode } }}</span>
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+        <span class="ref">
+            { asJavaReferenceType(class_index).asSpan("") }
+            <span>{{ { cp(name_and_type_index).asInstructionParameter } }}</span>
         </span>
+    }
 
     override def toString(implicit cp: Constant_Pool): String = {
         cp(class_index).toString(cp)+"{ "+cp(name_and_type_index).toString(cp)+" }"

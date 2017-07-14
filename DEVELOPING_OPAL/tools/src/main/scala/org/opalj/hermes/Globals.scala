@@ -64,9 +64,9 @@ object Globals {
      * Sets the used configuration object.
      */
     private[hermes] def setConfig(config: Config): Unit = {
-        if (isInitialized) {
-            throw new IllegalStateException("configuration is already set")
-        }
+        if (isInitialized)
+            throw new IllegalStateException("configuration is already set");
+
         this.config = config
         isInitialized = true
 

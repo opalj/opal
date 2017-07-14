@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -70,14 +71,8 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
     /**
      * Creates a resolved representation of this constant pool entry that is well-suited as an
      * output in combination with an instruction (e.g., an `ldc`, `get|putfield`,
-     * `invokXYZ`,...). I.e., a representation that contains no more
-     * pointers in the CP.
-     *
-     * @note This operation is only supported by constant pool entries related to
-     *      load constant instructions (ldc(2)(_W)). In case of the `invoke` or
-     *      `put|getfield` instructions the transformation is handled by the respective
-     *      instruction.
+     * `invokXYZ`,...). I.e., a representation that contains no more pointers in the CP.
      */
-    def asInlineNode(implicit cp: Constant_Pool): Node
+    def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq
 
 }

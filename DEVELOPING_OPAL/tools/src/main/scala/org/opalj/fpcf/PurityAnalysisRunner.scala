@@ -44,13 +44,11 @@ import org.opalj.fpcf.properties.Purity
  *
  * @author Michael Eichberg
  */
-object PurityAnalysis extends DefaultOneStepAnalysis {
+object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
     override def title: String = "assess the purity of methods"
 
-    override def description: String = {
-        "assess the purity of some methods"
-    }
+    override def description: String = { "assess the purity of some methods" }
 
     override def doAnalyze(
         project:       Project[URL],

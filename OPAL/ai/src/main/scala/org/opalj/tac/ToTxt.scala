@@ -123,6 +123,9 @@ object ToTxt {
 
             case GetField(_, declaringClass, name, _, receiver) ⇒
                 s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
+
+            case CaughtException(_, exceptionType) ⇒
+                s"caught ${exceptionType.map(_.toJava).getOrElse("<ANY>")}"
         }
     }
 
@@ -175,10 +178,6 @@ object ToTxt {
                 val Assignment(_, variable, expr) = stmt
                 s"$pc ${variable.name} = ${toTxtExpr(expr)}"
 
-            case ExprStmt.ASTID ⇒
-                val ExprStmt(_, expr) = stmt
-                s"$pc expression value is ignored:*/${toTxtExpr(expr)}"
-
             case ArrayStore.ASTID ⇒
                 val ArrayStore(_, arrayRef, index, operandVar) = stmt
                 s"$pc ${toTxtExpr(arrayRef)}[${toTxtExpr(index)}] = ${toTxtExpr(operandVar)}"
@@ -205,6 +204,10 @@ object ToTxt {
                 val NonVirtualMethodCall(_, declClass, _, name, _ /*desc.*/ , rec, params) = stmt
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(rec)}/*(non-virtual) ${declClass.toJava}*/$call"
+
+            case ExprStmt.ASTID ⇒
+                val ExprStmt(_, expr) = stmt
+                s"$pc /*expression value is ignored:*/${toTxtExpr(expr)}"
 
             case FailingExpr.ASTID ⇒
                 val FailingExpr(_, fExpr) = stmt
@@ -263,7 +266,7 @@ object ToTxt {
                     if (param ne null) {
                         val paramTxt = indention+"   param"+index+": "+param.toString()
                         javaLikeCode += (param match {
-                            case v: DVar[_] ⇒ v.useSites.mkString(s"$paramTxt // use sites:{", ", ", "}")
+                            case v: DVar[_] ⇒ v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
                             case _          ⇒ paramTxt
                         })
                     }
@@ -277,11 +280,13 @@ object ToTxt {
         var index = 0
         while (index < max) {
 
-            def catchTypeToString(t: Option[Type]): String = {
-                t.map(_.toJava).getOrElse("<FINALLY>")
-            }
+            def catchTypeToString(t: Option[Type]): String = t.map(_.toJava).getOrElse("<FINALLY>")
 
             val bb = cfg.bb(index)
+            assert(
+                bb ne null,
+                s"index: $index; max: $max; catchNodes:${cfg.catchNodes.mkString("{", ", ", "}")}"
+            )
             if (bb.startPC == index) {
                 // we are at the beginning of a basic block
                 if (index > 0) javaLikeCode += "" // an empty line

@@ -50,7 +50,7 @@ trait AnnotationTable extends Attribute {
      */
     def annotations: Annotations
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: AnnotationTable ⇒ this.similar(that)
             case _                     ⇒ false

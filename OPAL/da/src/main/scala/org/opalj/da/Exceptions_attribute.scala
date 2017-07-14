@@ -51,17 +51,29 @@ case class Exceptions_attribute(
 
     override def attribute_length: Int = 2 /*table_size*/ + exception_index_table.size * 2
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attributename">throws </span> { exceptionsToXHTML(cp) }</span>
+    def exceptionsSpan(implicit cp: Constant_Pool): Node = {
+        <span class="throws">
+            throws
+            {
+                exception_index_table.map(cp(_).asInstructionParameter).reduce[Seq[Node]] { (r, e) ⇒
+                    (r.theSeq :+ Text(", ")) ++ e.theSeq
+                }
+            }
+        </span>
     }
 
-    def exceptionsToXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{
-            val head = Seq(cp(exception_index_table.head).asInlineNode)
-            exception_index_table.tail.foldLeft(head) { (c, i) ⇒
-                c ++ Seq(Text(", "), cp(i).asInlineNode)
-            }
-        }</span>
+    // Primarily implemented to handle the case if the attribute is not found in an expected place.
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <details>
+            <summary>Exceptions</summary>
+            <ol>
+                {
+                    exception_index_table.map[Node, Seq[Node]] { cpIndex ⇒
+                        <li>{ cp(cpIndex).asInstructionParameter }</li>
+                    }
+                }
+            </ol>
+        </details>
     }
 
 }

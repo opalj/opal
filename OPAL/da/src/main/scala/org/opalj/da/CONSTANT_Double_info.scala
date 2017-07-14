@@ -30,6 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
+
 import org.opalj.bi.ConstantPoolTag
 
 /**
@@ -49,7 +51,7 @@ case class CONSTANT_Double_info(value: Double) extends Constant_Pool_Entry {
             )
         </span>
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq =
         <span class="contant_value">{ value.toString + 'd' }</span>
 
     override def toString(implicit cp: Constant_Pool): String = value.toString

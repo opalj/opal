@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import java.net.URL
+
 import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
@@ -52,15 +54,16 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
         val testProject = biProject("proxy.jar")
 
-        val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.allMethodsWithContext map { mc ⇒
+        val proxies: Iterable[(ClassFile, URL)] = testProject.allMethodsWithContext map { mc ⇒
             val (m, classFile) = mc
             val t = classFile.thisType
             var proxy: ClassFile = null
 
             describe(s"generating a valid proxy for ${t.toJava} { ${m.toJava(false)} }") {
+                val typeName = "ProxyValidation$"+t.fqn+":"+m.name + m.descriptor.toJVMDescriptor+"$"
                 val definingType =
                     TypeDeclaration(
-                        ObjectType("ProxyValidation$"+t.toJava+":"+m.toJava(false).replace(' ', '_')+"$"),
+                        ObjectType(typeName),
                         false,
                         Some(ObjectType.Object),
                         UIDSet.empty

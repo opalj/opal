@@ -83,14 +83,15 @@ final class Code private (
         with InstructionsContainer
         with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case that: Code ⇒ this.similar(that)
+            case that: Code ⇒ this.similar(that, config)
             case _          ⇒ false
         }
     }
 
-    def similar(other: Code): Boolean = {
+    def similar(other: Code, config: SimilarityTestConfiguration): Boolean = {
+
         if (!(this.maxStack == other.maxStack && this.maxLocals == other.maxLocals)) {
             return false;
         }
@@ -116,15 +117,7 @@ final class Code private (
             return false;
         }
 
-        if (this.attributes.size != other.attributes.size) {
-            return false;
-        }
-
-        if (!this.attributes.forall(a ⇒ other.attributes.exists(a.similar))) {
-            return false;
-        }
-
-        true
+        compareAttributes(other.attributes, config).isEmpty
     }
 
     import Code.BasicClassHierarchy
