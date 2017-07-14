@@ -68,17 +68,19 @@ sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInf
  * holds that Escapes(O, M) and Escapes(O, T). For example this is the case if O gets assigned to
  * a static field but also if it is returned by M or assigned to a field of an object that has
  * also [[GlobalEscape]] as property.
- * There is room for a discussion to introduce a stage between [[ArgEscape]] and
+ *
+ * There may be some potential to introduce a stage between [[ArgEscape]] and
  * [[GlobalEscape]] to describe the fact that O is returned by M but not accessible by another
  * thread. For now we stick with the literature.
  * Objects that have the property [[GlobalEscape]] have to be allocated on the heap and
- * synchronization mechanisms can not be removed.
+ * synchronization mechanisms can not be removed/proper synchronization is required if the
+ * object is accessed concurrently – the latter may be the goal of static analyses that find
+ * concurrency bugs).
  *
  * The property values are (totally) ordered as follows: [[NoEscape]] < [[ArgEscape]] <
  * [[GlobalEscape]].
- * Algorithms can improve their efficiency by over approximating this property, i.e. for object
+ * Algorithms are free to over approximate this property, i.e. for object
  * instance O with actual property P it is okay to say O has property P' if P < P'.
- *
  *
  * [1] Choi, Jong-Deok, Manish Gupta, Mauricio Serrano, Vugranam C. Sreedhar, and Sam Midkiff.
  * "Escape Analysis for Java." In Proceedings of the 14th ACM SIGPLAN Conference on
@@ -95,17 +97,30 @@ object EscapeProperty extends EscapePropertyMetaInforation {
     final val key: PropertyKey[EscapeProperty] = PropertyKey.create(
         // Name of the property
         "EscapeProperty",
-        // Fallback value
-        GlobalEscape,
+        MaybeNoEscape,
         // cycle-resolution strategy
         GlobalEscape
     )
 }
 
+
 /**
- * "The object is accessible only from within the method of creation. In most cases, the compiler
- * can eliminate the object and replace its fields by scalar variables [...]. Objects with this
- * escape level are called method-local." [2]
+ * Used, when we know nothing about the escape property so far or the analysis
+ *
+ * @see [[EscapeProperty]] for further details.
+ */
+case object MaybeNoEscape extends EscapeProperty {
+    final val isRefineable = true
+}
+
+
+/**
+ * ''The object is accessible only from within the method of creation. Objects with this
+ * escape level are called method-local.''
+ *
+ * @see [[EscapeProperty]] for further details.
+ *
+ * @author Florian Kuebler
  */
 case object NoEscape extends EscapeProperty {
     final val isRefineable = false
@@ -113,9 +128,9 @@ case object NoEscape extends EscapeProperty {
 
 /**
  * Used if we know that the escape property of an object instance on which its constructor was
- * called only depends on the escape property of the this local of the called constructor.
+ * called only depends on the escape property of the self reference of the called constructor.
  *
- * An object instance passed to a [[ConditionallyNoEscape]] this local on a constructor can be
+ * An object instance passed to a [[ConditionallyNoEscape]] constructor can be
  * at most [[ConditionallyNoEscape]] unless it is refined to [[NoEscape]].
  */
 case object ConditionallyNoEscape extends EscapeProperty {
@@ -123,17 +138,19 @@ case object ConditionallyNoEscape extends EscapeProperty {
 }
 
 /**
- * "The object escapes the current method but not the current thread, e.g. because it is passed
- * to a callee which does not let the argument escape. It is possible to allocate the object on
- * the stack and eliminate any synchronization on it. Objects with this escape level are called
- * thread-local." [2]
+ * ''The object escapes the current method but not the current thread, e.g. because it is passed
+ * to a callee which does not let the argument escape.''
+ *
+  * @see [[EscapeProperty]] for further details.
+ *
+ * @author Florian Kuebler
  */
 case object ArgEscape extends EscapeProperty {
     final val isRefineable = false
 }
 
 /**
- * Used if we know that the escape property of an object instance which was passed to a method only
+ * Used if we know that the escape property of an object instance, which was passed to a method, only
  * depends on the escape property of the formal parameter of the target method of a call.
  *
  * An object instance passed to a [[ConditionallyArgEscape]] parameter can at most be
@@ -144,12 +161,61 @@ case object ConditionallyArgEscape extends EscapeProperty {
 }
 
 /**
+ * ''The object escapes globally, typically because it is assigned to a static variable or to a
+ * field of a heap object.''
  *
- * "The object escapes globally, typically because it is assigned to a static variable or to a
- * field of a heap object. The object must be allocated on the heap, because it can be referenced
- * by other threads and methods." [2]
+ * This property should be used if and only if the analysis is conclusive and could determine
+ * that the value definitively escapes globaly.
+ * If a more advanced analysis – potentially run later – could identify an object
+ * as only [[ArgEscape]] or even [[NoEscape]] then the refineable property [[MaybeNoEscape]]
+ * should be used.
+ *
+ * @example
+ * Given the following library code:
+ * {{{
+ * public class X{
+ *  public static Object o;
+ *  public void m(boolean b) {
+ *      Object o = new Object();        // ALLOCATION SITE
+ *      if (b) X.o = o;
+ *      return;
+ *  }
+ * }
+ * }}}
+ * An analysis is only expected to return `GlobalEscapeViaStaticFieldAssignment` for the object o
+ * instantiated in m, if the analyses knows(!) that m is called and the parameter b is
+ * potentially `true`. If the above code is found in a library it may very well be the case that
+ * certain parameter values/combinations will never be used in a certain setting and – therefore –
+ * o does not escape.
+ *
+ * However, from a pure technical point-of-view it may be useful/necessary to use GlobalEscape at
+ * some point, to let depending computations know that no more
+ * changes will happen and therefore the dependencies can be deleted.
+ *
+ * @see [[EscapeProperty]] for further details.
+ *
+ * @author Florian Kuebler
  */
-case object GlobalEscape extends EscapeProperty {
+trait GlobalEscape extends EscapeProperty {
     final val isRefineable = false
 }
+
+/**
+ * Characterizes escapes via the write to a static field. (It may additionally escape by other
+ * means too, but this property was derived first.)
+ *
+ * TODO Concrete example.
+ */
+case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape
+
+/**
+ * The object is assigned to a (global) heap object. (It may additionally escape by other
+ * means too, but this property was derived first.)
+ *
+ * TODO Concrete example.
+ */
+case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape
+
+
+// TODO Do we need further case object to classify GlocalEscapes
 
