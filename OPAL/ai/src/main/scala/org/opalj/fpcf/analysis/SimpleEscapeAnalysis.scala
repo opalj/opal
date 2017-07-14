@@ -33,7 +33,9 @@ package analysis
 import java.io.File
 
 import org.opalj.ai.Domain
+import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br._
 import org.opalj.br.analyses.{AnalysisModeConfigFactory, FormalParameter, FormalParameters, Project, PropertyStoreKey, SomeProject}
 import org.opalj.collection.immutable.IntSet
@@ -56,7 +58,6 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
     private def doDetermineEscape(e: Entity, defSite: Int, uses: IntSet,
                                   code: Array[Stmt[V]]): PropertyComputationResult = {
         var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
-        var newUses = IntSet.empty
         for (use ← uses) {
             determineEscapeStmt(code(use), e, defSite) match {
                 // if we found a result it must be the top value GlobalEscape and we are done
@@ -73,28 +74,28 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             stmt.astID match {
                 case PutStatic.ASTID ⇒
                     val PutStatic(_, _, _, _, value) = stmt
-                    examineExpr(value, e, defSite)
+                    usesDefSite(value, e, defSite)
                 // we are field insensitive, so we have to consider a field (and array) write as
                 // GlobalEscape
                 case PutField.ASTID ⇒
                     val PutField(_, _, _, _, _, value) = stmt
-                    examineExpr(value, e, defSite)
+                    usesDefSite(value, e, defSite)
                 case ArrayStore.ASTID ⇒
                     val ArrayStore(_, _, _, value) = stmt
-                    examineExpr(value, e, defSite)
+                    usesDefSite(value, e, defSite)
                 case Throw.ASTID ⇒
                     val Throw(_, value) = stmt
-                    examineExpr(value, e, defSite)
+                    usesDefSite(value, e, defSite)
                 // we are inter-procedural
                 case ReturnValue.ASTID ⇒
                     val ReturnValue(_, value) = stmt
-                    examineExpr(value, e, defSite)
+                    usesDefSite(value, e, defSite)
                 case StaticMethodCall.ASTID ⇒
                     val StaticMethodCall(_, _, _, _, _, params) = stmt
-                    examineParameters(params, e, defSite)
+                    anyParameterUsesDefSite(params, e, defSite)
                 case VirtualMethodCall.ASTID ⇒
                     val VirtualMethodCall(_, _, _, _, _, value, params) = stmt
-                    examineExpr(value, e, defSite).orElse(examineParameters(params, e, defSite))
+                    usesDefSite(value, e, defSite).orElse(anyParameterUsesDefSite(params, e, defSite))
                 case NonVirtualMethodCall.ASTID ⇒
                     val NonVirtualMethodCall(_, dc, interface, name, descr, receiver, params) = stmt
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
@@ -108,14 +109,13 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 case Assignment.ASTID ⇒
                     val Assignment(_, left, right) = stmt
                     if (left.astID == Var.ASTID && right.astID == Checkcast.ASTID) {
-                        val DVar(_, useSites) = left
                         val Checkcast(_, value, _) = right
                         // val DVar(_, newUses) = left
                         if (value.astID == Var.ASTID) {
                             val UVar(_, defSites) = value
                             if (defSites.contains(defSite)) {
-                                return Some(ImmediateResult(e, GlobalEscape))
                                 // TODO spawn new analysis, conditionally purity
+                                return Some(ImmediateResult(e, GlobalEscape))
                             }
                         }
                         None
@@ -138,25 +138,24 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
                 case VirtualFunctionCall.ASTID ⇒
                     val VirtualFunctionCall(_, _, _, _, _, receiver, params) = expr
-                    examineExpr(receiver, e, defSite).orElse(examineParameters(params, e,
+                    usesDefSite(receiver, e, defSite).orElse(anyParameterUsesDefSite(params, e,
                         defSite))
                 case StaticFunctionCall.ASTID ⇒
                     val StaticFunctionCall(_, _, _, _, _, params) = expr
-                    examineParameters(params, e, defSite)
+                    anyParameterUsesDefSite(params, e, defSite)
                 // see Java8LambdaExpressionsRewriting
                 case Invokedynamic.ASTID ⇒
                     val Invokedynamic(_, _, _, _, params) = expr
-                    examineParameters(params, e, defSite)
+                    anyParameterUsesDefSite(params, e, defSite)
                 case _ ⇒ None
             }
         }
 
         /**
          * If the given expression is a [[UVar]] and is a use of the defSite, the entity e will be
-         * marked
-         * as GlobalEscape, otherwise [[None]] is returned
+         * marked as [[GlobalEscape]], otherwise [[None]] is returned
          */
-        def examineExpr(expr: Expr[V], e: Entity, defSite: Int): Option[PropertyComputationResult] = {
+        def usesDefSite(expr: Expr[V], e: Entity, defSite: Int): Option[PropertyComputationResult] = {
             if (expr.astID == Var.ASTID) {
                 val UVar(_, defSites) = expr
                 if (defSites.contains(defSite))
@@ -169,7 +168,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
          * If there exists a [[UVar]] in params that is a use of the defSite, e will be marked as
          * GlobalEscape, otherwise [[None]] is returned
          */
-        def examineParameters(params: Seq[Expr[V]], e: Entity, defSite: Int): Option[PropertyComputationResult] = {
+        def anyParameterUsesDefSite(params: Seq[Expr[V]], e: Entity, defSite: Int): Option[PropertyComputationResult] = {
             if (params.exists { case UVar(_, defSites) ⇒ defSites.contains(defSite) })
                 Some(ImmediateResult(e, GlobalEscape))
             else None
@@ -181,16 +180,17 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
          * The constructor of Object does not escape the self reference by definition. For other
          * constructor, the inter procedural chain will be processed until it reaches the Object
          * constructor or escapes.
-         * For non constructor calls, GlobalEscape of e will be returned whenever the receiver or a
-         * parameter is a use of defSite.
+         * For non constructor calls, [[GlobalEscape]] of e will be returned whenever the receiver
+         * or a parameter is a use of defSite.
          */
         def handleNonVirtualCall(e: Entity, defSite: Int, dc: ReferenceType, interface: Boolean,
                                  name: String, descr: MethodDescriptor,
                                  receiver: Expr[V], params: Seq[Expr[V]]): Option[PropertyComputationResult] = {
             // we only allow special (inter-procedural) handling for constructors
-            if (name == "<init>")
+            if (name == "<init>") {
                 // the object constructor will not escape the this local
-                if (dc != ObjectType.Object && receiver.astID == Var.ASTID) {
+                if (dc != ObjectType.Object) {
+                    // this is safe as we assume a flat tac hierarchy
                     val UVar(_, defSites) = receiver
                     if (defSites.contains(defSite)) {
                         // resolve the constructor
@@ -214,20 +214,21 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                 }
                             case /* unknown method */ _ ⇒ Some(ImmediateResult(e, GlobalEscape))
                         }
-                    } else examineParameters(params, e, defSite)
-                } else None
-            else {
-                examineExpr(receiver, e, defSite).orElse(examineParameters(params, e, defSite))
+                    } else anyParameterUsesDefSite(params, e, defSite)
+                } else /* Object constructor does escape by def. */ None
+            } else {
+                usesDefSite(receiver, e, defSite).orElse(anyParameterUsesDefSite(params, e, defSite))
             }
         }
 
-        // Every entity that is not identified as escaping is (conditionally) not escaping
+        // Every entity that is not identified as escaping is not escaping
         if (dependees.isEmpty)
             return ImmediateResult(e, NoEscape)
 
+        // we depend on the result for other entities, lets construct a continuation
         def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
             p match {
-                case GlobalEscape | ArgEscape ⇒
+                case GlobalEscape ⇒
                     Result(e, GlobalEscape)
 
                 case ConditionallyNoEscape ⇒
@@ -257,7 +258,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             case as @ AllocationSite(m, pc) ⇒
                 val code = project.get(DefaultTACAIKey)(m).stmts
 
-                val index = code.indexWhere(stmt ⇒ stmt.pc == pc)
+                val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
                 if (index != -1)
                     code(index) match {
@@ -315,7 +316,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
         Project.recreate(project, testConfig)
 
-        //SimpleAIKey.domainFactory = (p, cf, m) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
+        SimpleAIKey.domainFactory = (p, cf, m) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
         time {
             val tacai = project.get(DefaultTACAIKey)
             for {
@@ -343,7 +344,6 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
 
         println(s"# of global escaping objects: ${globalEscapes.size}")
         println(s"# of local objects: ${noEscape.size}")
-
     }
 }
 
