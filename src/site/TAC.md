@@ -1,5 +1,5 @@
 # 3-Address Code / Quadruples Code / Static Single Assigment Form
-OPAL provides an easy mechanism to transform Java bytecode into a 3-address code which is also sometimes called "Quadruples Code". The standard representation provided by OPAL is always in SSA form and is created after performing a low-level, highly configurable data-flow analysis; based on the configured low-level analysis, the amount of additional information about the program's values may differ greatly. In the simplest case, only basic type information is provided. In more advanced cases, constant computations are perfomed, constants are propagated, must-alias information is provided, dead paths due to progamming errors are automatically pruned, and so on. In all cases the 3-address code (in the following called **TAC**) immediately provides complete def-use information and the control-flow graph is also reified.
+OPAL provides enables you to transform Java bytecode into a 3-address code which is also sometimes called "Quadruples Code". The standard representation provided by OPAL is always in SSA form and is created after performing a low-level, highly configurable data-flow analysis; based on the configured low-level analysis, the amount of additional information about the program's values may differ greatly. In the simplest case, only basic type information is provided. In more advanced cases, constant computations are perfomed, constants are propagated, must-alias information is provided, dead paths due to progamming errors are automatically pruned, and so on. In all cases the 3-address code (in the following called **TAC**) immediately provides complete def-use information and the control-flow graph is also reified.
 
 ## Using the 3-Address Code (TAC)
 
@@ -42,4 +42,80 @@ A very straight forward way to get a method's TAC is to use the respective `Proj
 
 ## Examples
 
-To better understand the TAC provided by OPAL, we will discuss some examples. You can run the examples on your own using the discussed steps.
+To better understand OPAL's three-address code representation, we will discuss some examples. You can generate the 3-address code on your own using the steps discussed above.
+
+### Basics
+
+Given the following very simple loop implemented in Java.
+
+    public static void endless() {
+        while (true) {
+            System.out.println(System.nanoTime());
+        }
+    }
+    
+The three address code will be:
+
+    static void endless(){
+           // <start>, 3 →
+         0:/*pc=0:*/ lv0 = java.lang.System.out
+         1:/*pc=3:*/ lv1 = java.lang.System.nanoTime()
+           // ! - potentially uncaught exception/abnormal return
+     
+           // 1 →
+         2:/*pc=6:*/ {lv0}/*java.io.PrintStream*/.println({lv1})
+           // ! - potentially uncaught exception/abnormal return
+     
+           // 2 →
+         3:/*pc=9:*/ goto 0
+    }
+    
+As stated above, the def-use chain and the control-flow graph is directly made available. For example, the assignment statement with index 0 initializes the local variable `lv0` with the value of `System.out`. This local variable is then used by statement 2 as the receiver object of the `println` call which is given the value of the local variable 1 (`lv1`). 
+
+Given that the underlying analysis by default *only* uses intra-procedural information, it cannot determine whether the called methods potentially throws any exceptions or not and therefore has to assume that they potentially do. In the above code, the basic block boundaries of the underlying code are determined by empy lines. 
+
+Now, let's assume that the target stream is determined by a parameter:
+
+    public static void endless(boolean toErr) {
+        PrintStream out = toErr ? System.err : System.out;
+        while (true) {
+            out.println(System.nanoTime());
+        }
+    }
+    
+In this case the three-address code will be:
+    
+    static void endless(boolean){
+          /* PARAMETERS: param1: useSites={0} (origin=-2) */
+          
+        0:/*pc=1:*/ if({param1} == 0) goto 3
+    
+          // 0 →
+        1:/*pc=4:*/ lv1 = java.lang.System.err
+        2:/*pc=7:*/ goto 4
+    
+          // 0 →
+        3:/*pc=10:*/ lv3 = java.lang.System.out
+    
+          // 2, 3 →
+        4:/*pc=13:*/ ;
+    
+          // 7, 4 →
+        5:/*pc=15:*/ lv5 = java.lang.System.nanoTime()
+          // ! - potentially uncaught exception/abnormal return
+    
+          // 5 →
+        6:/*pc=18:*/ {lv1, lv3}/*java.io.PrintStream*/.println({lv5})
+          // ! - potentially uncaught exception/abnormal return
+    
+          // 6 →
+        7:/*pc=21:*/ goto 5
+    }    
+    
+In this case the `static` method `endless` defines a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by statement 0. Note that the parameters of a method will always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5`. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarily.
+
+Furthermore, given that the def-use information is explicitly reified, the information that the receiver object of the `println` [call](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.MethodCall) (statement 6) is either `lv1` or `lv3`, i.e., `System.out` or `System.err`, is directly available.
+     
+     
+---
+
