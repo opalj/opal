@@ -65,7 +65,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         folder:        File,
         domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse
     ): Unit = {
-        if (Thread.currentThread().isInterrupted) return;
+        if (Thread.currentThread().isInterrupted) return ;
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
