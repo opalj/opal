@@ -742,21 +742,28 @@ trait IntegerRangeValues
                             val result = leftLB % rightLB
                             ComputedValue(IntegerRange(result, result))
                         } else {
-                            val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))
+                            // From the spec:
+                            // [...] the result of the remainder operation can be negative only if
+                            // the dividend is negative and can be positive only if the dividend
+                            // is positive[...]
+                            val maxDividend = Math.max(Math.abs(leftLB), Math.abs(leftUB))
+                            var maxDivisor = Math.max(Math.abs(rightLB), Math.abs(rightUB))
+                            if (maxDividend < maxDivisor /* e.g., [0..3] % [1..8] */ )
+                                maxDivisor = maxDividend + 1
                             val newValue =
                                 if (leftLB < 0) {
                                     if (leftUB < 0)
-                                        IntegerRange(-(maxDividend - 1), 0)
+                                        IntegerRange(-(maxDivisor - 1), 0)
                                     else
-                                        IntegerRange(-(maxDividend - 1), maxDividend - 1)
+                                        IntegerRange(-(maxDivisor - 1), maxDivisor - 1)
                                 } else
-                                    IntegerRange(0, maxDividend - 1)
+                                    IntegerRange(0, maxDivisor - 1)
                             result(newValue)
                         }
 
                     case _ /*AnIntegerValue*/ if rightLB > Int.MinValue ⇒
-                        val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))
-                        val newValue = IntegerRange(-(maxDividend - 1), maxDividend - 1)
+                        val maxDivisor = Math.max(Math.abs(rightLB), Math.abs(rightUB))
+                        val newValue = IntegerRange(-(maxDivisor - 1), maxDivisor - 1)
                         result(newValue)
                     case _ /*AnIntegerValue*/ ⇒
                         result(IntegerValue(origin = pc))

@@ -1621,12 +1621,12 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
                 result.result should be(IntegerRange(0, 15))
             }
 
-            it("(the dividend (range) is smaller than the divisor) [1,8] % [1,16] => [0,7]") {
+            it("(the dividend (range) is smaller than the divisor) [1,8] % [1,16] => [1,8]") {
                 val v1 = IntegerRange(1, 8)
                 val v2 = IntegerRange(1, 16)
 
                 val result = irem(SomePC, v1, v2)
-                result.result should be(IntegerRange(0, 7))
+                result.result should be(IntegerRange(0, 8))
             }
 
             it("(the dividend and the divisor are point values) [2,2] % [16,16] => [2,2]") {
