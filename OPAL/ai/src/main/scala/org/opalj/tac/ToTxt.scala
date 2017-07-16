@@ -83,9 +83,6 @@ object ToTxt {
             case InstanceOf(_, value, tpe) ⇒
                 s"${toTxtExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
 
-            case Checkcast(_, value, tpe) ⇒
-                s"(${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
-
             case Compare(_, left, op, right) ⇒
                 toTxtExpr(left)+" "+op.toString+" "+toTxtExpr[V](right)
 
@@ -205,6 +202,10 @@ object ToTxt {
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(rec)}/*(non-virtual) ${declClass.toJava}*/$call"
 
+            case Checkcast.ASTID ⇒
+                val Checkcast(_, value, tpe) = stmt
+                s"$pc (${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
+
             case ExprStmt.ASTID ⇒
                 val ExprStmt(_, expr) = stmt
                 s"$pc /*expression value is ignored:*/${toTxtExpr(expr)}"
@@ -212,10 +213,6 @@ object ToTxt {
             case FailingExpr.ASTID ⇒
                 val FailingExpr(_, fExpr) = stmt
                 s"$pc expression evaluation will throw exception: ${toTxtExpr(fExpr)}"
-
-            case FailingStmt.ASTID ⇒
-                val FailingStmt(_, fStmt) = stmt
-                s"$pc statement always throws an exception: ${toTxtStmt(fStmt, includePC)}"
 
         }
     }

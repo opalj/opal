@@ -87,6 +87,8 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
 
     def isVar: Boolean
 
+    def asVar: V = throw new ClassCastException
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 }
 
@@ -111,30 +113,6 @@ case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceTyp
 
 }
 object InstanceOf { final val ASTID = -2 }
-
-/**
- * A `checkcast` expression as defined by the JVM specification.
- */
-case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Expr[V] {
-
-    final def astID: Int = Checkcast.ASTID
-
-    final def cTpe: ComputationalType = ComputationalTypeReference
-
-    final def isSideEffectFree: Boolean = {
-        // TODO Check if the type of the value is ALWAYS a subtype of cmpTpe.. then it is sideeffect free if the value expr is also sideeffect free
-        false
-    }
-
-    final def isVar: Boolean = false
-
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        value.remapIndexes(pcToIndex)
-    }
-
-    override def toString: String = s"Checkcast(pc=$pc,$value,${cmpTpe.toJava})"
-}
-object Checkcast { final val ASTID = -3 }
 
 /**
  * A comparison of two values.
@@ -671,6 +649,8 @@ trait Var[+V <: Var[V]] extends ValueExpr[V] { this: V ⇒
     def name: String
 
     final def isVar: Boolean = true
+
+    final override def asVar: V = this
 
 }
 
