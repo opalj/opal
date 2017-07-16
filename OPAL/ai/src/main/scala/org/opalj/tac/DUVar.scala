@@ -56,6 +56,36 @@ object DUVar {
 }
 
 /**
+ * Defines an extractor to get the definition site of an expression's/statement's value.
+ *
+ * This extractor may fail (i.e., throw an exception), when the expr is not a [[DVar]] or
+ * a [[Const]]; this decision was made to capture programming failures as early as possible
+ * ([[http://www.opal-project.de/TAC.html flat]]).
+ *
+ * @example
+ *          To get a return value's definition sites (unless the value is constant).
+ *          {{{
+ * val tac.ReturnValue(pc,tac.DefSites(defSites)) = code.stmts(5)
+ *          }}}
+ */
+object DefSites {
+
+    /*+
+    Defines an extractor to get the definition site of an expression's/statement's value.
+ * Returns the empty set if the value is a constant.
+     */
+    def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntSet] = {
+        Some(
+            valueExpr match {
+                case UVar(_, defSites) ⇒ defSites
+                case _: Const          ⇒ IntSet.empty
+            }
+        )
+    }
+
+}
+
+/**
  * A (final) variable definition, which is uniquely identified by its origin/the index of
  * the corresponding AssignmentStatement.
  * I.e., per method there must be at most one D variable which
