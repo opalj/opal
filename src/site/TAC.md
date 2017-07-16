@@ -42,9 +42,13 @@ A very straight forward way to get a method's TAC is to use the respective `Proj
 
 ## Examples
 
-To better understand OPAL's three-address code representation, we will discuss some examples. You can generate the 3-address code on your own using the steps discussed above.
+To better understand OPAL's three-address code representation, we will discuss some examples. 
 
-### Basics
+You can generate the 3-address code on your own using the steps discussed above.
+
+---
+
+**Loops and Exceptions**
 
 Given the following very simple loop implemented in Java.
 
@@ -72,7 +76,11 @@ The three address code will be:
     
 As stated above, the def-use chain and the control-flow graph is directly made available. For example, the assignment statement with index 0 initializes the local variable `lv0` with the value of `System.out`. This local variable is then used by statement 2 as the receiver object of the `println` call which is given the value of the local variable 1 (`lv1`). 
 
-Given that the underlying analysis by default *only* uses intra-procedural information, it cannot determine whether the called methods potentially throws any exceptions or not and therefore has to assume that they potentially do. In the above code, the basic block boundaries of the underlying code are determined by empy lines. 
+Given that the underlying analysis by default *only* uses intra-procedural information, it cannot determine whether the called methods potentially throw any exceptions or not and therefore has to assume that they potentially do. In the above code, the basic block boundaries of the underlying code are determined by empy lines. 
+
+---
+
+**On The Origin Of Values**
 
 Now, let's assume that the target stream is determined by a parameter:
 
@@ -83,10 +91,10 @@ Now, let's assume that the target stream is determined by a parameter:
         }
     }
     
-In this case the three-address code will be:
+In this case the initial three-address code will be:
     
     static void endless(boolean){
-          /* PARAMETERS: param1: useSites={0} (origin=-2) */
+        /* PARAMETERS: param1: useSites={0} (origin=-2) */
           
         0:/*pc=1:*/ if({param1} == 0) goto 3
     
@@ -98,7 +106,7 @@ In this case the three-address code will be:
         3:/*pc=10:*/ lv3 = java.lang.System.out
     
           // 2, 3 →
-        4:/*pc=13:*/ ;
+        4:/*pc=13:*/ ; // <= NOP can be optimized away 
     
           // 7, 4 →
         5:/*pc=15:*/ lv5 = java.lang.System.nanoTime()
@@ -112,10 +120,73 @@ In this case the three-address code will be:
         7:/*pc=21:*/ goto 5
     }    
     
-In this case the `static` method `endless` defines a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by statement 0. Note that the parameters of a method will always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5`. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarily.
+In the above example, the `static` method `endless` defines a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by statement 0 (`useSites`). Parameters of methods always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5`. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarily.
 
 Furthermore, given that the def-use information is explicitly reified, the information that the receiver object of the `println` [call](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.MethodCall) (statement 6) is either `lv1` or `lv3`, i.e., `System.out` or `System.err`, is directly available.
      
+---     
+
+**Getting Type Information**
+
+The following demonstrates how to get advanced type information about a specific value. Given the following code:
+
+     package ai;
+     class MethodsWithTypeChecks { 
+        public static FileNotFoundException requiredCast(Cloneable o) {
+            if(!(o instanceof FileNotFoundException)) return null;
+            return (FileNotFoundException)o;
+        }
+     }
+     
+we can get the 3-address code (using, e.g., the `sbt console`) as follows (the method is part of OPAL's test suite):          
+
+    import org.opalj._
+    val p = br.analyses.Project(new java.io.File("OPAL/bi/target/scala-2.11/resource_managed/test/ai.jar"))
+    val tacAIKey = p.get(tac.DefaultTACAIKey)
+    val code = tacAIKey(p.classFile(br.ObjectType("ai/MethodsWithTypeChecks")).get.findMethod("requiredCast").head)
+  
+The 3-address code of the above method is shown next:  
+  
+    static java.io.FileNotFoundException requiredCast(java.lang.Cloneable){
+           /* PARAMETERS: param1: useSites={0,4,5} (origin=-2) */
+         0:/*pc=1:*/ lv0 = {param1} instanceof java.io.FileNotFoundException
+         1:/*pc=4:*/ if({lv0} != 0) goto 4
+     
+           // 1 →
+         2:/*pc=7:*/ lv2 = null
+         3:/*pc=8:*/ return {lv2}
+     
+           // 1 →
+         4:/*pc=10:*/ (java.io.FileNotFoundException) {param1}
+           // ! - potentially uncaught exception/abnormal return
+     
+           // 4 →
+         5:/*pc=13:*/ return {param1}
+    }
+  
+Given the method's three-address code, we can now get the definition sites and the upper type bound of the return values as follows:
+  
+1) Get all return statements (the implicit cast `_.asBasicBlock` is safe, because a [`CatchNode`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.br.cfg.CatchNode) cannot be a predecessor of an `ExitNode`):
+
+        val returnStmts = code.cfg.normalReturnNode.predecessors.iterator.map(_.asBasicBlock.endPC) 
+
+2) Use simple pattern matching to get the defintion sites and the value information.
+
+        for { tac.ReturnValue(pc,tac.UVar(v,defSites)) <- returnStmts.map(code.stmts)} {
+            println(defSites.mkString(", ") + " => "+ v.asDomainReferenceValue)
+        }
+        
+In this case, the def-site is `-2`; i.e., the value of the first (formal/explicitly declared) parameter. 
+The type is `FileNotFoundException with Cloneable`; i.e., if the method returns successfully, then the returned value inherits from `java.io.FileNotFoundException` and also implements the marker interface `Cloneable`. The precise type information that is available is determined by the underlying data-flow analysis; however, type information at the described level is generally available.            
      
 ---
 
+## Summary
+
+ - The definition sites of the (explicitly declared )parameters of a method have the ids `[-2...-2-#Parameters]`.
+ - A use-site always references the statement where the variable is initialized. Hence, use-sites are always in the range `[0..index of the last instruction]`
+ - The standard TAC AST as well as all standard optimizations/transformations keep the AST flat; i.e., nested expressions are always [`ValueExpr`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.ValueExpr).
+ - Code that was identified as dead by the underlying analysis is stripped away.
+ - The initial transformation from bytecode to 3-address code inherently performs advanced dead-code removal; however, it does not perform changes which require structural changes of the CFG therefore, some [NOP](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.Nop) instructions may be found in the code.
+ - `pc` directly references the program counter/index into the instruction array of the original bytecode instruction. The `pc` can generally be used to lookup line number etc. information in the original code attributes. 
+ 
