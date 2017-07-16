@@ -31,7 +31,6 @@ package ai
 package domain
 package l1
 
-import java.lang.Integer.numberOfTrailingZeros
 import scala.Int.{MinValue ⇒ MinInt}
 import scala.Int.{MaxValue ⇒ MaxInt}
 import org.opalj.br.ComputationalType
@@ -742,12 +741,6 @@ trait IntegerRangeValues
                             // two point ranges...
                             val result = leftLB % rightLB
                             ComputedValue(IntegerRange(result, result))
-                        } else if (rightLB == rightUB && rightLB % 2 == 0 &&
-                            (leftLB >= 0 || leftUB <= 0) &&
-                            numberOfTrailingZeros(leftLB) > numberOfTrailingZeros(rightLB)) {
-                            // we are %-ing a number which is multiplicative of 2^x by 2^(x-n),
-                            // with 0 < n < x; hence, the result is 0.
-                            ComputedValue(IntegerRange(0))
                         } else {
                             val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))
                             val newValue =
