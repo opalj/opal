@@ -228,7 +228,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     /**
-     * The method which computes the def/use information when the instruction with
+     * Updates/computes the def/use information when the instruction with
      * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
      */
     private[this] def handleFlow(
@@ -718,10 +718,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         currentDefOps
                     }
                 propagate(newDefOps, defLocals(currentPC))
-
-            // VARIANT WHICH WILL ALWAYS CREATE A NEW VARIABLE!
-            // (Causes some headaches in the TAC!)
-            // stackOp(1, pushesValue = true)
 
             //
             // "ERROR" HANDLING
