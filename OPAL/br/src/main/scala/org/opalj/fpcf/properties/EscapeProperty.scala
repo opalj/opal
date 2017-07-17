@@ -163,7 +163,7 @@ case object ConditionallyArgEscape extends EscapeProperty {
  * field of a heap object.''
  *
  * This property should be used if and only if the analysis is conclusive and could determine
- * that the value definitively escapes globaly.
+ * that the value definitively escapes globally.
  * If a more advanced analysis – potentially run later – could identify an object
  * as only [[ArgEscape]] or even [[NoEscape]] then the refineable property [[MaybeNoEscape]]
  * should be used.
