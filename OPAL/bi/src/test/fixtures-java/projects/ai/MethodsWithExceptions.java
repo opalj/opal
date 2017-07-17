@@ -166,5 +166,29 @@ public class MethodsWithExceptions {
             System.out.println(o /*<=> null*/);
             return npe;
         }
-    }    
+    }
+
+    public static Object exceptionsAndNull(Object o) throws Exception {
+        try {
+            o.toString();
+        } catch (NullPointerException npe) {
+            return o; // null or a NullPointerException thrown by toString...
+        }
+        o.toString();
+        return o; // not-null
+    }
+
+    public static int exceptionsAndNull(Object[] o) throws Exception {
+        int r = 0;
+        try {
+            int l = o.length;
+            r = l -1;
+        } catch (NullPointerException npe) {
+            o.toString(); // o === null
+            return 0; // dead
+        }
+        o.toString(); // not-null
+        return r;
+    }
+
 }
