@@ -514,14 +514,17 @@ object FailingExpr {
     final val ASTID = 19
 }
 
-case class FailingStmt[+V <: Var[V]](pc: PC, stmt: Stmt[V]) extends FailingInstruction[V] {
+/**
+ * A `checkcast` as defined by the JVM specification.
+ */
+case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Stmt[V] {
 
-    final def astID = FailingStmt.ASTID
+    final def astID: Int = Checkcast.ASTID
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = stmt.remapIndexes(pcToIndex)
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
 
-    override def toString: String = s"FailingStmt(pc=$pc,$stmt)"
+    override def toString: String = s"Checkcast(pc=$pc,$value,${cmpTpe.toJava})"
 }
-object FailingStmt {
+object Checkcast {
     final val ASTID = 20
 }

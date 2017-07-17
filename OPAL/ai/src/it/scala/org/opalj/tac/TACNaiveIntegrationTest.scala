@@ -54,7 +54,7 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
     val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
     def checkFolder(folder: File): Unit = {
-        if (Thread.currentThread().isInterrupted) return;
+        if (Thread.currentThread().isInterrupted) return ;
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)

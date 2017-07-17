@@ -66,14 +66,24 @@ case class Field_Info(
      */
     def toXHTML(definingType: ObjectTypeInfo)(implicit cp: Constant_Pool): Node = {
         val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, FIELD)
-        <div class="field" data-access-flags={ explicitAccessFlags }>
+        val fieldName = this.fieldName
+        val fieldDeclaration =
             <span class="field_declaration">
                 { accessFlags }
                 { fieldType.asSpan("field_type") }
-                <span class="name"> { fieldName } </span>
+                <span class="name">{ fieldName }</span>
             </span>
-            { attributesToXHTML(cp) }
-        </div>
+
+        if (attributes.isEmpty) {
+            <div class="details field" data-name={ fieldName } data-access-flags={ explicitAccessFlags }>
+                { fieldDeclaration }
+            </div>
+        } else {
+            <details class="field" data-name={ fieldName } data-access-flags={ explicitAccessFlags }>
+                <summary>{ fieldDeclaration }</summary>
+                { attributesToXHTML }
+            </details>
+        }
     }
 
     def attributesToXHTML(implicit cp: Constant_Pool): Seq[Node] = attributes.map(_.toXHTML)

@@ -39,6 +39,10 @@ import org.opalj.ai.ValueOrigin
  */
 abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Var[DUVar[Value]] {
 
+    /**
+     * The information about the variable that were derived by the underlying data-flow analysis.
+     *
+     */
     def value: Value
 
     final def cTpe: ComputationalType = value.computationalType
@@ -52,14 +56,42 @@ object DUVar {
 }
 
 /**
- * Identifies the single index(pc) of the instruction which initialized
- * the variable. I.e., per method there must be at most one D variable which
+ * Defines an extractor to get the definition site of an expression's/statement's value.
+ *
+ * This extractor may fail (i.e., throw an exception), when the expr is not a [[DVar]] or
+ * a [[Const]]; this decision was made to capture programming failures as early as possible
+ * ([[http://www.opal-project.de/TAC.html flat]]).
+ *
+ * @example
+ *          To get a return value's definition sites (unless the value is constant).
+ *          {{{
+ * val tac.ReturnValue(pc,tac.DefSites(defSites)) = code.stmts(5)
+ *          }}}
+ */
+object DefSites {
+
+    /*+
+    Defines an extractor to get the definition site of an expression's/statement's value.
+ * Returns the empty set if the value is a constant.
+     */
+    def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntSet] = {
+        Some(
+            valueExpr match {
+                case UVar(_, defSites) ⇒ defSites
+                case _: Const          ⇒ IntSet.empty
+            }
+        )
+    }
+
+}
+
+/**
+ * A (final) variable definition, which is uniquely identified by its origin/the index of
+ * the corresponding AssignmentStatement.
+ * I.e., per method there must be at most one D variable which
  * has the given origin. Initially, the pc of the underlying bytecode instruction is used.
  *
- * @param value The value information; the value may be "illegal" if the value is not used
- * at all and an optimization is performed that identifies unused code and marks the
- * corresponding values as such. In that case, the value also has no
- * usages!
+ * @param value The value information.
  *
  */
 class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
@@ -68,8 +100,21 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         private[tac] var useSites: IntSet
 ) extends DUVar[Value] {
 
+    /**
+     * The origin of the value identifies the expression which initialized this variable.
+     *
+     * In general, the origin is positive and identifies a single, unique assignment statement.
+     * However, the origin can will be negative if the value assigned to the variable is not
+     * directly created by the program, but is either created by the JVM (e.g., the
+     * `DivisionByZeroException` created by the JVM when an `int` value is divided by `0`) or
+     * is just a constant.
+     */
     def definedBy: ValueOrigin = origin
 
+    /**
+     * The set of the indexes of the statements where this `variable` is used. Hence, a use-site
+     * is always positive.
+     */
     def usedBy: IntSet = useSites
 
     def name: String = {

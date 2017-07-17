@@ -261,6 +261,7 @@ object TACAI {
             if (addExceptionHandlerInitializer) {
                 val exception = operandsArray(pc /* the exception is already on the stack */ ).head
                 val usedBy = domain.usedBy(pc)
+                println("pc -> "+domain.operandOrigin(pc, 0).mkString(", "))
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
                 val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType)
                 if (usedBy ne null) {
@@ -461,7 +462,6 @@ object TACAI {
                     }
                 } else {
                     val value = operandUse(0)
-                    val cmpVal = IntConst(ai.ValueOriginForVMLevelValue(pc), 0)
                     addStmt(If(pc, value, condition, cmpVal, targetPC))
                 }
             }
@@ -702,12 +702,7 @@ object TACAI {
                     val value = operandUse(0)
                     val objRef = operandUse(1)
                     val putField = PutField(pc, declaringClass, name, fieldType, objRef, value)
-                    if (wasExecuted(nextPC)) {
-                        addStmt(putField)
-                    } else {
-                        // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingStmt(pc, putField))
-                    }
+                    addStmt(putField)
 
                 case GETSTATIC.opcode ⇒
                     val GETSTATIC(declaringClass, name, fieldType) = instruction
@@ -717,22 +712,12 @@ object TACAI {
                 case GETFIELD.opcode ⇒
                     val GETFIELD(declaringClass, name, fieldType) = instruction
                     val getField = GetField(pc, declaringClass, name, fieldType, operandUse(0))
-                    if (wasExecuted(nextPC)) {
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
-                    } else {
-                        // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpr(pc, getField))
-                    }
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
 
                 case NEW.opcode ⇒
                     val NEW(objectType) = instruction
                     val newObject = New(pc, objectType)
-                    if (wasExecuted(nextPC)) {
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, newObject)
-                    } else {
-                        // IMPROVE Encode information about the failing exception!
-                        addStmt(FailingExpr(pc, newObject))
-                    }
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, newObject)
 
                 case NEWARRAY.opcode ⇒
                     newArray(ArrayType(as[NEWARRAY](instruction).elementType))
@@ -772,12 +757,7 @@ object TACAI {
                 case CHECKCAST.opcode ⇒
                     val value1 = operandUse(0)
                     val CHECKCAST(targetType) = instruction
-                    val checkcast = Checkcast(pc, value1, targetType)
-                    if (wasExecuted(nextPC)) {
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, checkcast)
-                    } else {
-                        addStmt(FailingExpr(pc, checkcast))
-                    }
+                    addStmt(Checkcast(pc, value1, targetType))
 
                 case MONITORENTER.opcode ⇒ addStmt(MonitorEnter(pc, operandUse(0)))
                 case MONITOREXIT.opcode  ⇒ addStmt(MonitorExit(pc, operandUse(0)))

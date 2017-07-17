@@ -35,12 +35,12 @@ function toogleFilter() {
  var nameFilter = document.querySelector('input[type="text"]').value
  if(flagsFilter.length == 0 && nameFilter.length == 0) {
 	 // clear filter property
-	 document.querySelectorAll('div[class="method"]').forEach(function(e){e.style.display = 'block'})
+	 document.querySelectorAll('.method').forEach(function(e){e.style.display = 'block'})
  } else {
 	 // 1. hide all
-	 document.querySelectorAll("div[class='method']").forEach(function(e){e.style.display = 'none'})
+	 document.querySelectorAll(".method").forEach(function(e){e.style.display = 'none'})
 
-	 var filterString = "div[class='method']"
+	 var filterString = ".method"
 	 flagsFilter.forEach(function(e){filterString += "[data-access-flags*='"+e.value+"']"});
 	 if(nameFilter.length > 0)
 		 filterString += "[data-name*='"+document.querySelector('input[type="text"]').value+"']";
@@ -77,13 +77,13 @@ function toggleUnusedFlags() {
     var possibleFlags = document.querySelectorAll('input:not(:checked)[type="checkbox"],input:not(:checked)[type="radio"]');
 	var selectedFlags = document.querySelectorAll('input:checked[type="checkbox"],input:checked[type="radio"]');
 
-	var filterString = "div[class='method']"
+	var filterString = ".method"
 	selectedFlags.forEach(function(e){filterString += "[data-access-flags*='"+e.value+"']"});
 
     possibleFlags.forEach(function (e) {
 		if (e.type == "radio") {
 			// on radio types, we have to filter the currently set radio-button in the same set as they are mutually exclusive
-			filterString = "div[class='method']"
+			filterString = ".method"
 			selectedFlags.forEach(function(f){
 				if (e.name != f.name)
 					filterString += "[data-access-flags*='"+f.value+"']";

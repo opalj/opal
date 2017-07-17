@@ -200,7 +200,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         }
 
         // 2. check instructions
-        code.iterate { (pc, instruction) ⇒
+        code iterate { (pc, instruction) ⇒
             if (instruction.opcode != CHECKCAST.opcode) {
                 // a checkcast instruction is already a use
                 instruction.expressionResult match {
@@ -696,17 +696,32 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 stackOp(1, pushesValue = true)
 
             case CHECKCAST.opcode ⇒
-                // Recall that – even if the cast is successful (we don't have an exceptional
-                // control flow) - that does not mean that the cast was useless; therefore,
-                // we will always create a new variable.
+                // Recall that – even if the cast is successful NOW (i.e., we don't have an
+                // exceptional control flow) - that does not mean that the cast was useless.
                 // At this point in time we simply don't have the necessary information to
-                // decide whether the cast is truly useless (i.e., we could keep the
-                // operand stack as is) or not.
+                // decide whether the cast is truly useless.
                 // E.g,.
                 //      AbstractList abstractL = ...;
                 //      List l = (java.util.List) abstractL; // USELESS
                 //      ArrayList al = (java.util.ArrayList) l; // MAY OR MAY NO SUCCEED
-                stackOp(1, pushesValue = true)
+                val currentDefOps = defOps(currentPC)
+                val op = currentDefOps.head
+                updateUsageInformation(op, currentPC)
+                val newDefOps =
+                    if (isExceptionalControlFlow) {
+                        val successorDefOps = defOps(successorPC)
+                        if (successorDefOps eq null)
+                            Chain.singleton(ValueOrigins(successorPC))
+                        else
+                            successorDefOps
+                    } else {
+                        currentDefOps
+                    }
+                propagate(newDefOps, defLocals(currentPC))
+
+            // VARIANT WHICH WILL ALWAYS CREATE A NEW VARIABLE!
+            // (Causes some headaches in the TAC!)
+            // stackOp(1, pushesValue = true)
 
             //
             // "ERROR" HANDLING

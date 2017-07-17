@@ -687,7 +687,7 @@ object TACNaive {
                     val resultVar = OperandVar(ComputationalTypeReference, rest)
                     val targetType = as[CHECKCAST](instruction).referenceType
                     val checkcast = Checkcast(pc, value1, targetType)
-                    statements(pc) = List(Assignment(pc, resultVar, checkcast))
+                    statements(pc) = List(checkcast)
                     schedule(pcOfNextInstruction(pc), resultVar :: rest)
 
                 case MONITORENTER.opcode ⇒

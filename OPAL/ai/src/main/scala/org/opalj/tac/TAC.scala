@@ -100,6 +100,7 @@ object TAC {
         var className: Option[String] = None
         var methodSignature: Option[String] = None
         var naive: Boolean = false
+        var toString: Boolean = false
         var domainName: Option[String] = None
         var printCFG: Boolean = false
 
@@ -126,12 +127,13 @@ object TAC {
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")
 
-                case "-source" ⇒ source = readNextArg()
-                case "-cfg"    ⇒ printCFG = true
-                case "-open"   ⇒ doOpen = true
-                case "-class"  ⇒ className = Some(readNextArg())
-                case "-method" ⇒ methodSignature = Some(readNextArg())
-                case unknown   ⇒ handleError(s"unknown parameter: $unknown")
+                case "-source"   ⇒ source = readNextArg()
+                case "-cfg"      ⇒ printCFG = true
+                case "-open"     ⇒ doOpen = true
+                case "-class"    ⇒ className = Some(readNextArg())
+                case "-method"   ⇒ methodSignature = Some(readNextArg())
+                case "-toString" ⇒ toString = true
+                case unknown     ⇒ handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
@@ -160,8 +162,10 @@ object TAC {
             } {
                 val (tac: String, cfg: String, ehs: Option[String]) =
                     if (naive) {
-                        val TACode(params, code, cfg, ehs, _) =
+                        val tac @ TACode(params, code, cfg, ehs, _) =
                             TACNaive(m, ch, AllTACNaiveOptimizations)
+                        if (toString) Console.out.println(m.toJava(project.classFile(m), tac.toString))
+
                         (
                             ToTxt(params, code, cfg, skipParams = true, true, true).mkString("\n"),
                             tacToDot(code, cfg),
@@ -184,18 +188,16 @@ object TAC {
                         val aiResult = BaseAI(cf, m, d)
                         val tac @ TACode(params, code, cfg, ehs, _) =
                             TACAI(m, project.classHierarchy, aiResult)(Nil)
+                        if (toString) Console.out.println(m.toJava(project.classFile(m), tac.toString))
 
-                        try {
-                            // RETURN VALUE:
-                            (
-                                ToTxt(params, code, cfg, skipParams = false, true, true).mkString("\n"),
-                                tacToDot(code, cfg),
-                                if (ehs.nonEmpty)
-                                    Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
-                                else
-                                    None
-                            )
-                        } catch { case t: Throwable ⇒ Console.err.println(tac); throw t }
+                        (
+                            ToTxt(params, code, cfg, skipParams = false, true, true).mkString("\n"),
+                            tacToDot(code, cfg),
+                            if (ehs.nonEmpty)
+                                Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                            else
+                                None
+                        )
                     }
 
                 methodsAsTAC.append(mSig)

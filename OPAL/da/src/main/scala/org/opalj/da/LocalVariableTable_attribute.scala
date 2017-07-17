@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Text
+
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
@@ -45,7 +47,12 @@ case class LocalVariableTable_attribute(
     override def toXHTML(implicit cp: Constant_Pool) = {
         <details>
             <summary>LocalVariableTable</summary>
-            { local_variable_table.map(_.toXHTML(cp)) }
+            {
+                if (local_variable_table.nonEmpty)
+                    local_variable_table.map(_.toXHTML(cp))
+                else
+                    Text("<Empty>")
+            }
         </details>
     }
 }
