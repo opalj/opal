@@ -70,6 +70,15 @@ public class MethodsWithTypeChecks {
         return (FileNotFoundException)fioe;
     }
 
+    public static Object exceptionsAndNull(IOException o) throws Exception {
+        try {
+            throw o;
+        } catch (NullPointerException npe) {
+            System.out.println(o /*<=> null*/);
+            return npe;
+        }
+    }
+
     public static FileNotFoundException requiredCast(Cloneable o) {
         if(!(o instanceof FileNotFoundException)) return null;
 
