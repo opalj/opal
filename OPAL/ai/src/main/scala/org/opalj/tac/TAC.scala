@@ -29,6 +29,8 @@
 package org.opalj
 package tac
 
+import java.io.File
+
 import org.opalj.io.writeAndOpen
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain
@@ -83,12 +85,14 @@ object TAC {
     def usage: String = {
         "Usage: java …TAC \n"+
             "-source <JAR file/Folder containing class files>\n"+
+            "[-sourceLib <JAR file/Folder containing library class files (which may be required to get precise/correct type information.>\n"+
             "[-domainValueInformation (prints detailed information about domain values)\n"+
             "[-class <class file name> (filters the set of classes)]\n"+
             "[-method <method name/signature using Java notation>] (filters the set of methods)\n"+
             "[-naive (the naive representation is generated) | -domain <class name of the domain>]\n"+
             "[-cfg (print control-flow graph)]\n"+
             "[-open (the generated representations will be written to disk and opened)]\n"+
+            "[-toString (uses the \"toString\" method to print the object graph)]\n"+
             "Example:\n\tjava …TAC -jar /Library/jre/lib/rt.jar -class java.util.ArrayList .method toString"
     }
 
@@ -96,6 +100,7 @@ object TAC {
 
         // Parameters:
         var source: String = null
+        var sourceLib: Option[String] = None
         var doOpen: Boolean = false
         var className: Option[String] = None
         var methodSignature: Option[String] = None
@@ -127,13 +132,14 @@ object TAC {
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")
 
-                case "-source"   ⇒ source = readNextArg()
-                case "-cfg"      ⇒ printCFG = true
-                case "-open"     ⇒ doOpen = true
-                case "-class"    ⇒ className = Some(readNextArg())
-                case "-method"   ⇒ methodSignature = Some(readNextArg())
-                case "-toString" ⇒ toString = true
-                case unknown     ⇒ handleError(s"unknown parameter: $unknown")
+                case "-source"    ⇒ source = readNextArg()
+                case "-sourceLib" ⇒ sourceLib = Some(readNextArg())
+                case "-cfg"       ⇒ printCFG = true
+                case "-open"      ⇒ doOpen = true
+                case "-class"     ⇒ className = Some(readNextArg())
+                case "-method"    ⇒ methodSignature = Some(readNextArg())
+                case "-toString"  ⇒ toString = true
+                case unknown      ⇒ handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
@@ -142,7 +148,9 @@ object TAC {
             handleError("missing parameters")
         }
 
-        val project = Project(new java.io.File(source))
+        val sourceFile = new File(source)
+        val project =
+            sourceLib.map(l ⇒ Project(sourceFile, new File(l))).getOrElse(Project(sourceFile))
         if (project.projectMethodsCount == 0) {
             handleError(s"no methods found: $source")
         }
