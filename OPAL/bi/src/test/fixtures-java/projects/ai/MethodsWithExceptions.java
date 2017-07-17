@@ -158,4 +158,13 @@ public class MethodsWithExceptions {
             // ...
         }
     }
+
+    public static Object exceptionsAndNull(IOException o) throws Exception {
+        try {
+            throw o;
+        } catch (NullPointerException npe) {
+            System.out.println(o /*<=> null*/);
+            return npe;
+        }
+    }    
 }
