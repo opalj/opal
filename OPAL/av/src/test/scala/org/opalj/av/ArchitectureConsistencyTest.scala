@@ -31,7 +31,7 @@ package checking
 
 import org.junit.runner.RunWith
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.{BooleanValue, StringValue}
 import org.opalj.br.reader.Java8Framework.ClassFiles
 

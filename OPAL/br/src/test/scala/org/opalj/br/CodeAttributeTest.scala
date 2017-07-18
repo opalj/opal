@@ -40,7 +40,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions._
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * Tests some of the core methods of the Code attribute.

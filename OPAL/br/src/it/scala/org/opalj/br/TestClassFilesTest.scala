@@ -40,7 +40,7 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.io.process
 import org.opalj.br.reader._
-import org.opalj.bi.TestSupport.allBITestJARs
+import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bytecode.JRELibraryFolder
 
 /**

@@ -38,7 +38,7 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.ACC_BRIDGE
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
 import org.opalj.log.GlobalLogContext

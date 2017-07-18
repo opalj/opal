@@ -34,7 +34,7 @@ import java.util.zip.ZipFile
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 
-import org.opalj.bi.TestSupport.allManagedBITestJARs
+import org.opalj.bi.TestResources.allManagedBITestJARs
 import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
 
 /**

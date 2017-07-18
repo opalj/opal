@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.log.GlobalLogContext
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject

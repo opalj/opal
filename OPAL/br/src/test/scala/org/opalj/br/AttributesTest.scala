@@ -31,7 +31,7 @@ package br
 
 import org.scalatest.FunSuite
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * @author Michael Eichberg

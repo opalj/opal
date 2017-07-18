@@ -33,7 +33,7 @@ package reader
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * Tests the reading of class files.

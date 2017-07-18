@@ -33,7 +33,7 @@
 //import org.junit.runner.RunWith
 //import org.scalatest.FlatSpec
 //import org.scalatest.Matchers
-//import org.opalj.bi.TestSupport.locateTestResources
+//import org.opalj.bi.TestResources.locateTestResources
 //import org.opalj.br.analyses.Project
 //import org.opalj.br.ObjectType
 //import org.scalatest.junit.JUnitRunner

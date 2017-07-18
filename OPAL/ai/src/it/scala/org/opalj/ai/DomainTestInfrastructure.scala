@@ -42,7 +42,7 @@ import org.scalatest.Matchers
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.io.writeAndOpen
 import org.opalj.log.GlobalLogContext
-import org.opalj.bi.{TestSupport ⇒ BITestSupport}
+import org.opalj.bi.TestResources
 import org.opalj.br.{TestSupport ⇒ BRTestSupport}
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
@@ -204,7 +204,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
     it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-08-14-2014") in {
 
         import reader.AllClassFiles
-        val classFilesFolder = BITestSupport.locateTestResources("classfiles", "bi")
+        val classFilesFolder = TestResources.locateTestResources("classfiles", "bi")
         val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
             def accept(dir: java.io.File, name: String) = {
                 name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")
@@ -218,7 +218,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
     }
 
     it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-0.3.jar") in {
-        val classFiles = BITestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+        val classFiles = TestResources.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
         val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
 
         analyzeProject("OPAL-0.3", project, 2.5d)
