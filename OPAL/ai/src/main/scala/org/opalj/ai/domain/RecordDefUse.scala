@@ -30,6 +30,9 @@ package org.opalj
 package ai
 package domain
 
+import scala.annotation.tailrec
+import scala.annotation.switch
+
 import java.io.{ByteArrayOutputStream, PrintStream}
 
 import scala.xml.Node
@@ -58,10 +61,15 @@ import org.opalj.ai.util.XHTML
  * where the `Int` identifies the expression (by means of it's pc) which evaluated
  * to the respective value. In case of a parameter the `Int` value is equivalent to
  * the value `-parameterIndex`.
- * In case of exception values the `Int` value identifies the exception
- * handler that caught the respective exception. This information can then be used –
+ * '''In case of exception values the `Int` value identifies the exception
+ * handler that caught the respective exception.''' This information can then be used –
  * in combination with the AICFG - to identify the origin instruction that caused
- * the exception.
+ * the exception. A more precise propagation of def/use information related to exceptions is
+ * – as part of this very generic domain – not possible. If we would propagate def-use
+ * information beyond the handler, we would not be able to distinguish between the handlers
+ * anymore and therefore we would not be able to identify where a caught exception is eventually
+ * used.
+ *
  *
  * ==General Usage==
  * This trait finalizes the collection of the def/use information '''after the abstract
@@ -266,10 +274,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
-            if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null)) {
+            if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null /*non-dead*/ )) {
 
                 // we now also have to perform a join...
-                @annotation.tailrec def joinDefOps(
+                @tailrec def joinDefOps(
                     oldDefOps:     Chain[ValueOrigins],
                     lDefOps:       Chain[ValueOrigins],
                     rDefOps:       Chain[ValueOrigins],
@@ -415,11 +423,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             val currentDefOps = defOps(currentPC)
             currentDefOps.forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currentPC) }
 
-            val newDefOps =
+            val newDefOps: Chain[ValueOrigins] =
                 if (isExceptionalControlFlow) {
-                    // The stack only contains the exception (that was created before
-                    // and explicitly used by a throw instruction) or that resulted from
-                    // a called method or that was created by the JVM
+                    // The stack only contains the exception (which was created before
+                    // and was explicitly thrown by a throw instruction or that resulted from
+                    // a called method or that was created by the JVM)
                     // (Whether we had a join or not is irrelevant.)
                     val successorDefOps = defOps(successorPC)
                     if (successorDefOps eq null)
@@ -454,7 +462,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         //
         // THE IMPLEMENTATION...
         //
-        val scheduleNextPC: Boolean = (instruction.opcode: @annotation.switch) match {
+        val scheduleNextPC: Boolean = (instruction.opcode: @switch) match {
             case GOTO.opcode | GOTO_W.opcode |
                 NOP.opcode |
                 WIDE.opcode |
@@ -483,7 +491,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 | LOOKUPSWITCH.opcode | TABLESWITCH.opcode ⇒
                 stackOp(1, pushesValue = false)
 
-            case ATHROW.opcode                      ⇒ stackOp(1, pushesValue = false)
+            case ATHROW.opcode ⇒
+                stackOp(1, true /* <= actually ignored; athrow has special handling downstream */ )
 
             //
             // ARRAYS
