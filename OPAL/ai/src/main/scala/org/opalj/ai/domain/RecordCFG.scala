@@ -98,7 +98,7 @@ trait RecordCFG
         cfJoins:       BitSet,
         initialLocals: Locals
     ): Unit = {
-        val codeSize = code.instructions.size
+        val codeSize = code.instructions.length
         regularSuccessors = new Array[IntSet](codeSize)
         exceptionHandlerSuccessors = new Array[IntSet](codeSize)
         exitPCs = new mutable.BitSet(codeSize)
@@ -188,7 +188,7 @@ trait RecordCFG
                         startNodeHasPredecessors = predecessorsOf(0).nonEmpty,
                         foreachSuccessorOf,
                         foreachPredecessorOf,
-                        maxNode = code.instructions.size - 1
+                        maxNode = code.instructions.length - 1
                     )
                 this.theDominatorTree = theDominatorTree
             }
@@ -207,7 +207,7 @@ trait RecordCFG
                         allExitPCs.foreach,
                         foreachSuccessorOf,
                         foreachPredecessorOf,
-                        maxNode = code.instructions.size - 1
+                        maxNode = code.instructions.length - 1
                     )
                 this.thePostDominatorTree = thePostDominatorTree
             }
