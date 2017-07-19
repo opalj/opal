@@ -92,7 +92,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * PROJECT SETUP
      */
 
-    def file = org.opalj.bi.TestSupport.locateTestResources(testFileName, testFilePath)
+    def file = org.opalj.bi.TestResources.locateTestResources(testFileName, testFilePath)
 
     def loadProject: Project[URL] = org.opalj.br.analyses.Project(file)
 

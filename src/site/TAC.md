@@ -120,15 +120,15 @@ In this case the initial three-address code will be:
         7:/*pc=21:*/ goto 5
     }    
     
-In the above example, the `static` method `endless` defines,e.g., a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by the first statement with index 0 (`useSites`); the parameter it not used any further.   
+In the above example, the `static` method `endless` defines,e.g., a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by the first statement with index 0 (`useSites`); the parameter it not used any further - `useSites` for `param1` only contains one value. Def/use information is always directly available at a local-variable initialization ([`DVar`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.DVar)) or usage site ([`UVar`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.UVar)).    
 
-Parameters of methods always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5`. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarily.
+Parameters of methods always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5` independent of the method being static or not. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarily.
 
 Furthermore, given that the def-use information is explicitly reified, the information that the receiver object of the `println` [call](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.MethodCall) (statement 6) is either `lv1` or `lv3`, i.e., `System.out` or `System.err`, is directly available.
      
 ---     
 
-**Getting Type Information**
+**Getting Type Information** (Type Checks and Type Casts)
 
 The following demonstrates how to get advanced type information about a specific value. Given the following code:
 
@@ -166,21 +166,21 @@ The 3-address code of the above method is shown next:
          5:/*pc=13:*/ return {param1}
     }
   
-Given the method's three-address code, we can now get the definition sites and the upper type bound of the return values as follows:
+Given the method's three-address code, we can now get the definition sites and the upper type bound of the method's return values as follows:
   
-1) Get all return statements (the implicit cast `_.asBasicBlock` is safe, because a [`CatchNode`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.br.cfg.CatchNode) cannot be a predecessor of an `ExitNode`):
+1) Get all return statements using the CFG (the implicit cast `_.asBasicBlock` is safe, because a [`CatchNode`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.br.cfg.CatchNode) cannot be a predecessor of an `ExitNode`):
 
-        val returnStmts = code.cfg.normalReturnNode.predecessors.iterator.map(_.asBasicBlock.endPC) 
+        val returnStmts = code.cfg.normalReturnNode.predecessors.iterator.map(bb => code.stmts(bb.asBasicBlock.endPC)) 
 
 2) Use simple pattern matching to get the defintion sites and the value information.
 
-        for { tac.ReturnValue(pc,tac.UVar(v,defSites)) <- returnStmts.map(code.stmts)} {
+        for { tac.ReturnValue(pc,tac.UVar(v,defSites)) <- returnStmts} {
             println(defSites.mkString(", ") + " => "+ v.asDomainReferenceValue)
         }
         
-In this case, the def-site is `-2`; i.e., the value of the first (formal/explicitly declared) parameter. 
-The type is `FileNotFoundException with Cloneable`; i.e., if the method returns successfully, then the returned value inherits from `java.io.FileNotFoundException` and also implements the marker interface `Cloneable`. The precise type information that is available is determined by the underlying data-flow analysis; however, type information at the described level is generally available.            
-     
+In this case, the def-site is 2 for the first return statement (index: 3) and `-2` for the last return statement; i.e., in the latter case the value of the first (formal/explicitly declared) parameter is returned, but now the type is `FileNotFoundException with Cloneable`; i.e., if the method returns successfully (statement 5), then the returned value inherits from `java.io.FileNotFoundException` and also implements the marker interface `Cloneable`. *Note that, the precise type information that is available is determined by the underlying data-flow analysis; however, type information at the described level is generally available.*            
+    
+
 ---
 
 ## Summary

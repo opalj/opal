@@ -34,6 +34,8 @@ import java.util.Arrays
 import java.util.IdentityHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
+import scala.collection.AbstractIterator
+
 import org.opalj.collection.immutable.IntSet
 import org.opalj.collection.immutable.IntSet1
 import org.opalj.graphs.DefaultMutableNode
@@ -184,7 +186,7 @@ case class CFG(
      * not returned.) Always returns the basic block containing the first instruction first.
      */
     def allBBs: Iterator[BasicBlock] = {
-        new Iterator[BasicBlock] {
+        new AbstractIterator[BasicBlock] {
 
             var currentBBPC = 0
 

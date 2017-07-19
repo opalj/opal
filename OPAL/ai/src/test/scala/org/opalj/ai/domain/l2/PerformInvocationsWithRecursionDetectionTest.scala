@@ -36,7 +36,7 @@ import org.junit.runner.RunWith
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.Chain

@@ -86,20 +86,20 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
             )
 
         def establishNullProperty(objectRef: DomainValue): (Operands, Locals) = {
-            if (refIsNull(pc, objectRef).isUnknown)
+            if (refIsNull(pc, objectRef).isUnknown) {
                 if (isExceptionalControlFlow
                     // && the NullPointerException was created by the JVM, because
                     // the objectRef is (assumed to be) null
                     && {
-                        val TypeOfReferenceValue(utb) = objectRef
-                        utb.head eq ObjectType.NullPointerException
-                    }
-                    && {
-                        val origins = origin(objectRef)
-                        origins.nonEmpty && {
-                            val origin = origins.head
-                            isVMLevelValue(origin) && PCOfVMLevelValue(origin) == pc &&
-                                origins.tail.isEmpty
+                        val exception = newOperands.head
+                        val TypeOfReferenceValue(utb) = exception
+                        (utb.head eq ObjectType.NullPointerException) && {
+                            val origins = origin(exception)
+                            origins.nonEmpty && {
+                                val origin = origins.head
+                                isVMLevelValue(origin) && pcOfVMLevelValue(origin) == pc &&
+                                    origins.tail.isEmpty
+                            }
                         }
                     }) {
                     val (operands2, locals2) =
@@ -118,8 +118,9 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         targetPC, isExceptionalControlFlow, operands2, locals2
                     )
                 }
-            else
+            } else {
                 default()
+            }
         }
 
         (instruction.opcode: @switch) match {

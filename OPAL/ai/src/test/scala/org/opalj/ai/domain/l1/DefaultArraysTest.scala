@@ -38,7 +38,7 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.{ObjectType, ArrayType}
 import org.opalj.br.{IntegerType, ByteType, ShortType}
 import org.opalj.br.{LongType, FloatType, DoubleType}

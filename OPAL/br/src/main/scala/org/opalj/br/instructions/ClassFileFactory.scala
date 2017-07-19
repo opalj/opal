@@ -924,7 +924,7 @@ object ClassFileFactory {
             numberOfInstructions += loadInstructions + conversionInstructions
 
             parameterIndex += 1
-            lvIndex = parameter.computationalType.operandSize.toInt
+            lvIndex += parameter.computationalType.operandSize.toInt
         }
         numberOfInstructions += 3 // invoke target method
         numberOfInstructions += 1 // return

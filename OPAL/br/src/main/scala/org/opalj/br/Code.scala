@@ -36,20 +36,18 @@ import scala.reflect.ClassTag
 import java.util.Arrays.fill
 
 import scala.collection.BitSet
-
+import scala.collection.AbstractIterator
 import scala.collection.mutable
 import scala.collection.immutable
 import scala.collection.immutable.IntMap
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
-
 import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.immutable.IntSet
 import org.opalj.collection.immutable.IntSet1
 import org.opalj.collection.immutable.IntSetBuilder
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
-
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 
@@ -204,8 +202,8 @@ final class Code private (
      *
      * @see See the method [[foreach]] for an alternative.
      */
-    def programCounters: Iterator[PC] =
-        new Iterator[PC] {
+    def programCounters: Iterator[PC] = {
+        new AbstractIterator[PC] {
             var pc = 0 // there is always at least one instruction
 
             def next() = {
@@ -216,6 +214,7 @@ final class Code private (
 
             def hasNext = pc < instructions.size
         }
+    }
 
     /**
      * Computes the number of instructions.

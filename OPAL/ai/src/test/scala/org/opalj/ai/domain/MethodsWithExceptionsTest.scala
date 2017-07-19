@@ -35,7 +35,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.collection.immutable.IntSet
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br._

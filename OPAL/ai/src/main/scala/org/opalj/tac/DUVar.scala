@@ -47,6 +47,27 @@ abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Va
 
     final def cTpe: ComputationalType = value.computationalType
 
+    /**
+     * The indexes of the instructions which use this variable.
+     *
+     * '''Defined, if and only if this is an assignment statement.'''
+     */
+    def usedBy: IntSet
+
+    /**
+     * The indexes of the instructions which initialize this variable/
+     * the origin of the value identifies the expression which initialized this variable.
+     *
+     * '''Defined, if and only if this is a variable usage.'''
+     *
+     * In general, the origin is positive and identifies a single, unique assignment statement.
+     * However, the origin can  be negative if the value assigned to the variable is not
+     * directly created by the program, but is either created by the JVM (e.g., the
+     * `DivisionByZeroException` created by the JVM when an `int` value is divided by `0`) or
+     * is just a constant.
+     */
+    def definedBy: IntSet
+
 }
 
 object DUVar {
@@ -70,9 +91,9 @@ object DUVar {
  */
 object DefSites {
 
-    /*+
-    Defines an extractor to get the definition site of an expression's/statement's value.
- * Returns the empty set if the value is a constant.
+    /**
+     * Defines an extractor to get the definition site of an expression's/statement's value.
+     * Returns the emp ty set if the value is a constant.
      */
     def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntSet] = {
         Some(
@@ -100,16 +121,9 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         private[tac] var useSites: IntSet
 ) extends DUVar[Value] {
 
-    /**
-     * The origin of the value identifies the expression which initialized this variable.
-     *
-     * In general, the origin is positive and identifies a single, unique assignment statement.
-     * However, the origin can will be negative if the value assigned to the variable is not
-     * directly created by the program, but is either created by the JVM (e.g., the
-     * `DivisionByZeroException` created by the JVM when an `int` value is divided by `0`) or
-     * is just a constant.
-     */
-    def definedBy: ValueOrigin = origin
+    assert(origin >= 0)
+
+    def definedBy: Nothing = throw new UnsupportedOperationException
 
     /**
      * The set of the indexes of the statements where this `variable` is used. Hence, a use-site
@@ -118,7 +132,7 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
     def usedBy: IntSet = useSites
 
     def name: String = {
-        val n = if (origin < 0) s"param${(-origin - 1).toHexString}" else s"lv${origin.toHexString}"
+        val n = s"lv${origin.toHexString}"
         if (DUVar.printDomainValue) s"$n/*:$value*/" else n
     }
 
@@ -131,7 +145,10 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
      * of the transformation of exception handlers) to uses of the next statement.
      */
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        assert(origin >= 0, s"DVars are not intended to be used to model parameters (origin=$origin)")
+        assert(
+            origin >= 0,
+            s"DVars are not intended to be used to model parameters/exceptions (origin=$origin)"
+        )
         val newOrigin = pcToIndex(origin)
         origin = newOrigin
         useSites = useSites.map { useSite ⇒
@@ -185,9 +202,9 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         val n =
             defSites.iterator.map { defSite ⇒
                 val n =
-                    if (defSite < 0)
+                    if (defSite < 0) {
                         "param"+(-defSite - 1).toHexString
-                    else
+                    } else
                         "lv"+defSite.toHexString
                 if (DUVar.printDomainValue) s"$n/*:$value*/" else n
             }.mkString("{", ", ", "}")
@@ -196,11 +213,18 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
 
     def definedBy: IntSet = defSites
 
+    def usedBy: Nothing = throw new UnsupportedOperationException
+
     final def isSideEffectFree: Boolean = true
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         defSites = defSites.map { defSite ⇒
-            if (defSite >= 0) pcToIndex(defSite) else defSite /* <= it is referecing a parameter */
+            if (defSite >= 0)
+                pcToIndex(defSite)
+            else if (ai.isVMLevelValue(defSite))
+                ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(defSite)))
+            else
+                defSite /* <= it is referencing a parameter */
         }
     }
 

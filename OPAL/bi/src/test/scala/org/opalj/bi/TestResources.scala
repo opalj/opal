@@ -32,18 +32,14 @@ package bi
 import java.io.File
 import java.io.FileFilter
 
-import scala.util.Properties.versionNumberString
+import org.opalj.util.ScalaMajorVersion
 
 /**
  * Common functionality required by many tests.
  *
  * @author Michael Eichberg
  */
-object TestSupport {
-
-    val ScalaMajorVersion: String = {
-        versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
-    }
+object TestResources {
 
     val unmanagedResourcesFolder = "src/test/resources/"
     val managedResourcesFolder = s"target/scala-$ScalaMajorVersion/resource_managed/test/"
