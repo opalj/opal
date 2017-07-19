@@ -372,6 +372,10 @@ trait RecordCFG
         false
     }
 
+    def isDirectRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
+        regularSuccessorsOf(pc).contains(successorPC)
+    }
+
     def bbCFG: CFG = {
         var theBBCFG = this.theBBCFG
         if (theBBCFG eq null) synchronized {
