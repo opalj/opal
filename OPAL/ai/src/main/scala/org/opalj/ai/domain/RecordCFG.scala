@@ -128,7 +128,7 @@ trait RecordCFG
     /**
      * Returns the PCs of the first instruction of all subroutines.
      */
-    def allSubroutineStartPCs: IntSet = subroutineStartPCs
+    def allSubroutineStartPCs: PCs = subroutineStartPCs
 
     /**
      * Returns the program counter(s) of the instruction(s) that is(are) executed
@@ -281,7 +281,7 @@ trait RecordCFG
             successorsToVisit =
                 successorsToVisit.foldLeft(IntSet.empty) { (l, r) ⇒
                     l ++ (
-                        successorsOf(r, regularSuccessorsOnly).withFilter { pc ⇒
+                        successorsOf(r, regularSuccessorsOnly) withFilter { pc ⇒
                             !visitedSuccessors.contains(pc)
                         }
                     )
@@ -585,9 +585,7 @@ trait RecordCFG
      *
      * @note This method is only intended to be called by the AI framework.
      */
-    abstract override def returnVoid(
-        pc: PC
-    ): Computation[Nothing, ExceptionValue] = {
+    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
         exitPCs += pc
         super.returnVoid(pc)
     }
@@ -730,7 +728,7 @@ trait RecordCFG
                         val ln = code.lineNumber(pc).map(ln ⇒ s"[ln=$ln]").getOrElse("")
                         pc + ln+": "+domain.code.instructions(pc).toString(pc)
                     }
-                    pcs.map(pcToString(_)).mkString("", "\\l\\l", "\\l")
+                    pcs.map(pcToString).mkString("", "\\l\\l", "\\l")
                 }
 
                 new DefaultMutableNode(
