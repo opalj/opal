@@ -108,7 +108,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
     type ValueOrigins = IntSet
-    def ValueOrigins(vo: Int): IntSet = IntSet1(vo)
+    @inline final def ValueOrigins(vo: Int): IntSet = new IntSet1(vo)
 
     private[this] var instructions: Array[Instruction] = _ // initialized by initProperties
 
@@ -148,7 +148,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // used by the AI for parameters
                 parameterIndex -= 1
                 if (v ne null) {
-                    IntSet1(parameterIndex)
+                    ValueOrigins(parameterIndex)
                 } else {
                     null
                 }
@@ -261,7 +261,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
                 val oldUsedInfo: ValueOrigins = used(usedIndex)
                 if (oldUsedInfo eq null) {
-                    used(usedIndex) = IntSet1(useSite)
+                    used(usedIndex) = ValueOrigins(useSite)
                 } else {
                     val newUsedInfo = oldUsedInfo + useSite
                     if (newUsedInfo ne oldUsedInfo)
