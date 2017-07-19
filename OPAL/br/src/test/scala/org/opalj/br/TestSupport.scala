@@ -50,6 +50,10 @@ import org.opalj.bi.TestResources.allBITestJARs
  */
 object TestSupport {
 
+    final val DefaultJava9Reader: Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
+        new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache)
+    }
+
     def createJREProject(): Project[URL] = Project(readJREClassFiles(), Traversable.empty, true)
 
     def createRTJarProject(): Project[URL] = Project(readRTJarClassFiles(), Traversable.empty, true)
@@ -67,10 +71,6 @@ object TestSupport {
 
     def brProject(projectJARName: String): Project[URL] = {
         Project(locateTestResources(projectJARName, "br"))
-    }
-
-    final val DefaultJava9Reader: Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
-        new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache)
     }
 
     /**
