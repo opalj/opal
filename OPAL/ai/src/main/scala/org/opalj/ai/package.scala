@@ -30,6 +30,8 @@ package org.opalj
 
 import scala.language.existentials
 
+import scala.collection.AbstractIterator
+
 import org.opalj.collection.immutable.Chain
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
@@ -367,7 +369,7 @@ package object ai {
         isStatic:   Boolean,
         descriptor: MethodDescriptor
     ): Iterator[aiResult.domain.DomainValue] = {
-        new Iterator[aiResult.domain.DomainValue] {
+        new AbstractIterator[aiResult.domain.DomainValue] {
 
             private[this] var parameterIndex = 0
             private[this] val totalParameters = descriptor.parametersCount + (if (isStatic) 0 else 1)

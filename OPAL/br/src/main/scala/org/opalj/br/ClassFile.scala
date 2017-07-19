@@ -31,15 +31,15 @@ package br
 
 import scala.annotation.tailrec
 
+import scala.collection.AbstractIterator
+
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogMessage
 import org.opalj.log.Warn
-
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UShortPair
-
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_ANNOTATION
 import org.opalj.bi.ACC_ENUM
@@ -562,7 +562,7 @@ final class ClassFile private (
      * (This does not include the static initializer.)
      */
     def constructors: Iterator[Method] = {
-        new Iterator[Method] {
+        new AbstractIterator[Method] {
             private var i = -1
 
             private def lookupNextConstructor(): Unit = {
