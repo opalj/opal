@@ -52,6 +52,7 @@ import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.ExceptionHandler
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -356,17 +357,27 @@ trait RecordCFG
     /**
      * Tests if the instruction with the given pc is a direct or
      * indirect predecessor of the given successor instruction.
+     *
+     * If pc equals successorPC `true` is returned.
+     *
+     * Please note, that this method can be expensive basically traverses the entire graph
+     * if successorPC is NOT a regular predecessor of successorPC.
      */
     def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
-        var visitedSuccessors: IntSet = new IntSet1(pc)
-        var successorsToVisit = regularSuccessorsOf(pc)
+        if (pc == successorPC)
+            return true;
+        var visitedSuccessors = Set(pc) // IMPROVE new IntSet1(pc) ??
+        // IMPROVE  use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
+        val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator)
         while (successorsToVisit.nonEmpty) {
-            if (successorsToVisit.contains(successorPC))
+            val successor = successorsToVisit.pop()
+            if (successor == successorPC)
                 return true;
 
-            visitedSuccessors ++= successorsToVisit
-            successorsToVisit = successorsToVisit.foldLeft(IntSet.empty) { (l, r) ⇒
-                l ++ (regularSuccessorsOf(r) withFilter { pc ⇒ !visitedSuccessors.contains(pc) })
+            visitedSuccessors += successor
+            regularSuccessorsOf(successor) foreach { nextSuccessor ⇒
+                if (!visitedSuccessors.contains(nextSuccessor))
+                    successorsToVisit.push(nextSuccessor)
             }
         }
         false
