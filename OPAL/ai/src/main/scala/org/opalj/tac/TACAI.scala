@@ -539,11 +539,11 @@ object TACAI {
                     IFLT.opcode | IFLE.opcode |
                     IFGT.opcode | IFGE.opcode ⇒
                     val IF0Instruction(condition, branchoffset) = instruction
-                    ifXXX(condition, branchoffset, IntConst(ai.ValueOriginForVMLevelValue(pc), 0))
+                    ifXXX(condition, branchoffset, IntConst(ai.ConstantValueOrigin, 0))
 
                 case IFNONNULL.opcode | IFNULL.opcode ⇒
                     val IFXNullInstruction(condition, branchoffset) = instruction
-                    ifXXX(condition, branchoffset, NullExpr(ai.ValueOriginForVMLevelValue(pc)))
+                    ifXXX(condition, branchoffset, NullExpr(ai.ConstantValueOrigin))
 
                 case DCMPG.opcode | FCMPG.opcode ⇒ compareValues(CMPG)
                 case DCMPL.opcode | FCMPL.opcode ⇒ compareValues(CMPL)
