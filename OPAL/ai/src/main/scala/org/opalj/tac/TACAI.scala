@@ -30,9 +30,8 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
-
 import scala.collection.mutable.Queue
-
+import org.opalj.collection.immutable.IntSetBuilder
 import org.opalj.collection.immutable.IntSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
@@ -46,7 +45,7 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.immutable.IntSetBuilder
+import org.opalj.collection.immutable.ConstArray
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -265,11 +264,42 @@ object TACAI {
 
             // ADD AN EXPLICIT INSTRUCTION WHICH INITIALIZES THE CATCH HANDLER
             if (addExceptionHandlerInitializer) {
+                import aiResult.domain.{predecessorsOf, refIsNull, operandOrigin, isDirectRegularPredecessorOf}
                 val exception = operandsArray(pc /* the exception is already on the stack */ ).head
-                val usedBy = domain.usedBy(pc)
-                println("pc -> "+domain.operandOrigin(pc, 0).mkString(", "))
+                val usedBy = aiResult.domain.usedBy(pc)
+
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
-                val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType)
+                val predecessorsOfPC = predecessorsOf(pc)
+                val defSites =
+                    predecessorsOfPC.foldLeft(IntSet.empty) { (adaptedDefSites, exceptionSite) ⇒
+                        if (instructions(exceptionSite).opcode == ATHROW.opcode) {
+                            // We have to determine if the caught exception is actually the
+                            // thrown exception....
+                            // FIXME XXXX TODO
+                            val thrownValue = operandsArray(exceptionSite).head
+                            val exceptionIsNull = refIsNull(exceptionSite, thrownValue)
+                            var newDefSites = adaptedDefSites
+                            if (exceptionIsNull.isYesOrUnknown)
+                                newDefSites += ai.ValueOriginForVMLevelValue(exceptionSite)
+                            if (exceptionIsNull.isNoOrUnknown) {
+                                val exceptionOrigin = operandOrigin(exceptionSite, 0)
+                                newDefSites ++= normalizeParameterOrigins(exceptionOrigin)
+                            }
+                            newDefSites
+                        } else {
+                            adaptedDefSites + (
+                                if (isDirectRegularPredecessorOf(exceptionSite, pc)) {
+                                    // actually... this will never happen for "regular" code...
+                                    exceptionSite
+                                } else {
+                                    // The predecessor instruction was not an athrow instruction;
+                                    // hence, the exception was caused implicitly...
+                                    ai.ValueOriginForVMLevelValue(exceptionSite)
+                                }
+                            )
+                        }
+                    }
+                val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType, defSites)
                 if (usedBy ne null) {
                     assert(usedBy.forall(_ >= 0))
                     val localVal = DVar(aiResult.domain)(pc, exception, usedBy)
@@ -828,7 +858,7 @@ object TACAI {
 
         obsoleteUseSites foreach { useSite ⇒
             val /*original - bytecode based...:*/ (pc, defSites) = useSite
-            println(pc+" ==> "+defSites.mkString(", "))
+            println("useSite:"+pc+" ==> "+defSites.mkString(", "))
             //defSites foreach { defSite ⇒
             //
             //}
