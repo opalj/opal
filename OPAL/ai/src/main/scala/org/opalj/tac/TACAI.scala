@@ -143,6 +143,8 @@ object TACAI {
         import RelationalOperators._
         import UnaryArithmeticOperators._
 
+        val isStatic = method.isStatic
+        val descriptor = method.descriptor
         val code = method.body.get
         import code.pcOfNextInstruction
         val instructions: Array[Instruction] = code.instructions
@@ -176,20 +178,24 @@ object TACAI {
         // the variable which stores the exception (`CaughtException`, would otherwise "use" itself.
         val pcToIndex = new Array[Int](codeSize + 1 /* +1 if the try includes the last inst. */ )
 
-        // A function to map an ai based value origin (vo) of a parameter to a tac origin.
+        val simpleRemapping = !descriptor.hasComputationalTypeCategory2ValueInInit
+        // A function to map an ai based value origin (vo) of a __parameter__ to a tac origin.
         // To get the target value the ai based vo has to be negated and we have to add -1.
         // E.g., if the ai-based vo is -1 then the index which needs to be used is -(-1)-1 ==> 0
         // which will contain (for -1 only) the value -1.
         val normalizeParameterOrigins: IntSet ⇒ IntSet = {
-            val isStatic = method.isStatic
-            val descriptor = method.descriptor
-            val simpleRemapping = !descriptor.hasComputationalTypeCategory2ValueInInit
             if (!isStatic && simpleRemapping) {
                 // => no remapping is necessary
                 (aiVOs: IntSet) ⇒ aiVOs
             } else if (isStatic && simpleRemapping) {
                 // => we have to subtract -1 from origins related to parameters
-                (aiVOs: IntSet) ⇒ { aiVOs.map { aiVO ⇒ if (aiVO < 0) aiVO - 1 else aiVO } }
+                (aiVOs: IntSet) ⇒
+                    {
+                        aiVOs.map { aiVO ⇒
+                            assert(!ai.isVMLevelValue(aiVO))
+                            if (aiVO < 0) aiVO - 1 else aiVO
+                        }
+                    }
             } else {
                 // => we create an array which contains the mapping information
                 val aiVOToTACVo: Array[Int] = normalizeParameterOriginsMap(descriptor, isStatic)
@@ -829,12 +835,11 @@ object TACAI {
         }
 
         val tacParams: Parameters[TACMethodParameter] = {
-            import method.descriptor
             import descriptor.parameterTypes
-            if (method.descriptor.parametersCount == 0 && method.isStatic)
+            if (descriptor.parametersCount == 0 && isStatic)
                 NoParameters.asInstanceOf[Parameters[TACMethodParameter]]
             else {
-                val paramCount = method.descriptor.parametersCount + 1
+                val paramCount = descriptor.parametersCount + 1
                 val paramDVars = new Array[TACMethodParameter](paramCount)
 
                 var defOrigin = -1
@@ -845,7 +850,7 @@ object TACAI {
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
-                    paramDVars(0) = TACMethodParameter(-1, usedBy)
+                    paramDVars(0) = new TACMethodParameter(-1, usedBy)
                     defOrigin = -2
                 }
                 var pIndex = 1
@@ -857,7 +862,7 @@ object TACAI {
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
-                    paramDVars(pIndex) = TACMethodParameter(-pIndex - 1, usedBy)
+                    paramDVars(pIndex) = new TACMethodParameter(-pIndex - 1, usedBy)
                     defOrigin -= parameterTypes(pIndex - 1).operandSize
                     pIndex += 1
                 }
