@@ -614,6 +614,25 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             }
         }
 
+        def abstractInterpretationEnded(): AIResult { val domain: theDomain.type } = {
+
+            integrateSubroutineInformation()
+            val result =
+                AIResultBuilder.completed(
+                    code, cfJoins, liveVariables, theDomain
+                )(
+                    evaluated, operandsArray, localsArray
+                )
+            try {
+                theDomain.abstractInterpretationEnded(result)
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable         ⇒ throwInterpretationFailedException(t, instructions.length)
+            }
+            if (tracer.isDefined) tracer.get.result(result)
+            result
+        }
+
         // -------------------------------------------------------------------------------
         //
         // Main loop of the abstract interpreter
@@ -1137,15 +1156,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // one further instruction, but we may have evaluated that one
                     // already and the evaluation context didn't change).
                     if (worklist.isEmpty) {
-                        integrateSubroutineInformation()
-                        val result =
-                            AIResultBuilder.completed(
-                                code, cfJoins, liveVariables, theDomain
-                            )(
-                                evaluated, operandsArray, localsArray
-                            )
-                        if (tracer.isDefined) tracer.get.result(result)
-                        return result;
+                        return abstractInterpretationEnded();
                     }
                 }
                 // [THE DEFAULT CASE] the PC of the next instruction...
@@ -2550,21 +2561,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             }
         }
 
-        integrateSubroutineInformation()
-        val result =
-            AIResultBuilder.completed(
-                code, cfJoins, liveVariables, theDomain
-            )(
-                evaluated, operandsArray, localsArray
-            )
-        try {
-            theDomain.abstractInterpretationEnded(result)
-        } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case t: Throwable         ⇒ throwInterpretationFailedException(t, instructions.length)
-        }
-        if (tracer.isDefined) tracer.get.result(result)
-        result
+        abstractInterpretationEnded()
     }
 }
 
