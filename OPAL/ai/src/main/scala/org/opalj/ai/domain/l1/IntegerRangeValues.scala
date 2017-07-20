@@ -741,6 +741,9 @@ trait IntegerRangeValues
                             // two point ranges...
                             val result = leftLB % rightLB
                             ComputedValue(IntegerRange(result, result))
+                        } else if (rightLB == Int.MinValue) {
+                            // the following "else" relies on a divisor > Int.MinValue
+                            result(IntegerValue(origin = pc))
                         } else {
                             // From the spec:
                             // [...] the result of the remainder operation can be negative only if
