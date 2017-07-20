@@ -185,11 +185,11 @@ lazy val bi = Project(
      JavaFixtureCompiler.baseJavafixtureSettings ++
      Seq(
        unmanagedResourceDirectories ++= Seq(
-         (javafixtureProjectsDir in javafixtureDiscovery).value,
-         (javafixtureSupportDir in javafixtureDiscovery).value
+         (javaFixtureProjectsDir in javaFixtureDiscovery).value,
+         (javaFixtureSupportDir in javaFixtureDiscovery).value
        ),
        resourceGenerators += Def.task {
-           (javafixturePackage in Test).value flatMap (_.generatedFiles)
+           (javaFixturePackage in Test).value flatMap (_.generatedFiles)
        }
      )
    )

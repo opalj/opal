@@ -57,7 +57,8 @@ object FixtureCompileSpec {
   */
   case class JavaFixtureCompilationResult(
     task: JavaFixtureCompilationTask,
-    classFiles: Seq[File]
+    classFiles: Seq[File],
+    wasSkipped: Boolean
   ) {
     def generatedFiles: Seq[File] = classFiles
   }
@@ -68,7 +69,8 @@ object FixtureCompileSpec {
   */
   case class JavaFixturePackagingResult(
     compilation: JavaFixtureCompilationResult,
-    jarFile: File
+    jarFile: File,
+    wasSkipped: Boolean
   ) {
     def generatedFiles: Seq[File] = compilation.generatedFiles :+ jarFile
   }
@@ -126,16 +128,26 @@ object FixtureCompileSpec {
         s"${task.supportLibraries} -d ${task.targetFolder} -Xemacs -encoding utf8 "
       val commandLine = s"$standardConfiguration ${task.configOptions}"
 
-      IO.createDirectory(task.targetFolder)
-      val compilationResult = BatchCompiler.compile(commandLine, std, err, null);
+      val inputFiles = (task.fixture.sourceFolder ** ("*.java" || "compiler.config")).get
+      val existingOutputFiles = (task.targetFolder ** "*.class").get
 
-      log.info(s"Compiling test fixtures: $commandLine")
-      if (!compilationResult) {
-          throw new IllegalStateException("Compiling the test fixtures failed")
+      val newestOutputDate = existingOutputFiles.map(_.lastModified).foldLeft(0L)(Math.max(_,_))
+      val newestInputDate = inputFiles.map(_.lastModified).foldLeft(0L)(Math.max(_,_))
+
+      val compilationNecessary = newestOutputDate < newestInputDate;
+
+      if(compilationNecessary) {
+        IO.createDirectory(task.targetFolder)
+        val compilationResult = BatchCompiler.compile(commandLine, std, err, null);
+
+        log.info(s"Compiling test fixtures: $commandLine")
+        if (!compilationResult) {
+            throw new IllegalStateException("Compiling the test fixtures failed")
+        }
       }
 
       val classfileSeq = (task.targetFolder ** "*.class").get.toSeq
-      JavaFixtureCompilationResult(task, classfileSeq)
+      JavaFixtureCompilationResult(task, classfileSeq, ! compilationNecessary)
 
     }
 
