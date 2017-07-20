@@ -315,6 +315,16 @@ object TACAI {
                 UVar(aiResult.domain)(locals(index), defSites)
             }
 
+            def useOperands(operandsCount: Int): ConstArray[UVar[aiResult.domain.DomainValue]] = {
+                val ops = new Array[UVar[aiResult.domain.DomainValue]](operandsCount)
+                var i = 0
+                while (i < operandsCount) {
+                    ops(i) = operandUse(i)
+                    i += 1
+                }
+                ConstArray(ops)
+            }
+
             val nextPC = pcOfNextInstruction(pc)
             val instruction = instructions(pc)
             val opcode = instruction.opcode
@@ -517,7 +527,6 @@ object TACAI {
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
                     } else {
-                        // IMPROVE Encode information about the failing exception!
                         addStmt(FailingExpr(pc, lengthExpr))
                     }
 
@@ -609,7 +618,7 @@ object TACAI {
                         declClass, isInterface,
                         name, descriptor) = instruction
                     val parametersCount = descriptor.parametersCount
-                    val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
+                    val params = useOperands(parametersCount)
                     val receiver = operandUse(parametersCount) // this is the self reference
                     val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
@@ -646,7 +655,6 @@ object TACAI {
                         if (wasExecuted(nextPC)) {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
-                            // IMPROVE Encode information about the failing exception!
                             addStmt(FailingExpr(pc, expr))
                         }
                     }
@@ -654,7 +662,7 @@ object TACAI {
                 case INVOKESTATIC.opcode ⇒
                     val INVOKESTATIC(declaringClass, isInterface, name, descriptor) = instruction
                     val parametersCount = descriptor.parametersCount
-                    val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
+                    val params = useOperands(parametersCount)
                     val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
                         val staticCall =
@@ -674,7 +682,6 @@ object TACAI {
                         if (wasExecuted(nextPC)) {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
-                            // IMPROVE Encode information about the failing exception!
                             addStmt(FailingExpr(pc, expr))
                         }
                     }
@@ -682,12 +689,11 @@ object TACAI {
                 case INVOKEDYNAMIC.opcode ⇒
                     val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
                     val parametersCount = methodDescriptor.parametersCount
-                    val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
+                    val params = useOperands(parametersCount)
                     val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                     } else {
-                        // IMPROVE Encode information about the failing exception!
                         addStmt(FailingExpr(pc, expr))
                     }
 
