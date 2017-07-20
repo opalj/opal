@@ -264,10 +264,9 @@ object TACAI {
 
             // ADD AN EXPLICIT INSTRUCTION WHICH INITIALIZES THE CATCH HANDLER
             if (addExceptionHandlerInitializer) {
-                import aiResult.domain.{predecessorsOf, refIsNull, operandOrigin, isDirectRegularPredecessorOf}
+                import domain.{predecessorsOf, refIsNull, operandOrigin, isDirectRegularPredecessorOf}
                 val exception = operandsArray(pc /* the exception is already on the stack */ ).head
-                val usedBy = aiResult.domain.usedBy(pc)
-
+                val usedBy = domain.usedBy(pc)
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
                 val predecessorsOfPC = predecessorsOf(pc)
                 val defSites =

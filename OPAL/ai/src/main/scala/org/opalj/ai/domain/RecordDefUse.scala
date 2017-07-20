@@ -776,28 +776,45 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0)
 
         def checkAndScheduleNextSubroutine(): Boolean = {
-            /* We want to evaluate the subroutines only when strictly necessary;
-             * When we reach this point "nextPCs" is already empty!
-             *
-             * However, we have to ensure that all subroutines and all
-             * paths to a specific subroutine are actually evaluated before
+            // When we reach this point "nextPCs" is already empty!
+
+            /* We want to evaluate the subroutines only after evaluating all other regular
+             * paths to ensure the def-use information is "complete".
+             * Additionally, we have to ensure that all
+             * paths of a specific subroutine are actually evaluated before
              * we return.
+             *
+             * However, in case of deeply nested jsr-rets, we have to make sure that
+             * we "ret" as soon as all jumps to the subrouting have been evaluated, otherwise, we
+             * may circumvent a relevant control-flow.
+             *
+             * A concrete example (belonging to the qualitas corpus) is:
+             *  com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager{
+             *      public com.aelitis.azureus.core.dht.DHTStorageBlock keyBlockRequest(
+             *          com.aelitis.azureus.core.dht.transport.DHTTransportContact,byte[],byte[]
+             *      )
+             *  }
              */
 
-            // We have to make sure that – before we schedule the evaluation of an
-            // instruction that is the return target of a subroutine - the call
-            // of the subroutine from the respective location was already analyzed.
-            // Otherwise, the context information may be missing.
-
-            if (subroutinePCs.nonEmpty) {
-                nextPCs ++= subroutinePCs
-                subroutinePCs = Set.empty
-                //nextPCs += subroutinePCs.head;
-                //subroutinePCs = subroutinePCs.tail;
-                true
-            } else if (retPCs.nonEmpty) {
+            if (retPCs.nonEmpty) {
                 nextPCs += retPCs.head
                 retPCs = retPCs.tail
+                true
+            } else if (subroutinePCs.nonEmpty) {
+                if (subroutinePCs.size == 1) {
+                    nextPCs += subroutinePCs.head;
+                    subroutinePCs = Set.empty
+                } else {
+                    // We have to make sure that – before we schedule the evaluation of an
+                    // instruction that is the return target of a subroutine - the call
+                    // of the subroutine from the respective location was already analyzed.
+                    // Otherwise, the context information may be missing.
+                    val nextSubroutinePC = subroutinePCs.tail.foldLeft(subroutinePCs.head) { (c, n) ⇒
+                        if (aiResult.domain.postDominatorTree.strictlyDominates(c, n)) n else c
+                    }
+                    nextPCs += nextSubroutinePC
+                    subroutinePCs -= nextSubroutinePC
+                }
                 true
             } else {
                 false
@@ -807,10 +824,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         while (nextPCs.nonEmpty || checkAndScheduleNextSubroutine()) {
             val currPC = nextPCs.head
             nextPCs.remove(currPC)
-            // println(s"ANALYZING: $currPC; remaining: ${nextPCs.mkString(",")};"+
-            //            s"subroutines: ${subroutinePCs.mkString(",")}")
-            // println(defLocals(currPC).zipWithIndex.map(_.swap).
-            //            mkString("LOCALS:\n\t", "\n\t", "\n"))
+            /*
+            println(
+                s"ANALYZING: $currPC; remaining: ${nextPCs.mkString(",")}; "+
+                    s"subroutines: ${subroutinePCs.mkString(",")}; "+
+                    s"ret pcs: ${retPCs.mkString(",")}"
+            )
+            */
+            // println(defLocals(currPC).zipWithIndex.map(_.swap).mkString("LOCALS:\n\t", "\n\t", "\n"))
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
@@ -822,24 +843,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     )
                 } catch {
                     case e: Throwable ⇒
-                        var message = "failed calculating def-use information for: "
-                        if (defUseDomain.isInstanceOf[TheMethod]) {
-                            val method = defUseDomain.asInstanceOf[TheMethod].method
-                            if (defUseDomain.isInstanceOf[TheProject]) {
-                                val project = defUseDomain.asInstanceOf[TheProject].project
-                                message += method.toJava(project.classFile(method))+"\n"
-                            } else {
-                                message += method.toJava()+"\n"
-                            }
-                        } else {
-                            message += "<Unknown (the domain does not reference the method)>\n"
-                        }
-                        message += ("\tCurrent PC: "+currPC+"; SuccessorPC: "+succPC)+"\n"
-                        message += ("\tStack: "+defOps(currPC))+"\n"
+                        val method = analyzedEntity(aiResult.domain)
+                        var message = s"def-use computation failed for: $method\n"
+                        message += s"\tCurrent PC: $currPC; SuccessorPC: $succPC\n"
+                        message += s"\tStack: ${defOps(currPC)}\n"
                         val localsDump =
-                            defLocals(currPC).
-                                zipWithIndex.
-                                map { e ⇒ val (local, index) = e; s"$index: $local" }
+                            defLocals(currPC).zipWithIndex.map { e ⇒
+                                val (local, index) = e; s"$index: $local"
+                            }
                         message += localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n")
                         val bout = new ByteArrayOutputStream()
                         val pout = new PrintStream(bout)
@@ -858,8 +869,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         throw AnalysisException(message, e);
                 }
 
-                // assert(defLocals(succPC) ne null)
-                // assert(defOps(succPC) ne null)
+                assert(defLocals(succPC) ne null)
+                assert(defOps(succPC) ne null)
 
                 if (scheduleNextPC) {
                     instructions(currPC).opcode match {
@@ -867,9 +878,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             // first let's collect all subroutinePCs to make sure that we evaluate
                             // the subroutines only once
                             subroutinePCs += succPC
-                        case RET.opcode ⇒
-                            retPCs += succPC
-                        case _ ⇒ nextPCs += succPC
+                        case RET.opcode ⇒ retPCs += succPC
+                        case _          ⇒ nextPCs += succPC
                     }
                 }
             }
