@@ -1,15 +1,13 @@
-# Java fixture compiler plugins
+# Java Fixtures Compiler - SBT Plug-in
 
-This document gives information about
+This sbt plug-in compiles the Java projects that are used as test fixtures when testing/developing OPAL.
 
- - what this plugin does in the context of OPAL
- - how to configure it
+## Background
 
-## What it does in OPAL
+OPAL is a Java Bytecode library/static analysis framework and therefore – for testing purposes – requires stable Java class files with very specific properties. I.e., when the class files are (re-)compiled the generated files should be identical to the very last byte. By compiling specific Java test projects – in the following referred to as test fixtures; or just fixtures – using a well-defined, hard coded Java compiler the required property can be guaranteed.   
+Further documentation can be found in the project markdown file `OPAL/bi/src/test/fixtures-java/Readme.md`
 
-OPAL is a library that (i.a.) aims to expose to the user the most intricate details of Java bytecode. For testing as a part of the OPAL build process, reference frames of Java code and corresponding byte code (class files) are needed. Such reference frames are called "fixtures" in the following. The JVM byte code can be automatically compiled from the source before the testing. The corresponding documentation can be found in the project markdown file `OPAL/bi/src/test/fixtures-java/Readme.md`
-
-To be able to rely on this byte code being the same thing for every build session, the fixtures need to be compiled with one and the same compiler version. OPAL uses the Eclipse JDT compiler which is hardcoded in this plugin as a dependency. The plugin takes this compiler, and offers an SBT task to discover and compile the java fixtures based on the plugin's configuration
+To compile the fixtures OPAL uses the Eclipse JDT compiler which is hardcoded in this plugin as a dependency. The plugin takes this compiler, and offers an SBT task to discover and compile the Java fixtures based on the plugin's configuration
 
 ## Configuration of the plugin
 
