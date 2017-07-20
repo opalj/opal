@@ -15,18 +15,18 @@ import org.opalj.javacompilation.FixtureCompileSpec._
  *
  *
  *  Core tasks/keys:
- *  - `javafixtureCompile` (compile a )
- *  - `javafixturePackage` (compile with JAR packaging)
- *  - `javafixtureDiscovery` (discover fixture compilation tasks)
+ *  - `javaFixtureCompile` (compile a )
+ *  - `javaFixturePackage` (compile with JAR packaging)
+ *  - `javaFixtureDiscovery` (discover fixture compilation tasks)
  *
- * === Input for javafixtureCompile
- *  - `javafixtureTaskDefs` - a sequence of manually-specified tasks
+ * === Input for javaFixtureCompile
+ *  - `javaFixtureTaskDefs` - a sequence of manually-specified tasks
                                 - see: class JavaFixtureCompilationTask in FixtureCompileSpec.scala
  *
- * === Input for javafixtureDiscovery
- *  - javafixtureProjectsDir - the folder for discovery where each subfolder is a potential java fixture project
- *  - javafixtureSupportDir - folder containing .jar support libraries
- *  - javafixtureTargetDir - target folder for compilation and packaging
+ * === Input for javaFixtureDiscovery
+ *  - javaFixtureProjectsDir - the folder for discovery where each subfolder is a potential java fixture project
+ *  - javaFixtureSupportDir - folder containing .jar support libraries
+ *  - javaFixtureTargetDir - target folder for compilation and packaging
  */
 object JavaFixtureCompiler extends AutoPlugin {
 
@@ -34,45 +34,45 @@ object JavaFixtureCompiler extends AutoPlugin {
 
   object autoImport {
     // tasks of the plugin
-    val javafixtureCompile = taskKey[Seq[JavaFixtureCompilationResult]]("Compilation of java fixture projects against Eclipse JDT compiler specified statically in the plugin's dependencies")
-    val javafixturePackage = taskKey[Seq[JavaFixturePackagingResult]]("Compilation and packaging of java fixture projects against Eclipse JDT compiler specified statically in the plugin's dependencies")
-    val javafixtureDiscovery = taskKey[Seq[JavaFixtureCompilationTask]]("Discovery of java compilation tasks")
+    val javaFixtureCompile = taskKey[Seq[JavaFixtureCompilationResult]]("Compilation of java fixture projects against Eclipse JDT compiler specified statically in the plugin's dependencies")
+    val javaFixturePackage = taskKey[Seq[JavaFixturePackagingResult]]("Compilation and packaging of java fixture projects against Eclipse JDT compiler specified statically in the plugin's dependencies")
+    val javaFixtureDiscovery = taskKey[Seq[JavaFixtureCompilationTask]]("Discovery of java compilation tasks")
 
     // will be scoped to the compilation task.
-    val javafixtureTaskDefs = settingKey[Seq[JavaFixtureCompilationTask]]("Java fixture compilation task definitions for the plugin")
+    val javaFixtureTaskDefs = settingKey[Seq[JavaFixtureCompilationTask]]("Java fixture compilation task definitions for the plugin")
 
     // will be scoped to the discovery task
-    val javafixtureProjectsDir = settingKey[File]("Folder containing java project folders to be discovered by the plugin")
-    val javafixtureSupportDir = settingKey[File]("Folder containing support libraries for use of discovered tasks of the plugin")
-    val javafixtureTargetDir = settingKey[File]("Folder in which subfolders and JAR files for the output of discovered tasks of the plugin will be created")
+    val javaFixtureProjectsDir = settingKey[File]("Folder containing java project folders to be discovered by the plugin")
+    val javaFixtureSupportDir = settingKey[File]("Folder containing support libraries for use of discovered tasks of the plugin")
+    val javaFixtureTargetDir = settingKey[File]("Folder in which subfolders and JAR files for the output of discovered tasks of the plugin will be created")
   }
 
   import autoImport._
 
 
   lazy val baseJavafixtureSettings: Seq[Def.Setting[_]] = Seq(
-    javafixtureProjectsDir in javafixtureDiscovery := sourceDirectory.value / "fixtures-java" / "projects",
-    javafixtureSupportDir in javafixtureDiscovery := sourceDirectory.value / "fixtures-java" / "support",
-    javafixtureTargetDir in javafixtureDiscovery := resourceManaged.value,
+    javaFixtureProjectsDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "projects",
+    javaFixtureSupportDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "support",
+    javaFixtureTargetDir in javaFixtureDiscovery := resourceManaged.value,
 
-    javafixtureTaskDefs in javafixtureCompile := Seq(), // default: no manually defined tasks
+    javaFixtureTaskDefs in javaFixtureCompile := Seq(), // default: no manually defined tasks
 
-    javafixtureCompile := {
+    javaFixtureCompile := {
       Javacompilation.compileRunner(
-        javafixtureDiscovery.value ++ (javafixtureTaskDefs in javafixtureCompile).value,
+        javaFixtureDiscovery.value ++ (javaFixtureTaskDefs in javaFixtureCompile).value,
         streams.value
       )
     },
 
-    javafixturePackage := {
-      Javacompilation.packageRunner(javafixtureCompile.value)
+    javaFixturePackage := {
+      Javacompilation.packageRunner(javaFixtureCompile.value, streams.value)
     },
 
-    javafixtureDiscovery := {
+    javaFixtureDiscovery := {
       Javacompilation.discoveryRunner(
-        (javafixtureProjectsDir in javafixtureDiscovery).value,
-        (javafixtureSupportDir in javafixtureDiscovery).value,
-        (javafixtureTargetDir in javafixtureDiscovery).value,
+        (javaFixtureProjectsDir in javaFixtureDiscovery).value,
+        (javaFixtureSupportDir in javaFixtureDiscovery).value,
+        (javaFixtureTargetDir in javaFixtureDiscovery).value,
         streams.value
       )
     }
@@ -115,50 +115,79 @@ object JavaFixtureCompiler extends AutoPlugin {
       val std = new PrintWriter(new LogWriter((s: String) ⇒ log.info(s)))
       val err = new PrintWriter(new LogWriter((s: String) ⇒ log.error(s)))
 
-      val results = for(
+      val results = (for(
         fixtureTask <- tasks.par
       ) yield {
         fixtureTask.compiler.compile(fixtureTask, std, err, log)
+      }).seq
+
+      val (skipped, notSkipped) = results.toSeq.partition(_.wasSkipped)
+      if(results.isEmpty) {
+        streams.log.debug("No java fixtures found for compiling.")
+      } else if(notSkipped.isEmpty) {
+        streams.log.debug("All java fixtures were already found to be compiled.")
+      } else {
+        streams.log.info(s"${notSkipped.size}/${results.size} java fixtures have been compiled, the rest was already found to be compiled.");
       }
 
-      results.seq
+      results
     }
 
     /**
     * Packages a sequence of compilation results as individual JAR files in the
     * target folder of the compilation (where the .class files are).
     */
-    def packageRunner(compilationResults: Seq[JavaFixtureCompilationResult]): Seq[JavaFixturePackagingResult] = {
-      val results = for(
-        compilationResult <- compilationResults
+    def packageRunner(
+      compilationResults: Seq[JavaFixtureCompilationResult],
+      streams: TaskStreams
+    ): Seq[JavaFixturePackagingResult] = {
+      val results = (for(
+        compilationResult <- compilationResults.par
       ) yield {
-        packageRoutine(compilationResult, new File(compilationResult.task.targetFolder+".jar"))
+        packageRoutine(compilationResult, new File(compilationResult.task.targetFolder+".jar"), streams)
+      }).seq
+
+      val (skipped, notSkipped) = results.toSeq.partition(_.wasSkipped)
+      if(results.isEmpty) {
+        streams.log.debug("No java fixtures found for packaging.")
+      } else if(notSkipped.isEmpty) {
+        streams.log.debug("All java fixtures were already found to be packaged.")
+      } else {
+        streams.log.info(s"${notSkipped.size}/${results.size} java fixtures have been packaged, the rest was already found to be packaged.");
       }
 
-      results.toSeq
+      results
     }
 
     /**
     * Packages the result of the compilation of a java fixture. The resulting .jar
     * file will reside in the target folder of the compilation.
     */
-    def packageRoutine(compilationResult: JavaFixtureCompilationResult, targetJar: File): JavaFixturePackagingResult = {
-      val targetFolderLength = compilationResult.task.targetFolder.toString.length + 1
-      val classFiles: Traversable[(File, String)] =
-          (compilationResult.task.targetFolder ** "*.class").get map { classFile ⇒
-              ((classFile, classFile.toString.substring(targetFolderLength)))
-          }
+    def packageRoutine(
+      compilationResult: JavaFixtureCompilationResult,
+      targetJar: File,
+      streams: TaskStreams
+    ): JavaFixturePackagingResult = {
+      val inputFiles = (compilationResult.task.fixture.sourceFolder ** ("*.java" || "compiler.config")).get
 
-      IO.zip(classFiles, targetJar)
+      val newestOutputDate = if (targetJar.exists) targetJar.lastModified else 0L
+      val newestInputDate = inputFiles.map(_.lastModified).foldLeft(0L)(Math.max(_,_))
+      val packagingNecessary = newestOutputDate < newestInputDate;
 
-      JavaFixturePackagingResult(compilationResult, targetJar)
+      if(packagingNecessary) {
+        val targetFolderLength = compilationResult.task.targetFolder.toString.length + 1
+        val classFiles: Traversable[(File, String)] =
+            (compilationResult.task.targetFolder ** "*.class").get map { classFile ⇒
+                ((classFile, classFile.toString.substring(targetFolderLength)))
+            }
+
+        streams.log.info(s"Packaging test fixture into ${targetJar.getPath}")
+        IO.zip(classFiles, targetJar)
+      }
+
+      JavaFixturePackagingResult(compilationResult, targetJar, !packagingNecessary)
     }
 
   }
-
-
-
-
-
 
 }
