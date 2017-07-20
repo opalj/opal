@@ -462,10 +462,13 @@ final class Code private (
      * instructions without predecessors. Those instructions with multiple predecessors
      * are also returned.
      *
-     * @return  An array which contains for each instruction the set of all predecessors as well
-     *          as the set of all instructions which have only predecessors; i.e., no successors
-     *          and also the set of all instructions where multiple paths join.
+     * @return  (1) An array which contains for each instruction the set of all predecessors,
+     *          (2) the set of all instructions which have only predecessors; i.e., no successors
+     *          and (3) also the set of all instructions where multiple paths join.
      *          `(Array[PCs]/*PREDECESSOR_PCs*/, PCs/*FINAL_PCs*/, BitSet/*CF_JOINS*/)`
+     *          Note, that in case of completely broken code, set 2 may contain other
+     *          instructions than `return` and `athrow` instructions.
+     *          If the code contains jsr/ret instructions the full blown CFG is computed.
      */
     def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, BitSet) = {
         val instructions = this.instructions
@@ -497,14 +500,23 @@ final class Code private (
                 exitPCs += pc
             } else {
                 nextPCs foreach { nextPC ⇒
-                    // compute cfJoins
-                    runtimeSuccessor(nextPC)
-                    // compute predecessors
-                    val predecessorPCs = allPredecessorPCs(nextPC)
-                    if (predecessorPCs eq null) {
-                        allPredecessorPCs(nextPC) = new IntSet1(pc)
+                    if (nextPC < instructionsLength) {
+                        // compute cfJoins
+                        runtimeSuccessor(nextPC)
+                        // compute predecessors
+                        val predecessorPCs = allPredecessorPCs(nextPC)
+                        if (predecessorPCs eq null) {
+                            allPredecessorPCs(nextPC) = new IntSet1(pc)
+                        } else {
+                            allPredecessorPCs(nextPC) = predecessorPCs + pc
+                        }
                     } else {
-                        allPredecessorPCs(nextPC) = predecessorPCs + pc
+                        // this handles cases where we have totally broken code; e.g.,
+                        // compile-time dead code at the end of the method where the
+                        // very last instruction is not even a ret/jsr/goto/return/atrow
+                        // instruction (e.g., a NOP instruction as in case of the jPython
+                        // related classe.)
+                        exitPCs += pc
                     }
                 }
             }

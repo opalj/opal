@@ -261,7 +261,6 @@ object TACAI {
             if (addExceptionHandlerInitializer) {
                 val exception = operandsArray(pc /* the exception is already on the stack */ ).head
                 val usedBy = domain.usedBy(pc)
-                println("pc -> "+domain.operandOrigin(pc, 0).mkString(", "))
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
                 val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType)
                 if (usedBy ne null) {
