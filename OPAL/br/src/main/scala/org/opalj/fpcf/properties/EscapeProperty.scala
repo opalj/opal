@@ -30,11 +30,11 @@ package org.opalj
 package fpcf
 package properties
 
-sealed trait EscapePropertyMetaInforation extends PropertyMetaInformation {
+sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
     final type Self = EscapeProperty
 }
 
-sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInforation {
+sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInformation {
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 }
 
@@ -103,7 +103,7 @@ sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInf
  *
  * @author Florian Kuebler
  */
-object EscapeProperty extends EscapePropertyMetaInforation {
+object EscapeProperty extends EscapePropertyMetaInformation {
     final val key: PropertyKey[EscapeProperty] = PropertyKey.create(
         // Name of the property
         "EscapeProperty",
@@ -290,7 +290,7 @@ case object ConditionallyMethodEscape extends EscapeProperty {
  * field of a heap object.''
  *
  * This property should be used if and only if the analysis is conclusive and could determine
- * that the value definitively escapes globaly.
+ * that the value definitively escapes globally.
  * If a more advanced analysis – potentially run later – could identify an object
  * as only [[MethodEscape]], [[ArgEscape]] or even [[NoEscape]] then the refineable property
  * [[MaybeEscape]] should be used.
