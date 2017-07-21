@@ -142,7 +142,7 @@ public class Test {
 
     public int castEscape(Object param) {
         if (param == null) {
-            param = new @EscapeProperty(EscapeKeys.GlobalEscape)ClassWithFields();
+            param = new @EscapeProperty(EscapeKeys.NoEscape) ClassWithFields();
         }
         if (!(param instanceof ClassWithFields))
             throw new IllegalArgumentException("Unsupported type!");
@@ -153,5 +153,10 @@ public class Test {
             return -1;
         }
         return 1;
+    }
+
+    public static synchronized void noEscapeStaticFieldWrite() {
+        ClassWithFields.global = new @EscapeProperty(EscapeKeys.NoEscape) Object();
+        ClassWithFields.global = null;
     }
 }
