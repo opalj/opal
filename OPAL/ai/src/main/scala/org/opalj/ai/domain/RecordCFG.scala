@@ -82,7 +82,7 @@ trait RecordCFG
         extends CoreDomainFunctionality
         with CustomInitialization
         with ai.ReturnInstructionsDomain {
-    domain: ValuesDomain with TheCode ⇒
+    cfgDomain: ValuesDomain with TheCode ⇒
 
     private[this] var regularSuccessors: Array[IntSet] = _ // the IntSets are either null or non-empty
     private[this] var exceptionHandlerSuccessors: Array[IntSet] = _ // the IntSets are either null or non-empty
@@ -507,8 +507,8 @@ trait RecordCFG
                 }
 
                 val nextInstructionPC = code.pcOfNextInstruction(pc)
-                val theRegularSuccessors = regularSuccessorsOf(pc)
-                if (theRegularSuccessors.isEmpty) {
+                val theRegularSuccessors = regularSuccessors(pc)
+                if (theRegularSuccessors eq null) {
                     endRunningBB = true
                 } else {
                     // ... also handles the case where the last instruction is, e.g., a goto
@@ -583,9 +583,9 @@ trait RecordCFG
 
         val successors =
             if (isExceptionalControlFlow)
-                domain.exceptionHandlerSuccessors
+                cfgDomain.exceptionHandlerSuccessors
             else
-                domain.regularSuccessors
+                cfgDomain.regularSuccessors
 
         val successorsOfPC = successors(currentPC)
         if (successorsOfPC eq null)
@@ -699,6 +699,15 @@ trait RecordCFG
         super.abruptMethodExecution(pc, exceptionValue)
     }
 
+    abstract override def abstractInterpretationEnded(
+        aiResult: AIResult { val domain: cfgDomain.type }
+    ): Unit = {
+        super.abstractInterpretationEnded(aiResult)
+
+        assert(exceptionHandlerSuccessors.forall(s ⇒ (s eq null) || s.nonEmpty))
+        assert(regularSuccessors.forall(s ⇒ (s eq null) || s.nonEmpty))
+    }
+
     // GENERAL HELPER METHODS
 
     /**
@@ -757,7 +766,7 @@ trait RecordCFG
                 def pcsToString(pcs: List[PC]): String = {
                     def pcToString(pc: PC): String = {
                         val ln = code.lineNumber(pc).map(ln ⇒ s"[ln=$ln]").getOrElse("")
-                        pc + ln+": "+domain.code.instructions(pc).toString(pc)
+                        pc + ln+": "+cfgDomain.code.instructions(pc).toString(pc)
                     }
                     pcs.map(pcToString).mkString("", "\\l\\l", "\\l")
                 }
