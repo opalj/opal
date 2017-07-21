@@ -35,7 +35,7 @@ sealed trait EscapePropertyMetaInforation extends PropertyMetaInformation {
 }
 
 sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInforation {
-    final def key = EscapeProperty.key
+    final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 }
 
 /**
