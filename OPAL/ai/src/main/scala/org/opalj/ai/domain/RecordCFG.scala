@@ -84,8 +84,8 @@ trait RecordCFG
         with ai.ReturnInstructionsDomain {
     domain: ValuesDomain with TheCode ⇒
 
-    private[this] var regularSuccessors: Array[IntSet] = _
-    private[this] var exceptionHandlerSuccessors: Array[IntSet] = _
+    private[this] var regularSuccessors: Array[IntSet] = _ // the IntSets are either null or non-empty
+    private[this] var exceptionHandlerSuccessors: Array[IntSet] = _ // the IntSets are either null or non-empty
     private[this] var predecessors: Array[IntSet] = _
     private[this] var exitPCs: mutable.BitSet = _
     private[this] var subroutineStartPCs: IntSet = _
@@ -289,6 +289,22 @@ trait RecordCFG
                 }
         }
         false
+    }
+
+    /**
+     * Returns `true` if the execution of the given instruction – identified by its pc –
+     * ex-/implicitly throws an exception that is (potentially) handled by the method.
+     */
+    def throwsException(pc: PC): Boolean = {
+        exceptionHandlerSuccessors(pc) ne null
+    }
+
+    /**
+     * Returns `true` if the execution of the given instruction – identified by its pc –
+     * '''always just''' throws an exception that is (potentially) handled by the method.
+     */
+    def justThrowsException(pc: PC): Boolean = {
+        (exceptionHandlerSuccessors(pc) ne null) && (regularSuccessors(pc) eq null)
     }
 
     /**
