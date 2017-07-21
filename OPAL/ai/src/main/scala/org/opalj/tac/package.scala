@@ -139,41 +139,4 @@ package object tac {
         }
     }
 
-    /**
-     * Updates the exception handlers by adjusting the start, end and handler index (pc).
-     *
-     * This method can only be used in simple cases where the order of instructions remains
-     * the same and the start and end still map to valid exception handlers -
-     * deleting/adding instructions is supported.
-     *
-     * @note You should use `updateExceptionHandlers(AIResult,Array[Int])` whenever possible
-     *       since that method performs additional checks!
-     *
-     * @param exceptionHandlers The code's exception handlers.
-     * @param newIndexes A map that contains for each previous index the new index
-     *                   that should be used.
-     * @return The new exception handler.
-     */
-    def updateExceptionHandlers(
-        exceptionHandlers: ExceptionHandlers,
-        newIndexes:        Array[Int]
-    ): ExceptionHandlers = {
-        exceptionHandlers map { old ⇒
-            // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
-            // included in the handler block, the endPC is equal to `(pc of last instruction) +
-            // instruction.size`; however, this is already handled by the caller!
-            val (newStartPC, newEndPC) = getStartAndEndPC(old, newIndexes)
-
-            val newEH = old.copy(
-                startPC = newStartPC,
-                endPC = newEndPC,
-                handlerPC = newIndexes(old.handlerPC)
-            )
-            assert(
-                newEH.startPC <= newEH.endPC,
-                s"startPC=${old.startPC} => ${newEH.startPC};endPC=${old.endPC} => ${newEH.endPC}"
-            )
-            newEH
-        }
-    }
 }
