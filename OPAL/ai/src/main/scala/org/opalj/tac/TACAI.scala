@@ -748,12 +748,18 @@ object TACAI {
                 case GETSTATIC.opcode ⇒
                     val GETSTATIC(declaringClass, name, fieldType) = instruction
                     val getStatic = GetStatic(pc, declaringClass, name, fieldType)
+                    // Given that we currently *not* model load-time exception/handling of
+                    // corrupt/incompatible code bases, GETSTATIC will not throw an exception.
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, getStatic)
 
                 case GETFIELD.opcode ⇒
                     val GETFIELD(declaringClass, name, fieldType) = instruction
                     val getField = GetField(pc, declaringClass, name, fieldType, operandUse(0))
-                    addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
+                    if (wasExecuted(nextPC)) {
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
+                    } else { // ... here: NullPointerException
+                        addStmt(FailingExpr(pc, getField))
+                    }
 
                 case NEW.opcode ⇒
                     val NEW(objectType) = instruction
@@ -770,7 +776,11 @@ object TACAI {
                     val MULTIANEWARRAY(arrayType, dimensions) = instruction
                     val counts = (0 until dimensions).map(d ⇒ operandUse(d))(Seq.canBuildFrom)
                     val newArray = NewArray(pc, counts, arrayType)
-                    addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
+                    if (wasExecuted(nextPC)) {
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
+                    } else { // ... here: NegativeIndex...
+                        addStmt(FailingExpr(pc, newArray))
+                    }
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
                     val GotoInstruction(branchoffset) = instruction
