@@ -96,7 +96,12 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                             e.getCause.printStackTrace(Console.out)
                         }
                         val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
-                        println(instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n"))
+                        println(
+                            instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
+                        )
+                        println(
+                            body.exceptionHandlers.mkString("Exception Handlers:\n\t","\n\t","\n")
+                        )
                         errors ::= ((file+":"+methodSignature, e))
                     }
                 }
