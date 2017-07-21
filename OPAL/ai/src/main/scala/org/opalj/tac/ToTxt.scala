@@ -306,18 +306,19 @@ object ToTxt {
 
             if (bb.endPC == index && bb.successors.exists(!_.isBasicBlock)) {
                 val successors =
-                    bb.successors.map {
+                    bb.successors.collect {
                         case cn: CatchNode ⇒
                             s"⚡️ ${catchTypeToString(cn.catchType)} → ${cn.handlerPC}"
                         case ExitNode(false) ⇒
-                            "⚠️ - potentially uncaught exception/abnormal return"
+                            "⚡️ <uncaught exception ⇒ abnormal return>"
+                    }
 
-                        case _ ⇒ null
-                    }.filterNot(_ == null)
-
+                var head = (" " * (if (indented) 6 else 0))+"// "
+                if (stmts(index).astID != Throw.ASTID && bb.successors.forall(!_.isBasicBlock))
+                    head += "⚠️ ALWAYS THROWS EXCEPTION – "
                 if (successors.nonEmpty)
                     javaLikeCode +=
-                        successors.mkString((" " * (if (indented) 6 else 0))+"// ", ", ", "")
+                        successors.mkString(head, ", ", "")
             }
 
             index += 1
