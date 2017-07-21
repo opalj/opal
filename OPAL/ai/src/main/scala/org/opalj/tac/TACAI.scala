@@ -926,7 +926,7 @@ object TACAI {
             if (addedHandlerStmts.contains(index)) index + 1 else index
         }
         val taCodeCFG = cfg.mapPCsToIndexes(pcToIndex, singletonBBsExpander, lastIndex = index - 1)
-        val taExceptionHanders = updateExceptionHandlers(aiResult, pcToIndex)
+        val taExceptionHanders = updateExceptionHandlers(pcToIndex)(aiResult)
         val lnt = code.lineNumberTable
         val taCode = TACode(tacParams, tacStmts, taCodeCFG, taExceptionHanders, lnt)
 
