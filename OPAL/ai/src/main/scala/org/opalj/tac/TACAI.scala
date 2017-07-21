@@ -30,9 +30,8 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
-
 import scala.collection.mutable.Queue
-
+import org.opalj.collection.immutable.IntSetBuilder
 import org.opalj.collection.immutable.IntSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
@@ -46,7 +45,7 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.immutable.IntSetBuilder
+import org.opalj.collection.immutable.ConstArray
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -143,6 +142,8 @@ object TACAI {
         import RelationalOperators._
         import UnaryArithmeticOperators._
 
+        val isStatic = method.isStatic
+        val descriptor = method.descriptor
         val code = method.body.get
         import code.pcOfNextInstruction
         val instructions: Array[Instruction] = code.instructions
@@ -176,20 +177,24 @@ object TACAI {
         // the variable which stores the exception (`CaughtException`, would otherwise "use" itself.
         val pcToIndex = new Array[Int](codeSize + 1 /* +1 if the try includes the last inst. */ )
 
-        // A function to map an ai based value origin (vo) of a parameter to a tac origin.
+        val simpleRemapping = !descriptor.hasComputationalTypeCategory2ValueInInit
+        // A function to map an ai based value origin (vo) of a __parameter__ to a tac origin.
         // To get the target value the ai based vo has to be negated and we have to add -1.
         // E.g., if the ai-based vo is -1 then the index which needs to be used is -(-1)-1 ==> 0
         // which will contain (for -1 only) the value -1.
         val normalizeParameterOrigins: IntSet ⇒ IntSet = {
-            val isStatic = method.isStatic
-            val descriptor = method.descriptor
-            val simpleRemapping = !descriptor.hasComputationalTypeCategory2ValueInInit
             if (!isStatic && simpleRemapping) {
                 // => no remapping is necessary
                 (aiVOs: IntSet) ⇒ aiVOs
             } else if (isStatic && simpleRemapping) {
                 // => we have to subtract -1 from origins related to parameters
-                (aiVOs: IntSet) ⇒ { aiVOs.map { aiVO ⇒ if (aiVO < 0) aiVO - 1 else aiVO } }
+                (aiVOs: IntSet) ⇒
+                    {
+                        aiVOs.map { aiVO ⇒
+                            assert(!ai.isVMLevelValue(aiVO))
+                            if (aiVO < 0) aiVO - 1 else aiVO
+                        }
+                    }
             } else {
                 // => we create an array which contains the mapping information
                 val aiVOToTACVo: Array[Int] = normalizeParameterOriginsMap(descriptor, isStatic)
@@ -259,10 +264,41 @@ object TACAI {
 
             // ADD AN EXPLICIT INSTRUCTION WHICH INITIALIZES THE CATCH HANDLER
             if (addExceptionHandlerInitializer) {
+                import domain.{predecessorsOf, refIsNull, operandOrigin, isDirectRegularPredecessorOf}
                 val exception = operandsArray(pc /* the exception is already on the stack */ ).head
                 val usedBy = domain.usedBy(pc)
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
-                val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType)
+                val predecessorsOfPC = predecessorsOf(pc)
+                val defSites =
+                    predecessorsOfPC.foldLeft(IntSet.empty) { (adaptedDefSites, exceptionSite) ⇒
+                        if (instructions(exceptionSite).opcode == ATHROW.opcode) {
+                            // We have to determine if the caught exception is actually the
+                            // thrown exception....
+                            // FIXME XXXX TODO
+                            val thrownValue = operandsArray(exceptionSite).head
+                            val exceptionIsNull = refIsNull(exceptionSite, thrownValue)
+                            var newDefSites = adaptedDefSites
+                            if (exceptionIsNull.isYesOrUnknown)
+                                newDefSites += ai.ValueOriginForVMLevelValue(exceptionSite)
+                            if (exceptionIsNull.isNoOrUnknown) {
+                                val exceptionOrigin = operandOrigin(exceptionSite, 0)
+                                newDefSites ++= normalizeParameterOrigins(exceptionOrigin)
+                            }
+                            newDefSites
+                        } else {
+                            adaptedDefSites + (
+                                if (isDirectRegularPredecessorOf(exceptionSite, pc)) {
+                                    // actually... this will never happen for "regular" code...
+                                    exceptionSite
+                                } else {
+                                    // The predecessor instruction was not an athrow instruction;
+                                    // hence, the exception was caused implicitly...
+                                    ai.ValueOriginForVMLevelValue(exceptionSite)
+                                }
+                            )
+                        }
+                    }
+                val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType, defSites)
                 if (usedBy ne null) {
                     assert(usedBy.forall(_ >= 0))
                     val localVal = DVar(aiResult.domain)(pc, exception, usedBy)
@@ -312,6 +348,16 @@ object TACAI {
                 // get the definition site; recall: negative pcs refer to parameters
                 val defSites = normalizeParameterOrigins(domain.localOrigin(pc, index))
                 UVar(aiResult.domain)(locals(index), defSites)
+            }
+
+            def useOperands(operandsCount: Int): ConstArray[UVar[aiResult.domain.DomainValue]] = {
+                val ops = new Array[UVar[aiResult.domain.DomainValue]](operandsCount)
+                var i = 0
+                while (i < operandsCount) {
+                    ops(i) = operandUse(i)
+                    i += 1
+                }
+                ConstArray(ops)
             }
 
             val nextPC = pcOfNextInstruction(pc)
@@ -516,7 +562,6 @@ object TACAI {
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
                     } else {
-                        // IMPROVE Encode information about the failing exception!
                         addStmt(FailingExpr(pc, lengthExpr))
                     }
 
@@ -538,11 +583,11 @@ object TACAI {
                     IFLT.opcode | IFLE.opcode |
                     IFGT.opcode | IFGE.opcode ⇒
                     val IF0Instruction(condition, branchoffset) = instruction
-                    ifXXX(condition, branchoffset, IntConst(ai.ValueOriginForVMLevelValue(pc), 0))
+                    ifXXX(condition, branchoffset, IntConst(ai.ConstantValueOrigin, 0))
 
                 case IFNONNULL.opcode | IFNULL.opcode ⇒
                     val IFXNullInstruction(condition, branchoffset) = instruction
-                    ifXXX(condition, branchoffset, NullExpr(ai.ValueOriginForVMLevelValue(pc)))
+                    ifXXX(condition, branchoffset, NullExpr(ai.ConstantValueOrigin))
 
                 case DCMPG.opcode | FCMPG.opcode ⇒ compareValues(CMPG)
                 case DCMPL.opcode | FCMPL.opcode ⇒ compareValues(CMPL)
@@ -608,7 +653,7 @@ object TACAI {
                         declClass, isInterface,
                         name, descriptor) = instruction
                     val parametersCount = descriptor.parametersCount
-                    val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
+                    val params = useOperands(parametersCount)
                     val receiver = operandUse(parametersCount) // this is the self reference
                     val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
@@ -645,7 +690,6 @@ object TACAI {
                         if (wasExecuted(nextPC)) {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
-                            // IMPROVE Encode information about the failing exception!
                             addStmt(FailingExpr(pc, expr))
                         }
                     }
@@ -653,7 +697,7 @@ object TACAI {
                 case INVOKESTATIC.opcode ⇒
                     val INVOKESTATIC(declaringClass, isInterface, name, descriptor) = instruction
                     val parametersCount = descriptor.parametersCount
-                    val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
+                    val params = useOperands(parametersCount)
                     val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
                         val staticCall =
@@ -673,7 +717,6 @@ object TACAI {
                         if (wasExecuted(nextPC)) {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
-                            // IMPROVE Encode information about the failing exception!
                             addStmt(FailingExpr(pc, expr))
                         }
                     }
@@ -681,12 +724,11 @@ object TACAI {
                 case INVOKEDYNAMIC.opcode ⇒
                     val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
                     val parametersCount = methodDescriptor.parametersCount
-                    val params = (0 until parametersCount).map(i ⇒ operandUse(i))(Seq.canBuildFrom)
+                    val params = useOperands(parametersCount)
                     val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                     } else {
-                        // IMPROVE Encode information about the failing exception!
                         addStmt(FailingExpr(pc, expr))
                     }
 
@@ -815,19 +857,18 @@ object TACAI {
 
         obsoleteUseSites foreach { useSite ⇒
             val /*original - bytecode based...:*/ (pc, defSites) = useSite
-            println(pc+" ==> "+defSites.mkString(", "))
+            println("useSite:"+pc+" ==> "+defSites.mkString(", "))
             //defSites foreach { defSite ⇒
             //
             //}
         }
 
         val tacParams: Parameters[TACMethodParameter] = {
-            import method.descriptor
             import descriptor.parameterTypes
-            if (method.descriptor.parametersCount == 0 && method.isStatic)
+            if (descriptor.parametersCount == 0 && isStatic)
                 NoParameters.asInstanceOf[Parameters[TACMethodParameter]]
             else {
-                val paramCount = method.descriptor.parametersCount + 1
+                val paramCount = descriptor.parametersCount + 1
                 val paramDVars = new Array[TACMethodParameter](paramCount)
 
                 var defOrigin = -1
@@ -838,7 +879,7 @@ object TACAI {
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
-                    paramDVars(0) = TACMethodParameter(-1, usedBy)
+                    paramDVars(0) = new TACMethodParameter(-1, usedBy)
                     defOrigin = -2
                 }
                 var pIndex = 1
@@ -850,7 +891,7 @@ object TACAI {
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
-                    paramDVars(pIndex) = TACMethodParameter(-pIndex - 1, usedBy)
+                    paramDVars(pIndex) = new TACMethodParameter(-pIndex - 1, usedBy)
                     defOrigin -= parameterTypes(pIndex - 1).operandSize
                     pIndex += 1
                 }

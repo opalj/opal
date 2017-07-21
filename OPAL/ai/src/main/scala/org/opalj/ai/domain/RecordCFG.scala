@@ -694,7 +694,7 @@ trait RecordCFG
     def cfgAsGraph(): DefaultMutableNode[List[PC]] = {
         import scala.collection.immutable.{List ⇒ ScalaList}
         val instructions = code.instructions
-        val codeSize = instructions.size
+        val codeSize = instructions.length
         val nodes = new Array[DefaultMutableNode[List[PC]]](codeSize)
         val nodePredecessorsCount = new Array[Int](codeSize)
         // 1. create nodes

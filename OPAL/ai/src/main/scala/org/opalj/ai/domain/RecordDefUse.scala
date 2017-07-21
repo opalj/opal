@@ -465,8 +465,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val scheduleNextPC: Boolean = (instruction.opcode: @switch) match {
             case GOTO.opcode | GOTO_W.opcode |
                 NOP.opcode |
-                WIDE.opcode |
-                RETURN.opcode ⇒
+                WIDE.opcode ⇒
                 propagate(defOps(currentPC), defLocals(currentPC))
 
             case JSR.opcode | JSR_W.opcode ⇒
@@ -731,11 +730,19 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             //
             // "ERROR" HANDLING
             //
+            case RETURN.opcode ⇒
+                if (isExceptionalControlFlow) {
+                    stackOp(0, pushesValue = true /*value doesn't matter - has special handling*/ )
+                } else {
+                    val message = s"a return instruction does not have regular successors"
+                    throw BytecodeProcessingFailedException(message)
+                }
+
             case 176 /*areturn*/ |
                 175 /*dreturn*/ | 174 /*freturn*/ |
                 172 /*ireturn*/ | 173 /*lreturn*/ ⇒
                 if (isExceptionalControlFlow) {
-                    stackOp(1, pushesValue = false)
+                    stackOp(1, pushesValue = true /*value doesn't matter - has special handling*/ )
                 } else {
                     val message = s"a(n) $instruction instruction does not have regular successors"
                     throw BytecodeProcessingFailedException(message)
@@ -806,9 +813,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     subroutinePCs = Set.empty
                 } else {
                     // We have to make sure that – before we schedule the evaluation of an
-                    // instruction that is the return target of a subroutine - the call
-                    // of the subroutine from the respective location was already analyzed.
-                    // Otherwise, the context information may be missing.
+                    // instruction that is the return target of a subroutine - the
+                    // subroutine was completely analyzed. Otherwise, the context information
+                    // may be missing.
+                    // Additionally, we have to ensure that a subroutine which may be called
+                    // directly by the main code, but which may also be called after
+                    // some other subroutines were evaluated, is only evaluated after the
+                    // other subroutines have been completely evaluated.
+                    // We check the latter condition using the post dominator tree.
                     val nextSubroutinePC = subroutinePCs.tail.foldLeft(subroutinePCs.head) { (c, n) ⇒
                         if (aiResult.domain.postDominatorTree.strictlyDominates(c, n)) n else c
                     }
