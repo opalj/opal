@@ -30,11 +30,11 @@ package org.opalj
 package fpcf
 package properties
 
-sealed trait EscapePropertyMetaInforation extends PropertyMetaInformation {
+sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
     final type Self = EscapeProperty
 }
 
-sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInforation {
+sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInformation {
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 }
 
@@ -103,7 +103,7 @@ sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInf
  *
  * @author Florian Kuebler
  */
-object EscapeProperty extends EscapePropertyMetaInforation {
+object EscapeProperty extends EscapePropertyMetaInformation {
     final val key: PropertyKey[EscapeProperty] = PropertyKey.create(
         // Name of the property
         "EscapeProperty",
