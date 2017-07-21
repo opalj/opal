@@ -863,6 +863,31 @@ object TACNaive {
         finalStatements.foreach(_.remapIndexes(pcToIndex))
         val tacCode = finalStatements.toArray
 
+        def getStartAndEndIndex(
+            oldEH:      ExceptionHandler,
+            newIndexes: Array[Int]
+        ): (Int, Int) = {
+            val oldStartPC = oldEH.startPC
+            val newStartIndex = newIndexes(oldStartPC)
+            var newEndIndex = newIndexes(oldEH.endPC)
+            // In some code (in particular groovy related code), we have found code
+            // where the end of the try block is unreachable. I.e., no control flow path
+            // exists that will reach the instruction... and – after removing the dead
+            // instructions the exception handler collapses
+            if (newEndIndex == Int.MinValue) {
+                var lastPC = oldEH.endPC
+                while (newEndIndex <= 0 && lastPC >= oldStartPC) {
+                    lastPC -= 1
+                    newEndIndex = newIndexes(lastPC)
+                }
+                if (newEndIndex == newStartIndex) {
+                    newEndIndex += 1
+                }
+            }
+            assert(newStartIndex < newEndIndex, s"old: $oldEH => [$newStartIndex,$newEndIndex]")
+            (newStartIndex, newEndIndex)
+        }
+
         /*
           * Updates the exception handlers by adjusting the start, end and handler index (pc).
           *
