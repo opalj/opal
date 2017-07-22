@@ -29,6 +29,8 @@
 package org.opalj
 package tac
 
+import java.io.File
+
 import org.opalj.io.writeAndOpen
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain
@@ -83,12 +85,14 @@ object TAC {
     def usage: String = {
         "Usage: java …TAC \n"+
             "-source <JAR file/Folder containing class files>\n"+
+            "[-sourceLib <JAR file/Folder containing library class files (which may be required to get precise/correct type information.>\n"+
             "[-domainValueInformation (prints detailed information about domain values)\n"+
             "[-class <class file name> (filters the set of classes)]\n"+
             "[-method <method name/signature using Java notation>] (filters the set of methods)\n"+
             "[-naive (the naive representation is generated) | -domain <class name of the domain>]\n"+
             "[-cfg (print control-flow graph)]\n"+
             "[-open (the generated representations will be written to disk and opened)]\n"+
+            "[-toString (uses the \"toString\" method to print the object graph)]\n"+
             "Example:\n\tjava …TAC -jar /Library/jre/lib/rt.jar -class java.util.ArrayList .method toString"
     }
 
@@ -96,10 +100,12 @@ object TAC {
 
         // Parameters:
         var source: String = null
+        var sourceLib: Option[String] = None
         var doOpen: Boolean = false
         var className: Option[String] = None
         var methodSignature: Option[String] = None
         var naive: Boolean = false
+        var toString: Boolean = false
         var domainName: Option[String] = None
         var printCFG: Boolean = false
 
@@ -126,12 +132,14 @@ object TAC {
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")
 
-                case "-source" ⇒ source = readNextArg()
-                case "-cfg"    ⇒ printCFG = true
-                case "-open"   ⇒ doOpen = true
-                case "-class"  ⇒ className = Some(readNextArg())
-                case "-method" ⇒ methodSignature = Some(readNextArg())
-                case unknown   ⇒ handleError(s"unknown parameter: $unknown")
+                case "-source"    ⇒ source = readNextArg()
+                case "-sourceLib" ⇒ sourceLib = Some(readNextArg())
+                case "-cfg"       ⇒ printCFG = true
+                case "-open"      ⇒ doOpen = true
+                case "-class"     ⇒ className = Some(readNextArg())
+                case "-method"    ⇒ methodSignature = Some(readNextArg())
+                case "-toString"  ⇒ toString = true
+                case unknown      ⇒ handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
@@ -140,7 +148,9 @@ object TAC {
             handleError("missing parameters")
         }
 
-        val project = Project(new java.io.File(source))
+        val sourceFile = new File(source)
+        val project =
+            sourceLib.map(l ⇒ Project(sourceFile, new File(l))).getOrElse(Project(sourceFile))
         if (project.projectMethodsCount == 0) {
             handleError(s"no methods found: $source")
         }
@@ -160,8 +170,10 @@ object TAC {
             } {
                 val (tac: String, cfg: String, ehs: Option[String]) =
                     if (naive) {
-                        val TACode(params, code, cfg, ehs, _) =
+                        val tac @ TACode(params, code, cfg, ehs, _) =
                             TACNaive(m, ch, AllTACNaiveOptimizations)
+                        if (toString) Console.out.println(m.toJava(project.classFile(m), tac.toString))
+
                         (
                             ToTxt(params, code, cfg, skipParams = true, true, true).mkString("\n"),
                             tacToDot(code, cfg),
@@ -184,18 +196,16 @@ object TAC {
                         val aiResult = BaseAI(cf, m, d)
                         val tac @ TACode(params, code, cfg, ehs, _) =
                             TACAI(m, project.classHierarchy, aiResult)(Nil)
+                        if (toString) Console.out.println(m.toJava(project.classFile(m), tac.toString))
 
-                        try {
-                            // RETURN VALUE:
-                            (
-                                ToTxt(params, code, cfg, skipParams = false, true, true).mkString("\n"),
-                                tacToDot(code, cfg),
-                                if (ehs.nonEmpty)
-                                    Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
-                                else
-                                    None
-                            )
-                        } catch { case t: Throwable ⇒ Console.err.println(tac); throw t }
+                        (
+                            ToTxt(params, code, cfg, skipParams = false, true, true).mkString("\n"),
+                            tacToDot(code, cfg),
+                            if (ehs.nonEmpty)
+                                Some(ehs.mkString("\n\n      /*\n      ", "\n      ", "\n      */"))
+                            else
+                                None
+                        )
                     }
 
                 methodsAsTAC.append(mSig)

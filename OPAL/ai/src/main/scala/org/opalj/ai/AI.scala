@@ -614,6 +614,25 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             }
         }
 
+        def abstractInterpretationEnded(): AIResult { val domain: theDomain.type } = {
+
+            integrateSubroutineInformation()
+            val result =
+                AIResultBuilder.completed(
+                    code, cfJoins, liveVariables, theDomain
+                )(
+                    evaluated, operandsArray, localsArray
+                )
+            try {
+                theDomain.abstractInterpretationEnded(result)
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable         ⇒ throwInterpretationFailedException(t, instructions.length)
+            }
+            if (tracer.isDefined) tracer.get.result(result)
+            result
+        }
+
         // -------------------------------------------------------------------------------
         //
         // Main loop of the abstract interpreter
@@ -1137,15 +1156,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // one further instruction, but we may have evaluated that one
                     // already and the evaluation context didn't change).
                     if (worklist.isEmpty) {
-                        integrateSubroutineInformation()
-                        val result =
-                            AIResultBuilder.completed(
-                                code, cfJoins, liveVariables, theDomain
-                            )(
-                                evaluated, operandsArray, localsArray
-                            )
-                        if (tracer.isDefined) tracer.get.result(result)
-                        return result;
+                        return abstractInterpretationEnded();
                     }
                 }
                 // [THE DEFAULT CASE] the PC of the next instruction...
@@ -1312,8 +1323,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                  *
                  * Called when an exception was explicitly (by means of an athrow
                  * instruction) or implicitly raised as a side effect of
-                 * evaluating the current instruction. In this case the corresponding
-                 * handler is searched and the control is transfered to it.
+                 * evaluating the current instruction. In this case, the corresponding
+                 * handler is searched and the control is transferred to it.
                  * If no handler is found the domain is
                  * informed that the method invocation completed abruptly.
                  *
@@ -1390,39 +1401,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 def handleException(exceptionValue: ExceptionValue): PCs = {
-                    // potentially iterating over the individual exceptions is potentially
+                    // iterating over the individual exceptions is potentially
                     // more precise than just iterating over the "abstraction"
-                    /*
-                    theDomain.typeOfValue(exceptionValue) match {
-
-                        case IsReferenceValue(exceptionValues) ⇒
-                            if (exceptionValues.tail.isEmpty) {
-                                val exceptionValue = exceptionValues.head
-                                exceptionValue.isNull match {
-                                    case No ⇒ // just forward
-                                        val ev = exceptionValue.asDomainValue(theDomain)
-                                        doHandleTheException(ev, false)
-                                    case Unknown ⇒
-                                        val npeHandlerPC =
-                                            if (theDomain.throwNullPointerExceptionOnThrow) {
-                                                val npe = theDomain.VMNullPointerException(pc)
-                                                doHandleTheException(npe, false)
-                                            } else
-                                                IntSet.empty
-                                        val ev = exceptionValue.asDomainValue(theDomain)
-                                        npeHandlerPC ++ doHandleTheException(ev, true)
-                                    case Yes ⇒
-                                        val npe = theDomain.VMNullPointerException(pc)
-                                        doHandleTheException(npe, false)
-                                }
-                            } else {
-                                handleExceptions(exceptionValues.map(_.asDomainValue(theDomain)))
-                            }
-
-                        case exceptionType ⇒
-                            throw DomainException(s"unexpected exception type: $exceptionType")
-                    }
-                    */
                     val baseValues = exceptionValue.baseValues
                     if (baseValues.isEmpty) {
                         exceptionValue.isNull match {
@@ -2581,21 +2561,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             }
         }
 
-        integrateSubroutineInformation()
-        val result =
-            AIResultBuilder.completed(
-                code, cfJoins, liveVariables, theDomain
-            )(
-                evaluated, operandsArray, localsArray
-            )
-        try {
-            theDomain.abstractInterpretationEnded(result)
-        } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case t: Throwable         ⇒ throwInterpretationFailedException(t, instructions.length)
-        }
-        if (tracer.isDefined) tracer.get.result(result)
-        result
+        abstractInterpretationEnded()
     }
 }
 

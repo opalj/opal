@@ -38,9 +38,11 @@ import org.opalj.collection.immutable.IntSet
  * @author Michael Eichberg
  */
 case class TACMethodParameter(
-        val origin:   ValueOrigin,
-        val useSites: IntSet
+        origin:   ValueOrigin,
+        useSites: IntSet
 ) {
+
     override def toString: String = useSites.mkString("useSites={", ",", s"} (origin=$origin)")
+
 }
 

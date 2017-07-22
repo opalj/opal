@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -59,13 +60,11 @@ case class Code_attribute(
      */
     @throws[UnsupportedOperationException]("always")
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        val message = "the code attribute needs the method's id; "+
-            "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method"
+        val message = "use toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)"
         throw new UnsupportedOperationException(message)
     }
 
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
-
         val codeSize = code.instructions.size
         val methodBodyHeader =
             s"Method Body (Size: $codeSize bytes, Max Stack: $max_stack, Max Locals: $max_locals)"
@@ -84,19 +83,18 @@ case class Code_attribute(
 
     }
 
-    def attributesAsXHTML(implicit cp: Constant_Pool): Seq[Node] = attributes.map(_.toXHTML(cp))
+    def attributesAsXHTML(implicit cp: Constant_Pool): Seq[Node] = attributes.map(_.toXHTML)
 
-    def exception_handlersAsXHTML(implicit cp: Constant_Pool): Node = {
+    /** Can only be called if the exception table is non-emtpy! */
+    def exception_handlersAsXHTML(implicit cp: Constant_Pool): NodeSeq = {
         if (exceptionTable.length > 0)
-            <div>
-                <details>
-                    <summary>Exception Table:</summary>
-                    <ol class="exception_table">
-                        { exceptionTable.map(_.toXHTML(cp, code)) }
-                    </ol>
-                </details>
-            </div>
+            <details class="exception_table">
+                <summary>Exception Table:</summary>
+                <ol class="exception_table">
+                    { exceptionTable.map(_.toXHTML(cp, code)) }
+                </ol>
+            </details>
         else
-            <div></div>
+            NodeSeq.Empty
     }
 }

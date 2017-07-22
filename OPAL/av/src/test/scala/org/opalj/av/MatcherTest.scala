@@ -34,7 +34,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.junit.runner.RunWith
 import org.scalatest._
 import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.AccessFlagsMatcher._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project

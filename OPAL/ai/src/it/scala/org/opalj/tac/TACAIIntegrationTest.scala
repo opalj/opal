@@ -33,11 +33,11 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 import java.io.File
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.Domain
@@ -65,7 +65,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         folder:        File,
         domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse
     ): Unit = {
-        if (Thread.currentThread().isInterrupted) return;
+        if (Thread.currentThread().isInterrupted) return ;
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -96,7 +96,12 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                             e.getCause.printStackTrace(Console.out)
                         }
                         val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
-                        println(instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n"))
+                        println(
+                            instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
+                        )
+                        println(
+                            body.exceptionHandlers.mkString("Exception Handlers:\n\t","\n\t","\n")
+                        )
                         errors ::= ((file+":"+methodSignature, e))
                     }
                 }

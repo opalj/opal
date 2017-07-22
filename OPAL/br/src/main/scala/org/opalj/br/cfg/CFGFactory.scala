@@ -30,6 +30,8 @@ package org.opalj
 package br
 package cfg
 
+import scala.annotation.switch
+
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.HashMap
 import org.opalj.collection.immutable.IntSet
@@ -80,7 +82,7 @@ object CFGFactory {
      *        Hence, it is possible that the graph contains nodes that cannot be reached from
      *        the start node.
      *
-     * @param method A method with a body (i.e., with some code.)
+     * @param code A method's body (i.e., the code.)
      * @param classHierarchy The class hierarchy that will be used to determine
      *      if a certain exception is potentially handled by an exception handler.
      */
@@ -251,7 +253,7 @@ object CFGFactory {
                 }
             }
 
-            (instruction.opcode: @scala.annotation.switch) match {
+            (instruction.opcode: @switch) match {
 
                 case RET.opcode ⇒
                     // We cannot determine the target instructions at the moment;
@@ -399,7 +401,7 @@ object CFGFactory {
                 val subroutineBBs: List[BasicBlock] = subroutineBB.subroutineFrontier(code, bbs)
                 val retBBs = subroutineBBs.toSet[CFGNode]
                 retBBs.foreach(_.setSuccessors(returnBBs))
-                returnBBs.foreach(_.setPredecessors(retBBs))
+                returnBBs.foreach(_.addPredecessors(retBBs))
             }
         }
 

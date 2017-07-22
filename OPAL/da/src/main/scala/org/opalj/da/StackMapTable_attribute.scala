@@ -50,7 +50,7 @@ case class StackMapTable_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div>
             <details>
-                <summary>Stack map table:</summary>
+                <summary>StackMapTable</summary>
                 <span> number of frames:{ stack_map_frames.length }</span>
                 { stack_map_framestoXHTML(cp) }
             </details>

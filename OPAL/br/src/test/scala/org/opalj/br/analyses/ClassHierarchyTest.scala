@@ -38,7 +38,7 @@ import org.scalatest.Matchers
 import org.opalj.log.GlobalLogContext
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**

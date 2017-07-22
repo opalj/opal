@@ -30,25 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.xml.Text
-import scala.xml.NodeSeq
-
-abstract class AbstractAnnotation {
-
-    def element_value_pairs: IndexedSeq[ElementValuePair]
-
-    def evps(implicit cp: Constant_Pool): NodeSeq =
-        if (element_value_pairs.nonEmpty) {
-            val evpsAsXHTML = this.element_value_pairs.map(_.toXHTML)
-            Seq(
-                Text("("),
-                <ol class="element_value_pairs">{ evpsAsXHTML }</ol>,
-                Text(")")
-            )
-        } else {
-            NodeSeq.Empty
-        }
-}
 
 /**
  * @author Michael Eichberg

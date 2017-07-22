@@ -32,6 +32,8 @@ package opalj
 import java.lang.management.MemoryMXBean
 import java.lang.management.ManagementFactory
 
+import scala.util.Properties.versionNumberString
+
 import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
 
@@ -41,6 +43,10 @@ import org.opalj.log.LogContext
  * @author Michael Eichberg
  */
 package object util {
+
+    val ScalaMajorVersion: String = {
+        versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
+    }
 
     def avg(ts: Traversable[Nanoseconds]): Nanoseconds = {
         if (ts.isEmpty)

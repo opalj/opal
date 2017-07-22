@@ -158,4 +158,55 @@ public class MethodsWithExceptions {
             // ...
         }
     }
+
+    public static Object exceptionsAndNull(IOException o) throws Exception {
+        try {
+            throw o;
+        } catch (NullPointerException npe) {
+            System.out.println(o /*<=> null*/);
+            return npe;
+        }
+    }
+
+    public static Object exceptionsAndNull(Object o) throws Exception {
+        try {
+            o.toString();
+        } catch (NullPointerException npe) {
+            return o; // null or a NullPointerException thrown by toString...
+        }
+        o.toString();
+        return o; // not-null
+    }
+
+    public static int exceptionsAndNull(Object[] o) throws Exception {
+        int r = 0;
+        try {
+            int l = o.length;
+            r = l -1;
+        } catch (NullPointerException npe) {
+            o.toString(); // o === null
+            return 0; // dead
+        }
+        o.toString(); // not-null
+        return r;
+    }
+
+    public static int catchGame(Object o) throws Throwable {
+
+        Throwable t = null;
+        try {
+            throw (Throwable) o;
+        } catch (NullPointerException npe) {
+            // this handler is reached if either o is null or is a NullPointerException
+            t = npe;
+        } catch (ClassCastException cce) {
+            t = cce;
+        } catch (IllegalArgumentException iae) {
+            t = iae;
+        }
+
+        System.out.println("it was one of the three expected ones: "+t);
+        return -1;
+    }
+
 }

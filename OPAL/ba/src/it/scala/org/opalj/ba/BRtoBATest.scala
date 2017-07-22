@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters._
 
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bi.TestSupport.allBITestJARs
+import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.br.reader.Java8Framework
 
 /**

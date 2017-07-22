@@ -163,6 +163,38 @@ lazy val bi = Project(
     )
 ).dependsOn(common % "it->test;test->test;compile->compile")
  .configs(IntegrationTest)
+ .enablePlugins(JavaFixtureCompiler)
+ .settings(
+   buildSettings ++ Seq(
+     name := "Bytecode Infrastructure",
+     scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure"),
+     scalacOptions in (Compile, console) := Seq("-deprecation"),
+     //library dependencies
+     libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
+   ),
+
+  /* The following settings relate to the java-fixture-compiler plugin, which
+  compiles the java fixture projects in the BytecodeInfrastructure project for testing.
+  For information about the java fixtures, see: OPAL/bi/src/test/fixtures-java/Readme.md
+
+  The default settings for the fixture compilations are used.
+  For details on the plugin and how to change its settings, see:
+  DEVELOPING_OPAL/plugins/sbt-java-fixture-compiler/Readme.md */
+
+   inConfig(Test)(
+     JavaFixtureCompiler.baseJavafixtureSettings ++
+     Seq(
+       unmanagedResourceDirectories ++= Seq(
+         (javaFixtureProjectsDir in javaFixtureDiscovery).value,
+         (javaFixtureSupportDir in javaFixtureDiscovery).value
+       ),
+       resourceGenerators += Def.task {
+           (javaFixturePackage in Test).value flatMap (_.generatedFiles)
+       }
+     )
+   )
+
+ )
 
 lazy val br = Project(
 		id = "BytecodeRepresentation",

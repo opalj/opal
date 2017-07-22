@@ -35,7 +35,7 @@ import java.net.URL
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bi.TestSupport.allBITestJARs
+import org.opalj.bi.TestResources.allBITestJARs
 
 class LoadClassFilesInParallelTest extends FlatSpec with Matchers {
 

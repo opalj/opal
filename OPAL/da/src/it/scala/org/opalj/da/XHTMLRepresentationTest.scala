@@ -47,7 +47,7 @@ class XHTMLRepresentationTest extends FlatSpec with Matchers {
 
     behavior of "the Disassembler"
 
-    for { file ← bi.TestSupport.allBITestJARs ++ Traversable(bytecode.JRELibraryFolder) } {
+    for { file ← bi.TestResources.allBITestJARs ++ Traversable(bytecode.JRELibraryFolder) } {
 
         it should s"be able to create the xHTML representation of every class of $file" in {
 

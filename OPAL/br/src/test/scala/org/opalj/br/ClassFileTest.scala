@@ -34,7 +34,7 @@ import org.scalatest.Matchers
 import scala.util.control.ControlThrowable
 
 import org.opalj.collection.immutable.Naught
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * @author Michael Eichberg

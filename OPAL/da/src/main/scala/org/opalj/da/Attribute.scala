@@ -67,9 +67,7 @@ trait Attribute {
 
     def attribute_name(implicit cp: Constant_Pool) = cp(attribute_name_index).asString
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="attribute_name">{ attribute_name }</span>
-    }
+    def toXHTML(implicit cp: Constant_Pool): Node
 
     // TODO we need to add a method to create "inline representations" for some attributes.
 }

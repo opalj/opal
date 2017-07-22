@@ -687,7 +687,7 @@ object TACNaive {
                     val resultVar = OperandVar(ComputationalTypeReference, rest)
                     val targetType = as[CHECKCAST](instruction).referenceType
                     val checkcast = Checkcast(pc, value1, targetType)
-                    statements(pc) = List(Assignment(pc, resultVar, checkcast))
+                    statements(pc) = List(checkcast)
                     schedule(pcOfNextInstruction(pc), resultVar :: rest)
 
                 case MONITORENTER.opcode ⇒
@@ -862,6 +862,66 @@ object TACNaive {
 
         finalStatements.foreach(_.remapIndexes(pcToIndex))
         val tacCode = finalStatements.toArray
+
+        def getStartAndEndIndex(
+            oldEH:      ExceptionHandler,
+            newIndexes: Array[Int]
+        ): (Int, Int) = {
+            val oldStartPC = oldEH.startPC
+            val newStartIndex = newIndexes(oldStartPC)
+            var newEndIndex = newIndexes(oldEH.endPC)
+            // In some code (in particular groovy related code), we have found code
+            // where the end of the try block is unreachable. I.e., no control flow path
+            // exists that will reach the instruction... and – after removing the dead
+            // instructions the exception handler collapses
+            if (newEndIndex == Int.MinValue) {
+                var lastPC = oldEH.endPC
+                while (newEndIndex <= 0 && lastPC >= oldStartPC) {
+                    lastPC -= 1
+                    newEndIndex = newIndexes(lastPC)
+                }
+                if (newEndIndex == newStartIndex) {
+                    newEndIndex += 1
+                }
+            }
+            assert(newStartIndex < newEndIndex, s"old: $oldEH => [$newStartIndex,$newEndIndex]")
+            (newStartIndex, newEndIndex)
+        }
+
+        /*
+          * Updates the exception handlers by adjusting the start, end and handler index (pc).
+          *
+          * This method can only be used in simple cases where the order of instructions remains
+          * the same and the start and end still map to valid exception handlers -
+          * deleting/adding instructions is supported.
+          *
+          * @param exceptionHandlers The code's exception handlers.
+          * @param newIndexes A map that contains for each previous index the new index
+          *                   that should be used.
+          * @return The new exception handler.
+          */
+        def updateExceptionHandlers(
+            exceptionHandlers: ExceptionHandlers,
+            newIndexes:        Array[Int]
+        ): ExceptionHandlers = {
+            exceptionHandlers map { old ⇒
+                // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
+                // included in the handler block, the endPC is equal to `(pc of last instruction) +
+                // instruction.size`; however, this is already handled by the caller!
+                val (newStartIndex, newEndIndex) = getStartAndEndIndex(old, newIndexes)
+
+                val newEH = old.copy(
+                    startPC = newStartIndex,
+                    endPC = newEndIndex,
+                    handlerPC = newIndexes(old.handlerPC)
+                )
+                assert(
+                    newEH.startPC <= newEH.endPC,
+                    s"startPC=${old.startPC} => ${newEH.startPC};endPC=${old.endPC} => ${newEH.endPC}"
+                )
+                newEH
+            }
+        }
 
         val tacEHs = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
 

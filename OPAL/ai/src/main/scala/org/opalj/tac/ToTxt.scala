@@ -83,9 +83,6 @@ object ToTxt {
             case InstanceOf(_, value, tpe) ⇒
                 s"${toTxtExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
 
-            case Checkcast(_, value, tpe) ⇒
-                s"(${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
-
             case Compare(_, left, op, right) ⇒
                 toTxtExpr(left)+" "+op.toString+" "+toTxtExpr[V](right)
 
@@ -124,8 +121,9 @@ object ToTxt {
             case GetField(_, declaringClass, name, _, receiver) ⇒
                 s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
 
-            case CaughtException(_, exceptionType) ⇒
-                s"caught ${exceptionType.map(_.toJava).getOrElse("<ANY>")}"
+            case e @ CaughtException(_, exceptionType, _) ⇒
+                val t = { exceptionType.map(_.toJava).getOrElse("<ANY>") }
+                s"caught $t /* <= ${e.exceptionLocations.mkString("{", ",", "}")}*/"
         }
     }
 
@@ -205,6 +203,10 @@ object ToTxt {
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(rec)}/*(non-virtual) ${declClass.toJava}*/$call"
 
+            case Checkcast.ASTID ⇒
+                val Checkcast(_, value, tpe) = stmt
+                s"$pc (${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
+
             case ExprStmt.ASTID ⇒
                 val ExprStmt(_, expr) = stmt
                 s"$pc /*expression value is ignored:*/${toTxtExpr(expr)}"
@@ -212,10 +214,6 @@ object ToTxt {
             case FailingExpr.ASTID ⇒
                 val FailingExpr(_, fExpr) = stmt
                 s"$pc expression evaluation will throw exception: ${toTxtExpr(fExpr)}"
-
-            case FailingStmt.ASTID ⇒
-                val FailingStmt(_, fStmt) = stmt
-                s"$pc statement always throws an exception: ${toTxtStmt(fStmt, includePC)}"
 
         }
     }
@@ -308,18 +306,19 @@ object ToTxt {
 
             if (bb.endPC == index && bb.successors.exists(!_.isBasicBlock)) {
                 val successors =
-                    bb.successors.map {
+                    bb.successors.collect {
                         case cn: CatchNode ⇒
                             s"⚡️ ${catchTypeToString(cn.catchType)} → ${cn.handlerPC}"
                         case ExitNode(false) ⇒
-                            "⚠️ - potentially uncaught exception/abnormal return"
+                            "⚡️ <uncaught exception ⇒ abnormal return>"
+                    }
 
-                        case _ ⇒ null
-                    }.filterNot(_ == null)
-
+                var head = (" " * (if (indented) 6 else 0))+"// "
+                if (stmts(index).astID != Throw.ASTID && bb.successors.forall(!_.isBasicBlock))
+                    head += "⚠️ ALWAYS THROWS EXCEPTION – "
                 if (successors.nonEmpty)
                     javaLikeCode +=
-                        successors.mkString((" " * (if (indented) 6 else 0))+"// ", ", ", "")
+                        successors.mkString(head, ", ", "")
             }
 
             index += 1

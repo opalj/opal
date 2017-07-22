@@ -60,6 +60,10 @@ trait CFGNode extends Node {
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors += predecessor
     }
+    def addPredecessors(predecessor: TraversableOnce[CFGNode]): Unit = {
+        //  if (predecessor eq this) throw new IllegalArgumentException()
+        _predecessors ++= predecessor
+    }
     private[cfg] def setPredecessors(predecessors: Set[CFGNode]): Unit = {
         _predecessors = predecessors
     }

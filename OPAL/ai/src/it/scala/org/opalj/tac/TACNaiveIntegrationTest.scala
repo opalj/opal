@@ -33,11 +33,11 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 import java.io.File
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -54,7 +54,7 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
     val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
     def checkFolder(folder: File): Unit = {
-        if (Thread.currentThread().isInterrupted) return;
+        if (Thread.currentThread().isInterrupted) return ;
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -94,6 +94,9 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
                                 filter(_._1 != null).
                                 map(_.swap).
                                 mkString("Instructions:\n\t", "\n\t", "\n")
+                        )
+                        println(
+                            body.exceptionHandlers.mkString("Exception Handlers:\n\t","\n\t","\n")
                         )
                         errors ::= ((file+":"+methodSignature, e))
                     }
