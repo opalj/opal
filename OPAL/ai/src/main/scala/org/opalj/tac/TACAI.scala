@@ -224,7 +224,11 @@ object TACAI {
             //
             //
 
-            // the exception handler initializer is an extra instruction!
+            // The exception handler initializer is an extra instruction!
+            // In very weird cases, where the first instruction of a handler is also
+            // a jump target, the new "caught exception" becomes the target, however,
+            // given that this instruction has no special side effects, this is not
+            // problematic.
             val addExceptionHandlerInitializer = handlerPCs.contains(pc)
 
             def addStmt(stmt: Stmt[DUVar[aiResult.domain.DomainValue]]): Unit = {
