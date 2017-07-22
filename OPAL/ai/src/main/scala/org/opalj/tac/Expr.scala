@@ -95,7 +95,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
 
 /**
  * A caught exception is essential to ensure that the local variable that stores the exception
- * is reified in the 3-address code.
+ * is reified in the ai-based 3-address code.
  */
 case class CaughtException[+V <: Var[V]](
         pc:                        PC,
