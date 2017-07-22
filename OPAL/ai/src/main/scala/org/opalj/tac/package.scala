@@ -102,8 +102,14 @@ package object tac {
 
             var lastPC = oldEH.endPC
             do {
-                lastPC -= 1
                 newEndIndex = newIndexes(lastPC)
+                // it may be the case that an exception handler - which covers the start
+                // of a class file collapses; in this case, we have to make sure that
+                // lastPC is not negative when whe ask for the new index..., hence,
+                // 1) get new end index
+                // 2) decrement lastPC
+                lastPC -= 1
+
             } while (newEndIndex <= 0 && lastPC >= oldStartPC)
 
             if (lastPC < oldStartPC) {
@@ -118,7 +124,9 @@ package object tac {
                 newEndIndex = -1
             } else if (newStartIndex == newEndIndex && aiResult.domain.throwsException(lastPC)) {
                 newEndIndex += 1
-            } // else ... the eh only encompasses instructions which don't throw exceptions
+            }
+            // else ...
+            // the (remaining) eh only encompasses instructions which don't throw exceptions
 
         }
 
