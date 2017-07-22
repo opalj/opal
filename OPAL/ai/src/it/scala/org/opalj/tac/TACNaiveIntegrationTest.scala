@@ -95,6 +95,9 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
                                 map(_.swap).
                                 mkString("Instructions:\n\t", "\n\t", "\n")
                         )
+                        println(
+                            body.exceptionHandlers.mkString("Exception Handlers:\n\t","\n\t","\n")
+                        )
                         errors ::= ((file+":"+methodSignature, e))
                     }
                 }
