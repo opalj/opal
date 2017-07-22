@@ -191,4 +191,22 @@ public class MethodsWithExceptions {
         return r;
     }
 
+    public static int catchGame(Object o) throws Throwable {
+
+        Throwable t = null;
+        try {
+            throw (Throwable) o;
+        } catch (NullPointerException npe) {
+            // this handler is reached if either o is null or is a NullPointerException
+            t = npe;
+        } catch (ClassCastException cce) {
+            t = cce;
+        } catch (IllegalArgumentException iae) {
+            t = iae;
+        }
+
+        System.out.println("it was one of the three expected ones: "+t);
+        return -1;
+    }
+
 }
