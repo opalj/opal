@@ -37,13 +37,14 @@ import java.util.prefs.Preferences
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
-
 import javafx.scene.control.TableColumn
 import javafx.scene.control.SelectionMode
+import javafx.scene.control.Tooltip
 import javafx.scene.layout.Priority
+import javafx.scene.input.MouseEvent
+import javafx.event.EventHandler
 import javafx.stage.Screen
 
 import org.controlsfx.control.PopOver
@@ -62,16 +63,7 @@ import scalafx.stage.Modality
 import scalafx.scene.Scene
 import scalafx.scene.Group
 import scalafx.scene.layout.BorderPane
-import scalafx.scene.control.TableView
-import scalafx.scene.control.CheckBox
-import scalafx.scene.control.ProgressBar
-import scalafx.scene.control.Label
-import scalafx.scene.control.ListView
-import scalafx.scene.control.TextArea
-import scalafx.scene.control.TableCell
-import scalafx.scene.control.Button
-import scalafx.scene.control.Dialog
-import scalafx.scene.control.ButtonType
+import scalafx.scene.control._
 import scalafx.scene.layout.HBox
 import scalafx.scene.image.Image
 import scalafx.scene.web.WebView
@@ -80,8 +72,6 @@ import scalafx.scene.layout.GridPane
 import scalafx.scene.control.MenuItem
 import scalafx.stage.FileChooser
 import scalafx.stage.FileChooser.ExtensionFilter
-import scalafx.scene.control.MenuBar
-import scalafx.scene.control.Menu
 import scalafx.scene.input.KeyCombination
 import scalafx.scene.layout.StackPane
 import scalafx.scene.chart.XYChart
@@ -89,16 +79,16 @@ import scalafx.scene.chart.CategoryAxis
 import scalafx.scene.chart.NumberAxis
 import scalafx.scene.chart.BarChart
 import scalafx.scene.chart.PieChart
+import scalafx.scene.chart.ScatterChart
 import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
-
 import org.opalj.util.Nanoseconds
 import org.opalj.da.ClassFileReader
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg, Christian Schaarschmidt (for scatter and pie chart)
  */
 object Hermes extends JFXApp with HermesCore {
 
@@ -569,31 +559,279 @@ object Hermes extends JFXApp with HermesCore {
         val showAnalysisTimes = new MenuItem("Show Analysis Times...") {
             onAction = handle { analysisTimesStage.show() }
         }
-        val showMethodDistribution = new MenuItem("Show Method Distribution...") {
+        val showSatstisticVisualization = new MenuItem("Show Satstistic Visualization...") {
             // IMPROVE Move it to a "permanent stage" and make the project statistics observable to make it possible to react on changes and to get proper JavaFX behavior
             disable <== analysesFinished.not
             onAction = handle {
-                new Stage {
-                    title = "Method Distribution Across All Projects"
-                    scene = new Scene(900, 600) {
-                        root = new StackPane {
+
+                val pieChartList = ObservableBuffer.empty[scalafx.stage.Stage]
+
+                val projectStatisticsList = featureMatrix.get(0).projectConfiguration.statistics.keySet
+
+                val statisticDialog = new ChoiceDialog(defaultChoice = null, choices = projectStatisticsList) {
+                    initOwner(stage)
+                    title = "Project Statistic Visualization"
+                    headerText = "Select statistic you whish to see visualized in a pie chart"
+                    contentText = "Statistics:"
+                }
+
+                projectStatisticsList.foreach { statistic ⇒
+
+                    val pieChartStage = new Stage {
+                        title = statistic
+                        scene = new Scene(950, 600) {
                             val pieChartData = ObservableBuffer.empty[javafx.scene.chart.PieChart.Data]
                             val pieChart = new PieChart {
                                 data = pieChartData
-                                title = "Method Distribution Across All Projects"
+                                title = statistic
                             }
-                            pieChart.legendVisible = true
-                            children = pieChart
 
                             featureMatrix foreach { pf ⇒
                                 val statistics = pf.projectConfiguration.statistics
-                                val numberOfMethods = statistics.get("ProjectMethods")
+                                val numberOfMethods = statistics.get(statistic)
                                 pieChartData.add(PieChart.Data(pf.id.value, numberOfMethods.get))
                             }
+
+                            val legendButton = new Button("Show Legend")
+                            legendButton.onAction = handle {
+                                if (pieChart.isLegendVisible) {
+                                    pieChart.setLegendVisible(false)
+                                    legendButton.setText("Show Legend")
+                                } else {
+                                    pieChart.setLegendVisible(true)
+                                    legendButton.setText("Hide Legend")
+                                }
+                            }
+                            pieChart.setLegendVisible(false)
+
+                            val bp = new BorderPane {
+                                center = pieChart
+                                bottom = legendButton
+                            }
+                            root = bp
                         }
+                        initOwner(stage)
                     }
+
+                    pieChartList.add(pieChartStage)
+
+                }
+
+                val result = statisticDialog.showAndWait()
+                result match {
+                    case Some(choice) ⇒ pieChartList.filter(stage ⇒ stage.title.value == choice).get(0).show()
+                    case None         ⇒ println("no statistic selected")
+                }
+
+            }
+        }
+        val showFeatureToMethodCountCorrelation = new MenuItem("Show Feature To Method Count Correlation...") {
+            disable <== analysesFinished.not
+            onAction = handle {
+
+                val featureList = ObservableBuffer.empty[String]
+
+                val featureCountDialog = new ChoiceDialog(defaultChoice = null, choices = featureQueries.mapConserve(f ⇒ f.id)) {
                     initOwner(stage)
-                }.show()
+                    title = "Feature To Method Count Correlation"
+                    headerText = "First select feature category."
+                    contentText = ""
+                }
+
+                var selectedFeatureType = ""
+                var selectedFeature = ""
+
+                val result = featureCountDialog.showAndWait()
+                result match {
+                    case Some(choice) ⇒ selectedFeatureType = choice.toString
+                    case None         ⇒ println("no feature category selected")
+                }
+
+                if (selectedFeatureType.length != 0) {
+                    featureMatrix.get(0).featureGroups.filter(f ⇒ selectedFeatureType.equals(f._1.id.toString)).head._2.foreach(f ⇒
+                        featureList.add(f.value.id))
+
+                    val featureSelectDialog = new ChoiceDialog(defaultChoice = null, choices = featureList) {
+                        initOwner(stage)
+                        title = "Feature To Method Count Correlation"
+                        headerText = "Now select the feature to visualize."
+                        contentText = ""
+                    }
+
+                    val selectResult = featureSelectDialog.showAndWait()
+                    selectResult match {
+                        case Some(choice) ⇒
+
+                            selectedFeature = choice
+
+                            val chartData = ObservableBuffer.empty[XYChart.Series[Number, Number]]
+                            val chartStage = new Stage {
+                                title = "Scatter chart for "+selectedFeature
+                                scene = new Scene(950, 600) {
+                                    var highestMethodCount = 0.toDouble
+                                    var highestFeatureCount = 0.toDouble
+
+                                    featureMatrix foreach { pf ⇒
+                                        val statistics = pf.projectConfiguration.statistics
+                                        val numberOfMethods = statistics.get("ProjectMethods").get
+
+                                        val featureOccurrence = pf.featureGroups.filter(f ⇒ selectedFeatureType.equals(f._1.id)).head._2.filter(f ⇒
+                                            f.value.id == selectedFeature).head.value.count
+
+                                        if (highestMethodCount < numberOfMethods) highestMethodCount = numberOfMethods
+                                        if (highestFeatureCount < featureOccurrence) highestFeatureCount = featureOccurrence.toDouble
+
+                                        val chartSeries = XYChart.Series[Number, Number](
+                                            pf.id.value,
+                                            ObservableBuffer(XYChart.Data[Number, Number](numberOfMethods, featureOccurrence))
+                                        )
+
+                                        chartData.add(chartSeries)
+                                    }
+
+                                    val methodAxisLines = highestMethodCount / 100
+                                    val featureAxisLines = highestFeatureCount / 100
+
+                                    val upperBoundScale = 1.1
+
+                                    val methodAxis = new NumberAxis(
+                                        "Method Count for each project",
+                                        0, (highestMethodCount * upperBoundScale).ceil, methodAxisLines.floor
+                                    )
+
+                                    val featureAxis = new NumberAxis(
+                                        "Count for "+selectedFeature,
+                                        0, (highestFeatureCount * upperBoundScale).ceil, featureAxisLines.floor
+                                    )
+
+                                    val sChart = new ScatterChart[Number, Number](
+                                        methodAxis,
+                                        featureAxis
+
+                                    )
+                                    sChart.setTitle(selectedFeature+" in relation to Method Count")
+                                    chartData.foreach(d ⇒ sChart.getData.add(d))
+                                    sChart.setLegendVisible(false)
+                                    sChart.horizontalGridLinesVisible = false
+                                    sChart.verticalGridLinesVisible = false
+
+                                    val zoomInFactor = 0.5
+
+                                    sChart.setOnMouseClicked(new EventHandler[MouseEvent] {
+                                        override def handle(event: MouseEvent): Unit = {
+                                            var zoomDirection = 1
+                                            if (event.getButton.toString.equals("SECONDARY")) {
+                                                zoomDirection = -1
+                                            }
+
+                                            val result = event.getPickResult
+                                            if (result.getIntersectedNode.getStyleClass.toString.equals("chart-plot-background")) {
+                                                val xCoordinate = result.getIntersectedPoint.getX
+                                                val yCoordinate = result.getIntersectedPoint.getY
+
+                                                val maxX = result.getIntersectedNode.getBoundsInLocal.getMaxX
+                                                val maxY = result.getIntersectedNode.getBoundsInLocal.getMaxY
+
+                                                val delta = 0.1
+
+                                                var xPercentage = xCoordinate / maxX
+                                                if (xPercentage < delta) {
+                                                    xPercentage = 0
+                                                } else if (xPercentage > (1 - delta)) {
+                                                    xPercentage = 1
+                                                }
+
+                                                var yPercentage = yCoordinate / maxY
+                                                if (yPercentage < delta) {
+                                                    yPercentage = 0
+                                                } else if (yPercentage > (1 - delta)) {
+                                                    yPercentage = 1
+                                                }
+
+                                                val xAxixMax = methodAxis.getUpperBound
+                                                val xAxixMin = methodAxis.getLowerBound
+
+                                                val yAxixMax = featureAxis.getUpperBound
+                                                val yAxixMin = featureAxis.getLowerBound
+
+                                                val xAxisLenght = xAxixMax - xAxixMin
+                                                val yAxisLenght = yAxixMax - yAxixMin
+
+                                                methodAxis.setUpperBound(
+                                                    xAxixMax - zoomDirection * (xAxisLenght * zoomInFactor * (1 - xPercentage))
+                                                )
+                                                featureAxis.setUpperBound(
+                                                    yAxixMax - zoomDirection * (yAxisLenght * zoomInFactor * yPercentage)
+                                                )
+
+                                                methodAxis.setLowerBound(
+                                                    xAxixMin + zoomDirection * (xAxisLenght * zoomInFactor * xPercentage)
+                                                )
+                                                featureAxis.setLowerBound(
+                                                    yAxixMin + zoomDirection * (yAxisLenght * zoomInFactor * (1 - yPercentage))
+                                                )
+
+                                            }
+
+                                        }
+                                    })
+
+                                    val zoomInButton = new Button("Corner Zoom (+)")
+                                    zoomInButton.onAction = handle {
+                                        methodAxis.setUpperBound(methodAxis.getUpperBound * zoomInFactor)
+                                        featureAxis.setUpperBound(featureAxis.getUpperBound * zoomInFactor)
+                                    }
+                                    val zoomOutButton = new Button("Corner Zoom (-)")
+                                    zoomOutButton.onAction = handle {
+                                        methodAxis.setUpperBound(methodAxis.getUpperBound / zoomInFactor)
+                                        featureAxis.setUpperBound(featureAxis.getUpperBound / zoomInFactor)
+                                    }
+                                    val resetZoomButton = new Button("Reset Zoom")
+                                    resetZoomButton.onAction = handle {
+                                        methodAxis.setUpperBound(highestMethodCount * upperBoundScale)
+                                        featureAxis.setUpperBound(highestFeatureCount * upperBoundScale)
+                                        methodAxis.setLowerBound(0)
+                                        featureAxis.setLowerBound(0)
+                                    }
+
+                                    val legendButton = new Button("Show Legend")
+                                    legendButton.onAction = handle {
+                                        if (sChart.isLegendVisible) {
+                                            sChart.setLegendVisible(false)
+                                            legendButton.setText("Show Legend")
+                                        } else {
+                                            sChart.setLegendVisible(true)
+                                            legendButton.setText("Hide Legend")
+                                        }
+                                    }
+
+                                    val zoomDescription = new Label("Click on the chart plot background to zoom in."+
+                                        "\nRight mouse button to zoom out.")
+
+                                    val bp = new BorderPane {
+                                        center = sChart
+                                        bottom = new HBox {
+                                            children = Seq(legendButton, zoomInButton, zoomOutButton, resetZoomButton, zoomDescription)
+                                            spacing = 6
+                                            padding = Insets(10)
+                                            alignment = Pos.BottomLeft
+                                        }
+                                    }
+
+                                    root = bp
+
+                                }
+                            }
+                            chartStage.show()
+                            chartData.foreach(series ⇒ Tooltip.install(
+                                series.getData.head.getNode,
+                                new Tooltip(series.name.value+"; Feature Count: "+series.getData.head.getYValue+
+                                    "; Method Count: "+series.getData.head.getXValue)
+                            ))
+                        case None ⇒ println("no feature selected")
+                    }
+                }
+
             }
         }
         val fileExport = new MenuItem("Export As...") {
@@ -626,8 +864,9 @@ object Hermes extends JFXApp with HermesCore {
         }
         List(
             showConfig,
-            showAnalysisTimes, showMethodDistribution,
+            showAnalysisTimes, showSatstisticVisualization, showFeatureToMethodCountCorrelation,
             fileExport,
+
             computeProjectsForCorpus
         )
     }
