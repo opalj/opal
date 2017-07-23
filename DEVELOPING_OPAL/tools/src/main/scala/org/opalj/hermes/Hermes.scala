@@ -35,44 +35,45 @@ import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.prefs.Preferences
 
+import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
+import org.chocosolver.solver.Model
+import org.chocosolver.solver.variables.IntVar
+import javafx.stage.Screen
 import javafx.scene.control.TableColumn
 import javafx.scene.control.SelectionMode
 import javafx.scene.control.Tooltip
 import javafx.scene.layout.Priority
 import javafx.scene.input.MouseEvent
 import javafx.event.EventHandler
-import javafx.stage.Screen
 
 import org.controlsfx.control.PopOver
 import org.controlsfx.control.HiddenSidesPane
 import org.controlsfx.control.PopOver.ArrowLocation
 
 import scalafx.Includes._
+import scalafx.collections.ObservableBuffer
 import scalafx.application.JFXApp
 import scalafx.application.Platform
 import scalafx.application.JFXApp.PrimaryStage
-import scalafx.collections.ObservableBuffer
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
 import scalafx.stage.Stage
 import scalafx.stage.Modality
-import scalafx.scene.Scene
-import scalafx.scene.Group
-import scalafx.scene.layout.BorderPane
-import scalafx.scene.control._
-import scalafx.scene.layout.HBox
-import scalafx.scene.image.Image
-import scalafx.scene.web.WebView
-import scalafx.scene.layout.VBox
-import scalafx.scene.layout.GridPane
-import scalafx.scene.control.MenuItem
 import scalafx.stage.FileChooser
 import scalafx.stage.FileChooser.ExtensionFilter
+import scalafx.scene.Scene
+import scalafx.scene.Group
+import scalafx.scene.image.Image
+import scalafx.scene.web.WebView
 import scalafx.scene.input.KeyCombination
+import scalafx.scene.layout.VBox
+import scalafx.scene.layout.GridPane
+import scalafx.scene.layout.BorderPane
+import scalafx.scene.layout.HBox
 import scalafx.scene.layout.StackPane
 import scalafx.scene.chart.XYChart
 import scalafx.scene.chart.CategoryAxis
@@ -80,15 +81,29 @@ import scalafx.scene.chart.NumberAxis
 import scalafx.scene.chart.BarChart
 import scalafx.scene.chart.PieChart
 import scalafx.scene.chart.ScatterChart
-import org.chocosolver.solver.Model
-import org.chocosolver.solver.variables.IntVar
-import org.opalj.util.Nanoseconds
+import scalafx.scene.control.MenuItem
+import scalafx.scene.control.TextArea
+import scalafx.scene.control.ProgressBar
+import scalafx.scene.control.ButtonType
+import scalafx.scene.control.Dialog
+import scalafx.scene.control.TableCell
+import scalafx.scene.control.Button
+import scalafx.scene.control.Label
+import scalafx.scene.control.CheckBox
+import scalafx.scene.control.TableView
+import scalafx.scene.control.ListView
+import scalafx.scene.control.ChoiceDialog
+import scalafx.scene.control.MenuBar
+import scalafx.scene.control.Menu
+
 import org.opalj.da.ClassFileReader
+import org.opalj.util.Nanoseconds
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
  *
- * @author Michael Eichberg, Christian Schaarschmidt (for scatter and pie chart)
+ * @author Michael Eichberg
+ * @author Christian Schaarschmidt (Scatter and Pie chart)
  */
 object Hermes extends JFXApp with HermesCore {
 
@@ -111,15 +126,16 @@ object Hermes extends JFXApp with HermesCore {
     initialize(new File(parameters.unnamed(0)))
 
     if (parameters.named.size == 1) {
+        // when the CSV was requested, we perform the analysis and then finish Hermes
         analysesFinished onChange { (_, _, isFinished) ⇒
             if (isFinished) {
                 exportCSV(new File(parameters.named("csv")))
-                stage.close()
+                stage.close() // <=> quit Hermes
             }
         }
     }
 
-    // We use standard preferences for saving the state of the application only; not for
+    // We use standard preferences for saving the application state; not for
     // permanent configuration settings!
     val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
 
@@ -178,13 +194,15 @@ object Hermes extends JFXApp with HermesCore {
         jsonGenerator.close()
     }
 
-    override def updateProjectData(f: ⇒ Unit): Unit = Platform.runLater { f }
+    override def updateProjectData(f: ⇒ Unit): Unit = Platform.runLater {
+        // We have to ensure that we are not calling this too often to avoid that the
+        // UI starts to lag
+        f
+    }
 
-    override def reportProgress(f: ⇒ Double): Unit = {
-        Platform.runLater {
-            val progress = f
-            if (progress >= 1.0d) rootPane.getChildren().remove(progressBar)
-        }
+    override def reportProgress(f: ⇒ Double): Unit = Platform.runLater {
+        val progress = f
+        if (progress >= 1.0d) rootPane.getChildren().remove(progressBar)
     }
 
     // Must only be called after all features were computed.
@@ -218,14 +236,14 @@ object Hermes extends JFXApp with HermesCore {
         model.setObjective(Model.MINIMIZE, overallSize)
         val solver = model.getSolver
 
-        val solutionTextArea = new TextArea() {
+        val solutionTextArea = new TextArea {
             editable = false
             prefHeight = 300
             prefWidth = 450
             vgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
         }
-        val solverProgressBar = new ProgressBar() {
+        val solverProgressBar = new ProgressBar {
             hgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
         }
@@ -275,7 +293,7 @@ object Hermes extends JFXApp with HermesCore {
     //
     // ---------------------------------------------------------------------------------------------
 
-    val progressBar = new ProgressBar { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
+    private[this] val progressBar = new ProgressBar { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
 
     val projectColumn = new TableColumn[ProjectFeatures[URL], String]("Project")
     // TODO Make the project configuration observable to fill the statistics table automatically.
@@ -559,70 +577,60 @@ object Hermes extends JFXApp with HermesCore {
         val showAnalysisTimes = new MenuItem("Show Analysis Times...") {
             onAction = handle { analysisTimesStage.show() }
         }
-        val showSatstisticVisualization = new MenuItem("Show Satstistic Visualization...") {
+        val showProjectStatistics = new MenuItem("Project Statistics...") {
             // IMPROVE Move it to a "permanent stage" and make the project statistics observable to make it possible to react on changes and to get proper JavaFX behavior
+
+            // Container to store the stages; currently, we have to create the stages lazily
+            // because the statistics are not yet observable.
+            val pieChartStages: mutable.Map[String, Stage] = mutable.Map.empty
+            def createPieChartStage(statistic: String): Stage = {
+                val pieChartStage = new Stage {
+                    title = statistic
+                    scene = new Scene(950, 600) {
+                        val pieChartData = ObservableBuffer.empty[javafx.scene.chart.PieChart.Data]
+                        val pieChart = new PieChart {
+                            data = pieChartData
+                            //title = statistic
+                            legendVisible = true
+                        }
+
+                        featureMatrix foreach { pf ⇒
+                            val statistics = pf.projectConfiguration.statistics.get(statistic)
+                            pieChartData.add(PieChart.Data(pf.id.value, statistics.get))
+                        }
+
+                        val legendButton = new CheckBox("Show Legend (If Place is Sufficient)")
+                        pieChart.legendVisible <== legendButton.selected
+                        val bp = new BorderPane {
+                            center = pieChart
+                            top = legendButton
+                        }
+                        root = bp
+                    }
+                    initOwner(stage)
+                }
+
+                pieChartStage
+            }
+
             disable <== analysesFinished.not
             onAction = handle {
+                // all project's have the same statistics, hence, it is sufficient to
+                // collect those of the first project
+                val someProjectConfiguration = featureMatrix.get(0).projectConfiguration
+                val projectStatisticsList = someProjectConfiguration.statistics.keySet
 
-                val pieChartList = ObservableBuffer.empty[scalafx.stage.Stage]
-
-                val projectStatisticsList = featureMatrix.get(0).projectConfiguration.statistics.keySet
-
-                val statisticDialog = new ChoiceDialog(defaultChoice = null, choices = projectStatisticsList) {
-                    initOwner(stage)
-                    title = "Project Statistic Visualization"
-                    headerText = "Select statistic you whish to see visualized in a pie chart"
-                    contentText = "Statistics:"
-                }
-
-                projectStatisticsList.foreach { statistic ⇒
-
-                    val pieChartStage = new Stage {
-                        title = statistic
-                        scene = new Scene(950, 600) {
-                            val pieChartData = ObservableBuffer.empty[javafx.scene.chart.PieChart.Data]
-                            val pieChart = new PieChart {
-                                data = pieChartData
-                                title = statistic
-                            }
-
-                            featureMatrix foreach { pf ⇒
-                                val statistics = pf.projectConfiguration.statistics
-                                val numberOfMethods = statistics.get(statistic)
-                                pieChartData.add(PieChart.Data(pf.id.value, numberOfMethods.get))
-                            }
-
-                            val legendButton = new Button("Show Legend")
-                            legendButton.onAction = handle {
-                                if (pieChart.isLegendVisible) {
-                                    pieChart.setLegendVisible(false)
-                                    legendButton.setText("Show Legend")
-                                } else {
-                                    pieChart.setLegendVisible(true)
-                                    legendButton.setText("Hide Legend")
-                                }
-                            }
-                            pieChart.setLegendVisible(false)
-
-                            val bp = new BorderPane {
-                                center = pieChart
-                                bottom = legendButton
-                            }
-                            root = bp
-                        }
+                val statisticDialog =
+                    new ChoiceDialog(projectStatisticsList.head, projectStatisticsList) {
                         initOwner(stage)
+                        title = "Project Statistics"
+                        headerText = "Choose the project statistic to visualize."
+                        contentText = "Project Statistic:"
                     }
 
-                    pieChartList.add(pieChartStage)
-
+                statisticDialog.showAndWait() foreach { choice ⇒
+                    pieChartStages.getOrElseUpdate(choice, createPieChartStage(choice)).show()
                 }
-
-                val result = statisticDialog.showAndWait()
-                result match {
-                    case Some(choice) ⇒ pieChartList.filter(stage ⇒ stage.title.value == choice).get(0).show()
-                    case None         ⇒ println("no statistic selected")
-                }
-
             }
         }
         val showFeatureToMethodCountCorrelation = new MenuItem("Show Feature To Method Count Correlation...") {
@@ -631,7 +639,7 @@ object Hermes extends JFXApp with HermesCore {
 
                 val featureList = ObservableBuffer.empty[String]
 
-                val featureCountDialog = new ChoiceDialog(defaultChoice = null, choices = featureQueries.mapConserve(f ⇒ f.id)) {
+                val featureCountDialog = new ChoiceDialog(defaultChoice = null, choices = featureQueries.map(f ⇒ f.id)) {
                     initOwner(stage)
                     title = "Feature To Method Count Correlation"
                     headerText = "First select feature category."
@@ -808,7 +816,7 @@ object Hermes extends JFXApp with HermesCore {
                                     val zoomDescription = new Label("Click on the chart plot background to zoom in."+
                                         "\nRight mouse button to zoom out.")
 
-                                    val bp = new BorderPane {
+                                    root = new BorderPane {
                                         center = sChart
                                         bottom = new HBox {
                                             children = Seq(legendButton, zoomInButton, zoomOutButton, resetZoomButton, zoomDescription)
@@ -817,17 +825,18 @@ object Hermes extends JFXApp with HermesCore {
                                             alignment = Pos.BottomLeft
                                         }
                                     }
-
-                                    root = bp
-
                                 }
                             }
                             chartStage.show()
-                            chartData.foreach(series ⇒ Tooltip.install(
-                                series.getData.head.getNode,
-                                new Tooltip(series.name.value+"; Feature Count: "+series.getData.head.getYValue+
-                                    "; Method Count: "+series.getData.head.getXValue)
-                            ))
+                            chartData.foreach { series ⇒
+                                val data = series.getData.head
+                                val name = series.name.value
+                                val yValue = data.getYValue
+                                val xValue = data.getXValue
+                                val description = s"$name; #Features: $yValue; #Methods: $xValue"
+                                Tooltip.install(data.getNode, new Tooltip(description))
+                            }
+
                         case None ⇒ println("no feature selected")
                     }
                 }
@@ -864,7 +873,7 @@ object Hermes extends JFXApp with HermesCore {
         }
         List(
             showConfig,
-            showAnalysisTimes, showSatstisticVisualization, showFeatureToMethodCountCorrelation,
+            showAnalysisTimes, showProjectStatistics, showFeatureToMethodCountCorrelation,
             fileExport,
 
             computeProjectsForCorpus
