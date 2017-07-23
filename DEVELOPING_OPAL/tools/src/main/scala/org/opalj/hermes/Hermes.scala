@@ -756,27 +756,27 @@ object Hermes extends JFXApp with HermesCore {
                                                     yPercentage = 1
                                                 }
 
-                                                val xAxixMax = methodAxis.getUpperBound
-                                                val xAxixMin = methodAxis.getLowerBound
+                                                val xAxisMax = methodAxis.getUpperBound
+                                                val xAxisMin = methodAxis.getLowerBound
 
-                                                val yAxixMax = featureAxis.getUpperBound
-                                                val yAxixMin = featureAxis.getLowerBound
+                                                val yAxisMax = featureAxis.getUpperBound
+                                                val yAxisMin = featureAxis.getLowerBound
 
-                                                val xAxisLenght = xAxixMax - xAxixMin
-                                                val yAxisLenght = yAxixMax - yAxixMin
+                                                val xAxisLenght = xAxisMax - xAxisMin
+                                                val yAxisLenght = yAxisMax - yAxisMin
 
                                                 methodAxis.setUpperBound(
-                                                    xAxixMax - zoomDirection * (xAxisLenght * zoomInFactor * (1 - xPercentage))
+                                                    xAxisMax - zoomDirection * (xAxisLenght * zoomInFactor * (1 - xPercentage))
                                                 )
                                                 featureAxis.setUpperBound(
-                                                    yAxixMax - zoomDirection * (yAxisLenght * zoomInFactor * yPercentage)
+                                                    yAxisMax - zoomDirection * (yAxisLenght * zoomInFactor * yPercentage)
                                                 )
 
                                                 methodAxis.setLowerBound(
-                                                    xAxixMin + zoomDirection * (xAxisLenght * zoomInFactor * xPercentage)
+                                                    xAxisMin + zoomDirection * (xAxisLenght * zoomInFactor * xPercentage)
                                                 )
                                                 featureAxis.setLowerBound(
-                                                    yAxixMin + zoomDirection * (yAxisLenght * zoomInFactor * (1 - yPercentage))
+                                                    yAxisMin + zoomDirection * (yAxisLenght * zoomInFactor * (1 - yPercentage))
                                                 )
 
                                             }
