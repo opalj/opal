@@ -646,16 +646,14 @@ object Hermes extends JFXApp with HermesCore {
                     contentText = ""
                 }
 
-                var selectedFeatureType = ""
+                var selectedFeatureType: String = null
                 var selectedFeature = ""
 
-                val result = featureCountDialog.showAndWait()
-                result match {
-                    case Some(choice) ⇒ selectedFeatureType = choice.toString
-                    case None         ⇒ println("no feature category selected")
+                featureCountDialog.showAndWait() foreach { choice ⇒
+                    selectedFeatureType = choice.toString
                 }
 
-                if (selectedFeatureType.length != 0) {
+                if (selectedFeatureType != null) {
                     featureMatrix.get(0).featureGroups.filter(f ⇒ selectedFeatureType.equals(f._1.id.toString)).head._2.foreach(f ⇒
                         featureList.add(f.value.id))
 
@@ -666,178 +664,170 @@ object Hermes extends JFXApp with HermesCore {
                         contentText = ""
                     }
 
-                    val selectResult = featureSelectDialog.showAndWait()
-                    selectResult match {
-                        case Some(choice) ⇒
+                    featureSelectDialog.showAndWait() foreach { choice ⇒
+                        selectedFeature = choice
+                        val chartData = ObservableBuffer.empty[XYChart.Series[Number, Number]]
+                        val chartStage = new Stage {
+                            title = selectedFeature.replace("\n", " ")+" in relation to Method Count"
+                            scene = new Scene(950, 600) {
+                                var highestMethodCount = 0.toDouble
+                                var highestFeatureCount = 0.toDouble
 
-                            selectedFeature = choice
+                                featureMatrix foreach { pf ⇒
+                                    val statistics = pf.projectConfiguration.statistics
+                                    val numberOfMethods = statistics.get("ProjectMethods").get
 
-                            val chartData = ObservableBuffer.empty[XYChart.Series[Number, Number]]
-                            val chartStage = new Stage {
-                                title = "Scatter chart for "+selectedFeature
-                                scene = new Scene(950, 600) {
-                                    var highestMethodCount = 0.toDouble
-                                    var highestFeatureCount = 0.toDouble
+                                    val featureOccurrence = pf.featureGroups.filter(f ⇒ selectedFeatureType.equals(f._1.id)).head._2.filter(f ⇒
+                                        f.value.id == selectedFeature).head.value.count
 
-                                    featureMatrix foreach { pf ⇒
-                                        val statistics = pf.projectConfiguration.statistics
-                                        val numberOfMethods = statistics.get("ProjectMethods").get
+                                    if (highestMethodCount < numberOfMethods) highestMethodCount = numberOfMethods
+                                    if (highestFeatureCount < featureOccurrence) highestFeatureCount = featureOccurrence.toDouble
 
-                                        val featureOccurrence = pf.featureGroups.filter(f ⇒ selectedFeatureType.equals(f._1.id)).head._2.filter(f ⇒
-                                            f.value.id == selectedFeature).head.value.count
-
-                                        if (highestMethodCount < numberOfMethods) highestMethodCount = numberOfMethods
-                                        if (highestFeatureCount < featureOccurrence) highestFeatureCount = featureOccurrence.toDouble
-
-                                        val chartSeries = XYChart.Series[Number, Number](
-                                            pf.id.value,
-                                            ObservableBuffer(XYChart.Data[Number, Number](numberOfMethods, featureOccurrence))
-                                        )
-
-                                        chartData.add(chartSeries)
-                                    }
-
-                                    val methodAxisLines = highestMethodCount / 100
-                                    val featureAxisLines = highestFeatureCount / 100
-
-                                    val upperBoundScale = 1.1
-
-                                    val methodAxis = new NumberAxis(
-                                        "Method Count for each project",
-                                        0, (highestMethodCount * upperBoundScale).ceil, methodAxisLines.floor
+                                    val chartSeries = XYChart.Series[Number, Number](
+                                        pf.id.value,
+                                        ObservableBuffer(XYChart.Data[Number, Number](numberOfMethods, featureOccurrence))
                                     )
 
-                                    val featureAxis = new NumberAxis(
-                                        "Count for "+selectedFeature,
-                                        0, (highestFeatureCount * upperBoundScale).ceil, featureAxisLines.floor
-                                    )
+                                    chartData.add(chartSeries)
+                                }
 
-                                    val sChart = new ScatterChart[Number, Number](
-                                        methodAxis,
-                                        featureAxis
+                                val methodAxisLines = highestMethodCount / 100
+                                val featureAxisLines = highestFeatureCount / 100
 
-                                    )
-                                    sChart.setTitle(selectedFeature+" in relation to Method Count")
-                                    chartData.foreach(d ⇒ sChart.getData.add(d))
-                                    sChart.setLegendVisible(false)
-                                    sChart.horizontalGridLinesVisible = false
-                                    sChart.verticalGridLinesVisible = false
+                                val upperBoundScale = 1.1
 
-                                    val zoomInFactor = 0.5
+                                val methodAxis = new NumberAxis(
+                                    "Method Count for each Project",
+                                    0, (highestMethodCount * upperBoundScale).ceil, methodAxisLines.floor
+                                )
 
-                                    sChart.setOnMouseClicked(new EventHandler[MouseEvent] {
-                                        override def handle(event: MouseEvent): Unit = {
-                                            var zoomDirection = 1
-                                            if (event.getButton.toString.equals("SECONDARY")) {
-                                                zoomDirection = -1
+                                val featureAxis = new NumberAxis(
+                                    "Count for "+selectedFeature,
+                                    0, (highestFeatureCount * upperBoundScale).ceil, featureAxisLines.floor
+                                )
+
+                                val sChart = new ScatterChart[Number, Number](
+                                    methodAxis,
+                                    featureAxis
+                                )
+                                chartData.foreach(d ⇒ sChart.getData.add(d))
+                                sChart.setLegendVisible(false)
+                                sChart.horizontalGridLinesVisible = false
+                                sChart.verticalGridLinesVisible = false
+
+                                val zoomInFactor = 0.5
+
+                                sChart.setOnMouseClicked(new EventHandler[MouseEvent] {
+                                    override def handle(event: MouseEvent): Unit = {
+                                        var zoomDirection = 1
+                                        if (event.getButton == javafx.scene.input.MouseButton.SECONDARY) {
+                                            zoomDirection = -1
+                                        }
+
+                                        val result = event.getPickResult
+                                        if (result.getIntersectedNode.getStyleClass.toString.equals("chart-plot-background")) {
+                                            val xCoordinate = result.getIntersectedPoint.getX
+                                            val yCoordinate = result.getIntersectedPoint.getY
+
+                                            val maxX = result.getIntersectedNode.getBoundsInLocal.getMaxX
+                                            val maxY = result.getIntersectedNode.getBoundsInLocal.getMaxY
+
+                                            val delta = 0.1
+
+                                            var xPercentage = xCoordinate / maxX
+                                            if (xPercentage < delta) {
+                                                xPercentage = 0
+                                            } else if (xPercentage > (1 - delta)) {
+                                                xPercentage = 1
                                             }
 
-                                            val result = event.getPickResult
-                                            if (result.getIntersectedNode.getStyleClass.toString.equals("chart-plot-background")) {
-                                                val xCoordinate = result.getIntersectedPoint.getX
-                                                val yCoordinate = result.getIntersectedPoint.getY
-
-                                                val maxX = result.getIntersectedNode.getBoundsInLocal.getMaxX
-                                                val maxY = result.getIntersectedNode.getBoundsInLocal.getMaxY
-
-                                                val delta = 0.1
-
-                                                var xPercentage = xCoordinate / maxX
-                                                if (xPercentage < delta) {
-                                                    xPercentage = 0
-                                                } else if (xPercentage > (1 - delta)) {
-                                                    xPercentage = 1
-                                                }
-
-                                                var yPercentage = yCoordinate / maxY
-                                                if (yPercentage < delta) {
-                                                    yPercentage = 0
-                                                } else if (yPercentage > (1 - delta)) {
-                                                    yPercentage = 1
-                                                }
-
-                                                val xAxisMax = methodAxis.getUpperBound
-                                                val xAxisMin = methodAxis.getLowerBound
-
-                                                val yAxisMax = featureAxis.getUpperBound
-                                                val yAxisMin = featureAxis.getLowerBound
-
-                                                val xAxisLenght = xAxisMax - xAxisMin
-                                                val yAxisLenght = yAxisMax - yAxisMin
-
-                                                methodAxis.setUpperBound(
-                                                    xAxisMax - zoomDirection * (xAxisLenght * zoomInFactor * (1 - xPercentage))
-                                                )
-                                                featureAxis.setUpperBound(
-                                                    yAxisMax - zoomDirection * (yAxisLenght * zoomInFactor * yPercentage)
-                                                )
-
-                                                methodAxis.setLowerBound(
-                                                    xAxisMin + zoomDirection * (xAxisLenght * zoomInFactor * xPercentage)
-                                                )
-                                                featureAxis.setLowerBound(
-                                                    yAxisMin + zoomDirection * (yAxisLenght * zoomInFactor * (1 - yPercentage))
-                                                )
-
+                                            var yPercentage = yCoordinate / maxY
+                                            if (yPercentage < delta) {
+                                                yPercentage = 0
+                                            } else if (yPercentage > (1 - delta)) {
+                                                yPercentage = 1
                                             }
 
+                                            val xAxisMax = methodAxis.getUpperBound
+                                            val xAxisMin = methodAxis.getLowerBound
+
+                                            val yAxisMax = featureAxis.getUpperBound
+                                            val yAxisMin = featureAxis.getLowerBound
+
+                                            val xAxisLenght = xAxisMax - xAxisMin
+                                            val yAxisLenght = yAxisMax - yAxisMin
+
+                                            methodAxis.setUpperBound(
+                                                xAxisMax - zoomDirection * (xAxisLenght * zoomInFactor * (1 - xPercentage))
+                                            )
+                                            featureAxis.setUpperBound(
+                                                yAxisMax - zoomDirection * (yAxisLenght * zoomInFactor * yPercentage)
+                                            )
+
+                                            methodAxis.setLowerBound(
+                                                xAxisMin + zoomDirection * (xAxisLenght * zoomInFactor * xPercentage)
+                                            )
+                                            featureAxis.setLowerBound(
+                                                yAxisMin + zoomDirection * (yAxisLenght * zoomInFactor * (1 - yPercentage))
+                                            )
+
                                         }
-                                    })
 
-                                    val zoomInButton = new Button("Corner Zoom (+)")
-                                    zoomInButton.onAction = handle {
-                                        methodAxis.setUpperBound(methodAxis.getUpperBound * zoomInFactor)
-                                        featureAxis.setUpperBound(featureAxis.getUpperBound * zoomInFactor)
                                     }
-                                    val zoomOutButton = new Button("Corner Zoom (-)")
-                                    zoomOutButton.onAction = handle {
-                                        methodAxis.setUpperBound(methodAxis.getUpperBound / zoomInFactor)
-                                        featureAxis.setUpperBound(featureAxis.getUpperBound / zoomInFactor)
-                                    }
-                                    val resetZoomButton = new Button("Reset Zoom")
-                                    resetZoomButton.onAction = handle {
-                                        methodAxis.setUpperBound(highestMethodCount * upperBoundScale)
-                                        featureAxis.setUpperBound(highestFeatureCount * upperBoundScale)
-                                        methodAxis.setLowerBound(0)
-                                        featureAxis.setLowerBound(0)
-                                    }
+                                })
 
-                                    val legendButton = new Button("Show Legend")
-                                    legendButton.onAction = handle {
-                                        if (sChart.isLegendVisible) {
-                                            sChart.setLegendVisible(false)
-                                            legendButton.setText("Show Legend")
-                                        } else {
-                                            sChart.setLegendVisible(true)
-                                            legendButton.setText("Hide Legend")
-                                        }
+                                val zoomInButton = new Button("Corner Zoom (+)")
+                                zoomInButton.onAction = handle {
+                                    methodAxis.setUpperBound(methodAxis.getUpperBound * zoomInFactor)
+                                    featureAxis.setUpperBound(featureAxis.getUpperBound * zoomInFactor)
+                                }
+                                val zoomOutButton = new Button("Corner Zoom (-)")
+                                zoomOutButton.onAction = handle {
+                                    methodAxis.setUpperBound(methodAxis.getUpperBound / zoomInFactor)
+                                    featureAxis.setUpperBound(featureAxis.getUpperBound / zoomInFactor)
+                                }
+                                val resetZoomButton = new Button("Reset Zoom")
+                                resetZoomButton.onAction = handle {
+                                    methodAxis.setUpperBound(highestMethodCount * upperBoundScale)
+                                    featureAxis.setUpperBound(highestFeatureCount * upperBoundScale)
+                                    methodAxis.setLowerBound(0)
+                                    featureAxis.setLowerBound(0)
+                                }
+
+                                val legendButton = new Button("Show Legend")
+                                legendButton.onAction = handle {
+                                    if (sChart.isLegendVisible) {
+                                        sChart.setLegendVisible(false)
+                                        legendButton.setText("Show Legend")
+                                    } else {
+                                        sChart.setLegendVisible(true)
+                                        legendButton.setText("Hide Legend")
                                     }
+                                }
 
-                                    val zoomDescription = new Label("Click on the chart plot background to zoom in."+
-                                        "\nRight mouse button to zoom out.")
+                                val zoomDescription = new Label("Click on the chart plot background to zoom in."+
+                                    "\nRight mouse button to zoom out.")
 
-                                    root = new BorderPane {
-                                        center = sChart
-                                        bottom = new HBox {
-                                            children = Seq(legendButton, zoomInButton, zoomOutButton, resetZoomButton, zoomDescription)
-                                            spacing = 6
-                                            padding = Insets(10)
-                                            alignment = Pos.BottomLeft
-                                        }
+                                root = new BorderPane {
+                                    center = sChart
+                                    bottom = new HBox {
+                                        children = Seq(legendButton, zoomInButton, zoomOutButton, resetZoomButton, zoomDescription)
+                                        spacing = 6
+                                        padding = Insets(10)
+                                        alignment = Pos.BottomLeft
                                     }
                                 }
                             }
-                            chartStage.show()
-                            chartData.foreach { series ⇒
-                                val data = series.getData.head
-                                val name = series.name.value
-                                val yValue = data.getYValue
-                                val xValue = data.getXValue
-                                val description = s"$name; #Features: $yValue; #Methods: $xValue"
-                                Tooltip.install(data.getNode, new Tooltip(description))
-                            }
-
-                        case None ⇒ println("no feature selected")
+                        }
+                        chartStage.show()
+                        chartData.foreach { series ⇒
+                            val data = series.getData.head
+                            val name = series.name.value
+                            val yValue = data.getYValue
+                            val xValue = data.getXValue
+                            val description = s"$name; #Features: $yValue; #Methods: $xValue"
+                            Tooltip.install(data.getNode, new Tooltip(description))
+                        }
                     }
                 }
 
