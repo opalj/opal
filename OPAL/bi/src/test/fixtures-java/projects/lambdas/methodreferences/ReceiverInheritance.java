@@ -32,7 +32,6 @@ import java.util.LinkedHashSet;
 import java.util.function.*;
 
 import annotations.target.InvokedMethod;
-import annotations.target.InvokedMethods;
 import static annotations.target.TargetResolution.DYNAMIC;
 
 /**
@@ -43,6 +42,7 @@ import static annotations.target.TargetResolution.DYNAMIC;
  *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE).
+ *
  *
  * -->
  *
