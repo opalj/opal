@@ -85,11 +85,11 @@ package object tac {
             //      if... // DEAD => no mapping for endPC
             // try - end
             /*
-               37	aload_3	// <= determined to be NULL (!!!)
-               38	invokeinterface (nargs=1) java.sql.ResultSet { void close () }
-               43	goto 48
-               46	astore 4
-               48	return
+               37    aload_3    // <= determined to be NULL (!!!)
+               38    invokeinterface (nargs=1) java.sql.ResultSet { void close () }
+               43    goto 48
+               46    astore 4
+               48    return
                try [37-43) catch 46 java.lang.Exception
 
                Mapping
