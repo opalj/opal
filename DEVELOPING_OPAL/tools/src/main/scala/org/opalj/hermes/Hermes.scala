@@ -99,7 +99,7 @@ import org.opalj.util.Nanoseconds
  * Executes all analyses to determine the representativeness of the given projects.
  *
  * @author Michael Eichberg
- * @author Christian Schaarschmidt (Scatter and Pie chart)
+ * @author Christian Schaarschmidt (JavaFX Data Visualization)
  */
 object Hermes extends JFXApp with HermesCore {
 
