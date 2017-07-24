@@ -55,9 +55,9 @@ class JRELambdaExpressionsRewritingTest extends FunSuite {
 
     def isProxyFactoryCall(instruction: INVOKESTATIC): Boolean = {
         instruction.declaringClass.fqn.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx) ||
-        instruction.declaringClass.fqn.matches(
-            Java8LambdaExpressionsRewriting.LambdaDeserializeNameRegEx
-        )
+            instruction.declaringClass.fqn.matches(
+                Java8LambdaExpressionsRewriting.LambdaDeserializeNameRegEx
+            )
     }
 
     if (!isCurrentJREAtLeastJava8) {

@@ -100,7 +100,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                             instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
                         )
                         println(
-                            body.exceptionHandlers.mkString("Exception Handlers:\n\t","\n\t","\n")
+                            body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
                         )
                         errors ::= ((file+":"+methodSignature, e))
                     }

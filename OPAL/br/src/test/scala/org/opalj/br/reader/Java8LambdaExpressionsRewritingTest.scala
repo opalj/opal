@@ -32,16 +32,18 @@ package reader
 
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
+import org.scalactic.Equality
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.log.{GlobalLogContext, LogContext, OPALLogger}
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.bi.TestResources.{locateTestResources ⇒ locate}
 import org.opalj.br.instructions.INVOKESTATIC
-import org.scalactic.Equality
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Tests the rewriting of Java 8 lambda expressions/method references based
@@ -58,10 +60,10 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     val InvokedMethods = ObjectType("annotations/target/InvokedMethods")
 
-    val lambda18TestResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+    val lambda18TestResources = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
-        OPALLogger.info("Java8LambdaExpressionsRewritingTest", s"Testing $name")(GlobalLogContext)
+        info("Java8LambdaExpressionsRewritingTest", s"Testing $name")(GlobalLogContext)
         var successFull = false
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
@@ -70,16 +72,16 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             annotations = method.runtimeVisibleAnnotations
         } {
             successFull = true
-            implicit val MethodEq =
-                new Equality[Method] {
-                    def areEqual(a: Method, b: Any): Boolean =
-                        b match {
-                            case m: Method ⇒
-                                a.compare(m) == 0 && a.visibilityModifier == m.visibilityModifier &&
-                                    a.isStatic == m.isStatic
-                            case _ ⇒ false
-                        }
-                }
+            implicit val MethodEquality = new Equality[Method] {
+                def areEqual(a: Method, b: Any): Boolean =
+                    b match {
+                        case m: Method ⇒
+                            a.compare(m) == 0 /* <=> same name and descriptor */ &&
+                                a.visibilityModifier == m.visibilityModifier &&
+                                a.isStatic == m.isStatic
+                        case _ ⇒ false
+                    }
+            }
 
             if (annotations.exists(_.annotationType == InvokedMethods)) {
                 val invokedTarget = annotations
@@ -90,7 +92,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
                         val innerAnnotation = IndexedSeq(invokeMethod.asInstanceOf[AnnotationValue].annotation)
                         val expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
                         val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
-                        MethodEq.areEqual(expectedTarget.get, actualTarget.get)
+                        MethodEquality.areEqual(expectedTarget.get, actualTarget.get)
                     }
 
                 assert(invokedTarget.nonEmpty, s"failed to resolve $factoryCall in ${method.toJava(classFile)}")
@@ -140,11 +142,18 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
                 invocationInstruction.methodDescriptor
             }
 
-        project.resolveMethodReference(
-            declaringType.asObjectType,
-            targetMethodName,
-            targetMethodDescriptor
-        )
+        if (project.classHierarchy.isInterface(declaringType.asObjectType).isYes)
+            project.resolveInterfaceMethodReference(
+                declaringType.asObjectType,
+                targetMethodName,
+                targetMethodDescriptor
+            )
+        else
+            project.resolveMethodReference(
+                declaringType.asObjectType,
+                targetMethodName,
+                targetMethodDescriptor
+            )
     }
 
     /**
@@ -217,8 +226,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
          * @return An Option of the `Method`
          */
         def findMethodRecursiveInner(classFile: ClassFile): Method = {
-            var methodOpt = classFile
-                .findMethod(methodName)
+            var methodOpt = classFile.findMethod(methodName)
             if (parameterTypes.isDefined) {
                 methodOpt = methodOpt.filter(_.parameterTypes == parameterTypes.get)
             }
