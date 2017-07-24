@@ -36,7 +36,7 @@ import java.lang.{Boolean ⇒ JBoolean}
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.log.DefaultLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.Project
