@@ -38,7 +38,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.log.{GlobalLogContext, LogContext, OPALLogger}
+import org.opalj.log.{GlobalLogContext, LogContext}
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.bi.TestResources.{locateTestResources ⇒ locate}
@@ -63,7 +63,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
     val lambda18TestResources = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
-        info("Java8LambdaExpressionsRewritingTest", s"Testing $name")(GlobalLogContext)
+        info(s"Testing $name")
         var successFull = false
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
