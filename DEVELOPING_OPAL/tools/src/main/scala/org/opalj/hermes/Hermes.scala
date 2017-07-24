@@ -45,10 +45,7 @@ import org.chocosolver.solver.variables.IntVar
 import javafx.stage.Screen
 import javafx.scene.control.TableColumn
 import javafx.scene.control.SelectionMode
-import javafx.scene.control.Tooltip
 import javafx.scene.layout.Priority
-import javafx.scene.input.MouseEvent
-import javafx.event.EventHandler
 
 import org.controlsfx.control.PopOver
 import org.controlsfx.control.HiddenSidesPane
@@ -80,7 +77,6 @@ import scalafx.scene.chart.CategoryAxis
 import scalafx.scene.chart.NumberAxis
 import scalafx.scene.chart.BarChart
 import scalafx.scene.chart.PieChart
-import scalafx.scene.chart.ScatterChart
 import scalafx.scene.control.MenuItem
 import scalafx.scene.control.TextArea
 import scalafx.scene.control.ProgressBar
@@ -664,9 +660,8 @@ object Hermes extends JFXApp with HermesCore {
         }
         List(
             showConfig,
-            showAnalysisTimes, showProjectStatistics, showFeatureToMethodCountCorrelation,
+            showAnalysisTimes, showProjectStatistics,
             fileExport,
-
             computeProjectsForCorpus
         )
     }
