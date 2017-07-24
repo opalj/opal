@@ -91,7 +91,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     /**
      * Counter to ensure that the generated types have unique names.
      */
-    private final val typeIdGenerator = new AtomicInteger(0)
+    private final val lambdaTypeIdGenerator = new AtomicInteger(0)
+    private final val scalaLambdaDeserializeTypeIdGenerator = new AtomicInteger(0)
 
     /**
      * Generates a new, internal name for a lambda expression found in the given
@@ -105,8 +106,24 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      * @param surroundingType the type in which the Lambda expression has been found
      */
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
-        val nextId = typeIdGenerator.getAndIncrement()
+        val nextId = lambdaTypeIdGenerator.getAndIncrement()
         s"Lambda$$${surroundingType.id.toHexString}:${nextId.toHexString}"
+    }
+
+    /**
+     * Generates a new, internal name for a scala lambda deserialize found in the given
+     * `surroundingType`.
+     *
+     * It follows the pattern: `LambdaDeserialize${surroundingType.id}:{uniqueId}`, where
+     * `uniqueId` is simply a run-on counter. For example: `LambdaDeserialize$$17:4` would refer to
+     * the fourth Lambda Deserialize INVOKEDYNAMIC parsed during the analysis of the project, which
+     * is defined in the [[ClassFile]] with the type id `17`.
+     *
+     * @param surroundingType the type in which the Lambda Deserialize expression has been found
+     */
+    private def newScalaLambdaDeserializeTypeName(surroundingType: ObjectType): String = {
+        val nextId = scalaLambdaDeserializeTypeIdGenerator.getAndIncrement()
+        s"LambdaDeserialize$$${surroundingType.id.toHexString}:${nextId.toHexString}"
     }
 
     override def deferredInvokedynamicResolution(
@@ -119,7 +136,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         // gather complete information about invokedynamic instructions from the bootstrap
         // method table
-        var updatedClassFile =
+        val updatedClassFile =
             super.deferredInvokedynamicResolution(
                 classFile,
                 cp,
@@ -131,220 +148,361 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         if (!performJava8LambdaExpressionsRewriting)
             return updatedClassFile;
 
-        val invokedynamic @
-            INVOKEDYNAMIC(bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor) =
-            instructions(pc)
-
+        val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (isJava8LambdaExpression(invokedynamic)) {
-
-            val bootstrapArguments = bootstrapMethod.arguments
-            // apparently there are cases in the JRE where there are more than just those
-            // three parameters
-            val Seq(
-                functionalInterfaceDescriptorAfterTypeErasure: MethodDescriptor,
-                invokeTargetMethodHandle: MethodCallMethodHandle,
-                functionalInterfaceDescriptorBeforeTypeErasure: MethodDescriptor, _*
-                ) =
-                bootstrapArguments
-
-            val MethodCallMethodHandle(
-                targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
-                ) = invokeTargetMethodHandle
-
-            val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
-            val typeDeclaration = TypeDeclaration(
-                // ObjectType(newLambdaTypeName(targetMethodOwner)),
-                ObjectType(newLambdaTypeName(classFile.thisType)),
-                isInterfaceType = false,
-                Some(ObjectType.Object), // we basically create a "CallSiteObject"
-                superInterfaceTypes
+            java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
+        } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
+            scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
+        } else if (isScalaSymbolExpression(invokedynamic)) {
+            scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
+        } else {
+            info(
+                "LambdaExpressionsRewriting",
+                s"unresolvable INVOKEDYNAMIC in classfile ${classFile.thisType.toJava}: "+
+                    invokedynamic
             )
+            updatedClassFile
+        }
+    }
 
-            val invocationInstruction = invokeTargetMethodHandle.opcodeOfUnderlyingInstruction
+    /**
+     * Resolve invokedynamic instructions introduced by scala.deprecatedName.
+     *
+     * @param classFile The classfile to parse
+     * @param instructions The instructions of the method we are currently parsing
+     * @param pc The program counter of the current instuction
+     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
+     * @return A classfile which has the INVOKEDYNAMIC instruction replaced
+     */
+    private def scalaSymbolResolution(
+        classFile:     ClassFile,
+        instructions:  Array[Instruction],
+        pc:            PC,
+        invokedynamic: INVOKEDYNAMIC
+    ): ClassFile = {
+        // IMPROVE Rewrite the code such that we are not forced to use a constant pool entry in
+        // the range [0..255]
+        val INVOKEDYNAMIC(
+            bootstrapMethod, _, _ // functionalInterfaceMethodName, factoryDescriptor
+            ) = invokedynamic
+        val bootstrapArguments = bootstrapMethod.arguments
 
-            val receiverDescriptor: MethodDescriptor =
-                if (invokeTargetMethodHandle.isInstanceOf[NewInvokeSpecialMethodHandle]) {
-                    MethodDescriptor(targetMethodDescriptor.parameterTypes, targetMethodOwner)
-                } else {
-                    targetMethodDescriptor
-                }
-
-            val needsBridgeMethod = functionalInterfaceDescriptorAfterTypeErasure !=
-                functionalInterfaceDescriptorBeforeTypeErasure
-
-            val bridgeMethodDescriptor: Option[MethodDescriptor] =
-                if (needsBridgeMethod) {
-                    Some(functionalInterfaceDescriptorAfterTypeErasure)
-                } else {
-                    None
-                }
-
-            val receiverType =
-                /*
-                The receiver type is determined based on the type and/or parameters of the
-                underlying invoke instruction.
-
-                `targetMethodOwner` identifies the class which actually implements the target method.
-                But, in case of INVOKEVIRTUAL and INVOKEINTERFACE the call to the proxy class
-                is done with the actual class, not the class where the method is implemented.
-                Therefore, the receiverType must be the class from the caller, not where the to-
-                be-called method is eventually implemented. E.g. LinkedHashSet.contains() is
-                implemented in HashSet, but the receiverType and constructor parameter must
-                 be LinkedHashSet instead of HashSet.
-
-                *** INVOKEVIRTUAL ***
-                An INVOKEVIRTUAL is used when the method is defined by a class type
-                (not an interface type). (e.g. LinkedHashSet.addAll()).
-                This instruction requires a receiver object when the method reference uses a
-                non-null object as a receiver.
-                E.g.: LinkedHashSet<T> lhs = new LinkedHashSet<>();
-                      lhs::container()
-
-                It does not have a receiver field in case of a class based method reference,
-                e.g. LinkedHashSet::container()
-
-                *** INVOKEINTERFACE ***
-                It is similar to INVOKEVIRTUAL, but the method definition is defined in an
-                interface. Therefore, the same rule like INVOKEVIRTUAL applies.
-
-                *** INVOKESTATIC ***
-                When a static method is called, we will not have a "receiver".
-
-                *** INVOKESPECIAL ***
-                INVOKESPECIAL is used for:
-                - instance initialization methods (i.e. constructors) -> Method is implemented
-                  in called class -> no rewrite necessary
-                - private method invocation: The private method must be in the same class as
-                  the callee -> no rewrite needed
-                - Invokation of methods using super keyword -> Not needed, because a synthetic
-                  method in the callee class is created which handles the INVOKESPECIAL.
-                  Therefore the receiverType is also the callee class.
-
-                  E.g.
-                      public static class Superclass {
-                          protected String someMethod() {
-                              return "someMethod";
-                          }
-                      }
-
-                      public static class Subclass extends Superclass {
-                          public String callSomeMethod() {
-                              Supplier<String> s = super::someMethod;
-                              return s.get();
-                          }
-                      }
-
-                  The class Subclass contains a synthetic method `access`, which has an
-                  INVOKESPECIAL instruction calling Superclass.someMethod. The generated
-                  Lambda Proxyclass calls Subclass.access, so the receiverType must be
-                  Subclass instead of Superclass.
-
-                More information:
-                http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
-                */
-                if (invocationInstruction == INVOKESPECIAL.opcode ||
-                    invocationInstruction == INVOKESTATIC.opcode) {
-                    targetMethodOwner
-                } else if ({
-                    val parameters = invokedynamic.methodDescriptor.parameterTypes
-                    parameters.nonEmpty && parameters.head.isObjectType
-                }) {
-                    // If we have an instance-based method reference,
-                    // get the receiver type from the invokedynamic instruction.
-                    // It is the first parameter of the method defined by the functional interface.
-                    invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
-                } else if ({
-                    val parameters = functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes
-                    parameters.nonEmpty && parameters.head.isObjectType
-                }) {
-                    // In case of an instance method reference like `LinkedHashSet::addAll`, get
-                    // the receiver type from the functional interface. The first parameter is
-                    // the receiver of the method call.
-                    functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.asObjectType
-                } else {
-                    targetMethodOwner
-                }
-
-            /*
-            It is possible for the receiverType to be different from the current classFile.
-            In this case, check if the receiverType is an interface instead of the classFile.
-
-            The Proxy Factory must get the correct value to build the correct variant of the
-            INVOKESTATIC instruction.
-             */
-            val receiverIsInterface =
-                invokeTargetMethodHandle match {
-                    case handle: InvokeStaticMethodHandle ⇒
-                        handle.isInterface
-                    case _ ⇒
-                        classFile.isInterfaceDeclaration
-                }
-
-            val proxy: ClassFile = ClassFileFactory.Proxy(
-                typeDeclaration,
-                functionalInterfaceMethodName,
-                functionalInterfaceDescriptorBeforeTypeErasure,
-                receiverType,
-                // Note a static lambda method in an interface needs
-                // to be called using the correct variant of an invokestatic.
-                receiverIsInterface = receiverIsInterface,
-                targetMethodName,
-                receiverDescriptor,
-                invocationInstruction,
-                bridgeMethodDescriptor
+        val newInvokestatic = INVOKESTATIC(
+            ObjectType.ScalaSymbol,
+            isInterface = false, // the created proxy class is always a concrete class
+            "apply",
+            // the invokedynamic's methodDescriptor (factoryDescriptor) determines
+            // the parameters that are actually pushed and popped from/to the stack
+            MethodDescriptor(
+                IndexedSeq(
+                    ObjectType.String
+                ),
+                ObjectType.ScalaSymbol
             )
-            val factoryMethod = {
-                if (functionalInterfaceMethodName == DefaultFactoryMethodName)
-                    proxy.findMethod(AlternativeFactoryMethodName).head
-                else
-                    proxy.findMethod(DefaultFactoryMethodName).head
-            }
+        )
 
-            val newInvokestatic = INVOKESTATIC(
-                proxy.thisType,
-                isInterface = false, // the created proxy class is always a concrete class
-                factoryMethod.name,
-                // the invokedynamic's methodDescriptor (factoryDescriptor) determines
-                // the parameters that are actually pushed and popped from/to the stack
-                factoryDescriptor.copy(returnType = proxy.thisType)
-            )
-
-            /*// DEBUG ---
-            if (receiverType != targetMethodOwner) {
-                println("Rewritten proxy class receiver type from targetMethodOwner to receiverType!\n")
-                println("Creating Proxy Class:")
-                println(s"\t\ttypeDeclaration = $typeDeclaration")
-                println(s"\t\tfunctionalInterfaceMethodName = $functionalInterfaceMethodName")
-                println(s"\t\tfunctionalInterfaceDescriptorBeforeTypeErasure = $functionalInterfaceDescriptorBeforeTypeErasure")
-                println(s"\t\ttargetMethodOwner = $targetMethodOwner")
-                println(s"\t\treceiverType =  $receiverType")
-                println(s"\t\ttargetMethodName = $targetMethodName")
-                println(s"\t\treceiverDescriptor = $receiverDescriptor")
-                println(s"\t\tinvocationInstruction = $invocationInstruction")
-                println(s"\t\tbridgeMethodDescriptor = $bridgeMethodDescriptor")
-                println(s"$pc: factoryMethod md => ${factoryMethod.descriptor}")
-                println(s"$pc: invokedynamic md => ${invokedynamic.methodDescriptor}")
-                println(s"$pc:\n$invokedynamic\n=>\n$newInvokestatic\n")
-                println()
-            }
-            // --- DEBUG*/
-
-            if (logJava8LambdaExpressionsRewrites) {
-                val m = s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic"
-                info("analysis", m)
-            }
-
-            instructions(pc) = newInvokestatic
-            // since invokestatic is two bytes shorter than invokedynamic, we need to fill
-            // the two-byte gap following the invokestatic with NOPs
-            instructions(pc + 3) = NOP
-            instructions(pc + 4) = NOP
-
-            val reason = Some((classFile, instructions, pc, invokedynamic, newInvokestatic))
-            updatedClassFile = storeProxy(updatedClassFile, proxy, reason)
+        if (logJava8LambdaExpressionsRewrites) {
+            info("analysis", s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic")
         }
 
-        updatedClassFile
+        instructions(pc) = LDC(bootstrapArguments.head.asInstanceOf[ConstantString])
+        instructions(pc + 2) = newInvokestatic
+
+        classFile
+    }
+
+    /**
+     * The scala compiler (and possibly other JVM bytecode compilers) add a
+     * `$deserializeLambda$`, which handles validation of lambda methods if the lambda is
+     * Serializable. This method is called when the serialized lambda is deserialized.
+     * For scala 2.12, it includes an INVOKEDYNAMIC instruction. This one has to be replaced with
+     * calls to `LambdaDeserialize::deserializeLambda`, which is what the INVOKEDYNAMIC instruction
+     * refers to, see [https://github.com/scala/scala/blob/v2.12.2/src/library/scala/runtime/LambdaDeserialize.java#L29].
+     * This is done to reduce the size of `$deserializeLambda$`.
+     *
+     * @note SerializedLambda has a readResolve method that looks for a (possibly private) static
+     * method called $deserializeLambda$(SerializedLambda) in the capturing class, invokes that
+     * with itself as the first argument, and returns the result. Lambda classes implementing
+     * $deserializeLambda$ are responsible for validating that the properties of the
+     * SerializedLambda are consistent with a lambda actually captured by that class.
+     * See: [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/SerializedLambda.html]
+     *
+     * More information about lambda deserialization:
+     *  - [https://zeroturnaround.com/rebellabs/java-8-revealed-lambdas-default-methods-and-bulk-data-operations/4/]
+     *  - [http://mail.openjdk.java.net/pipermail/mlvm-dev/2016-August/006699.html]
+     *  - [https://github.com/scala/scala/blob/v2.12.2/src/library/scala/runtime/LambdaDeserialize.java]
+     *
+     * @param classFile The classfile to parse
+     * @param instructions The instructions of the method we are currently parsing
+     * @param pc The program counter of the current instuction
+     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
+     * @return A classfile which has the INVOKEDYNAMIC instruction replaced
+     */
+    private def scalaLambdaDeserializeResolution(
+        classFile:     ClassFile,
+        instructions:  Array[Instruction],
+        pc:            PC,
+        invokedynamic: INVOKEDYNAMIC
+    ): ClassFile = {
+        val INVOKEDYNAMIC(
+            bootstrapMethod, _, _ // functionalInterfaceMethodName, factoryDescriptor
+            ) = invokedynamic
+        val bootstrapArguments = bootstrapMethod.arguments
+
+        val superInterfaceTypes = UIDSet(LambdaMetafactoryDescriptor.returnType.asObjectType)
+        val typeDeclaration = TypeDeclaration(
+            // ObjectType(newLambdaTypeName(targetMethodOwner)),
+            ObjectType(newScalaLambdaDeserializeTypeName(classFile.thisType)),
+            isInterfaceType = false,
+            Some(ObjectType.Object), // we basically create a "CallSiteObject"
+            superInterfaceTypes
+        )
+
+        val proxy: ClassFile = ClassFileFactory.DeserializeLambdaProxy(
+            typeDeclaration,
+            bootstrapArguments
+        )
+
+        val factoryMethod = proxy.findMethod("<init>").head
+
+        val newInvokestatic = INVOKESTATIC(
+            proxy.thisType,
+            isInterface = false, // the created proxy class is always a concrete class
+            factoryMethod.name,
+            // the invokedynamic's methodDescriptor (factoryDescriptor) determines
+            // the parameters that are actually pushed and popped from/to the stack
+            MethodDescriptor(
+                IndexedSeq.empty[ObjectType],
+                ObjectType.CallSite
+            )
+        )
+
+        if (logJava8LambdaExpressionsRewrites) {
+            info("analysis", s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic")
+        }
+
+        instructions(pc) = newInvokestatic
+        // since invokestatic is two bytes shorter than invokedynamic, we need to fill
+        // the two-byte gap following the invokestatic with NOPs
+        instructions(pc + 3) = NOP
+        instructions(pc + 4) = NOP
+
+        val reason = Some((classFile, instructions, pc, invokedynamic, newInvokestatic))
+        storeProxy(classFile, proxy, reason)
+    }
+
+    private def java8LambdaResolution(
+        classFile:     ClassFile,
+        instructions:  Array[Instruction],
+        pc:            PC,
+        invokedynamic: INVOKEDYNAMIC
+    ): ClassFile = {
+        val INVOKEDYNAMIC(
+            bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
+            ) = invokedynamic
+        val bootstrapArguments = bootstrapMethod.arguments
+        // apparently there are cases in the JRE where there are more than just those
+        // three parameters
+        // TODO: Why can they be ignored
+        val Seq(
+            functionalInterfaceDescriptorAfterTypeErasure: MethodDescriptor,
+            invokeTargetMethodHandle: MethodCallMethodHandle,
+            functionalInterfaceDescriptorBeforeTypeErasure: MethodDescriptor, _*
+            ) =
+            bootstrapArguments
+
+        val MethodCallMethodHandle(
+            targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
+            ) = invokeTargetMethodHandle
+
+        val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
+        val typeDeclaration = TypeDeclaration(
+            // ObjectType(newLambdaTypeName(targetMethodOwner)),
+            ObjectType(newLambdaTypeName(classFile.thisType)),
+            isInterfaceType = false,
+            Some(ObjectType.Object), // we basically create a "CallSiteObject"
+            superInterfaceTypes
+        )
+
+        val invocationInstruction = invokeTargetMethodHandle.opcodeOfUnderlyingInstruction
+
+        val receiverDescriptor: MethodDescriptor =
+            if (invokeTargetMethodHandle.isInstanceOf[NewInvokeSpecialMethodHandle]) {
+                MethodDescriptor(targetMethodDescriptor.parameterTypes, targetMethodOwner)
+            } else {
+                targetMethodDescriptor
+            }
+
+        val needsBridgeMethod = functionalInterfaceDescriptorAfterTypeErasure !=
+            functionalInterfaceDescriptorBeforeTypeErasure
+
+        val bridgeMethodDescriptor: Option[MethodDescriptor] =
+            if (needsBridgeMethod) {
+                Some(functionalInterfaceDescriptorAfterTypeErasure)
+            } else {
+                None
+            }
+
+        val receiverType =
+            /*
+            Check the type of the invoke instruction using the instruction's opcode.
+
+            targetMethodOwner identifies the class where the method is actually implemented.
+            This is wrong for INVOKEVIRTUAL and INVOKEINTERFACE. The call to the proxy class
+            is done with the actual class, not the class where the method is implemented.
+            Therefore, the receiverType must be the class from the caller, not where the to-
+            be-called method is implemented. E.g. LinkedHashSet.contains() is implemented in
+            HashSet, but the receiverType and constructor parameter must be LinkedHashSet
+            instead of HashSet.
+
+            *** INVOKEVIRTUAL ***
+            An INVOKEVIRTUAL is used when the method is defined by a class type
+            (not an interface type). (e.g. LinkedHashSet.addAll()).
+            This instruction requires a receiver object when the method reference uses a
+            non-null object as a receiver.
+            E.g.: LinkedHashSet<T> lhs = new LinkedHashSet<>();
+                  lhs::container()
+
+            It does not have a receiver field in case of a class based method reference,
+            e.g. LinkedHashSet::container()
+
+            *** INVOKEINTERFACE ***
+            It is similar to INVOKEVIRTUAL, but the method definition is defined in an
+            interface. Therefore, the same rule like INVOKEVIRTUAL applies.
+
+            *** INVOKESTATIC ***
+            Because we call a static method, we don't have an instance. Therefore we don't
+            need a receiver field.
+
+            *** INVOKESPECIAL ***
+            INVOKESPECIAL is used for:
+            - instance initialization methods (i.e. constructors) -> Method is implemented
+              in called class -> no rewrite necessary
+            - private method invocation: The private method must be in the same class as
+              the callee -> no rewrite needed
+            - Invokation of methods using super keyword -> Not needed, because a synthetic
+              method in the callee class is created which handles the INVOKESPECIAL.
+              Therefore the receiverType is also the callee class.
+
+              E.g.
+                  public static class Superclass {
+                      protected String someMethod() {
+                          return "someMethod";
+                      }
+                  }
+
+                  public static class Subclass extends Superclass {
+                      public String callSomeMethod() {
+                          Supplier<String> s = super::someMethod;
+                          return s.get();
+                      }
+                  }
+
+              The class Subclass contains a synthetic method `access`, which has an
+              INVOKESPECIAL instruction calling Superclass.someMethod. The generated
+              Lambda Proxyclass calls Subclass.access, so the receiverType must be
+              Subclass insteaed of Superclass.
+
+              More information:
+                http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
+            */
+            if (invocationInstruction != INVOKEVIRTUAL.opcode &&
+                invocationInstruction != INVOKEINTERFACE.opcode) {
+                targetMethodOwner
+            } else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
+                invokedynamic.methodDescriptor.parameterTypes.head.isObjectType) {
+                // If we have an instance of a object and use a method reference,
+                // get the receiver type from the invokedynamic instruction.
+                // It is the first parameter of the functional interface parameter
+                // list.
+                invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
+            } else if (functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.nonEmpty &&
+                functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.isObjectType) {
+                // If we get a instance method reference like `LinkedHashSet::addAll`, get
+                // the receiver type from the functional interface. The first parameter is
+                // the instance where the method should be called.
+                functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.asObjectType
+            } else {
+                targetMethodOwner
+            }
+
+        /*
+        It is possible for the receiverType to be different from classFile. In this case,
+        check if the receiverType is an interface instead of the classFile.
+
+        The Proxy Factory must get the correct value to build the correct variant of the
+        INVOKESTATIC instruction.
+         */
+        val receiverIsInterface =
+            invokeTargetMethodHandle match {
+                case handle: InvokeStaticMethodHandle ⇒
+                    handle.isInterface
+                case _ ⇒
+                    classFile.isInterfaceDeclaration
+            }
+
+        val proxy: ClassFile = ClassFileFactory.Proxy(
+            typeDeclaration,
+            functionalInterfaceMethodName,
+            functionalInterfaceDescriptorBeforeTypeErasure,
+            receiverType,
+            // Note a static lambda method in an interface needs
+            // to be called using the correct variant of an invokestatic.
+            receiverIsInterface = receiverIsInterface,
+            targetMethodName,
+            receiverDescriptor,
+            invocationInstruction,
+            bridgeMethodDescriptor
+        )
+        val factoryMethod = {
+            if (functionalInterfaceMethodName == DefaultFactoryMethodName)
+                proxy.findMethod(AlternativeFactoryMethodName).head
+            else
+                proxy.findMethod(DefaultFactoryMethodName).head
+        }
+
+        val newInvokestatic = INVOKESTATIC(
+            proxy.thisType,
+            isInterface = false, // the created proxy class is always a concrete class
+            factoryMethod.name,
+            // the invokedynamic's methodDescriptor (factoryDescriptor) determines
+            // the parameters that are actually pushed and popped from/to the stack
+            factoryDescriptor.copy(returnType = proxy.thisType)
+        )
+
+        /*// DEBUG ---
+        if (receiverType != targetMethodOwner) {
+            println("Rewritten proxy class receiver type from targetMethodOwner to receiverType!\n")
+            println("Creating Proxy Class:")
+            println(s"\t\ttypeDeclaration = $typeDeclaration")
+            println(s"\t\tfunctionalInterfaceMethodName = $functionalInterfaceMethodName")
+            println(s"\t\tfunctionalInterfaceDescriptorBeforeTypeErasure = $functionalInterfaceDescriptorBeforeTypeErasure")
+            println(s"\t\ttargetMethodOwner = $targetMethodOwner")
+            println(s"\t\treceiverType =  $receiverType")
+            println(s"\t\ttargetMethodName = $targetMethodName")
+            println(s"\t\treceiverDescriptor = $receiverDescriptor")
+            println(s"\t\tinvocationInstruction = $invocationInstruction")
+            println(s"\t\tbridgeMethodDescriptor = $bridgeMethodDescriptor")
+            println(s"$pc: factoryMethod md => ${factoryMethod.descriptor}")
+            println(s"$pc: invokedynamic md => ${invokedynamic.methodDescriptor}")
+            println(s"$pc:\n$invokedynamic\n=>\n$newInvokestatic\n")
+            println()
+        }
+        // --- DEBUG*/
+
+        if (logJava8LambdaExpressionsRewrites) {
+            val m = s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic"
+            info("analysis", m)
+        }
+
+        instructions(pc) = newInvokestatic
+        // since invokestatic is two bytes shorter than invokedynamic, we need to fill
+        // the two-byte gap following the invokestatic with NOPs
+        instructions(pc + 3) = NOP
+        instructions(pc + 4) = NOP
+
+        val reason = Some((classFile, instructions, pc, invokedynamic, newInvokestatic))
+        storeProxy(classFile, proxy, reason)
     }
 
     def isJava8LambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
@@ -356,6 +514,28 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 } else {
                     name == "altMetafactory" && descriptor == LambdaAltMetafactoryDescriptor
                 }
+            case _ ⇒ false
+        }
+    }
+
+    def isScalaLambdaDeserializeExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        import MethodDescriptor.ScalaLambdaDeserializeDescriptor
+        import ObjectType.ScalaLambdaDeserialize
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(
+                ScalaLambdaDeserialize, false, "bootstrap", ScalaLambdaDeserializeDescriptor
+                ) ⇒ true
+            case _ ⇒ false
+        }
+    }
+
+    def isScalaSymbolExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        import MethodDescriptor.ScalaSymbolLiteralDescriptor
+        import ObjectType.ScalaSymbolLiteral
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(
+                ScalaSymbolLiteral, false, "bootstrap", ScalaSymbolLiteralDescriptor
+                ) ⇒ true
             case _ ⇒ false
         }
     }
@@ -380,7 +560,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
 object Java8LambdaExpressionsRewriting {
 
-    final val FactoryNamesRegEx = "^Lambda\\$[0-9a-f]+:[0-9a-f]+$"
+    final val LambdaNameRegEx = "^Lambda\\$[0-9a-f]+:[0-9a-f]+$"
+
+    final val LambdaDeserializeNameRegEx = "^LambdaDeserialize\\$\\d+:\\d+$"
 
     final val Java8LambdaExpressionsConfigKeyPrefix = {
         ClassFileReaderConfiguration.ConfigKeyPrefix+"Java8LambdaExpressions."

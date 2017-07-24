@@ -543,6 +543,33 @@ object MethodDescriptor {
         )
     }
 
+    /**
+     * Descriptor of the method `scala.runtime.LambdaDeserializer`.
+     */
+    final val ScalaLambdaDeserializeDescriptor = {
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ArrayType.ArrayOfMethodHandle
+            ),
+            ObjectType.CallSite
+        )
+    }
+
+    final val ScalaSymbolLiteralDescriptor = {
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ObjectType.String
+            ),
+            ObjectType.CallSite
+        )
+    }
+
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {
             case VoidType.id         ⇒ NoArgumentAndNoReturnValueMethodDescriptor

@@ -285,6 +285,101 @@ object ClassFileFactory {
             IndexedSeq(VirtualTypeFlag))
     }
 
+    def DeserializeLambdaProxy(
+        definingType:       TypeDeclaration,
+        bootstrapArguments: BootstrapArguments
+    ): ClassFile = {
+
+        def createConstructor(): Method = {
+            /*
+            Instructions of LambdaDeserialize::bootstrap. This method will be reimplemented in the
+            constructor of the new LambdaDeserializeProxy class.
+
+            PC  Line  Instruction
+            0     45  invokestatic java.lang.invoke.MethodHandles { java.lang.invoke.MethodHandles$Lookup   lookup () }
+            3      |  astore_2
+            4     47  new ..LambdaDeserialize
+            7      |  dup
+            8      |  aload_2
+            9      |  aload_0
+            10     |  invokespecial ..LambdaDeserialize { void   <init> (java.lang.invoke.MethodHandles$Lookup, java.lang.invoke.MethodHandle[]) }
+            13     |  astore_3
+            14    48  aload_3
+            15     |  aload_1
+            16     |  invokevirtual ..LambdaDeserialize { java.lang.Object   deserializeLambda (java.lang.invoke.SerializedLambda) }
+            19     |  areturn
+             */
+            val instructions: Array[Instruction] =
+                callSuperDefaultConstructor(definingType.theSuperclassType.get) ++ Array(
+                    INVOKESTATIC(
+                        ObjectType.MethodHandles,
+                        false,
+                        "lookup",
+                        MethodDescriptor(
+                            IndexedSeq(),
+                            ObjectType.MethodHandles$Lookup
+
+                        )
+                    ),
+                    null,
+                    null,
+                    ASTORE_2,
+                    NEW(ObjectType.ScalaLambdaDeserialize),
+                    null,
+                    null,
+                    DUP,
+                    ALOAD_2,
+                    ALOAD_0,
+                    INVOKESPECIAL(
+                        ObjectType.ScalaLambdaDeserialize,
+                        false,
+                        "<init>",
+                        MethodDescriptor(
+                            IndexedSeq(
+                                ObjectType.MethodHandles$Lookup,
+                                ArrayType.ArrayOfMethodHandle
+                            ),
+                            VoidType
+                        )
+                    ),
+                    null,
+                    null,
+                    ASTORE_3,
+                    ALOAD_3,
+                    ALOAD_1,
+                    INVOKEVIRTUAL(
+                        ObjectType.ScalaLambdaDeserialize,
+                        "deserializeLambda",
+                        MethodDescriptor(
+                            IndexedSeq(ObjectType.SerializedLambda),
+                            ObjectType.Object
+                        )
+                    ),
+                    null,
+                    null,
+                    ARETURN
+                )
+            val maxStack = 4
+            val maxLocals = 4
+
+            Method(
+                bi.ACC_PUBLIC.mask,
+                "<init>",
+                MethodDescriptor(IndexedSeq.empty[FieldType], ObjectType.CallSite),
+                Seq(Code(maxStack, maxLocals, instructions, IndexedSeq.empty, Seq.empty))
+            )
+        }
+
+        ClassFile(0, 49,
+            bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
+            definingType.objectType,
+            definingType.theSuperclassType,
+            definingType.theSuperinterfaceTypes.toSeq,
+            IndexedSeq.empty[Field], // Class fields
+            Array(createConstructor()), // Methods
+            IndexedSeq(VirtualTypeFlag))
+    }
+
     /**
      * Returns true if the method invocation described by the given Opcode and method name
      * is a "NewInvokeSpecial" invocation (i.e. a reference to a constructor, like so:

@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.function.*;
 
 import annotations.target.InvokedMethod;
+import annotations.target.InvokedMethods;
 import static annotations.target.TargetResolution.DYNAMIC;
 
 /**
@@ -58,14 +59,21 @@ public class ReceiverInheritance {
         return state;
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "<init>", parameterTypes = { }, line = 68)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "add", line = 69)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "addAll", line = 70)
     public static <T> LinkedHashSet<T> callBiConsumer(T t) {
         LinkedHashSet<T> lhm = ReceiverInheritance.<T, LinkedHashSet<T>>someBiConsumerParameter(
-                LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll, t);
+                LinkedHashSet::new,
+                LinkedHashSet::add,
+                LinkedHashSet::addAll,
+                t
+        );
 
         return lhm;
     }
 
-    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "contains", line = 71)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "contains", line = 80)
     public static <T> void instanceBiConsumer(T t) {
         LinkedHashSet<T> lhm = new LinkedHashSet<T>();
         Consumer<T> bc = lhm::contains;
