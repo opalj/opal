@@ -44,13 +44,11 @@ class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest
     test("rewriting of invokedynamic instructions in scala 2.12.2 library") {
         val project = load(locateTestResources("classfiles/scala-2.12.2", "bi"))
 
-        val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
+        val invokedynamics = project.allMethodsWithBody.flatMap { method ⇒
             method.body.get.collect {
-                case i: INVOKEDYNAMIC if
-                Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
+                case i: INVOKEDYNAMIC if Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
                     Java8LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaSymbolExpression(i)
-                ⇒ i
+                    Java8LambdaExpressionsRewriting.isScalaSymbolExpression(i) ⇒ i
             }
         }
 

@@ -156,6 +156,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         } else if (isScalaSymbolExpression(invokedynamic)) {
             scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else {
+            // TODO Log
             info(
                 "LambdaExpressionsRewriting",
                 s"unresolvable INVOKEDYNAMIC in classfile ${classFile.thisType.toJava}: "+

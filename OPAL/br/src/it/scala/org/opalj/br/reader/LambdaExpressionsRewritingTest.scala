@@ -33,7 +33,7 @@ package reader
 import scala.language.existentials
 
 import org.scalatest.FunSuite
-import java.lang.{Boolean => JBoolean}
+import java.lang.{Boolean ⇒ JBoolean}
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -57,15 +57,19 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
             declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaDeserializeNameRegEx)
     }
 
-    protected def proxyFactoryCalls(project : SomeProject): Iterable[INVOKESTATIC] =
-        project.allMethodsWithBody.flatMap { method ⇒
-            method.body.get.collectInstructions { case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i }
+    protected def proxyFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
+        val factoryCalls = project.allMethodsWithBody.flatMap { method ⇒
+            method.body.get.collectInstructions {
+                case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i
+            }
         }
+        factoryCalls.seq
+    }
 
     /**
      * Loads the library and check if at least one call to a proxy factory method is found.
      */
-    protected def project(libraryPath: java.io.File): (SomeProject,Iterable[INVOKESTATIC]) = {
+    protected def project(libraryPath: java.io.File): (SomeProject, Iterable[INVOKESTATIC]) = {
         val baseConfig: Config = ConfigFactory.load()
         val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
         val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
@@ -81,16 +85,16 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
         val proxyFactoryCalls = this.proxyFactoryCalls(project)
         assert(proxyFactoryCalls.nonEmpty, "there should be calls to the proxy factories")
 
-        ( project, proxyFactoryCalls)
+        (project, proxyFactoryCalls)
     }
 
     protected def checkForMissingProxyClassFiles(
-                                          project: SomeProject,
-                                          proxyFactoryCalls: Iterable[INVOKESTATIC]
-                                      ): Unit = {
+        project:           SomeProject,
+        proxyFactoryCalls: Iterable[INVOKESTATIC]
+    ): Unit = {
         val missingProxyClassFiles = for {
             classFile ← project.allProjectClassFiles.par
-            method@MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) ← classFile.methods
             proxyFactoryCall ← proxyFactoryCalls
             proxy = project.classFile(proxyFactoryCall.declaringClass)
             if proxy.isEmpty
@@ -110,8 +114,8 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
     }
 
     protected def load(libraryPath: java.io.File): SomeProject = {
-        val (project,proxyFactoryCalls) = this.project(libraryPath)
-        checkForMissingProxyClassFiles(project,proxyFactoryCalls)
+        val (project, proxyFactoryCalls) = this.project(libraryPath)
+        checkForMissingProxyClassFiles(project, proxyFactoryCalls)
         project
     }
 }
