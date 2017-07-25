@@ -433,8 +433,19 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
          */
         val receiverIsInterface =
             invokeTargetMethodHandle match {
-                case handle: InvokeStaticMethodHandle ⇒ handle.isInterface
-                case _                                ⇒ classFile.isInterfaceDeclaration
+                case handle: InvokeStaticMethodHandle ⇒
+                    // The following test was added to handle a case where the Scala
+                    // compiler generated invalid bytecode (the Scala compiler generated
+                    // a MethodRef instead of an InterfaceMethodRef which led to the
+                    // wrong kind of InvokeStaticMethodHandle).
+                    // See https://github.com/scala/bug/issues/10429 for further deatails-
+                    if (invokeTargetMethodHandle.receiverType eq classFile.thisType) {
+                        classFile.isInterfaceDeclaration
+                    } else {
+                        handle.isInterface
+                    }
+                case _ ⇒
+                    classFile.isInterfaceDeclaration
             }
 
         val proxy: ClassFile = ClassFileFactory.Proxy(
@@ -442,7 +453,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             functionalInterfaceMethodName,
             functionalInterfaceDescriptorBeforeTypeErasure,
             receiverType,
-            // Note a static lambda method in an interface needs
+            // Note, a static lambda method in an interface needs
             // to be called using the correct variant of an invokestatic.
             receiverIsInterface = receiverIsInterface,
             targetMethodName,
