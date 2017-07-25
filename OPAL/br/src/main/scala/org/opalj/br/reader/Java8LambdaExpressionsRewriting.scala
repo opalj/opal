@@ -523,7 +523,7 @@ object Java8LambdaExpressionsRewriting {
 
     final val LambdaNameRegEx = "^Lambda\\$[0-9a-f]+:[0-9a-f]+$"
 
-    final val LambdaDeserializeNameRegEx = "^LambdaDeserialize\\$\\d+:\\d+$"
+    final val LambdaDeserializeNameRegEx = "^LambdaDeserialize\\$[0-9a-f]+:[0-9a-f]+$"
 
     final val Java8LambdaExpressionsConfigKeyPrefix = {
         ClassFileReaderConfiguration.ConfigKeyPrefix+"Java8LambdaExpressions."
