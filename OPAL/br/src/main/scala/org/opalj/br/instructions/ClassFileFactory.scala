@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import scala.annotation.switch
+
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.bi.ACC_BRIDGE
@@ -623,7 +625,7 @@ object ClassFileFactory {
         invocationInstruction:    Opcode
     ): Code = {
 
-        val isVirutalMethodReference = this.isVirtualMethodReference(
+        val isVirtualMethodReference = this.isVirtualMethodReference(
             invocationInstruction,
             receiverType,
             receiverMethodDescriptor,
@@ -634,7 +636,7 @@ object ClassFileFactory {
         // unless we have a method reference where the receiver will be explicitly
         // provided
         val loadReceiverObject: Array[Instruction] =
-            if (invocationInstruction == INVOKESTATIC.opcode || isVirutalMethodReference) {
+            if (invocationInstruction == INVOKESTATIC.opcode || isVirtualMethodReference) {
                 Array()
             } else if (receiverMethodName == "<init>") {
                 Array(
@@ -658,7 +660,7 @@ object ClassFileFactory {
             )
 
         val forwardingCallInstruction: Array[Instruction] =
-            (invocationInstruction: @scala.annotation.switch) match {
+            (invocationInstruction: @switch) match {
                 case INVOKESTATIC.opcode ⇒
                     Array(
                         INVOKESTATIC(
@@ -921,9 +923,9 @@ object ClassFileFactory {
             OPALLogger.error(
                 "internal error",
                 s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t"+
-                    s"fowarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t"+
-                    s"receiver descriptor = ${receiverMethodDescriptor} +\n\t "+
-                    s"static parameters   = $staticParameters (variableOffset=$variableOffset)",
+                    s"forwarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t"+
+                    s"receiver descriptor  = ${receiverMethodDescriptor} +\n\t "+
+                    s"static parameters    = $staticParameters (variableOffset=$variableOffset)",
                 t
             )(GlobalLogContext)
             throw t;
