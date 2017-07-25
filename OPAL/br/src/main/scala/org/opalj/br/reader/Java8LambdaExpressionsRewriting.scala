@@ -89,6 +89,17 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         logRewrites
     }
 
+    val logUnknownInvokeDynamics: Boolean = {
+        import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
+        val logUnknownInvokeDynamics: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
+        if (logUnknownInvokeDynamics) {
+            info("project configuration", "unknown invokedynamics are logged")
+        } else {
+            info("project configuration", "unknown invokedynamics are not logged")
+        }
+        logUnknownInvokeDynamics
+    }
+
     /**
      * Counter to ensure that the generated types have unique names.
      */
@@ -156,12 +167,10 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         } else if (isScalaSymbolExpression(invokedynamic)) {
             scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else {
-            // TODO Log
-            info(
-                "LambdaExpressionsRewriting",
-                s"unresolvable INVOKEDYNAMIC in classfile ${classFile.thisType.toJava}: "+
-                    invokedynamic
-            )
+            if (logUnknownInvokeDynamics) {
+                val t = classFile.thisType.toJava
+                info("load-time transformation", s"$t - unresolvable INVOKEDYNAMIC: $invokedynamic")
+            }
             updatedClassFile
         }
     }
@@ -527,6 +536,10 @@ object Java8LambdaExpressionsRewriting {
 
     final val Java8LambdaExpressionsLogRewritingsConfigKey = {
         Java8LambdaExpressionsConfigKeyPrefix+"logRewrites"
+    }
+
+    final val Java8LambdaExpressionsLogUnknownInvokeDynamicsConfigKey = {
+        Java8LambdaExpressionsConfigKeyPrefix+"logUnknownInvokeDynamics"
     }
 
     def isJava8LikeLambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
