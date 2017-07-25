@@ -39,6 +39,8 @@ import net.ceedubs.ficus.Ficus._
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.OPALLogger.info
+import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
+import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
 import org.opalj.br.instructions._
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
@@ -63,8 +65,7 @@ import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
 trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     this: ClassFileBinding ⇒
 
-    import MethodDescriptor.LambdaMetafactoryDescriptor
-    import MethodDescriptor.LambdaAltMetafactoryDescriptor
+    import Java8LambdaExpressionsRewriting._
 
     val performJava8LambdaExpressionsRewriting: Boolean = {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
@@ -148,7 +149,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             return updatedClassFile;
 
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
-        if (isJava8LikeLambdaExpression(invokedynamic)) {
+        if (Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
             java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
             scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
@@ -500,41 +501,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         storeProxy(classFile, proxy, reason)
     }
 
-    def isJava8LikeLambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
-        import ObjectType.LambdaMetafactory
-        invokedynamic.bootstrapMethod.handle match {
-            case InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) ⇒
-                if (name == "metafactory") {
-                    descriptor == LambdaMetafactoryDescriptor
-                } else {
-                    name == "altMetafactory" && descriptor == LambdaAltMetafactoryDescriptor
-                }
-            case _ ⇒ false
-        }
-    }
-
-    def isScalaLambdaDeserializeExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
-        import MethodDescriptor.ScalaLambdaDeserializeDescriptor
-        import ObjectType.ScalaLambdaDeserialize
-        invokedynamic.bootstrapMethod.handle match {
-            case InvokeStaticMethodHandle(
-                ScalaLambdaDeserialize, false, "bootstrap", ScalaLambdaDeserializeDescriptor
-                ) ⇒ true
-            case _ ⇒ false
-        }
-    }
-
-    def isScalaSymbolExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
-        import MethodDescriptor.ScalaSymbolLiteralDescriptor
-        import ObjectType.ScalaSymbolLiteral
-        invokedynamic.bootstrapMethod.handle match {
-            case InvokeStaticMethodHandle(
-                ScalaSymbolLiteral, false, "bootstrap", ScalaSymbolLiteralDescriptor
-                ) ⇒ true
-            case _ ⇒ false
-        }
-    }
-
     def storeProxy(
         classFile: ClassFile,
         proxy:     ClassFile,
@@ -571,6 +537,41 @@ object Java8LambdaExpressionsRewriting {
         Java8LambdaExpressionsConfigKeyPrefix+"logRewrites"
     }
 
+    def isJava8LikeLambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        import ObjectType.LambdaMetafactory
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) ⇒
+                if (name == "metafactory") {
+                    descriptor == LambdaMetafactoryDescriptor
+                } else {
+                    name == "altMetafactory" && descriptor == LambdaAltMetafactoryDescriptor
+                }
+            case _ ⇒ false
+        }
+    }
+
+    def isScalaLambdaDeserializeExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        import MethodDescriptor.ScalaLambdaDeserializeDescriptor
+        import ObjectType.ScalaLambdaDeserialize
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(
+                ScalaLambdaDeserialize, false, "bootstrap", ScalaLambdaDeserializeDescriptor
+                ) ⇒ true
+            case _ ⇒ false
+        }
+    }
+
+    def isScalaSymbolExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        import MethodDescriptor.ScalaSymbolLiteralDescriptor
+        import ObjectType.ScalaSymbolLiteral
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(
+                ScalaSymbolLiteral, false, "bootstrap", ScalaSymbolLiteralDescriptor
+                ) ⇒ true
+            case _ ⇒ false
+        }
+    }
+
     /**
      * Returns the default config where the settings for rewriting and logging rewrites are
      * set to the specified values.
@@ -584,3 +585,4 @@ object Java8LambdaExpressionsRewriting {
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
     }
 }
+
