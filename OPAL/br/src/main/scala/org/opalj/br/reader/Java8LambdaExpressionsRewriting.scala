@@ -466,26 +466,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             factoryDescriptor.copy(returnType = proxy.thisType)
         )
 
-        /*// DEBUG ---
-        if (receiverType != targetMethodOwner) {
-            println("Rewritten proxy class receiver type from targetMethodOwner to receiverType!\n")
-            println("Creating Proxy Class:")
-            println(s"\t\ttypeDeclaration = $typeDeclaration")
-            println(s"\t\tfunctionalInterfaceMethodName = $functionalInterfaceMethodName")
-            println(s"\t\tfunctionalInterfaceDescriptorBeforeTypeErasure = $functionalInterfaceDescriptorBeforeTypeErasure")
-            println(s"\t\ttargetMethodOwner = $targetMethodOwner")
-            println(s"\t\treceiverType =  $receiverType")
-            println(s"\t\ttargetMethodName = $targetMethodName")
-            println(s"\t\treceiverDescriptor = $receiverDescriptor")
-            println(s"\t\tinvocationInstruction = $invocationInstruction")
-            println(s"\t\tbridgeMethodDescriptor = $bridgeMethodDescriptor")
-            println(s"$pc: factoryMethod md => ${factoryMethod.descriptor}")
-            println(s"$pc: invokedynamic md => ${invokedynamic.methodDescriptor}")
-            println(s"$pc:\n$invokedynamic\n=>\n$newInvokestatic\n")
-            println()
-        }
-        // --- DEBUG*/
-
         if (logJava8LambdaExpressionsRewrites) {
             val m = s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic"
             info("analysis", m)
