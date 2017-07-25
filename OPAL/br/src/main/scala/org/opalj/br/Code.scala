@@ -42,6 +42,8 @@ import scala.collection.immutable
 import scala.collection.immutable.IntMap
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
+
+import org.opalj.util.AnyToAnyThis
 import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.immutable.IntSet
 import org.opalj.collection.immutable.IntSet1
@@ -1090,8 +1092,9 @@ final class Code private (
         var result: List[(PC, B)] = List.empty
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            if (f.isDefinedAt(instruction)) {
-                result = (pc, f(instruction)) :: result
+            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= ((pc, r.asInstanceOf[B]))
             }
             pc = pcOfNextInstruction(pc)
         }
@@ -1134,8 +1137,9 @@ final class Code private (
         var pc = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            if (f.isDefinedAt(instruction)) {
-                result = f(instruction) :: result
+            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= r.asInstanceOf[B]
             }
             pc = pcOfNextInstruction(pc)
         }
@@ -1163,8 +1167,9 @@ final class Code private (
         val vs = Chain.newBuilder[B]
         while (pc < max_pc) {
             val params = (pc, instructions(pc))
-            if (f.isDefinedAt(params)) {
-                vs += f(params)
+            val r: Any = f.applyOrElse(params, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                vs += r.asInstanceOf[B]
             }
             pc = pcOfNextInstruction(pc)
         }
@@ -1180,9 +1185,10 @@ final class Code private (
         var pc = 0
         while (pc < max_pc) {
             val params = (pc, instructions(pc))
-            if (f.isDefinedAt(params))
-                return Some(f(params));
-
+            val r: Any = f.applyOrElse(params, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                return Some(r.asInstanceOf[B]);
+            }
             pc = pcOfNextInstruction(pc)
         }
 
@@ -1273,8 +1279,9 @@ final class Code private (
         while (lastPC < max_pc) {
             instrs = instrs.enqueue(instructions(lastPC))
 
-            if (f.isDefinedAt((firstPC, instrs))) {
-                result = f((firstPC, instrs)) :: result
+            val r: Any = f.applyOrElse((firstPC, instrs), AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= r.asInstanceOf[B]
             }
 
             firstPC = pcOfNextInstruction(firstPC)
@@ -1326,8 +1333,9 @@ final class Code private (
         while (lastPC < max_pc) {
             instrs = instrs.enqueue(instructions(lastPC))
 
-            if (f.isDefinedAt(instrs)) {
-                result = (firstPC, f(instrs)) :: result
+            val r: Any = f.applyOrElse(instrs, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= ((firstPC, r.asInstanceOf[B]))
             }
 
             firstPC = pcOfNextInstruction(firstPC)
@@ -1363,9 +1371,11 @@ final class Code private (
         var result: List[(PC, B)] = List.empty
         while (second_pc < max_pc) {
             secondInstruction = instructions(second_pc)
+
             val instrs = (firstInstruction, secondInstruction)
-            if (f.isDefinedAt(instrs)) {
-                result = (first_pc, f(instrs)) :: result
+            val r: Any = f.applyOrElse(instrs, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= ((first_pc, r.asInstanceOf[B]))
             }
 
             firstInstruction = secondInstruction
