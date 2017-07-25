@@ -54,10 +54,9 @@ import org.opalj.bi.JARsFileFilter
 class JRELambdaExpressionsRewritingTest extends FunSuite {
 
     def isProxyFactoryCall(instruction: INVOKESTATIC): Boolean = {
-        instruction.declaringClass.fqn.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx) ||
-            instruction.declaringClass.fqn.matches(
-                Java8LambdaExpressionsRewriting.LambdaDeserializeNameRegEx
-            )
+        val declaringClassFQN = instruction.declaringClass.fqn
+        declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx) ||
+            declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaDeserializeNameRegEx)
     }
 
     if (!isCurrentJREAtLeastJava8) {
@@ -137,22 +136,9 @@ class JRELambdaExpressionsRewritingTest extends FunSuite {
             method.body.get.collect { case i: INVOKEDYNAMIC ⇒ i }
         }
 
-        OPALLogger.info(
-            "JRELambdaExpressionsRewritingTest",
-            s"Could not resolve ${invokedynamics.size} invokedynamic instructions."
-        )
-
-        // Check only invokedynamics that we can actually resolve. Ignore other invokedynamic
-        // instructions
-        assert(
-            !invokedynamics.exists {
-                case (_, i) ⇒
-                    KnownLambdaResolutionChecker.isJava8LambdaExpression(i) ||
-                        KnownLambdaResolutionChecker.isScalaLambdaDeserializeExpression(i) ||
-                        KnownLambdaResolutionChecker.isScalaSymbolExpression(i)
-            },
-            "some resolvable invokedynamic instructions should have been resolved"
-        )
+        if (invokedynamics.nonEmpty) {
+            fail(invokedynamics.mkString("Could not resolve:", "\n", "\n"))
+        }
 
         val invokestatics: Iterable[INVOKESTATIC] = jreProject.allMethodsWithBody.flatMap { method ⇒
             method.body.get.collectInstructions { case i: INVOKESTATIC ⇒ i }
@@ -186,6 +172,7 @@ class JRELambdaExpressionsRewritingTest extends FunSuite {
 
     object KnownLambdaResolutionChecker
             extends Java8LibraryFramework with Java8LambdaExpressionsRewriting {
+
         /**
          * If `true` method bodies are never loaded.
          */
