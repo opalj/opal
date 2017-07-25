@@ -75,9 +75,9 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
         val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
         val config = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE)).
-            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
-        /*.
-                withValue(SynthesizedClassFiles., ConfigValueFactory.fromAnyRef(JBoolean.FALSE))*/
+            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE)) /*.
+            withValue(SynthesizedClassFiles., ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
+            */
 
         val logContext = new DefaultLogContext
         OPALLogger.register(logContext)
