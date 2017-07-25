@@ -26,46 +26,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package cp
+package org.opalj.br.reader
+
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.instructions.INVOKEDYNAMIC
 
 /**
- * Constant pool entry that represents method refs.
+ * This test loads all classes found in the Sala 2.12.2 libraries and verifies that all
+ * suported [[INVOKEDYNAMIC]] instructions can be resolved.
  *
- * The created `MethodRef` is cached.
- *
- * @author Michael Eichberg
- * @author Andre Pacak
+ * @author Arne Lottmann
+ *         @author Andreas Amuttsch
+ *                 @author Michael Eichberg
  */
-trait AsMethodref extends Constant_Pool_Entry {
+class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
 
-    def class_index: Constant_Pool_Index
+    test("rewriting of invokedynamic instructions in scala 2.12.2 library") {
+        val project = load(locateTestResources("classfiles/scala-2.12.2", "bi"))
 
-    def name_and_type_index: Constant_Pool_Index
-
-    def isInterfaceMethodRef: Boolean
-
-    // to cache the result
-    private[this] var methodref: (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) = null
-    override def asMethodref(cp: Constant_Pool): (ReferenceType, Boolean, String, MethodDescriptor) = {
-        // The following solution is sufficiently thread safe; i.e.,
-        // it may happen that two or more methodref instances  
-        // are created, but these instances are guaranteed to
-        // be equal (`==`).
-
-        var methodref = this.methodref
-        if (methodref eq null) {
-            val nameAndType = cp(name_and_type_index).asNameAndType
-            methodref =
-                (
-                    cp(class_index).asReferenceType(cp),
-                    isInterfaceMethodRef,
-                    nameAndType.name(cp),
-                    nameAndType.methodDescriptor(cp)
-                )
-            this.methodref = methodref
+        val invokedynamics = project.allMethodsWithBody.flatMap { method ⇒
+            method.body.get.collect {
+                case i: INVOKEDYNAMIC if Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
+                    Java8LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
+                    Java8LambdaExpressionsRewriting.isScalaSymbolExpression(i) ⇒ i
+            }
         }
-        methodref
+
+        if (invokedynamics.nonEmpty) {
+            fail(invokedynamics.mkString("Could not resolve:", "\n", "\n"))
+        }
     }
 }

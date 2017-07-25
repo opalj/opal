@@ -1768,10 +1768,11 @@ object Project {
             }
         }
         if (exceptions.nonEmpty) {
-            OPALLogger.error(
-                "internal - ignored",
-                "project validation failed (please, report):\n"+exceptions.mkString("\n")
-            )(project.logContext)
+            exceptions foreach { exception ⇒
+                OPALLogger.error(
+                    "internal - ignored", "project validation failed", exception
+                )(project.logContext)
+            }
         }
 
         exs

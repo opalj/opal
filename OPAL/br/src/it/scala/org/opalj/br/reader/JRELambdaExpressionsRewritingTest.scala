@@ -30,20 +30,8 @@ package org.opalj
 package br
 package reader
 
-import org.scalatest.FunSuite
-import java.lang.{Boolean ⇒ JBoolean}
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.log.DefaultLogContext
-import org.opalj.log.OPALLogger
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.bi.isCurrentJREAtLeastJava8
-import org.opalj.bi.JARsFileFilter
 
 /**
  * This test loads all classes found in the JRE and verifies that all [[INVOKEDYNAMIC]]
@@ -51,131 +39,20 @@ import org.opalj.bi.JARsFileFilter
  *
  * @author Arne Lottmann
  */
-class JRELambdaExpressionsRewritingTest extends FunSuite {
-
-    def isProxyFactoryCall(instruction: INVOKESTATIC): Boolean = {
-        val declaringClassFQN = instruction.declaringClass.fqn
-        declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx) ||
-            declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaDeserializeNameRegEx)
-    }
-
-    if (!isCurrentJREAtLeastJava8) {
-        fail("the current JDK does not use invokedynamic or was not correctly recognized")
-    }
+class JRELambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
 
     test("rewriting of invokedynamic instructions in the JRE") {
-        val jrePath = org.opalj.bytecode.JRELibraryFolder
-        val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
-        val config = baseConfig.
-            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE)).
-            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE)) /*.
-                withValue(SynthesizedClassFiles., ConfigValueFactory.fromAnyRef(JBoolean.FALSE))*/
+        if (!isCurrentJREAtLeastJava8) {
+            fail("the current JDK does not use invokedynamic or was not correctly recognized")
+        }
 
-        val logContext = new DefaultLogContext
-        OPALLogger.register(logContext)
-        val jreProject = Project(jrePath, logContext, config)
+        val project = load(org.opalj.bytecode.JRELibraryFolder)
 
-        val invokedynamics = jreProject.allMethodsWithBody.flatMap { method ⇒
+        val invokedynamics = project.allMethodsWithBody.flatMap { method ⇒
             method.body.get.collect { case i: INVOKEDYNAMIC ⇒ i }
         }
+
         // if the test fails we want to know the invokedynamic instructions
         assert(invokedynamics.isEmpty, "all invokedynamics should have been removed")
-
-        val invokestatics: Iterable[INVOKESTATIC] = jreProject.allMethodsWithBody.flatMap { method ⇒
-            method.body.get.collectInstructions { case i: INVOKESTATIC ⇒ i }
-        }
-        val proxyFactoryCalls = invokestatics.filter(isProxyFactoryCall)
-        assert(proxyFactoryCalls.nonEmpty, "there should be calls to the proxy factories")
-
-        val missingProxyClassFiles =
-            for {
-                classFile ← jreProject.allProjectClassFiles.par
-                method @ MethodWithBody(body) ← classFile.methods
-                proxyFactoryCall ← body.instructions.collect { case i: INVOKESTATIC ⇒ i }
-                if isProxyFactoryCall(proxyFactoryCall)
-                proxy = jreProject.classFile(proxyFactoryCall.declaringClass)
-                if proxy.isEmpty
-            } yield {
-                (classFile, method, proxyFactoryCall)
-            }
-
-        //  proxyFactoryCallsCount
-
-        if (missingProxyClassFiles.nonEmpty) {
-            val failures = missingProxyClassFiles.size
-            val data = missingProxyClassFiles.mkString(
-                "missing proxy ClassFiles for the following instructions:\n\t", "\n\t", "\n"
-            )
-            val logFile = io.writeAndOpen(data, "MissingProxyClassFiles", ".txt")
-            val msg = s"missing $failures proxy ClassFiles for lambdas; see $logFile for details"
-            fail(msg)
-        }
-
-    }
-
-    // scala 2.12.2 jar test
-    test("rewriting of invokedynamic instructions in scala 2.12.2 library") {
-        val jrePath = org.opalj.bytecode.JRELibraryFolder
-        val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
-        implicit val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
-        implicit val config = baseConfig.
-            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE)).
-            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
-
-        implicit val logContext = new DefaultLogContext
-        OPALLogger.register(logContext)
-
-        // Create project
-        val f = locateTestResources("classfiles/scala-2.12.2", "bi")
-        val jreProject = Project(f.listFiles(JARsFileFilter), Array(jrePath), logContext, config)
-
-        val invokedynamics = jreProject.allMethodsWithBody.flatMap { method ⇒
-            method.body.get.collect { case i: INVOKEDYNAMIC ⇒ i }
-        }
-
-        if (invokedynamics.nonEmpty) {
-            fail(invokedynamics.mkString("Could not resolve:", "\n", "\n"))
-        }
-
-        val invokestatics: Iterable[INVOKESTATIC] = jreProject.allMethodsWithBody.flatMap { method ⇒
-            method.body.get.collectInstructions { case i: INVOKESTATIC ⇒ i }
-        }
-        val proxyFactoryCalls = invokestatics.filter(isProxyFactoryCall)
-        assert(proxyFactoryCalls.nonEmpty, "there should be calls to the proxy factories")
-
-        val missingProxyClassFiles =
-            for {
-                classFile ← jreProject.allProjectClassFiles.par
-                method @ MethodWithBody(body) ← classFile.methods
-                proxyFactoryCall ← body.instructions.collect { case i: INVOKESTATIC ⇒ i }
-                if isProxyFactoryCall(proxyFactoryCall)
-                proxy = jreProject.classFile(proxyFactoryCall.declaringClass)
-                if proxy.isEmpty
-            } yield {
-                (classFile, method, proxyFactoryCall)
-            }
-
-        if (missingProxyClassFiles.nonEmpty) {
-            val failures = missingProxyClassFiles.size
-            val data = missingProxyClassFiles.mkString(
-                "missing proxy ClassFiles for the following instructions:\n\t", "\n\t", "\n"
-            )
-            val logFile = io.writeAndOpen(data, "MissingProxyClassFiles", ".txt")
-            val msg = s"missing $failures proxy ClassFiles for lambdas; see $logFile for details"
-            fail(msg)
-        }
-
-    }
-
-    object KnownLambdaResolutionChecker
-            extends Java8LibraryFramework with Java8LambdaExpressionsRewriting {
-
-        /**
-         * If `true` method bodies are never loaded.
-         */
-        override def loadsInterfacesOnly: Boolean = false
     }
 }
