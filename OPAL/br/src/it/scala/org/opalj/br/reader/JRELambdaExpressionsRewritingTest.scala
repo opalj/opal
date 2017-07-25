@@ -48,7 +48,7 @@ class JRELambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
 
         val project = load(org.opalj.bytecode.JRELibraryFolder)
 
-        val invokedynamics = project.allMethodsWithBody.flatMap { method ⇒
+        val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
             method.body.get.collect { case i: INVOKEDYNAMIC ⇒ i }
         }
 

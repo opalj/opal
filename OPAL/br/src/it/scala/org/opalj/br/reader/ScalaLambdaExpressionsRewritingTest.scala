@@ -36,15 +36,15 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  * suported [[INVOKEDYNAMIC]] instructions can be resolved.
  *
  * @author Arne Lottmann
- *         @author Andreas Amuttsch
- *                 @author Michael Eichberg
+ * @author Andreas Amuttsch
+ * @author Michael Eichberg
  */
 class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
 
     test("rewriting of invokedynamic instructions in scala 2.12.2 library") {
         val project = load(locateTestResources("classfiles/scala-2.12.2", "bi"))
 
-        val invokedynamics = project.allMethodsWithBody.flatMap { method ⇒
+        val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
             method.body.get.collect {
                 case i: INVOKEDYNAMIC if Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
                     Java8LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||

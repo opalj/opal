@@ -32,8 +32,11 @@ package reader
 
 import scala.language.existentials
 
+import scala.collection.JavaConverters._
+
 import org.scalatest.FunSuite
-import java.lang.{Boolean ⇒ JBoolean}
+import java.lang.{Boolean => JBoolean}
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -52,18 +55,35 @@ import org.opalj.br.analyses.SomeProject
 abstract class LambdaExpressionsRewritingTest extends FunSuite {
 
     protected def isProxyFactoryCall(instruction: INVOKESTATIC): Boolean = {
-        val declaringClassFQN = instruction.declaringClass.fqn
+        isProxyFactoryCall(instruction.declaringClass.fqn)
+    }
+
+    protected def isProxyFactoryCall(declaringClassFQN: String): Boolean = {
         declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx) ||
             declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaDeserializeNameRegEx)
     }
 
     protected def proxyFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
-        val factoryCalls = project.allMethodsWithBody.flatMap { method ⇒
-            method.body.get.collectInstructions {
+        val factoryCalls = new ConcurrentLinkedQueue[INVOKESTATIC]()
+        val exceptions = project.parForeachMethodWithBody(){ mi ⇒
+            factoryCalls.addAll(
+                (mi.method.body.get.collectInstructions {
                 case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i
+            }).asJava
+            )
+            /*
+            for {
+                (_,i @ INVOKESTATIC(declaringClass,_,_,_)) <- mi.method.body.get
+                if isProxyFactoryCall(declaringClass.fqn)
+            } {
+                factoryCalls.add(i)
             }
+            */
         }
-        factoryCalls.seq
+        if(exceptions.nonEmpty) throw new UnknownError(exceptions.mkString("\n"))
+        info(s"found ${factoryCalls.size} lambda proxy factor ymethod calls")
+        factoryCalls.asScala
+
     }
 
     /**
@@ -93,13 +113,11 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
         proxyFactoryCalls: Iterable[INVOKESTATIC]
     ): Unit = {
         val missingProxyClassFiles = for {
-            classFile ← project.allProjectClassFiles.par
-            method @ MethodWithBody(body) ← classFile.methods
             proxyFactoryCall ← proxyFactoryCalls
             proxy = project.classFile(proxyFactoryCall.declaringClass)
             if proxy.isEmpty
         } yield {
-            (classFile, method, proxyFactoryCall)
+            (proxy, proxyFactoryCall)
         }
 
         if (missingProxyClassFiles.nonEmpty) {
