@@ -296,17 +296,17 @@ object ClassFileFactory {
             constructor of the new LambdaDeserializeProxy class.
 
             PC  Line  Instruction
-            0     45  invokestatic java.lang.invoke.MethodHandles { java.lang.invoke.MethodHandles$Lookup   lookup () }
+            0     45  invokestatic java.lang.invoke.MethodHandles { java.lang.invoke.MethodHandles$Lookup lookup () }
             3      |  astore_2
             4     47  new ..LambdaDeserialize
             7      |  dup
             8      |  aload_2
             9      |  aload_0
-            10     |  invokespecial ..LambdaDeserialize { void   <init> (java.lang.invoke.MethodHandles$Lookup, java.lang.invoke.MethodHandle[]) }
+            10     |  invokespecial ..LambdaDeserialize { void <init> (java.lang.invoke.MethodHandles$Lookup, java.lang.invoke.MethodHandle[]) }
             13     |  astore_3
             14    48  aload_3
             15     |  aload_1
-            16     |  invokevirtual ..LambdaDeserialize { java.lang.Object   deserializeLambda (java.lang.invoke.SerializedLambda) }
+            16     |  invokevirtual ..LambdaDeserialize { java.lang.Object deserializeLambda (java.lang.invoke.SerializedLambda) }
             19     |  areturn
              */
             val instructions: Array[Instruction] =
@@ -315,18 +315,10 @@ object ClassFileFactory {
                         ObjectType.MethodHandles,
                         false,
                         "lookup",
-                        MethodDescriptor(
-                            IndexedSeq(),
-                            ObjectType.MethodHandles$Lookup
-
-                        )
-                    ),
-                    null,
-                    null,
+                        MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
+                    ), null, null,
                     ASTORE_2,
-                    NEW(ObjectType.ScalaLambdaDeserialize),
-                    null,
-                    null,
+                    NEW(ObjectType.ScalaLambdaDeserialize), null, null,
                     DUP,
                     ALOAD_2,
                     ALOAD_0,
@@ -341,22 +333,15 @@ object ClassFileFactory {
                             ),
                             VoidType
                         )
-                    ),
-                    null,
-                    null,
+                    ), null, null,
                     ASTORE_3,
                     ALOAD_3,
                     ALOAD_1,
                     INVOKEVIRTUAL(
                         ObjectType.ScalaLambdaDeserialize,
                         "deserializeLambda",
-                        MethodDescriptor(
-                            IndexedSeq(ObjectType.SerializedLambda),
-                            ObjectType.Object
-                        )
-                    ),
-                    null,
-                    null,
+                        MethodDescriptor(IndexedSeq(ObjectType.SerializedLambda), ObjectType.Object)
+                    ), null, null,
                     ARETURN
                 )
             val maxStack = 4
@@ -417,7 +402,6 @@ object ClassFileFactory {
         fieldType:   FieldType,
         attributes:  Seq[Attribute] = Seq.empty
     ): Field = {
-
         Field(accessFlags, name, fieldType, attributes)
     }
 
@@ -446,7 +430,7 @@ object ClassFileFactory {
                 copyParametersToInstanceFields(theType, fields) :+
                 RETURN
         val maxStack =
-            1 + ( // for `this` when invoking the super constructor
+            1 /* for `this` when invoking the super constructor*/ + (
                 if (fields.isEmpty)
                     0 // nothing extra needed if no fields are being set
                 /*
@@ -979,8 +963,7 @@ object ClassFileFactory {
                 typeOnStack.asObjectType.unboxValue
             } else {
                 throw new IllegalArgumentException(
-                    "types are incompatible: "+
-                        s"${toBeReturnedType.toJava} and ${typeOnStack.toJava}"
+                    s"incompatible types: ${toBeReturnedType.toJava} and ${typeOnStack.toJava}"
                 )
             }
         conversionInstructions :+ ReturnInstruction(toBeReturnedType)
