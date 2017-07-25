@@ -133,7 +133,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         instructions:      Array[Instruction],
         pc:                PC
     ): ClassFile = {
-
         // gather complete information about invokedynamic instructions from the bootstrap
         // method table
         val updatedClassFile =
@@ -149,7 +148,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             return updatedClassFile;
 
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
-        if (isJava8LambdaExpression(invokedynamic)) {
+        if (isJava8LikeLambdaExpression(invokedynamic)) {
             java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
             scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
@@ -187,24 +186,22 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             ) = invokedynamic
         val bootstrapArguments = bootstrapMethod.arguments
 
-        val newInvokestatic = INVOKESTATIC(
-            ObjectType.ScalaSymbol,
-            isInterface = false, // the created proxy class is always a concrete class
-            "apply",
-            // the invokedynamic's methodDescriptor (factoryDescriptor) determines
-            // the parameters that are actually pushed and popped from/to the stack
-            MethodDescriptor(
-                IndexedSeq(
-                    ObjectType.String
-                ),
-                ObjectType.ScalaSymbol
+        val newInvokestatic =
+            INVOKESTATIC(
+                ObjectType.ScalaSymbol,
+                isInterface = false, // the created proxy class is always a concrete class
+                "apply",
+                // the invokedynamic's methodDescriptor (factoryDescriptor) determines
+                // the parameters that are actually pushed and popped from/to the stack
+                MethodDescriptor(IndexedSeq(ObjectType.String), ObjectType.ScalaSymbol)
             )
-        )
 
         if (logJava8LambdaExpressionsRewrites) {
-            info("analysis", s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic")
+            info(
+                "load-time transformation",
+                s"rewriting Scala Symbols related invokedynamic: $invokedynamic ⇒ $newInvokestatic"
+            )
         }
-
         instructions(pc) = LDC(bootstrapArguments.head.asInstanceOf[ConstantString])
         instructions(pc + 2) = newInvokestatic
 
@@ -271,14 +268,14 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             factoryMethod.name,
             // the invokedynamic's methodDescriptor (factoryDescriptor) determines
             // the parameters that are actually pushed and popped from/to the stack
-            MethodDescriptor(
-                IndexedSeq.empty[ObjectType],
-                ObjectType.CallSite
-            )
+            MethodDescriptor.withNoArgs(ObjectType.CallSite)
         )
 
         if (logJava8LambdaExpressionsRewrites) {
-            info("analysis", s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic")
+            info(
+                "load-time transformation",
+                s"rewriting Java 8 like invokedynamic: $invokedynamic ⇒ $newInvokestatic"
+            )
         }
 
         instructions(pc) = newInvokestatic
@@ -435,10 +432,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
          */
         val receiverIsInterface =
             invokeTargetMethodHandle match {
-                case handle: InvokeStaticMethodHandle ⇒
-                    handle.isInterface
-                case _ ⇒
-                    classFile.isInterfaceDeclaration
+                case handle: InvokeStaticMethodHandle ⇒ handle.isInterface
+                case _                                ⇒ classFile.isInterfaceDeclaration
             }
 
         val proxy: ClassFile = ClassFileFactory.Proxy(
@@ -505,7 +500,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         storeProxy(classFile, proxy, reason)
     }
 
-    def isJava8LambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
+    def isJava8LikeLambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
         import ObjectType.LambdaMetafactory
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) ⇒
