@@ -77,10 +77,7 @@ case class CONSTANT_NameAndType_info(
             )
         } else {
             val name = cp(name_index).asString
-            val descriptor = cp(descriptor_index) match {
-                case cim : CONSTANT_InterfaceMethodref_info => "/*(interface)*/"+cim.asString
-                case cm : CONSTANT_Methodref_info => cm.asString
-            }
+            val descriptor = cp(descriptor_index).asString
             methodDescriptorAsInlineNode(name, descriptor, None)
         }
     }
