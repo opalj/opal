@@ -488,7 +488,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     ): ClassFile = {
         classFile.synthesizedClassFiles match {
             case Some(scf @ SynthesizedClassFiles(cfs)) ⇒
-                val newScf = new SynthesizedClassFiles(((proxy, reason)) :: cfs)
+                val newScf = new SynthesizedClassFiles((proxy, reason) :: cfs)
                 val newAttrs = newScf +: classFile.attributes.filter(_ ne scf)
                 classFile.copy(attributes = newAttrs)
             case None ⇒
