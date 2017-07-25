@@ -44,6 +44,11 @@ import org.opalj.log.LogContext
  */
 package object util {
 
+    // Used in the context of the implementation of "collect(PartialFunction)" methods.
+    final val AnyToAnyThis: Function1[Any, Any] = {
+        new Function1[Any, Any] { def apply(x: Any): Any = this }
+    }
+
     val ScalaMajorVersion: String = {
         versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
     }
