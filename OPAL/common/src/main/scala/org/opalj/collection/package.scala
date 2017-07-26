@@ -80,6 +80,8 @@ package object collection {
      * @note    It is possible that `f` is evaluated but the result is not used, if
      *          another thread has already associated a value with the respective key.
      *          In that case the result of the evaluation of `f` is thrown away.
+     * @migration With Java 8 the ConcurrentHashMap natively provides such functionality
+     *           and that functionality should be used.
      */
     def putIfAbsentAndGet[K, V](map: ConcurrentHashMap[K, V], key: K, f: ⇒ V): V = {
         val value = map.get(key)
