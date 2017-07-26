@@ -103,7 +103,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     /**
      * Counter to ensure that the generated types have unique names.
      */
-    private final val lambdaTypeIdGenerator = new AtomicInteger(0)
+    private final val jreLikeLambdaTypeIdGenerator = new AtomicInteger(0)
     private final val scalaLambdaDeserializeTypeIdGenerator = new AtomicInteger(0)
 
     /**
@@ -118,7 +118,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      * @param surroundingType the type in which the Lambda expression has been found
      */
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
-        val nextId = lambdaTypeIdGenerator.getAndIncrement()
+        val nextId = jreLikeLambdaTypeIdGenerator.getAndIncrement()
         s"Lambda$$${surroundingType.id.toHexString}:${nextId.toHexString}"
     }
 
