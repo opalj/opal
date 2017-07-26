@@ -41,7 +41,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  */
 class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
 
-    test("rewriting of invokedynamic instructions in scala 2.12.2 library") {
+    test("rewriting of invokedynamic instructions in Scala 2.12.2 library") {
         val project = load(locateTestResources("classfiles/scala-2.12.2", "bi"))
 
         val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒

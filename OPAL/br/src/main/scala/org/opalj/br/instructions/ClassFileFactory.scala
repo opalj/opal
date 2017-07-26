@@ -50,7 +50,7 @@ object ClassFileFactory {
     /**
      * Name used to store the final receiver object in generated proxy classes.
      */
-    final val ReceiverFieldName = "$receiver";
+    final val ReceiverFieldName = "$receiver"
 
     /**
      * This is the default name for the factory method of a proxy class that is created by
