@@ -79,23 +79,24 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 // GlobalEscape
                 case PutField.ASTID ⇒
                     val PutField(_, _, _, _, _, value) = stmt
-                    usesDefSite(value, e, defSite, MaybeEscape)
+                    usesDefSite(value, e, defSite, MaybeNoEscape)
                 case ArrayStore.ASTID ⇒
                     val ArrayStore(_, _, _, value) = stmt
-                    usesDefSite(value, e, defSite, MaybeEscape)
+                    usesDefSite(value, e, defSite, MaybeNoEscape)
                 case Throw.ASTID ⇒
                     val Throw(_, value) = stmt
-                    usesDefSite(value, e, defSite, MaybeEscape)
+                    usesDefSite(value, e, defSite, MaybeNoEscape)
                 // we are inter-procedural
                 case ReturnValue.ASTID ⇒
                     val ReturnValue(_, value) = stmt
-                    usesDefSite(value, e, defSite, MaybeEscape)
+                    usesDefSite(value, e, defSite, MaybeMethodEscape)
                 case StaticMethodCall.ASTID ⇒
                     val StaticMethodCall(_, _, _, _, _, params) = stmt
-                    anyParameterUsesDefSite(params, e, defSite, MaybeEscape)
+                    anyParameterUsesDefSite(params, e, defSite, MaybeArgEscape)
                 case VirtualMethodCall.ASTID ⇒
                     val VirtualMethodCall(_, _, _, _, _, value, params) = stmt
-                    usesDefSite(value, e, defSite, MaybeEscape).orElse(anyParameterUsesDefSite(params, e, defSite, MaybeEscape))
+                    val x = usesDefSite(value, e, defSite, MaybeArgEscape)
+                    x.orElse(anyParameterUsesDefSite(params, e, defSite, MaybeArgEscape))
                 case NonVirtualMethodCall.ASTID ⇒
                     val NonVirtualMethodCall(_, dc, interface, name, descr, receiver, params) = stmt
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
@@ -127,15 +128,15 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
                 case VirtualFunctionCall.ASTID ⇒
                     val VirtualFunctionCall(_, _, _, _, _, receiver, params) = expr
-                    usesDefSite(receiver, e, defSite, MaybeEscape).orElse(anyParameterUsesDefSite(params, e,
-                        defSite, MaybeEscape))
+                    val x = usesDefSite(receiver, e, defSite, MaybeArgEscape)
+                    x orElse anyParameterUsesDefSite(params, e, defSite, MaybeArgEscape)
                 case StaticFunctionCall.ASTID ⇒
                     val StaticFunctionCall(_, _, _, _, _, params) = expr
-                    anyParameterUsesDefSite(params, e, defSite, MaybeEscape)
+                    anyParameterUsesDefSite(params, e, defSite, MaybeArgEscape)
                 // see Java8LambdaExpressionsRewriting
                 case Invokedynamic.ASTID ⇒
                     val Invokedynamic(_, _, _, _, params) = expr
-                    anyParameterUsesDefSite(params, e, defSite, MaybeEscape)
+                    anyParameterUsesDefSite(params, e, defSite, MaybeArgEscape)
                 case _ ⇒ None
             }
         }
@@ -191,11 +192,14 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                 // check if the this local escapes in the callee
                                 val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
                                 escapeState match {
-                                    case EP(_, NoEscape) ⇒ None
-                                    case EP(_, state: GlobalEscape) ⇒
-                                        Some(ImmediateResult(e, state))
-                                    case EP(_, MaybeEscape) ⇒
-                                        Some(ImmediateResult(e, MaybeEscape))
+                                    case EP(_, NoEscape)            ⇒ None
+                                    case EP(_, state: GlobalEscape) ⇒ Some(ImmediateResult(e, state))
+                                    case EP(_, MaybeNoEscape) ⇒
+                                        Some(ImmediateResult(e, MaybeNoEscape))
+                                    case EP(_, MaybeArgEscape) ⇒
+                                        Some(ImmediateResult(e, MaybeArgEscape))
+                                    case EP(_, MaybeMethodEscape) ⇒
+                                        Some(ImmediateResult(e, MaybeMethodEscape))
                                     case EP(_, _) ⇒
                                         throw new RuntimeException("not yet implemented")
                                     // result not yet finished
@@ -204,13 +208,13 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                         None
 
                                 }
-                            case /* unknown method */ _ ⇒ Some(ImmediateResult(e, MaybeEscape))
+                            case /* unknown method */ _ ⇒ Some(ImmediateResult(e, MaybeNoEscape))
                         }
-                    } else anyParameterUsesDefSite(params, e, defSite, MaybeEscape)
+                    } else anyParameterUsesDefSite(params, e, defSite, MaybeArgEscape)
                 } else /* Object constructor does escape by def. */ None
             } else {
-                usesDefSite(receiver, e, defSite, MaybeEscape).orElse(anyParameterUsesDefSite(params, e,
-                    defSite, MaybeEscape))
+                val x = usesDefSite(receiver, e, defSite, MaybeArgEscape)
+                x orElse anyParameterUsesDefSite(params, e, defSite, MaybeArgEscape)
             }
         }
 
@@ -223,7 +227,9 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             p match {
                 case state: GlobalEscape ⇒
                     Result(e, state)
-                case MaybeEscape ⇒ Result(e, MaybeEscape)
+                case MaybeNoEscape     ⇒ Result(e, MaybeNoEscape)
+                case MaybeArgEscape    ⇒ Result(e, MaybeArgEscape)
+                case MaybeMethodEscape ⇒ Result(e, MaybeMethodEscape)
 
                 case ConditionallyNoEscape ⇒
                     val newEP = EP(other, p.asInstanceOf[EscapeProperty])
@@ -231,7 +237,9 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     IntermediateResult(e, ConditionallyNoEscape, dependees, c)
 
                 case NoEscape ⇒
-                    dependees = dependees.filter { _.e ne other }
+                    dependees = dependees.filter {
+                        _.e ne other
+                    }
                     if (dependees.isEmpty)
                         Result(e, NoEscape)
                     else
@@ -328,9 +336,14 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
 
         val propertyStore = project.get(PropertyStoreKey)
-        val staticEscapes = propertyStore.entities(GlobalEscapeViaStaticFieldAssignment).filter(_
-            .isInstanceOf[AllocationSite])
-        val maybeEscape = propertyStore.entities(MaybeEscape).filter(_.isInstanceOf[AllocationSite])
+        val staticEscapes =
+            propertyStore.entities(GlobalEscapeViaStaticFieldAssignment).filter(_.isInstanceOf[AllocationSite])
+        val maybeNoEscape =
+            propertyStore.entities(MaybeNoEscape).filter(_.isInstanceOf[AllocationSite])
+        val maybeArgEscape =
+            propertyStore.entities(MaybeArgEscape).filter(_.isInstanceOf[AllocationSite])
+        val maybeMethodEscape =
+            propertyStore.entities(MaybeNoEscape).filter(_.isInstanceOf[AllocationSite])
         val noEscape = propertyStore.entities(NoEscape).collect { case as: AllocationSite ⇒ as }
         for {
             as ← noEscape
@@ -339,7 +352,9 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         }
 
         println(s"# of global escaping objects: ${staticEscapes.size}")
-        println(s"# of maybe escaping objects: ${maybeEscape.size}")
+        println(s"# of maybe no escaping objects: ${maybeNoEscape.size}")
+        println(s"# of maybe arg escaping objects: ${maybeArgEscape.size}")
+        println(s"# of maybe method escaping objects: ${maybeMethodEscape.size}")
         println(s"# of local objects: ${noEscape.size}")
     }
 }
