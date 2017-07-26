@@ -1231,7 +1231,7 @@ class PropertyStore private (
      *
      * @note This method will not trigger lazy or direct property computations.
      */
-    def collect[T](collect: PartialFunction[(Entity, Property), T]): Traversable[T] = {
+    def collect[T](pf: PartialFunction[(Entity, Property), T]): Traversable[T] = {
         accessStore {
             for {
                 (e, eps) ← entries
@@ -1241,9 +1241,10 @@ class PropertyStore private (
                 if p ne null
                 if !p.isBeingComputed
                 ep /*: (Entity, Property)*/ = (e, p)
-                if collect.isDefinedAt(ep)
+                // IMPROVE Rewrite the split isDefinedAt + pf.apply using pf.applyOrElse
+                if pf.isDefinedAt(ep)
             } yield {
-                collect(ep)
+                pf(ep)
             }
         }
     }

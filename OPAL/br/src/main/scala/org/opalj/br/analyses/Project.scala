@@ -1236,6 +1236,23 @@ object Project {
         )
     }
 
+    def apply(
+        projectFiles: Array[File],
+        libraryFiles: Array[File],
+        logContext:   LogContext,
+        config:       Config
+    ): Project[URL] = {
+        this(
+            JavaClassFileReader(logContext, config).AllClassFiles(projectFiles),
+            JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
+            libraryClassFilesAreInterfacesOnly = true,
+            virtualClassFiles = Traversable.empty,
+            handleInconsistentProject = defaultHandlerForInconsistentProjects,
+            config = config,
+            logContext
+        )
+    }
+
     def apply[Source](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)]
     ): Project[Source] = {
@@ -1751,10 +1768,11 @@ object Project {
             }
         }
         if (exceptions.nonEmpty) {
-            OPALLogger.error(
-                "internal - ignored",
-                "project validation failed (please, report):\n"+exceptions.mkString("\n")
-            )(project.logContext)
+            exceptions foreach { exception ⇒
+                OPALLogger.error(
+                    "internal - ignored", "project validation failed", exception
+                )(project.logContext)
+            }
         }
 
         exs

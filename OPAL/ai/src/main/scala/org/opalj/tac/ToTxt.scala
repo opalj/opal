@@ -43,7 +43,8 @@ import org.opalj.br.Type
 import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
- * Converts a list of three-address instructions into a text-based representation.
+ * Converts a list of three-address instructions into a text-based representation for comprehension
+ * purposes only.
  *
  * @note This representation is primarily provided for debugging purposes and is not
  *       performance optimized.
@@ -71,6 +72,8 @@ object ToTxt {
             case DoubleConst(_, value)         ⇒ value.toString+"d"
             case ClassConst(_, value)          ⇒ value.toJava+".class"
             case StringConst(_, value)         ⇒ s""""$value""""
+            case MethodHandleConst(_, value)   ⇒ s"""MethodHandle("${value.toJava}")"""
+            case MethodTypeConst(_, value)     ⇒ s"""MethodType("${value.toJava}")"""
             case NullExpr(_)                   ⇒ "null"
 
             case PrefixExpr(_, _, op, operand) ⇒ op.toString+" "+toTxtExpr[V](operand)
@@ -306,18 +309,19 @@ object ToTxt {
 
             if (bb.endPC == index && bb.successors.exists(!_.isBasicBlock)) {
                 val successors =
-                    bb.successors.map {
+                    bb.successors.collect {
                         case cn: CatchNode ⇒
                             s"⚡️ ${catchTypeToString(cn.catchType)} → ${cn.handlerPC}"
                         case ExitNode(false) ⇒
-                            "⚠️ - potentially uncaught exception/abnormal return"
+                            "⚡️ <uncaught exception ⇒ abnormal return>"
+                    }
 
-                        case _ ⇒ null
-                    }.filterNot(_ == null)
-
+                var head = (" " * (if (indented) 6 else 0))+"// "
+                if (stmts(index).astID != Throw.ASTID && bb.successors.forall(!_.isBasicBlock))
+                    head += "⚠️ ALWAYS THROWS EXCEPTION – "
                 if (successors.nonEmpty)
                     javaLikeCode +=
-                        successors.mkString((" " * (if (indented) 6 else 0))+"// ", ", ", "")
+                        successors.mkString(head, ", ", "")
             }
 
             index += 1

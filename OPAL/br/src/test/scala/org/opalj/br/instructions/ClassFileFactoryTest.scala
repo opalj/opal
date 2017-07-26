@@ -936,7 +936,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ALOAD_1
                     )
                 )
-                d = MethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
+                d = MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
                 ClassFileFactory.parameterForwardingInstructions(
                     d, d, 0, Seq.empty, ObjectType.Object
                 ) should be(
@@ -1092,7 +1092,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     )
                 val d2 =
                     MethodDescriptor(
-                        IndexedSeq(ObjectType.String, ArrayType.ArrayOfObjects),
+                        IndexedSeq(ObjectType.String, ArrayType.ArrayOfObject),
                         VoidType
                     )
                 ClassFileFactory.parameterForwardingInstructions(
@@ -1103,7 +1103,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     null,
                     null,
                     ALOAD_1,
-                    CHECKCAST(ArrayType.ArrayOfObjects),
+                    CHECKCAST(ArrayType.ArrayOfObject),
                     null,
                     null
                 ))
@@ -1122,7 +1122,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             ShortType
                         ), VoidType
                     )
-                val d2 = MethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
+                val d2 = MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
                 ClassFileFactory.parameterForwardingInstructions(
                     d1, d2, 0, Seq.empty, ObjectType.Object
                 ) should be(
