@@ -41,6 +41,7 @@ import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.bi.TestResources.allBITestProjectFolders
 import org.opalj.bi.TestResources.allBITestJARs
 
 /**
@@ -98,13 +99,13 @@ object TestSupport {
             case Some(jreReader) ⇒
                 val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
                 val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
-                allBITestJARs().toIterator map { biProjectJAR ⇒
-                    val projectClassFiles = projectReader.ClassFiles(biProjectJAR)
+                (allBITestJARs().toIterator ++ allBITestProjectFolders().toIterator) map { biProject ⇒
+                    val projectClassFiles = projectReader.ClassFiles(biProject)
                     val readerFactory = () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly)
-                    (biProjectJAR.getName, readerFactory)
+                    (biProject.getName, readerFactory)
                 }
             case None ⇒
-                allBITestJARs().toIterator map { biProjectJAR ⇒
+                (allBITestJARs().toIterator ++ allBITestProjectFolders().toIterator) map { biProjectJAR ⇒
                     val readerFactory = () ⇒ Project(biProjectJAR)
                     (biProjectJAR.getName, readerFactory)
                 }
