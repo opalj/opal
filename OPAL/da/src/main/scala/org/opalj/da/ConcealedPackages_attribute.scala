@@ -44,12 +44,10 @@ case class ConcealedPackages_attribute(
     override def attribute_length: Int = 2 + packages.size * 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div id="concealed_packages">
-            <details>
-                <summary>ConcealedPackages</summary>
-                { packages.map { p ⇒ <span>{ cp(p).asString }</span><br/> } }
-            </details>
-        </div>
+        <details class="attribute">
+            <summary>ConcealedPackages</summary>
+            { packages.map { p ⇒ <span>{ cp(p).asString }</span><br/> } }
+        </details>
     }
 
 }

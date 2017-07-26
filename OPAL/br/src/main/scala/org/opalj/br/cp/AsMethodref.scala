@@ -31,16 +31,13 @@ package br
 package cp
 
 /**
- * Common super trait of all constant pool entries that represent method refs.
+ * Constant pool entry that represents method refs.
  *
  * The created `MethodRef` is cached.
  *
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-import org.opalj.br.ReferenceType
-import org.opalj.br.MethodDescriptor
-
 trait AsMethodref extends Constant_Pool_Entry {
 
     def class_index: Constant_Pool_Index

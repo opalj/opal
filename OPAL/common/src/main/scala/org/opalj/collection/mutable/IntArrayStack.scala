@@ -231,7 +231,7 @@ object IntArrayStack {
      * Creates a new stack based on a given sequence. The last value of the sequence will
      * be the top value of the stack.
      */
-    def fromSeq(seq: Seq[Int]): IntArrayStack = seq.foldLeft(new IntArrayStack())(_ += _)
+    def fromSeq(seq: TraversableOnce[Int]): IntArrayStack = seq.foldLeft(new IntArrayStack(8))(_ += _)
 
     def apply(value: Int): IntArrayStack = {
         val initialArray = new Array[Int](10)

@@ -48,6 +48,7 @@ import org.opalj.br.analyses.MethodInfo
 import org.opalj.graphs.ControlDependencies
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.TestSupport
 
 /**
  * Tests if we are able to compute the CFG as well as the dominator/post-dominator tree for
@@ -257,7 +258,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         it("should be possible to calculate the information for all methods of the JDK") {
             DominatorsPerformanceEvaluation.resetAll()
 
-            val project = org.opalj.br.TestSupport.createJREProject
+            val project = TestSupport.createJREProject
 
             time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
 
@@ -267,7 +268,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         it("should be possible to calculate the information for all methods of the OPAL 0.3 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
 
-            val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+            val classFiles = org.opalj.bi.TestResources.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
             val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
 
             time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
@@ -278,7 +279,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         it("should be possible to calculate the information for all methods of the OPAL-08-14-2014 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
 
-            val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
+            val classFilesFolder = org.opalj.bi.TestResources.locateTestResources("classfiles", "bi")
             val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
                 def accept(dir: java.io.File, name: String) =
                     name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")

@@ -46,3 +46,14 @@ trait IFICMPInstructionLike extends SimpleConditionalBranchInstructionLike {
 }
 
 trait IFICMPInstruction extends SimpleConditionalBranchInstruction with IFICMPInstructionLike
+
+object IFICMPInstruction {
+
+    def unapply(i: Instruction): Option[(RelationalOperator, Int /*Branchoffset*/ )] = {
+        i match {
+            case i: IFICMPInstruction ⇒ Some((i.condition, i.branchoffset))
+            case _                    ⇒ None
+        }
+    }
+
+}

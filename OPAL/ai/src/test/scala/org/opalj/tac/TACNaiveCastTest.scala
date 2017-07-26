@@ -150,7 +150,7 @@ class TACNaiveCastTest extends TACNaiveTest {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                Assignment(1, SimpleVar(0, ComputationalTypeReference), Checkcast(1, SimpleVar(0, ComputationalTypeReference), listType)),
+                Checkcast(1, SimpleVar(0, ComputationalTypeReference), listType),
                 Assignment(4, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Return(5)
             ))
@@ -158,7 +158,7 @@ class TACNaiveCastTest extends TACNaiveTest {
                 "0: r_0 = this",
                 "1: r_1 = p_1",
                 "2: op_0 = r_1",
-                s"3: op_0 = (${listType.toJava}) op_0",
+                s"3: (${listType.toJava}) op_0",
                 "4: r_2 = op_0",
                 "5: return"
             ).mkString("\n")

@@ -1162,10 +1162,15 @@ object ObjectType {
 
     // Types related to the invokedynamic instruction
     final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
+    final val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
     final val MethodHandles$Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
     final val MethodType = ObjectType("java/lang/invoke/MethodType")
     final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
     final val CallSite = ObjectType("java/lang/invoke/CallSite")
+    final val ScalaLambdaDeserialize = ObjectType("scala/runtime/LambdaDeserialize")
+    final val SerializedLambda = ObjectType("java/lang/invoke/SerializedLambda")
+    final val ScalaSymbolLiteral = ObjectType("scala/runtime/SymbolLiteral")
+    final val ScalaSymbol = ObjectType("scala/Symbol")
 
     // Exceptions and errors that may be thrown by the JVM (i.e., instances of these
     // exceptions may be created at runtime by the JVM)
@@ -1429,7 +1434,8 @@ object ArrayType {
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
-    final val ArrayOfObjects = ArrayType(ObjectType.Object)
+    final val ArrayOfObject = ArrayType(ObjectType.Object)
+    final val ArrayOfMethodHandle = ArrayType(ObjectType.MethodHandle)
 }
 
 /**

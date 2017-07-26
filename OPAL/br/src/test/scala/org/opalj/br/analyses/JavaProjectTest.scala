@@ -37,7 +37,7 @@ import org.scalatest.Matchers
 
 import scala.collection.JavaConverters._
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * Tests the support for "project" related functionality.

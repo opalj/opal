@@ -458,7 +458,7 @@ object MethodDescriptor {
      * }}}
      */
     final val SignaturePolymorphicMethod: MethodDescriptor = {
-        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
+        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
     }
 
     final val JustReturnsBoolean: MethodDescriptor = new NoArgumentMethodDescriptor(BooleanType)
@@ -537,7 +537,34 @@ object MethodDescriptor {
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
-                ArrayType.ArrayOfObjects
+                ArrayType.ArrayOfObject
+            ),
+            ObjectType.CallSite
+        )
+    }
+
+    /**
+     * Descriptor of the method `scala.runtime.LambdaDeserializer`.
+     */
+    final val ScalaLambdaDeserializeDescriptor = {
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ArrayType.ArrayOfMethodHandle
+            ),
+            ObjectType.CallSite
+        )
+    }
+
+    final val ScalaSymbolLiteralDescriptor = {
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ObjectType.String
             ),
             ObjectType.CallSite
         )

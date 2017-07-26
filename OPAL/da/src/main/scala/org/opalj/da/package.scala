@@ -62,7 +62,7 @@ package object da {
      *
      * In the string the default visibility is represented using the name `default`.
      */
-    def accessFlagsToXHTML(access_flags: Int, context: AccessFlagsContext): (Node, String) = {
+    def accessFlagsToXHTML(access_flags: Int, context: AccessFlagsContext): (NodeSeq, String) = {
         val accessFlags = AccessFlags.toString(access_flags, context)
 
         val explicitAccessFlags =
@@ -71,7 +71,15 @@ package object da {
                 case _    ⇒ accessFlags
             }
 
-        (<span class="access_flags">{ accessFlags }</span>, explicitAccessFlags)
+        (
+            {
+                if (accessFlags.isEmpty)
+                    NodeSeq.Empty
+                else
+                    Seq(<span class="access_flags">{ accessFlags }</span>, Text(" "))
+            },
+            explicitAccessFlags
+        )
     }
 
     def asJavaReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): FieldTypeInfo = {

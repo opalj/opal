@@ -32,19 +32,18 @@ package reader
 
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
+import org.scalactic.Equality
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-
+import org.opalj.log.{GlobalLogContext, LogContext}
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.bi.TestSupport.{locateTestResources ⇒ locate}
-import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.bi.TestResources.{locateTestResources ⇒ locate}
 import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Tests the rewriting of Java 8 lambda expressions/method references based
@@ -59,39 +58,63 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 
-    val lambdas18Project = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+    val InvokedMethods = ObjectType("annotations/target/InvokedMethods")
+
+    val lambda18TestResources = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
-        var successful = false
-        val methods = classFile.findMethod(name)
+        info(s"Testing $name")
+        var successFull = false
         for {
-            (method, body) ← methods.collect { case method @ MethodWithBody(body) ⇒ (method, body) }
-            factoryCall ← body.collectInstructions { case i: INVOKESTATIC ⇒ i }
+            method @ MethodWithBody(body) ← classFile.findMethod(name)
+            (_, factoryCall @ INVOKESTATIC(_, _, _, _)) ← body
             if factoryCall.declaringClass.fqn.matches("^Lambda\\$[A-Fa-f0-9]+:[A-Fa-f0-9]+$")
             annotations = method.runtimeVisibleAnnotations
         } {
-            successful = true
-            val expectedTarget = getInvokedMethod(project, annotations)
-            if (expectedTarget.isEmpty) {
-                val message =
-                    annotations.
-                        filter(_.annotationType == InvokedMethod).
-                        mkString("\n\t", "\n\t", "\n")
-                fail(
-                    s"the specified invoked method $message is not defined "+
-                        classFile.methods.map(_.name).mkString("; defined methods = {", ",", "}")
-                )
+            successFull = true
+            implicit val MethodDeclarationEquality = new Equality[Method] {
+                def areEqual(a: Method, b: Any): Boolean =
+                    b match {
+                        case m: Method ⇒
+                            a.compare(m) == 0 /* <=> same name and descriptor */ &&
+                                a.visibilityModifier == m.visibilityModifier &&
+                                a.isStatic == m.isStatic
+                        case _ ⇒ false
+                    }
             }
 
-            val actualTarget = getCallTarget(project, factoryCall)
-            withClue {
-                s"failed to resolve $factoryCall in ${method.toJava(classFile)}"
-            }(actualTarget should be(expectedTarget))
+            if (annotations.exists(_.annotationType == InvokedMethods)) {
+                val invokedTarget = annotations
+                    .filter(_.annotationType == InvokedMethods)
+                    .flatMap(_.elementValuePairs)
+                    .flatMap(_.value.asInstanceOf[ArrayValue].values)
+                    .filter { invokeMethod ⇒
+                        val innerAnnotation = IndexedSeq(invokeMethod.asInstanceOf[AnnotationValue].annotation)
+                        val expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
+                        val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
+                        MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
+                    }
+
+                assert(invokedTarget.nonEmpty, s"failed to resolve $factoryCall in ${method.toJava(classFile)}")
+
+            } else {
+                val expectedTarget = getInvokedMethod(project, classFile, annotations)
+                val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
+
+                withClue {
+                    s"failed to resolve $factoryCall in ${method.toJava(classFile)}"
+                }(actualTarget.get should ===(expectedTarget.get))
+            }
+
         }
-        assert(successful, s"couldn't find factory method call in $name")
+        assert(successFull, s"couldn't find factory method call in $name")
     }
 
-    private def getCallTarget(project: SomeProject, factoryCall: INVOKESTATIC): Option[Method] = {
+    private def getCallTarget(
+        project:            SomeProject,
+        factoryCall:        INVOKESTATIC,
+        expectedTargetName: String
+    ): Option[Method] = {
         val proxy = project.classFile(factoryCall.declaringClass).get
         val forwardingMethod = proxy.methods.find { m ⇒
             !m.isConstructor && m.name != factoryCall.name && !m.isBridge
@@ -99,7 +122,15 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         val invocationInstructions = forwardingMethod.body.get.instructions.collect {
             case i: MethodInvocationInstruction ⇒ i
         }
-        val invocationInstruction = invocationInstructions.head
+
+        // Make sure to get the correct instruction, Integer::compareUnsigned has 3
+        // MethodInvokations in the proxy class, 2x intValue for getting the value of the int and
+        // compareUnsigned for the actual comparison. This method must return the last one, which
+        // is compareUnsigned
+        val invocationInstruction = invocationInstructions
+            .find(_.name == expectedTargetName)
+            .orElse(Some(invocationInstructions.head)).get
+
         // declaringClass must be an ObjectType, since lambdas cannot be created on
         // array types, nor do arrays have methods that could be referenced
         val declaringType = invocationInstruction.declaringClass.asObjectType
@@ -111,11 +142,18 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
                 invocationInstruction.methodDescriptor
             }
 
-        project.resolveMethodReference(
-            declaringType.asObjectType,
-            targetMethodName,
-            targetMethodDescriptor
-        )
+        if (project.classHierarchy.isInterface(declaringType.asObjectType).isYes)
+            project.resolveInterfaceMethodReference(
+                declaringType.asObjectType,
+                targetMethodName,
+                targetMethodDescriptor
+            )
+        else
+            project.resolveMethodReference(
+                declaringType.asObjectType,
+                targetMethodName,
+                targetMethodDescriptor
+            )
     }
 
     /**
@@ -130,7 +168,11 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
      * invokedynamic instruction, while all other times would refer to invocations of the
      * generated object's single method).
      */
-    private def getInvokedMethod(project: SomeProject, annotations: Annotations): Option[Method] = {
+    private def getInvokedMethod(
+        project:     SomeProject,
+        classFile:   ClassFile,
+        annotations: Annotations
+    ): Option[Method] = {
         val method = for {
             invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
             pairs = invokedMethod.elementValuePairs
@@ -141,7 +183,19 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             if (classFileOpt.isEmpty) {
                 throw new IllegalStateException(s"the class file $receiverType cannot be found")
             }
-            findMethodRecursive(project, classFileOpt.get, methodName, receiverType)
+            val parameterTypes = getParameterTypes(pairs)
+            findMethodRecursive(project, classFileOpt.get, methodName, receiverType, parameterTypes)
+        }
+
+        if (method.isEmpty) {
+            val message =
+                annotations.
+                    filter(_.annotationType == InvokedMethod).
+                    mkString("\n\t", "\n\t", "\n")
+            fail(
+                s"the specified invoked method ${message} is not defined "+
+                    classFile.methods.map(_.name).mkString("; defined methods = {", ",", "}")
+            )
         }
 
         Some(method.head)
@@ -158,10 +212,11 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
      * @return The `Method` with the name `methodName`
      */
     def findMethodRecursive(
-        project:      SomeProject,
-        classFile:    ClassFile,
-        methodName:   String,
-        receiverType: String
+        project:        SomeProject,
+        classFile:      ClassFile,
+        methodName:     String,
+        receiverType:   String,
+        parameterTypes: Option[IndexedSeq[FieldType]]
     ): Method = {
         /**
          * Get the method definition recursively -> if the method isn't implemented in `classFile`, check if
@@ -171,7 +226,10 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
          * @return An Option of the `Method`
          */
         def findMethodRecursiveInner(classFile: ClassFile): Method = {
-            val methodOpt = classFile.findMethod(methodName)
+            var methodOpt = classFile.findMethod(methodName)
+            if (parameterTypes.isDefined) {
+                methodOpt = methodOpt.filter(_.parameterTypes == parameterTypes.get)
+            }
             if (methodOpt.isEmpty) {
                 classFile.superclassType match {
                     case Some(superType) ⇒ findMethodRecursiveInner(project.classFile(superType).get)
@@ -186,43 +244,67 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         findMethodRecursiveInner(classFile)
     }
 
+    private def getParameterTypes(pairs: ElementValuePairs): Option[IndexedSeq[FieldType]] = {
+        pairs.find(_.name == "parameterTypes").map { p ⇒
+            p.value.asInstanceOf[ArrayValue].values.map {
+                case ClassValue(x: ArrayType)  ⇒ x
+                case ClassValue(x: ObjectType) ⇒ x
+                case ClassValue(x: BaseType)   ⇒ x
+                case x: ElementValue           ⇒ x.valueType
+            }
+        }
+    }
+
     def testProject(project: SomeProject): Unit = {
-        val Lambdas = project.classFile(ObjectType("lambdas/Lambdas")).get
-
-        it("should resolve a parameterless lambda") {
-            testMethod(project, Lambdas, "plainLambda")
+        def testAllMethodsWithInvokedMethodAnnotation(ot: String): Unit = {
+            val classFile = project.classFile(ObjectType(ot)).get
+            classFile
+                .methods
+                .filter(_.runtimeVisibleAnnotations.exists { a ⇒
+                    a.annotationType == InvokedMethod || a.annotationType == InvokedMethods
+                })
+                .foreach(m ⇒ testMethod(project, classFile, m.name))
         }
 
-        it("should resolve a lambda with a reference to a local variable") {
-            testMethod(project, Lambdas, "localClosure")
+        it("should resolve all references in Lambdas") {
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/Lambdas")
         }
 
-        it("should resolve a lambda with a reference to an instance variable") {
-            testMethod(project, Lambdas, "instanceClosure")
+        // --- Method References ---
+
+        it("should resolve all references in DefaultMethod") {
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/DefaultMethod")
         }
 
-        it("should resolve a lambda with references to both local and instance variables") {
-            testMethod(project, Lambdas, "localAndInstanceClosure")
+        it("should resolve all references in InvokeSpecial") {
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/InvokeSpecial")
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/InvokeSpecial$Superclass")
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/InvokeSpecial$Subclass")
         }
 
-        val MethodReferences = project.classFile(ObjectType("lambdas/methodreferences/MethodReferences")).get
-
-        it("should resolve a reference to a static method") {
-            testMethod(project, MethodReferences, "compareValues")
+        it("should resolve all references in MethodReferencePrimitives") {
+            testAllMethodsWithInvokedMethodAnnotation(
+                "lambdas/methodreferences/MethodReferencePrimitives"
+            )
         }
 
-        it("should resolve a reference to an instance method") {
-            testMethod(project, MethodReferences, "filterOutEmptyValues")
+        it("should resolve all references in MethodReferences") {
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/MethodReferences")
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/MethodReferences$Child")
         }
 
-        it("should resolve a reference to a constructor") {
-            testMethod(project, MethodReferences, "newValue")
+        it("should resolve all references in ReceiverInheritance") {
+            testAllMethodsWithInvokedMethodAnnotation(
+                "lambdas/methodreferences/ReceiverInheritance"
+            )
         }
 
-        val ReceiverInheritance = project.classFile(ObjectType("lambdas/methodreferences/ReceiverInheritance")).get
+        it("should resolve all references in SinkTest") {
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/SinkTest")
+        }
 
-        it("should resolve a reference to a method implemented in a superclass") {
-            testMethod(project, ReceiverInheritance, "instanceBiConsumer")
+        it("should resolve all references in StaticInheritance") {
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/StaticInheritance")
         }
     }
 
@@ -240,7 +322,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
         val framework = new Framework()
         val project = Project(
-            framework.ClassFiles(lambdas18Project),
+            framework.ClassFiles(lambda18TestResources),
             Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JRELibraryFolder),
             true,
             Traversable.empty,

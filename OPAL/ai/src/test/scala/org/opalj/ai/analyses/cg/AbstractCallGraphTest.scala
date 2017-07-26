@@ -84,7 +84,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     //
     // PROJECT SETUP
     //
-    def file = org.opalj.bi.TestSupport.locateTestResources(testFileName, testFilePath)
+    def file = org.opalj.bi.TestResources.locateTestResources(testFileName, testFilePath)
     val project = org.opalj.br.analyses.Project(file)
 
     //

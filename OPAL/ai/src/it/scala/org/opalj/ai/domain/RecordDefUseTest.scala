@@ -41,7 +41,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.opalj.br.analyses.MethodInfo
-import org.opalj.br.instructions.CHECKCAST
 
 /**
  * Tests if we are able to collect def/use information for all methods of the JDK and OPAL and if
@@ -102,7 +101,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     val (ops, pc) = opsPC
                     if ((ops ne null) &&
                         // Note:
-                        // In case of handlers and checkcast, the def/use information
+                        // In case of handlers, the def/use information
                         // is slightly different when compared with the
                         // information recorded by the reference values domain.
                         ehs.forall(_.handlerPC != pc)) {
@@ -121,14 +120,10 @@ class RecordDefUseTest extends FunSpec with Matchers {
                                             t
                                         )
                                 }
-                            def isCheckcast(pc: PC): Boolean = {
-                                pc >= 0 && body.instructions(pc).opcode == CHECKCAST.opcode
-                            }
                             def haveSameOrigins: Boolean = {
                                 domainOrigins forall { o ⇒
                                     defUseOrigins.contains(o) ||
-                                        defUseOrigins.exists(duo ⇒ ehs.exists(_.handlerPC == duo)) ||
-                                        defUseOrigins.exists(isCheckcast)
+                                        defUseOrigins.exists(duo ⇒ ehs.exists(_.handlerPC == duo))
                                 }
                             }
 

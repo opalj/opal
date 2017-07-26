@@ -29,7 +29,7 @@
 package org.opalj
 package de
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.VirtualClass
 import org.opalj.br.VirtualMethod

@@ -29,10 +29,12 @@
 package org.opalj
 package br
 
+import scala.annotation.tailrec
+
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import scala.annotation.tailrec
+import scala.collection.AbstractIterator
 import scala.io.BufferedSource
 import scala.collection.mutable
 import scala.collection.generic.Growable
@@ -47,7 +49,7 @@ import org.opalj.log.Warn
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.Chain.{IncompleteEmptyChain, CompleteEmptyChain}
+import org.opalj.collection.immutable.Chain.{CompleteEmptyChain, IncompleteEmptyChain}
 import org.opalj.collection.StrictSubset
 import org.opalj.collection.EqualSets
 import org.opalj.collection.StrictSuperset
@@ -632,7 +634,7 @@ class ClassHierarchy private (
                     return Iterator.empty;
             }
         }
-        new Iterator[ObjectType] {
+        new AbstractIterator[ObjectType] {
             var iterators = List[Iterator[ObjectType]](initialIterator)
 
             @tailrec def advanceToNextNonEmptyIterator: Boolean = {

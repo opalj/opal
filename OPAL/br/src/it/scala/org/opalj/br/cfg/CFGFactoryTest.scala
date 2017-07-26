@@ -33,7 +33,7 @@ import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
 import org.opalj.collection.immutable.IntSet
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bi.TestSupport.allBITestJARs
+import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 

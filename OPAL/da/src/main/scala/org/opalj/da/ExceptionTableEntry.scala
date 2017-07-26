@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.Text
 
 /**
  * @author Wael Alkhatib
@@ -43,13 +44,9 @@ case class ExceptionTableEntry(
         catch_type: Int
 ) {
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-
-        if (catch_type != 0) {
-            val catchType: Node = <span class="fqn">{ cp(catch_type).toString(cp) }</span>;
-            <li>try [{ start_pc }-{ end_pc }) catch { handler_pc } { catchType }</li>
-        } else
-            <li>try [{ start_pc }-{ end_pc }) catch { handler_pc } Any</li>
+    def toXHTML(implicit cp: Constant_Pool, code: Code): Node = {
+        // IMPROVE Write it out as a table row (adapt toXHTML) in ExceptionTable
+        <li>try [{ start_pc }-{ end_pc }) catch { handler_pc } { if (catch_type != 0) { asJavaObjectType(catch_type).asSpan("") } else Text("<ANY>") }</li>
     }
 }
 

@@ -100,7 +100,7 @@ object INSTANCEOF {
     /**
      * Factory method to create [[INSTANCEOF]] instructions.
      *
-     * @param   referenceType The `referenceType` against which the type test is done; see
+     * @param   referenceTypeName The `referenceType` against which the type test is done; see
      * +            [[org.opalj.br.ReferenceType$]]'s `apply` method for the correct syntax.
      */
     def apply(referenceTypeName: String): INSTANCEOF = INSTANCEOF(ReferenceType(referenceTypeName))

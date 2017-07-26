@@ -10,11 +10,12 @@
    (See `Project.getOrCreateProjektInformationKeyInitializationData` for further information.)
  - the parameters are now explicitly represented in TACAI
  - fixed a bug in TACAI where the handled exceptions are swallowed
- - fixed several minor bugs and issues
+ - fixed several minor bugs and issues related to compile-time dead code
+ - fixed issues related to the computation of def-use information for very old (JSR/RET) bytecode
  - removed the Eclipse Plug-in sub-project; it wasn't maintained anymore and is now replaced by the ATOM plug-in.
  - removed the Viz sub-project; it wasn't maintained anymore and OPAL already has the possibility to generate SVGs using [Graphviz compiled to JavaScript](https://github.com/mdaines/viz.js) and executed using JDK Nashorn 
  - renamed the immutability analyses to reflect the names used in our upcomming paper
-
+ 
 ## 0.8.14
  - OPAL now has a very advanced 3-address code representation; go to wwww.opal-project.de to read about the 3-address code
  - fixed all known bugs when rewriting INVOKEDYNAMIC instruction (contributed by Andreas Muttscheller)

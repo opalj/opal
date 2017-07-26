@@ -29,11 +29,11 @@
 package org.opalj
 package da
 
-import scala.xml.Node
 import org.opalj.bi.AccessFlagsContexts.METHOD
 
 import scala.xml.Text
 import scala.xml.NodeSeq
+import scala.xml.Node
 
 /**
  * @author Michael Eichberg
@@ -95,53 +95,59 @@ case class Method_Info(
 
         val (codeAttributes, attributes2) = attributes1.partition(_.isInstanceOf[Code_attribute])
         val (signatureAttributes, attributes3) = attributes2.partition(_.isInstanceOf[Signature_attribute])
-        <div class="method" id={ name + jvmDescriptor } data-name={ name } data-index={ index } data-access-flags={ explicitAccessFlags }>
-            {
-                if (codeAttributes.nonEmpty) {
-                    val codeAttribute = codeAttributes.head.asInstanceOf[Code_attribute]
-
-                    val code = codeAttribute.code
-                    val codeSize = code.instructions.length
-                    val maxStack = codeAttribute.max_stack
-                    val maxLocals = codeAttribute.max_locals
-                    val methodBodyHeader =
-                        s"[size: $codeSize bytes, max Stack: $maxStack, max Locals: $maxLocals]"
-                    <details open="">
-                        <summary>
-                            { Seq(declarationNode, Text(methodBodyHeader)) }
-                            {
-                                if (signatureAttributes.nonEmpty) {
-                                    val signatureAttribute = signatureAttributes.head.asInstanceOf[Signature_attribute]
-                                    Seq(<br/>, signatureAttribute.signatureSpan)
-                                }
-                            }
-                        </summary>
-                        <div>
-                            {
-                                code.toXHTML(
-                                    methodIndex,
-                                    codeAttribute.exceptionTable,
-                                    codeAttribute.attributes.collectFirst {
-                                        case LineNumberTable_attribute(_, lnt)⇒ lnt
-                                    }
-                                )
-                            }
-                            { codeAttribute.exception_handlersAsXHTML }
-                            {
-                                codeAttribute.attributes.
-                                    filterNot(_.isInstanceOf[LineNumberTable_attribute]).
-                                    map(_.toXHTML)
-                            }
-                        </div>
-                        { attributes3.map(_.toXHTML) }
-                    </details>
-                } else {
-                    <details class="native_or_abstract_method">
-                        <summary>{ declarationNode }</summary>
-                        { attributes3.map(_.toXHTML) }
-                    </details>
-                }
+        val signatureNode =
+            if (signatureAttributes.nonEmpty) {
+                val signatureAttribute = signatureAttributes.head.asInstanceOf[Signature_attribute]
+                Seq(<br/>, signatureAttribute.signatureSpan)
+            } else {
+                NodeSeq.Empty
             }
-        </div>
+        if (codeAttributes.nonEmpty) {
+            val codeAttribute = codeAttributes.head.asInstanceOf[Code_attribute]
+
+            val code = codeAttribute.code
+            val codeSize = code.instructions.length
+            val maxStack = codeAttribute.max_stack
+            val maxLocals = codeAttribute.max_locals
+            val methodBodyHeader =
+                s"[size: $codeSize bytes, max Stack: $maxStack, max Locals: $maxLocals]"
+            <details open="" class="method" id={ name + jvmDescriptor } data-index={ index } data-name={ name } data-access-flags={ explicitAccessFlags }>
+                <summary>
+                    { Seq(declarationNode, Text(methodBodyHeader)) }
+                    { signatureNode }
+                </summary>
+                <div>
+                    {
+                        code.toXHTML(
+                            methodIndex,
+                            codeAttribute.exceptionTable,
+                            codeAttribute.attributes.collectFirst {
+                                case LineNumberTable_attribute(_, lnt)⇒ lnt
+                            }
+                        )
+                    }
+                    { codeAttribute.exception_handlersAsXHTML }
+                    {
+                        codeAttribute.attributes.
+                            filterNot(_.isInstanceOf[LineNumberTable_attribute]).
+                            map(_.toXHTML)
+                    }
+                </div>
+                { attributes3.map(_.toXHTML) }
+            </details>
+        } else if (attributes3.nonEmpty) {
+            <details class="method native_or_abstract" id={ name + jvmDescriptor } data-index={ index } data-name={ name } data-access-flags={ explicitAccessFlags }>
+                <summary>
+                    { declarationNode }
+                    { signatureNode }
+                </summary>
+                { attributes3.map(_.toXHTML) }
+            </details>
+        } else {
+            <div class="details method native_or_abstract" id={ name + jvmDescriptor } data-index={ index } data-name={ name } data-access-flags={ explicitAccessFlags }>
+                { declarationNode }
+                { signatureNode }
+            </div>
+        }
     }
 }

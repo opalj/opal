@@ -42,7 +42,7 @@ class JDKBugsTest extends FlatSpec with Matchers {
 
     "JDKBugs" should "find all known bugs in the corresponding files in src/test/java" in {
 
-        import org.opalj.bi.TestSupport.locateTestResources
+        import org.opalj.bi.TestResources.locateTestResources
 
         val args = new Array[String](2)
         args(0) = "-cp="+locateTestResources("jdkbug/test.jar", "incubation").getPath()

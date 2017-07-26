@@ -31,9 +31,9 @@ package collection
 package immutable
 
 import scala.language.implicitConversions
-
 import scala.collection.GenIterable
 import scala.collection.GenTraversableOnce
+import scala.collection.AbstractIterator
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.generic.FilterMonadic
@@ -522,7 +522,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     def toIterator: Iterator[T] = {
-        new Iterator[T] {
+        new AbstractIterator[T] {
             private var rest = self
             def hasNext: Boolean = rest.nonEmpty
             def next(): T = {

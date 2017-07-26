@@ -41,12 +41,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.log.GlobalLogContext
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.reader.Java8LambdaExpressionsRewriting.FactoryNamesRegEx
+import org.opalj.br.reader.Java8LambdaExpressionsRewriting.LambdaNameRegEx
 import org.opalj.ai.BaseAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.Domain
@@ -113,7 +113,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             method @ MethodWithBody(body) ← classFile.methods
             instructions = body.instructions
             if instructions.exists {
-                case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches(FactoryNamesRegEx)
+                case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches(LambdaNameRegEx)
                 case _               ⇒ false
             }
         } {

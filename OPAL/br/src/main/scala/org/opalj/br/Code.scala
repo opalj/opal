@@ -36,20 +36,20 @@ import scala.reflect.ClassTag
 import java.util.Arrays.fill
 
 import scala.collection.BitSet
-
+import scala.collection.AbstractIterator
 import scala.collection.mutable
 import scala.collection.immutable
 import scala.collection.immutable.IntMap
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
+import org.opalj.util.AnyToAnyThis
 import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.immutable.IntSet
 import org.opalj.collection.immutable.IntSet1
 import org.opalj.collection.immutable.IntSetBuilder
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
-
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 
@@ -122,7 +122,7 @@ final class Code private (
 
     import Code.BasicClassHierarchy
 
-    def codeSize: Int = instructions.length
+    @inline final def codeSize: Int = instructions.length
 
     /**
      * Represents some filtered code. Primarily, implicitly used when a for-comprehension
@@ -204,8 +204,8 @@ final class Code private (
      *
      * @see See the method [[foreach]] for an alternative.
      */
-    def programCounters: Iterator[PC] =
-        new Iterator[PC] {
+    def programCounters: Iterator[PC] = {
+        new AbstractIterator[PC] {
             var pc = 0 // there is always at least one instruction
 
             def next() = {
@@ -216,6 +216,7 @@ final class Code private (
 
             def hasNext = pc < instructions.size
         }
+    }
 
     /**
      * Computes the number of instructions.
@@ -464,10 +465,13 @@ final class Code private (
      * instructions without predecessors. Those instructions with multiple predecessors
      * are also returned.
      *
-     * @return  An array which contains for each instruction the set of all predecessors as well
-     *          as the set of all instructions which have only predecessors; i.e., no successors
-     *          and also the set of all instructions where multiple paths join.
+     * @return  (1) An array which contains for each instruction the set of all predecessors,
+     *          (2) the set of all instructions which have only predecessors; i.e., no successors
+     *          and (3) also the set of all instructions where multiple paths join.
      *          `(Array[PCs]/*PREDECESSOR_PCs*/, PCs/*FINAL_PCs*/, BitSet/*CF_JOINS*/)`
+     *          Note, that in case of completely broken code, set 2 may contain other
+     *          instructions than `return` and `athrow` instructions.
+     *          If the code contains jsr/ret instructions the full blown CFG is computed.
      */
     def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, BitSet) = {
         val instructions = this.instructions
@@ -499,14 +503,23 @@ final class Code private (
                 exitPCs += pc
             } else {
                 nextPCs foreach { nextPC ⇒
-                    // compute cfJoins
-                    runtimeSuccessor(nextPC)
-                    // compute predecessors
-                    val predecessorPCs = allPredecessorPCs(nextPC)
-                    if (predecessorPCs eq null) {
-                        allPredecessorPCs(nextPC) = new IntSet1(pc)
+                    if (nextPC < instructionsLength) {
+                        // compute cfJoins
+                        runtimeSuccessor(nextPC)
+                        // compute predecessors
+                        val predecessorPCs = allPredecessorPCs(nextPC)
+                        if (predecessorPCs eq null) {
+                            allPredecessorPCs(nextPC) = new IntSet1(pc)
+                        } else {
+                            allPredecessorPCs(nextPC) = predecessorPCs + pc
+                        }
                     } else {
-                        allPredecessorPCs(nextPC) = predecessorPCs + pc
+                        // this handles cases where we have totally broken code; e.g.,
+                        // compile-time dead code at the end of the method where the
+                        // very last instruction is not even a ret/jsr/goto/return/atrow
+                        // instruction (e.g., a NOP instruction as in case of the jPython
+                        // related classe.)
+                        exitPCs += pc
                     }
                 }
             }
@@ -1080,8 +1093,9 @@ final class Code private (
         var result: List[(PC, B)] = List.empty
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            if (f.isDefinedAt(instruction)) {
-                result = (pc, f(instruction)) :: result
+            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= ((pc, r.asInstanceOf[B]))
             }
             pc = pcOfNextInstruction(pc)
         }
@@ -1124,8 +1138,9 @@ final class Code private (
         var pc = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            if (f.isDefinedAt(instruction)) {
-                result = f(instruction) :: result
+            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= r.asInstanceOf[B]
             }
             pc = pcOfNextInstruction(pc)
         }
@@ -1153,8 +1168,9 @@ final class Code private (
         val vs = Chain.newBuilder[B]
         while (pc < max_pc) {
             val params = (pc, instructions(pc))
-            if (f.isDefinedAt(params)) {
-                vs += f(params)
+            val r: Any = f.applyOrElse(params, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                vs += r.asInstanceOf[B]
             }
             pc = pcOfNextInstruction(pc)
         }
@@ -1170,9 +1186,10 @@ final class Code private (
         var pc = 0
         while (pc < max_pc) {
             val params = (pc, instructions(pc))
-            if (f.isDefinedAt(params))
-                return Some(f(params));
-
+            val r: Any = f.applyOrElse(params, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                return Some(r.asInstanceOf[B]);
+            }
             pc = pcOfNextInstruction(pc)
         }
 
@@ -1263,8 +1280,9 @@ final class Code private (
         while (lastPC < max_pc) {
             instrs = instrs.enqueue(instructions(lastPC))
 
-            if (f.isDefinedAt((firstPC, instrs))) {
-                result = f((firstPC, instrs)) :: result
+            val r: Any = f.applyOrElse((firstPC, instrs), AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= r.asInstanceOf[B]
             }
 
             firstPC = pcOfNextInstruction(firstPC)
@@ -1316,8 +1334,9 @@ final class Code private (
         while (lastPC < max_pc) {
             instrs = instrs.enqueue(instructions(lastPC))
 
-            if (f.isDefinedAt(instrs)) {
-                result = (firstPC, f(instrs)) :: result
+            val r: Any = f.applyOrElse(instrs, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= ((firstPC, r.asInstanceOf[B]))
             }
 
             firstPC = pcOfNextInstruction(firstPC)
@@ -1353,9 +1372,11 @@ final class Code private (
         var result: List[(PC, B)] = List.empty
         while (second_pc < max_pc) {
             secondInstruction = instructions(second_pc)
+
             val instrs = (firstInstruction, secondInstruction)
-            if (f.isDefinedAt(instrs)) {
-                result = (first_pc, f(instrs)) :: result
+            val r: Any = f.applyOrElse(instrs, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= ((first_pc, r.asInstanceOf[B]))
             }
 
             firstInstruction = secondInstruction

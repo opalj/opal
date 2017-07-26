@@ -29,6 +29,7 @@
 package org.opalj
 package tac
 
+import org.opalj.collection.immutable.IntSet
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
@@ -87,7 +88,64 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
 
     def isVar: Boolean
 
+    def asVar: V = throw new ClassCastException
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+}
+
+/**
+ * A caught exception is essential to ensure that the local variable that stores the exception
+ * is reified in the ai-based 3-address code.
+ */
+case class CaughtException[+V <: Var[V]](
+        pc:                        PC,
+        exceptionType:             Option[ObjectType],
+        private var throwingStmts: IntSet
+) extends Expr[V] {
+
+    final def astID: Int = CaughtException.ASTID
+
+    final def cTpe: ComputationalType = ComputationalTypeReference
+
+    final def isVar: Boolean = false
+
+    final def isSideEffectFree: Boolean = false
+
+    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        throwingStmts = throwingStmts map { stmt ⇒
+            if (ai.isVMLevelValue(stmt))
+                ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(stmt)))
+            else if (stmt < 0)
+                stmt
+            else
+                pcToIndex(stmt)
+
+        }
+    }
+
+    final def exceptionLocations: Iterator[String] = {
+        throwingStmts.iterator.map { defSite ⇒
+            if (defSite < 0) {
+                if (ai.isVMLevelValue(defSite))
+                    "exception@"+ai.pcOfVMLevelValue(defSite)
+                else
+                    "param"+(-defSite - 1).toHexString
+            } else
+                "lv"+defSite.toHexString
+        }
+    }
+
+    override def toString: String = {
+        val exceptionType = this.exceptionType.map(_.toJava).getOrElse("<ANY>")
+        val exceptionLocations = this.exceptionLocations.mkString("{", ",", "}")
+        s"CaughtException(pc=$pc,$exceptionType,caused by=$exceptionLocations)"
+    }
+}
+
+object CaughtException {
+
+    final val ASTID = -1
+
 }
 
 /**
@@ -111,30 +169,6 @@ case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceTyp
 
 }
 object InstanceOf { final val ASTID = -2 }
-
-/**
- * A `checkcast` expression as defined by the JVM specification.
- */
-case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Expr[V] {
-
-    final def astID: Int = Checkcast.ASTID
-
-    final def cTpe: ComputationalType = ComputationalTypeReference
-
-    final def isSideEffectFree: Boolean = {
-        // TODO Check if the type of the value is ALWAYS a subtype of cmpTpe.. then it is sideeffect free if the value expr is also sideeffect free
-        false
-    }
-
-    final def isVar: Boolean = false
-
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        value.remapIndexes(pcToIndex)
-    }
-
-    override def toString: String = s"Checkcast(pc=$pc,$value,${cmpTpe.toJava})"
-}
-object Checkcast { final val ASTID = -3 }
 
 /**
  * A comparison of two values.
@@ -623,33 +657,6 @@ case class StaticFunctionCall[+V <: Var[V]](
 object StaticFunctionCall { final val ASTID = -26 }
 
 /**
- * A caught exception is essential to ensure that the local variable that stores the exception
- * is reified in the 3-address code.
- */
-case class CaughtException[+V <: Var[V]](pc: PC, exceptionType: Option[ObjectType]) extends Expr[V] {
-
-    final def astID: Int = CaughtException.ASTID
-
-    final def cTpe: ComputationalType = ComputationalTypeReference
-
-    final def isVar: Boolean = false
-
-    final def isSideEffectFree: Boolean = false
-
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = { /*nothing to do*/ }
-
-    override def toString: String = {
-        s"CaughtException(pc=$pc,${exceptionType.map(_.toJava).getOrElse("<ANY>")})"
-    }
-}
-
-object CaughtException {
-
-    final val ASTID = -27
-
-}
-
-/**
  * Represents a variable. Depending on the concrete usage, it is possible to distinguish between
  * a use and/or definition site. Typically, `V` is directly bound by the direct subtypes of Var.
  *
@@ -672,11 +679,13 @@ trait Var[+V <: Var[V]] extends ValueExpr[V] { this: V ⇒
 
     final def isVar: Boolean = true
 
+    final override def asVar: V = this
+
 }
 
 object Var {
 
-    final val ASTID = -28
+    final val ASTID = -27
 
     def unapply[V <: Var[V]](variable: Var[V]): Some[String] = Some(variable.name)
 
