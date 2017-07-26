@@ -200,6 +200,15 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                         Some(ImmediateResult(e, MaybeArgEscape))
                                     case EP(_, MaybeMethodEscape) ⇒
                                         Some(ImmediateResult(e, MaybeMethodEscape))
+                                    case EP(_, ConditionallyNoEscape) ⇒
+                                        dependees += escapeState
+                                        None
+                                    case EP(_, ConditionallyArgEscape) ⇒
+                                        dependees += escapeState
+                                        None
+                                    case EP(_, ConditionallyMethodEscape) ⇒
+                                        dependees += escapeState
+                                        None
                                     case EP(_, _) ⇒
                                         throw new RuntimeException("not yet implemented")
                                     // result not yet finished
@@ -343,7 +352,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         val maybeArgEscape =
             propertyStore.entities(MaybeArgEscape).filter(_.isInstanceOf[AllocationSite])
         val maybeMethodEscape =
-            propertyStore.entities(MaybeNoEscape).filter(_.isInstanceOf[AllocationSite])
+            propertyStore.entities(MaybeMethodEscape).filter(_.isInstanceOf[AllocationSite])
         val noEscape = propertyStore.entities(NoEscape).collect { case as: AllocationSite ⇒ as }
         for {
             as ← noEscape
