@@ -125,6 +125,24 @@ object TestResources {
     }
 
     /**
+     * Returns all folders in the `classfiles` folder.
+     * @return
+     */
+    def allBITestProjectFolders(): Traversable[File] = {
+        val f = locateTestResources("classfiles", "bi")
+        if (!f.exists || !f.isDirectory)
+            return Nil;
+
+        for {
+            file ← f.listFiles()
+            if file.isDirectory
+            if file.canRead
+        } yield {
+            file
+        }
+    }
+
+    /**
      * Returns all JARs created based on the set of test fixtures and the explicitly selected JARs.
      *
      * @note This set never includes the JRE.
