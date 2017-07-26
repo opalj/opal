@@ -1434,7 +1434,7 @@ object ArrayType {
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
-    final val ArrayOfObjects = ArrayType(ObjectType.Object)
+    final val ArrayOfObject = ArrayType(ObjectType.Object)
     final val ArrayOfMethodHandle = ArrayType(ObjectType.MethodHandle)
 }
 
