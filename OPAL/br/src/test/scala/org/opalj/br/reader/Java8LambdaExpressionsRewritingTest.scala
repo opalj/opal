@@ -72,7 +72,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             annotations = method.runtimeVisibleAnnotations
         } {
             successFull = true
-            implicit val MethodEquality = new Equality[Method] {
+            implicit val MethodDeclarationEquality = new Equality[Method] {
                 def areEqual(a: Method, b: Any): Boolean =
                     b match {
                         case m: Method ⇒
@@ -92,7 +92,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
                         val innerAnnotation = IndexedSeq(invokeMethod.asInstanceOf[AnnotationValue].annotation)
                         val expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
                         val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
-                        MethodEquality.areEqual(expectedTarget.get, actualTarget.get)
+                        MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
                     }
 
                 assert(invokedTarget.nonEmpty, s"failed to resolve $factoryCall in ${method.toJava(classFile)}")
