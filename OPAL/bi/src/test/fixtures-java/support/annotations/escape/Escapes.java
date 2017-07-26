@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,17 +26,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package annotations.target;
+package annotations.escape;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.annotation.Repeatable;
 
 import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+/**
+ * @author Florian Kuebler
+ */
 @Retention(RUNTIME)
 @Target({TYPE_USE, PARAMETER})
-public @interface EscapeProperty {
-    EscapeKeys value() default EscapeKeys.NoEscape;
+@Repeatable(EscapeProperties.class)
+public @interface Escapes {
+
+    EscapeKeys value() default EscapeKeys.No;
+
+    /**
+     * The algorithms, if only specific algorithms will compute this result
+     */
+    String[] algorithms() default {};
+
+    /**
+     * Other entities that must have the given property for this annotation to be correct
+     */
+    EP[] eps() default {};
 }

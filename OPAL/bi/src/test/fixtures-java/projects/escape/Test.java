@@ -29,70 +29,68 @@
 package escape;
 
 import escape.ClassWithFields;
+import annotations.escape.Escapes;
 
-import annotations.target.EscapeKeys;
-import annotations.target.EscapeProperty;
+import static annotations.target.EscapeKeys.*;
 
 
 public class Test {
 
 
     public static Object returnEscape() {
-        return new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+        return new @Escapes(ViaReturn) Object();
     }
 
     public static Object multipleEscapes(ClassWithFields param) {
-        ClassWithFields.global = new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+        ClassWithFields.global = new @Escapes(ViaStaticField) Object();
         if (param == null) {
-            throw new @EscapeProperty(EscapeKeys.GlobalEscape) RuntimeException();
+            throw new @Escapes(ViaException) RuntimeException();
         }
-        param.f = new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
-        Object local = new @EscapeProperty(EscapeKeys.NoEscape) Object();
-        Object noLocal = new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+        param.f = new @Escapes(ViaParameterAssignment) Object();
+        Object local = new @Escapes(No) Object();
+        Object noLocal = new @Escapes(ViaStaticField) Object();
         if (local != null) {
             formalParamEscape(noLocal);
         }
-        return new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+        return new @Escapes(ViaReturn) Object();
     }
 
     public static void globalFieldEscape() {
-        ClassWithFields.global = new
-                @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+        ClassWithFields.global = new @Escapes(ViaStaticField) Object();
     }
 
     public static void instanceFieldEscape(ClassWithFields param) {
-        param.f = new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+        param.f = new @Escapes(ViaParameterAssignment) Object();
     }
 
     public static void arrayEscape(Object[] param) {
         if (param.length > 0)
-            param[0] = new @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+            param[0] = new @Escapes(ViaParameterAssignment) Object();
     }
 
     public static void parameterEscape(ClassWithFields param) {
-        param.f = new
-                @EscapeProperty(EscapeKeys.GlobalEscape) Object();
+        param.f = new @Escapes(ViaParameterAssignment) Object();
     }
 
     public static void exceptionEscape() {
-        throw new @EscapeProperty(EscapeKeys.GlobalEscape) RuntimeException();
+        throw new @Escapes(ViaException) RuntimeException();
     }
 
     public static void staticMethodEscape() {
-        formalParamEscape(new @EscapeProperty(EscapeKeys.GlobalEscape) Object());
+        formalParamEscape(new @Escapes(ViaStaticField) Object());
     }
 
     public void virtualMethodEscape() {
-        formalNonStaticParamEscape(new @EscapeProperty(EscapeKeys.GlobalEscape) Object());
+        formalNonStaticParamEscape(new @Escapes(ViaStaticField) Object());
     }
 
     public void virtualMethodInExprStmtEscape() {
-        formalNonStaticParamEscapeWithReturn(new @EscapeProperty(EscapeKeys.GlobalEscape) Object(),
-                new @EscapeProperty(EscapeKeys.GlobalEscape) ClassWithFields());
+        formalNonStaticParamEscapeWithReturn(new @Escapes(GlobalEscape) Object(),
+                new @Escapes(GlobalEscape) ClassWithFields());
     }
 
     public static void localNoEscape(boolean b) {
-        Object x = new @EscapeProperty(EscapeKeys.NoEscape) Object();
+        Object x = new @Escapes(NoEscape) Object();
         if (b)
             x = null;
         else
@@ -102,7 +100,7 @@ public class Test {
     }
 
     public static int simpleLocalNoEscape(boolean b) {
-        Object x = new @EscapeProperty(EscapeKeys.NoEscape) Object();
+        Object x = new @Escapes(NoEscape) Object();
         if (b)
             x = null;
         if (x != null) {
@@ -112,7 +110,7 @@ public class Test {
     }
 
     public static int nonObjectLocalNoEscape(boolean b) {
-        ClassWithFields x = new @EscapeProperty(EscapeKeys.NoEscape) ClassWithFields();
+        ClassWithFields x = new @Escapes(NoEscape) ClassWithFields();
         if (b)
             x = null;
         if (x != null) {
@@ -122,19 +120,19 @@ public class Test {
     }
 
     public static void constructorEscape() {
-        new @EscapeProperty(EscapeKeys.GlobalEscape) ClassWithFields(1);
+        new @Escapes(GlobalEscape) ClassWithFields(1);
     }
 
-    public static void formalParamEscape(@EscapeProperty(EscapeKeys.GlobalEscape) Object param) {
+    public static void formalParamEscape(@Escapes(GlobalEscape) Object param) {
         ClassWithFields.global = param;
     }
 
-    public void formalNonStaticParamEscape(@EscapeProperty(EscapeKeys.GlobalEscape) Object param) {
+    public void formalNonStaticParamEscape(@Escapes(ViaStaticField) Object param) {
         ClassWithFields.global = param;
     }
 
-    public ClassWithFields formalNonStaticParamEscapeWithReturn(@EscapeProperty(EscapeKeys
-            .GlobalEscape) Object p1, @EscapeProperty(EscapeKeys.GlobalEscape) ClassWithFields p2) {
+    public ClassWithFields formalNonStaticParamEscapeWithReturn(@Escapes(ViaStaticField) Object p1,
+                                                                @Escapes(ViaReturn) ClassWithFields p2) {
         p2.f = new Object();
         ClassWithFields.global = p1;
         return p2;
@@ -142,7 +140,7 @@ public class Test {
 
     public int castEscape(Object param) {
         if (param == null) {
-            param = new @EscapeProperty(EscapeKeys.NoEscape) ClassWithFields();
+            param = new @Escapes(No) ClassWithFields();
         }
         if (!(param instanceof ClassWithFields))
             throw new IllegalArgumentException("Unsupported type!");
@@ -156,7 +154,7 @@ public class Test {
     }
 
     public static synchronized void noEscapeStaticFieldWrite() {
-        ClassWithFields.global = new @EscapeProperty(EscapeKeys.NoEscape) Object();
+        ClassWithFields.global = new @Escapes(No) Object();
         ClassWithFields.global = null;
     }
 }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,11 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package annotations.target;
+package annotations.escape;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.*;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 
-public enum EscapeKeys {
-    GlobalEscape,
-    ArgEscape,
-    NoEscape
+/**
+ * Container for having escape property annotations multiple times
+ * for different algorithms
+ *
+ * @author Florian Kübler
+ */
+@Retention(RUNTIME)
+@Target({TYPE_USE, PARAMETER})
+public @interface EscapeProperties {
+    Escapes[] value();
 }
