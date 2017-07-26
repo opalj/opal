@@ -87,7 +87,11 @@ sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInf
  *      [[GlobalEscape]] < [[MethodEscape]] < [[ArgEscape]] < [[NoEscape]].
  * Algorithms are free to over approximate this property, i.e. for object
  * instance O with actual property P it is okay to say O has property P' if P < P'.
- * If they simply don't know the actual property they should use [[MaybeEscape]].
+ * If they simply don't know the actual property they should use [[MaybeNoEscape]].
+ * If we know that the actual property is at most [[ArgEscape]] (i.e. not [[NoEscape]],
+ * [[MaybeArgEscape]] should be used.
+ * The same holds for [[MaybeMethodEscape]]. It should be used if we know that the actual
+ * property is at most [[MethodEscape]] (i.e. neither [[NoEscape]] nor [[ArgEscape]].
  *
  * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.FormalParameter]] are used as
  * [[Entity]] in combination with this property.
@@ -108,9 +112,9 @@ object EscapeProperty extends EscapePropertyMetaInformation {
         // Name of the property
         "EscapeProperty",
         // fallback value
-        MaybeEscape,
+        MaybeNoEscape,
         // cycle-resolution strategy
-        MaybeEscape
+        MaybeNoEscape
     )
 }
 
@@ -119,7 +123,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
  *
  * @see [[EscapeProperty]] for further details.
  */
-case object MaybeEscape extends EscapeProperty {
+case object MaybeNoEscape extends EscapeProperty {
     final val isRefineable = true
 }
 
@@ -145,6 +149,17 @@ case object NoEscape extends EscapeProperty {
  */
 case object ConditionallyNoEscape extends EscapeProperty {
     final val isRefineable: Boolean = true
+}
+
+/**
+ * Used, when the only thing we know about the escape property for an object instance, is that it
+ * can never be refined to [[NoEscape]]. So speaking, we know that the final property will be at
+ * most [[ArgEscape]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ */
+case object MaybeArgEscape extends EscapeProperty {
+    final val isRefineable = true
 }
 
 /**
@@ -184,6 +199,17 @@ case object ArgEscape extends EscapeProperty {
  */
 case object ConditionallyArgEscape extends EscapeProperty {
     final val isRefineable: Boolean = true
+}
+
+/**
+ * Used, when the only thing we know about the escape property for an object instance, is that it
+ * can never be refined to [[NoEscape]] or [[ArgEscape]]. So speaking, we know that the final
+ * property  will be at most [[MethodEscape]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ */
+case object MaybeMethodEscape extends EscapeProperty {
+    final val isRefineable = true
 }
 
 /**
@@ -293,7 +319,7 @@ case object ConditionallyMethodEscape extends EscapeProperty {
  * that the value definitively escapes globally.
  * If a more advanced analysis – potentially run later – could identify an object
  * as only [[MethodEscape]], [[ArgEscape]] or even [[NoEscape]] then the refineable property
- * [[MaybeEscape]] should be used.
+ * [[MaybeNoEscape]] should be used.
  *
  * @example
  * Given the following library code:
@@ -316,7 +342,6 @@ case object ConditionallyMethodEscape extends EscapeProperty {
  * However, from a pure technical point-of-view it may be useful/necessary to use
  * [[GlobalEscape]] at some point, to let depending computations know that no more
  * changes will happen and therefore the dependencies can be deleted.
- *
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
  */
