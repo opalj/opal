@@ -208,7 +208,7 @@ object JavaFixtureCompiler extends AutoPlugin {
                         ((classFile, classFile.toString.substring(targetFolderLength)))
                     }
 
-                streams.log.info(s"Creating jar in: ${targetJar.getPath}.")
+                streams.log.info(s"Creating: ${targetJar.getPath}.")
                 IO.zip(classFiles, targetJar)
             }
 

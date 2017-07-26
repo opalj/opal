@@ -82,7 +82,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val AnUnknownType = ObjectType("myTest/AnUnknownType")
     val AnUnknownTypeArray = ArrayType(AnUnknownType)
     val CloneableArray = ArrayType(Cloneable)
-    val ObjectArray = ArrayType.ArrayOfObjects
+    val ObjectArray = ArrayType.ArrayOfObject
     val intArray = ArrayType(IntegerType)
     val arrayOfIntArray = ArrayType(ArrayType(IntegerType))
     val longArray = ArrayType(LongType)

@@ -53,8 +53,7 @@ object HermesCLI {
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "--csv" ⇒
-                    i += 1; csvFile = args(i)
+                case "-csv" ⇒ i += 1; csvFile = args(i)
                 case s ⇒ configFile = s
             }
             i += 1
@@ -64,9 +63,9 @@ object HermesCLI {
             err.println("OPAL - Hermes")
             err.println("Parameters 1) the configuration which lists a corpus' projects")
             err.println("           2) the file to which the results should be exported")
-            err.println("              --csv=<FileName>")
+            err.println("              -csv <FileName>")
             err.println()
-            err.println("java org.opalj.hermes.HermesCLI <ConfigFile.json> --csv=<FileName>")
+            err.println("java org.opalj.hermes.HermesCLI <ConfigFile.json> -csv <FileName>")
             System.exit(1)
         }
 

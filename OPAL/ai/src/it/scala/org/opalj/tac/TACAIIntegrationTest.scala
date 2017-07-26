@@ -33,12 +33,12 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.TestSupport.createJREProject
 import org.opalj.bytecode.JRELibraryFolder
 import java.io.File
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.Domain
 import org.opalj.br.ClassFile
@@ -61,8 +61,8 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
     val jreLibFolder: File = JRELibraryFolder
     val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
-    def checkFolder(
-        folder:        File,
+    def checkProject(
+        project:       SomeProject,
         domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse
     ): Unit = {
         if (Thread.currentThread().isInterrupted) return ;
@@ -70,12 +70,8 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
         val mutex = new Object
+        val ch = project.classHierarchy
         for {
-            file ← folder.listFiles()
-            if !Thread.currentThread().isInterrupted
-            if file.isFile && file.canRead && file.getName.endsWith(".jar")
-            project = Project(file)
-            ch = project.classHierarchy
             cf ← project.allProjectClassFiles.par
             if !Thread.currentThread().isInterrupted
             m ← cf.methods
@@ -96,8 +92,13 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                             e.getCause.printStackTrace(Console.out)
                         }
                         val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
-                        println(instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n"))
-                        errors ::= ((file+":"+methodSignature, e))
+                        println(
+                            instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
+                        )
+                        println(
+                            body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
+                        )
+                        errors ::= ((project.source(cf)+":"+methodSignature, e))
                     }
                 }
             }
@@ -110,49 +111,46 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                     mkString(
                         "Errors thrown:\n",
                         "\n",
-                        "successfully transformed methods: "+successfullyCompleted.get+
+                        s"successfully transformed ${successfullyCompleted.get} methods: "+
                             "; failed methods: "+errors.size+"\n"
                     )
             fail(message)
         }
     }
 
-    describe("creating the 3-address code using an abstract interpretation using the default domain") {
+    def domainFactories =
+        Seq(
+            (
+                "DefaultDomainWithCFGAndDefUse",
+                (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
+                    new DefaultDomainWithCFGAndDefUse(p, cf, m)
+                }
+            ),
+            (
+                "PrimitiveTACAIDomain",
+                (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
+                    new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
+                }
+            )
+        )
 
-        val domainFactory = (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-            new DefaultDomainWithCFGAndDefUse(p, cf, m)
-        }
+    domainFactories foreach { domainInformation ⇒
+        val (domainName, domainFactory) = domainInformation
+        describe(s"creating the 3-address code using $domainName") {
+            allBIProjects() foreach { biProject ⇒
+                val (name, projectFactory) = biProject
+                it(s"it should be able to create the TAC for $name using $domainName") {
+                    time {
+                        checkProject(projectFactory(), domainFactory)
+                    } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+                }
+            }
 
-        it("it should be able to create the fully typed TAC for the set of collected class files") {
-            time {
-                checkFolder(biClassfilesFolder, domainFactory)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
-        }
-
-        it("it should be able to create the fully typed TAC for the JDK") {
-            time {
-                checkFolder(jreLibFolder, domainFactory)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
-        }
-    }
-
-    describe("creating the 3-address code using the PrimitiveTACAIDomain") {
-
-        val domainFactory = (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-            new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
-        }
-
-        it("it should be able to create the fully typed TAC for the set of collected class files") {
-            time {
-                checkFolder(biClassfilesFolder, domainFactory)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
-        }
-
-        it("it should be able to create the fully typed TAC for the JDK") {
-            time {
-                checkFolder(jreLibFolder, domainFactory)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            it(s"it should be able to create the TAC for the JDK using $domainName") {
+                time {
+                    checkProject(createJREProject(), domainFactory)
+                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
         }
     }
-
 }

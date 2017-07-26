@@ -857,28 +857,32 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     case e: Throwable ⇒
                         val method = analyzedEntity(aiResult.domain)
                         var message = s"def-use computation failed for: $method\n"
-                        message += s"\tCurrent PC: $currPC; SuccessorPC: $succPC\n"
-                        message += s"\tStack: ${defOps(currPC)}\n"
-                        val localsDump =
-                            defLocals(currPC).zipWithIndex.map { e ⇒
-                                val (local, index) = e; s"$index: $local"
-                            }
-                        message += localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n")
-                        val bout = new ByteArrayOutputStream()
-                        val pout = new PrintStream(bout)
-                        e.printStackTrace(pout)
-                        pout.flush()
-                        val stacktrace = bout.toString("UTF-8")
-                        message += "\tStacktrace: \n\t"+stacktrace+"\n"
-
-                        // val htmlMessage =
-                        // message.
-                        //     replace("\n", "<br>").
-                        //     replace("\t", "&nbsp;&nbsp;") +
-                        //     dumpDefUseInfo().toString
-                        // org.opalj.io.writeAndOpen(htmlMessage, "defuse", ".html")
-
+                        try {
+                            message += s"\tCurrent PC: $currPC; SuccessorPC: $succPC\n"
+                            message += s"\tStack: ${defOps(currPC)}\n"
+                            val localsDump =
+                                defLocals(currPC).zipWithIndex.map { e ⇒
+                                    val (local, index) = e; s"$index: $local"
+                                }
+                            message += localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n")
+                            val bout = new ByteArrayOutputStream()
+                            val pout = new PrintStream(bout)
+                            e.printStackTrace(pout)
+                            pout.flush()
+                            val stacktrace = bout.toString("UTF-8")
+                            message += "\tStacktrace: \n\t"+stacktrace+"\n"
+                        } catch {
+                            case t: Throwable ⇒
+                                message += s"<fatal error while collecting details: ${t.getMessage}>"
+                        }
                         throw AnalysisException(message, e);
+                    // val htmlMessage =
+                    // message.
+                    //     replace("\n", "<br>").
+                    //     replace("\t", "&nbsp;&nbsp;") +
+                    //     dumpDefUseInfo().toString
+                    // org.opalj.io.writeAndOpen(htmlMessage, "defuse", ".html")
+
                 }
 
                 assert(defLocals(succPC) ne null)
