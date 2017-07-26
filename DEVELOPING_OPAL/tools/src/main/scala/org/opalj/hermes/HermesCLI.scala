@@ -53,8 +53,9 @@ object HermesCLI {
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "-csv" ⇒ i += 1; csvFile = args(i)
-                case s ⇒ configFile = s
+                case "-csv" ⇒
+                    i += 1; csvFile = args(i)
+                case s      ⇒ configFile = s
             }
             i += 1
         }
