@@ -31,7 +31,7 @@ package escape;
 import escape.ClassWithFields;
 import annotations.escape.Escapes;
 
-import static annotations.target.EscapeKeys.*;
+import static annotations.escape.EscapeKeys.*;
 
 /**
  * @author Florian Kuebler

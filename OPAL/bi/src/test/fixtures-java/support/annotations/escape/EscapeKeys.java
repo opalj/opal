@@ -60,4 +60,5 @@ public enum EscapeKeys {
             case MaybeMethod: return "MaybeMethodEscape";
             default: throw new IllegalArgumentException();
         }
+    }
 }
