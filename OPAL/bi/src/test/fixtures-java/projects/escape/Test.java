@@ -133,8 +133,10 @@ public class Test {
         ClassWithFields.global = param;
     }
 
-    public ClassWithFields formalNonStaticParamEscapeWithReturn(@Escapes(ViaStaticField) Object p1,
-                                                                @Escapes(ViaReturn) ClassWithFields p2) {
+    public ClassWithFields formalNonStaticParamEscapeWithReturn(
+            @Escapes(ViaStaticField) Object p1,
+            @Escapes(ViaReturn) ClassWithFields p2
+    ) {
         p2.f = new Object();
         ClassWithFields.global = p1;
         return p2;
