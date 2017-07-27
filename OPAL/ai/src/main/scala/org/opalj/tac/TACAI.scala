@@ -266,7 +266,7 @@ object TACAI {
                 }
             }
 
-            // ADD AN EXPLICIT INSTRUCTION WHICH INITIALIZES THE CATCH HANDLER
+            // ADD AN EXPLICIT INSTRUCTION WHICH REPRESENTS THE CATCH HANDLER
             if (addExceptionHandlerInitializer) {
                 import domain.{predecessorsOf, refIsNull, operandOrigin, isDirectRegularPredecessorOf}
                 val exception = operandsArray(pc /* the exception is already on the stack */ ).head

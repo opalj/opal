@@ -291,7 +291,7 @@ trait RecordCFG
         false
     }
 
-    def hasNoSuccessor(pc : PC) : Boolean = {
+    def hasNoSuccessor(pc: PC): Boolean = {
         (regularSuccessors(pc) eq null) && (exceptionHandlerSuccessors eq null)
     }
 
