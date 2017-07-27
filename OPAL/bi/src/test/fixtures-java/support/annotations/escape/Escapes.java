@@ -39,15 +39,15 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * @author Florian Kuebler
  */
-@Retention(RUNTIME)
-@Target({TYPE_USE, PARAMETER})
-@Repeatable(EscapeProperties.class)
-public @interface Escapes {
+@Retention(RUNTIME) @Target({ TYPE_USE,
+        PARAMETER }) @Repeatable(EscapeProperties.class) public @interface Escapes {
 
     EscapeKeys value() default EscapeKeys.No;
 
     /**
      * The algorithms, if only specific algorithms will compute this result
+     *
+     * TODO Add example to clarify how to specify the algorithm.
      */
     String[] algorithms() default {};
 

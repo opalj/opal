@@ -34,15 +34,13 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.*;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-
 /**
  * Container for having escape property annotations multiple times
  * for different algorithms
  *
  * @author Florian Kübler
  */
-@Retention(RUNTIME)
-@Target({TYPE_USE, PARAMETER})
-public @interface EscapeProperties {
+@Retention(RUNTIME) @Target({ TYPE_USE, PARAMETER }) public @interface EscapeProperties {
+
     Escapes[] value();
 }

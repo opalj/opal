@@ -53,11 +53,14 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
     /**
      * The algorithms, if only specific algorithms will compute this result.
+     *
+     * TODO Add example to clarify how to specify the algorithm.
      */
     String[] algorithms() default {};
 
     /**
-     * Other entities that must have the given property for this annotation to be correct.
+     * Specification of a pre-condition on the propeties of other elements. Only if the
+     * other entities have the specified property, this property should be evaluated.
      */
     EP[] eps() default {};
 }

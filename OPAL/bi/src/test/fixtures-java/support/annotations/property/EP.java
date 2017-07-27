@@ -34,22 +34,27 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * An entity along with a specific property value it should have.
- * 
+ *
  * @author Dominik Helm
  */
-@Retention(RUNTIME)
-public @interface EP {
+@Retention(RUNTIME) public @interface EP {
 
-	/** The entity that should have a specific property value. */
-	String e();
+    /**
+     * The entity that should have a specific property value.
+     */
+    String e();
 
-	/** The property key for the property required, empty to use the property key of the test. */
-	String pk() default "";
+    /**
+     * The property key for the property required, empty to use the property key of the test.
+     *
+     * TODO Add example to clarify how to specify the propery key (name of the class?).
+     */
+    String pk() default "";
 
-	/**
-	 * The property value that the entity should have.
-	 *
-	 * @note This can't be a specific enum as it must be able to hold any property
-	 */
-	String p();
+    /**
+     * The property value that the entity should have.
+     *
+     * @note This can't be a specific enum as it must be able to hold any property
+     */
+    String p();
 }
