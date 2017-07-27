@@ -36,6 +36,8 @@ import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+import annotations.property.EP;
+
 /**
  * @author Florian Kuebler
  */
