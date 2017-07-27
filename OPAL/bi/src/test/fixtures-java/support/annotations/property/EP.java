@@ -26,24 +26,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package escape;
+package annotations.property;
+
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * @author Florian Kuebler
+ * An entity along with a specific property value it should have.
+ *
+ * @author Dominik Helm
  */
-public class ClassWithFields {
-    public static Object global;
-    public Object f;
+@Retention(RUNTIME) public @interface EP {
 
-    public ClassWithFields() {
-    }
+    /**
+     * The entity that should have a specific property value.
+     */
+    String e();
 
-    public ClassWithFields(Object param) {
-        this.f = param;
-    }
+    /**
+     * The property key for the property required, empty to use the property key of the test.
+     *
+     * TODO Add example to clarify how to specify the propery key (name of the class?).
+     */
+    String pk() default "";
 
-    public ClassWithFields(int i) {
-        global = this;
-        System.out.println(i);
-    }
+    /**
+     * The property value that the entity should have.
+     *
+     * @note This can't be a specific enum as it must be able to hold any property
+     */
+    String p();
 }

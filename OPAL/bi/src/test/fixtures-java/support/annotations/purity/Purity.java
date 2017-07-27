@@ -26,24 +26,41 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package escape;
+package annotations.purity;
+
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import annotations.property.EP;
+
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * @author Florian Kuebler
+ * The purity property of a method or constructor.
+ *
+ * @author Dominik Helm
  */
-public class ClassWithFields {
-    public static Object global;
-    public Object f;
+@Retention(RUNTIME) @Target({ METHOD,
+        CONSTRUCTOR }) @Repeatable(PurityProperty.class) public @interface Purity {
 
-    public ClassWithFields() {
-    }
+    /**
+     * The methods purity.
+     */
+    PurityKeys value();
 
-    public ClassWithFields(Object param) {
-        this.f = param;
-    }
+    /**
+     * The algorithms, if only specific algorithms will compute this result.
+     *
+     * TODO Add example to clarify how to specify the algorithm.
+     */
+    String[] algorithms() default {};
 
-    public ClassWithFields(int i) {
-        global = this;
-        System.out.println(i);
-    }
+    /**
+     * Specification of a pre-condition on the propeties of other elements. Only if the
+     * other entities have the specified property, this property should be evaluated.
+     */
+    EP[] eps() default {};
 }

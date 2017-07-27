@@ -32,32 +32,34 @@ package annotations.escape;
  * @author Florian Kuebler
  */
 public enum EscapeKeys {
-    ViaStaticField,
-    ViaHeapObjectAssignment,
-    ViaReturnAssignment,
-    ViaParameterAssignment,
-    ViaReturn,
-    ViaException,
-    Arg,
-    No,
-    MaybeNo,
-    MaybeArg,
-    MaybeMethod;
+    ViaStaticField, ViaHeapObjectAssignment, ViaReturnAssignment, ViaParameterAssignment, ViaReturn, ViaException, Arg, No, MaybeNo, MaybeArg, MaybeMethod;
 
-    @Override
-    public String toString() {
-        switch(this) {
-            case ViaStaticField: return "GlobalEscapeViaStaticField";
-            case ViaHeapObjectAssignment: return "GlobalEscapeViaHeapObjectAssignment";
-            case ViaReturnAssignment: return "MethodEscapeViaReturnAssignment";
-            case ViaParameterAssignment: return "MethodEscapeViaParameterAssignment";
-            case ViaReturn: return "MethodEscapeViaReturn";
-            case ViaException: return "MethodEscapeViaException";
-            case Arg: return "ArgEscape";
-            case No: return "NoEscape";
-            case MaybeNo: return "MaybeNoEscape";
-            case MaybeArg: return "MaybeArgEscape";
-            case MaybeMethod: return "MaybeMethodEscape";
-            default: throw new IllegalArgumentException();
+    @Override public String toString() {
+        switch (this) {
+        case ViaStaticField:
+            return "GlobalEscapeViaStaticField";
+        case ViaHeapObjectAssignment:
+            return "GlobalEscapeViaHeapObjectAssignment";
+        case ViaReturnAssignment:
+            return "MethodEscapeViaReturnAssignment";
+        case ViaParameterAssignment:
+            return "MethodEscapeViaParameterAssignment";
+        case ViaReturn:
+            return "MethodEscapeViaReturn";
+        case ViaException:
+            return "MethodEscapeViaException";
+        case Arg:
+            return "ArgEscape";
+        case No:
+            return "NoEscape";
+        case MaybeNo:
+            return "MaybeNoEscape";
+        case MaybeArg:
+            return "MaybeArgEscape";
+        case MaybeMethod:
+            return "MaybeMethodEscape";
+        default:
+            throw new IllegalArgumentException();
         }
+    }
 }

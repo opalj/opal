@@ -26,24 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package escape;
+package annotations.purity;
 
 /**
- * @author Florian Kuebler
+ * Key for specifying the purity of a method.
+ *
+ * @author Dominik Helm
  */
-public class ClassWithFields {
-    public static Object global;
-    public Object f;
+public enum PurityKeys {
 
-    public ClassWithFields() {
-    }
+    Pure,
 
-    public ClassWithFields(Object param) {
-        this.f = param;
-    }
+    SideEffectFree,
 
-    public ClassWithFields(int i) {
-        global = this;
-        System.out.println(i);
-    }
+    Impure
 }

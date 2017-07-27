@@ -26,24 +26,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package escape;
+package annotations.purity;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * @author Florian Kuebler
+ * Container for having purity multiple times for different algorithms.
+ *
+ * @author Dominik Helm
+ * @author Florian Kübler
  */
-public class ClassWithFields {
-    public static Object global;
-    public Object f;
+@Retention(RUNTIME) @Target({ METHOD, CONSTRUCTOR }) public @interface PurityProperty {
 
-    public ClassWithFields() {
-    }
-
-    public ClassWithFields(Object param) {
-        this.f = param;
-    }
-
-    public ClassWithFields(int i) {
-        global = this;
-        System.out.println(i);
-    }
+    /**
+     * The individual purity annotations.
+     */
+    Purity[] value();
 }

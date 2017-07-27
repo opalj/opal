@@ -291,6 +291,10 @@ trait RecordCFG
         false
     }
 
+    def hasNoSuccessor(pc: PC): Boolean = {
+        (regularSuccessors(pc) eq null) && (exceptionHandlerSuccessors eq null)
+    }
+
     /**
      * Returns `true` if the execution of the given instruction – identified by its pc –
      * ex-/implicitly throws an exception that is (potentially) handled by the method.
