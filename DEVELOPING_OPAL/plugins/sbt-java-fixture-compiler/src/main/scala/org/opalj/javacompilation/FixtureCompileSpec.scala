@@ -138,6 +138,8 @@ object FixtureCompileSpec {
             val compilationNecessary = newestClassFileDate < newestSourceFileDate
 
             if (compilationNecessary) {
+                // to ensure that we have no lingering class files
+                IO.deleteFilesEmptyDirs(Iterable(task.targetFolder))
                 IO.createDirectory(task.targetFolder)
                 log.info(s"Compiling test fixtures: $commandLine")
                 val compilationResult = BatchCompiler.compile(commandLine, std, err, null)
