@@ -23,5 +23,4 @@ addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "1.1")
 //
 // CONFIGURATION OF SCALARIFORM
 // TODO Use scalariform to automatically format the build files!
-resolvers += "Sonatype OSS Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.6.0")
+addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.7.1")
