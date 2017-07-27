@@ -109,7 +109,7 @@ object JavaFixtureCompiler extends AutoPlugin {
 
     /**
      * Object that contains the task implementations for the fixture compilation
-     * plugin and helper methods (e. g. for packaging).
+     * plugin and helper methods (e.g. for packaging).
      */
     object Javacompilation {
 
@@ -150,11 +150,11 @@ object JavaFixtureCompiler extends AutoPlugin {
 
             val (skipped, notSkipped) = results.toSeq.partition(_.wasSkipped)
             if (results.isEmpty) {
-                streams.log.debug("No Java fixtures found.")
+                log.debug("No Java fixtures found.")
             } else if (notSkipped.isEmpty) {
-                streams.log.debug("All Java fixture projects were already compiled.")
+                log.debug("All Java fixture projects were already compiled.")
             } else {
-                streams.log.info(s"(Re)Compiled ${notSkipped.size}/${results.size} Java fixtures projects.");
+                log.info(s"(Re)Compiled ${notSkipped.size}/${results.size} Java fixtures projects.");
             }
 
             results
@@ -168,19 +168,25 @@ object JavaFixtureCompiler extends AutoPlugin {
             compilationResults: Seq[JavaFixtureCompilationResult],
             streams:            TaskStreams
         ): Seq[JavaFixturePackagingResult] = {
+            import streams.log
             val results = (for (
                 compilationResult ← compilationResults.par
             ) yield {
-                packageRoutine(compilationResult, new File(compilationResult.task.targetFolder+".jar"), streams)
+                packageRoutine(
+                    compilationResult,
+                    new File(compilationResult.task.targetFolder+".jar"),
+                    streams
+                )
             }).seq
 
             val (skipped, notSkipped) = results.toSeq.partition(_.wasSkipped)
             if (results.isEmpty) {
-                streams.log.debug("No class files found.")
+                log.debug("No class files found.")
             } else if (notSkipped.isEmpty) {
-                streams.log.debug("All class files were already packaged.")
+                log.debug("All class files were already packaged.")
             } else {
-                streams.log.info(s"Packaged classed of ${notSkipped.size}/${results.size} Java fixture projects.");
+                val ratio = notSkipped.size+ "/"+results.size
+                log.info(s"Packaged classed of $ratio Java fixture projects.");
             }
 
             results
@@ -195,7 +201,9 @@ object JavaFixtureCompiler extends AutoPlugin {
             targetJar:         File,
             streams:           TaskStreams
         ): JavaFixturePackagingResult = {
-            val inputFiles = (compilationResult.task.fixture.sourceFolder ** ("*.java" || "compiler.config")).get
+            val inputFiles = (
+                compilationResult.task.fixture.sourceFolder ** ("*.java" || "compiler.config")
+            ).get
 
             val newestOutputDate = if (targetJar.exists) targetJar.lastModified else 0L
             val newestInputDate = inputFiles.map(_.lastModified).foldLeft(0L)(Math.max)
