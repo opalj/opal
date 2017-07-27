@@ -41,7 +41,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * @author Dominik Helm
  * @author Florian Kübler
  */
-@Retention(RUNTIME) @Target({ METHOD, CONSTRUCTOR }) public @interface PurityProperty {
+@Retention(RUNTIME)
+@Target({ METHOD, CONSTRUCTOR })
+public @interface PurityProperty {
 
     /**
      * The individual purity annotations.

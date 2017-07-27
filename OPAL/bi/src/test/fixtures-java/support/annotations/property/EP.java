@@ -37,7 +37,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * @author Dominik Helm
  */
-@Retention(RUNTIME) public @interface EP {
+@Retention(RUNTIME)
+public @interface EP {
 
     /**
      * The entity that should have a specific property value.
@@ -46,7 +47,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
     /**
      * The property key for the property required, empty to use the property key of the test.
-     *
+     * <p>
      * TODO Add example to clarify how to specify the propery key (name of the class?).
      */
     String pk() default "";
