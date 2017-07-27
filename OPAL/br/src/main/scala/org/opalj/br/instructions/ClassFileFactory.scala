@@ -289,10 +289,11 @@ object ClassFileFactory {
 
     def DeserializeLambdaProxy(
         definingType:       TypeDeclaration,
-        bootstrapArguments: BootstrapArguments
+        bootstrapArguments: BootstrapArguments,
+        staticMethodName:   String
     ): ClassFile = {
 
-        def createConstructor(): Method = {
+        def createStaticMethod(): Method = {
             /*
             Instructions of LambdaDeserialize::bootstrap. This method will be reimplemented in the
             constructor of the new LambdaDeserializeProxy class.
@@ -312,7 +313,7 @@ object ClassFileFactory {
             19     |  areturn
              */
             val instructions: Array[Instruction] =
-                callSuperDefaultConstructor(definingType.theSuperclassType.get) ++ Array(
+                Array(
                     INVOKESTATIC(
                         ObjectType.MethodHandles,
                         false,
@@ -350,9 +351,12 @@ object ClassFileFactory {
             val maxLocals = 4
 
             Method(
-                bi.ACC_PUBLIC.mask,
-                "<init>",
-                MethodDescriptor(IndexedSeq.empty[FieldType], ObjectType.CallSite),
+                bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
+                staticMethodName,
+                MethodDescriptor(
+                    IndexedSeq(ObjectType.SerializedLambda),
+                    ObjectType.Object
+                ),
                 Seq(Code(maxStack, maxLocals, instructions, IndexedSeq.empty, Seq.empty))
             )
         }
@@ -363,7 +367,7 @@ object ClassFileFactory {
             definingType.theSuperclassType,
             definingType.theSuperinterfaceTypes.toSeq,
             IndexedSeq.empty[Field], // Class fields
-            Array(createConstructor()), // Methods
+            Array(createStaticMethod()), // Methods
             IndexedSeq(VirtualTypeFlag))
     }
 
