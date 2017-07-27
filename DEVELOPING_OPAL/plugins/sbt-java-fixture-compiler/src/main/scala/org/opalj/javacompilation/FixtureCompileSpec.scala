@@ -129,11 +129,15 @@ object FixtureCompileSpec {
                 s"${task.supportLibraries} -d ${task.targetFolder} -Xemacs -encoding utf8 "
             val commandLine = s"$standardConfiguration ${task.configOptions}"
 
+            // Note that we have to recompile the entire project if some file is
+            // just deleted to ensure that the project is still consistent.
+            // see commit: 818ddcefdbf47e1368d476a8cf0ad32e1a4e4856
             val sourceFiles = (task.fixture.sourceFolder ** ("*.java" || "compiler.config")).get
-            val newestSourceFileDate = sourceFiles.map(_.lastModified).foldLeft(0L)(Math.max)
-
+            val sourceFolderDate = task.fixture.sourceFolder.lastModified()
+            val newestSourceFileDate = sourceFiles.map(_.lastModified).foldLeft(sourceFolderDate)(Math.max)
             val classFiles = (task.targetFolder ** "*.class").get
-            val newestClassFileDate = classFiles.map(_.lastModified).foldLeft(0L)(Math.max)
+            val targetFolderDate = task.targetFolder.lastModified()
+            val newestClassFileDate = classFiles.map(_.lastModified).foldLeft(targetFolderDate)(Math.max)
 
             val compilationNecessary = newestClassFileDate < newestSourceFileDate
 
