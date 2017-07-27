@@ -63,6 +63,9 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  *      considered pure. If an argument is "call-by-reference", any parameter mutation will alter
  *      the value of the argument outside the function, which will render the function impure.
  *      '''However, if the referenced object is immutable it is ok.'''
+ *
+ * @author Michael Eichberg
+ * @author Dominik Helm
  */
 sealed abstract class Purity extends Property with PurityPropertyMetaInformation {
 
@@ -72,6 +75,7 @@ sealed abstract class Purity extends Property with PurityPropertyMetaInformation
     // All instances have to share the SAME key!
     final def key = Purity.key
 }
+
 object Purity extends PurityPropertyMetaInformation {
 
     /**
@@ -91,7 +95,6 @@ object Purity extends PurityPropertyMetaInformation {
     // as a sideeffect of setting the pureness of one method!
     // (epks: Iterable[EPK]) ⇒ { epks.map(epk ⇒ Result(epk.e, Pure)) }
     )
-
 }
 
 /**
@@ -110,6 +113,21 @@ case object MaybePure extends Purity { final val isRefineable = true }
  * ConditionallyPure is refined to [[Pure]].
  */
 case object ConditionallyPure extends Purity { final val isRefineable = true }
+
+/**
+ * Used if we know that side-effect freeness of a method only depends on the
+ * side-effect freeness of the target methods.
+ *
+ * A method calling a ConditionallySideEffectFree method can at most be ConditionallySideEffectFree
+ * itself, unless ConditionallySideEffectFree is refined to [[SideEffectFree]].
+ */
+case object ConditionallySideEffectFree extends Purity { final val isRefineable = true }
+
+/**
+ * The respective method is side-effect free, i.e. it does not have side-effects but
+ * its results may be non-deterministic.
+ */
+case object SideEffectFree extends Purity { final val isRefineable = false }
 
 /**
  * The respective method is pure.
