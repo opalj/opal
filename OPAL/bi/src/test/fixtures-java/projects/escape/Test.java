@@ -38,7 +38,6 @@ import static annotations.escape.EscapeKeys.*;
  */
 public class Test {
 
-
     public static Object returnEscape() {
         return new @Escapes(ViaReturn) Object();
     }
@@ -87,12 +86,13 @@ public class Test {
     }
 
     public void virtualMethodInExprStmtEscape() {
-        formalNonStaticParamEscapeWithReturn(new @Escapes(GlobalEscape) Object(),
-                new @Escapes(GlobalEscape) ClassWithFields());
+        formalNonStaticParamEscapeWithReturn(
+                new @Escapes(ViaParameterAssignment) Object(),
+                new @Escapes(ViaParameterAssignment) ClassWithFields());
     }
 
     public static void localNoEscape(boolean b) {
-        Object x = new @Escapes(NoEscape) Object();
+        Object x = new @Escapes(No) Object();
         if (b)
             x = null;
         else
@@ -102,7 +102,7 @@ public class Test {
     }
 
     public static int simpleLocalNoEscape(boolean b) {
-        Object x = new @Escapes(NoEscape) Object();
+        Object x = new @Escapes(No) Object();
         if (b)
             x = null;
         if (x != null) {
@@ -112,7 +112,7 @@ public class Test {
     }
 
     public static int nonObjectLocalNoEscape(boolean b) {
-        ClassWithFields x = new @Escapes(NoEscape) ClassWithFields();
+        ClassWithFields x = new @Escapes(No) ClassWithFields();
         if (b)
             x = null;
         if (x != null) {
@@ -122,10 +122,10 @@ public class Test {
     }
 
     public static void constructorEscape() {
-        new @Escapes(GlobalEscape) ClassWithFields(1);
+        new @Escapes(ViaHeapObjectAssignment) ClassWithFields(1);
     }
 
-    public static void formalParamEscape(@Escapes(GlobalEscape) Object param) {
+    public static void formalParamEscape(@Escapes(ViaHeapObjectAssignment) Object param) {
         ClassWithFields.global = param;
     }
 
@@ -134,9 +134,7 @@ public class Test {
     }
 
     public ClassWithFields formalNonStaticParamEscapeWithReturn(
-            @Escapes(ViaStaticField) Object p1,
-            @Escapes(ViaReturn) ClassWithFields p2
-    ) {
+            @Escapes(ViaStaticField) Object p1, @Escapes(ViaReturn) ClassWithFields p2) {
         p2.f = new Object();
         ClassWithFields.global = p1;
         return p2;
