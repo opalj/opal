@@ -267,19 +267,20 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         val proxy: ClassFile = ClassFileFactory.DeserializeLambdaProxy(
             typeDeclaration,
-            bootstrapArguments
+            bootstrapArguments,
+            DefaultDeserializeLambdaStaticMethodName
         )
 
-        val factoryMethod = proxy.findMethod("<init>").head // FIXME XXX the constructor can only be called by INVOKESPECIAL!
+        val factoryMethod = proxy.findMethod(DefaultDeserializeLambdaStaticMethodName).head
 
         val newInvokestatic = INVOKESTATIC(
             proxy.thisType,
             isInterface = false, // the created proxy class is always a concrete class
             factoryMethod.name,
-            // the invokedynamic's methodDescriptor (factoryDescriptor) determines
-            // the parameters that are actually pushed and popped from/to the stack
-            // FIXME XXX Comment and code don't fit!
-            MethodDescriptor.withNoArgs(ObjectType.CallSite)
+            MethodDescriptor(
+                IndexedSeq(ObjectType.SerializedLambda),
+                ObjectType.Object
+            )
         )
 
         if (logJava8LambdaExpressionsRewrites) {
@@ -521,6 +522,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 }
 
 object Java8LambdaExpressionsRewriting {
+
+    final val DefaultDeserializeLambdaStaticMethodName = "$deserializeLambda"
 
     final val LambdaNameRegEx = "^Lambda\\$[0-9a-f]+:[0-9a-f]+$"
 
