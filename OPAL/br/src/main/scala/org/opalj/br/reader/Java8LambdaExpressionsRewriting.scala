@@ -228,17 +228,17 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      * refers to, see [https://github.com/scala/scala/blob/v2.12.2/src/library/scala/runtime/LambdaDeserialize.java#L29].
      * This is done to reduce the size of `$deserializeLambda$`.
      *
-     * @note SerializedLambda has a readResolve method that looks for a (possibly private) static
-     * method called $deserializeLambda$(SerializedLambda) in the capturing class, invokes that
-     * with itself as the first argument, and returns the result. Lambda classes implementing
-     * $deserializeLambda$ are responsible for validating that the properties of the
-     * SerializedLambda are consistent with a lambda actually captured by that class.
-     * See: [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/SerializedLambda.html]
+     * @note   SerializedLambda has a readResolve method that looks for a (possibly private) static
+     *         method called $deserializeLambda$(SerializedLambda) in the capturing class, invokes
+     *         that with itself as the first argument, and returns the result. Lambda classes
+     *         implementing $deserializeLambda$ are responsible for validating that the properties
+     *         of the SerializedLambda are consistent with a lambda actually captured by that class.
+     *          See: [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/SerializedLambda.html]
      *
-     * More information about lambda deserialization:
-     *  - [https://zeroturnaround.com/rebellabs/java-8-revealed-lambdas-default-methods-and-bulk-data-operations/4/]
-     *  - [http://mail.openjdk.java.net/pipermail/mlvm-dev/2016-August/006699.html]
-     *  - [https://github.com/scala/scala/blob/v2.12.2/src/library/scala/runtime/LambdaDeserialize.java]
+     * @see     More information about lambda deserialization:
+     *           - [https://zeroturnaround.com/rebellabs/java-8-revealed-lambdas-default-methods-and-bulk-data-operations/4/]
+     *           - [http://mail.openjdk.java.net/pipermail/mlvm-dev/2016-August/006699.html]
+     *           - [https://github.com/scala/scala/blob/v2.12.2/src/library/scala/runtime/LambdaDeserialize.java]
      *
      * @param classFile The classfile to parse
      * @param instructions The instructions of the method we are currently parsing
@@ -259,7 +259,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         val superInterfaceTypes = UIDSet(LambdaMetafactoryDescriptor.returnType.asObjectType)
         val typeDeclaration = TypeDeclaration(
-            // ObjectType(newLambdaTypeName(targetMethodOwner)),
             ObjectType(newScalaLambdaDeserializeTypeName(classFile.thisType)),
             isInterfaceType = false,
             Some(ObjectType.Object), // we basically create a "CallSiteObject"
@@ -271,7 +270,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             bootstrapArguments
         )
 
-        val factoryMethod = proxy.findMethod("<init>").head
+        val factoryMethod = proxy.findMethod("<init>").head // FIXME XXX the constructor can only be called by INVOKESPECIAL!
 
         val newInvokestatic = INVOKESTATIC(
             proxy.thisType,
@@ -279,6 +278,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             factoryMethod.name,
             // the invokedynamic's methodDescriptor (factoryDescriptor) determines
             // the parameters that are actually pushed and popped from/to the stack
+            // FIXME XXX Comment and code don't fit!
             MethodDescriptor.withNoArgs(ObjectType.CallSite)
         )
 
