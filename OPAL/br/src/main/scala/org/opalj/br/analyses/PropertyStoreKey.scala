@@ -103,7 +103,7 @@ object PropertyStoreKey
         f: SomeProject ⇒ (Traversable[AnyRef], T)
     ): Unit = this.synchronized {
         project.getOrCreateProjectInformationKeyInitializationData(
-            this, defaultEntityDerivationFunctions
+            this, defaultEntityDerivationFunctions()
         ).add((p: SomeProject) ⇒ {
             val (es, ctxValue) = f(p)
             (es, typeOf[T], ctxValue)
