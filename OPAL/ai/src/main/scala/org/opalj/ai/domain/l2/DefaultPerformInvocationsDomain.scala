@@ -39,11 +39,11 @@ import org.opalj.ai.domain.DefaultRecordMethodCallResults
  * Performs a simple invocation of the immediately called methods.
  */
 class DefaultPerformInvocationsDomain[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
+        project:   Project[Source],
+        classFile: ClassFile,
+        method:    Method
 ) extends SharedDefaultDomain[Source](project, classFile, method)
-        with PerformInvocations {
+    with PerformInvocations {
 
     def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean = {
         !method.returnType.isVoidType
@@ -63,7 +63,7 @@ class DefaultPerformInvocationsDomain[Source](
 }
 
 class DefaultPerformInvocationsDomainWithCFG[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
+        project:   Project[Source],
+        classFile: ClassFile,
+        method:    Method
 ) extends DefaultPerformInvocationsDomain[Source](project, classFile, method) with RecordCFG

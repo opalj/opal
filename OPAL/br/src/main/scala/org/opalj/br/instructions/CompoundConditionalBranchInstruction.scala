@@ -51,8 +51,8 @@ trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstruct
 }
 
 trait CompoundConditionalBranchInstruction
-        extends ConditionalBranchInstruction
-        with CompoundConditionalBranchInstructionLike {
+    extends ConditionalBranchInstruction
+    with CompoundConditionalBranchInstructionLike {
 
     def defaultOffset: Int
 

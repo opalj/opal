@@ -521,10 +521,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *  @param methodPredicate The method to match.
      */
     case class LocalOutgoingShouldImplementMethodConstraint(
-        sourceEnsemble:  Symbol,
-        methodPredicate: SourceElementPredicate[Method]
+            sourceEnsemble:  Symbol,
+            methodPredicate: SourceElementPredicate[Method]
     )
-            extends PropertyChecker {
+        extends PropertyChecker {
 
         override def property: String = methodPredicate.toDescription
 

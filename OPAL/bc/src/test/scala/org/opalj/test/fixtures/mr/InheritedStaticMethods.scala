@@ -108,9 +108,9 @@ object InheritedStaticMethods extends App {
                     Code_attribute(
                         attribute_name_index = 7, max_stack = 1, max_locals = 1,
                         code =
-                        new Code(
-                            Array[Byte](42, (0xff & 183).toByte, 0, 8, (0xff & 177).toByte)
-                        )
+                            new Code(
+                                Array[Byte](42, (0xff & 183).toByte, 0, 8, (0xff & 177).toByte)
+                            )
                     )
                 )
             ),
@@ -122,13 +122,13 @@ object InheritedStaticMethods extends App {
                     Code_attribute(
                         attribute_name_index = 7, max_stack = 0, max_locals = 1,
                         code =
-                        new Code(
-                            Array[Byte](
-                                (0xff & 184).toByte, 0, 24, // invokestatic #24 (SubX.m())
-                                (0xff & 184).toByte, 0, 10, // invokestatic #24 (SubIntf.m())
-                                (0xff & 177).toByte // return
+                            new Code(
+                                Array[Byte](
+                                    (0xff & 184).toByte, 0, 24, // invokestatic #24 (SubX.m())
+                                    (0xff & 184).toByte, 0, 10, // invokestatic #24 (SubIntf.m())
+                                    (0xff & 177).toByte // return
+                                )
                             )
-                        )
                     )
                 )
             )

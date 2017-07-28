@@ -43,11 +43,11 @@ import org.opalj.bi.reader.VerificationTypeInfoReader
  * @author Michael Eichberg
  */
 trait StackMapTable_attributeBinding
-        extends StackMapTable_attributeReader
-        with StackMapFrameReader
-        with VerificationTypeInfoReader
-        with ConstantPoolBinding
-        with AttributeBinding {
+    extends StackMapTable_attributeReader
+    with StackMapFrameReader
+    with VerificationTypeInfoReader
+    with ConstantPoolBinding
+    with AttributeBinding {
 
     type VerificationTypeInfo = br.VerificationTypeInfo
     val VerificationTypeInfoManifest: ClassTag[VerificationTypeInfo] = implicitly

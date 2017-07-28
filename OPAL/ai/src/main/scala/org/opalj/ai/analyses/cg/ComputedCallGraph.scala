@@ -42,10 +42,10 @@ import org.opalj.br.Method
  * @author Michael Eichberg
  */
 class ComputedCallGraph(
-    val callGraph:              CallGraph,
-    val entryPoints:            () ⇒ Iterable[Method],
-    val unresolvedMethodCalls:  List[UnresolvedMethodCall],
-    val constructionExceptions: List[CallGraphConstructionException]
+        val callGraph:              CallGraph,
+        val entryPoints:            () ⇒ Iterable[Method],
+        val unresolvedMethodCalls:  List[UnresolvedMethodCall],
+        val constructionExceptions: List[CallGraphConstructionException]
 )
 
 object ComputedCallGraph {

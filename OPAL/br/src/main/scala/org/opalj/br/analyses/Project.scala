@@ -1272,8 +1272,8 @@ object Project {
             libraryClassFilesAreInterfacesOnly = false /*it actually doesn't matter*/ ,
             virtualClassFiles = Traversable.empty
         )(
-            projectLogger = projectLogger
-        )
+                projectLogger = projectLogger
+            )
     }
 
     def apply(
@@ -1387,9 +1387,9 @@ object Project {
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
         )(
-            if (useOldConfigAsFallback) config.withFallback(project.config) else config,
-            projectLogger = OPALLogger.logger(project.logContext.successor)
-        )
+                if (useOldConfigAsFallback) config.withFallback(project.config) else config,
+                projectLogger = OPALLogger.logger(project.logContext.successor)
+            )
     }
 
     /**

@@ -69,7 +69,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     val EPType = ObjectType("annotations/property/EP")
 
     /*
-     * GENERIC TEST PARAMETERS - THESE HAVE TO BE OVERWRITTEN BY SUBCLASSES 
+     * GENERIC TEST PARAMETERS - THESE HAVE TO BE OVERWRITTEN BY SUBCLASSES
      */
 
     def analysisName: String

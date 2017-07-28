@@ -522,36 +522,36 @@ object Hermes extends JFXApp with HermesCore {
     mainPane.setContent(featuresTableView);
     mainPane.setRight(
         new VBox(
-        new Label(s"Locations (at most ${Globals.MaxLocations} are shown)") {
-            padding = Insets(5, 5, 5, 5)
-            hgrow = Priority.ALWAYS
-            maxWidth = Double.MaxValue
-            alignment = Pos.Center
-            style = "-fx-background-color: #ccc"
-        },
-        locationsView
-    ) {
-        padding = Insets(100, 0, 100, 5)
-        vgrow = Priority.ALWAYS
-        maxHeight = Double.MaxValue
-    }.delegate
+            new Label(s"Locations (at most ${Globals.MaxLocations} are shown)") {
+                padding = Insets(5, 5, 5, 5)
+                hgrow = Priority.ALWAYS
+                maxWidth = Double.MaxValue
+                alignment = Pos.Center
+                style = "-fx-background-color: #ccc"
+            },
+            locationsView
+        ) {
+            padding = Insets(100, 0, 100, 5)
+            vgrow = Priority.ALWAYS
+            maxHeight = Double.MaxValue
+        }.delegate
     )
     mainPane.setTop(
         new VBox(
-        new Label(s"Table Configuration") {
-            padding = Insets(5, 5, 5, 5)
+            new Label(s"Table Configuration") {
+                padding = Insets(5, 5, 5, 5)
+                hgrow = Priority.ALWAYS
+                maxWidth = Double.MaxValue
+                alignment = Pos.Center
+                style = "-fx-background-color: #ccc"
+            },
+            onlyShowNotAvailableFeatures,
+            showFeatureQueryResults
+        ) {
+            padding = Insets(0, 250, 0, 250)
             hgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
-            alignment = Pos.Center
-            style = "-fx-background-color: #ccc"
-        },
-        onlyShowNotAvailableFeatures,
-        showFeatureQueryResults
-    ) {
-        padding = Insets(0, 250, 0, 250)
-        hgrow = Priority.ALWAYS
-        maxWidth = Double.MaxValue
-    }.delegate
+        }.delegate
     )
 
     def createFileMenuItems(): List[MenuItem] = {

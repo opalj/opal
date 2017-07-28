@@ -45,7 +45,7 @@ import org.opalj.ai.dataflow.solver.NaiveSolver
  * @author Michael Eichberg and Ben Hermann
  */
 abstract class StringPassedToClassForName[Source]
-        extends DataFlowProblemSpecification[Source, (String) ⇒ Boolean] {
+    extends DataFlowProblemSpecification[Source, (String) ⇒ Boolean] {
 
     type P = (String) ⇒ Boolean
     val definedInRestrictedPackage = p

@@ -38,8 +38,8 @@ import org.opalj.collection.immutable.Chain
  * @author Michael Eichberg
  */
 abstract class NegateInstruction
-        extends StackBasedArithmeticInstruction
-        with UnaryArithmeticInstruction {
+    extends StackBasedArithmeticInstruction
+    with UnaryArithmeticInstruction {
 
     final def operator: String = "-"
 

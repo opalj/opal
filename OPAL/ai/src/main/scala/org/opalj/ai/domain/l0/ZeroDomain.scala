@@ -48,10 +48,10 @@ package l0
  * @author Michael Eichberg
  */
 trait ZeroDomain
-        extends TypeLevelDomain
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with TheProject
-        with TheCode { domain: Configuration ⇒
+    extends TypeLevelDomain
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with TheProject
+    with TheCode { domain: Configuration ⇒
 
 }

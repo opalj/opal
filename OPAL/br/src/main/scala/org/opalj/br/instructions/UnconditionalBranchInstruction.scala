@@ -39,8 +39,8 @@ import org.opalj.collection.immutable.Chain
  * @author Michael Eichberg
  */
 trait UnconditionalBranchInstructionLike
-        extends ControlTransferInstructionLike
-        with ConstantLengthInstruction {
+    extends ControlTransferInstructionLike
+    with ConstantLengthInstruction {
 
     override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 

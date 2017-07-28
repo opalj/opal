@@ -42,8 +42,8 @@ import org.opalj.ai.domain.l2.PerformInvocations
  * @author Michael Eichberg
  */
 trait PerformInvocationsWithBasicVirtualMethodCallResolution
-        extends PerformInvocations
-        with Callees {
+    extends PerformInvocations
+    with Callees {
     callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     /**
