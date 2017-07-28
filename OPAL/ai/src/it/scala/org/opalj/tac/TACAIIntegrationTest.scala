@@ -58,9 +58,6 @@ import org.opalj.br.analyses.SomeProject
 @RunWith(classOf[JUnitRunner])
 class TACAIIntegrationTest extends FunSpec with Matchers {
 
-    val jreLibFolder: File = JRELibraryFolder
-    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
-
     def checkProject(
         project:       SomeProject,
         domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse
