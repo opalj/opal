@@ -47,8 +47,8 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Michael Eichberg
  */
 class OPALThreadPoolExecutor(
-    n:         Int,
-    val group: ThreadGroup
+        n:         Int,
+        val group: ThreadGroup
 ) extends ThreadPoolExecutor(
     n, n,
     60L, TimeUnit.SECONDS, // this is a fixed size pool

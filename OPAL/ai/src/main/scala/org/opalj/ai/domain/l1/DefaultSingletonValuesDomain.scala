@@ -42,23 +42,23 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultSingletonValuesDomain[Source](
-    val project:   Project[Source],
-    val classFile: ClassFile,
-    val method:    Method
+        val project:   Project[Source],
+        val classFile: ClassFile,
+        val method:    Method
 ) extends Domain
-        with TypedValuesFactory
-        with TheProject
-        with TheMethod
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l0.DefaultReferenceValuesBinding
-        with l1.DefaultIntegerValues
-        with l1.DefaultLongValues
-        with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions
+    with TypedValuesFactory
+    with TheProject
+    with TheMethod
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    with l0.DefaultReferenceValuesBinding
+    with l1.DefaultIntegerValues
+    with l1.DefaultLongValues
+    with l1.LongValuesShiftOperators
+    with l1.ConcretePrimitiveValuesConversions

@@ -118,8 +118,8 @@ object SupertypeInformation {
 }
 
 private[br] final class SupertypeInformationForClasses(
-    val classTypes:     UIDSet[ObjectType],
-    val interfaceTypes: UIDSet[ObjectType]
+        val classTypes:     UIDSet[ObjectType],
+        val interfaceTypes: UIDSet[ObjectType]
 ) extends SupertypeInformation
 
 private[br] object NoSpecificSupertypeInformationForInterfaces extends SupertypeInformation {

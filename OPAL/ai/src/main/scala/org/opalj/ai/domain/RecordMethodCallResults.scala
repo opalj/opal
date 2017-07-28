@@ -44,9 +44,9 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait RecordMethodCallResults
-        extends MethodCallResults
-        with RecordReturnedValues
-        with RecordThrownExceptions {
+    extends MethodCallResults
+    with RecordReturnedValues
+    with RecordThrownExceptions {
     this: Domain with TheClassHierarchy ⇒
 
     type ThrownException <: Set[this.ExceptionValue]

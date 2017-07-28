@@ -124,23 +124,23 @@ class ClassValuesTest extends FlatSpec with Matchers {
 object PlainClassesTest {
 
     class RecordingDomain
-            extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with DefaultHandlingForReturnInstructions
-            with DefaultHandlingOfVoidReturns
-            with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultClassValuesBinding {
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with DefaultHandlingForReturnInstructions
+        with DefaultHandlingOfVoidReturns
+        with ThrowAllPotentialExceptionsConfiguration
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultClassValuesBinding {
 
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {

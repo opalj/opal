@@ -34,9 +34,9 @@ package analyses
  * Encapsulated the defining context of a method.
  */
 case class MethodInfo[Source](
-    source:    Source,
-    classFile: ClassFile,
-    method:    Method
+        source:    Source,
+        classFile: ClassFile,
+        method:    Method
 )
 
 /**

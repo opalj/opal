@@ -3659,41 +3659,41 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
 }
 
 class DefaultIntegerRangesTestDomain(
-    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 )
-        extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultReferenceValuesBinding
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.SimpleTypeLevelInvokeInstructions
-        with l1.DefaultIntegerRangeValues // <----- The one we are going to test
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with PredefinedClassHierarchy
-        with RecordLastReturnedValues
+    extends CorrelationalDomain
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with l0.DefaultTypeLevelLongValues
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.DefaultReferenceValuesBinding
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.SimpleTypeLevelInvokeInstructions
+    with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+    with l0.TypeLevelPrimitiveValuesConversions
+    with l0.TypeLevelLongValuesShiftOperators
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with PredefinedClassHierarchy
+    with RecordLastReturnedValues
 
 class JoinResultsIntegerRangesTestDomain(
-    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 )
-        extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultReferenceValuesBinding
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.SimpleTypeLevelInvokeInstructions
-        with l1.DefaultIntegerRangeValues // <----- The one we are going to test
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with PredefinedClassHierarchy
-        with RecordReturnedValue
+    extends CorrelationalDomain
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with l0.DefaultTypeLevelLongValues
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.DefaultReferenceValuesBinding
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.SimpleTypeLevelInvokeInstructions
+    with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+    with l0.TypeLevelPrimitiveValuesConversions
+    with l0.TypeLevelLongValuesShiftOperators
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with PredefinedClassHierarchy
+    with RecordReturnedValue

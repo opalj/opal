@@ -49,7 +49,7 @@ import org.opalj.log.OPALLogger
  * @author Michael Eichberg
  */
 object StringConstantsInformationKey
-        extends ProjectInformationKey[StringConstantsInformation, Nothing] {
+    extends ProjectInformationKey[StringConstantsInformation, Nothing] {
 
     /**
      * The analysis has no special prerequisites.

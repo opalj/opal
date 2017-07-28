@@ -69,7 +69,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     val EPType = ObjectType("annotations/property/EP")
 
     /*
-     * GENERIC TEST PARAMETERS - THESE HAVE TO BE OVERWRITTEN BY SUBCLASSES 
+     * GENERIC TEST PARAMETERS - THESE HAVE TO BE OVERWRITTEN BY SUBCLASSES
      */
 
     def analysisName: String
@@ -197,14 +197,16 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         annotation: Annotation,
         predicate:  Option[IndexedSeq[String]] ⇒ Boolean
     ): Seq[Annotation] = {
-        annotation.elementValuePairs collectFirst {
-            case ElementValuePair("value", EnumValue(_, _)) // Single flat annotation
-            if predicate(algorithmExtraction(annotation)) ⇒ List(annotation)
-            case ElementValuePair("value", ArrayValue(properties: IndexedSeq[_])) ⇒ // Container
-                properties collect {
-                    case AnnotationValue(annotation) if predicate(algorithmExtraction(annotation)) ⇒ annotation
-                }
-        } getOrElse List.empty[Annotation]
+        if(annotation.annotationType == propertyAnnotation)
+            List(annotation) // Single flat annotation
+        else  // Container annotation
+            annotation.elementValuePairs.collectFirst {
+                case ElementValuePair("value", ArrayValue(properties: IndexedSeq[_])) ⇒
+                    properties collect {
+                        case AnnotationValue(annotation)
+                            if predicate(algorithmExtraction(annotation)) ⇒ annotation
+                    }
+            } getOrElse List.empty[Annotation]
     }
 
     /**

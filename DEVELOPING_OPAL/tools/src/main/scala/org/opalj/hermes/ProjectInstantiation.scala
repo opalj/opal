@@ -40,6 +40,6 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 case class ProjectInstantiation(
-    project:       Project[URL],
-    rawClassFiles: Traversable[(da.ClassFile, URL)]
+        project:       Project[URL],
+        rawClassFiles: Traversable[(da.ClassFile, URL)]
 )

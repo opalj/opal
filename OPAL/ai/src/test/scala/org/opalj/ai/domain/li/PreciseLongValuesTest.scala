@@ -45,21 +45,21 @@ import org.scalatest.Matchers
 class PreciseLongValuesTest extends FlatSpec with Matchers {
 
     object LongValuesTestDomain
-            extends Domain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultReferenceValuesBinding
-            with li.DefaultPreciseLongValues
-            with li.DefaultPreciseIntegerValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with RecordLastReturnedValues
-            with IgnoreSynchronization {
+        extends Domain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultReferenceValuesBinding
+        with li.DefaultPreciseLongValues
+        with li.DefaultPreciseIntegerValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with RecordLastReturnedValues
+        with IgnoreSynchronization {
 
         override def maxUpdatesForIntegerValues: Long = 5
 

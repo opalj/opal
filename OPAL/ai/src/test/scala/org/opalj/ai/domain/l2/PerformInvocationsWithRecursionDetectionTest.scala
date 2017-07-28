@@ -121,35 +121,35 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
 object PerformInvocationsWithRecursionDetectionTestFixture {
 
     abstract class BaseDomain(val project: Project[java.net.URL])
-            extends CorrelationalDomain
-            with ValuesDomain
-            with DefaultDomainValueBinding
-            with TheProject
-            with TypedValuesFactory
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l1.DefaultReferenceValuesBinding
-            with li.DefaultPreciseIntegerValues {
+        extends CorrelationalDomain
+        with ValuesDomain
+        with DefaultDomainValueBinding
+        with TheProject
+        with TypedValuesFactory
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l1.DefaultReferenceValuesBinding
+        with li.DefaultPreciseIntegerValues {
         domain: Configuration ⇒
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
 
     abstract class SharedInvocationDomain(
-        project:    Project[java.net.URL],
-        val method: Method
+            project:    Project[java.net.URL],
+            val method: Method
     ) extends BaseDomain(project) with Domain
-            with TheMethod
-            with l0.TypeLevelInvokeInstructions
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with IgnoreSynchronization
-            //with DefaultHandlingOfMethodResults
-            with l0.DefaultTypeLevelHandlingOfMethodResults
-            with PerformInvocationsWithRecursionDetection
-            with DefaultRecordMethodCallResults {
+        with TheMethod
+        with l0.TypeLevelInvokeInstructions
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with IgnoreSynchronization
+        //with DefaultHandlingOfMethodResults
+        with l0.DefaultTypeLevelHandlingOfMethodResults
+        with PerformInvocationsWithRecursionDetection
+        with DefaultRecordMethodCallResults {
 
         override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
             ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
@@ -204,11 +204,11 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     class ChildInvocationDomain(
-        project:          Project[java.net.URL],
-        method:           Method,
-        val callerDomain: SharedInvocationDomain
+            project:          Project[java.net.URL],
+            method:           Method,
+            val callerDomain: SharedInvocationDomain
     ) extends SharedInvocationDomain(project, method)
-            with ChildPerformInvocationsWithRecursionDetection { callingDomain ⇒
+        with ChildPerformInvocationsWithRecursionDetection { callingDomain ⇒
 
         final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI
 

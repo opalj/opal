@@ -46,9 +46,9 @@ import org.opalj.constraints.NumericConstraints
  * @author Michael Eichberg
  */
 trait ConstraintsBetweenIntegerValues
-        extends CoreDomainFunctionality
-        with IntegerRangeValues // IMRPOVE [ConstraintsBetweenIntegerValues] Define a common trait that specifies that the values support aliasing analyses
-        with TheCodeStructure {
+    extends CoreDomainFunctionality
+    with IntegerRangeValues // IMRPOVE [ConstraintsBetweenIntegerValues] Define a common trait that specifies that the values support aliasing analyses
+    with TheCodeStructure {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     type Constraint = NumericConstraints.Value

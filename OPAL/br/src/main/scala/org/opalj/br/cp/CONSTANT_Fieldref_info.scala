@@ -45,7 +45,7 @@ case class CONSTANT_Fieldref_info(
 
     override def tag: Int = ConstantPoolTags.CONSTANT_Fieldref_ID
 
-    // We don't mind if the field is initialized more than once (if reading the classfile 
+    // We don't mind if the field is initialized more than once (if reading the classfile
     // should be parallelized) as it is just an optimization and the object reference
     // is of now importance; an equals check will return true. Hence, w.r.t. the
     // previous definition this code is thread-safe.

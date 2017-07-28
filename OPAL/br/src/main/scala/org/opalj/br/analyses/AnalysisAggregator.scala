@@ -43,7 +43,7 @@ package analyses
  * @author Michael Eichberg
  */
 class AnalysisAggregator[Source, AnalysisResult]
-        extends Analysis[Source, Iterable[AnalysisResult]] {
+    extends Analysis[Source, Iterable[AnalysisResult]] {
 
     protected[this] var analyses = List.empty[Analysis[Source, AnalysisResult]]
 
@@ -54,7 +54,7 @@ class AnalysisAggregator[Source, AnalysisResult]
     }
 
     def setAnalyzeInParallel(analyzeInParallel: Boolean): Unit = {
-        this.synchronized(this.analyzeInParallel = analyzeInParallel)
+        this.synchronized(this.analyzeInParallel= analyzeInParallel)
     }
 
     def analyze(

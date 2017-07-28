@@ -417,8 +417,8 @@ trait ValuesDomain {
     val DomainReferenceValue: ClassTag[DomainReferenceValue]
 
     trait ReferenceValue
-            extends TypedValue[ReferenceType]
-            with IsReferenceValue[DomainReferenceValue] {
+        extends TypedValue[ReferenceType]
+        with IsReferenceValue[DomainReferenceValue] {
         this: DomainReferenceValue ⇒
 
         /**

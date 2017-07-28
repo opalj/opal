@@ -51,23 +51,23 @@ class DefaultLongSetsTest extends FunSpec with Matchers {
     final val SomePC = 100000
 
     class LongSetsTestDomain(
-        override val maxCardinalityOfLongSets: Int = Int.MaxValue
+            override val maxCardinalityOfLongSets: Int = Int.MaxValue
     ) extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultTypeLevelFloatValues
-            with l1.DefaultIntegerRangeValues // <---- Required to test the shift operators
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultReferenceValuesBinding
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultLongSetValues // <----- Test target
-            with l1.LongSetValuesShiftOperators // <----- Test target
-            with l0.TypeLevelPrimitiveValuesConversions
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with PredefinedClassHierarchy
-            with RecordLastReturnedValues
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelFloatValues
+        with l1.DefaultIntegerRangeValues // <---- Required to test the shift operators
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultLongSetValues // <----- Test target
+        with l1.LongSetValuesShiftOperators // <----- Test target
+        with l0.TypeLevelPrimitiveValuesConversions
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with PredefinedClassHierarchy
+        with RecordLastReturnedValues
 
     describe("central properties of domains that use LongSet values") {
 
