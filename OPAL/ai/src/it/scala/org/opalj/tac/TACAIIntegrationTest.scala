@@ -115,7 +115,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         }
     }
 
-    def domainFactories =
+    protected def domainFactories = {
         Seq(
             (
                 "DefaultDomainWithCFGAndDefUse",
@@ -130,6 +130,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                 }
             )
         )
+    }
 
     domainFactories foreach { domainInformation ⇒
         val (domainName, domainFactory) = domainInformation
