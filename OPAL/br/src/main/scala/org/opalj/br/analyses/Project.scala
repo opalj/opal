@@ -1600,7 +1600,7 @@ object Project {
                         logContext,
                         InconsistentProjectException(
                             s"${libraryType.toJava} is defined multiple times in the project's lbraries: "+
-                                sources.get(libraryType).getOrElse("<VIRTUAL>")+" and "+
+                                sources.getOrElse(libraryType,"<VIRTUAL>")+" and "+
                                 source.toString+"; keeping the first one."
                         )
                     )
