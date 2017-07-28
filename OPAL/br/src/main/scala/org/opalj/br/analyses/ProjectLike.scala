@@ -697,12 +697,12 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         // ...  in case of super method calls (not initializers), we can use
         //      "instanceMethods" to find the method, because the method has to
         //      be an instance method, must not be abstract and must not be private.
-        // ...  the receiver type of super initialzizer calls is always explicitly given
+        // ...  the receiver type of super initializer calls is always explicitly given
         classFile(declaringClass) match {
             case Some(classFile) ⇒
                 classFile.findMethod(name, descriptor) match {
                     case Some(method)             ⇒ Success(method)
-                    case None if name == "<init>" ⇒ Empty // the initialzizer is not found...
+                    case None if name == "<init>" ⇒ Empty // initializer not found...
                     case _ ⇒
                         // We have to find the (maximally specific) super method, which is,
                         // unless we have an inconsistent code base, unique (compared to
