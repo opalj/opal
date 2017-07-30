@@ -239,6 +239,20 @@ final class Method private (
         Answer(mps(parameterIndex).isSynthetic)
     }
 
+    /**
+     * Returns `Yes` if the parameter with the given index is mandated; `No` if not and `Unknown`
+     * if the information is not available. The indexes correspond to those used by the
+     * [[MethodDescriptor]].
+     */
+    def isMandatedParameter(parameterIndex: Int): Answer = {
+        val mpsOpt = methodParameters
+        if (mpsOpt.isEmpty)
+            return Unknown;
+
+        val mps = mpsOpt.get
+        Answer(mps(parameterIndex).isMandated)
+    }
+
     // This is directly supported due to its need for the resolution of signature
     // polymorphic methods.
     final def isNativeAndVarargs: Boolean = Method.isNativeAndVarargs(accessFlags)
