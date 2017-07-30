@@ -52,7 +52,7 @@ import org.opalj.fpcf.PropertyStoreContext
  * @author Michael Eichberg
  */
 object PropertyStoreKey
-        extends ProjectInformationKey[PropertyStore, ConcurrentLinkedQueue[EntityDerivationFunction]] {
+    extends ProjectInformationKey[PropertyStore, ConcurrentLinkedQueue[EntityDerivationFunction]] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.PropertyStoreKey."
 

@@ -51,8 +51,8 @@ import org.opalj.br.ComputationalTypeInt
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelIntegerValues
-        extends DefaultDomainValueBinding
-        with TypeLevelIntegerValues {
+    extends DefaultDomainValueBinding
+    with TypeLevelIntegerValues {
     this: Configuration ⇒
 
     //

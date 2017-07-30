@@ -43,10 +43,10 @@ import org.opalj.br.MethodDescriptor
  * @author Michael Eichberg
  */
 trait StringValues
-        extends ReferenceValues
-        with DefaultJavaObjectToDomainValueConversion
-        with MethodCallsDomain
-        with PostEvaluationMemoryManagement {
+    extends ReferenceValues
+    with DefaultJavaObjectToDomainValueConversion
+    with MethodCallsDomain
+    with PostEvaluationMemoryManagement {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue

@@ -46,8 +46,8 @@ sealed abstract class StackMapFrame {
 final case class SameFrame(frameType: Int) extends StackMapFrame
 
 final case class SameLocals1StackItemFrame(
-    frameType:                     Int,
-    verificationTypeInfoStackItem: VerificationTypeInfo
+        frameType:                     Int,
+        verificationTypeInfoStackItem: VerificationTypeInfo
 ) extends StackMapFrame
 
 final case class SameLocals1StackItemFrameExtended(
@@ -83,9 +83,9 @@ final case class SameFrameExtended(offsetDelta: Int) extends StackMapFrame {
 }
 
 final case class AppendFrame(
-    frameType:                  Int,
-    offsetDelta:                Int,
-    verificationTypeInfoLocals: VerificationTypeInfoLocals
+        frameType:                  Int,
+        offsetDelta:                Int,
+        verificationTypeInfoLocals: VerificationTypeInfoLocals
 ) extends StackMapFrame
 
 final case class FullFrame(

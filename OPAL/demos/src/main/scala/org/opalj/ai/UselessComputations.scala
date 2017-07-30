@@ -49,22 +49,22 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 object UselessComputations extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
-            extends CorrelationalDomain
-            with domain.DefaultDomainValueBinding
-            with domain.TheProject
-            with domain.TheMethod
-            with domain.DefaultHandlingOfMethodResults
-            with domain.IgnoreSynchronization
-            with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelFloatValues
-            with domain.l0.DefaultTypeLevelDoubleValues
-            with domain.l0.TypeLevelFieldAccessInstructions
-            with domain.l0.TypeLevelInvokeInstructions
-            with domain.l1.DefaultReferenceValuesBinding
-            with domain.l1.DefaultIntegerRangeValues
-            with domain.l1.DefaultLongValues
-            with domain.l1.ConcretePrimitiveValuesConversions
-            with domain.l1.LongValuesShiftOperators {
+        extends CorrelationalDomain
+        with domain.DefaultDomainValueBinding
+        with domain.TheProject
+        with domain.TheMethod
+        with domain.DefaultHandlingOfMethodResults
+        with domain.IgnoreSynchronization
+        with domain.ThrowAllPotentialExceptionsConfiguration
+        with domain.l0.DefaultTypeLevelFloatValues
+        with domain.l0.DefaultTypeLevelDoubleValues
+        with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.TypeLevelInvokeInstructions
+        with domain.l1.DefaultReferenceValuesBinding
+        with domain.l1.DefaultIntegerRangeValues
+        with domain.l1.DefaultLongValues
+        with domain.l1.ConcretePrimitiveValuesConversions
+        with domain.l1.LongValuesShiftOperators {
 
         override def maxCardinalityOfIntegerRanges: Long = 4L
     }

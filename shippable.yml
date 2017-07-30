@@ -7,7 +7,8 @@ jdk:
 
 branches:
   only:
-    - feature/*
+    - develop
+    - feature/Hermes
 
 script:
   - export SBT_OPTS="-XX:+CMSClassUnloadingEnabled"

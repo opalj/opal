@@ -199,21 +199,21 @@ object UsageKind extends Enumeration {
 }
 
 class ExceptionUsageAnalysisDomain(val project: Project[java.net.URL], val method: Method)
-        extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
-        with domain.l0.TypeLevelPrimitiveValuesConversions
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.DefaultTypeLevelLongValues
-        with domain.l0.TypeLevelLongValuesShiftOperators
-        with domain.l0.DefaultTypeLevelIntegerValues
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
-        with domain.TheProject
-        with domain.TheMethod {
+    extends CorrelationalDomain
+    with domain.DefaultDomainValueBinding
+    with domain.l0.TypeLevelPrimitiveValuesConversions
+    with domain.l0.DefaultTypeLevelFloatValues
+    with domain.l0.DefaultTypeLevelDoubleValues
+    with domain.l0.DefaultTypeLevelLongValues
+    with domain.l0.TypeLevelLongValuesShiftOperators
+    with domain.l0.DefaultTypeLevelIntegerValues
+    with domain.l0.TypeLevelFieldAccessInstructions
+    with domain.l0.TypeLevelInvokeInstructions
+    with domain.l1.DefaultReferenceValuesBinding
+    with domain.DefaultHandlingOfMethodResults
+    with domain.IgnoreSynchronization
+    with domain.TheProject
+    with domain.TheMethod {
 
     def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethods.Value = {
         ExceptionsRaisedByCalledMethods.Any

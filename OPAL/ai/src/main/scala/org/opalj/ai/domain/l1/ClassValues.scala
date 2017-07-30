@@ -75,7 +75,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
      * are actually represented by the same class (object) value at runtime.
      */
     protected class ClassValue(origin: ValueOrigin, val value: Type, t: Timestamp)
-            extends SObjectValue(origin, No, true, ObjectType.Class, t) {
+        extends SObjectValue(origin, No, true, ObjectType.Class, t) {
         this: DomainClassValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(

@@ -298,12 +298,12 @@ object DeadEdgesAnalysis {
                             result.liveVariables,
                             zDomain
                         )(
-                            /*initialWorkList =*/ Chain(nextPC),
-                            /*alreadyEvaluated =*/ Naught,
-                            zOperandsArray,
-                            zLocalsArray,
-                            Naught, null, null // we don't care about the state of subroutines
-                        )
+                                /*initialWorkList =*/ Chain(nextPC),
+                                /*alreadyEvaluated =*/ Naught,
+                                zOperandsArray,
+                                zLocalsArray,
+                                Naught, null, null // we don't care about the state of subroutines
+                            )
                         val exceptionValue = zOperandsArray(athrowPC).head
                         val throwsError =
                             (

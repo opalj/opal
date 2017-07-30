@@ -39,10 +39,10 @@ import org.opalj.br.analyses.SomeProject
  * @author Marco Torsello
  */
 case class PackageMatcher(
-    namePredicate: NamePredicate,
-    classMatcher:  ClassMatcher
+        namePredicate: NamePredicate,
+        classMatcher:  ClassMatcher
 )
-        extends ClassLevelMatcher {
+    extends ClassLevelMatcher {
 
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         val packageName = classFile.thisType.packageName

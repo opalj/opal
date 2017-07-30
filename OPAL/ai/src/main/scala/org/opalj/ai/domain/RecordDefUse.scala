@@ -1045,7 +1045,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 }
 
 private object UnsupportedOperationComputationalTypeCategory
-        extends (Int ⇒ ComputationalTypeCategory) {
+    extends (Int ⇒ ComputationalTypeCategory) {
 
     def apply(i: Int): Nothing = throw new UnsupportedOperationException
 

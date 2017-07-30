@@ -63,16 +63,16 @@ import org.opalj.ai.domain.l0.TypeLevelPrimitiveValuesConversions
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
 
 class CallerNode(
-    theIdentifier:       String,
-    identifierToString:  String ⇒ String,
-    theVisualProperties: Map[String, String],
-    theChildren:         List[Node]
+        theIdentifier:       String,
+        identifierToString:  String ⇒ String,
+        theVisualProperties: Map[String, String],
+        theChildren:         List[Node]
 )
-        extends MutableNodeLike[String, Node](
-            theIdentifier, identifierToString,
-            theVisualProperties,
-            theChildren
-        ) {
+    extends MutableNodeLike[String, Node](
+        theIdentifier, identifierToString,
+        theVisualProperties,
+        theChildren
+    ) {
 
     def this(identifier: String) {
         this(identifier, id ⇒ id, Map("shape" → "box"), List.empty)
@@ -80,16 +80,16 @@ class CallerNode(
 }
 
 class ContextNode(
-    theIdentifier:       (RelevantParameters, String),
-    identifierToString:  ((RelevantParameters, String)) ⇒ String,
-    theVisualProperties: Map[String, String],
-    theChildren:         List[CallerNode]
+        theIdentifier:       (RelevantParameters, String),
+        identifierToString:  ((RelevantParameters, String)) ⇒ String,
+        theVisualProperties: Map[String, String],
+        theChildren:         List[CallerNode]
 )
-        extends MutableNodeLike[(RelevantParameters, String), CallerNode](
-            theIdentifier, identifierToString,
-            theVisualProperties,
-            theChildren
-        ) {
+    extends MutableNodeLike[(RelevantParameters, String), CallerNode](
+        theIdentifier, identifierToString,
+        theVisualProperties,
+        theChildren
+    ) {
 
     def this(identifier: (RelevantParameters, String)) {
         this(identifier, id ⇒ id.toString, Map("shape" → "box"), List.empty)
@@ -102,9 +102,9 @@ class ContextNode(
  * @author Lars Schulte
  */
 object JDKTaintAnalysis
-        extends AIProject[URL, Domain with OptionalReport]
-        with OneStepAnalysis[URL, ReportableAnalysisResult]
-        with AnalysisExecutor {
+    extends AIProject[URL, Domain with OptionalReport]
+    with OneStepAnalysis[URL, ReportableAnalysisResult]
+    with AnalysisExecutor {
 
     def ai: AI[Domain with OptionalReport] = new AI[Domain with OptionalReport] {}
 
@@ -230,25 +230,25 @@ object TaintAnalysisDomain {
  * This is the analysis domain it provides all need functionality to find Class.forName bugs.
  */
 trait TaintAnalysisDomain[Source]
-        extends CorrelationalDomain
-        with DomainId
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with TypeLevelLongValuesShiftOperators
-        with TypeLevelPrimitiveValuesConversions
-        with DefaultDomainValueBinding
-        with TypeLevelInvokeInstructions
-        with TypeLevelFieldAccessInstructions
-        with DefaultTypeLevelLongValues
-        with DefaultTypeLevelFloatValues
-        with DefaultTypeLevelDoubleValues
-        with DefaultTypeLevelIntegerValues
-        with DefaultStringValuesBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with TypeLevelReferenceValues
-        with TheProject
-        with TheCode
-        with OptionalReport { thisDomain ⇒
+    extends CorrelationalDomain
+    with DomainId
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with TypeLevelLongValuesShiftOperators
+    with TypeLevelPrimitiveValuesConversions
+    with DefaultDomainValueBinding
+    with TypeLevelInvokeInstructions
+    with TypeLevelFieldAccessInstructions
+    with DefaultTypeLevelLongValues
+    with DefaultTypeLevelFloatValues
+    with DefaultTypeLevelDoubleValues
+    with DefaultTypeLevelIntegerValues
+    with DefaultStringValuesBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with TypeLevelReferenceValues
+    with TheProject
+    with TheCode
+    with OptionalReport { thisDomain ⇒
 
     type Id = CallStackEntry
 
@@ -530,8 +530,8 @@ trait TaintAnalysisDomain[Source]
             project.lookupMethodDefinition(
                 declaringClass.asObjectType, methodName, methodDescriptor
             ).getOrElse {
-                return doTypeLevelInvoke
-            }
+                    return doTypeLevelInvoke
+                }
 
         if (method.body.isEmpty) {
             return doTypeLevelInvoke;
@@ -608,8 +608,8 @@ trait TaintAnalysisDomain[Source]
                 methodName,
                 methodDescriptor
             ).getOrElse {
-                return doTypeLevelInvoke
-            }
+                    return doTypeLevelInvoke
+                }
 
         inspectMethod(pc, method, operands)
 
@@ -877,12 +877,12 @@ trait TaintAnalysisDomain[Source]
  * as well as when searching for the use of a field
  */
 class RootTaintAnalysisDomain[Source](
-    val project:              Project[Source],
-    val taintedGloableFields: List[String],
-    val id:                   CallStackEntry,
-    val checkForFields:       Boolean
+        val project:              Project[Source],
+        val taintedGloableFields: List[String],
+        val id:                   CallStackEntry,
+        val checkForFields:       Boolean
 )
-        extends TaintAnalysisDomain[Source] {
+    extends TaintAnalysisDomain[Source] {
 
     val callerNode: CallerNode = new CallerNode("Some user of the API")
 
@@ -925,14 +925,14 @@ class RootTaintAnalysisDomain[Source](
  * a method resulting.
  */
 class CalledTaintAnalysisDomain[Source](
-    val previousTaintAnalysisDomain: TaintAnalysisDomain[Source],
-    val id:                          CallStackEntry,
-    val callerNode:                  CallerNode,
-    val relevantParameters:          RelevantParameters,
-    val checkForFields:              Boolean
+        val previousTaintAnalysisDomain: TaintAnalysisDomain[Source],
+        val id:                          CallStackEntry,
+        val callerNode:                  CallerNode,
+        val relevantParameters:          RelevantParameters,
+        val checkForFields:              Boolean
 )
 
-        extends TaintAnalysisDomain[Source] {
+    extends TaintAnalysisDomain[Source] {
 
     taintedFields = previousTaintAnalysisDomain.taintedFields
     //cachedInterfaceCalls = previousTaintAnalysisDomain.cachedInterfaceCalls

@@ -1095,23 +1095,23 @@ class MethodsPlainTest extends FlatSpec with Matchers {
 private object MethodsPlainTest {
 
     class RecordingDomain
-            extends Domain
-            with DefaultDomainValueBinding
-            with DefaultHandlingForReturnInstructions
-            with DefaultHandlingOfVoidReturns
-            with DefaultReferenceValuesBinding
-            with DefaultTypeLevelIntegerValues
-            with DefaultTypeLevelLongValues
-            with DefaultTypeLevelFloatValues
-            with DefaultTypeLevelDoubleValues
-            with TypeLevelPrimitiveValuesConversions
-            with TypeLevelLongValuesShiftOperators
-            with TypeLevelFieldAccessInstructions
-            with SimpleTypeLevelInvokeInstructions
-            with ThrowAllPotentialExceptionsConfiguration
-            with IgnoreSynchronization
-            with DefaultHandlingForThrownExceptions
-            with PredefinedClassHierarchy {
+        extends Domain
+        with DefaultDomainValueBinding
+        with DefaultHandlingForReturnInstructions
+        with DefaultHandlingOfVoidReturns
+        with DefaultReferenceValuesBinding
+        with DefaultTypeLevelIntegerValues
+        with DefaultTypeLevelLongValues
+        with DefaultTypeLevelFloatValues
+        with DefaultTypeLevelDoubleValues
+        with TypeLevelPrimitiveValuesConversions
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelFieldAccessInstructions
+        with SimpleTypeLevelInvokeInstructions
+        with ThrowAllPotentialExceptionsConfiguration
+        with IgnoreSynchronization
+        with DefaultHandlingForThrownExceptions
+        with PredefinedClassHierarchy {
 
         type Id = String
 

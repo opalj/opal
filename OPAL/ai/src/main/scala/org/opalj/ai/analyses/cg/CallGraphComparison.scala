@@ -102,12 +102,12 @@ sealed trait CallGraphDifferenceReport {
 }
 
 case class AdditionalCallTargets(
-    project:     SomeProject,
-    method:      Method,
-    pc:          PC,
-    callTargets: Iterable[Method]
+        project:     SomeProject,
+        method:      Method,
+        pc:          PC,
+        callTargets: Iterable[Method]
 )
-        extends CallGraphDifferenceReport {
+    extends CallGraphDifferenceReport {
 
     final val differenceClassifier = BLUE+"[Additional]"+RESET
 }
@@ -116,12 +116,12 @@ case class AdditionalCallTargets(
  *
  */
 case class UnexpectedCallTargets(
-    project:     SomeProject,
-    method:      Method,
-    pc:          PC,
-    callTargets: Iterable[Method]
+        project:     SomeProject,
+        method:      Method,
+        pc:          PC,
+        callTargets: Iterable[Method]
 )
-        extends CallGraphDifferenceReport {
+    extends CallGraphDifferenceReport {
 
     final val differenceClassifier = RED+"[Unexpected]"+RESET
 }

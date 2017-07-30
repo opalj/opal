@@ -78,7 +78,7 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
     }
 
     override def asConstantValue(cp: Constant_Pool): ConstantString = {
-        // required to support annotations; should be called at most once 
+        // required to support annotations; should be called at most once
         // => caching doesn't make sense
         ConstantString(value)
     }

@@ -339,8 +339,8 @@ trait AnalysisExecutor {
                 libraryClassFilesAreInterfacesOnly = !completelyLoadLibraries,
                 Traversable.empty
             )(
-                config = configuredConfig
-            )
+                    config = configuredConfig
+                )
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
         OPALLogger.info(

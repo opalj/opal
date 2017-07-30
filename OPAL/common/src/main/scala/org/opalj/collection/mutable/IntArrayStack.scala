@@ -44,12 +44,12 @@ import scala.collection.AbstractIterator
  * @author Michael Eichberg
  */
 final class IntArrayStack private (
-    private var data:  Array[Int],
-    private var size0: Int
+        private var data:  Array[Int],
+        private var size0: Int
 ) extends mutable.IndexedSeq[Int]
-        with mutable.IndexedSeqLike[Int, IntArrayStack]
-        with mutable.Cloneable[IntArrayStack]
-        with Serializable { stack ⇒
+    with mutable.IndexedSeqLike[Int, IntArrayStack]
+    with mutable.Cloneable[IntArrayStack]
+    with Serializable { stack ⇒
 
     def this(initialSize: Int = 4) { this(new Array[Int](initialSize), 0) }
 

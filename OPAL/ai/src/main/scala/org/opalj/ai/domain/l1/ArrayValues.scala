@@ -65,9 +65,9 @@ import org.opalj.br.ArrayType
  * @author   Michael Eichberg
  */
 trait ArrayValues
-        extends l1.ReferenceValues
-        with PerInstructionPostProcessing
-        with PostEvaluationMemoryManagement {
+    extends l1.ReferenceValues
+    with PerInstructionPostProcessing
+    with PostEvaluationMemoryManagement {
     domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with TheClassHierarchy with LogContextProvider ⇒
 
     private[this] val debug: Boolean = false

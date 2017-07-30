@@ -108,56 +108,56 @@ object IsPrimitiveValue {
 }
 
 trait IsBooleanValue[DomainBooleanValue <: AnyRef]
-        extends IsPrimitiveValue[BooleanType, DomainBooleanValue] {
+    extends IsPrimitiveValue[BooleanType, DomainBooleanValue] {
     this: DomainBooleanValue ⇒
 
     final def primitiveType: BooleanType = BooleanType
 }
 
 trait IsByteValue[DomainByteValue <: AnyRef]
-        extends IsPrimitiveValue[ByteType, DomainByteValue] {
+    extends IsPrimitiveValue[ByteType, DomainByteValue] {
     this: DomainByteValue ⇒
 
     final def primitiveType: ByteType = ByteType
 }
 
 trait IsCharValue[DomainCharValue <: AnyRef]
-        extends IsPrimitiveValue[CharType, DomainCharValue] {
+    extends IsPrimitiveValue[CharType, DomainCharValue] {
     this: DomainCharValue ⇒
 
     final def primitiveType: CharType = CharType
 }
 
 trait IsShortValue[DomainShortValue <: AnyRef]
-        extends IsPrimitiveValue[ShortType, DomainShortValue] {
+    extends IsPrimitiveValue[ShortType, DomainShortValue] {
     this: DomainShortValue ⇒
 
     final def primitiveType: ShortType = ShortType
 }
 
 trait IsIntegerValue[DomainIntegerValue <: AnyRef]
-        extends IsPrimitiveValue[IntegerType, DomainIntegerValue] {
+    extends IsPrimitiveValue[IntegerType, DomainIntegerValue] {
     this: DomainIntegerValue ⇒
 
     final def primitiveType: IntegerType = IntegerType
 }
 
 trait IsFloatValue[DomainFloatValue <: AnyRef]
-        extends IsPrimitiveValue[FloatType, DomainFloatValue] {
+    extends IsPrimitiveValue[FloatType, DomainFloatValue] {
     this: DomainFloatValue ⇒
 
     final def primitiveType: FloatType = FloatType
 }
 
 trait IsLongValue[DomainLongValue <: AnyRef]
-        extends IsPrimitiveValue[LongType, DomainLongValue] {
+    extends IsPrimitiveValue[LongType, DomainLongValue] {
     this: DomainLongValue ⇒
 
     final def primitiveType: LongType = LongType
 }
 
 trait IsDoubleValue[DomainDoubleValue <: AnyRef]
-        extends IsPrimitiveValue[DoubleType, DomainDoubleValue] {
+    extends IsPrimitiveValue[DoubleType, DomainDoubleValue] {
     this: DomainDoubleValue ⇒
 
     final def primitiveType: DoubleType = DoubleType

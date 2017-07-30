@@ -43,8 +43,8 @@ import org.opalj.br.ReferenceType
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelReferenceValues
-        extends DefaultDomainValueBinding
-        with TypeLevelReferenceValues {
+    extends DefaultDomainValueBinding
+    with TypeLevelReferenceValues {
     domain: IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     // -----------------------------------------------------------------------------------

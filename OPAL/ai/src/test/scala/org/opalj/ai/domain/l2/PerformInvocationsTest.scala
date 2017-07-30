@@ -209,33 +209,33 @@ object PerformInvocationsTestFixture {
         with TheMethod
 
     trait LiDomain
-            extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with TheProject
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l1.DefaultReferenceValuesBinding
-            with li.DefaultPreciseIntegerValues
-            with li.DefaultPreciseLongValues
-            with l1.ConcretePrimitiveValuesConversions
-            with l1.LongValuesShiftOperators
-            with l0.TypeLevelFieldAccessInstructions
-            with TheMethod {
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with TheProject
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l1.DefaultReferenceValuesBinding
+        with li.DefaultPreciseIntegerValues
+        with li.DefaultPreciseLongValues
+        with l1.ConcretePrimitiveValuesConversions
+        with l1.LongValuesShiftOperators
+        with l0.TypeLevelFieldAccessInstructions
+        with TheMethod {
 
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
 
     }
 
     abstract class InvocationDomain(
-        val project: Project[java.net.URL],
-        val method:  Method
+            val project: Project[java.net.URL],
+            val method:  Method
     ) extends Domain
-            with l0.TypeLevelInvokeInstructions
-            with PerformInvocations
-            with ThrowAllPotentialExceptionsConfiguration
-            with IgnoreSynchronization
-            with l0.DefaultTypeLevelHandlingOfMethodResults
-            with DefaultRecordMethodCallResults {
+        with l0.TypeLevelInvokeInstructions
+        with PerformInvocations
+        with ThrowAllPotentialExceptionsConfiguration
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelHandlingOfMethodResults
+        with DefaultRecordMethodCallResults {
         domain: ValuesFactory with TheClassHierarchy with Configuration with TheProject with TheMethod ⇒
 
         override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
@@ -286,7 +286,7 @@ object PerformInvocationsTestFixture {
     }
 
     class L1InvocationDomain(project: Project[java.net.URL], method: Method)
-            extends InvocationDomain(project, method) with L1Domain {
+        extends InvocationDomain(project, method) with L1Domain {
 
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],

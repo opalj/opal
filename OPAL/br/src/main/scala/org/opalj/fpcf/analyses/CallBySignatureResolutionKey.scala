@@ -46,7 +46,7 @@ import org.opalj.br.analyses.ProjectInformationKey
  * @author Michael Reif
  */
 object CallBySignatureResolutionKey
-        extends ProjectInformationKey[CallBySignatureResolution, Nothing] {
+    extends ProjectInformationKey[CallBySignatureResolution, Nothing] {
 
     /**
      * The computation of [[CallBySignatureResolution]] information needs the

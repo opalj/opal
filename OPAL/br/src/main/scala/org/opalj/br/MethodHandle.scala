@@ -69,27 +69,27 @@ sealed abstract class FieldReadAccessMethodHandle extends FieldAccessMethodHandl
 sealed abstract class FieldWriteAccessMethodHandle extends FieldAccessMethodHandle
 
 case class GetFieldMethodHandle(
-    declaringClassType: ObjectType,
-    name:               String,
-    fieldType:          FieldType
+        declaringClassType: ObjectType,
+        name:               String,
+        fieldType:          FieldType
 ) extends FieldReadAccessMethodHandle
 
 case class GetStaticMethodHandle(
-    declaringClassType: ObjectType,
-    name:               String,
-    fieldType:          FieldType
+        declaringClassType: ObjectType,
+        name:               String,
+        fieldType:          FieldType
 ) extends FieldReadAccessMethodHandle
 
 case class PutFieldMethodHandle(
-    declaringClassType: ObjectType,
-    name:               String,
-    fieldType:          FieldType
+        declaringClassType: ObjectType,
+        name:               String,
+        fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle
 
 case class PutStaticMethodHandle(
-    declaringClassType: ObjectType,
-    name:               String,
-    fieldType:          FieldType
+        declaringClassType: ObjectType,
+        name:               String,
+        fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle
 
 sealed abstract class MethodCallMethodHandle extends MethodHandle {

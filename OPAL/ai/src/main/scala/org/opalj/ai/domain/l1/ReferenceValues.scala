@@ -86,7 +86,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * both origins.
      */
     implicit object DomainSingleOriginReferenceValueOrdering
-            extends Ordering[DomainSingleOriginReferenceValue] {
+        extends Ordering[DomainSingleOriginReferenceValue] {
 
         def compare(
             x: DomainSingleOriginReferenceValue,
@@ -781,14 +781,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      *          the parameter) if the true origin is not known.)
      */
     protected class SObjectValue(
-        override val origin:    ValueOrigin,
-        override val isNull:    Answer,
-        override val isPrecise: Boolean,
-        theUpperTypeBound:      ObjectType,
-        override val t:         Timestamp
+            override val origin:    ValueOrigin,
+            override val isNull:    Answer,
+            override val isPrecise: Boolean,
+            theUpperTypeBound:      ObjectType,
+            override val t:         Timestamp
     ) extends super.SObjectValue(theUpperTypeBound)
-            with ObjectValue
-            with NonNullSingleOriginSReferenceValue {
+        with ObjectValue
+        with NonNullSingleOriginSReferenceValue {
         this: DomainObjectValue ⇒
 
         assert(this.isNull.isNoOrUnknown)

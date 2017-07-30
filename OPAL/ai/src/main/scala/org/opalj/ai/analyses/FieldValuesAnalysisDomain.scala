@@ -64,25 +64,25 @@ import org.opalj.br.MethodSignature
  * @author Michael Eichberg
  */
 class BaseFieldValuesAnalysisDomain(
-    override val project: SomeProject,
-    val classFile:        ClassFile
+        override val project: SomeProject,
+        val classFile:        ClassFile
 ) extends Domain
-        with domain.TheProject
-        with domain.TheClassFile
-        with domain.TheCode
-        with domain.DefaultDomainValueBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelIntegerValues
-        with domain.l0.DefaultTypeLevelLongValues
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelPrimitiveValuesConversions
-        with domain.l0.TypeLevelLongValuesShiftOperators
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.DefaultReferenceValuesBinding
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization {
+    with domain.TheProject
+    with domain.TheClassFile
+    with domain.TheCode
+    with domain.DefaultDomainValueBinding
+    with domain.ThrowAllPotentialExceptionsConfiguration
+    with domain.l0.DefaultTypeLevelIntegerValues
+    with domain.l0.DefaultTypeLevelLongValues
+    with domain.l0.DefaultTypeLevelFloatValues
+    with domain.l0.DefaultTypeLevelDoubleValues
+    with domain.l0.TypeLevelPrimitiveValuesConversions
+    with domain.l0.TypeLevelLongValuesShiftOperators
+    with domain.l0.TypeLevelFieldAccessInstructions
+    with domain.l0.TypeLevelInvokeInstructions
+    with domain.l0.DefaultReferenceValuesBinding
+    with domain.DefaultHandlingOfMethodResults
+    with domain.IgnoreSynchronization {
 
     import scala.collection.mutable.{Map ⇒ MutableMap}
 
@@ -195,11 +195,11 @@ class BaseFieldValuesAnalysisDomain(
 }
 
 class FPFieldValuesAnalysisDomain(
-    project:                          SomeProject,
-    val fieldValueInformation:        FieldValueInformation,
-    val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache:                        CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    classFile:                        ClassFile
+        project:                          SomeProject,
+        val fieldValueInformation:        FieldValueInformation,
+        val methodReturnValueInformation: MethodReturnValueInformation,
+        val cache:                        CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+        classFile:                        ClassFile
 ) extends BaseFieldValuesAnalysisDomain(project, classFile)
-        with RefinedTypeLevelFieldAccessInstructions
-        with RefinedTypeLevelInvokeInstructions
+    with RefinedTypeLevelFieldAccessInstructions
+    with RefinedTypeLevelInvokeInstructions

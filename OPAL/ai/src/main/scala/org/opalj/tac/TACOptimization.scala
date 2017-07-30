@@ -49,6 +49,6 @@ trait TACOptimization[P <: AnyRef, V <: Var[V]] {
  * @author Michael Eichberg
  */
 case class TACOptimizationResult[P <: AnyRef, V <: Var[V]](
-    code:           TACode[P, V],
-    wasTransformed: Boolean
+        code:           TACode[P, V],
+        wasTransformed: Boolean
 )

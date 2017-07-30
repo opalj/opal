@@ -47,7 +47,6 @@ class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest
         val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
             method.body.get.collect {
                 case i: INVOKEDYNAMIC if Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
                     Java8LambdaExpressionsRewriting.isScalaSymbolExpression(i) ⇒ i
             }
         }

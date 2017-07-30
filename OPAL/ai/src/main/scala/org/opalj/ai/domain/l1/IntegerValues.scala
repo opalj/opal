@@ -62,8 +62,8 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
      * Abstracts over all values with computational type `integer`.
      */
     sealed trait IntegerLikeValue
-            extends TypedValue[CTIntType]
-            with IsIntegerValue[IntegerLikeValue] {
+        extends TypedValue[CTIntType]
+        with IsIntegerValue[IntegerLikeValue] {
         this: DomainTypedValue[CTIntType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt

@@ -133,22 +133,22 @@ class DefaultPreciseIntegerValuesTest extends FlatSpec with Matchers {
 object DefaultPreciseIntegerValuesTest {
 
     class TestDomain
-            extends Domain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultReferenceValuesBinding
-            with DefaultPreciseIntegerValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with RecordLastReturnedValues
-            with IgnoreSynchronization {
+        extends Domain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultReferenceValuesBinding
+        with DefaultPreciseIntegerValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with RecordLastReturnedValues
+        with IgnoreSynchronization {
 
         override def maxUpdatesForIntegerValues: Long = 5
     }

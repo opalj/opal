@@ -57,9 +57,9 @@ import scala.collection.generic.FilterMonadic
  * @author Michael Eichberg
  */
 sealed trait Chain[@specialized(Int) +T]
-        extends TraversableOnce[T]
-        with FilterMonadic[T, Chain[T]]
-        with Serializable { self ⇒
+    extends TraversableOnce[T]
+    with FilterMonadic[T, Chain[T]]
+    with Serializable { self ⇒
 
     /**
      * Represents a filtered [[Chain]]. Instances of [[ChainWithFilter]] are typically
