@@ -217,6 +217,28 @@ final class Method private (
         attributes collectFirst { case ev: ElementValue ⇒ ev }
     }
 
+    /**
+     * If this method has extended method parameter information, the `MethodParameterTable` is
+     * returned.
+     */
+    def methodParameters: Option[MethodParameterTable] = {
+        attributes collectFirst { case mp: MethodParameterTable ⇒ mp }
+    }
+
+    /**
+     * Returns `Yes` if the parameter with the given index is synthetic; `No` if not and `Unknown`
+     * if the information is not available. The indexes correspond to those used by the
+     * [[MethodDescriptor]].
+     */
+    def isSyntheticParameter(parameterIndex: Int): Answer = {
+        val mpsOpt = methodParameters
+        if (mpsOpt.isEmpty)
+            return Unknown;
+
+        val mps = mpsOpt.get
+        Answer(mps(parameterIndex).isSynthetic)
+    }
+
     // This is directly supported due to its need for the resolution of signature
     // polymorphic methods.
     final def isNativeAndVarargs: Boolean = Method.isNativeAndVarargs(accessFlags)
