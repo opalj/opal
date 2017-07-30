@@ -52,11 +52,11 @@ package object collection {
         if (l1 eq l2)
             return l1;
 
-        var prefix = List.empty[T]
+        val prefix = List.newBuilder[T]
         var l1Tail = l1
         var l2Tail = l2
         while (l1Tail.nonEmpty && l2Tail.nonEmpty && l1Tail.head == l2Tail.head) {
-            prefix ::= l1Tail.head
+            prefix += l1Tail.head
             l1Tail = l1Tail.tail
             l2Tail = l2Tail.tail
         }
@@ -65,7 +65,7 @@ package object collection {
         else if (l2Tail.isEmpty)
             l2
         else
-            prefix.reverse
+            prefix.result()
     }
 
     //
@@ -80,6 +80,8 @@ package object collection {
      * @note    It is possible that `f` is evaluated but the result is not used, if
      *          another thread has already associated a value with the respective key.
      *          In that case the result of the evaluation of `f` is thrown away.
+     * @migration With Java 8 the ConcurrentHashMap natively provides such functionality
+     *           and that functionality should be used.
      */
     def putIfAbsentAndGet[K, V](map: ConcurrentHashMap[K, V], key: K, f: ⇒ V): V = {
         val value = map.get(key)

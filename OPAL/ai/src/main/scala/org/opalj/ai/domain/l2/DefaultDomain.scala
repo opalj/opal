@@ -56,7 +56,7 @@ trait SharedValuesDomain[Source]
  * A basic Domain that is used to identify recursive calls.
  */
 class CoordinatingValuesDomain[Source](
-    val project: Project[Source]
+        val project: Project[Source]
 ) extends ValuesCoordinatingDomain with SharedValuesDomain[Source]
 
 /**
@@ -73,38 +73,38 @@ class CoordinatingValuesDomain[Source](
  * @author Michael Eichberg
  */
 class SharedDefaultDomain[Source](
-    val project:   Project[Source],
-    val classFile: ClassFile,
-    val method:    Method
+        val project:   Project[Source],
+        val classFile: ClassFile,
+        val method:    Method
 ) extends TheMethod
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with SpecialMethodsHandling
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with SharedValuesDomain[Source]
-        with l1.MaxArrayLengthRefinement // OPTIONAL
-        with l1.NullPropertyRefinement // OPTIONAL
-        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
-        with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions {
+    with ThrowAllPotentialExceptionsConfiguration
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    with SpecialMethodsHandling
+    // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
+    with SharedValuesDomain[Source]
+    with l1.MaxArrayLengthRefinement // OPTIONAL
+    with l1.NullPropertyRefinement // OPTIONAL
+    // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
+    with l1.LongValuesShiftOperators
+    with l1.ConcretePrimitiveValuesConversions {
 
     override def toString: String = super.toString()+"("+method.toJava(classFile)+")"
 
 }
 
 class DefaultDomain[Source](
-    project:                            Project[Source],
-    classFile:                          ClassFile,
-    method:                             Method,
-    val frequentEvaluationWarningLevel: Int,
-    val maxCallChainLength:             Int
+        project:                            Project[Source],
+        classFile:                          ClassFile,
+        method:                             Method,
+        val frequentEvaluationWarningLevel: Int,
+        val maxCallChainLength:             Int
 ) extends SharedDefaultDomain[Source](project, classFile, method)
-        with PerformInvocationsWithRecursionDetection
-        with RecordCFG
-        with TheMemoryLayout {
+    with PerformInvocationsWithRecursionDetection
+    with RecordCFG
+    with TheMemoryLayout {
     callingDomain ⇒
 
     type CalledMethodDomain = ChildDefaultDomain[Source]
@@ -150,14 +150,14 @@ class DefaultDomain[Source](
 }
 
 class ChildDefaultDomain[Source](
-    project:                Project[Source],
-    classFile:              ClassFile,
-    method:                 Method,
-    val callerDomain:       PerformInvocationsWithRecursionDetection { type CalledMethodDomain = ChildDefaultDomain[Source] },
-    val maxCallChainLength: Int
+        project:                Project[Source],
+        classFile:              ClassFile,
+        method:                 Method,
+        val callerDomain:       PerformInvocationsWithRecursionDetection { type CalledMethodDomain = ChildDefaultDomain[Source] },
+        val maxCallChainLength: Int
 ) extends SharedDefaultDomain[Source](project, classFile, method)
-        with ChildPerformInvocationsWithRecursionDetection
-        with DefaultRecordMethodCallResults { callingDomain ⇒
+    with ChildPerformInvocationsWithRecursionDetection
+    with DefaultRecordMethodCallResults { callingDomain ⇒
 
     type CalledMethodDomain = callerDomain.CalledMethodDomain
 

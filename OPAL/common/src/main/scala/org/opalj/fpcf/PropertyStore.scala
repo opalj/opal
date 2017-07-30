@@ -62,6 +62,7 @@ import org.opalj.log.OPALLogger.{warn ⇒ logWarn}
 import org.opalj.log.{LogContext, OPALLogger}
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.UID
+import org.opalj.util.AnyToAnyThis
 
 /**
  * The property store manages the execution of computations of properties related to specific
@@ -1041,10 +1042,12 @@ class PropertyStore private (
                         if (remainingEntities.nonEmpty) {
                             val nextEntity = remainingEntities.head
                             remainingEntities = remainingEntities.tail
-                            if (entitySelector.isDefinedAt(nextEntity))
-                                entitySelector(nextEntity)
-                            else
+                            val r: Any = entitySelector.applyOrElse(nextEntity, AnyToAnyThis)
+                            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                                r.asInstanceOf[E]
+                            } else {
                                 null
+                            }
                         } else
                             null
                     }
@@ -2311,8 +2314,8 @@ object PropertyStoreContext {
 //--------------------------------------------------------------------------------------------------
 
 private[fpcf] final class PropertyAndObservers(
-    final val p:  Property  = null,
-    final val os: Observers = null
+        final val p:  Property  = null,
+        final val os: Observers = null
 )
 
 private[fpcf] object PropertyAndObservers {
@@ -2330,10 +2333,7 @@ private[fpcf] object PropertyAndObservers {
 private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObservers, Property] {
 
     def isDefinedAt(pos: PropertyAndObservers): Boolean = {
-        (pos ne null) && {
-            val p = pos.p
-            (p ne null) && !p.isBeingComputed
-        }
+        (pos ne null) && { val p = pos.p; (p ne null) && !p.isBeingComputed }
     }
 
     def apply(pos: PropertyAndObservers): Property = pos.p
@@ -2346,9 +2346,9 @@ private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObserve
  * @param ps A mutable map of the entities properties; the key is the id of the property's kind.
  */
 private[fpcf] final class EntityProperties(
-    final val id: Int,
-    final val l:  ReentrantReadWriteLock = new ReentrantReadWriteLock,
-    final val ps: Properties             = ArrayMap(sizeHint = Math.max(3, PropertyKey.maxId))
+        final val id: Int,
+        final val l:  ReentrantReadWriteLock = new ReentrantReadWriteLock,
+        final val ps: Properties             = ArrayMap(sizeHint = Math.max(3, PropertyKey.maxId))
 ) extends UID
 
 private[fpcf] object PropertiesOfEntity {

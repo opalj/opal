@@ -153,12 +153,12 @@ class PackageLocation(
 }
 
 class ClassLocation(
-    description:   Option[String],
-    theProject:    SomeProject,
-    val classFile: ClassFile,
-    details:       Seq[IssueDetails] = List.empty
+        description:   Option[String],
+        theProject:    SomeProject,
+        val classFile: ClassFile,
+        details:       Seq[IssueDetails] = List.empty
 ) extends PackageLocation(description, theProject, classFile.thisType.packageName, details)
-        with ClassComprehension {
+    with ClassComprehension {
 
     override def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
         val locationAsInlineXHTML = super.locationAsInlineXHTML(basicInfoOnly) ++
@@ -198,13 +198,13 @@ class ClassLocation(
 }
 
 class MethodLocation(
-    description: Option[String],
-    theProject:  SomeProject,
-    classFile:   ClassFile,
-    val method:  Method,
-    details:     Seq[IssueDetails] = List.empty
+        description: Option[String],
+        theProject:  SomeProject,
+        classFile:   ClassFile,
+        val method:  Method,
+        details:     Seq[IssueDetails] = List.empty
 ) extends ClassLocation(description, theProject, classFile, details)
-        with MethodComprehension {
+    with MethodComprehension {
 
     val firstLineOfMethod: Option[String] = {
         method.body.flatMap(_.firstLineNumber.map(ln ⇒ (if (ln > 2) (ln - 2) else 0).toString))
@@ -241,14 +241,14 @@ class MethodLocation(
 }
 
 class InstructionLocation(
-    description: Option[String],
-    theProject:  SomeProject,
-    classFile:   ClassFile,
-    method:      Method,
-    val pc:      PC,
-    details:     Seq[IssueDetails] = List.empty
+        description: Option[String],
+        theProject:  SomeProject,
+        classFile:   ClassFile,
+        method:      Method,
+        val pc:      PC,
+        details:     Seq[IssueDetails] = List.empty
 ) extends MethodLocation(description, theProject, classFile, method, details)
-        with PCLineComprehension {
+    with PCLineComprehension {
 
     assert(method.body.isDefined)
 
@@ -281,9 +281,9 @@ class InstructionLocation(
 }
 
 class FieldLocation(
-    description: Option[String],
-    theProject:  SomeProject,
-    classFile:   ClassFile,
-    val field:   Field,
-    details:     Seq[IssueDetails] = List.empty
+        description: Option[String],
+        theProject:  SomeProject,
+        classFile:   ClassFile,
+        val field:   Field,
+        details:     Seq[IssueDetails] = List.empty
 ) extends ClassLocation(description, theProject, classFile, details)

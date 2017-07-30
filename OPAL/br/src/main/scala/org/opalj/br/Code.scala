@@ -73,15 +73,15 @@ import org.opalj.br.cfg.CFGFactory
  * @author Michael Eichberg
  */
 final class Code private (
-    val maxStack:          Int,
-    val maxLocals:         Int,
-    val instructions:      Array[Instruction],
-    val exceptionHandlers: ExceptionHandlers,
-    val attributes:        Attributes
+        val maxStack:          Int,
+        val maxLocals:         Int,
+        val instructions:      Array[Instruction],
+        val exceptionHandlers: ExceptionHandlers,
+        val attributes:        Attributes
 ) extends Attribute
-        with CommonAttributes
-        with InstructionsContainer
-        with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
+    with CommonAttributes
+    with InstructionsContainer
+    with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
@@ -129,7 +129,7 @@ final class Code private (
      * is used to process the code.
      */
     class FilteredCode( final val p: ((PC, Instruction)) ⇒ Boolean)
-            extends FilterMonadic[(PC, Instruction), Nothing] {
+        extends FilterMonadic[(PC, Instruction), Nothing] {
 
         def map[B, That](
             f: ((PC, Instruction)) ⇒ B

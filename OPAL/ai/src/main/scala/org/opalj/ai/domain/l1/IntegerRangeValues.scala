@@ -110,9 +110,9 @@ import org.opalj.br.CTIntType
  * @author David Becker
  */
 trait IntegerRangeValues
-        extends IntegerValuesDomain
-        with IntegerRangeValuesFactory
-        with ConcreteIntegerValues {
+    extends IntegerValuesDomain
+    with IntegerRangeValuesFactory
+    with ConcreteIntegerValues {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
@@ -143,8 +143,8 @@ trait IntegerRangeValues
      * Abstracts over all values with computational type `integer`.
      */
     sealed trait IntegerLikeValue
-            extends TypedValue[CTIntType]
-            with IsIntegerValue[IntegerLikeValue] {
+        extends TypedValue[CTIntType]
+        with IsIntegerValue[IntegerLikeValue] {
         this: DomainTypedValue[CTIntType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt

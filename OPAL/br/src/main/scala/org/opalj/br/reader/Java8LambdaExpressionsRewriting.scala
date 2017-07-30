@@ -104,7 +104,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      * Counter to ensure that the generated types have unique names.
      */
     private final val jreLikeLambdaTypeIdGenerator = new AtomicInteger(0)
-    private final val scalaLambdaDeserializeTypeIdGenerator = new AtomicInteger(0)
 
     /**
      * Generates a new, internal name for a lambda expression found in the given
@@ -120,22 +119,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
         val nextId = jreLikeLambdaTypeIdGenerator.getAndIncrement()
         s"Lambda$$${surroundingType.id.toHexString}:${nextId.toHexString}"
-    }
-
-    /**
-     * Generates a new, internal name for a scala lambda deserialize found in the given
-     * `surroundingType`.
-     *
-     * It follows the pattern: `LambdaDeserialize${surroundingType.id}:{uniqueId}`, where
-     * `uniqueId` is simply a run-on counter. For example: `LambdaDeserialize$$17:4` would refer to
-     * the fourth Lambda Deserialize INVOKEDYNAMIC parsed during the analysis of the project, which
-     * is defined in the [[ClassFile]] with the type id `17`.
-     *
-     * @param surroundingType the type in which the Lambda Deserialize expression has been found
-     */
-    private def newScalaLambdaDeserializeTypeName(surroundingType: ObjectType): String = {
-        val nextId = scalaLambdaDeserializeTypeIdGenerator.getAndIncrement()
-        s"LambdaDeserialize$$${surroundingType.id.toHexString}:${nextId.toHexString}"
     }
 
     override def deferredInvokedynamicResolution(
@@ -162,8 +145,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
             java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
-        } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
-            scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaSymbolExpression(invokedynamic)) {
             scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else {
@@ -217,86 +198,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         instructions(pc + 2) = newInvokestatic
 
         classFile
-    }
-
-    /**
-     * The scala compiler (and possibly other JVM bytecode compilers) add a
-     * `$deserializeLambda$`, which handles validation of lambda methods if the lambda is
-     * Serializable. This method is called when the serialized lambda is deserialized.
-     * For scala 2.12, it includes an INVOKEDYNAMIC instruction. This one has to be replaced with
-     * calls to `LambdaDeserialize::deserializeLambda`, which is what the INVOKEDYNAMIC instruction
-     * refers to, see [https://github.com/scala/scala/blob/v2.12.2/src/library/scala/runtime/LambdaDeserialize.java#L29].
-     * This is done to reduce the size of `$deserializeLambda$`.
-     *
-     * @note SerializedLambda has a readResolve method that looks for a (possibly private) static
-     * method called $deserializeLambda$(SerializedLambda) in the capturing class, invokes that
-     * with itself as the first argument, and returns the result. Lambda classes implementing
-     * $deserializeLambda$ are responsible for validating that the properties of the
-     * SerializedLambda are consistent with a lambda actually captured by that class.
-     * See: [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/SerializedLambda.html]
-     *
-     * More information about lambda deserialization:
-     *  - [https://zeroturnaround.com/rebellabs/java-8-revealed-lambdas-default-methods-and-bulk-data-operations/4/]
-     *  - [http://mail.openjdk.java.net/pipermail/mlvm-dev/2016-August/006699.html]
-     *  - [https://github.com/scala/scala/blob/v2.12.2/src/library/scala/runtime/LambdaDeserialize.java]
-     *
-     * @param classFile The classfile to parse
-     * @param instructions The instructions of the method we are currently parsing
-     * @param pc The program counter of the current instuction
-     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
-     * @return A classfile which has the INVOKEDYNAMIC instruction replaced
-     */
-    private def scalaLambdaDeserializeResolution(
-        classFile:     ClassFile,
-        instructions:  Array[Instruction],
-        pc:            PC,
-        invokedynamic: INVOKEDYNAMIC
-    ): ClassFile = {
-        val INVOKEDYNAMIC(
-            bootstrapMethod, _, _ // functionalInterfaceMethodName, factoryDescriptor
-            ) = invokedynamic
-        val bootstrapArguments = bootstrapMethod.arguments
-
-        val superInterfaceTypes = UIDSet(LambdaMetafactoryDescriptor.returnType.asObjectType)
-        val typeDeclaration = TypeDeclaration(
-            // ObjectType(newLambdaTypeName(targetMethodOwner)),
-            ObjectType(newScalaLambdaDeserializeTypeName(classFile.thisType)),
-            isInterfaceType = false,
-            Some(ObjectType.Object), // we basically create a "CallSiteObject"
-            superInterfaceTypes
-        )
-
-        val proxy: ClassFile = ClassFileFactory.DeserializeLambdaProxy(
-            typeDeclaration,
-            bootstrapArguments
-        )
-
-        val factoryMethod = proxy.findMethod("<init>").head
-
-        val newInvokestatic = INVOKESTATIC(
-            proxy.thisType,
-            isInterface = false, // the created proxy class is always a concrete class
-            factoryMethod.name,
-            // the invokedynamic's methodDescriptor (factoryDescriptor) determines
-            // the parameters that are actually pushed and popped from/to the stack
-            MethodDescriptor.withNoArgs(ObjectType.CallSite)
-        )
-
-        if (logJava8LambdaExpressionsRewrites) {
-            info(
-                "load-time transformation",
-                s"rewriting Java 8 like invokedynamic: $invokedynamic ⇒ $newInvokestatic"
-            )
-        }
-
-        instructions(pc) = newInvokestatic
-        // since invokestatic is two bytes shorter than invokedynamic, we need to fill
-        // the two-byte gap following the invokestatic with NOPs
-        instructions(pc + 3) = NOP
-        instructions(pc + 4) = NOP
-
-        val reason = Some((classFile, instructions, pc, invokedynamic, newInvokestatic))
-        storeProxy(classFile, proxy, reason)
     }
 
     private def java8LambdaResolution(
@@ -551,17 +452,6 @@ object Java8LambdaExpressionsRewriting {
                 } else {
                     name == "altMetafactory" && descriptor == LambdaAltMetafactoryDescriptor
                 }
-            case _ ⇒ false
-        }
-    }
-
-    def isScalaLambdaDeserializeExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
-        import MethodDescriptor.ScalaLambdaDeserializeDescriptor
-        import ObjectType.ScalaLambdaDeserialize
-        invokedynamic.bootstrapMethod.handle match {
-            case InvokeStaticMethodHandle(
-                ScalaLambdaDeserialize, false, "bootstrap", ScalaLambdaDeserializeDescriptor
-                ) ⇒ true
             case _ ⇒ false
         }
     }

@@ -147,7 +147,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_NameAndType_info
-            extends ClassFileElement[CONSTANT_NameAndType_info] {
+        extends ClassFileElement[CONSTANT_NameAndType_info] {
         def write(
             ci: CONSTANT_NameAndType_info
         )(
@@ -164,7 +164,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Utf8_info
-            extends ClassFileElement[CONSTANT_Utf8_info] {
+        extends ClassFileElement[CONSTANT_Utf8_info] {
         def write(
             ci: CONSTANT_Utf8_info
         )(
@@ -179,7 +179,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_MethodHandle_info
-            extends ClassFileElement[CONSTANT_MethodHandle_info] {
+        extends ClassFileElement[CONSTANT_MethodHandle_info] {
         def write(
             ci: CONSTANT_MethodHandle_info
         )(
@@ -195,7 +195,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_MethodType_info
-            extends ClassFileElement[CONSTANT_MethodType_info] {
+        extends ClassFileElement[CONSTANT_MethodType_info] {
         def write(
             ci: CONSTANT_MethodType_info
         )(
@@ -210,7 +210,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_InvokeDynamic_info
-            extends ClassFileElement[CONSTANT_InvokeDynamic_info] {
+        extends ClassFileElement[CONSTANT_InvokeDynamic_info] {
         def write(
             ci: CONSTANT_InvokeDynamic_info
         )(

@@ -42,11 +42,11 @@ import org.opalj.br.VirtualSourceElement
  * @author Marco Torsello
  */
 case class MethodMatcher(
-    classLevelMatcher:    ClassLevelMatcher              = AllClasses,
-    annotationsPredicate: AnnotationsPredicate           = AnyAnnotations,
-    methodPredicate:      SourceElementPredicate[Method] = AnyMethod
+        classLevelMatcher:    ClassLevelMatcher              = AllClasses,
+        annotationsPredicate: AnnotationsPredicate           = AnyAnnotations,
+        methodPredicate:      SourceElementPredicate[Method] = AnyMethod
 )
-        extends SourceElementsMatcher {
+    extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         classLevelMatcher.doesMatch(classFile)

@@ -305,17 +305,17 @@ class ProjectTest extends FlatSpec with Matchers {
             }
             assert(
                 missedMethods.isEmpty, {
-                s"; missed ${missedMethods.size} methods: "+
-                    missedMethods.map { mm ⇒
-                        val (c, m) = mm
-                        val belongsToProject = project.isProjectType(c.thisType)
-                        m.toJava(
-                            c,
-                            m.body.get.instructions.length.toString+
-                                "; belongs to project = "+belongsToProject
-                        )
-                    }.mkString("\n\t", "\n\t", "\n")
-            }
+                    s"; missed ${missedMethods.size} methods: "+
+                        missedMethods.map { mm ⇒
+                            val (c, m) = mm
+                            val belongsToProject = project.isProjectType(c.thisType)
+                            m.toJava(
+                                c,
+                                m.body.get.instructions.length.toString+
+                                    "; belongs to project = "+belongsToProject
+                            )
+                        }.mkString("\n\t", "\n\t", "\n")
+                }
             )
             val methodsCount = methods.size
             info(s"parForeachMethodWithBody iterated over $methodsCount methods")

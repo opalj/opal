@@ -56,38 +56,38 @@ import org.opalj.br.MethodSignature
  * @author Michael Eichberg
  */
 class DefaultDomain(
-    val project:         SomeProject,
-    val classFile:       ClassFile,
-    override val method: Method
+        val project:         SomeProject,
+        val classFile:       ClassFile,
+        override val method: Method
 ) extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        //with domain.l0.TypeLevelFieldAccessInstructions
-        with RefinedTypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with RefinedTypeLevelInvokeInstructions
-        //with domain.l1.DefaultReferenceValuesBinding
-        with domain.l1.DefaultClassValuesBinding
-        //with domain.l1.DefaultStringValuesBinding
-        with domain.l1.NullPropertyRefinement
-        with domain.l1.DefaultIntegerRangeValues
-        with domain.l1.MaxArrayLengthRefinement
-        //[CURRENTLY ONLY A WASTE OF RESOURCES] with domain.l1.ConstraintsBetweenIntegerValues
-        // with domain.l1.DefaultIntegerSetValues
-        with domain.l1.DefaultLongSetValues
-        with domain.l1.LongSetValuesShiftOperators
-        with domain.l1.ConcretePrimitiveValuesConversions
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
-        with domain.TheProject
-        with domain.TheMethod
-        // the following two are required to detect instructions that always throw
-        // an exception (such as div by zero, a failing checkcast, a method call that
-        // always fails etc.)
-        with domain.RecordCFG
-        with domain.l1.RecordAllThrownExceptions {
+    with domain.DefaultDomainValueBinding
+    with domain.ThrowAllPotentialExceptionsConfiguration
+    with domain.l0.DefaultTypeLevelFloatValues
+    with domain.l0.DefaultTypeLevelDoubleValues
+    //with domain.l0.TypeLevelFieldAccessInstructions
+    with RefinedTypeLevelFieldAccessInstructions
+    with domain.l0.TypeLevelInvokeInstructions
+    with RefinedTypeLevelInvokeInstructions
+    //with domain.l1.DefaultReferenceValuesBinding
+    with domain.l1.DefaultClassValuesBinding
+    //with domain.l1.DefaultStringValuesBinding
+    with domain.l1.NullPropertyRefinement
+    with domain.l1.DefaultIntegerRangeValues
+    with domain.l1.MaxArrayLengthRefinement
+    //[CURRENTLY ONLY A WASTE OF RESOURCES] with domain.l1.ConstraintsBetweenIntegerValues
+    // with domain.l1.DefaultIntegerSetValues
+    with domain.l1.DefaultLongSetValues
+    with domain.l1.LongSetValuesShiftOperators
+    with domain.l1.ConcretePrimitiveValuesConversions
+    with domain.DefaultHandlingOfMethodResults
+    with domain.IgnoreSynchronization
+    with domain.TheProject
+    with domain.TheMethod
+    // the following two are required to detect instructions that always throw
+    // an exception (such as div by zero, a failing checkcast, a method call that
+    // always fails etc.)
+    with domain.RecordCFG
+    with domain.l1.RecordAllThrownExceptions {
 
     override val maxCardinalityOfIntegerRanges: Long = 16L
 

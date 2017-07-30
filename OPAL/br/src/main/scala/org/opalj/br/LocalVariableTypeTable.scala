@@ -59,9 +59,9 @@ object LocalVariableTypeTable {
 }
 
 case class LocalVariableType(
-    startPC:   Int,
-    length:    Int,
-    name:      String,
-    signature: FieldTypeSignature,
-    index:     Int
+        startPC:   Int,
+        length:    Int,
+        name:      String,
+        signature: FieldTypeSignature,
+        index:     Int
 )

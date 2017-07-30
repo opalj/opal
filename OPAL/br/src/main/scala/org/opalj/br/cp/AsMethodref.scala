@@ -50,7 +50,7 @@ trait AsMethodref extends Constant_Pool_Entry {
     private[this] var methodref: (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) = null
     override def asMethodref(cp: Constant_Pool): (ReferenceType, Boolean, String, MethodDescriptor) = {
         // The following solution is sufficiently thread safe; i.e.,
-        // it may happen that two or more methodref instances  
+        // it may happen that two or more methodref instances
         // are created, but these instances are guaranteed to
         // be equal (`==`).
 

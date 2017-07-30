@@ -43,8 +43,8 @@ import scala.math.Ordered
  * @author Michael Eichberg
  */
 sealed abstract class MethodDescriptor
-        extends ConstantValue[MethodDescriptor]
-        with Ordered[MethodDescriptor] {
+    extends ConstantValue[MethodDescriptor]
+    with Ordered[MethodDescriptor] {
 
     def parameterTypes: IndexedSeq[FieldType]
 

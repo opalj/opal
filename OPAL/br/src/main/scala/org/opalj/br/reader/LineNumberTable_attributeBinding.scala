@@ -40,9 +40,9 @@ import bi.reader.LineNumberTable_attributeReader
  * @author Michael Eichberg
  */
 trait UnpackedLineNumberTable_attributeBinding
-        extends LineNumberTable_attributeReader
-        with ConstantPoolBinding
-        with AttributeBinding {
+    extends LineNumberTable_attributeReader
+    with ConstantPoolBinding
+    with AttributeBinding {
 
     type LineNumberTableEntry = br.LineNumber
     val LineNumberTableEntryManifest: ClassTag[LineNumber] = implicitly
@@ -72,9 +72,9 @@ import bi.reader.CompactLineNumberTable_attributeReader
  * @author Michael Eichberg
  */
 trait CompactLineNumberTable_attributeBinding
-        extends CompactLineNumberTable_attributeReader
-        with ConstantPoolBinding
-        with AttributeBinding {
+    extends CompactLineNumberTable_attributeReader
+    with ConstantPoolBinding
+    with AttributeBinding {
 
     type LineNumberTable_attribute = br.CompactLineNumberTable
 

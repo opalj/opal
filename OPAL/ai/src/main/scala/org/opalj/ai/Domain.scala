@@ -96,19 +96,19 @@ import org.opalj.br.ConstantString
  * @author Dennis Siebert
  */
 trait Domain
-        extends CoreDomainFunctionality
-        with IntegerValuesDomain
-        with LongValuesDomain
-        with FloatValuesDomain
-        with DoubleValuesDomain
-        with ReferenceValuesDomain
-        with FieldAccessesDomain
-        with MethodCallsDomain
-        with MonitorInstructionsDomain
-        with ReturnInstructionsDomain
-        with PrimitiveValuesConversionsDomain
-        with TypedValuesFactory
-        with Configuration {
+    extends CoreDomainFunctionality
+    with IntegerValuesDomain
+    with LongValuesDomain
+    with FloatValuesDomain
+    with DoubleValuesDomain
+    with ReferenceValuesDomain
+    with FieldAccessesDomain
+    with MethodCallsDomain
+    with MonitorInstructionsDomain
+    with ReturnInstructionsDomain
+    with PrimitiveValuesConversionsDomain
+    with TypedValuesFactory
+    with Configuration {
 
     // -----------------------------------------------------------------------------------
     //

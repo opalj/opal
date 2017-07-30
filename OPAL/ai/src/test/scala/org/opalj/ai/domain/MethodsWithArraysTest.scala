@@ -51,22 +51,22 @@ class MethodsWithArraysTest extends FlatSpec with Matchers {
     import MethodsWithArraysTest._
 
     class TestDomain
-            extends Domain
-            with DefaultDomainValueBinding
-            with DefaultReferenceValuesBinding
-            with DefaultTypeLevelIntegerValues
-            with DefaultTypeLevelLongValues
-            with DefaultTypeLevelFloatValues
-            with DefaultTypeLevelDoubleValues
-            with TypeLevelPrimitiveValuesConversions
-            with TypeLevelLongValuesShiftOperators
-            with TypeLevelFieldAccessInstructions
-            with SimpleTypeLevelInvokeInstructions
-            with ThrowAllPotentialExceptionsConfiguration
-            with IgnoreSynchronization
-            with DefaultHandlingOfMethodResults
-            with RecordLastReturnedValues
-            with PredefinedClassHierarchy {
+        extends Domain
+        with DefaultDomainValueBinding
+        with DefaultReferenceValuesBinding
+        with DefaultTypeLevelIntegerValues
+        with DefaultTypeLevelLongValues
+        with DefaultTypeLevelFloatValues
+        with DefaultTypeLevelDoubleValues
+        with TypeLevelPrimitiveValuesConversions
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelFieldAccessInstructions
+        with SimpleTypeLevelInvokeInstructions
+        with ThrowAllPotentialExceptionsConfiguration
+        with IgnoreSynchronization
+        with DefaultHandlingOfMethodResults
+        with RecordLastReturnedValues
+        with PredefinedClassHierarchy {
 
         type Id = String
         def id = "MethodsWithArraysTestDomain"

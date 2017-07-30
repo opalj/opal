@@ -35,6 +35,6 @@ package br
  * @author Michael Eichberg
  */
 case class MethodParameter(
-    name:         Option[String],
-    access_flags: Int
+        name:         Option[String],
+        access_flags: Int
 )
