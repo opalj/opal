@@ -197,14 +197,13 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         annotation: Annotation,
         predicate:  Option[IndexedSeq[String]] ⇒ Boolean
     ): Seq[Annotation] = {
-        if(annotation.annotationType == propertyAnnotation)
+        if (annotation.annotationType == propertyAnnotation)
             List(annotation) // Single flat annotation
-        else  // Container annotation
+        else // Container annotation
             annotation.elementValuePairs.collectFirst {
                 case ElementValuePair("value", ArrayValue(properties: IndexedSeq[_])) ⇒
                     properties collect {
-                        case AnnotationValue(annotation)
-                            if predicate(algorithmExtraction(annotation)) ⇒ annotation
+                        case AnnotationValue(annotation) if predicate(algorithmExtraction(annotation)) ⇒ annotation
                     }
             } getOrElse List.empty[Annotation]
     }
