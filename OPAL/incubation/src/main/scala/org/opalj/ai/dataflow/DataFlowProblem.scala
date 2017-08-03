@@ -111,19 +111,19 @@ trait DataFlowProblem[Source, P] {
     }
 
     case class Invoke(
-        declaringClassType: ReferenceType,
-        name:               String,
-        descriptor:         MethodDescriptor,
-        context:            Method,
-        caller:             TaintInformation,
-        receiver:           TaintInformation,
-        parameters:         IndexedSeq[TaintInformation]
+            declaringClassType: ReferenceType,
+            name:               String,
+            descriptor:         MethodDescriptor,
+            context:            Method,
+            caller:             TaintInformation,
+            receiver:           TaintInformation,
+            parameters:         IndexedSeq[TaintInformation]
     )
 
     case class CallResult(
-        receiver:   TaintInformation,
-        parameters: IndexedSeq[TaintInformation],
-        result:     (DomainValue) ⇒ TaintInformation
+            receiver:   TaintInformation,
+            parameters: IndexedSeq[TaintInformation],
+            result:     (DomainValue) ⇒ TaintInformation
     )
 
     type OnCallTaintProcessor = PartialFunction[Invoke, CallResult]
@@ -135,13 +135,13 @@ trait DataFlowProblem[Source, P] {
     }
 
     case class FieldWrite(
-        declaringClassType: ReferenceType,
-        name:               String,
-        fieldType:          Type,
-        context:            Method,
-        caller:             TaintInformation,
-        value:              TaintInformation,
-        receiver:           TaintInformation
+            declaringClassType: ReferenceType,
+            name:               String,
+            fieldType:          Type,
+            context:            Method,
+            caller:             TaintInformation,
+            value:              TaintInformation,
+            receiver:           TaintInformation
     )
 
     type OnWriteTaintProcessor = PartialFunction[FieldWrite, (DomainValue) ⇒ TaintInformation /*about the receiver*/ ]

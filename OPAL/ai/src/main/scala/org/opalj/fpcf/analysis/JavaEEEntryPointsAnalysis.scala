@@ -42,7 +42,7 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.ai.analyses.cg.CallGraphFactory
 
 class JavaEEEntryPointsAnalysis private[analysis] (
-    val project: SomeProject
+        val project: SomeProject
 ) extends {
     private[this] final val SerializableType = ObjectType.Serializable
     private[this] final val InjectedClasses = project.get(InjectedClassesInformationKey)

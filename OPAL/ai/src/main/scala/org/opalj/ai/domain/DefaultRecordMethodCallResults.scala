@@ -38,9 +38,9 @@ package domain
  * @author Michael Eichberg
  */
 trait DefaultRecordMethodCallResults
-        extends RecordMethodCallResults
-        with RecordLastReturnedValues
-        with RecordAllThrownExceptions {
+    extends RecordMethodCallResults
+    with RecordLastReturnedValues
+    with RecordAllThrownExceptions {
     this: Domain with TheClassHierarchy ⇒
 
 }

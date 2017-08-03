@@ -71,7 +71,7 @@ class TypesSetTest extends FlatSpec with Matchers {
     val AnUnknownType = ObjectType("myTest/AnUnknownType")
 
     //
-    // Verify 
+    // Verify
     //
 
     behavior of "the TypesSet"

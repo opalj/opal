@@ -83,6 +83,6 @@ case class UnpackedLineNumberTable(lineNumbers: LineNumbers) extends LineNumberT
  * @author Michael Eichberg
  */
 case class LineNumber(
-    startPC:    Int,
-    lineNumber: Int
+        startPC:    Int,
+        lineNumber: Int
 )

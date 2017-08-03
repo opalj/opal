@@ -35,7 +35,7 @@ import scala.language.existentials
 import scala.collection.JavaConverters._
 
 import org.scalatest.FunSuite
-import java.lang.{Boolean => JBoolean}
+import java.lang.{Boolean ⇒ JBoolean}
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import com.typesafe.config.Config
@@ -65,11 +65,11 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
 
     protected def proxyFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
         val factoryCalls = new ConcurrentLinkedQueue[INVOKESTATIC]()
-        val exceptions = project.parForeachMethodWithBody(){ mi ⇒
+        val exceptions = project.parForeachMethodWithBody() { mi ⇒
             factoryCalls.addAll(
                 (mi.method.body.get.collectInstructions {
-                case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i
-            }).asJava
+                    case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i
+                }).asJava
             )
             /*
             for {
@@ -80,7 +80,7 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
             }
             */
         }
-        if(exceptions.nonEmpty) throw new UnknownError(exceptions.mkString("\n"))
+        if (exceptions.nonEmpty) throw new UnknownError(exceptions.mkString("\n"))
         info(s"found ${factoryCalls.size} lambda proxy factor ymethod calls")
         factoryCalls.asScala
 

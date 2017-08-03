@@ -337,7 +337,8 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                             "entity.annotation.Column",
                             "name" → StringValue("id"), "nullable" → BooleanValue(false)
                         )
-                    ))
+                    )
+                )
         }
 
         specification.analyze() should be(empty)
@@ -360,7 +361,8 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                             "entity.annotation.Column",
                             "name" → StringValue("id"), "nullable" → BooleanValue(true)
                         )
-                    ))
+                    )
+                )
         }
 
         specification.analyze() should not be (empty)

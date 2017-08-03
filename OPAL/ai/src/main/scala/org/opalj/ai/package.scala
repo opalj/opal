@@ -32,6 +32,7 @@ import scala.language.existentials
 
 import scala.collection.AbstractIterator
 
+import org.opalj.util.AnyToAnyThis
 import org.opalj.collection.immutable.Chain
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
@@ -515,21 +516,22 @@ package object ai {
         f: PartialFunction[(PC, Instruction, domain.Operands), B]
     ): Seq[B] = {
         val instructions = code.instructions
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc = 0
-        var result: List[B] = List.empty
+        val result = List.newBuilder[B]
         while (pc < max_pc) {
             val instruction = instructions(pc)
             val operands = operandsArray(pc)
             if (operands ne null) {
                 val params = (pc, instruction, operands)
-                if (f.isDefinedAt(params)) {
-                    result = f(params) :: result
+                val r: Any = f.applyOrElse(params, AnyToAnyThis)
+                if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                    result += r.asInstanceOf[B]
                 }
             }
             pc = instruction.indexOfNextInstruction(pc)(code)
         }
-        result.reverse
+        result.result()
     }
 
     def foreachPCWithOperands[U](

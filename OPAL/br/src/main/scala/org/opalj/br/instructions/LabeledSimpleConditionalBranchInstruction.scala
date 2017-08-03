@@ -37,8 +37,8 @@ package instructions
  * @author Michael Eichberg
  */
 trait LabeledSimpleConditionalBranchInstruction
-        extends LabeledSingleJumpTargetInstruction
-        with SimpleConditionalBranchInstructionLike {
+    extends LabeledSingleJumpTargetInstruction
+    with SimpleConditionalBranchInstructionLike {
 
     def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): SimpleConditionalBranchInstruction
 

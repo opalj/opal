@@ -150,7 +150,8 @@ object InstructionStatistics extends AnalysisExecutor {
                         "$$dim": $normalizedInstructions,
                         "$$color": "$color"
                     }"""+children,
-                    allInstructions)
+                    allInstructions
+                )
             }
 
             val theProjectStatistics = {

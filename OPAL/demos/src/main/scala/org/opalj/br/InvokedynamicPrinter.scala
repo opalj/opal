@@ -83,13 +83,13 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
             val BasicMethodInfo(classFile, method @ MethodWithBody(body)) = methodInfo
             invokedynamics.addAll(
                 body.collectWithIndex {
-                case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
-                    classFile.thisType.toJava+" {\n  "+method.toJava()+"{ "+pc+": \n"+
-                        s"    ${bootstrap.toJava}\n"+
-                        bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +
-                        s"    Calling:   ${descriptor.toJava(name)}\n"+
-                        "} }\n"
-            }.toList.asJava
+                    case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
+                        classFile.thisType.toJava+" {\n  "+method.toJava()+"{ "+pc+": \n"+
+                            s"    ${bootstrap.toJava}\n"+
+                            bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +
+                            s"    Calling:   ${descriptor.toJava(name)}\n"+
+                            "} }\n"
+                }.toList.asJava
             )
         }
         val result = invokedynamics.asScala.toSeq.sorted

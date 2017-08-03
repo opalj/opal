@@ -914,7 +914,7 @@ package object ba { ba ⇒
                         parameters.map { p ⇒
                             da.MethodParameter(
                                 if (p.name.isDefined) CPEUtf8(p.name.get) else 0,
-                                p.access_flags
+                                p.accessFlags
                             )
                         }
                     )

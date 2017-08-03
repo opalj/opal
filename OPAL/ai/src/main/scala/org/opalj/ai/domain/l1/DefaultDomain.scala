@@ -40,34 +40,34 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultConfigurableDomain[I, Source](
-    val id:        I,
-    val project:   Project[Source],
-    val classFile: ClassFile,
-    val method:    Method
+        val id:        I,
+        val project:   Project[Source],
+        val classFile: ClassFile,
+        val method:    Method
 ) extends CorrelationalDomain
-        with DomainId
-        with TheProject
-        with TheMethod
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelHandlingOfMethodResults
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with SpecialMethodsHandling
-        // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
-        // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding
-        with l1.DefaultClassValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with l1.MaxArrayLengthRefinement // OPTIONAL
-        with l1.NullPropertyRefinement // OPTIONAL
-        with l1.DefaultIntegerRangeValues
-        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
-        with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions {
+    with DomainId
+    with TheProject
+    with TheMethod
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with IgnoreSynchronization
+    with l0.DefaultTypeLevelHandlingOfMethodResults
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    with SpecialMethodsHandling
+    // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
+    // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding
+    with l1.DefaultClassValuesBinding
+    // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
+    with l1.MaxArrayLengthRefinement // OPTIONAL
+    with l1.NullPropertyRefinement // OPTIONAL
+    with l1.DefaultIntegerRangeValues
+    // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
+    with l1.DefaultLongValues
+    with l1.LongValuesShiftOperators
+    with l1.ConcretePrimitiveValuesConversions {
 
     type Id = I
 
@@ -78,9 +78,9 @@ class DefaultConfigurableDomain[I, Source](
  * which uses the method as the id.
  */
 class DefaultDomain[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
+        project:   Project[Source],
+        classFile: ClassFile,
+        method:    Method
 ) extends DefaultConfigurableDomain[String, Source](
     method.toJava(classFile),
     project, classFile, method
@@ -91,9 +91,9 @@ class DefaultDomain[Source](
  * which also records the abstract-interpretation time control flow graph.
  */
 class DefaultDomainWithCFG[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
+        project:   Project[Source],
+        classFile: ClassFile,
+        method:    Method
 ) extends DefaultDomain[Source](project, classFile, method) with RecordCFG
 
 /**

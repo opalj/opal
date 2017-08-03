@@ -296,9 +296,9 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                         name,
                         SignaturePolymorphicMethodDescriptor
                     ) match {
-                        case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
-                        case r                                                 ⇒ r
-                    }
+                            case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
+                            case r                                                 ⇒ r
+                        }
                 } else {
                     Result(r)
                 }

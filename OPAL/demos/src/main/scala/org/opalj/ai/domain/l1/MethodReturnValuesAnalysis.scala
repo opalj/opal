@@ -59,26 +59,26 @@ import org.opalj.util.PerformanceEvaluation.time
 object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
-        override val project: Project[java.net.URL],
-        val ai:               InterruptableAI[_],
-        val method:           Method
+            override val project: Project[java.net.URL],
+            val ai:               InterruptableAI[_],
+            val method:           Method
     ) extends CorrelationalDomain
-            with domain.DefaultDomainValueBinding
-            with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelIntegerValues
-            with domain.l0.DefaultTypeLevelLongValues
-            with domain.l0.TypeLevelPrimitiveValuesConversions
-            with domain.l0.TypeLevelLongValuesShiftOperators
-            with domain.l0.DefaultTypeLevelFloatValues
-            with domain.l0.DefaultTypeLevelDoubleValues
-            with domain.l0.TypeLevelFieldAccessInstructions
-            with domain.l0.TypeLevelInvokeInstructions
-            with domain.l1.DefaultReferenceValuesBinding
-            with domain.DefaultHandlingOfMethodResults
-            with domain.IgnoreSynchronization
-            with domain.TheProject
-            with domain.TheMethod
-            with domain.RecordReturnedValuesInfrastructure {
+        with domain.DefaultDomainValueBinding
+        with domain.ThrowAllPotentialExceptionsConfiguration
+        with domain.l0.DefaultTypeLevelIntegerValues
+        with domain.l0.DefaultTypeLevelLongValues
+        with domain.l0.TypeLevelPrimitiveValuesConversions
+        with domain.l0.TypeLevelLongValuesShiftOperators
+        with domain.l0.DefaultTypeLevelFloatValues
+        with domain.l0.DefaultTypeLevelDoubleValues
+        with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.TypeLevelInvokeInstructions
+        with domain.l1.DefaultReferenceValuesBinding
+        with domain.DefaultHandlingOfMethodResults
+        with domain.IgnoreSynchronization
+        with domain.TheProject
+        with domain.TheMethod
+        with domain.RecordReturnedValuesInfrastructure {
 
         type ReturnedValue = DomainValue
 

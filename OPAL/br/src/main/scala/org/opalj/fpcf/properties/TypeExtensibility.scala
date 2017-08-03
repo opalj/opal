@@ -70,8 +70,8 @@ sealed trait TypeExtensibilityPropertyMetaInformation extends PropertyMetaInform
 }
 
 sealed abstract class TypeExtensibility
-        extends Property
-        with TypeExtensibilityPropertyMetaInformation {
+    extends Property
+    with TypeExtensibilityPropertyMetaInformation {
 
     def key: PropertyKey[TypeExtensibility] = TypeExtensibility.key
 }

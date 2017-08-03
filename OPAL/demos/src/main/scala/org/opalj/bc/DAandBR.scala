@@ -193,15 +193,15 @@ object DAandBR extends App {
                         max_stack = 1,
                         max_locals = 1,
                         code =
-                        new Code(
-                            Array[Byte](
-                                42, // aload_0
-                                (0xff & 183).toByte, // invokespecial
-                                0, //                    -> Methodref
-                                8, //                       #8
-                                (0xff & 177).toByte
+                            new Code(
+                                Array[Byte](
+                                    42, // aload_0
+                                    (0xff & 183).toByte, // invokespecial
+                                    0, //                    -> Methodref
+                                    8, //                       #8
+                                    (0xff & 177).toByte
+                                )
                             )
-                        )
                     )
                 )
             ),
@@ -215,19 +215,19 @@ object DAandBR extends App {
                         max_stack = 2,
                         max_locals = 1,
                         code =
-                        new Code(
-                            Array[Byte](
-                                (0xff & 178).toByte, // getstatic
-                                0,
-                                16,
-                                18, // ldc
-                                22,
-                                (0xff & 182).toByte, // invokevirtual
-                                0,
-                                24,
-                                (0xff & 177).toByte // return
+                            new Code(
+                                Array[Byte](
+                                    (0xff & 178).toByte, // getstatic
+                                    0,
+                                    16,
+                                    18, // ldc
+                                    22,
+                                    (0xff & 182).toByte, // invokevirtual
+                                    0,
+                                    24,
+                                    (0xff & 177).toByte // return
+                                )
                             )
-                        )
                     )
                 )
             )

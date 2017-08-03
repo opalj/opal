@@ -50,23 +50,23 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
     import MethodsWithExceptionsTest._
 
     class DefaultRecordingDomain(val id: String) extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with RecordLastReturnedValues
-            with RecordAllThrownExceptions
-            with RecordVoidReturns
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultReferenceValuesBinding
-            with l1.DefaultIntegerRangeValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators {
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with RecordLastReturnedValues
+        with RecordAllThrownExceptions
+        with RecordVoidReturns
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultReferenceValuesBinding
+        with l1.DefaultIntegerRangeValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators {
 
         override def maxCardinalityOfIntegerRanges: Long = 16L
 

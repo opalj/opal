@@ -79,9 +79,9 @@ import org.opalj.collection.mutable.IntArrayStack
  * @author Marc Eichler
  */
 trait RecordCFG
-        extends CoreDomainFunctionality
-        with CustomInitialization
-        with ai.ReturnInstructionsDomain {
+    extends CoreDomainFunctionality
+    with CustomInitialization
+    with ai.ReturnInstructionsDomain {
     cfgDomain: ValuesDomain with TheCode ⇒
 
     private[this] var regularSuccessors: Array[IntSet] = _ // the IntSets are either null or non-empty
@@ -289,6 +289,10 @@ trait RecordCFG
                 }
         }
         false
+    }
+
+    def hasNoSuccessor(pc: PC): Boolean = {
+        (regularSuccessors(pc) eq null) && (exceptionHandlerSuccessors eq null)
     }
 
     /**
