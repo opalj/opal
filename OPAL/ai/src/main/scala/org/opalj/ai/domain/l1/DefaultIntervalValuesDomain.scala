@@ -41,36 +41,36 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultConfigurableIntervalValuesDomain[I, Source](
-    val id:        I,
-    val project:   Project[Source],
-    val classFile: ClassFile,
-    val method:    Method
+        val id:        I,
+        val project:   Project[Source],
+        val classFile: ClassFile,
+        val method:    Method
 ) extends CorrelationalDomain
-        with TheProject
-        with TheMethod
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l0.DefaultReferenceValuesBinding
-        with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
-        with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions {
+    with TheProject
+    with TheMethod
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    with l0.DefaultReferenceValuesBinding
+    with l1.DefaultIntegerRangeValues
+    with l1.ConstraintsBetweenIntegerValues
+    with l1.DefaultLongValues
+    with l1.LongValuesShiftOperators
+    with l1.ConcretePrimitiveValuesConversions {
 
     type Id = I
 
 }
 
 class DefaultIntervalValuesDomain[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
+        project:   Project[Source],
+        classFile: ClassFile,
+        method:    Method
 ) extends DefaultConfigurableIntervalValuesDomain[String, Source](
     method.toJava(classFile),
     project,

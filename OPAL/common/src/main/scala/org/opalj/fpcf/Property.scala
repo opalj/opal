@@ -142,8 +142,8 @@ private[fpcf] object PropertyIsBeingComputed {
  * computed property.
  */
 private[fpcf] final class PropertyIsDirectlyComputed
-        extends CountDownLatch(1)
-        with PropertyIsBeingComputed {
+    extends CountDownLatch(1)
+    with PropertyIsBeingComputed {
 
     type Self = PropertyIsDirectlyComputed
 

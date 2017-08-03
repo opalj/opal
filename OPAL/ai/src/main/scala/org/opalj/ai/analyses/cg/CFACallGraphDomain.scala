@@ -62,40 +62,40 @@ import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolu
  * @author Michael Eichberg
  */
 class CFACallGraphDomain[Source](
-    val k:                            Int, // the maximum length of the call chain
-    val project:                      Project[Source],
-    val fieldValueInformation:        FieldValueInformation,
-    val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache:                        CallGraphCache[MethodSignature, Set[Method]],
-    val classFile:                    ClassFile,
-    val method:                       Method,
-    val calledMethods:                Set[Method]                                  = Set.empty
+        val k:                            Int, // the maximum length of the call chain
+        val project:                      Project[Source],
+        val fieldValueInformation:        FieldValueInformation,
+        val methodReturnValueInformation: MethodReturnValueInformation,
+        val cache:                        CallGraphCache[MethodSignature, Set[Method]],
+        val classFile:                    ClassFile,
+        val method:                       Method,
+        val calledMethods:                Set[Method]                                  = Set.empty
 ) extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with TheProject
-        with TheClassFile
-        with TheMethod
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l1.DefaultReferenceValuesBinding
-        with l1.NullPropertyRefinement
-        with l1.DefaultIntegerRangeValues
-        //with l0.DefaultTypeLevelIntegerValues
-        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
-        with l0.DefaultTypeLevelLongValues
-        //with l1.LongSetValuesShiftOperators
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l1.MaxArrayLengthRefinement
-        with l0.TypeLevelInvokeInstructions // the foundation
-        with la.RefinedTypeLevelInvokeInstructions
-        with SpecialMethodsHandling
-        with la.RefinedTypeLevelFieldAccessInstructions
-        with PerformInvocationsWithBasicVirtualMethodCallResolution
-        with DefaultRecordMethodCallResults {
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with TheProject
+    with TheClassFile
+    with TheMethod
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with l1.DefaultReferenceValuesBinding
+    with l1.NullPropertyRefinement
+    with l1.DefaultIntegerRangeValues
+    //with l0.DefaultTypeLevelIntegerValues
+    // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
+    with l0.DefaultTypeLevelLongValues
+    //with l1.LongSetValuesShiftOperators
+    with l0.TypeLevelPrimitiveValuesConversions
+    with l0.TypeLevelLongValuesShiftOperators
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l1.MaxArrayLengthRefinement
+    with l0.TypeLevelInvokeInstructions // the foundation
+    with la.RefinedTypeLevelInvokeInstructions
+    with SpecialMethodsHandling
+    with la.RefinedTypeLevelFieldAccessInstructions
+    with PerformInvocationsWithBasicVirtualMethodCallResolution
+    with DefaultRecordMethodCallResults {
     callingDomain ⇒
 
     // we just want to be able to track "booleans"

@@ -68,8 +68,8 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
         val exceptions = project.parForeachMethodWithBody() { mi ⇒
             factoryCalls.addAll(
                 (mi.method.body.get.collectInstructions {
-                case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i
-            }).asJava
+                    case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i
+                }).asJava
             )
             /*
             for {

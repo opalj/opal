@@ -55,23 +55,23 @@ class MethodsWithBranchesTest extends FlatSpec with Matchers {
     import domain.RecordConstraints
 
     class TestDomain(val name: String)
-            extends Domain
-            with DefaultDomainValueBinding
-            with DefaultReferenceValuesBinding
-            with DefaultTypeLevelIntegerValues
-            with DefaultTypeLevelLongValues
-            with DefaultTypeLevelFloatValues
-            with DefaultTypeLevelDoubleValues
-            with TypeLevelPrimitiveValuesConversions
-            with TypeLevelLongValuesShiftOperators
-            with TypeLevelFieldAccessInstructions
-            with SimpleTypeLevelInvokeInstructions
-            with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy
-            with IgnoreSynchronization
-            with DefaultHandlingOfMethodResults
-            with RecordLastReturnedValues
-            with RecordConstraints {
+        extends Domain
+        with DefaultDomainValueBinding
+        with DefaultReferenceValuesBinding
+        with DefaultTypeLevelIntegerValues
+        with DefaultTypeLevelLongValues
+        with DefaultTypeLevelFloatValues
+        with DefaultTypeLevelDoubleValues
+        with TypeLevelPrimitiveValuesConversions
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelFieldAccessInstructions
+        with SimpleTypeLevelInvokeInstructions
+        with ThrowAllPotentialExceptionsConfiguration
+        with PredefinedClassHierarchy
+        with IgnoreSynchronization
+        with DefaultHandlingOfMethodResults
+        with RecordLastReturnedValues
+        with RecordConstraints {
 
         type Id = String
         def id = "MethodsWithBranchesTestDomain: "+name

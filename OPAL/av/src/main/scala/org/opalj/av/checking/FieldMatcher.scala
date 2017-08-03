@@ -44,12 +44,12 @@ import org.opalj.br.VirtualSourceElement
  * @author Michael Eichberg
  */
 case class FieldMatcher(
-    declaringClass: ClassLevelMatcher,
-    annotations:    AnnotationsPredicate,
-    theType:        Option[FieldType],
-    theName:        Option[NamePredicate]
+        declaringClass: ClassLevelMatcher,
+        annotations:    AnnotationsPredicate,
+        theType:        Option[FieldType],
+        theName:        Option[NamePredicate]
 )
-        extends SourceElementsMatcher {
+    extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         declaringClass.doesMatch(classFile)

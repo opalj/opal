@@ -93,16 +93,16 @@ object StaticAndDefaultInterfaceMethods extends App {
                         attribute_name_index = 9,
                         max_stack = 1, max_locals = 1,
                         code =
-                        new Code(
-                            Array[Byte](
-                                18, // ldc
-                                10, // #10
-                                (0xff & 184).toByte, // invokestatic
-                                0, // -> Methodref
-                                12, // #12
-                                (0xff & 177).toByte // return
+                            new Code(
+                                Array[Byte](
+                                    18, // ldc
+                                    10, // #10
+                                    (0xff & 184).toByte, // invokestatic
+                                    0, // -> Methodref
+                                    12, // #12
+                                    (0xff & 177).toByte // return
+                                )
                             )
-                        )
                     )
                 )
             )
@@ -148,16 +148,16 @@ object StaticAndDefaultInterfaceMethods extends App {
                         attribute_name_index = 9,
                         max_stack = 1, max_locals = 1,
                         code =
-                        new Code(
-                            Array[Byte](
-                                18, // ldc
-                                10, // #10
-                                (0xff & 184).toByte, // invokestatic
-                                0, // -> Methodref
-                                12, //    #12
-                                (0xff & 177).toByte // return
+                            new Code(
+                                Array[Byte](
+                                    18, // ldc
+                                    10, // #10
+                                    (0xff & 184).toByte, // invokestatic
+                                    0, // -> Methodref
+                                    12, //    #12
+                                    (0xff & 177).toByte // return
+                                )
                             )
-                        )
                     )
                 )
             )

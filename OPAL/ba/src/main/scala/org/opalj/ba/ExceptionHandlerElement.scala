@@ -64,8 +64,8 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement
  * @see [[ExceptionHandlerElement]]
  */
 class CATCH private (
-    val id:          Symbol,
-    val handlerType: Option[br.ObjectType]
+        val id:          Symbol,
+        val handlerType: Option[br.ObjectType]
 ) extends ExceptionHandlerElement
 
 /**

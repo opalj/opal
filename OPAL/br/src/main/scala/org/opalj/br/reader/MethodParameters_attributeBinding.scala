@@ -40,9 +40,9 @@ import org.opalj.bi.reader.MethodParameters_attributeReader
  * @author Michael Eichberg
  */
 trait MethodParameters_attributeBinding
-        extends MethodParameters_attributeReader
-        with ConstantPoolBinding
-        with AttributeBinding {
+    extends MethodParameters_attributeReader
+    with ConstantPoolBinding
+    with AttributeBinding {
 
     type MethodParameter = br.MethodParameter
     override val MethodParameterManifest: ClassTag[MethodParameter] = implicitly

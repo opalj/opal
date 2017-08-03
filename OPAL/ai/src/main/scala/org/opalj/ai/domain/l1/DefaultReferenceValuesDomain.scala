@@ -40,35 +40,35 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultConfigurableReferenceValuesDomain[I, Source](
-    val id:               I,
-    override val project: Project[Source],
-    val classFile:        ClassFile,
-    override val method:  Method
+        val id:               I,
+        override val project: Project[Source],
+        val classFile:        ClassFile,
+        override val method:  Method
 ) extends CorrelationalDomain
-        with TheProject
-        with TheMethod
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l1.DefaultReferenceValuesBinding
-        with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultTypeLevelLongValues
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators {
+    with TheProject
+    with TheMethod
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    with l1.DefaultReferenceValuesBinding
+    with l0.DefaultTypeLevelIntegerValues
+    with l0.DefaultTypeLevelLongValues
+    with l0.TypeLevelPrimitiveValuesConversions
+    with l0.TypeLevelLongValuesShiftOperators {
 
     type Id = I
 
 }
 
 class DefaultReferenceValuesDomain[Source](
-    override val project:   Project[Source],
-    override val classFile: ClassFile,
-    override val method:    Method
+        override val project:   Project[Source],
+        override val classFile: ClassFile,
+        override val method:    Method
 ) extends DefaultConfigurableReferenceValuesDomain[String, Source](
     method.toJava(classFile),
     project,

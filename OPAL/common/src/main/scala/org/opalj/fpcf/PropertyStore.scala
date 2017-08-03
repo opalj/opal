@@ -2314,8 +2314,8 @@ object PropertyStoreContext {
 //--------------------------------------------------------------------------------------------------
 
 private[fpcf] final class PropertyAndObservers(
-    final val p:  Property  = null,
-    final val os: Observers = null
+        final val p:  Property  = null,
+        final val os: Observers = null
 )
 
 private[fpcf] object PropertyAndObservers {
@@ -2346,9 +2346,9 @@ private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObserve
  * @param ps A mutable map of the entities properties; the key is the id of the property's kind.
  */
 private[fpcf] final class EntityProperties(
-    final val id: Int,
-    final val l:  ReentrantReadWriteLock = new ReentrantReadWriteLock,
-    final val ps: Properties             = ArrayMap(sizeHint = Math.max(3, PropertyKey.maxId))
+        final val id: Int,
+        final val l:  ReentrantReadWriteLock = new ReentrantReadWriteLock,
+        final val ps: Properties             = ArrayMap(sizeHint = Math.max(3, PropertyKey.maxId))
 ) extends UID
 
 private[fpcf] object PropertiesOfEntity {

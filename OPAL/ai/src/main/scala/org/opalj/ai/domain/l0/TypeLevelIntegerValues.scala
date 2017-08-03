@@ -66,8 +66,8 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     }
 
     trait BooleanValue
-            extends ComputationalTypeIntegerValue[BooleanType]
-            with IsBooleanValue[BooleanValue] {
+        extends ComputationalTypeIntegerValue[BooleanType]
+        with IsBooleanValue[BooleanValue] {
         this: DomainTypedValue[BooleanType] ⇒
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
@@ -85,8 +85,8 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     }
 
     trait CharValue
-            extends ComputationalTypeIntegerValue[CharType]
-            with IsCharValue[CharValue] {
+        extends ComputationalTypeIntegerValue[CharType]
+        with IsCharValue[CharValue] {
         this: DomainTypedValue[CharType] ⇒
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
@@ -96,8 +96,8 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     }
 
     trait ShortValue
-            extends ComputationalTypeIntegerValue[ShortType]
-            with IsShortValue[ShortValue] {
+        extends ComputationalTypeIntegerValue[ShortType]
+        with IsShortValue[ShortValue] {
         this: DomainTypedValue[ShortType] ⇒
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
@@ -107,8 +107,8 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     }
 
     trait IntegerValue
-            extends ComputationalTypeIntegerValue[IntegerType]
-            with IsIntegerValue[IntegerValue] {
+        extends ComputationalTypeIntegerValue[IntegerType]
+        with IsIntegerValue[IntegerValue] {
         this: DomainTypedValue[IntegerType] ⇒
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {

@@ -51,7 +51,7 @@ import org.opalj.ai.analyses.cg.CallGraphFactory
  * @author Michael Reif
  */
 class LibraryEntryPointsAnalysis private[analysis] (
-    val project: SomeProject
+        val project: SomeProject
 ) extends {
     private[this] final val AccessKey = ProjectAccessibility.Key
     private[this] final val InstantiabilityKey = Instantiability.key

@@ -54,28 +54,28 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
     private[this] val IrrelevantPC = Int.MinValue
 
     class ReflectiveInvokerTestDomain
-            extends CorrelationalDomain
-            with GlobalLogContextProvider
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            //    with DefaultStringValuesBinding
-            with l1.DefaultClassValuesBinding
-            with l1.DefaultArrayValuesBinding
-            with li.DefaultPreciseIntegerValues
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with RecordLastReturnedValues
-            with RecordAllThrownExceptions
-            with RecordVoidReturns
-            with IgnoreSynchronization
-            with ReflectiveInvoker {
+        extends CorrelationalDomain
+        with GlobalLogContextProvider
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        //    with DefaultStringValuesBinding
+        with l1.DefaultClassValuesBinding
+        with l1.DefaultArrayValuesBinding
+        with li.DefaultPreciseIntegerValues
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with RecordLastReturnedValues
+        with RecordAllThrownExceptions
+        with RecordVoidReturns
+        with IgnoreSynchronization
+        with ReflectiveInvoker {
 
         override protected def maxUpdatesForIntegerValues = 25
 

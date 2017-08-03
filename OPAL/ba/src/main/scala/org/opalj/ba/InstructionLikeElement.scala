@@ -49,7 +49,7 @@ object InstructionLikeElement {
  * Wrapper for [[org.opalj.br.instructions.InstructionLike]]s.
  */
 case class InstructionElement(
-    instruction: InstructionLike
+        instruction: InstructionLike
 ) extends InstructionLikeElement[Nothing]
 
 /**

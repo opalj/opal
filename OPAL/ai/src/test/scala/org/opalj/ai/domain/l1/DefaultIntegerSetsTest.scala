@@ -64,23 +64,23 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
     final val SomePC = 100000
 
     class IntegerSetsTestDomain(
-        override val maxCardinalityOfIntegerSets: Int = 126 // <= MAX SUPPORTED VALUE
+            override val maxCardinalityOfIntegerSets: Int = 126 // <= MAX SUPPORTED VALUE
     ) extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultReferenceValuesBinding
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultIntegerSetValues // <----- The one we are going to test
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with PredefinedClassHierarchy
-            with RecordLastReturnedValues
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultIntegerSetValues // <----- The one we are going to test
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with PredefinedClassHierarchy
+        with RecordLastReturnedValues
 
     describe("central properties of domains that use IntegerSet values") {
 
