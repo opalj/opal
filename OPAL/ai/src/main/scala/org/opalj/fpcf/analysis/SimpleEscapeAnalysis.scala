@@ -346,11 +346,11 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
 
         val propertyStore = project.get(PropertyStoreKey)
         val staticEscapes =
-            propertyStore.entities(GlobalEscapeViaStaticFieldAssignment).filter(_.isInstanceOf[AllocationSite])
+            propertyStore.entities(GlobalEscapeViaStaticFieldAssignment).collect { case as: AllocationSite ⇒ as }
         val maybeNoEscape =
-            propertyStore.entities(MaybeNoEscape).filter(_.isInstanceOf[AllocationSite])
+            propertyStore.entities(MaybeNoEscape).collect { case as: AllocationSite ⇒ as }
         val maybeArgEscape =
-            propertyStore.entities(MaybeArgEscape).filter(_.isInstanceOf[AllocationSite])
+            propertyStore.entities(MaybeArgEscape).collect { case as: AllocationSite ⇒ as }
         val maybeMethodEscape =
             propertyStore.entities(MaybeMethodEscape).filter(_.isInstanceOf[AllocationSite])
         val noEscape = propertyStore.entities(NoEscape).collect { case as: AllocationSite ⇒ as }
