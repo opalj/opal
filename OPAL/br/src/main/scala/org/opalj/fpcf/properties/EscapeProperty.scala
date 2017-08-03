@@ -182,6 +182,9 @@ case object MaybeArgEscape extends EscapeProperty {
  *  }
  * }
  * }}}
+ *  An analysis is only expected to return [[ArgEscape]] for the object o
+ * instantiated in foo, if the analyses knows(!) that no extension of X overrides bar s.t. it let
+ * its parameter escape.
  *
  * @see [[EscapeProperty]] for further details.
  *
@@ -219,8 +222,6 @@ case object MaybeMethodEscape extends EscapeProperty {
  *
  * @see [[EscapeProperty]] for further details.
  *
- *
- *
  * @note This property does not refer to the identically named property defined by Kotzmann
  *       and Mössenböck
  */
@@ -232,6 +233,8 @@ trait MethodEscape extends EscapeProperty {
  * globally. (It may additionally escape by other means too, but this property
  * was derived first. It must not be the case that an additional escape has the
  * property [[GlobalEscape]].)
+ *
+ * @note For escape characterization, a 'throw' statements is seen as a 'return' statement.
  *
  * @example
  * Given the following code:
@@ -271,6 +274,8 @@ case object MethodEscapeViaReturn extends MethodEscape
  *  }
  * }
  * }}}
+ * An analysis is only expected to return [[MethodEscapeViaParameterAssignment]] for the object o
+ * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
 case object MethodEscapeViaParameterAssignment extends MethodEscape
 
@@ -296,6 +301,8 @@ case object MethodEscapeViaParameterAssignment extends MethodEscape
  *  }
  * }
  * }}}
+ * An analysis is only expected to return [[MethodEscapeViaParameterAssignment]] for the object o
+ * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
 case object MethodEscapeViaReturnAssignment extends MethodEscape
 
@@ -365,6 +372,7 @@ trait GlobalEscape extends EscapeProperty {
  *  }
  * }
  * }}}
+ *
  */
 case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape
 
@@ -380,8 +388,8 @@ case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape
  *  public Object f;
  *  public void m() {
  *      Object o = new Object();        // ALLOCATION SITE
- *     X x = X.o;
- *     x.f = o;
+ *      X x = X.o;
+ *      x.f = o;
  *      return;
  *  }
  * }
