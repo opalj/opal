@@ -53,9 +53,9 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
     }
 
     /**
-      * Add all AllocationsSites found in the project to the entities in the property
-      * stores created with the PropertyStoreKey.
-      */
+     * Add all AllocationsSites found in the project to the entities in the property
+     * stores created with the PropertyStoreKey.
+     */
     override def init(): Unit = {
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.addEntityDerivationFunction(project)(FormalParametersKey.entityDerivationFunction)
@@ -73,8 +73,7 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
         annotation.elementValuePairs collectFirst { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
     }
 
-    def validatePropertyByParameterAnnotation(m: Method, annotation: Annotation, fp: FormalParameter): Unit
-    = {
+    def validatePropertyByParameterAnnotation(m: Method, annotation: Annotation, fp: FormalParameter): Unit = {
         val annotatedOProperty = propertyExtraction(annotation)
         val annotatedProperty = annotatedOProperty getOrElse defaultValue
 
@@ -85,7 +84,7 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
         if (computedOProperty.hasNoProperty) {
             val className = project.classFile(m).fqn
             val message =
-                "Entity has no property: " + s"$className $m $fp  for: $propertyKey;" +
+                "Entity has no property: "+s"$className $m $fp  for: $propertyKey;"+
                     s"\nexpected property: $annotatedProperty"
             fail(message)
         }
@@ -95,10 +94,10 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
         if (computedProperty != annotatedProperty) {
             val className = project.classFile(m).fqn
             val message =
-                "Wrong property computed: " +
-                    s"$className $m $fp" +
-                    s"has the property $computedProperty for $propertyKey;" +
-                    s"\n\tactual property:   $computedProperty" +
+                "Wrong property computed: "+
+                    s"$className $m $fp"+
+                    s"has the property $computedProperty for $propertyKey;"+
+                    s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $annotatedProperty"
             fail(message)
         }
@@ -113,16 +112,16 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
         val expr = annon.target match {
             case TAOfNew(pc) ⇒ Some(pcToAs(pc))
-            case _ ⇒ throw new RuntimeException("not yet implemented")
+            case _           ⇒ throw new RuntimeException("not yet implemented")
         }
 
-        expr.foreach(entity => {
+        expr.foreach(entity ⇒ {
             val computedOProperty = propertyStore(entity, propertyKey)
 
             if (computedOProperty.hasNoProperty) {
                 val className = project.classFile(m).fqn
                 val message =
-                    "Entity has no property: " + s"$className $m $entity  for: $propertyKey;" +
+                    "Entity has no property: "+s"$className $m $entity  for: $propertyKey;"+
                         s"\nexpected property: $annotatedProperty"
                 fail(message)
             }
@@ -132,10 +131,10 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
             if (computedProperty != annotatedProperty) {
                 val className = project.classFile(m).fqn
                 val message =
-                    "Wrong property computed: " +
-                        s"$className $m $entity" +
-                        s"has the property $computedProperty for $propertyKey;" +
-                        s"\n\tactual property:   $computedProperty" +
+                    "Wrong property computed: "+
+                        s"$className $m $entity"+
+                        s"has the property $computedProperty for $propertyKey;"+
+                        s"\n\tactual property:   $computedProperty"+
                         s"\n\texpected property: $annotatedProperty"
                 fail(message)
             }
@@ -147,31 +146,31 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
     for {
         classFile ← project.allClassFiles
-        method@MethodWithBody(code) ← classFile.methods
+        method @ MethodWithBody(code) ← classFile.methods
         annotation ← code.runtimeVisibleTypeAnnotations
         if annotation.annotationType == propertyAnnotation
     } {
         val allocationSites = propertyStore.context[AllocationSites]
-        analysisName should ("correctly calculate the property of the expression " +
-            annotation.target + "in method " + method.name + " in class " + classFile.fqn) in {
-            validatePropertyByTypeAnnotation(method, annotation, allocationSites(method))
-        }
+        analysisName should ("correctly calculate the property of the expression "+
+            annotation.target+"in method "+method.name+" in class "+classFile.fqn) in {
+                validatePropertyByTypeAnnotation(method, annotation, allocationSites(method))
+            }
     }
 
     for {
         classFile ← project.allClassFiles
         method ← classFile.methods
-        i <- method.runtimeVisibleParameterAnnotations.indices
+        i ← method.runtimeVisibleParameterAnnotations.indices
     } {
         val annotations = method.runtimeVisibleParameterAnnotations(i)
         for {
-            annotation <- annotations
+            annotation ← annotations
             if annotation.annotationType == propertyAnnotation
         } {
-            val doWhat = "correctly calculate the property of  " + method.toJava(classFile) +
-                " for parameter " + i
+            val doWhat = "correctly calculate the property of  "+method.toJava(classFile)+
+                " for parameter "+i
             val fps = propertyStore.context[FormalParameters]
-            val fp = fps(method)(i+1)
+            val fp = fps(method)(i + 1)
             analysisName should doWhat in {
                 validatePropertyByParameterAnnotation(method, annotation, fp)
             }
