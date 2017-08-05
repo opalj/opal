@@ -125,6 +125,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
  */
 case object MaybeNoEscape extends EscapeProperty {
     final val isRefineable = true
+    override def toString: String = "MaybeNo"
 }
 
 /**
@@ -135,6 +136,7 @@ case object MaybeNoEscape extends EscapeProperty {
  */
 case object NoEscape extends EscapeProperty {
     final val isRefineable = false
+    override def toString: String = "No"
 }
 
 /**
@@ -160,6 +162,7 @@ case object ConditionallyNoEscape extends EscapeProperty {
  */
 case object MaybeArgEscape extends EscapeProperty {
     final val isRefineable = true
+    override def toString: String = "MaybeArg"
 }
 
 /**
@@ -192,6 +195,7 @@ case object MaybeArgEscape extends EscapeProperty {
  */
 case object ArgEscape extends EscapeProperty {
     final val isRefineable = false
+    override def toString: String = "Arg"
 }
 
 /**
@@ -213,6 +217,7 @@ case object ConditionallyArgEscape extends EscapeProperty {
  */
 case object MaybeMethodEscape extends EscapeProperty {
     final val isRefineable = true
+    override def toString: String = "MaybeMethod"
 }
 
 /**
@@ -253,7 +258,9 @@ trait MethodEscape extends EscapeProperty {
  * An analysis is only expected to return [[MethodEscapeViaReturn]] for the object o
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
-case object MethodEscapeViaReturn extends MethodEscape
+case object MethodEscapeViaReturn extends MethodEscape {
+    override def toString: String = "ViaReturn"
+}
 
 /**
  * Characterizes escapes via an assignment to a field of a method parameter, where no caller let
@@ -277,7 +284,9 @@ case object MethodEscapeViaReturn extends MethodEscape
  * An analysis is only expected to return [[MethodEscapeViaParameterAssignment]] for the object o
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
-case object MethodEscapeViaParameterAssignment extends MethodEscape
+case object MethodEscapeViaParameterAssignment extends MethodEscape {
+    override def toString: String = "ViaParameter"
+}
 
 /**
  * Characterizes escapes via an assignment to a field of the return value, where no caller let
@@ -304,7 +313,9 @@ case object MethodEscapeViaParameterAssignment extends MethodEscape
  * An analysis is only expected to return [[MethodEscapeViaParameterAssignment]] for the object o
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
-case object MethodEscapeViaReturnAssignment extends MethodEscape
+case object MethodEscapeViaReturnAssignment extends MethodEscape {
+    override def toString: String = "ViaReturnAssignment"
+}
 
 /**
  * This property is for technical purpose only. It will never by the final property value.
@@ -374,7 +385,9 @@ trait GlobalEscape extends EscapeProperty {
  * }}}
  *
  */
-case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape
+case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape {
+    override def toString: String = "ViaStaticField"
+}
 
 /**
  * The object is assigned to a (global) heap object. (It may additionally escape by other
@@ -395,4 +408,6 @@ case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape
  * }
  * }}}
  */
-case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape
+case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape {
+    override def toString: String = "ViaHeapObject"
+}
