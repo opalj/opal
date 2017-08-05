@@ -32,15 +32,48 @@ package analysis
 
 import java.io.File
 
-import org.opalj.ai.{Domain, ValueOrigin}
+import org.opalj.ai.Domain
+import org.opalj.ai.ValueOrigin
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.br._
-import org.opalj.br.analyses.{AnalysisModeConfigFactory, FormalParameter, FormalParameters, Project, PropertyStoreKey, SomeProject}
+import org.opalj.br.AllocationSite
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.AnalysisModeConfigFactory
+import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.analyses.FormalParameters
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.PropertyStoreKey
+import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntSet
 import org.opalj.fpcf.properties._
-import org.opalj.tac.{NonVirtualMethodCall, _}
+import org.opalj.tac.ArrayStore
+import org.opalj.tac.Assignment
+import org.opalj.tac.DUVar
+import org.opalj.tac.DVar
+import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.Expr
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.FailingExpr
+import org.opalj.tac.Invokedynamic
+import org.opalj.tac.New
+import org.opalj.tac.NewArray
+import org.opalj.tac.NonVirtualFunctionCall
+import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.PutField
+import org.opalj.tac.PutStatic
+import org.opalj.tac.ReturnValue
+import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.Stmt
+import org.opalj.tac.TACode
+import org.opalj.tac.Throw
+import org.opalj.tac.UVar
+import org.opalj.tac.Var
+import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.VirtualMethodCall
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -85,7 +118,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     usesDefSite(value, e, defSite, MaybeNoEscape)
                 case Throw.ASTID ⇒
                     val Throw(_, value) = stmt
-                    usesDefSite(value, e, defSite, MaybeNoEscape)
+                    usesDefSite(value, e, defSite, MaybeMethodEscape)
                 // we are inter-procedural
                 case ReturnValue.ASTID ⇒
                     val ReturnValue(_, value) = stmt
@@ -285,7 +318,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
                 val thisParam = params.thisParameter
                 doDetermineEscape(e, thisParam.origin, thisParam.useSites, code)
-            case fp: FormalParameter ⇒ Result(fp, GlobalEscapeViaStaticFieldAssignment)
+            case fp: FormalParameter ⇒ Result(fp, MaybeNoEscape)
         }
 
     }

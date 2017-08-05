@@ -31,10 +31,14 @@ package org.opalj.fpcf.analysis
 import java.net.URL
 
 import org.opalj.AnalysisModes
-import org.opalj.br._
-import org.opalj.br.analyses.{AllocationSites, AnalysisModeConfigFactory, FormalParameter, FormalParameters, FormalParametersKey, Project, PropertyStoreKey}
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.AnalysisModeConfigFactory
+import org.opalj.br.analyses.FormalParametersKey
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.properties.{EscapeProperty, NoEscape}
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.NoEscape
 
 class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
@@ -48,10 +52,9 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
 
-    override def propertyAnnotation: ObjectType = {
-        ObjectType("annotations/target/EscapeProperty")
-    }
+    override def propertyAnnotation: ObjectType = ObjectType("annotations/escape/Escapes")
 
+    override def containerAnnotation: ObjectType = ObjectType("annotations/escape/EscapeProperties")
     /**
      * Add all AllocationsSites found in the project to the entities in the property
      * stores created with the PropertyStoreKey.
@@ -67,113 +70,5 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
         Project.recreate(project, testConfig)
     }
 
-    def defaultValue = NoEscape.toString
-
-    def propertyExtraction(annotation: TypeAnnotation): Option[String] = {
-        annotation.elementValuePairs collectFirst { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
-    }
-
-    def validatePropertyByParameterAnnotation(m: Method, annotation: Annotation, fp: FormalParameter): Unit = {
-        val annotatedOProperty = propertyExtraction(annotation)
-        val annotatedProperty = annotatedOProperty getOrElse defaultValue
-
-        assert(m ne null, "method is empty")
-
-        val computedOProperty = propertyStore(fp, propertyKey)
-
-        if (computedOProperty.hasNoProperty) {
-            val className = project.classFile(m).fqn
-            val message =
-                "Entity has no property: "+s"$className $m $fp  for: $propertyKey;"+
-                    s"\nexpected property: $annotatedProperty"
-            fail(message)
-        }
-
-        val computedProperty = computedOProperty.p.toString
-
-        if (computedProperty != annotatedProperty) {
-            val className = project.classFile(m).fqn
-            val message =
-                "Wrong property computed: "+
-                    s"$className $m $fp"+
-                    s"has the property $computedProperty for $propertyKey;"+
-                    s"\n\tactual property:   $computedProperty"+
-                    s"\n\texpected property: $annotatedProperty"
-            fail(message)
-        }
-    }
-
-    def validatePropertyByTypeAnnotation(m: Method, annon: TypeAnnotation,
-                                         pcToAs: Map[PC, AllocationSite]): Unit = {
-        val annotatedOProperty = propertyExtraction(annon)
-        val annotatedProperty = annotatedOProperty getOrElse defaultValue
-
-        assert(m ne null, "method is empty")
-
-        val expr = annon.target match {
-            case TAOfNew(pc) ⇒ Some(pcToAs(pc))
-            case _           ⇒ throw new RuntimeException("not yet implemented")
-        }
-
-        expr.foreach(entity ⇒ {
-            val computedOProperty = propertyStore(entity, propertyKey)
-
-            if (computedOProperty.hasNoProperty) {
-                val className = project.classFile(m).fqn
-                val message =
-                    "Entity has no property: "+s"$className $m $entity  for: $propertyKey;"+
-                        s"\nexpected property: $annotatedProperty"
-                fail(message)
-            }
-
-            val computedProperty = computedOProperty.p.toString
-
-            if (computedProperty != annotatedProperty) {
-                val className = project.classFile(m).fqn
-                val message =
-                    "Wrong property computed: "+
-                        s"$className $m $entity"+
-                        s"has the property $computedProperty for $propertyKey;"+
-                        s"\n\tactual property:   $computedProperty"+
-                        s"\n\texpected property: $annotatedProperty"
-                fail(message)
-            }
-
-        })
-    }
-
-    // TEST
-
-    for {
-        classFile ← project.allClassFiles
-        method @ MethodWithBody(code) ← classFile.methods
-        annotation ← code.runtimeVisibleTypeAnnotations
-        if annotation.annotationType == propertyAnnotation
-    } {
-        val allocationSites = propertyStore.context[AllocationSites]
-        analysisName should ("correctly calculate the property of the expression "+
-            annotation.target+"in method "+method.name+" in class "+classFile.fqn) in {
-                validatePropertyByTypeAnnotation(method, annotation, allocationSites(method))
-            }
-    }
-
-    for {
-        classFile ← project.allClassFiles
-        method ← classFile.methods
-        i ← method.runtimeVisibleParameterAnnotations.indices
-    } {
-        val annotations = method.runtimeVisibleParameterAnnotations(i)
-        for {
-            annotation ← annotations
-            if annotation.annotationType == propertyAnnotation
-        } {
-            val doWhat = "correctly calculate the property of  "+method.toJava(classFile)+
-                " for parameter "+i
-            val fps = propertyStore.context[FormalParameters]
-            val fp = fps(method)(i + 1)
-            analysisName should doWhat in {
-                validatePropertyByParameterAnnotation(method, annotation, fp)
-            }
-        }
-    }
+    def defaultValue: String = NoEscape.toString
 }
