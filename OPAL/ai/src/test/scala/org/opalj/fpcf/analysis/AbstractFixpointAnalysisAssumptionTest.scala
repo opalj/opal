@@ -37,7 +37,6 @@ import org.opalj.br.ElementValuePair
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import scala.language.reflectiveCalls
 
-
 /**
  *
  * Tests a fix-point analysis implementation using the classes in the configured

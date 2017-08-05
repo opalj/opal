@@ -481,8 +481,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
                 val doWhat = "correctly calculate the property of  "+method.toJava(classFile)+
                     " for allocation site at pc "+pc
                 analysisName should doWhat in {
-                        validatePropertyByAllocationSite(allocationSite, expectedProperty)
-                    }
+                    validatePropertyByAllocationSite(allocationSite, expectedProperty)
+                }
             case _ ⇒
         }
     }
