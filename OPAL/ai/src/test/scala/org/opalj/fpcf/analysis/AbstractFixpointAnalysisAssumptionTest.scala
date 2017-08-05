@@ -30,12 +30,13 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.br.Annotation
 import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.EnumValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.analyses.AnalysisModeConfigFactory
+import scala.language.reflectiveCalls
+
 
 /**
  *
@@ -62,7 +63,7 @@ abstract class AbstractFixpointAnalysisAssumptionTest extends AbstractFixpointAn
      * PROPERTY VALIDATION
      */
 
-    override def propertyExtraction(annotation: Annotation): Option[String] = {
+    override def propertyExtraction(annotation: AnnotationLike): Option[String] = {
         analysisMode match {
             case AnalysisModes.LibraryWithOpenPackagesAssumption ⇒
                 annotation.elementValuePairs collectFirst (
