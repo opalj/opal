@@ -181,6 +181,16 @@ public class Test {
         ClassWithFields.global = param;
     }
 
+    public static void formalParamNoEscape(
+            @Escapes(No)
+            @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
+                    Object param
+    ) {
+        if (param == null) {
+            System.out.println("null");
+        }
+    }
+
     public void formalNonStaticParamEscape(
             @Escapes(ViaStaticField)
             @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
@@ -221,5 +231,11 @@ public class Test {
                 @Escapes(value = ViaStaticField, algorithms = "SimpleEscapeAnalysis")
                         Object();
         ClassWithFields.global = null;
+    }
+
+    public static void globalEscapeGreaterArgEscape() {
+        Object o = new @Escapes(ViaStaticField) Object();
+        formalParamNoEscape(o);
+        ClassWithFields.global = o;
     }
 }
