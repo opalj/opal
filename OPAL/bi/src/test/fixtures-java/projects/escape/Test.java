@@ -100,13 +100,16 @@ public class Test {
     public static void exceptionEscape() {
         throw new
                 @Escapes(ViaReturn)
-                @Escapes(value = MaybeMethod, algorithms = "SimpleEscapeAnalysis")
+                @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
                         RuntimeException();
     }
 
     public static void exceptionNoEscape() {
         try {
-            throw new @Escapes(No) RuntimeException();
+            throw new
+                    @Escapes(No)
+                    @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
+                            RuntimeException();
         } catch (Exception e) {
             System.out.println("catched the error");
         }
