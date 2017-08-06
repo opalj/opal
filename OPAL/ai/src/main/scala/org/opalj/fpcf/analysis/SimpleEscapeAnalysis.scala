@@ -50,7 +50,6 @@ import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntSet
 import org.opalj.fpcf.properties.MaybeArgEscape
-import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
 import org.opalj.tac.ArrayStore
