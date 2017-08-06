@@ -38,6 +38,7 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.AllocationSite
+import org.opalj.br.ExceptionHandlers
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -92,7 +93,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
      * allocation/parameter escapes in the given code.
      */
     private def doDetermineEscape(e: Entity, defSite: ValueOrigin, uses: IntSet,
-                                  code: Array[Stmt[V]]): PropertyComputationResult = {
+                                  code: Array[Stmt[V]], handlers: ExceptionHandlers): PropertyComputationResult = {
         var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
         var worstProperty: EscapeProperty = NoEscape
         for (use ← uses) {
@@ -122,7 +123,8 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     if (usesDefSite(value, e, defSite)) MaybeNoEscape else NoEscape
                 case Throw.ASTID ⇒
                     val Throw(_, value) = stmt
-                    if (usesDefSite(value, e, defSite)) MaybeMethodEscape else NoEscape
+                    // the exception could be catched, so we know nothing
+                    if (usesDefSite(value, e, defSite)) MaybeNoEscape else NoEscape
                 // we are inter-procedural
                 case ReturnValue.ASTID ⇒
                     val ReturnValue(_, value) = stmt
@@ -304,25 +306,25 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             case as @ AllocationSite(m, pc) ⇒
-                val code = project.get(DefaultTACAIKey)(m).stmts
+                val TACode(_, code, _, handlers, _) = project.get(DefaultTACAIKey)(m)
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
                 if (index != -1)
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _)) ⇒
-                            doDetermineEscape(as, index, uses, code)
+                            doDetermineEscape(as, index, uses, code, handlers)
                         case Assignment(`pc`, DVar(_, uses), NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code)
+                            doDetermineEscape(as, index, uses, code, handlers)
                         case stmt ⇒
                             throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
                     }
                 else /* the allocation site is part of dead code */ Result(e, NoEscape)
             case FormalParameter(m, _) if m.body.isEmpty ⇒ Result(e, MaybeNoEscape)
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
-                val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
+                val TACode(params, code, _, handlers, _) = project.get(DefaultTACAIKey)(m)
                 val thisParam = params.thisParameter
-                doDetermineEscape(e, thisParam.origin, thisParam.useSites, code)
+                doDetermineEscape(e, thisParam.origin, thisParam.useSites, code, handlers)
             case fp: FormalParameter ⇒ Result(fp, MaybeNoEscape)
         }
 
