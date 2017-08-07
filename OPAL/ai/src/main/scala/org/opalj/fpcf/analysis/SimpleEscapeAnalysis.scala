@@ -239,12 +239,6 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                     case EP(_, ConditionallyNoEscape) ⇒
                                         dependees += escapeState
                                         NoEscape
-                                    case EP(_, ConditionallyArgEscape) ⇒
-                                        dependees += escapeState
-                                        NoEscape
-                                    case EP(_, ConditionallyMethodEscape) ⇒
-                                        dependees += escapeState
-                                        NoEscape
                                     case EP(_, _) ⇒
                                         throw new RuntimeException("not yet implemented")
                                     // result not yet finished
