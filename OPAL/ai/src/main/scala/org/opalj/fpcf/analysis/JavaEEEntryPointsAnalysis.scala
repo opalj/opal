@@ -46,7 +46,7 @@ class JavaEEEntryPointsAnalysis private[analysis] (
 ) extends {
     private[this] final val SerializableType = ObjectType.Serializable
     private[this] final val InjectedClasses = project.get(InjectedClassesInformationKey)
-    private[this] final val ExceptionHandlerFactory = ObjectType("javax.faces.context.ExceptionHandlerFactory")
+    private[this] final val ExceptionHandlerFactory = ObjectType("javax/faces/context/ExceptionHandlerFactory")
 } with FPCFAnalysis {
 
     /**
@@ -114,9 +114,7 @@ class JavaEEEntryPointsAnalysis private[analysis] (
 
 object JavaEEEntryPointsAnalysis {
 
-    val injectAnnotation = ObjectType("javax.inject.Inject")
+    val injectAnnotation = ObjectType("javax/inject/Inject")
 
-    final def entitySelector: PartialFunction[Entity, ClassFile] = {
-        case cf: ClassFile ⇒ cf
-    }
+    final def entitySelector: PartialFunction[Entity, ClassFile] = { case cf: ClassFile ⇒ cf }
 }
