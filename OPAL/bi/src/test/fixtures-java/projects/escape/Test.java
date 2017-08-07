@@ -50,7 +50,7 @@ public class Test {
         if (param == null) {
             throw new
                     @Escapes(ViaReturn)
-                    @Escapes(value = MaybeMethod, algorithms = "SimpleEscapeAnalysis")
+                    @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
                             RuntimeException();
         }
         param.f = new
