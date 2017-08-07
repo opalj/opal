@@ -38,7 +38,6 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.AllocationSite
-import org.opalj.br.ExceptionHandlers
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -92,7 +91,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
      * allocation/parameter escapes in the given code.
      */
     private def doDetermineEscape(e: Entity, defSite: ValueOrigin, uses: IntSet,
-                                  code: Array[Stmt[V]], handlers: ExceptionHandlers): PropertyComputationResult = {
+                                  code: Array[Stmt[V]]): PropertyComputationResult = {
         var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
         var worstProperty: EscapeProperty = NoEscape
         for (use ← uses) {
@@ -139,9 +138,8 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     val NonVirtualMethodCall(_, dc, interface, name, descr, receiver, params) = stmt
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
                 case FailingExpr.ASTID ⇒
-                    //val FailingExpr(_, failingStmt) = stmt
-                    println(stmt)
-                    NoEscape
+                    //TODO there is single FailingExpr in JDK?
+                    throw new RuntimeException("not yet implemented")
                 //determineEscapeStmt(failingStmt, e, defSite)
                 case ExprStmt.ASTID ⇒
                     val ExprStmt(_, expr) = stmt
@@ -155,9 +153,10 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
         }
 
         /**
-         * For a given entity with defSite, check whether the expression is a function call or a
-         * CheckCast. For function call mark parameters and receiver objects that use the defSite as
-         * GlobalEscape.
+         * For a given entity with defSite, check whether the expression is a function call.
+         * For function call mark parameters and receiver objects that use the defSite as
+         * [[MaybeArgEscape]]. For constructor calls with receiver being a use of e,
+         * interprocedurally check the constructor.
          */
         def examineCall(e: Entity, defSite: Int, expr: Expr[V]): EscapeProperty = {
             expr.astID match {
@@ -180,8 +179,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
         }
 
         /**
-         * If the given expression is a [[UVar]] and is a use of the defSite, the entity e will be
-         * marked as [[GlobalEscape]], otherwise [[None]] is returned
+         * Checks whether the given expression is a [[UVar]] and if it is a use of the defSite.
          */
         def usesDefSite(expr: Expr[V], e: Entity, defSite: Int): Boolean = {
             if (expr.astID == Var.ASTID) {
@@ -193,8 +191,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
         }
 
         /**
-         * If there exists a [[UVar]] in params that is a use of the defSite, e will be marked as
-         * GlobalEscape, otherwise [[None]] is returned
+         * If there exists a [[UVar]] in params that is a use of the defSite, return true.
          */
         def anyParameterUsesDefSite(params: Seq[Expr[V]], e: Entity, defSite: Int): Boolean = {
             if (params.exists { case UVar(_, defSites) ⇒ defSites.contains(defSite) })
@@ -206,9 +203,11 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
          * Special handling for constructor calls, as the receiver of an constructor is always an
          * allocation site.
          * The constructor of Object does not escape the self reference by definition. For other
-         * constructor, the inter procedural chain will be processed until it reaches the Object
-         * constructor or escapes.
-         * For non constructor calls, [[GlobalEscape]] of e will be returned whenever the receiver
+         * constructor, the interprocedural chain will be processed until it reaches the Object
+         * constructor or escapes. Is this the case, worstProperty will be set to the lower bound
+         * of the current value and the calculated escape state.
+          *
+         * For non constructor calls, [[MaybeArgEscape]] of e will be returned whenever the receiver
          * or a parameter is a use of defSite.
          */
         def handleNonVirtualCall(e: Entity, defSite: Int, dc: ReferenceType, interface: Boolean,
@@ -259,6 +258,20 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             }
         }
 
+        /**
+         * Sets worstProperty to the lower bound of p and the current worst and remove entity
+         * other from dependees. If this entity does not depend on any more results it has
+         * associated property of worstProperty, otherwise build a continuation.
+         */
+        def meetAndFilter(other: Entity, p: EscapeProperty) = {
+            worstProperty = worstProperty meet p
+            dependees = dependees filter (_.e ne other)
+            if (dependees.isEmpty)
+                Result(e, worstProperty)
+            else
+                IntermediateResult(e, ConditionallyNoEscape, dependees, c)
+        }
+
         // Every entity that is not identified as escaping is not escaping
         if (dependees.isEmpty)
             return Result(e, worstProperty)
@@ -266,26 +279,15 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
         // we depend on the result for other entities, lets construct a continuation
         def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
             p match {
-                case state: GlobalEscape ⇒
-                    Result(e, state)
-                case MaybeNoEscape     ⇒ Result(e, MaybeNoEscape)
-                case MaybeArgEscape    ⇒ Result(e, MaybeArgEscape)
-                case MaybeMethodEscape ⇒ Result(e, MaybeMethodEscape)
-
+                case state: GlobalEscape ⇒ Result(e, state)
+                case MaybeNoEscape       ⇒ meetAndFilter(other, MaybeNoEscape)
+                case MaybeArgEscape      ⇒ meetAndFilter(other, MaybeArgEscape)
+                case MaybeMethodEscape   ⇒ meetAndFilter(other, MaybeNoEscape) //TODO plausible?
+                case NoEscape            ⇒ meetAndFilter(other, NoEscape)
                 case ConditionallyNoEscape ⇒
-                    val newEP = EP(other, p.asInstanceOf[EscapeProperty])
+                    val newEP = EP(other, ConditionallyNoEscape)
                     dependees = dependees.filter(_.e ne other) + newEP
                     IntermediateResult(e, ConditionallyNoEscape, dependees, c)
-
-                case NoEscape ⇒
-                    dependees = dependees.filter {
-                        _.e ne other
-                    }
-                    if (dependees.isEmpty)
-                        Result(e, worstProperty)
-                    else
-                        IntermediateResult(e, ConditionallyNoEscape, dependees, c)
-
             }
         }
 
@@ -299,25 +301,25 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             case as @ AllocationSite(m, pc) ⇒
-                val TACode(_, code, _, handlers, _) = project.get(DefaultTACAIKey)(m)
+                val code = project.get(DefaultTACAIKey)(m).stmts
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
                 if (index != -1)
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, handlers)
+                            doDetermineEscape(as, index, uses, code)
                         case Assignment(`pc`, DVar(_, uses), NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, handlers)
+                            doDetermineEscape(as, index, uses, code)
                         case stmt ⇒
                             throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
                     }
                 else /* the allocation site is part of dead code */ Result(e, NoEscape)
             case FormalParameter(m, _) if m.body.isEmpty ⇒ Result(e, MaybeNoEscape)
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
-                val TACode(params, code, _, handlers, _) = project.get(DefaultTACAIKey)(m)
+                val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
                 val thisParam = params.thisParameter
-                doDetermineEscape(e, thisParam.origin, thisParam.useSites, code, handlers)
+                doDetermineEscape(e, thisParam.origin, thisParam.useSites, code)
             case fp: FormalParameter ⇒ Result(fp, MaybeNoEscape)
         }
 
