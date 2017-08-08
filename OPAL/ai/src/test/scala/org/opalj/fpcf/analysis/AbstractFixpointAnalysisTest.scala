@@ -46,8 +46,7 @@ import scala.language.reflectiveCalls
  * class file.
  *
  * @note This test supports only property tests where only one annotation field
- *      is used. It's not possible to check multiple values.
- *
+ *       is used. It's not possible to check multiple values.
  * @author Michael Reif
  * @author Dominik Helm
  * @author Florian Kübler
@@ -56,7 +55,8 @@ import scala.language.reflectiveCalls
 abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     type AnnotationLike = {
-        val annotationType: FieldType; val elementValuePairs: ElementValuePairs
+        val annotationType: FieldType;
+        val elementValuePairs: ElementValuePairs
     }
 
     /**
@@ -144,12 +144,11 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * option will be empty.
      *
      * @note Subclasses should override this method when they use non-default
-     * named values within their annotation. Please note that this extraction
-     * mechanism can only be used if a single value has to be extracted.
+     *       named values within their annotation. Please note that this extraction
+     *       mechanism can only be used if a single value has to be extracted.
      */
     def propertyExtraction(annotation: AnnotationLike): Option[String] = {
-        annotation.elementValuePairs collectFirst
-            { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
+        annotation.elementValuePairs collectFirst { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
     }
 
     /**
@@ -168,7 +167,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * This method extracts the algorithms property if it is set and an array of Strings
      * Otherwise the resulting option will be empty
      */
-    def algorithmExtraction(annotation: Annotation): Option[IndexedSeq[String]] = {
+    def algorithmExtraction(annotation: AnnotationLike): Option[IndexedSeq[String]] = {
         annotation.elementValuePairs collectFirst {
             case ElementValuePair("algorithms",
                 ArrayValue(eps: IndexedSeq[_])) ⇒
@@ -194,8 +193,11 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         annotation: AnnotationLike,
         predicate:  Option[IndexedSeq[String]] ⇒ Boolean
     ): Seq[AnnotationLike] = {
-        if (annotation.annotationType == propertyAnnotation)
-            List(annotation) // Single flat annotation
+        if (annotation.annotationType == propertyAnnotation) // Single flat annotation
+            if (predicate(algorithmExtraction(annotation)))
+                List(annotation)
+            else
+                List.empty[Annotation]
         else // Container annotation
             annotation.elementValuePairs.collectFirst {
                 case ElementValuePair("value", ArrayValue(properties: IndexedSeq[_])) ⇒
@@ -213,55 +215,92 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         eps.isEmpty || eps.get.forall { ep ⇒
             if (ep.annotationType == EPType) {
                 val epEntity = stringExtraction(ep, "e").get
-                val epProperty = {
+                val epProperty: PropertyKey[Property] = {
                     val key = stringExtraction(ep, "pk")
                     // If no property attribute is given, the property key tested is used
                     if (key.isDefined) propertyKeyMap(key.get) else propertyKey
                 }
-                val epValue = stringExtraction(ep, "p").get
+                val epValue = stringExtraction(ep, "p")
                 val classIndex = epEntity.indexOf('.')
                 val descriptorIndex = epEntity.indexOf('(')
                 if (classIndex < 0) { // Entity is a class
                     val classFileO = project.classFile(ObjectType(epEntity))
-                    classFileO exists { classFile ⇒
-                        val eop = propertyStore(classFile, epProperty)
-                        eop.hasProperty && eop.p.toString == epValue
-                    }
+                    if (epValue.isEmpty) // No property for the entity may exist
+                        !(classFileO exists { classFile ⇒
+                            val eop = propertyStore(classFile, epProperty)
+                            eop.hasProperty
+                        })
+                    else
+                        classFileO exists { classFile ⇒
+                            val eop = propertyStore(classFile, epProperty)
+                            eop.hasProperty && eop.p.toString == epValue.get
+                        }
+                } else if (descriptorIndex < 0) { // Entity is a field
+                    val className = epEntity.substring(0, classIndex)
+                    val fieldName = epEntity.substring(classIndex + 1)
+                    val classFileO = project.classFile(ObjectType(className))
+                    if (epValue.isEmpty) // No property for the entity may exist
+                        !(classFileO exists {
+                            _ findField (fieldName) exists { field ⇒
+                                val eop = propertyStore(field, epProperty)
+                                eop.hasProperty
+                            }
+                        })
+                    else
+                        classFileO exists {
+                            _ findField (fieldName) exists { field ⇒
+                                val eop = propertyStore(field, epProperty)
+                                eop.hasProperty && eop.p.toString == epValue.get
+                            }
+                        }
                 } else if (descriptorIndex > classIndex) { // Entity is a method
                     val className = epEntity.substring(0, classIndex)
-                    val name = epEntity.substring(classIndex + 1, descriptorIndex)
+                    val methodName = epEntity.substring(classIndex + 1, descriptorIndex)
                     val descriptor = MethodDescriptor(epEntity.substring(descriptorIndex))
                     val classFileO = project.classFile(ObjectType(className))
-                    classFileO exists {
-                        _ findMethod (name, descriptor) exists { entity ⇒
-                            val eop = propertyStore(entity, epProperty)
-                            eop.hasProperty && eop.p.toString == epValue
+                    if (epValue.isEmpty) // No property for the entity may exist
+                        !(classFileO exists {
+                            _ findMethod (methodName, descriptor) exists { method ⇒
+                                val eop = propertyStore(method, epProperty)
+                                eop.hasProperty
+                            }
+                        })
+                    else
+                        classFileO exists {
+                            _ findMethod (methodName, descriptor) exists { method ⇒
+                                val eop = propertyStore(method, epProperty)
+                                eop.hasProperty && eop.p.toString == epValue.get
+                            }
                         }
-                    }
                 } else throw new RuntimeException("Invalid eps annotation")
             } else false
         }
     }
 
     /**
-     * Returns the property expected by the annotation given
-     * or None, if multiple annotations apply because of wrong annotation
+     * Returns the the properties expected by the annotations that apply.
+     * If the result is empty, no annotation  applies.
      */
-    def getExpectedProperty(annotation: AnnotationLike): Option[String] = {
-        val specific = extractAnnotations(annotation, { _.exists { _.exists { _ == analysisName } } })
+    def getExpectedProperties(annotation: AnnotationLike): Seq[String] = {
+        val specific = extractAnnotations(annotation, {
+            _.exists {
+                _.exists {
+                    _ == analysisName
+                }
+            }
+        })
         val specificFulfilled = specific filter fulfillsEPS
         val annotatedProperties =
             if (specificFulfilled.isEmpty)
-                extractAnnotations(annotation, { _.isEmpty }) filter fulfillsEPS
+                extractAnnotations(annotation, {
+                    _.isEmpty
+                }) filter fulfillsEPS
             else
                 specificFulfilled
 
-        if (annotatedProperties.isEmpty)
-            Some(defaultValue)
-        else if (annotatedProperties.size == 1)
-            Some(propertyExtraction(annotatedProperties.head) getOrElse defaultValue)
-        else
-            None
+        annotatedProperties map {
+            propertyExtraction(_) getOrElse defaultValue
+        }
     }
 
     /**
@@ -399,17 +438,23 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     for {
         classFile ← project.allClassFiles
         annotation ← classFile.runtimeVisibleAnnotations
-        if annotation.annotationType == propertyAnnotation
+        if annotation.annotationType == propertyAnnotation ||
+            annotation.annotationType == containerAnnotation
     } {
-        val expectedPropertyO = getExpectedProperty(annotation)
-        val expectedProperty = expectedPropertyO getOrElse {
-            throw new RuntimeException("Test annotated incorrectly:"+
-                s"Multiple annotations applicable for class ${classFile.fqn}")
-        }
+        val expected = getExpectedProperties(annotation)
 
-        val doWhat = s"correctly calculate the property of  ${classFile.fqn}: "+
-            s"expected property $expectedProperty"
-        analysisName should doWhat in { validatePropertyByClassFile(classFile, expectedProperty) }
+        if (!expected.isEmpty) {
+            val expectedProperty = if (expected.forall(_ == expected.head)) expected.head else {
+                throw new RuntimeException("Test annotated incorrectly:"+
+                    s"Multiple annotations applicable for class ${classFile.fqn}")
+            }
+
+            val doWhat = s"correctly calculate the property of  ${classFile.fqn}: "+
+                s"expected property ${expectedProperty}"
+            analysisName should (doWhat) in {
+                validatePropertyByClassFile(classFile, expectedProperty)
+            }
+        }
     }
 
     for {
@@ -419,16 +464,23 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         if annotation.annotationType == propertyAnnotation ||
             annotation.annotationType == containerAnnotation
     } {
-        val expectedPropertyO = getExpectedProperty(annotation)
-        val expectedProperty = expectedPropertyO getOrElse {
-            throw new RuntimeException("Test annotated incorrectly: "+
-                "Multiple annotations applicable "+
-                s"for method ${method.toJava(classFile)} in class ${classFile.fqn}")
-        }
+        val expected = getExpectedProperties(annotation)
 
-        val doWhat = s"correctly calculate the property of  ${method.toJava(classFile)}: "+
-            s"expected property $expectedProperty"
-        analysisName should doWhat in { validatePropertyByMethod(method, expectedProperty) }
+        if (!expected.isEmpty) {
+            val expectedProperty =
+                if (expected.forall(_ == expected.head)) expected.head
+                else {
+                    throw new RuntimeException("Test annotated incorrectly: "+
+                        "Multiple annotations applicable "+
+                        s"for method ${method.toJava(classFile)} in class ${classFile.fqn}")
+                }
+
+            val doWhat = s"correctly calculate the property of  ${method.toJava(classFile)}: "+
+                s"expected property $expectedProperty"
+            analysisName should (doWhat) in {
+                validatePropertyByMethod(method, expectedProperty)
+            }
+        }
     }
 
     for {
@@ -442,46 +494,56 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             if annotation.annotationType == propertyAnnotation ||
                 annotation.annotationType == containerAnnotation
         } {
-            val expectedPropertyO = getExpectedProperty(annotation)
-            val expectedProperty = expectedPropertyO getOrElse {
-                throw new RuntimeException("Test annotated incorrectly: "+
-                    "Multiple annotations applicable "+
-                    s"for formal parameter $i in method ${method.toJava(classFile)} in class"+
-                    s"${classFile.fqn}")
-            }
+            val expected = getExpectedProperties(annotation)
 
-            val doWhat = "correctly calculate the property of  "+method.toJava(classFile)+
-                " for parameter "+i
-            val fps = propertyStore.context[FormalParameters]
-            analysisName should doWhat in {
-                validatePropertyByParameterAnnotation(fps(method)(i + 1), expectedProperty)
+            if (!expected.isEmpty) {
+                val expectedProperty =
+                    if (expected.forall(_ == expected.head)) expected.head
+                    else {
+                        throw new RuntimeException("Test annotated incorrectly: "+
+                            "Multiple annotations applicable "+
+                            s"for formal parameter $i in method ${method.toJava(classFile)} "+
+                            s"in class${classFile.fqn}")
+                    }
+
+                val doWhat = "correctly calculate the property of  "+method.toJava(classFile)+
+                    " for parameter "+i
+                val fps = propertyStore.context[FormalParameters]
+                analysisName should doWhat in {
+                    validatePropertyByParameterAnnotation(fps(method)(i + 1), expectedProperty)
+                }
             }
         }
     }
 
     for {
         classFile ← project.allClassFiles
-        method @ MethodWithBody(code) ← classFile.methods
+        method@MethodWithBody(code) ← classFile.methods
         annotation ← code.runtimeVisibleTypeAnnotations
         if annotation.annotationType == propertyAnnotation ||
             annotation.annotationType == containerAnnotation
     } {
         annotation.target match {
             case TAOfNew(pc) ⇒
-                val expectedPropertyO = getExpectedProperty(annotation)
-                val expectedProperty = expectedPropertyO getOrElse {
-                    throw new RuntimeException("Test annotated incorrectly: "+
-                        "Multiple annotations applicable "+
-                        s"for allocation site at pc $pc in method ${method.toJava(classFile)} in "+
-                        s"class ${classFile.fqn}")
-                }
+                val expected = getExpectedProperties(annotation)
 
-                val allocationSites = propertyStore.context[AllocationSites]
-                val allocationSite = allocationSites(method)(pc)
-                val doWhat = "correctly calculate the property of  "+method.toJava(classFile)+
-                    " for allocation site at pc "+pc
-                analysisName should doWhat in {
-                    validatePropertyByAllocationSite(allocationSite, expectedProperty)
+                if (!expected.isEmpty) {
+                    val expectedProperty =
+                        if (expected.forall(_ == expected.head)) expected.head
+                        else {
+                            throw new RuntimeException("Test annotated incorrectly: "+
+                                "Multiple annotations applicable "+
+                                s"for allocation site at pc $pc in method "+
+                                s"${method.toJava(classFile)} in class ${classFile.fqn}")
+                        }
+
+                    val allocationSites = propertyStore.context[AllocationSites]
+                    val allocationSite = allocationSites(method)(pc)
+                    val doWhat = "correctly calculate the property of  "+
+                        method.toJava(classFile)+" for allocation site at pc "+pc
+                    analysisName should doWhat in {
+                        validatePropertyByAllocationSite(allocationSite, expectedProperty)
+                    }
                 }
             case _ ⇒
         }
