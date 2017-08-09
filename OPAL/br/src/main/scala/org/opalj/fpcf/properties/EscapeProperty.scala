@@ -44,7 +44,6 @@ sealed abstract class EscapeProperty extends Property with EscapePropertyMetaInf
 }
 
 /**
- * ≤
  * Describes lifetime of object instance. This is classically used for compiler optimizations
  * such as scalar replacement, stack allocation or removal of synchronization.
  * Choi et al. [1] describes two predicates that can be used to describe the properties relevant
