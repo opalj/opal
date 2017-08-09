@@ -234,7 +234,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                     case EP(_, MaybeArgEscape) ⇒
                                         MaybeArgEscape
                                     case EP(_, MaybeMethodEscape) ⇒
-                                        MaybeMethodEscape
+                                        MaybeNoEscape
                                     case EP(_, ConditionallyNoEscape) ⇒
                                         dependees += escapeState
                                         NoEscape

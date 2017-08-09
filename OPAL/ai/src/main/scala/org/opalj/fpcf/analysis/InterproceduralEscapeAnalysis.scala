@@ -229,7 +229,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                                     case EP(_, ArgEscape)             ⇒ setWorst(ArgEscape)
                                     case EP(_, MaybeNoEscape)         ⇒ setWorst(MaybeNoEscape)
                                     case EP(_, MaybeArgEscape)        ⇒ setWorst(MaybeArgEscape)
-                                    case EP(_, MaybeMethodEscape)     ⇒ setWorst(MaybeMethodEscape)
+                                    case EP(_, MaybeMethodEscape)     ⇒ setWorst(MaybeNoEscape)
                                     case EP(_, ConditionallyNoEscape) ⇒ dependees += escapeState
                                     case EP(_, x) ⇒
                                         throw new RuntimeException("not yet implemented "+x)
