@@ -73,7 +73,6 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 import org.opalj.tac.Throw
 import org.opalj.tac.UVar
-import org.opalj.tac.Var
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.util.PerformanceEvaluation.time
@@ -95,60 +94,62 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
         var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
         var worstProperty: EscapeProperty = NoEscape
         for (use ← uses) {
-            val result = determineEscapeStmt(code(use), e, defSite)
+            determineEscapeStmt(code(use))
+        }
 
-            worstProperty = worstProperty meet result
+        /**
+         * Sets worstProperty to the minimum of its current value and the given one.
+         */
+        def setWorst(prop: EscapeProperty) = {
+            worstProperty = worstProperty meet prop
         }
 
         /**
          * Determines whether the given statement leads to an escape of the entity e with definition
          * site defSite
          */
-        def determineEscapeStmt(stmt: Stmt[V], e: Entity, defSite: Int): EscapeProperty = {
+        def determineEscapeStmt(stmt: Stmt[V]): Unit = {
             stmt.astID match {
                 case PutStatic.ASTID ⇒
                     val PutStatic(_, _, _, _, value) = stmt
-                    if (usesDefSite(value, e, defSite))
-                        GlobalEscapeViaStaticFieldAssignment
-                    else NoEscape
+                    if (usesDefSite(value))
+                        setWorst(GlobalEscapeViaStaticFieldAssignment)
                 // we are field insensitive, so we have to consider a field (and array) write as
                 // GlobalEscape
                 case PutField.ASTID ⇒
                     val PutField(_, _, _, _, _, value) = stmt
-                    if (usesDefSite(value, e, defSite)) MaybeNoEscape else NoEscape
+                    if (usesDefSite(value)) setWorst(MaybeNoEscape)
                 case ArrayStore.ASTID ⇒
                     val ArrayStore(_, _, _, value) = stmt
-                    if (usesDefSite(value, e, defSite)) MaybeNoEscape else NoEscape
+                    if (usesDefSite(value)) setWorst(MaybeNoEscape)
                 case Throw.ASTID ⇒
                     val Throw(_, value) = stmt
                     // the exception could be catched, so we know nothing
-                    if (usesDefSite(value, e, defSite)) MaybeNoEscape else NoEscape
+                    if (usesDefSite(value)) setWorst(MaybeNoEscape)
                 // we are inter-procedural
                 case ReturnValue.ASTID ⇒
                     val ReturnValue(_, value) = stmt
-                    if (usesDefSite(value, e, defSite)) MaybeMethodEscape else NoEscape
+                    if (usesDefSite(value)) setWorst(MaybeMethodEscape)
                 case StaticMethodCall.ASTID ⇒
                     val StaticMethodCall(_, _, _, _, _, params) = stmt
-                    if (anyParameterUsesDefSite(params, e, defSite)) MaybeArgEscape else NoEscape
+                    if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 case VirtualMethodCall.ASTID ⇒
                     val VirtualMethodCall(_, _, _, _, _, value, params) = stmt
-                    if (usesDefSite(value, e, defSite) ||
-                        anyParameterUsesDefSite(params, e, defSite)) MaybeArgEscape else NoEscape
+                    if (usesDefSite(value) ||
+                        anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 case NonVirtualMethodCall.ASTID ⇒
                     val NonVirtualMethodCall(_, dc, interface, name, descr, receiver, params) = stmt
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
                 case FailingExpr.ASTID ⇒
                     //TODO there is single FailingExpr in JDK?
                     throw new RuntimeException("not yet implemented")
-                //determineEscapeStmt(failingStmt, e, defSite)
                 case ExprStmt.ASTID ⇒
                     val ExprStmt(_, expr) = stmt
-                    examineCall(e, defSite, expr)
-
+                    examineCall(expr)
                 case Assignment.ASTID ⇒
                     val Assignment(_, _, right) = stmt
-                    examineCall(e, defSite, right)
-                case _ ⇒ NoEscape
+                    examineCall(right)
+                case _ ⇒
             }
         }
 
@@ -158,43 +159,41 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
          * [[MaybeArgEscape]]. For constructor calls with receiver being a use of e,
          * interprocedurally check the constructor.
          */
-        def examineCall(e: Entity, defSite: Int, expr: Expr[V]): EscapeProperty = {
+        def examineCall(expr: Expr[V]): Unit = {
             expr.astID match {
                 case NonVirtualFunctionCall.ASTID ⇒
                     val NonVirtualFunctionCall(_, dc, interface, name, descr, receiver, params) = expr
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
                 case VirtualFunctionCall.ASTID ⇒
                     val VirtualFunctionCall(_, _, _, _, _, receiver, params) = expr
-                    if (usesDefSite(receiver, e, defSite) ||
-                        anyParameterUsesDefSite(params, e, defSite)) MaybeArgEscape else NoEscape
+                    if (usesDefSite(receiver) ||
+                        anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 case StaticFunctionCall.ASTID ⇒
                     val StaticFunctionCall(_, _, _, _, _, params) = expr
-                    if (anyParameterUsesDefSite(params, e, defSite)) MaybeArgEscape else NoEscape
+                    if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 // see Java8LambdaExpressionsRewriting
                 case Invokedynamic.ASTID ⇒
                     val Invokedynamic(_, _, _, _, params) = expr
-                    if (anyParameterUsesDefSite(params, e, defSite)) MaybeArgEscape else NoEscape
-                case _ ⇒ NoEscape
+                    if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
+                case _ ⇒
             }
         }
 
         /**
          * Checks whether the given expression is a [[UVar]] and if it is a use of the defSite.
          */
-        def usesDefSite(expr: Expr[V], e: Entity, defSite: Int): Boolean = {
-            if (expr.astID == Var.ASTID) {
-                val UVar(_, defSites) = expr
-                if (defSites.contains(defSite))
-                    true
+        def usesDefSite(expr: Expr[V]): Boolean = {
+            if (expr.isVar)
+                if (expr.asVar.definedBy contains defSite) true
                 else false
-            } else false
+            else false
         }
 
         /**
          * If there exists a [[UVar]] in params that is a use of the defSite, return true.
          */
-        def anyParameterUsesDefSite(params: Seq[Expr[V]], e: Entity, defSite: Int): Boolean = {
-            if (params.exists { case UVar(_, defSites) ⇒ defSites.contains(defSite) })
+        def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
+            if (params.exists { case UVar(_, defSites) ⇒ defSites contains defSite })
                 true
             else false
         }
@@ -212,7 +211,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
          */
         def handleNonVirtualCall(e: Entity, defSite: Int, dc: ReferenceType, interface: Boolean,
                                  name: String, descr: MethodDescriptor,
-                                 receiver: Expr[V], params: Seq[Expr[V]]): EscapeProperty = {
+                                 receiver: Expr[V], params: Seq[Expr[V]]): Unit = {
             // we only allow special (inter-procedural) handling for constructors
             if (name == "<init>") {
                 // the object constructor will not escape the this local
@@ -226,35 +225,27 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                 val fp = propertyStore.context[FormalParameters]
                                 // check if the this local escapes in the callee
                                 val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
-                                val tmpResult = escapeState match {
-                                    case EP(_, NoEscape)            ⇒ NoEscape
-                                    case EP(_, state: GlobalEscape) ⇒ state
-                                    case EP(_, MaybeNoEscape) ⇒
-                                        MaybeNoEscape
-                                    case EP(_, MaybeArgEscape) ⇒
-                                        MaybeArgEscape
-                                    case EP(_, MaybeMethodEscape) ⇒
-                                        MaybeNoEscape
-                                    case EP(_, ConditionallyNoEscape) ⇒
-                                        dependees += escapeState
-                                        NoEscape
+                                escapeState match {
+                                    case EP(_, NoEscape)              ⇒
+                                    case EP(_, state: GlobalEscape)   ⇒ setWorst(state)
+                                    case EP(_, MaybeNoEscape)         ⇒ setWorst(MaybeNoEscape)
+                                    case EP(_, MaybeArgEscape)        ⇒ setWorst(MaybeArgEscape)
+                                    case EP(_, MaybeMethodEscape)     ⇒ setWorst(MaybeNoEscape)
+                                    case EP(_, ConditionallyNoEscape) ⇒ dependees += escapeState
                                     case EP(_, _) ⇒
                                         throw new RuntimeException("not yet implemented")
                                     // result not yet finished
-                                    case epk ⇒
-                                        dependees += epk
-                                        NoEscape
+                                    case epk ⇒ dependees += epk
 
                                 }
-                                worstProperty = tmpResult meet worstProperty
                             case /* unknown method */ _ ⇒
-                                worstProperty = MaybeNoEscape meet worstProperty
+                                setWorst(MaybeNoEscape)
                         }
-                    if (anyParameterUsesDefSite(params, e, defSite)) MaybeArgEscape else NoEscape
+                    if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 } else /* Object constructor does escape by def. */ NoEscape
             } else {
-                if (usesDefSite(receiver, e, defSite) ||
-                    anyParameterUsesDefSite(params, e, defSite)) MaybeArgEscape else NoEscape
+                if (usesDefSite(receiver) || anyParameterUsesDefSite(params))
+                    setWorst(MaybeArgEscape)
             }
         }
 
@@ -264,7 +255,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
          * associated property of worstProperty, otherwise build a continuation.
          */
         def meetAndFilter(other: Entity, p: EscapeProperty) = {
-            worstProperty = worstProperty meet p
+            setWorst(p)
             dependees = dependees filter (_.e ne other)
             if (dependees.isEmpty)
                 Result(e, worstProperty)
@@ -407,8 +398,8 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         println(s"# of arg escaping objects: ${sizeAsFP(argEscapes)}")
         println(s"# of local objects: ${sizeAsFP(noEscape)}")
 
-        def sizeAsAS(entities: Traversable[Entity]) = entities.collect{ case x: AllocationSite ⇒ x }.size
-        def sizeAsFP(entities: Traversable[Entity]) = entities.collect{ case x: FormalParameter ⇒ x }.size
+        def sizeAsAS(entities: Traversable[Entity]) = entities.collect { case x: AllocationSite ⇒ x }.size
+        def sizeAsFP(entities: Traversable[Entity]) = entities.collect { case x: FormalParameter ⇒ x }.size
     }
 }
 
