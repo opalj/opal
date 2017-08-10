@@ -481,7 +481,7 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
         println(s"# of arg escaping objects: ${sizeAsFP(argEscapes)}")
         println(s"# of local objects: ${sizeAsFP(noEscape)}")
 
-        def sizeAsAS(entities: Traversable[Entity]) = entities.collect{ case x: AllocationSite ⇒ x }.size
-        def sizeAsFP(entities: Traversable[Entity]) = entities.collect{ case x: FormalParameter ⇒ x }.size
+        def sizeAsAS(entities: Traversable[Entity]) = entities.collect { case x: AllocationSite ⇒ x }.size
+        def sizeAsFP(entities: Traversable[Entity]) = entities.collect { case x: FormalParameter ⇒ x }.size
     }
 }
