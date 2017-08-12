@@ -213,7 +213,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                         ObjectType("tactest/StackManipulationAndSynchronization"), false,
                         "staticMethod",
                         MethodDescriptor(IndexedSeq[FieldType](IntegerType, IntegerType), IntegerType),
-                        List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt))
+                        List(SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))
                     )
                 ),
                 Assignment(5, SimpleVar(-2, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
