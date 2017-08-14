@@ -35,8 +35,13 @@ import java.net.URL
 
 import org.junit.runner.RunWith
 import org.opalj.br._
-import org.opalj.br.analyses.{AllocationSites, FormalParameter, FormalParameters, Project, PropertyStoreKey}
-import org.scalatest.{FlatSpec, Matchers}
+import org.opalj.br.analyses.AllocationSites
+import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.analyses.FormalParameters
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.PropertyStoreKey
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 import scala.language.reflectiveCalls

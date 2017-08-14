@@ -53,7 +53,7 @@ public @interface EP {
     /**
      * The property key for the property required, empty to use the property key of the test.
      *
-     * By convention, use the name of the property class for this, e.g. pk="Purity".
+     * By convention, use the simple name of the property class for this, e.g. pk="Purity".
      * The actual mapping to the property key is up to the test, though.
      */
     String pk() default "";
