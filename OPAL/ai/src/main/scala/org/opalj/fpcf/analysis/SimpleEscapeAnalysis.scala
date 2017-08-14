@@ -112,8 +112,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             stmt.astID match {
                 case PutStatic.ASTID ⇒
                     val PutStatic(_, _, _, _, value) = stmt
-                    if (usesDefSite(value))
-                        setWorst(GlobalEscapeViaStaticFieldAssignment)
+                    if (usesDefSite(value)) setWorst(GlobalEscapeViaStaticFieldAssignment)
                 // we are field insensitive, so we have to consider a field (and array) write as
                 // GlobalEscape
                 case PutField.ASTID ⇒
@@ -242,7 +241,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                 setWorst(MaybeNoEscape)
                         }
                     if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
-                } else /* Object constructor does escape by def. */ NoEscape
+                }
             } else {
                 if (usesDefSite(receiver) || anyParameterUsesDefSite(params))
                     setWorst(MaybeArgEscape)
