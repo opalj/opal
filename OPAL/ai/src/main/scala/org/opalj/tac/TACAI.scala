@@ -657,7 +657,7 @@ object TACAI {
                         declClass, isInterface,
                         name, descriptor) = instruction
                     val parametersCount = descriptor.parametersCount
-                    val params = useOperands(parametersCount)
+                    val params = useOperands(parametersCount).reverse
                     val receiver = operandUse(parametersCount) // this is the self reference
                     val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
@@ -701,7 +701,7 @@ object TACAI {
                 case INVOKESTATIC.opcode ⇒
                     val INVOKESTATIC(declaringClass, isInterface, name, descriptor) = instruction
                     val parametersCount = descriptor.parametersCount
-                    val params = useOperands(parametersCount)
+                    val params = useOperands(parametersCount).reverse
                     val returnType = descriptor.returnType
                     if (returnType.isVoidType) {
                         val staticCall =
@@ -728,7 +728,7 @@ object TACAI {
                 case INVOKEDYNAMIC.opcode ⇒
                     val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
                     val parametersCount = methodDescriptor.parametersCount
-                    val params = useOperands(parametersCount)
+                    val params = useOperands(parametersCount).reverse
                     val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
