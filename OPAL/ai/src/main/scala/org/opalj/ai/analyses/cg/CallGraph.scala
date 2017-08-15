@@ -153,14 +153,13 @@ class CallGraph private[opalj] (
     ): String = {
 
         var result: List[(String, String, String, Int, Int)] = List.empty
-        // IMPROVE Use methodsWithContext
         project.allMethods foreach { (method: Method) ⇒
             val callSites = calls(method)
             callSites foreach { callSite ⇒
                 val (pc, targets) = callSite
                 result ::= ((
-                    project.classFile(method).fqn,
-                    "\""+method.toJava(withVisibility = true)+"\"",
+                    method.classFile.fqn,
+                    "\""+method.signatureToJava(withVisibility = true)+"\"",
                     "\""+method.body.get.instructions(pc).toString(pc).replace('\n', ' ')+"\"",
                     pc,
                     targets.size
@@ -192,10 +191,10 @@ class CallGraph private[opalj] (
                 val (callerMethod, callingInstructions) = callingSite
                 result =
                     List(
-                        project.classFile(method).fqn,
-                        method.toJava(withVisibility = false),
-                        project.classFile(callerMethod).fqn,
-                        callerMethod.toJava(withVisibility = false),
+                        method.classFile.fqn,
+                        method.signatureToJava(withVisibility = false),
+                        callerMethod.classFile.fqn,
+                        callerMethod.signatureToJava(withVisibility = false),
                         callingInstructions.size.toString
                     ) :: result
                 resultCount += 1

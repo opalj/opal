@@ -125,11 +125,10 @@ class ClassFileTest extends FunSuite with Matchers {
         boundedBuffer.findField("AnumberInBuffers") should be(Naught)
     }
 
-    val innerclassesJARFile = locateTestResources("innerclasses.jar", "bi")
-    val innerclassesProject = analyses.Project(innerclassesJARFile)
-    val outerClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass.class").head
-    val innerPrinterOfXClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$InnerPrinterOfX.class").head
-    val formatterClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$Formatter.class").head
+    val innerclassesProject = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature.jar")
+    val outerClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass")).get
+    val innerPrinterOfXClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")).get
+    val formatterClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$Formatter")).get
 
     test("that all direct nested classes of a top-level class are correctly identified") {
         outerClass.nestedClasses(innerclassesProject).toSet should be(Set(

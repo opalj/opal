@@ -96,7 +96,7 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
                         if method.isPublic || (method.isProtected && !classFile.isFinal)
                         referenceParametersCount = method.parameterTypes.count(_.isReferenceType)
                     } yield {
-                        method.toJava(classFile, referenceParametersCount.toString)
+                        method.toJava(referenceParametersCount.toString)
                     }
                 ).seq
 

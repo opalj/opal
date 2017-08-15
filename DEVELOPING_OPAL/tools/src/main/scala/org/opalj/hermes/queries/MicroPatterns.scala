@@ -257,9 +257,7 @@ object MicroPatterns extends FeatureQuery {
     def isFunctionObject(cl: ClassFile): Boolean = {
         cl.fields.nonEmpty &&
             cl.fields.forall { f ⇒ !f.isStatic } &&
-            cl.methods.count { m ⇒
-                !isInitMethod(m) && m.isPublic
-            } == 1 &&
+            cl.methods.count { m ⇒ !isInitMethod(m) && m.isPublic } == 1 &&
             !cl.methods.filter(m ⇒ !isInitMethod(m)).exists(m ⇒ m.isStatic)
     }
 
@@ -297,7 +295,7 @@ object MicroPatterns extends FeatureQuery {
 
     def isRestrictedCreation(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration &&
-            cl.fields.exists { f ⇒ f.isStatic && !f.isFinal && f.fieldType.toJava.equals(cl.thisType.toJava) } &&
+            cl.fields.exists { f ⇒ f.isStatic && !f.isFinal && f.fieldType == cl.thisType } &&
             cl.methods.filter { m ⇒ m.isConstructor }.forall { m ⇒ m.isPrivate }
     }
 
@@ -414,9 +412,9 @@ object MicroPatterns extends FeatureQuery {
                 isInitMethod(m) || !m.isPublic ||
                     (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
                         case Some(a) ⇒ (a.isAbstract || a.body.isEmpty) && (
-                            (hasExplicitSuperType(cl) && theProject.classFile(a) != null &&
-                                theProject.classFile(a).thisType == cl.superclassType.get) ||
-                                cl.interfaceTypes.exists(it ⇒ theProject.classFile(a) != null && theProject.classFile(a).thisType == it)
+                            (hasExplicitSuperType(cl) && a.classFile != null &&
+                                a.classFile.thisType == cl.superclassType.get) ||
+                                cl.interfaceTypes.exists(it ⇒ a.classFile != null && a.classFile.thisType == it)
                         )
                         case None ⇒ false
                     })
@@ -433,9 +431,9 @@ object MicroPatterns extends FeatureQuery {
                 m.isInitializer ||
                     (theProject.resolveMethodReference(cl.thisType, m.name, m.descriptor) match {
                         case Some(a) ⇒ (!a.isAbstract && a.body.isDefined && m.body.nonEmpty) && (
-                            (hasExplicitSuperType(cl) && theProject.classFile(a) != null &&
-                                theProject.classFile(a).thisType == cl.superclassType.get) ||
-                                cl.interfaceTypes.exists(it ⇒ theProject.classFile(a) != null && theProject.classFile(a).thisType == it)
+                            (hasExplicitSuperType(cl) && a.classFile != null &&
+                                a.classFile.thisType == cl.superclassType.get) ||
+                                cl.interfaceTypes.exists(it ⇒ a.classFile != null && a.classFile.thisType == it)
                         )
                         case None ⇒ false
                     })
@@ -456,7 +454,7 @@ object MicroPatterns extends FeatureQuery {
             cl.fields.nonEmpty &&
             cl.methods.count(m ⇒ !isInitMethod(m) && !isObjectMethod(m)) > 1 &&
             cl.methods.filter(m ⇒ !isInitMethod(m) && !isObjectMethod(m)).forall { m ⇒
-                isSetter(m, cl) || isGetter(m, cl)
+                isSetter(m) || isGetter(m)
             }
     }
 
@@ -478,14 +476,14 @@ object MicroPatterns extends FeatureQuery {
         with domain.TheMethod
         with domain.RecordDefUse
 
-    def isGetter[S](method: Method, cf: ClassFile)(implicit theProject: Project[S]): Boolean = {
+    def isGetter[S](method: Method)(implicit theProject: Project[S]): Boolean = {
         if (!method.isPublic || method.returnType.isVoidType || method.body.isEmpty ||
             !method.body.get.instructions.exists { i ⇒ i.isInstanceOf[FieldReadAccess] }) {
             return false
         }
 
         val instructions = method.body.get.associateWithIndex().toMap
-        val result = BaseAI(cf, method, new AnalysisDomain(theProject, method))
+        val result = BaseAI(method, new AnalysisDomain(theProject, method))
         val returns = instructions.filter(i ⇒ i._2.isInstanceOf[ReturnValueInstruction])
 
         returns.forall(r ⇒ result.domain.operandOrigin(r._1, 0).forall { u ⇒
@@ -495,7 +493,7 @@ object MicroPatterns extends FeatureQuery {
         })
     }
 
-    def isSetter[S](method: Method, cf: ClassFile)(implicit theProject: Project[S]): Boolean = {
+    def isSetter[S](method: Method)(implicit theProject: Project[S]): Boolean = {
         if (!method.isPublic || !method.returnType.isVoidType ||
             method.descriptor.parametersCount == 0 || method.body.isEmpty ||
             (method.body.isDefined && method.body.isEmpty) ||
@@ -504,7 +502,7 @@ object MicroPatterns extends FeatureQuery {
         }
 
         val instructions = method.body.get.associateWithIndex().toMap
-        val result = BaseAI(cf, method, new AnalysisDomain(theProject, method))
+        val result = BaseAI(method, new AnalysisDomain(theProject, method))
         val puts = instructions.filter(i ⇒ i._2.isInstanceOf[FieldWriteAccess])
 
         puts.forall(p ⇒ (p._2.isInstanceOf[PUTSTATIC] &&

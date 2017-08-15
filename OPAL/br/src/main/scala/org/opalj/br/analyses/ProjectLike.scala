@@ -231,7 +231,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
             return Unknown;
         }
         val definedMethods: ConstArray[MethodDeclarationContext] = definedMethodsOption.get
-        val declaringPackageName = classFile(method).thisType.packageName
+        val declaringPackageName = method.classFile.thisType.packageName
 
         val result: Option[MethodDeclarationContext] = find(definedMethods) { definedMethodContext ⇒
             val definedMethod = definedMethodContext.method
@@ -521,10 +521,10 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 var currentMaximallySpecificMethods = currentMethods
                 var additionalMaximallySpecificMethods = Set.empty[Method]
                 methods.view.filter(!currentMethods.contains(_)) foreach { method ⇒
-                    val newMethodDeclaringClassType = project.classFile(method).thisType
+                    val newMethodDeclaringClassType = method.classFile.thisType
                     var addNewMethod = true
                     currentMaximallySpecificMethods = currentMaximallySpecificMethods.filter { method ⇒
-                        val specificMethodDeclaringClassType = project.classFile(method).thisType
+                        val specificMethodDeclaringClassType = method.classFile.thisType
                         if ((specificMethodDeclaringClassType isSubtyeOf newMethodDeclaringClassType).isYes) {
                             addNewMethod = false
                             true
@@ -798,7 +798,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                     // is an abstract class in a closed package/module
                     methods ++= (
                         overriddenBy(mdc.method).iterator.filter { m ⇒
-                            (classFile(m).thisType isSubtyeOf subtype).isYes
+                            (m.classFile.thisType isSubtyeOf subtype).isYes
                         }
                     )
                     // for interfaces we have to continue, because we may have inherited a
@@ -851,7 +851,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
 
         if (methods.nonEmpty) {
             val method = methods.head
-            if (classFile(method).thisType eq declaringClass) {
+            if (method.classFile.thisType eq declaringClass) {
                 // The (concret) method belongs to this class... hence, we just need to
                 // get all methods which override (reflexive) this method and are done.
                 return overriddenBy(method);
@@ -886,7 +886,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
             }
             if (mdcOption.isDefined) {
                 val method = mdcOption.get.method
-                if (method.isNativeAndVarargs && (classFile(method) eq MethodHandleClassFile.get)) {
+                if (method.isNativeAndVarargs && (method.classFile eq MethodHandleClassFile.get)) {
                     return Set(method);
                 }
             }

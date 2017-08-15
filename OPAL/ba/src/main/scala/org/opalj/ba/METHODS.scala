@@ -30,7 +30,7 @@ package org.opalj
 package ba
 
 /**
- * Builder for a list of [[org.opalj.br.Method]]s.
+ * Builder for a list of [[org.opalj.br.MethodTemplate]]s.
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
@@ -38,9 +38,9 @@ package ba
 class METHODS[T](private[this] var methods: Seq[METHOD[T]]) {
 
     /**
-     * Returns the build [[org.opalj.br.Method]] and its code annotations.
+     * Returns the build [[org.opalj.br.MethodTemplate]] and its code annotations.
      */
-    def result(): IndexedSeq[(br.Method, Option[T])] = {
+    def result(): IndexedSeq[(br.MethodTemplate, Option[T])] = {
         IndexedSeq.empty ++ methods.iterator.map(m ⇒ m.result())
     }
 

@@ -70,7 +70,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
             methodsWhichDoNotThrowExceptions.view.filter(_._1.isPrivate).size
 
         val report = methodsWithCompleteThrownExceptionsInfo.map {
-            case (m: Method, ts: AllThrownExceptions) ⇒ { s"${m.toJava(project.classFile(m))} ⇒ $ts" }
+            case (m: Method, ts: AllThrownExceptions) ⇒ { s"${m.toJava} ⇒ $ts" }
         }.toList.sorted.mkString("\n")
 
         BasicReport(

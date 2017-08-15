@@ -56,14 +56,14 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("be able to analyze a simple static, recursive method") in {
         val method = StaticCalls.findMethod("simpleRecursion").head
         val domain = new InvocationDomain(project, method)
-        val result = BaseAI(StaticCalls, method, domain)
+        val result = BaseAI(method, domain)
         result.domain.returnedNormally should be(true)
     }
 
     it should ("be able to analyze a method that is self-recursive and which will never abort") in {
         val method = StaticCalls.findMethod("endless").head
         val domain = new InvocationDomain(project, method)
-        BaseAI(StaticCalls, method, domain)
+        BaseAI(method, domain)
         if (domain.allReturnedValues.nonEmpty)
             fail("the method never returns, but the following result was produced: "+
                 domain.allReturnedValues)
@@ -75,7 +75,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("be able to analyze a method that is self-recursive and which will never abort due to exception handling") in {
         val method = StaticCalls.findMethod("endlessDueToExceptionHandling").head
         val domain = new InvocationDomain(project, method)
-        BaseAI(StaticCalls, method, domain)
+        BaseAI(method, domain)
         if (domain.allReturnedValues.nonEmpty)
             fail("the method never returns, but the following result was produced: "+
                 domain.allReturnedValues)
@@ -87,7 +87,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("be able to analyze some methods with mutual recursion") in {
         val method = StaticCalls.findMethod("mutualRecursionA").head
         val domain = new InvocationDomain(project, method)
-        BaseAI(StaticCalls, method, domain)
+        BaseAI(method, domain)
 
         domain.returnedNormally should be(true) // because we work at the type level at some point..
     }
@@ -95,9 +95,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("be able to analyze a static method that uses recursion to calculate the factorial of a small concrete number") in {
         val method = StaticCalls.findMethod("fak").head
         val domain = new InvocationDomain(project, method)
-        BaseAI.perform(StaticCalls, method, domain)(
-            Some(IndexedSeq(domain.IntegerValue(-1, 3)))
-        )
+        BaseAI.perform(method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 3))))
         domain.returnedNormally should be(true)
         domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(6))
     }
@@ -105,9 +103,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("issue a warning if a method is called very often using different operands") in {
         val method = StaticCalls.findMethod("fak").head
         val domain = new InvocationDomain(project, method, 1)
-        BaseAI.perform(StaticCalls, method, domain)(
-            Some(IndexedSeq(domain.IntegerValue(-1, 11)))
-        )
+        BaseAI.perform(method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 11))))
         val theCalledMethodsStore = domain.calledMethodsStore
         if (!domain.returnedNormally) fail("domain didn't return normally")
 
@@ -155,7 +151,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
         }
 
-        def shouldInvocationBePerformed(definingClass: ClassFile, method: Method): Boolean = true
+        def shouldInvocationBePerformed(method: Method): Boolean = true
 
         type CalledMethodDomain = ChildInvocationDomain
 
@@ -186,9 +182,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
                 var warningIssued = false
 
                 override def frequentEvalution(
-                    definingClass: ClassFile,
-                    method:        Method,
-                    operandsSet:   List[Array[domain.DomainValue]]
+                    method:      Method,
+                    operandsSet: List[Array[domain.DomainValue]]
                 ): Unit = {
                     //super.frequentEvalution(definingClass, method, operandsSet)
                     warningIssued = true
@@ -196,7 +191,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
             }
         }
-        override def calledMethodDomain(classFile: ClassFile, method: Method) =
+        override def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, this)
 
         def calledMethodAI = BaseAI
@@ -212,7 +207,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
         final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI
 
-        def calledMethodDomain(classFile: ClassFile, method: Method) =
+        def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, callingDomain)
 
     }

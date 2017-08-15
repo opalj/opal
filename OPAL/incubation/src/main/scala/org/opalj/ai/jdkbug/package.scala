@@ -29,7 +29,6 @@
 package org.opalj
 package ai
 
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 
 /**
@@ -48,12 +47,13 @@ package object jdkbug {
     // Initialized (exactly once) by the "analyze" method of the main analysis class.
     protected[jdkbug] var restrictedPackages: Set[String] = null
 
-    def definedInRestrictedPackage(packageName: String): Boolean =
+    def definedInRestrictedPackage(packageName: String): Boolean = {
         restrictedPackages.exists((packageName+"/").startsWith(_))
+    }
 }
 
 package jdkbug {
 
-    case class CallStackEntry(classFile: ClassFile, method: Method)
+    case class CallStackEntry(method: Method)
 
 }

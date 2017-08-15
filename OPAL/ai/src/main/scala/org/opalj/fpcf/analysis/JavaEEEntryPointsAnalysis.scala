@@ -62,9 +62,9 @@ class JavaEEEntryPointsAnalysis private[analysis] (
         val willBeInjected = InjectedClasses.isInjected(classFile)
         val result = ListBuffer.empty[SomeEP]
         val isWebFactory = project.classHierarchy.isSubtypeOf(classFile.thisType, ExceptionHandlerFactory).isYesOrUnknown
-        classFile.methods.filter { m ⇒ !m.isAbstract && !m.isNative }.foreach { method ⇒
+        classFile.methods.filter(m ⇒ !m.isAbstract && !m.isNative) foreach { method ⇒
 
-            if (CallGraphFactory.isPotentiallySerializationRelated(classFile, method)(project.classHierarchy)) {
+            if (CallGraphFactory.isPotentiallySerializationRelated(method)(project.classHierarchy)) {
                 result += EP(method, IsEntryPoint)
             } else if (method.isConstructor && willBeInjected) {
                 result += EP(method, IsEntryPoint)
@@ -74,7 +74,7 @@ class JavaEEEntryPointsAnalysis private[analysis] (
                 result += EP(method, IsEntryPoint)
             } else if (isAnnotated) {
                 result += EP(method, IsEntryPoint)
-            } else if (hasAnnotatedSubtypeAndInheritsMethod(classFile, method)) {
+            } else if (hasAnnotatedSubtypeAndInheritsMethod(method)) {
                 result += EP(method, IsEntryPoint)
             } else if (isWebFactory && !method.isPrivate) {
                 result += EP(method, IsEntryPoint)
@@ -84,9 +84,10 @@ class JavaEEEntryPointsAnalysis private[analysis] (
         ImmediateMultiResult(result.toSet)
     }
 
-    def hasAnnotatedSubtypeAndInheritsMethod(classFile: ClassFile, method: Method): Boolean = {
+    def hasAnnotatedSubtypeAndInheritsMethod(method: Method): Boolean = {
 
         val classHierarchy = project.classHierarchy
+        val classFile = method.classFile
         val methodName = method.name
         val methodDescriptor = method.descriptor
 

@@ -48,7 +48,7 @@ object PrintTAC {
             if m.body.isDefined
         } {
             val tac = tacProvider(m)
-            println(m.toJava(cf, ToTxt(tac).mkString("\n", "\n", "\n"))+"\n\n")
+            println(m.toJava(ToTxt(tac).mkString("\n", "\n", "\n"))+"\n\n")
         }
 
         BasicReport("Done.")

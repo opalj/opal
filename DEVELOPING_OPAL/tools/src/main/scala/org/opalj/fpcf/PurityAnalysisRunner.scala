@@ -68,8 +68,7 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
         val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
         val pureMethods: Traversable[(Method, Property)] =
             pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
-        val pureMethodsAsStrings =
-            pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
+        val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
 
         val methodInfo =
             pureMethodsAsStrings.toList.sorted.mkString(

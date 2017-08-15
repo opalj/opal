@@ -36,7 +36,6 @@ import org.scalatest.junit.JUnitRunner
 
 import java.net.URL
 
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
@@ -52,8 +51,8 @@ class DefaultDomainTest extends DomainTestInfrastructure("l2.DefaultDomain") {
 
     type AnalyzedDomain = l2.DefaultDomain[URL]
 
-    def Domain(project: Project[URL], classFile: ClassFile, method: Method): AnalyzedDomain = {
-        new l2.DefaultDomain(project, classFile, method)
+    def Domain(project: Project[URL], method: Method): AnalyzedDomain = {
+        new l2.DefaultDomain(project, method)
     }
 
 }

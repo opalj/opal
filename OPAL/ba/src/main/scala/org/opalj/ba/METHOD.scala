@@ -30,7 +30,7 @@ package org.opalj
 package ba
 
 /**
- * Builder for a [[org.opalj.br.Method]].
+ * Builder for a [[org.opalj.br.MethodTemplate]].
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
@@ -44,9 +44,9 @@ class METHOD[T](
 ) {
 
     /**
-     * Returns the build [[org.opalj.br.Method]] and its annotations.
+     * Returns the build [[org.opalj.br.MethodTemplate]] and its annotations.
      */
-    def result(): (br.Method, Option[T]) = {
+    def result(): (br.MethodTemplate, Option[T]) = {
         val methodDescriptor = br.MethodDescriptor(descriptor)
         val accessFlags = accessModifiers.accessFlags
 

@@ -68,12 +68,9 @@ object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
                 method.descriptor.parameterTypes.exists(_.isReferenceType)
             ) || !method.isStatic
             result = BaseAI(
-                classFile,
                 method,
                 // "in real code" a specially tailored domain should be used.
-                new domain.l1.DefaultDomain(
-                    theProject, classFile, method
-                ) with RecordLastReturnedValues
+                new domain.l1.DefaultDomain(theProject, method) with RecordLastReturnedValues
             )
             if result.domain.allReturnedValues.forall(_ match {
                 case (_, Origin(o)) if o < 0              ⇒ true
@@ -86,7 +83,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
                 result.domain.allReturnedValues.values.
                     map(result.domain.origin(_).toSet).flatten.toSet
 
-            method.toJava(classFile) + (
+            method.toJava + (
                 if (origins.nonEmpty)
                     "; returned values: "+origins.mkString(",")
                 else

@@ -41,7 +41,6 @@ import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.domain
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
@@ -126,13 +125,13 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
                 if method.returnType.isReferenceType
                 ai = new InterruptableAI[Domain]
                 domain = new AnalysisDomain(theProject, ai, method)
-                result = ai(classFile, method, domain)
+                result = ai(method, domain)
                 if !result.wasAborted
                 returnedValue = domain.returnedValue
                 if returnedValue.isEmpty ||
                     returnedValue.get.asDomainReferenceValue.upperTypeBound != UIDSet(originalType)
             } yield {
-                RefinedReturnType(classFile, method, domain.returnedValue)
+                RefinedReturnType(method, domain.returnedValue)
             }
         } { ns ⇒ println(s"the analysis took ${ns.toSeconds}") }
 
@@ -145,17 +144,12 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
 }
 
-case class RefinedReturnType(
-        classFile:   ClassFile,
-        method:      Method,
-        refinedType: Option[Domain#DomainValue]
-) {
+case class RefinedReturnType(method: Method, refinedType: Option[Domain#DomainValue]) {
 
     override def toString(): String = {
         import Console._
-        "Refined the return type of "+BOLD + BLUE + method.toJava(classFile)+" => "+
+        "Refined the return type of "+BOLD + BLUE + method.toJava+" => "+
             GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
     }
 
 }
-

@@ -106,7 +106,7 @@ object TACAI {
     )(
         domain: Domain with RecordDefUse = new DefaultDomainWithCFGAndDefUse(project, method)
     ): TACode[TACMethodParameter, DUVar[domain.DomainValue]] = {
-        val aiResult = BaseAI(project.classFile(method), method, domain)
+        val aiResult = BaseAI(method, domain)
         TACAI(method, project.classHierarchy, aiResult)(Nil)
     }
 

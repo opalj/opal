@@ -34,7 +34,6 @@ package cg
 import scala.collection.Set
 import scala.collection.mutable.HashSet
 
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodSignature
@@ -64,8 +63,7 @@ class CHACallGraphExtractor(
 ) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(
-            val classFile: ClassFile,
-            val method:    Method
+            val method: Method
     )(
             implicit
             val project: SomeProject
@@ -82,10 +80,7 @@ class CHACallGraphExtractor(
         ): Unit = {
 
             def handleUnresolvedMethodCall() = {
-                addUnresolvedMethodCall(
-                    classFile.thisType, method, pc,
-                    declaringClassType, name, descriptor
-                )
+                addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
             }
 
             lookupMethodDefinition(declaringClassType, name, descriptor) match {
@@ -102,10 +97,7 @@ class CHACallGraphExtractor(
         ): Unit = {
 
             def handleUnresolvedMethodCall(): Unit = {
-                addUnresolvedMethodCall(
-                    classFile.thisType, method, pc,
-                    declaringClassType, name, descriptor
-                )
+                addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
             }
 
             lookupMethodDefinition(declaringClassType, name, descriptor) match {
@@ -133,7 +125,7 @@ class CHACallGraphExtractor(
         ): Unit = {
 
             if (receiverIsNull.isYesOrUnknown) {
-                addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+                addCallToNullPointerExceptionConstructor(method, pc)
             }
 
             doNonVirtualCall(pc, declaringClassType, name, descriptor)
@@ -152,13 +144,11 @@ class CHACallGraphExtractor(
             isInterfaceInvocation: Boolean          = false
         ): Unit = {
 
-            addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+            addCallToNullPointerExceptionConstructor(method, pc)
 
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
             if (callees.isEmpty) {
-                addUnresolvedMethodCall(
-                    classFile.thisType, method, pc, declaringClassType, name, descriptor
-                )
+                addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
             } else {
                 addCallEdge(pc, callees)
             }
@@ -166,13 +156,12 @@ class CHACallGraphExtractor(
     }
 
     def extract(
-        classFile: ClassFile,
-        method:    Method
+        method: Method
     )(
         implicit
         project: SomeProject
     ): CallGraphExtractor.LocalCallGraphInformation = {
-        val context = new AnalysisContext(classFile, method)
+        val context = new AnalysisContext(method)
 
         method.body.get.iterate { (pc, instruction) ⇒
             instruction.opcode match {
