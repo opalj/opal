@@ -353,7 +353,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         val computedOProperty = propertyStore(method, propertyKey)
 
         if (computedOProperty.hasNoProperty) {
-            val classFile = project.classFile(method)
+            val classFile = method.classFile
             val message =
                 s"Method has no property: ${classFile.fqn} for: $propertyKey;"+
                     s"\n\tmethod name:       ${method.name}"+
@@ -364,11 +364,11 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != expected) {
-            val classFile = project.classFile(method)
+            val classFile = method.classFile
             val message =
                 "Wrong property computed: "+
                     s"${classFile.fqn} has the property $computedProperty for $propertyKey;"+
-                    s"\n\tmethod name:       ${method.toJava(classFile)}"+
+                    s"\n\tmethod name:       ${method.toJava}"+
                     s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $expected"
             fail(message)
@@ -382,7 +382,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         val computedOProperty = propertyStore(fp, propertyKey)
 
         if (computedOProperty.hasNoProperty) {
-            val classFile = project.classFile(method)
+            val classFile = method.classFile
             val message =
                 s"Formal parameter has no property: ${classFile.fqn} for: $propertyKey;"+
                     s"\n\tparameter:         ${fp.origin}"+
@@ -394,12 +394,12 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != expected) {
-            val classFile = project.classFile(method)
+            val classFile = method.classFile
             val message =
                 "Wrong property computed: "+
                     s"${classFile.fqn} has the property $computedProperty for $propertyKey;"+
                     s"\n\tparameter:         ${fp.origin}"+
-                    s"\n\tmethod name:       ${method.toJava(classFile)}"+
+                    s"\n\tmethod name:       ${method.toJava}"+
                     s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $expected"
             fail(message)
@@ -413,7 +413,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         val computedOProperty = propertyStore(as, propertyKey)
 
         if (computedOProperty.hasNoProperty) {
-            val classFile = project.classFile(method)
+            val classFile = method.classFile
             val message =
                 s"Allocation site has no property: ${classFile.fqn} for: $propertyKey;"+
                     s"\n\tprogram counter:   ${as.pc}"+
@@ -425,12 +425,12 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != expected) {
-            val classFile = project.classFile(method)
+            val classFile = method.classFile
             val message =
                 "Wrong property computed: "+
                     s"${classFile.fqn} has the property $computedProperty for $propertyKey;"+
                     s"\n\tprogram counter:   ${as.pc}"+
-                    s"\n\tmethod name:       ${method.toJava(classFile)}"+
+                    s"\n\tmethod name:       ${method.toJava}"+
                     s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $expected"
             fail(message)
