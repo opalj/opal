@@ -238,7 +238,11 @@ object DAandBR extends App {
     val assembledCF = Assembler(cf)
 
     val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(assembledCF)).head
-    val newBRClassFile = brClassFile.copy(methods = brClassFile.methods.filter( /*some sophisticated analysis...*/ _.name == "<init>"))
+    val newBRMethods =
+        brClassFile.methods.
+            filter(m ⇒ /*due some sophisticated analysis...*/ m.name == "<init>").
+            map(m ⇒ m.copy())
+    val newBRClassFile = brClassFile.copy(methods = newBRMethods)
 
     val newDAClassFile = cf.copy(methods = cf.methods.filter { daM ⇒
         implicit val cp = cf.constant_pool

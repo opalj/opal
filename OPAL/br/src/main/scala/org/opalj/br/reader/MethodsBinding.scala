@@ -35,11 +35,9 @@ import scala.reflect.ClassTag
 import org.opalj.bi.reader.MethodsReader
 
 /**
- *
  * @author Michael Eichberg
  */
-trait MethodsBinding extends MethodsReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
+trait MethodsBinding extends MethodsReader { this: ConstantPoolBinding with AttributeBinding ⇒
 
     type Method_Info = br.Method
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
@@ -51,7 +49,7 @@ trait MethodsBinding extends MethodsReader {
         descriptor_index: Int,
         attributes:       Attributes
     ): Method_Info = {
-        Method(
+        Method.unattached(
             accessFlags,
             cp(name_index).asString,
             cp(descriptor_index).asMethodDescriptor,

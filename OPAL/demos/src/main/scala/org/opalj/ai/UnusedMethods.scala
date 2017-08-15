@@ -71,7 +71,7 @@ object UnusedMethods extends DefaultOneStepAnalysis {
                     method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
                 )
                 if !(
-                    CallGraphFactory.isPotentiallySerializationRelated(classFile, method) &&
+                    CallGraphFactory.isPotentiallySerializationRelated(method) &&
                     isSubtypeOf(classFile.thisType, ObjectType.Serializable).isYesOrUnknown
                 )
             } yield {
@@ -87,7 +87,7 @@ object UnusedMethods extends DefaultOneStepAnalysis {
                     val e2FQN = e2ClassFile.thisType.fqn
                     e1FQN < e2FQN || (e1FQN == e2FQN && e1Method < e2Method)
                 }
-            ).map(e ⇒ e._2.fullyQualifiedSignature(e._1.thisType))
+            ).map(e ⇒ e._2.fullyQualifiedSignature)
 
         val msg = sortedResults.mkString("Dead Methods: "+results.size+"): \n", "\n", "\n")
         BasicReport(msg)

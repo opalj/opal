@@ -83,9 +83,7 @@ object RefineableNativeMethods extends DefaultOneStepAnalysis {
             } yield method
 
         val refineableNativeMethodsInfo =
-            refineableNativeMethods.
-                map(method ⇒ method.toJava(project.classFile(method))).
-                mkString("\n")
+            refineableNativeMethods.map(method ⇒ method.toJava).mkString("\n")
 
         BasicReport(
             statistics +

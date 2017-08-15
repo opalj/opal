@@ -69,16 +69,15 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
 
     type AnalyzedDomain <: Domain
 
-    def Domain(project: Project[URL], classFile: ClassFile, method: Method): AnalyzedDomain
+    def Domain(project: Project[URL], method: Method): AnalyzedDomain
 
     /**
      * Called for each method that was successfully analyzed.
      */
     def analyzeAIResult(
-        project:   Project[URL],
-        classFile: ClassFile,
-        method:    Method,
-        result:    AIResult { val domain: AnalyzedDomain }
+        project: Project[URL],
+        method:  Method,
+        result:  AIResult { val domain: AnalyzedDomain }
     ): Unit = {
         // validate that we can get the computational type of each value stored on the stack
         // (this test will fail by throwing an exception)
@@ -102,22 +101,22 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         def analyzeClassFile(
-            source:    String,
-            classFile: ClassFile,
-            method:    Method
+            source: String,
+            method: Method
         ): Option[(String, ClassFile, Method, Throwable)] = {
+            val classFile = method.classFile
             val body = method.body.get
             try {
                 time('AI) {
                     val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor)
-                    val result = ai(classFile, method, Domain(project, classFile, method))
+                    val result = ai(method, Domain(project, method))
                     if (result.wasAborted) {
                         throw new InterruptedException(
                             s"evaluation bound (max=${ai.maxEvaluationCount} exceeded"+
                                 s" (maxStack=${body.maxStack}; maxLocals=${body.maxLocals})"
                         )
                     } else {
-                        analyzeAIResult(project, classFile, method, result)
+                        analyzeAIResult(project, method, result)
                     }
                 }
                 methodsCount.incrementAndGet()
@@ -135,8 +134,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         val collectedExceptions = time('OVERALL) {
             val exceptions = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { (m) ⇒
-                val MethodInfo(source, classFile, method) = m
-                analyzeClassFile(source.toString, classFile, method) foreach { exceptions.add(_) }
+                val MethodInfo(source, method) = m
+                analyzeClassFile(source.toString, method) foreach { exceptions.add(_) }
             }
             import scala.collection.JavaConverters._
             exceptions.asScala
@@ -152,7 +151,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                             val (_, classFile, method, throwable) = ex
                             <div>
                                 <b>{ classFile.thisType.fqn }</b>
-                                <i>"{ method.toJava(false) }"</i><br/>
+                                <i>"{ method.signatureToJava(false) }"</i><br/>
                                 { "Length: "+method.body.get.instructions.length }
                                 <div>{ XHTML.throwableToXHTML(throwable) }</div>
                             </div>

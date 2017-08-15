@@ -33,9 +33,7 @@ import java.net.URL
 import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 import org.opalj.br.Method
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.ClassFile
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.BasicMethodInfo
 import org.opalj.ai.domain.PerformAI
 
 /**
@@ -63,8 +61,8 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
         val refinedCallsCount = new java.util.concurrent.atomic.AtomicInteger
         val ch = theProject.classHierarchy
 
-        def analyzeMethod(classFile: ClassFile, method: Method): Unit = {
-            val domain = new ai.domain.l1.DefaultDomain(theProject, classFile, method)
+        def analyzeMethod(method: Method): Unit = {
+            val domain = new ai.domain.l1.DefaultDomain(theProject, method)
             val result = PerformAI(domain)
 
             val code = method.body.get
@@ -123,16 +121,8 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
             }
         }
 
-        theProject.parForeachMethodWithBody { isInterrupted } { projectMethodInfo ⇒
-            val BasicMethodInfo(classFile, method) = projectMethodInfo
-            try {
-                // <= THIS IS STRICTLY NECESSARY AS parForeachMethodWithBody
-                // (HAS TO) SWALLOW EXCEPTIONS
-                analyzeMethod(classFile, method)
-            } catch {
-                case t: Throwable ⇒ t.printStackTrace()
-            }
-        }
+        val ex = theProject.parForeachMethodWithBody(isInterrupted)(mi ⇒ analyzeMethod(mi.method))
+        ex.foreach { e ⇒ e.printStackTrace(Console.err) }
 
         BasicReport(s"Found ${refinedCallsCount.get}/${callsCount.get} calls where we were able to get more precise type information.")
     }

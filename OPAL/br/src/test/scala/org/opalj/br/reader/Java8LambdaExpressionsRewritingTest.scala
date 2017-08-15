@@ -95,15 +95,18 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
                         MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
                     }
 
-                assert(invokedTarget.nonEmpty, s"failed to resolve $factoryCall in ${method.toJava(classFile)}")
+                assert(
+                    invokedTarget.nonEmpty,
+                    s"failed to resolve $factoryCall in ${method.toJava}"
+                )
 
             } else {
                 val expectedTarget = getInvokedMethod(project, classFile, annotations)
                 val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
 
-                withClue {
-                    s"failed to resolve $factoryCall in ${method.toJava(classFile)}"
-                }(actualTarget.get should ===(expectedTarget.get))
+                withClue { s"failed to resolve $factoryCall in ${method.toJava}" }(
+                    actualTarget.get should ===(expectedTarget.get)
+                )
             }
 
         }

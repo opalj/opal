@@ -505,7 +505,8 @@ object TACNaive {
                     val invoke = as[MethodInvocationInstruction](instruction)
                     val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
-                    val (params, List(receiver)) = operands.splitAt(numOps - 1)
+                    val (paramsInOperandsOrder, List(receiver)) = operands.splitAt(numOps - 1)
+                    val params = paramsInOperandsOrder.reverse
                     import invoke.{methodDescriptor, declaringClass, isInterfaceCall, name}
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
@@ -544,7 +545,8 @@ object TACNaive {
                 case INVOKESTATIC.opcode ⇒
                     val invoke = as[INVOKESTATIC](instruction)
                     val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
-                    val (params, rest) = stack.splitAt(numOps)
+                    val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
+                    val params = paramsInOperandsOrder.reverse
                     import invoke.{declaringClass, methodDescriptor, name, isInterface}
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
@@ -571,9 +573,11 @@ object TACNaive {
                 case INVOKEDYNAMIC.opcode ⇒
                     val call @ INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
                     val numOps = call.numberOfPoppedOperands(x ⇒ stack.drop(x).head.cTpe.category)
-                    val (operands, rest) = stack.splitAt(numOps)
+                    val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
+                    val params = paramsInOperandsOrder.reverse
+
                     val returnType = methodDescriptor.returnType
-                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, operands)
+                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
                     val newVar = OperandVar(returnType.computationalType, rest)
                     statements(pc) = List(Assignment(pc, newVar, expr))
                     schedule(pcOfNextInstruction(pc), newVar :: rest)

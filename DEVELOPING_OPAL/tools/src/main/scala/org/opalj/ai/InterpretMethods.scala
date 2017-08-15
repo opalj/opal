@@ -160,28 +160,25 @@ object InterpretMethodsAnalysis {
         val methodsCount = new AtomicInteger(0)
         val instructionEvaluationsCount = new AtomicLong(0)
 
-        val domainConstructor =
-            domainClass.getConstructor(classOf[Project[URL]], classOf[ClassFile], classOf[Method])
+        val domainConstructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
 
         def analyzeMethod(
-            source:    String,
-            classFile: ClassFile,
-            method:    Method
+            source: String,
+            method: Method
         ): Option[(String, ClassFile, Method, Throwable)] = {
 
             val body = method.body.get
             try {
-                if (beVerbose) println(method.toJava(classFile, YELLOW+"[started]"+RESET))
+                if (beVerbose) println(method.toJava(YELLOW+"[started]"+RESET))
 
                 val evaluatedCount = time('AI) {
                     val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor, true)
-                    val domain = domainConstructor.newInstance(project, classFile, method)
-                    val result = ai(classFile, method, domain)
+                    val domain = domainConstructor.newInstance(project, method)
+                    val result = ai(method, domain)
                     if (result.wasAborted) {
                         if (beVerbose)
                             println(
                                 method.toJava(
-                                    classFile,
                                     RED+"[aborted after evaluating "+
                                         ai.currentEvaluationCount+
                                         " instructions (size of instructions array="+
@@ -200,28 +197,28 @@ object InterpretMethodsAnalysis {
                 }
                 val naiveEvaluatedCount = time('NAIVE_AI) {
                     val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor, false)
-                    val domain = domainConstructor.newInstance(project, classFile, method)
-                    ai(classFile, method, domain)
+                    val domain = domainConstructor.newInstance(project, method)
+                    ai(method, domain)
                     ai.currentEvaluationCount
                 }
 
                 if (naiveEvaluatedCount > evaluatedCount) {
                     val codeLength = body.instructions.length
                     val message = method.toJava(
-                        classFile,
                         s"Evaluation steps (code length:$codeLength): "+
                             s"${naiveEvaluatedCount} (w/o dead variables analysis) vs. $evaluatedCount"
                     )
                     println(message)
                 }
 
-                if (beVerbose) println(method.toJava(classFile, GREEN+"[finished]"+RESET))
+                if (beVerbose) println(method.toJava(GREEN+"[finished]"+RESET))
                 methodsCount.incrementAndGet()
                 None
             } catch {
                 case ct: ControlThrowable ⇒ throw ct
                 case t: Throwable ⇒
                     // basically, we want to catch everything!
+                    val classFile = method.classFile
                     val source = project.source(classFile.thisType).get.toString
                     Some((source, classFile, method, t))
             }
@@ -230,8 +227,7 @@ object InterpretMethodsAnalysis {
         val collectedExceptions = time('OVERALL) {
             val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { m ⇒
-                val MethodInfo(source, classFile, method) = m
-                analyzeMethod(source.toString, classFile, method).map(results.add(_))
+                analyzeMethod(m.source.toString, m.method).map(results.add(_))
             }
             import scala.collection.JavaConverters._
             results.asScala
@@ -247,7 +243,7 @@ object InterpretMethodsAnalysis {
                             val (_, classFile, method, throwable) = ex
                             <div>
                                 <b>{ classFile.thisType.fqn }</b>
-                                <i>"{ method.toJava(true) }"</i><br/>
+                                <i>"{ method.signatureToJava(true) }"</i><br/>
                                 { "Length: "+method.body.get.instructions.length }
                                 <div>{ XHTML.throwableToXHTML(throwable) }</div>
                             </div>

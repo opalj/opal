@@ -34,8 +34,8 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * Configuration of a specific
- * import org.opalj.ai.analyses.cg.CallGraphExtractor call graph algorithm. Basically, the configuration
- * consist of the `Cache` object that will be used during the
+ * [[org.opalj.ai.analyses.cg.CallGraphExtractor]] call graph algorithm.
+ * Basically, the configuration consist of the `Cache` object that will be used during the
  * computation of the call graph and the extractor that will be used
  * for each method that is analyzed during the construction of the graph.
  *

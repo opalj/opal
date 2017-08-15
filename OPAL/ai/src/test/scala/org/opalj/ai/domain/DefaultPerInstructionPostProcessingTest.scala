@@ -80,7 +80,7 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
     private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit): Unit = {
         val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             f(domain)

@@ -81,10 +81,8 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
                     var isOwner = true
                     val aiResult =
                         BaseAI(
-                            classFile, method,
-                            new DefaultDomain(
-                                theProject, classFile, method
-                            ) with RecordLastReturnedValues
+                            method,
+                            new DefaultDomain(theProject, method) with RecordLastReturnedValues
                         )
                     import aiResult.domain
                     if (method.returnType.isReferenceType) {

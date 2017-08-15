@@ -131,13 +131,12 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
                 effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.p))
 
             val effectivelyFinalFieldsAsStrings =
-                effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
+                effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava)
 
             val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
             val pureMethods: Traversable[(Method, Property)] =
                 pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
-            val pureMethodsAsStrings =
-                pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
+            val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
 
             val fieldInfo =
                 effectivelyFinalFieldsAsStrings.toList.sorted.mkString(

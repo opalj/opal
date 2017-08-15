@@ -31,13 +31,15 @@ package ai
 package analyses
 package cg
 
+import scala.annotation.switch
+
 import scala.collection.Set
 import scala.collection.Map
 import scala.collection.mutable.HashSet
+
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br._
 import org.opalj.ai.domain.TheProject
-import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.TheMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -53,17 +55,17 @@ import org.opalj.br.instructions.VirtualMethodInvocationInstruction
  *
  * @author Michael Eichberg
  */
-class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFile with TheMethod](
+class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheMethod](
         val cache: CallGraphCache[MethodSignature, Set[Method]],
-        Domain:    (ClassFile, Method) ⇒ TheDomain
+        Domain:    Method ⇒ TheDomain
 ) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(val domain: TheDomain) extends super.AnalysisContext {
 
-        val project = domain.project
-        val classHierarchy = project.classHierarchy
-        val classFile = domain.classFile
-        val method = domain.method
+        def project = domain.project
+        def classHierarchy = project.classHierarchy
+        def classFile = domain.classFile
+        def method = domain.method
 
         def staticCall(
             pc:                 PC,
@@ -74,9 +76,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         ): Unit = {
 
             def handleUnresolvedMethodCall() = {
-                addUnresolvedMethodCall(
-                    classFile.thisType, method, pc, declaringClassType, name, descriptor
-                )
+                addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
             }
             project.lookupMethodDefinition(declaringClassType, name, descriptor) match {
                 case Some(callee) ⇒ addCallEdge(pc, HashSet(callee))
@@ -97,9 +97,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         ): Unit = {
 
             def handleUnresolvedMethodCall(): Unit = {
-                addUnresolvedMethodCall(
-                    classFile.thisType, method, pc, declaringClassType, name, descriptor
-                )
+                addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
             }
             project.lookupMethodDefinition(declaringClassType, name, descriptor) match {
                 case Some(callee) ⇒ addCallEdge(pc, HashSet(callee))
@@ -123,7 +121,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         ): Unit = {
 
             if (receiverIsNull.isYesOrUnknown) {
-                addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+                addCallToNullPointerExceptionConstructor(method, pc)
             }
 
             doNonVirtualCall(
@@ -140,9 +138,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         ): Unit = {
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
             if (callees.isEmpty) {
-                addUnresolvedMethodCall(
-                    classFile.thisType, method, pc, declaringClassType, name, descriptor
-                )
+                addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
             } else {
                 addCallEdge(pc, callees)
             }
@@ -172,12 +168,12 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             //    the central factory method already "handles" this issue - hence, we don't care
 
             if (receiverIsNull.isYes) {
-                addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+                addCallToNullPointerExceptionConstructor(method, pc)
                 return ;
             }
 
             if (receiverIsNull.isUnknown) {
-                addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+                addCallToNullPointerExceptionConstructor(method, pc)
                 // ... and continue!
             }
 
@@ -312,8 +308,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
     private[this] val chaCallGraphExtractor = new CHACallGraphExtractor(cache /*it should not be used...*/ )
 
     def extract(
-        classFile: ClassFile,
-        method:    Method
+        method: Method
     )(
         implicit
         project: SomeProject
@@ -328,16 +323,16 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                 i.isInstanceOf[VirtualMethodInvocationInstruction]
             }
         if (!hasVirtualMethodCalls)
-            return chaCallGraphExtractor.extract(classFile, method)
+            return chaCallGraphExtractor.extract(method)
 
         // There are virtual calls, hence, we now do the call graph extraction using
         // variable type analysis
 
-        val result = BaseAI(classFile, method, Domain(classFile, method))
+        val result = BaseAI(method, Domain(method))
         val context = AnalysisContext(result.domain)
 
         result.domain.code iterate { (pc, instruction) ⇒
-            (instruction.opcode: @scala.annotation.switch) match {
+            (instruction.opcode: @switch) match {
                 case INVOKEVIRTUAL.opcode ⇒
                     val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
                     val operands = result.operandsArray(pc)

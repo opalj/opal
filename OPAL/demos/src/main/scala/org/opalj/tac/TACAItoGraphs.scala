@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.BasicReport
 
 /**
@@ -79,8 +78,8 @@ object TACAItoGraphs extends DefaultOneStepAnalysis {
         val tacs = theProject.get(DefaultTACAIKey)
 
         val errors = theProject.parForeachMethodWithBody() { mi ⇒
-            val MethodInfo(_, cf, m) = mi
-            val methodName = m.toJava(cf)
+            val m = mi.method
+            val methodName = m.toJava
             val outputFileName = pathName + org.opalj.io.sanitizeFileName(methodName)
 
             // 1. create the def/use graphs

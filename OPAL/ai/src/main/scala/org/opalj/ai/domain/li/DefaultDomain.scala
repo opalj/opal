@@ -31,14 +31,12 @@ package ai
 package domain
 package li
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
-class DefaultConfigurableDomain[I, Source](
-        val id:        I,
-        val project:   Project[Source],
-        val classFile: ClassFile,
-        val method:    Method
+class DefaultDomain[Source](
+        val project: Project[Source],
+        val method:  Method
 ) extends CorrelationalDomain
     with DefaultDomainValueBinding
     with ThrowAllPotentialExceptionsConfiguration
@@ -59,19 +57,6 @@ class DefaultConfigurableDomain[I, Source](
     with li.DefaultPreciseLongValues
     with l1.ConcretePrimitiveValuesConversions {
 
-    type Id = I
-
     override protected def maxUpdatesForIntegerValues: Long = 25L
 
 }
-
-class DefaultDomain[Source](
-        project:   Project[Source],
-        classFile: ClassFile,
-        method:    Method
-) extends DefaultConfigurableDomain[String, Source](
-    method.toJava(classFile),
-    project,
-    classFile,
-    method
-)

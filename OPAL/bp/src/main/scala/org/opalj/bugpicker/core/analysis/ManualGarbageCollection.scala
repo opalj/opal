@@ -90,7 +90,7 @@ object ManualGarbageCollection {
             s"contains dubious call to $gcCall",
             Set(IssueCategory.Performance),
             Set(IssueKind.DubiousMethodCall),
-            List(new InstructionLocation(None, theProject, classFile, method, pc))
+            List(new InstructionLocation(None, theProject, method, pc))
         )
     }
 }
