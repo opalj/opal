@@ -29,15 +29,10 @@
 package org.opalj
 package br
 
-import reader.Java8Framework.ClassFiles
-import analyses.Project
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
-import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * Tests OPAL's support w.r.t. inner classes.
@@ -47,10 +42,7 @@ import org.opalj.bi.TestResources.locateTestResources
 @RunWith(classOf[JUnitRunner])
 class IsInnerClassPropertyTest extends FlatSpec with Matchers {
 
-    val project = {
-        val testResources = locateTestResources("innerclasses.jar", "bi")
-        Project(ClassFiles(testResources), Traversable.empty, true)
-    }
+    val project = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature")
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
     val myRootClass = ObjectType("innerclasses/MyRootClass")

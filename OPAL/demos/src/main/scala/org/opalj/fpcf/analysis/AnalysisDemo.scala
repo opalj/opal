@@ -47,9 +47,7 @@ trait AnalysisDemo extends DefaultOneStepAnalysis {
         implicit
         propertyStore: PropertyStore
     ): Traversable[EP[Entity, property.Self]] = {
-        propertyStore.entities(property.key).filter { ep ⇒
-            ep.p == property
-        }
+        propertyStore.entities(property.key).filter { ep ⇒ ep.p == property }
     }
 
     def finalReport(infoStrings: Traversable[String], caption: String): String =
@@ -67,7 +65,7 @@ trait MethodAnalysisDemo extends AnalysisDemo {
     ): Traversable[String] = entities.map { ep ⇒
         val method = ep.e.asInstanceOf[Method]
         val methodString = getVisibilityModifier(method)+" "+method.name
-        val classFile = project.classFile(method)
+        val classFile = method.classFile
         val jarInfo = if (withJarInfo)
             project.source(classFile.thisType)
         else ""

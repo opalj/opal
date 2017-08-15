@@ -34,7 +34,7 @@ import org.opalj.collection.immutable.UShortPair
 /**
  * Given a class files's main elements the attribute is build.
  *
- * @see The BytecodeAssember framework for an example usage.
+ * @see The ''BytecodeAssember framework'' for an example usage.
  *
  * @author Michael Eichberg
  */
@@ -46,8 +46,8 @@ trait ClassFileAttributeBuilder {
         thisType:       ObjectType,
         superclassType: Option[ObjectType],
         interfaceTypes: Seq[ObjectType], // TODO Use a UIDSet over here and in the class hierarchy!
-        fields:         Fields,
-        methods:        Methods
+        fields:         Seq[FieldTemplate],
+        methods:        Seq[MethodTemplate]
     ): Attribute
 
 }

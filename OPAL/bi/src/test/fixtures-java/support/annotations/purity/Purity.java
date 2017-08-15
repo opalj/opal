@@ -43,8 +43,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * @author Dominik Helm
  */
-@Retention(RUNTIME) @Target({ METHOD,
-        CONSTRUCTOR }) @Repeatable(PurityProperty.class) public @interface Purity {
+@Retention(RUNTIME)
+@Target({ METHOD, CONSTRUCTOR })
+@Repeatable(PurityProperty.class)
+public @interface Purity {
 
     /**
      * The methods purity.
@@ -53,7 +55,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
     /**
      * The algorithms, if only specific algorithms will compute this result.
-     *
+     * <p>
      * TODO Add example to clarify how to specify the algorithm.
      */
     String[] algorithms() default {};

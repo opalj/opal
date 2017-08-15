@@ -297,7 +297,7 @@ class ProjectExplorer(
             classFile,
             method
         )
-        val aiResult = BaseAI(classFile, method, domain)
+        val aiResult = BaseAI(method, domain)
         val aiResultXHTML =
             XHTML.dump(
                 classFile, method, "Result of Abstract Interpretation", aiResult

@@ -30,8 +30,8 @@ package org.opalj
 package ai
 package project
 
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.{Project, ReportableAnalysisResult}
 
 /**
@@ -65,7 +65,7 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
      * The analysis of all entry points may happen concurrently unless
      * [[analyzeInParallel]] is `false`.
      */
-    def domain(project: Project[Source], classFile: ClassFile, method: Method): D
+    def domain(project: Project[Source], method: Method): D
 
     /**
      * A project's entry points.
@@ -85,7 +85,7 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
      *
      * @return All methods that are potential entry points.
      */
-    def entryPoints(project: Project[Source]): Iterable[(ClassFile, Method)]
+    def entryPoints(project: Project[Source]): Iterable[Method]
 
     /**
      * Analyzes the given project by first determining the entry points of the analysis
@@ -97,15 +97,11 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
      *      it is recommended to first analyze the parameters and afterwards to call
      *      this method using `super.analyze(...)`.
      */
-    def analyze(
-        project:    Project[Source],
-        parameters: Seq[String]
-    ): ReportableAnalysisResult = {
+    def analyze(project: Project[Source], parameters: Seq[String]): ReportableAnalysisResult = {
 
-        val analyze: ((ClassFile, Method)) ⇒ Option[String] = { cf_m: (ClassFile, Method) ⇒
-            val (classFile: ClassFile, method: Method) = cf_m
-            val theDomain = domain(project, classFile, method)
-            ai(classFile, method, theDomain)
+        val analyze: Method ⇒ Option[String] = { m: Method ⇒
+            val theDomain = domain(project, m)
+            ai(m, theDomain)
             theDomain.report
         }
 
@@ -116,9 +112,6 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
                 entryPoints(project) map { analyze }
 
         val theReports = reports.filter(_.isDefined).map(_.get)
-        br.analyses.BasicReport(
-            "Number of reports: "+theReports.size+"\n"+theReports.mkString("\n")
-        )
+        BasicReport("Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
     }
 }
-

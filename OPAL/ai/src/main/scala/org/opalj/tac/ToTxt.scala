@@ -55,7 +55,7 @@ import org.opalj.br.ComputationalTypeReturnAddress
 object ToTxt {
 
     def callToTxt[V <: Var[V]](name: String, params: Seq[Expr[V]]): String = {
-        params.reverse map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
+        params map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
     }
 
     @inline final def toTxtExpr[V <: Var[V]](expr: Expr[V]): String = {

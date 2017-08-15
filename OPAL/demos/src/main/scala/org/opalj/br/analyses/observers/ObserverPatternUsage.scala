@@ -197,8 +197,8 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
                 (BOLD+"Observer interfaces in application ("+appObserverInterfaces.size+"): "+RESET + appObserverInterfaces.map(_.toJava).mkString(", ")) +
                 (BOLD+"Observer classes in application ("+appObserverClasses.size+"): "+RESET + appObserverClasses.map(_.toJava).mkString(", ")) +
                 (BOLD+"Fields to store observers in application ("+observerFields.size+"): "+RESET + observerFields.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.fieldType.toJava+" "+e._2.name+" }").mkString(", ")) +
-                (BOLD+"Methods to manage observers in application ("+observerManagementMethods.size+"): "+RESET + observerManagementMethods.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.toJava(false)+" }").mkString(", ")) +
-                (BOLD+"Methods that are related to observers in application ("+observerNotificationMethods.size+"): "+RESET + observerNotificationMethods.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.toJava(false)+" }").mkString(", "))
+                (BOLD+"Methods to manage observers in application ("+observerManagementMethods.size+"): "+RESET + observerManagementMethods.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.signatureToJava(false)+" }").mkString(", ")) +
+                (BOLD+"Methods that are related to observers in application ("+observerNotificationMethods.size+"): "+RESET + observerNotificationMethods.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.signatureToJava(false)+" }").mkString(", "))
         )
     }
 }

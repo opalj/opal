@@ -83,12 +83,8 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         // Explicitly specifies that all reference values are not null.
-        def setToNonNull(
-            domain: DefaultDomain[URL]
-        )(
-            defaultLocals: domain.Locals
-        ): domain.Locals = {
-            defaultLocals.map { value ⇒
+        def setToNonNull(domain: DefaultDomain[URL])(locals: domain.Locals): domain.Locals = {
+            locals.map { value ⇒
                 if (value == null)
                     // not all local values are used right from the beginning
                     null
@@ -115,18 +111,18 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
 
                 // 1. Default interpretation
                 val domain1 =
-                    new DefaultDomain(theProject, classFile, method) with domain.RecordAllThrownExceptions
+                    new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
                 ai.performInterpretation(method.isStrict, method.body.get, domain1)(
-                    ai.initialOperands(classFile, method, domain1),
-                    ai.initialLocals(classFile, method, domain1)(None)
+                    ai.initialOperands(method, domain1),
+                    ai.initialLocals(method, domain1)(None)
                 )
 
                 // 1. Interpretation under the assumption that all values are non-null
                 val domain2 =
-                    new DefaultDomain(theProject, classFile, method) with domain.RecordAllThrownExceptions
-                val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(classFile, method, domain2)(None))
+                    new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
+                val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(method, domain2)(None))
                 ai.performInterpretation(method.isStrict, method.body.get, domain2)(
-                    ai.initialOperands(classFile, method, domain2), nonNullLocals
+                    ai.initialOperands(method, domain2), nonNullLocals
                 )
 
                 // Let's calculate the diff. The basic idea is to iterate over
@@ -161,7 +157,7 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
 
                 (
                     classFile, //<= only used for sorting purposes
-                    BLUE + method.toJava(classFile) + RESET,
+                    BLUE + method.toJava + RESET,
                     result ++ d2ThrownExceptions
                 )
             }

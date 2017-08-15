@@ -159,7 +159,7 @@ class ProjectTest extends FlatSpec with Matchers {
             forceLookupInSuperinterfacesOnFailure = true
         )
         r should be('Defined)
-        assert(project.classFile(r.get).thisType === ObjectType("methods/b/SubI"))
+        assert(r.get.classFile.thisType === ObjectType("methods/b/SubI"))
     }
 
     it should "find a method declared by an indirectly implemented interface" in {
@@ -168,7 +168,7 @@ class ProjectTest extends FlatSpec with Matchers {
             forceLookupInSuperinterfacesOnFailure = true
         )
         r should be('Defined)
-        assert(project.classFile(r.get).thisType === ObjectType("methods/b/SuperI"))
+        assert(r.get.classFile.thisType === ObjectType("methods/b/SuperI"))
     }
 
     behavior of "A Project's information management methods"
@@ -310,7 +310,6 @@ class ProjectTest extends FlatSpec with Matchers {
                             val (c, m) = mm
                             val belongsToProject = project.isProjectType(c.thisType)
                             m.toJava(
-                                c,
                                 m.body.get.instructions.length.toString+
                                     "; belongs to project = "+belongsToProject
                             )

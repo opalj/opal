@@ -57,7 +57,7 @@ class MethodsWithLoopsTest extends FlatSpec with Matchers {
     //    private def evaluateMethod(name: String, f: BaseDomain ⇒ Unit) {
     //        val domain = new BaseDomain()
     //        val method = classFile.methods.find(_.name == name).get
-    //        val result = BaseAI(classFile, method, domain)
+    //        val result = BaseAI(method, domain)
     //
     //        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
     //            Some(classFile),
@@ -92,7 +92,7 @@ class MethodsWithLoopsTest extends FlatSpec with Matchers {
             with IgnoreSynchronization
 
         val method = findMethod("endless")
-        /*val result =*/ BaseAI(classFile, method, MostBasicDomain)
+        /*val result =*/ BaseAI(method, MostBasicDomain)
         // if we reach this point, everything is OK
     }
 

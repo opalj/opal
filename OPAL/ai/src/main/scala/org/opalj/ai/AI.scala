@@ -185,19 +185,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     /**
      *  Performs an abstract interpretation of the given method using the given domain.
      *
-     *  @param classFile The method's defining class file.
      *  @param method A non-native, non-abstract method of the given class file that
      *      will be analyzed. All parameters are automatically initialized with sensible
      *      default values.
      *  @param theDomain The domain that will be used to perform computations related
      *      to values.
      */
-    def apply(
-        classFile: ClassFile,
-        method:    Method,
-        theDomain: D
-    ): AIResult { val domain: theDomain.type } = {
-        perform(classFile, method, theDomain)(None)
+    def apply(method: Method, theDomain: D): AIResult { val domain: theDomain.type } = {
+        perform(method, theDomain)(None)
     }
 
     /**
@@ -210,11 +205,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      * This method is called by the `perform` method with the same signature. It
      * may be overridden by subclasses to perform some additional processing.
      */
-    def initialOperands(
-        classFile: ClassFile,
-        method:    Method,
-        domain:    D
-    ): domain.Operands = Naught
+    def initialOperands(method: Method, domain: D): domain.Operands = Naught
 
     /**
      * Returns the initial register assignment (the initialized locals) that is
@@ -231,16 +222,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      * that case, however, it is highly recommended to call this method to finalize the
      * initial assignment.
      *
-     * @param classFile The class file which defines the given method.
      * @param method A non-native, non-abstract method. I.e., a method that has an
      *      implementation in Java bytecode (e.g., `method.body.isDefined === true`).
      * @param domain The domain that will be used to perform computations related
      *      to values.
      */
     def initialLocals(
-        classFile: ClassFile,
-        method:    Method,
-        domain:    D
+        method: Method,
+        domain: D
     )(
         someLocals: SomeLocals[domain.DomainValue] = None
     ): domain.Locals = {
@@ -278,7 +267,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             @inline def origin(localVariableIndex: Int) = -localVariableIndex - 1
 
             if (!method.isStatic) {
-                val thisType = classFile.thisType
+                val thisType = method.classFile.thisType
                 val thisValue =
                     domain.NonNullObjectValue(origin(localVariableIndex), thisType)
                 locals.set(localVariableIndex, thisValue)
@@ -311,8 +300,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      * The abstract interpretation of a method is aborted if the AI's `isInterrupted`
      * method returns true.
      *
-     * @param classFile Some class file; needed to determine the type of `this` if
-     *      the method is an instance method.
      * @param method A non-abstract, non-native method of the given class file. I.e.,
      *      a method with a body.
      * @param theDomain The abstract domain that will be used for the abstract interpretation
@@ -332,17 +319,15 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      *      if needed/desired.
      */
     def perform(
-        classFile: ClassFile,
         method:    Method,
         theDomain: D
     )(
         someLocals: Option[IndexedSeq[theDomain.DomainValue]] = None
     ): AIResult { val domain: theDomain.type } = {
-
         val body = method.body.get
         performInterpretation(method.isStrict, body, theDomain)(
-            initialOperands(classFile, method, theDomain),
-            initialLocals(classFile, method, theDomain)(someLocals)
+            initialOperands(method, theDomain),
+            initialLocals(method, theDomain)(someLocals)
         )
     }
 

@@ -33,7 +33,6 @@ package common
 import scala.collection.concurrent.TrieMap
 
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.RecordDefUse
@@ -56,10 +55,9 @@ trait AIKey extends ProjectInformationKey[Method ⇒ AIResult { val domain: Doma
  */
 object SimpleAIKey extends AIKey {
 
-    @volatile var domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse =
-        (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-            new domain.l1.DefaultDomainWithCFGAndDefUse(p, cf, m)
-        }
+    @volatile var domainFactory: (SomeProject, Method) ⇒ Domain with RecordDefUse = {
+        (p: SomeProject, m: Method) ⇒ new domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+    }
 
     /**
      * The SimpleAIKey has no special prerequisites.
@@ -94,9 +92,7 @@ object SimpleAIKey extends AIKey {
                         aiResults.get(m) match {
                             case Some(aiResult) ⇒ aiResult
                             case None ⇒
-                                val cf = project.classFile(m)
-                                val domain = domainFactory(project, cf, m)
-                                val aiResult = BaseAI(cf, m, domain)
+                                val aiResult = BaseAI(m, domainFactory(project, m))
                                 aiResults.put(m, aiResult)
                                 aiResult
                         }

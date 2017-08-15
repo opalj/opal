@@ -45,16 +45,15 @@ class FieldAccessInformation(
         val unresolved:       Vector[(Method, PCs)]
 ) {
 
-    import project.classFile
-
     private[this] def accesses(
         accessInformation:  Map[Field, Seq[(Method, PCs)]],
         declaringClassType: ObjectType,
         fieldName:          String
     ): Seq[(Method, PCs)] = {
+        // FIX We can also use a reference to a subclass to access a field in a supertype
         accessInformation.collectFirst {
             case (field, accesses) if field.name == fieldName &&
-                (classFile(field).thisType eq declaringClassType) ⇒ accesses
+                (field.classFile.thisType eq declaringClassType) ⇒ accesses
         }.getOrElse(Seq.empty)
     }
 

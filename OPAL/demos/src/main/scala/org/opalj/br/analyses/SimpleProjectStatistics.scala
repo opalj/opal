@@ -94,7 +94,7 @@ object SimpleProjectStatistics extends DefaultOneStepAnalysis {
                     if size > max
                 } {
                     max = size
-                    methodName = method.toJava(classFile)
+                    methodName = method.toJava
                 }
 
                 (max, methodName)
@@ -113,7 +113,7 @@ object SimpleProjectStatistics extends DefaultOneStepAnalysis {
                     if count > max
                 } {
                     max = count
-                    methodName = method.toJava(classFile)
+                    methodName = method.toJava
                 }
 
                 (max, methodName)

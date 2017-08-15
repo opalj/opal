@@ -33,21 +33,18 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
-import org.opalj.bytecode.JRELibraryFolder
-import java.io.File
 
-import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.Method
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.Domain
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.br.analyses.SomeProject
 
 /**
  * Tests that all methods of the JDK can be converted to the ai-based three address representation.
@@ -58,12 +55,9 @@ import org.opalj.br.analyses.SomeProject
 @RunWith(classOf[JUnitRunner])
 class TACAIIntegrationTest extends FunSpec with Matchers {
 
-    val jreLibFolder: File = JRELibraryFolder
-    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
-
     def checkProject(
         project:       SomeProject,
-        domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse
+        domainFactory: (SomeProject, Method) ⇒ Domain with RecordDefUse
     ): Unit = {
         if (Thread.currentThread().isInterrupted) return ;
 
@@ -76,14 +70,14 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
             if !Thread.currentThread().isInterrupted
             m ← cf.methods
             body ← m.body
-            aiResult = BaseAI(cf, m, domainFactory(project, cf, m))
+            aiResult = BaseAI(m, domainFactory(project, m))
         } {
             try {
                 val TACode(params, tacAICode, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
                 ToTxt(params, tacAICode, cfg, false, true, true)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
-                    val methodSignature = m.toJava(cf)
+                    val methodSignature = m.toJava
                     mutex.synchronized {
                         println(methodSignature+" - size: "+body.instructions.length)
                         e.printStackTrace(Console.out)
@@ -118,21 +112,18 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         }
     }
 
-    def domainFactories =
+    protected def domainFactories = {
         Seq(
             (
                 "DefaultDomainWithCFGAndDefUse",
-                (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-                    new DefaultDomainWithCFGAndDefUse(p, cf, m)
-                }
+                (p: SomeProject, m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(p, m)
             ),
             (
                 "PrimitiveTACAIDomain",
-                (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-                    new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
-                }
+                (p: SomeProject, m: Method) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, m)
             )
         )
+    }
 
     domainFactories foreach { domainInformation ⇒
         val (domainName, domainFactory) = domainInformation

@@ -38,8 +38,10 @@ package ba
 case class FIELDS(fields: FIELD*) {
 
     /**
-     * Returns the collection of [[org.opalj.br.Field]] objects.
+     * Returns the collection of [[org.opalj.br.FieldTemplate]] objects.
      */
-    def result(): IndexedSeq[br.Field] = IndexedSeq.empty ++ fields.iterator.map(f ⇒ f.result())
+    def result(): IndexedSeq[br.FieldTemplate] = {
+        IndexedSeq.empty ++ fields.iterator.map(f ⇒ f.result())
+    }
 
 }

@@ -63,14 +63,14 @@ object CallGraphFactory {
         ObjectType("javax/annotation/PreDestroy")
     )
 
-    @inline def isPotentiallySerializationRelated(
-        classFile: ClassFile,
-        method:    Method
+    def isPotentiallySerializationRelated(
+        method: Method
     )(
         implicit
         classHierarchy: ClassHierarchy
     ): Boolean = {
         import classHierarchy.isSubtypeOf
+        val classFile = method.classFile
         val definingType = classFile.thisType
         val nonFinal = !classFile.isFinal /*we may inherit from Serializable later on...*/
         // TODO Perform some further checks of the subtypes w.r.t. their Serializability property.
@@ -118,8 +118,8 @@ object CallGraphFactory {
         implicit val classHierarchy = project.classHierarchy
         val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
         project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
-            val classFile = methodInfo.classFile
             val method = methodInfo.method
+            val classFile = method.classFile
 
             val classIsInstantiable = !instantiableClasses.isNotInstantiable(classFile.thisType)
 
@@ -134,12 +134,12 @@ object CallGraphFactory {
             }
 
             if ((classIsInstantiable || classFile.isInterfaceDeclaration || method.isStatic) &&
-                (isNonPrivate || isPotentiallySerializationRelated(classFile, method))) {
+                (isNonPrivate || isPotentiallySerializationRelated(method))) {
                 methods.add(method)
             } else if (isImplicitlyUsed) {
                 methods.add(method)
             } else if (isNonPrivate) {
-                val m = "non-instantiable class contains instance method: "+method.toJava(classFile)
+                val m = "non-instantiable class contains instance method: "+method.toJava
                 OPALLogger.info("analysis result", m)
             }
         }
@@ -178,9 +178,8 @@ object CallGraphFactory {
         def doAnalyzeMethod(method: Method): Callable[MethodAnalysisResult] =
             new Callable[MethodAnalysisResult] {
                 def call(): MethodAnalysisResult = {
-                    val classFile = project.classFile(method)
                     try {
-                        val (callEdges, unresolveableCalls) = extract(classFile, method)(project)
+                        val (callEdges, unresolveableCalls) = extract(method)(project)
                         (callEdges, unresolveableCalls, None)
                     } catch {
                         case ct: scala.util.control.ControlThrowable ⇒ throw ct
@@ -188,7 +187,7 @@ object CallGraphFactory {
                             (
                                 (method, Map.empty[PC, /*Callees*/ Set[Method]]),
                                 List.empty,
-                                Some(CallGraphConstructionException(classFile, method, t))
+                                Some(CallGraphConstructionException(method, t))
                             )
                     }
                 }

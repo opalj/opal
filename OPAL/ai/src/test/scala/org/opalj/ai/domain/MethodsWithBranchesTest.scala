@@ -80,7 +80,7 @@ class MethodsWithBranchesTest extends FlatSpec with Matchers {
     private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit): Unit = {
         val domain = new TestDomain(name)
         val method = classFile.methods.find(_.name == name).get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(
             Some(classFile),

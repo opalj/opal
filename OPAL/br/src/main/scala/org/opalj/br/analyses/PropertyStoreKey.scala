@@ -89,7 +89,7 @@ object PropertyStoreKey
      * entities to drive the entity derivation function. (See [[makeAllocationSitesAvailable]] for
      * further details.)
      *
-     * @param f A function that takes a project and which computes (1) the set of of entities and
+     * @param f A function that takes a project and which computes (1) the set of entities and
      *          (2) (optionally) a data structure – which typically makes the set of computed
      *          properties available. This data structure is added as a context value to the
      *          property store; the key is the specified generic type. E.g., `Iterable[Method]`
@@ -103,7 +103,7 @@ object PropertyStoreKey
         f: SomeProject ⇒ (Traversable[AnyRef], T)
     ): Unit = this.synchronized {
         project.getOrCreateProjectInformationKeyInitializationData(
-            this, defaultEntityDerivationFunctions
+            this, defaultEntityDerivationFunctions()
         ).add((p: SomeProject) ⇒ {
             val (es, ctxValue) = f(p)
             (es, typeOf[T], ctxValue)
@@ -154,12 +154,6 @@ object PropertyStoreKey
             }
             entities
         }
-        PropertyStore(
-            entities,
-            defaultIsInterrupted,
-            parallelismLevel,
-            debug,
-            context: _*
-        )
+        PropertyStore(entities, defaultIsInterrupted, parallelismLevel, debug, context: _*)
     }
 }
