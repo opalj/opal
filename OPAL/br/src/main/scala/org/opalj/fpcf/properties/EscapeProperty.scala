@@ -139,7 +139,7 @@ sealed abstract class EscapeProperty(private final val level: Int) extends Prope
      * annotation.escape.EscapeKeys file in the bi java test fixtures.
      * @return the short name of the property.
      */
-    def toString(): String
+    def toString: String
 }
 
 object EscapeProperty extends EscapePropertyMetaInformation {
@@ -265,7 +265,7 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
  * @note This property does not refer to the identically named property defined by Kotzmann
  *       and Mössenböck
  */
-trait MethodEscape extends EscapeProperty {
+sealed abstract class MethodEscape extends EscapeProperty(7) {
     final val isRefineable = false
 }
 
@@ -293,7 +293,7 @@ trait MethodEscape extends EscapeProperty {
  * An analysis is only expected to return [[MethodEscapeViaReturn]] for the object o
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
-case object MethodEscapeViaReturn extends MethodEscape(7) {
+case object MethodEscapeViaReturn extends MethodEscape {
     override def toString: String = "ViaReturn"
 }
 
@@ -319,7 +319,7 @@ case object MethodEscapeViaReturn extends MethodEscape(7) {
  * An analysis is only expected to return [[MethodEscapeViaParameterAssignment]] for the object o
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
-case object MethodEscapeViaParameterAssignment extends MethodEscape(7) {
+case object MethodEscapeViaParameterAssignment extends MethodEscape {
     override def toString: String = "ViaParameter"
 }
 
@@ -348,7 +348,7 @@ case object MethodEscapeViaParameterAssignment extends MethodEscape(7) {
  * An analysis is only expected to return [[MethodEscapeViaParameterAssignment]] for the object o
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
-case object MethodEscapeViaReturnAssignment extends MethodEscape(7) {
+case object MethodEscapeViaReturnAssignment extends MethodEscape {
     override def toString: String = "ViaReturnAssignment"
 }
 
@@ -396,7 +396,7 @@ case object ConditionallyMethodEscape extends EscapeProperty(4) {
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
  */
-trait GlobalEscape extends EscapeProperty {
+sealed abstract class GlobalEscape extends EscapeProperty(0) {
     final val isRefineable = false
 }
 
@@ -418,7 +418,7 @@ trait GlobalEscape extends EscapeProperty {
  * }}}
  *
  */
-case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape(0) {
+case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape {
     override def toString: String = "ViaStaticField"
 }
 
@@ -441,6 +441,6 @@ case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape(0) {
  * }
  * }}}
  */
-case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape(0) {
+case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape {
     override def toString: String = "ViaHeapObject"
 }
