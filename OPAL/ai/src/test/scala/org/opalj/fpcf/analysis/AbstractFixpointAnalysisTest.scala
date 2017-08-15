@@ -477,10 +477,10 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
                 else {
                     throw new RuntimeException("Test annotated incorrectly: "+
                         "Multiple annotations applicable "+
-                        s"for method ${method.toJava(classFile)} in class ${classFile.fqn}")
+                        s"for method ${method.toJava} in class ${classFile.fqn}")
                 }
 
-            val doWhat = s"correctly calculate the property of  ${method.toJava(classFile)}: "+
+            val doWhat = s"correctly calculate the property of  ${method.toJava}: "+
                 s"expected property $expectedProperty"
             analysisName should (doWhat) in {
                 validatePropertyByMethod(method, expectedProperty)
@@ -507,11 +507,11 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
                     else {
                         throw new RuntimeException("Test annotated incorrectly: "+
                             "Multiple annotations applicable "+
-                            s"for formal parameter $i in method ${method.toJava(classFile)} "+
+                            s"for formal parameter $i in method ${method.toJava} "+
                             s"in class${classFile.fqn}")
                     }
 
-                val doWhat = "correctly calculate the property of  "+method.toJava(classFile)+
+                val doWhat = "correctly calculate the property of  "+method.toJava+
                     " for parameter "+i
                 val fps = propertyStore.context[FormalParameters]
                 analysisName should doWhat in {
@@ -523,7 +523,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     for {
         classFile ← project.allClassFiles
-        method@MethodWithBody(code) ← classFile.methods
+        method @ MethodWithBody(code) ← classFile.methods
         annotation ← code.runtimeVisibleTypeAnnotations
         if annotation.annotationType == propertyAnnotation ||
             annotation.annotationType == containerAnnotation
@@ -539,13 +539,13 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
                             throw new RuntimeException("Test annotated incorrectly: "+
                                 "Multiple annotations applicable "+
                                 s"for allocation site at pc $pc in method "+
-                                s"${method.toJava(classFile)} in class ${classFile.fqn}")
+                                s"${method.toJava} in class ${classFile.fqn}")
                         }
 
                     val allocationSites = propertyStore.context[AllocationSites]
                     val allocationSite = allocationSites(method)(pc)
                     val doWhat = "correctly calculate the property of  "+
-                        method.toJava(classFile)+" for allocation site at pc "+pc
+                        method.toJava+" for allocation site at pc "+pc
                     analysisName should doWhat in {
                         validatePropertyByAllocationSite(allocationSite, expectedProperty)
                     }
