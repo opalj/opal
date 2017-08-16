@@ -80,7 +80,7 @@ object XHTML {
     )(
         f: AIResult { val domain: theDomain.type } ⇒ T
     ): T = {
-        val result = ai(classFile, method, theDomain)
+        val result = ai(method, theDomain)
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
         try {
@@ -154,7 +154,7 @@ object XHTML {
     ): Node = {
         import result._
 
-        val title = method.toJava(classFile)
+        val title = method.toJava
 
         createXHTML(
             Some(title),
@@ -189,7 +189,7 @@ object XHTML {
         localsArray:   TheLocalsArray[domain.Locals]
     ): Node = {
 
-        def methodToString(method: Method): String = method.toJava(withVisibility = false)
+        def methodToString(method: Method): String = method.signatureToJava(withVisibility = false)
 
         val title =
             classFile.

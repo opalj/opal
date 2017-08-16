@@ -67,7 +67,7 @@ class FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAna
                         val field = classFile.findField(fieldName, fieldType)
                         if (field.isDefined) { effectivelyFinalFields -= field.get }
 
-                        effectivelyFinalFields.isEmpty // <=> true will abort the querying of the code
+                        effectivelyFinalFields.isEmpty // <=> true aborts the analysis
                     case _ ⇒
                         false
                     /*Nothing to do*/

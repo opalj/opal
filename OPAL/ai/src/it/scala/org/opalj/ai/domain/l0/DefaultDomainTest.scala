@@ -36,7 +36,6 @@ import org.scalatest.junit.JUnitRunner
 
 import java.net.URL
 
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
@@ -53,13 +52,12 @@ class DefaultDomainTest extends DomainTestInfrastructure("l0.DefaultDomain") {
     type AnalyzedDomain = l0.BaseDomain[URL]
 
     override def analyzeAIResult(
-        project:   Project[URL],
-        classFile: ClassFile,
-        method:    Method,
-        result:    AIResult { val domain: AnalyzedDomain }
+        project: Project[URL],
+        method:  Method,
+        result:  AIResult { val domain: AnalyzedDomain }
     ): Unit = {
 
-        super.analyzeAIResult(project, classFile, method, result)
+        super.analyzeAIResult(project, method, result)
 
         implicit val code = result.code
         implicit val classHierarchy = project.classHierarchy
@@ -90,8 +88,8 @@ class DefaultDomainTest extends DomainTestInfrastructure("l0.DefaultDomain") {
 
     }
 
-    def Domain(project: Project[URL], classFile: ClassFile, method: Method): AnalyzedDomain = {
-        new l0.BaseDomain(project, classFile, method)
+    def Domain(project: Project[URL], method: Method): AnalyzedDomain = {
+        new l0.BaseDomain(project, method)
     }
 
 }

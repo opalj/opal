@@ -71,7 +71,7 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
 
         import projectIndex.findMethods
 
-        val interfaceClassFile = project.classFile(method)
+        val interfaceClassFile = method.classFile
         val interfaceType = interfaceClassFile.thisType
 
         val cbsTargets = mutable.Set.empty[Method]
@@ -86,7 +86,7 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
             if (!isInheritableMethod(cbsCallee))
                 return ;
 
-            val cbsCalleeDeclaringClass = project.classFile(cbsCallee)
+            val cbsCalleeDeclaringClass = cbsCallee.classFile
 
             if (!cbsCalleeDeclaringClass.isClassDeclaration)
                 return ;

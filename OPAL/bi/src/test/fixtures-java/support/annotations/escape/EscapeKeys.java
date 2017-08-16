@@ -32,7 +32,17 @@ package annotations.escape;
  * @author Florian Kuebler
  */
 public enum EscapeKeys {
-    ViaStaticField, ViaHeapObjectAssignment, ViaReturnAssignment, ViaParameterAssignment, ViaReturn, ViaException, Arg, No, MaybeNo, MaybeArg, MaybeMethod;
+    ViaStaticField,
+    ViaHeapObjectAssignment,
+    ViaReturnAssignment,
+    ViaParameterAssignment,
+    ViaReturn,
+    ViaException,
+    Arg,
+    No,
+    MaybeNo,
+    MaybeArg,
+    MaybeMethod;
 
     @Override public String toString() {
         switch (this) {

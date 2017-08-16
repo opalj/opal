@@ -31,20 +31,18 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 /**
  * This domain uses the l1 level ''stable'' domains which can "only" represent single
- * values.
+ * values (basically just performs constant propagation).
  *
  * @author Michael Eichberg
  */
 class DefaultSingletonValuesDomain[Source](
-        val project:   Project[Source],
-        val classFile: ClassFile,
-        val method:    Method
+        val project: Project[Source],
+        val method:  Method
 ) extends Domain
     with TypedValuesFactory
     with TheProject

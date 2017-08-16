@@ -32,7 +32,6 @@ package core
 package analysis
 
 import org.opalj.bi.VisibilityModifier
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.cg.ComputedCallGraph
@@ -72,7 +71,6 @@ object UnusedMethodsAnalysis {
         theProject:           SomeProject,
         callgraph:            ComputedCallGraph,
         callgraphEntryPoints: Set[Method],
-        classFile:            ClassFile,
         method:               Method
     ): Option[Issue] = {
 
@@ -86,6 +84,8 @@ object UnusedMethodsAnalysis {
             return None;
 
         def rateMethod(): Relevance = {
+
+            val classFile = method.classFile
 
             import method.{isConstructor, isPrivate, actualArgumentsCount, descriptor, name}
             import descriptor.{returnType, parametersCount ⇒ declaredParametersCount}
@@ -181,7 +181,7 @@ object UnusedMethodsAnalysis {
                     unusedMethodOrConstructor,
                     Set(IssueCategory.Comprehensibility),
                     Set(IssueKind.UnusedMethod),
-                    List(new MethodLocation(None, theProject, classFile, method))
+                    List(new MethodLocation(None, theProject, method))
                 )
                 return Some(issue);
             }

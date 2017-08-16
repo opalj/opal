@@ -55,10 +55,7 @@ trait DefaultPreciseLongValues extends DefaultDomainValueBinding with PreciseLon
             target.LongValue(pc)
     }
 
-    case class LongRange(
-            val initial: Long,
-            val value:   Long
-    ) extends super.DefiniteLongValue {
+    case class LongRange(initial: Long, value: Long) extends super.DefiniteLongValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
@@ -112,4 +109,3 @@ trait DefaultPreciseLongValues extends DefaultDomainValueBinding with PreciseLon
     override def LongValue(pc: PC, value: Long): LongRange = new LongRange(value, value)
 
 }
-

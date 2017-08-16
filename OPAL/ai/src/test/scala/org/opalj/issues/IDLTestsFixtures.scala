@@ -61,22 +61,66 @@ object IDLTestsFixtures {
     }
 
     private[issues] def relevanceToIDL(name: String, value: Int): JsObject = {
-        Json.obj(
-            "name" → name,
-            "value" → value
-        )
+        Json.obj("name" → name, "value" → value)
     }
 
-    private[issues] val simplePackageLocation = new PackageLocation(Option("foo"), null, "bar/baz")
+    val simplePackageLocation = new PackageLocation(Option("foo"), null, "bar/baz")
 
-    private[issues] val simplePackageLocationIDL: JsObject = Json.obj(
+    val attributes = IndexedSeq(CompactLineNumberTable(Array[Byte](0, 0, 10, 0, 0, 0, 0, 10)))
+
+    val code = Code(0, 0, Array(new IFEQ(0)))
+
+    val codeWithLineNumbers = Code(0, 0, Array(new IFEQ(0)), attributes = attributes)
+
+    val simplePackageLocationIDL: JsObject = Json.obj(
         "location" → Json.obj("package" → "bar.baz"),
         "description" → "foo",
         "details" → Json.arr()
     )
 
+    val classFileIDL: JsObject = Json.obj(
+        "fqn" → "foo/Bar",
+        "type" → Json.obj("ot" → "foo.Bar", "simpleName" → "Bar"),
+        "accessFlags" → "public"
+    )
+
+    val methodReturnVoidNoParametersIDL: JsObject = Json.obj(
+        "accessFlags" → "public",
+        "name" → "test0p",
+        "returnType" → Json.obj("vt" → "void"),
+        "parameters" → Json.arr(),
+        "signature" → "test0p()V",
+        "firstLine" → JsNull
+    )
+    private[this] val methodTemplateReturnVoidNoParameters = {
+        Method(ACC_PUBLIC.mask, "test0p", IndexedSeq.empty, VoidType, Seq(code))
+    }
+
+    private[this] val methodTemplateReturnIntOneParameter = {
+        Method(ACC_PUBLIC.mask | ACC_STATIC.mask, "test1p", IndexedSeq(ObjectType("foo/Bar")), IntegerType)
+    }
+
+    val methodReturnIntTwoParametersIDL: JsObject = Json.obj(
+        "accessFlags" → "public static",
+        "name" → "test2p",
+        "returnType" → Json.obj("bt" → "int"),
+        "parameters" → Json.arr(
+            Json.obj("at" → Json.obj("bt" → "byte"), "dimensions" → 2),
+            Json.obj("ot" → "foo.Bar", "simpleName" → "Bar")
+        ),
+        "signature" → "test2p([[BLfoo/Bar;)I",
+        "firstLine" → "8"
+    )
+    private[issues] val methodTemplateReturnIntTwoParameters = Method(
+        ACC_PUBLIC.mask | ACC_STATIC.mask,
+        "test2p",
+        IndexedSeq(ArrayType(2, ByteType), ObjectType("foo/Bar")),
+        IntegerType,
+        Seq(codeWithLineNumbers)
+    )
+
     // an arbitrary (actually invalid) class file
-    private[issues] val classFile = ClassFile(
+    val classFile = ClassFile(
         0,
         1,
         ACC_PUBLIC.mask,
@@ -84,75 +128,31 @@ object IDLTestsFixtures {
         Option.empty,
         Nil,
         IndexedSeq(),
-        IndexedSeq(),
+        IndexedSeq(
+            methodTemplateReturnVoidNoParameters,
+            methodTemplateReturnIntOneParameter,
+            methodTemplateReturnIntTwoParameters
+        ),
         Seq()
     )
 
-    private[issues] val classFileIDL: JsObject = Json.obj(
-        "fqn" → "foo/Bar",
-        "type" → Json.obj(
-            "ot" → "foo.Bar",
-            "simpleName" → "Bar"
-        ),
-        "accessFlags" → "public"
-    )
+    val methodReturnVoidNoParameters = classFile.methods(0)
+    val methodReturnIntOneParameter = classFile.methods(1)
+    val methodReturnIntTwoParameters = classFile.methods(2)
 
-    private[this] val attributes = IndexedSeq(CompactLineNumberTable(Array[Byte](0, 0, 10, 0, 0, 0, 0, 10)))
+    val simpleOperands = new Operands(code, 0, Chain("foo"), null)
 
-    private[this] val code = Code(0, 0, Array(new IFEQ(0)))
-
-    private[this] val codeWithLineNumbers = Code(0, 0, Array(new IFEQ(0)), attributes = attributes)
-
-    private[issues] val methodReturnVoidNoParameters = Method(ACC_PUBLIC.mask, "test", IndexedSeq.empty, VoidType, Seq(code))
-
-    private[issues] val methodReturnVoidNoParametersIDL: JsObject = Json.obj(
-        "accessFlags" → "public",
-        "name" → "test",
-        "returnType" → Json.obj("vt" → "void"),
-        "parameters" → Json.arr(),
-        "signature" → "test()V",
-        "firstLine" → JsNull
-    )
-
-    private[issues] val methodReturnIntTwoParameters = Method(
-        ACC_PUBLIC.mask | ACC_STATIC.mask,
-        "test",
-        IndexedSeq(ArrayType(2, ByteType), ObjectType("foo/Bar")),
-        IntegerType,
-        Seq(codeWithLineNumbers)
-    )
-
-    private[issues] val methodReturnIntTwoParametersIDL: JsObject = Json.obj(
-        "accessFlags" → "public static",
-        "name" → "test",
-        "returnType" → Json.obj("bt" → "int"),
-        "parameters" → Json.arr(
-            Json.obj(
-                "at" → Json.obj("bt" → "byte"),
-                "dimensions" → 2
-            ), Json.obj(
-                "ot" → "foo.Bar",
-                "simpleName" → "Bar"
-            )
-        ),
-        "signature" → "test([[BLfoo/Bar;)I",
-        "firstLine" → "8"
-    )
-
-    private[issues] val simpleOperands = new Operands(code, 0, Chain("foo"), null)
-
-    private[issues] val simpleOperandsIDL: JsObject = Json.obj(
+    val simpleOperandsIDL: JsObject = Json.obj(
         "type" → "SimpleConditionalBranchInstruction",
         "operator" → "== 0",
         "value" → "foo",
         "value2" → JsNull
     )
 
-    private[issues] val simpleLocalVariables = new LocalVariables(code, 0, Locals.empty)
+    val simpleLocalVariables = new LocalVariables(code, 0, Locals.empty)
 
-    private[issues] val simpleLocalVariablesIDL: JsObject = Json.obj(
-        "type" → "LocalVariables",
-        "values" → Json.arr()
-    )
+    val simpleLocalVariablesIDL: JsObject = {
+        Json.obj("type" → "LocalVariables", "values" → Json.arr())
+    }
 
 }

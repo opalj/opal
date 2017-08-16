@@ -32,7 +32,6 @@ package tac
 import scala.collection.concurrent.TrieMap
 
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.ai.domain.RecordDefUse
@@ -52,10 +51,9 @@ import org.opalj.ai.Domain
  */
 object SimpleTACAIKey extends TACAIKey {
 
-    @volatile var domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse =
-        (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-            new ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, cf, m)
-        }
+    @volatile var domainFactory: (SomeProject, Method) ⇒ Domain with RecordDefUse = {
+        (p: SomeProject, m: Method) ⇒ new ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+    }
 
     /**
      * TACAI code has no special prerequisites.
@@ -87,9 +85,8 @@ object SimpleTACAIKey extends TACAIKey {
                     taCodes.get(m) match {
                         case Some(taCode) ⇒ taCode
                         case None ⇒
-                            val cf = project.classFile(m)
-                            val domain = domainFactory(project, cf, m)
-                            val aiResult = BaseAI(cf, m, domain)
+                            val domain = domainFactory(project, m)
+                            val aiResult = BaseAI(m, domain)
                             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
                             // well... the following cast safe is safe, because the underlying
                             // datastructure is actually, conceptually immutable

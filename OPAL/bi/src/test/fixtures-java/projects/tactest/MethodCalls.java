@@ -26,35 +26,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package domain
-
-import org.opalj.br.ClassFile
+package tactest;
 
 /**
- * Provides information about the [[org.opalj.br.ClassFile]] that is currently analyzed
- *
- * ==Usage==
- * A domain that implements this trait usually defines a parameter that is set
- * at construction domain.
- *
- * E.g.,
- * {{{
- * class MyDomain{val classFile : ClassFile} extends Domain with TheMethod
- * }}}
- *
- * ==Core Properties==
- * "Just" defines the public interface. The concrete implementation will then determine
- * the further properties.
+ * Class with some non-trivial method calls.
  *
  * @author Michael Eichberg
+ *
  */
-trait TheClassFile {
+public class MethodCalls {
 
-    /**
-     * Returns the classFile that is currently analyzed.
-     */
-    def classFile: ClassFile
+    public Object barVarargs(Object... os) {
+        return os;
+    }
 
+    public void fooVarargs() {
+        barVarargs(new X(), new Y());
+    }
+
+    public Object bar(X x, Y y) {
+        return x.toString() + y.toString();
+    }
+
+    public void foo() {
+        bar(new X(), new Y());
+    }
 }
+
+class X {}
+
+class Y {}

@@ -105,7 +105,7 @@ object CallBySignature {
     val fallback: (PropertyStore, Entity) ⇒ CallBySignature = (ps, e) ⇒ {
         val method = e.asInstanceOf[Method]
         val project = ps.context[SomeProject]
-        val classFile = project.classFile(method)
+        val classFile = method.classFile
 
         if (classFile.isClassDeclaration)
             NoCBSTargets;
@@ -136,4 +136,3 @@ case class CBSTargets(cbsTargets: Set[Method]) extends CallBySignature
 case object UnknownCBSTargets extends CallBySignature
 
 case object NoCBSTargets extends CallBySignature
-

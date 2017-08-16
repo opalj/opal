@@ -426,8 +426,8 @@ package object ai {
 
         assert(
             operands.size == calledMethod.actualArgumentsCount,
-            (if (calledMethod.isStatic) "static" else "/*virtual*/") +
-                s" ${calledMethod.toJava()}(Arguments: ${calledMethod.actualArgumentsCount}) "+
+            (if (calledMethod.isStatic) "static " else "/*virtual*/ ") +
+                s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) "+
                 s"${operands.mkString("Operands(", ",", ")")}"
         )
 

@@ -28,41 +28,29 @@
  */
 package org.opalj
 package ai
-package analyses
-package cg
+package domain
+package l0
 
-import org.opalj.log.OPALLogger
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.analyses.Project
 
 /**
- * Configuration of a call graph algorithm that uses "variable type analysis".
- *
- * ==Thread Safety==
- * This class is thread-safe (it contains no mutable state.)
- *
- * ==Usage==
- * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
- *
- * @author Michael Eichberg
+ * This is the most primitive domain that can be used to transform the bytecode to the
+ * three address representation which is build upon the result of an abstract interpretation.
  */
-class CFACallGraphAlgorithmConfiguration(
-        project: SomeProject,
-        val k:   Int         = 2
-) extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
+class PrimitiveTACAIDomain(
+        val classHierarchy: ClassHierarchy,
+        val method:         Method
+) extends TypeLevelDomain
+    with ThrowAllPotentialExceptionsConfiguration
+    with IgnoreSynchronization
+    with DefaultTypeLevelHandlingOfMethodResults
+    with TheClassHierarchy
+    with TheMethod
+    with RecordDefUse {
 
-    import project.logContext
-
-    CallGraphFactory.debug = true
-
-    OPALLogger.info("progress", s"constructing a $k-CFA call graph")
-
-    def Domain(method: Method) = {
-        new CFACallGraphDomain(
-            k,
-            project, fieldValueInformation, methodReturnValueInformation,
-            cache,
-            method
-        )
+    def this(project: Project[_], method: Method) {
+        this(project.classHierarchy, method)
     }
 }

@@ -37,12 +37,6 @@ import org.scalatest.junit.JUnitRunner
 import play.api.libs.json.JsNull
 import play.api.libs.json.Json
 
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_STATIC
-import org.opalj.br.IntegerType
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-
 /**
  * Tests toIDL method of IssueLocation
  *
@@ -100,9 +94,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
     }
 
     it should "return a valid issue description for a method with no parameters and no return value" in {
-        val methodLocation = new MethodLocation(
-            Option("baz"), null, classFile, methodReturnVoidNoParameters
-        )
+        val methodLocation = new MethodLocation(Option("baz"), null, methodReturnVoidNoParameters)
 
         methodLocation.toIDL should be(Json.obj(
             "description" → "baz",
@@ -116,9 +108,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
     }
 
     it should "return a valid issue description for a method with two int parameters and which returns int values" in {
-        val methodLocation = new MethodLocation(
-            Option("baz"), null, classFile, methodReturnIntTwoParameters
-        )
+        val methodLocation = new MethodLocation(Option("baz"), null, methodReturnIntTwoParameters)
 
         methodLocation.toIDL should be(Json.obj(
             "description" → "baz",
@@ -132,8 +122,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
     }
 
     it should "return a valid issue description for a method which returns ints and declares one parameter" in {
-        val method = Method(ACC_PUBLIC.mask | ACC_STATIC.mask, "test", IndexedSeq(ObjectType("foo/Bar")), IntegerType)
-        val methodLocation = new MethodLocation(Option("baz"), null, classFile, method)
+        val methodLocation = new MethodLocation(Option("baz"), null, methodReturnIntOneParameter)
 
         methodLocation.toIDL should be(Json.obj(
             "description" → "baz",
@@ -142,7 +131,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
                 "class" → classFileIDL,
                 "method" → Json.obj(
                     "accessFlags" → "public static",
-                    "name" → "test",
+                    "name" → "test1p",
                     "returnType" → Json.obj(
                         "bt" → "int"
                     ),
@@ -150,7 +139,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
                         "ot" → "foo.Bar",
                         "simpleName" → "Bar"
                     )),
-                    "signature" → "test(Lfoo/Bar;)I",
+                    "signature" → "test1p(Lfoo/Bar;)I",
                     "firstLine" → JsNull
                 )
             ),
@@ -162,7 +151,6 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
         val methodLocation = new MethodLocation(
             Option("baz"),
             null,
-            classFile,
             methodReturnIntTwoParameters,
             Seq(simpleOperands, simpleLocalVariables)
         )
@@ -180,7 +168,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
 
     it should "return a valid issue description for an InstructionLocation in a method without parameters which returns nothing" in {
         val instructionLocation = new InstructionLocation(
-            Option("baz"), null, classFile, methodReturnVoidNoParameters, 42
+            Option("baz"), null, methodReturnVoidNoParameters, 42
         )
 
         instructionLocation.toIDL should be(Json.obj(
@@ -189,9 +177,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
                 "package" → "foo",
                 "class" → classFileIDL,
                 "method" → methodReturnVoidNoParametersIDL,
-                "instruction" → Json.obj(
-                    "pc" → 42
-                )
+                "instruction" → Json.obj("pc" → 42)
             ),
             "details" → Json.arr()
         ))
@@ -199,7 +185,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
 
     it should "return a valid issue description for InstructionLocation with int return and 2 parameters" in {
         val instructionLocation = new InstructionLocation(
-            Some("baz"), null, classFile, methodReturnIntTwoParameters, 42
+            Some("baz"), null, methodReturnIntTwoParameters, 42
         )
 
         instructionLocation.toIDL should be(Json.obj(
@@ -208,10 +194,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
                 "package" → "foo",
                 "class" → classFileIDL,
                 "method" → methodReturnIntTwoParametersIDL,
-                "instruction" → Json.obj(
-                    "pc" → 42,
-                    "line" → 10
-                )
+                "instruction" → Json.obj("pc" → 42, "line" → 10)
             ),
             "details" → Json.arr()
         ))
@@ -221,7 +204,6 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
         val instructionLocation = new InstructionLocation(
             Some("baz"),
             null,
-            classFile,
             methodReturnIntTwoParameters,
             42,
             Seq(simpleOperands, simpleLocalVariables)
@@ -233,10 +215,7 @@ class IssueLocationIDLTest extends FlatSpec with Matchers {
                 "package" → "foo",
                 "class" → classFileIDL,
                 "method" → methodReturnIntTwoParametersIDL,
-                "instruction" → Json.obj(
-                    "pc" → 42,
-                    "line" → 10
-                )
+                "instruction" → Json.obj("pc" → 42, "line" → 10)
             ),
             "details" → Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
         ))

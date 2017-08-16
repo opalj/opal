@@ -92,19 +92,9 @@ package object domain {
      * the result depends on the mixed-in domain.
      */
     def analyzedEntity(domain: Domain): String = {
-        if (domain.isInstanceOf[TheMethod]) {
-            val method = domain.asInstanceOf[TheMethod].method
-            if (domain.isInstanceOf[TheClassFile]) {
-                val classFile = domain.asInstanceOf[TheClassFile].classFile
-                method.toJava(classFile)
-            } else if (domain.isInstanceOf[TheProject]) {
-                val project = domain.asInstanceOf[TheProject].project
-                method.toJava(project.classFile(method))
-            } else {
-                method.toJava()
-            }
-        } else {
-            "<Unknown (the domain does not provide meaningful source information)>\n"
+        domain match {
+            case d: TheMethod ⇒ d.method.toJava
+            case _            ⇒ "<Unknown (the domain does not provide source information)>\n"
         }
     }
 

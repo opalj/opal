@@ -61,7 +61,7 @@ case class MethodMatcher(
         val allMatchedMethods = project.allClassFiles collect {
             case classFile if doesClassFileMatch(classFile) ⇒ {
                 classFile.methods collect {
-                    case method if doesMethodMatch(method) ⇒ method.asVirtualMethod(classFile)
+                    case m if doesMethodMatch(m) ⇒ m.asVirtualMethod(classFile.thisType)
                 }
             }
         }

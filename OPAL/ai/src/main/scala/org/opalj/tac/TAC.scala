@@ -172,7 +172,7 @@ object TAC {
                     if (naive) {
                         val tac @ TACode(params, code, cfg, ehs, _) =
                             TACNaive(m, ch, AllTACNaiveOptimizations)
-                        if (toString) Console.out.println(m.toJava(project.classFile(m), tac.toString))
+                        if (toString) Console.out.println(m.toJava(tac.toString))
 
                         (
                             ToTxt(params, code, cfg, skipParams = true, true, true).mkString("\n"),
@@ -184,7 +184,7 @@ object TAC {
                         )
                     } else {
                         val d: Domain with RecordDefUse = if (domainName.isEmpty) {
-                            new domain.l1.DefaultDomainWithCFGAndDefUse(project, cf, m)
+                            new domain.l1.DefaultDomainWithCFGAndDefUse(project, m)
                         } else {
                             // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
                             Class.
@@ -193,10 +193,10 @@ object TAC {
                                 newInstance(project, cf, m)
                         }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
-                        val aiResult = BaseAI(cf, m, d)
+                        val aiResult = BaseAI(m, d)
                         val tac @ TACode(params, code, cfg, ehs, _) =
                             TACAI(m, project.classHierarchy, aiResult)(Nil)
-                        if (toString) Console.out.println(m.toJava(project.classFile(m), tac.toString))
+                        if (toString) Console.out.println(m.toJava(tac.toString))
 
                         (
                             ToTxt(params, code, cfg, skipParams = false, true, true).mkString("\n"),
@@ -214,7 +214,7 @@ object TAC {
                 ehs.map(methodsAsTAC.append)
                 if (printCFG) {
                     if (doOpen) {
-                        Console.println("wrote cfg to: "+writeAndOpen(cfg, m.toJava(cf), ".cfg.gv"))
+                        Console.println("wrote cfg to: "+writeAndOpen(cfg, m.toJava, ".cfg.gv"))
                     } else {
                         methodsAsTAC.append("\n/* - CFG")
                         methodsAsTAC.append(cfg)

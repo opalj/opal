@@ -88,7 +88,7 @@ object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
                 (
                     data.map { e ⇒
                         val (method, pcs) = e
-                        method.toJava(project.classFile(method), pcs.mkString("pcs: ", ", ", ""))
+                        method.toJava(pcs.mkString("pcs: ", ", ", ""))
                     }
                 ).mkString("\t ", "\n\t ", "\n")
             }

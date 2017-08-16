@@ -96,7 +96,7 @@ object CovariantEquals {
 
         import MethodDescriptor.JustReturnsInteger
         project.lookupMethodDefinition(superclassType, "hashCode", JustReturnsInteger) match {
-            case Some(m) ⇒ project.classFile(m).thisType ne ObjectType.Object
+            case Some(m) ⇒ m.classFile.thisType ne ObjectType.Object
             case _       ⇒ false
         }
     }

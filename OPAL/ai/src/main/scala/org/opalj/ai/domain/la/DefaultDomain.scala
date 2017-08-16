@@ -34,14 +34,13 @@ package la
 import scala.collection.Set
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.MethodSignature
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.analyses.MethodReturnValueInformation
 import org.opalj.ai.analyses.cg.CallGraphCache
-import org.opalj.br.MethodSignature
 
 /**
  * A default configuration of a Domain that uses - in particular - the domains implemented
@@ -56,9 +55,8 @@ import org.opalj.br.MethodSignature
  * @author Michael Eichberg
  */
 class DefaultDomain(
-        val project:         SomeProject,
-        val classFile:       ClassFile,
-        override val method: Method
+        val project: SomeProject,
+        val method:  Method
 ) extends CorrelationalDomain
     with domain.DefaultDomainValueBinding
     with domain.ThrowAllPotentialExceptionsConfiguration

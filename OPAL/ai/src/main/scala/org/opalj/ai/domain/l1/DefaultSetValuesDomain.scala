@@ -31,7 +31,7 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 /**
@@ -41,9 +41,8 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultSetValuesDomain[Source](
-        override val project: Project[Source],
-        val classFile:        ClassFile,
-        override val method:  Method
+        val project: Project[Source],
+        val method:  Method
 ) extends CorrelationalDomain
     with TheProject
     with TheMethod

@@ -38,8 +38,7 @@ import org.opalj.bi.reader.FieldsReader
  *
  * @author Michael Eichberg
  */
-trait FieldsBinding extends FieldsReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
+trait FieldsBinding extends FieldsReader { this: ConstantPoolBinding with AttributeBinding ⇒
 
     type Field_Info = br.Field
     val Field_InfoManifest: ClassTag[Field_Info] = implicitly
@@ -51,9 +50,9 @@ trait FieldsBinding extends FieldsReader {
         descriptor_index: Constant_Pool_Index,
         attributes:       Attributes
     ): Field_Info = {
-        Field(
+        Field.unattached(
             access_flags,
-            cp(name_index).asString,
+            cp(name_index).asString.intern(),
             cp(descriptor_index).asFieldType,
             attributes
         )

@@ -48,11 +48,11 @@ object LocalPointsTo {
         // Load the class file (we don't handle invokedynamic in this case)
         val cf = Java9Framework.ClassFile(() ⇒ new FileInputStream(args(0))).head
         // ... now let's take the first method that matches our filter
-        val m = cf.methods.filter(m ⇒ m.toJava().contains(args(1))).head
+        val m = cf.methods.filter(m ⇒ m.signatureToJava().contains(args(1))).head
         // ... let's get one of the default pre-initialized class hierarchies (typically we want a project!)
         val ch = Code.BasicClassHierarchy
         // ... perform the data-flow analysis
-        val aiResult = BaseAI(cf, m, new PrimitiveTACAIDomain(ch, cf, m))
+        val aiResult = BaseAI(m, new PrimitiveTACAIDomain(ch, m))
         // now, we can transform the bytecode to three-address code
         val tac = TACAI(m, ch, aiResult)(Nil /* no tac based optimizations*/ )
 

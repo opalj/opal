@@ -31,7 +31,7 @@ package bugpicker
 package core
 package analysis
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.Method
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.br.Code
@@ -76,8 +76,9 @@ import org.opalj.collection.immutable.Chain
 object DeadEdgesAnalysis {
 
     def apply(
-        theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with Callees with RecordCFG with Origin }
+        theProject: SomeProject,
+        method:     Method,
+        result:     AIResult { val domain: Domain with Callees with RecordCFG with Origin }
     ): Seq[Issue] = {
         if (method.isSynthetic)
             return Seq.empty;
@@ -370,7 +371,6 @@ object DeadEdgesAnalysis {
                         )
                     ),
                     theProject,
-                    classFile,
                     method,
                     pc,
                     List(
@@ -379,8 +379,8 @@ object DeadEdgesAnalysis {
                     )
                 )),
                 List(
-                    new FieldValues(classFile, method, result),
-                    new MethodReturnValues(classFile, method, result)
+                    new FieldValues(method, result),
+                    new MethodReturnValues(method, result)
                 )
             )
         }

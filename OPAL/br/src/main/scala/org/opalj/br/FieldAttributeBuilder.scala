@@ -36,10 +36,6 @@ package br
  */
 trait FieldAttributeBuilder {
 
-    def apply(
-        accessFlags: Int,
-        name:        String,
-        fieldType:   FieldType
-    ): Attribute
+    def apply(accessFlags: Int, name: String, fieldType: FieldType): Attribute
 
 }
