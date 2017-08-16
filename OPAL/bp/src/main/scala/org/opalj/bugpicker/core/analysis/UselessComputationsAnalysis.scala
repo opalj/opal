@@ -31,7 +31,6 @@ package bugpicker
 package core
 package analysis
 
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.ComputationalTypeInt
@@ -69,8 +68,9 @@ object UselessComputationsAnalysis {
     type UselessComputationsAnalysisDomain = Domain with ConcreteIntegerValues with ConcreteLongValues with ReferenceValues
 
     def apply(
-        theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: UselessComputationsAnalysisDomain }
+        theProject: SomeProject,
+        method:     Method,
+        result:     AIResult { val domain: UselessComputationsAnalysisDomain }
     ): Seq[Issue] = {
 
         val defaultRelevance = Relevance.DefaultRelevance
@@ -82,7 +82,7 @@ object UselessComputationsAnalysis {
             val operands = result.operandsArray(pc)
             val localVariables = result.localsArray(pc)
             val details = new InstructionLocation(
-                None, theProject, classFile, method, pc,
+                None, theProject, method, pc,
                 List(new Operands(code, pc, operands, localVariables))
             )
             Issue(

@@ -42,26 +42,20 @@ public @interface EP {
 
     /**
      * The entity that should have a specific property value.
-     *
-     * Entities accepted currently are classes, fields and methods.
-     * Classes are specified by fully qualified name, e.g. java/lang/Math
-     * Fields are specified by className . fieldName, e.g. java/lang/Long.value
-     * Methods are specified by className . methodName methodDescriptor, e.g. java/lang/Math.abs(I)I
      */
     String e();
 
     /**
      * The property key for the property required, empty to use the property key of the test.
-     *
-     * By convention, use the name of the property class for this, e.g. pk="Purity".
-     * The actual mapping to the property key is up to the test, though.
+     * <p>
+     * TODO Add example to clarify how to specify the propery key (name of the class?).
      */
     String pk() default "";
 
     /**
-     * The property value that the entity should have, empty if the property should not exist.
+     * The property value that the entity should have.
      *
-     * @note This can't be a specific enum as it must be able to hold any property.
+     * @note This can't be a specific enum as it must be able to hold any property
      */
-    String p() default "";
+    String p();
 }

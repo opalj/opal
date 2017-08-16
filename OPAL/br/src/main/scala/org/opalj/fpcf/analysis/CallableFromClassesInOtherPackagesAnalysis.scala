@@ -31,6 +31,9 @@ package org.opalj
 package fpcf
 package analysis
 
+import scala.IndexedSeq
+import scala.collection.mutable
+
 import org.opalj.br.BooleanType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
@@ -40,11 +43,9 @@ import org.opalj.br.MethodDescriptor._
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
-import scala.collection.mutable
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
-import scala.IndexedSeq
 import org.opalj.fpcf.properties.NotClientCallable
 import org.opalj.fpcf.properties.IsClientCallable
 import org.opalj.fpcf.properties.ClientCallable
@@ -97,7 +98,7 @@ class CallableFromClassesInOtherPackagesAnalysis private (
                 /* a package private method can not leak to the client under CPA */
                 return NotClientCallable;
 
-            val classFile = project.classFile(method)
+            val classFile = method.classFile
             if (classFile.isEffectivelyFinal && !method.isPublic)
                 return NotClientCallable;
 

@@ -31,7 +31,7 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 /**
@@ -39,11 +39,9 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-class DefaultConfigurableReferenceValuesDomain[I, Source](
-        val id:               I,
-        override val project: Project[Source],
-        val classFile:        ClassFile,
-        override val method:  Method
+class DefaultReferenceValuesDomain[Source](
+        val project: Project[Source],
+        val method:  Method
 ) extends CorrelationalDomain
     with TheProject
     with TheMethod
@@ -59,19 +57,4 @@ class DefaultConfigurableReferenceValuesDomain[I, Source](
     with l0.DefaultTypeLevelIntegerValues
     with l0.DefaultTypeLevelLongValues
     with l0.TypeLevelPrimitiveValuesConversions
-    with l0.TypeLevelLongValuesShiftOperators {
-
-    type Id = I
-
-}
-
-class DefaultReferenceValuesDomain[Source](
-        override val project:   Project[Source],
-        override val classFile: ClassFile,
-        override val method:    Method
-) extends DefaultConfigurableReferenceValuesDomain[String, Source](
-    method.toJava(classFile),
-    project,
-    classFile,
-    method
-)
+    with l0.TypeLevelLongValuesShiftOperators

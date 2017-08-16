@@ -99,8 +99,7 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
     }
 
     object DefiniteLongValue {
-        def unapply(v: DefiniteLongValue): Option[Long] =
-            Some(v.value)
+        def unapply(v: DefiniteLongValue): Option[Long] = Some(v.value)
     }
 
     //
@@ -361,4 +360,3 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 }
-

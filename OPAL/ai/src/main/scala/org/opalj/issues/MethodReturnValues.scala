@@ -33,8 +33,8 @@ import scala.xml.Node
 import scala.xml.Group
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.ClassFile
 import org.opalj.br.PC
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
@@ -42,10 +42,11 @@ import org.opalj.ai.AIResult
 import org.opalj.collection.immutable.Chain
 
 class MethodReturnValues(
-        val classFile: ClassFile,
-        val method:    Method,
-        val result:    AIResult
+        val method: Method,
+        val result: AIResult
 ) extends IssueDetails with MethodComprehension {
+
+    final def classFile: ClassFile = method.classFile
 
     private[this] implicit def code = result.code
 

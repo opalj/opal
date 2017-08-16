@@ -31,7 +31,7 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 /**
@@ -40,11 +40,9 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-class DefaultConfigurableIntervalValuesDomain[I, Source](
-        val id:        I,
-        val project:   Project[Source],
-        val classFile: ClassFile,
-        val method:    Method
+class DefaultIntervalValuesDomain[Source](
+        val project: Project[Source],
+        val method:  Method
 ) extends CorrelationalDomain
     with TheProject
     with TheMethod
@@ -61,19 +59,4 @@ class DefaultConfigurableIntervalValuesDomain[I, Source](
     with l1.ConstraintsBetweenIntegerValues
     with l1.DefaultLongValues
     with l1.LongValuesShiftOperators
-    with l1.ConcretePrimitiveValuesConversions {
-
-    type Id = I
-
-}
-
-class DefaultIntervalValuesDomain[Source](
-        project:   Project[Source],
-        classFile: ClassFile,
-        method:    Method
-) extends DefaultConfigurableIntervalValuesDomain[String, Source](
-    method.toJava(classFile),
-    project,
-    classFile,
-    method
-)
+    with l1.ConcretePrimitiveValuesConversions

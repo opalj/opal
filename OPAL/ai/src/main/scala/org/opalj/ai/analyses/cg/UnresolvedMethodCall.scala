@@ -42,7 +42,6 @@ import br.ReferenceType
  * @author Michael Eichberg
  */
 case class UnresolvedMethodCall(
-        callerClass:      ReferenceType,
         caller:           Method,
         pc:               PC,
         calleeClass:      ReferenceType,
@@ -53,10 +52,7 @@ case class UnresolvedMethodCall(
     import Console._
 
     override def toString: String = {
-        callerClass.toJava+"{ "+
-            BOLD + caller.toJava(withVisibility = true) + RESET+":"+pc+" } => "+
-            calleeClass.toJava+"{ "+
-            BOLD + calleeDescriptor.toJava(calleeName) + RESET+
-            " }"
+        val target = s"${calleeClass.toJava}{{$BOLD${calleeDescriptor.toJava(calleeName)}$RESET}}"
+        caller.toJava(s"pc=$pc: $target")
     }
 }

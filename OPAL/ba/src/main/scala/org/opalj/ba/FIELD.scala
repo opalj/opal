@@ -46,7 +46,7 @@ case class FIELD(
     /**
      * Returns the build [[org.opalj.br.Method]] and its annotations.
      */
-    def result(): br.Field = {
+    def result(): br.FieldTemplate = {
         val fieldType = br.FieldType(descriptor)
         val accessFlags = accessModifiers.accessFlags
         val attributes = attributesBuilders map { attributeBuilder ⇒

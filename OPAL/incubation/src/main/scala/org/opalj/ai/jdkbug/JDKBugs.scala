@@ -159,7 +159,7 @@ object JDKTaintAnalysis
      * An entry point has to be public or protected and not final.
      * Also it needs to take a String as argument and return an Object or Class
      */
-    def entryPoints(project: Project[URL]): Iterable[(ClassFile, Method)] = {
+    def entryPoints(project: Project[URL]): Iterable[Method] = {
         import ObjectType._
         for {
             classFile ← project.allProjectClassFiles
@@ -169,19 +169,15 @@ object JDKTaintAnalysis
             if method.isPublic || (method.isProtected && !classFile.isFinal)
             descriptor = method.descriptor
             if (descriptor.parameterTypes.contains(String))
-        } yield (classFile, method)
+        } yield (method)
     }
 
     /**
      * Basically, each entry point is analyzed on its own and is associated with
      * a unique domain instance.
      */
-    def domain(
-        project:   analyses.Project[URL],
-        classFile: ClassFile,
-        method:    Method
-    ): Domain with OptionalReport = {
-        new RootTaintAnalysisDomain[URL](project, List.empty, CallStackEntry(classFile, method), false)
+    def domain(project: analyses.Project[URL], method: Method): Domain with OptionalReport = {
+        new RootTaintAnalysisDomain[URL](project, List.empty, CallStackEntry(method), false)
     }
 }
 
@@ -254,7 +250,7 @@ trait TaintAnalysisDomain[Source]
 
     import ObjectType._
 
-    protected def declaringClass = id.classFile.thisType
+    protected def declaringClass = id.method.classFile.thisType
     def method: Method = id.method
     protected def methodName = id.method.name
     protected def methodDescriptor = id.method.descriptor
@@ -530,7 +526,7 @@ trait TaintAnalysisDomain[Source]
             project.lookupMethodDefinition(
                 declaringClass.asObjectType, methodName, methodDescriptor
             ).getOrElse {
-                    return doTypeLevelInvoke
+                    return doTypeLevelInvoke;
                 }
 
         if (method.body.isEmpty) {
@@ -566,7 +562,7 @@ trait TaintAnalysisDomain[Source]
             project.resolveMethodReference(
                 declaringClass, methodName, methodDescriptor
             ).getOrElse {
-                return doTypeLevelInvoke
+                return doTypeLevelInvoke;
             }
 
         inspectMethod(pc, method, operands)
@@ -608,7 +604,7 @@ trait TaintAnalysisDomain[Source]
                 methodName,
                 methodDescriptor
             ).getOrElse {
-                    return doTypeLevelInvoke
+                    return doTypeLevelInvoke;
                 }
 
         inspectMethod(pc, method, operands)
@@ -627,17 +623,8 @@ trait TaintAnalysisDomain[Source]
         parameters:       DomainValues
     ): Boolean
 
-    final def isRecursiveCall(
-        classFile:  ClassFile,
-        method:     Method,
-        parameters: DomainValues
-    ): Boolean = {
-        isRecursiveCall(
-            classFile.thisType,
-            method.name,
-            method.descriptor,
-            parameters
-        )
+    final def isRecursiveCall(method: Method, parameters: DomainValues): Boolean = {
+        isRecursiveCall(method.classFile.thisType, method.name, method.descriptor, parameters)
     }
 
     override def putfield(
@@ -662,7 +649,7 @@ trait TaintAnalysisDomain[Source]
                     fieldType
                 ).get
 
-                val classFile: ClassFile = project.classFile(thisField)
+                val classFile: ClassFile = thisField.classFile
 
                 findAndInspectNewEntryPoint(classFile)
             }
@@ -784,14 +771,12 @@ trait TaintAnalysisDomain[Source]
      * returned result of that analysis. It returns true if a relevant
      * Value was returned.
      */
-    def inspectMethod(
-        pc:       PC,
-        method:   Method,
-        operands: Operands
-    ): Boolean = {
-        val classFile = project.classFile(method)
+    def inspectMethod(pc: PC, method: Method, operands: Operands): Boolean = {
+        val classFile = method.classFile
 
-        if (!method.isNative && !definedInRestrictedPackage(classFile.thisType.packageName) && method.body.nonEmpty) {
+        if (!method.isNative &&
+            !definedInRestrictedPackage(classFile.thisType.packageName) &&
+            method.body.nonEmpty) {
             val callerNode: CallerNode = new CallerNode(pc+": method invocation; method id: "+method)
 
             // compute the new pc of relevant parameters that the analysis
@@ -806,7 +791,7 @@ trait TaintAnalysisDomain[Source]
 
             val calleeDomain = new CalledTaintAnalysisDomain(
                 this,
-                CallStackEntry(classFile, method),
+                CallStackEntry(method),
                 callerNode,
                 relevantParameters,
                 checkForFields
@@ -822,7 +807,7 @@ trait TaintAnalysisDomain[Source]
             }
 
             val parameters = DomainValues(calleeDomain)(calleeParameters)
-            if (isRecursiveCall(classFile, method, parameters)) {
+            if (isRecursiveCall(method, parameters)) {
                 false
             } else {
                 // If we reach this point, we have an invocation of a relevant method
@@ -830,7 +815,7 @@ trait TaintAnalysisDomain[Source]
                 // not native and which is not a recursive call
 
                 // Analyze the method
-                val aiResult = BaseAI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
+                val aiResult = BaseAI.perform(method, calleeDomain)(Some(calleeParameters))
                 if (!aiResult.domain.isRelevantValueReturned) {
                     false
                 } else {
@@ -859,10 +844,10 @@ trait TaintAnalysisDomain[Source]
      */
     def findAndInspectNewEntryPoint(classFile: ClassFile): Unit = {
         for (method ← classFile.methods) {
-            if (!isRecursiveCall(classFile, method, null)) {
+            if (!isRecursiveCall(method, null)) {
                 if (!method.body.isEmpty) {
-                    val domain = new RootTaintAnalysisDomain(project, taintedFields, CallStackEntry(classFile, method), true)
-                    val aiResult = BaseAI.perform(classFile, method, domain)()
+                    val domain = new RootTaintAnalysisDomain(project, taintedFields, CallStackEntry(method), true)
+                    val aiResult = BaseAI.perform(method, domain)()
                     val log: String = aiResult.domain.report.getOrElse(null)
                     if (log != null)
                         println(log)
