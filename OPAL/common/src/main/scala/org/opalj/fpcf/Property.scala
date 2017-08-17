@@ -113,6 +113,17 @@ trait OrderedProperty extends Property {
 
 }
 
+/**
+ * Allows properties to have different names and key value names used in test-fixture annotations.
+ * The AbstractFixpointAnalysisTest (in the ai project), will use the provide property key value
+ * instead of calling the toString method of the property.
+ */
+trait SpecializedPropertyKeyName { def propertyKeyValue: String }
+
+object SpecializedPropertyKeyName {
+    def unapply(p: SpecializedPropertyKeyName): Some[String] = Some(p.propertyKeyValue)
+}
+
 private[fpcf] trait PropertyIsBeingComputed extends Property {
 
     final override def key: Nothing = throw new UnsupportedOperationException

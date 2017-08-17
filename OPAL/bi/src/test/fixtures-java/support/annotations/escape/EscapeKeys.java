@@ -33,9 +33,9 @@ package annotations.escape;
  */
 public enum EscapeKeys {
     ViaStaticField,
-    ViaHeapObjectAssignment,
+    ViaHeapObject,
     ViaReturnAssignment,
-    ViaParameterAssignment,
+    ViaParameter,
     ViaReturn,
     ViaException,
     Arg,
@@ -43,33 +43,4 @@ public enum EscapeKeys {
     MaybeNo,
     MaybeArg,
     MaybeMethod;
-
-    @Override public String toString() {
-        switch (this) {
-        case ViaStaticField:
-            return "GlobalEscapeViaStaticField";
-        case ViaHeapObjectAssignment:
-            return "GlobalEscapeViaHeapObjectAssignment";
-        case ViaReturnAssignment:
-            return "MethodEscapeViaReturnAssignment";
-        case ViaParameterAssignment:
-            return "MethodEscapeViaParameterAssignment";
-        case ViaReturn:
-            return "MethodEscapeViaReturn";
-        case ViaException:
-            return "MethodEscapeViaException";
-        case Arg:
-            return "ArgEscape";
-        case No:
-            return "NoEscape";
-        case MaybeNo:
-            return "MaybeNoEscape";
-        case MaybeArg:
-            return "MaybeArgEscape";
-        case MaybeMethod:
-            return "MaybeMethodEscape";
-        default:
-            throw new IllegalArgumentException();
-        }
-    }
 }
