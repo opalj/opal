@@ -104,10 +104,28 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * Compilation and Deoptimization.” In Proceedings of the 1st ACM/USENIX International Conference
  * on Virtual Execution Environments, 111–120. VEE ’05. New York, NY, USA: ACM, 2005.
  *
+ * @param  level The escape level; the higher the value the more restricted is the usage of the
+ *         respective value. The precise value is subject to change without notice and should
+ *         not be used!
+ *
  * @author Florian Kuebler
  */
-sealed abstract class EscapeProperty(private final val level: Int) extends Property with EscapePropertyMetaInformation with SpecializedPropertyKeyName {
+sealed abstract class EscapeProperty(
+        final val level: Int
+) extends OrderedProperty with ExplicitlyNamedProperty with EscapePropertyMetaInformation {
+
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        other match {
+            case p: EscapeProperty ⇒
+                if (this.level <= p.level)
+                    None
+                else
+                    Some(s"non-monotonic refinement from $this to $p")
+            case p ⇒ Some(s"illegal refinement of escape property $this to $p")
+        }
+    }
 
     /**
      * A smaller or equals check based on the underlying order of the property.
