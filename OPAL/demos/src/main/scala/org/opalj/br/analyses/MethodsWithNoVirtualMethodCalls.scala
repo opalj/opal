@@ -65,7 +65,7 @@ object MethodsWithNoVirtualMethodCalls extends DefaultOneStepAnalysis {
                     if { allMethods.incrementAndGet(); true }
                     if body.instructions.exists { i ⇒ i.isInstanceOf[VirtualMethodInvocationInstruction] }
                 } yield {
-                    method.toJava(classFile)
+                    method.toJava
                 }
             } { t ⇒ println(s"Analysis time: $t") }
 

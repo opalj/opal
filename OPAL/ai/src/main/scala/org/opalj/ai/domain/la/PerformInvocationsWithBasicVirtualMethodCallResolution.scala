@@ -72,8 +72,7 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
                         callees(refValue.upperTypeBound.head.asObjectType, name, descriptor)
                     if (methods.size == 1) {
                         val m = methods.head
-                        val cf = project.classFile(m)
-                        testAndDoInvoke(pc, cf, m, operands, fallback)
+                        testAndDoInvoke(pc, m, operands, fallback)
                     } else {
                         fallback()
                     }
@@ -92,4 +91,3 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
     }
 
 }
-

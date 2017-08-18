@@ -110,7 +110,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         initialDependees: Set[EOptionP[Method, Purity]]
     ): PropertyComputationResult = {
 
-        val declaringClassType = project.classFile(method).thisType
+        val declaringClassType = method.classFile.thisType
         val methodDescriptor = method.descriptor
         val methodName = method.name
         val body = method.body.get

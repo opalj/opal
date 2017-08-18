@@ -96,17 +96,17 @@ class SimilarityTestConfigurationTest extends FunSuite with Matchers {
 
             def compareFields(
                 leftContext: ClassFile,
-                left:        Fields,
-                right:       Fields
-            ): (Fields, Fields) = {
+                left:        Seq[JVMField],
+                right:       Seq[JVMField]
+            ): (Seq[JVMField], Seq[JVMField]) = {
                 (IndexedSeq.empty, IndexedSeq.empty)
             }
 
             def compareMethods(
                 leftContext: ClassFile,
-                left:        Methods,
-                right:       Methods
-            ): (Methods, Methods) = {
+                left:        Seq[JVMMethod],
+                right:       Seq[JVMMethod]
+            ): (Seq[JVMMethod], Seq[JVMMethod]) = {
                 (IndexedSeq.empty, IndexedSeq.empty)
             }
 
@@ -119,7 +119,7 @@ class SimilarityTestConfigurationTest extends FunSuite with Matchers {
             }
 
             def compareCode(
-                leftContext: Method,
+                leftContext: JVMMethod,
                 left:        Option[Code],
                 right:       Option[Code]
             ): (Option[Code], Option[Code]) = {
@@ -194,9 +194,9 @@ class SimilarityTestConfigurationTest extends FunSuite with Matchers {
         object FieldsWithAccessFlagsEquals1 extends CompareAllConfiguration {
             override def compareFields(
                 leftContext: ClassFile,
-                left:        Fields,
-                right:       Fields
-            ): (Fields, Fields) = {
+                left:        Seq[JVMField],
+                right:       Seq[JVMField]
+            ): (Seq[JVMField], Seq[JVMField]) = {
                 (
                     left.filter(a ⇒ a.accessFlags == 1),
                     right.filter(a ⇒ a.accessFlags == 1)
@@ -218,34 +218,5 @@ class SimilarityTestConfigurationTest extends FunSuite with Matchers {
             classWithLessFields.similar(simpleClass, FieldsWithAccessFlagsEquals1)
         )
     }
-
-    /*
-    test("test missing fields") {
-        val classMissingFields = simpleClass.copy(fields = Vector(simpleField))
-        val fieldsFilter = CompareAllConfiguration {
-            override def testFieldsSize(fields: Fields): Boolean = false
-            // only choose the first field
-            override def testField(field: Field): Boolean = field.accessFlags == 1
-        }
-
-        assert(!simpleClass.similar(classMissingFields))
-        assert(simpleClass.similar(classMissingFields, fieldsFilter))
-        assert(classMissingFields.similar(simpleClass, fieldsFilter))
-    }
-
-    test("test missing method") {
-        val methodFilter = new CompareAllConfiguration {
-            override def testMethodsSize(methods: Methods): Boolean = false
-            override def testMethod(method: Method): Boolean = false
-        }
-
-        val classMissingMethod = simpleClass.copy(methods = Vector(simpleMethod))
-
-        assert(!simpleClass.similar(classMissingMethod))
-        assert(simpleClass.similar(classMissingMethod, methodFilter))
-        assert(classMissingMethod.similar(simpleClass, methodFilter))
-    }
-
-*/
 
 }

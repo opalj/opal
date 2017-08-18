@@ -77,7 +77,7 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         method: Method
     ): PropertyComputationResult = {
 
-        val classFile = project.classFile(method)
+        val classFile = method.classFile
         if (classFile.isPublic && (method.isPublic || (!classFile.isFinal && method.isProtected)))
             return ImmediateResult(method, Global);
 
@@ -113,9 +113,11 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         ImmediateResult(method, PackageLocal)
     }
 
-    private[this] def determineInstanceMethodAccessibility(method: Method): PropertyComputationResult = {
+    private[this] def determineInstanceMethodAccessibility(
+        method: Method
+    ): PropertyComputationResult = {
 
-        val classFile = project.classFile(method)
+        val classFile = method.classFile
         val isFinalClass = classFile.isFinal
         val isPublicClass = classFile.isPublic
 

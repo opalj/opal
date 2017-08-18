@@ -69,13 +69,13 @@ object TrivialReflectionUsage extends FeatureQuery {
         val nontrivialLocations = new LocationsContainer[S]
 
         val errors = project.parForeachMethodWithBody(isInterrupted = this.isInterrupted) { mi ⇒
-            val MethodInfo(source, cf, m @ MethodWithBody(code)) = mi
+            val MethodInfo(source, m @ MethodWithBody(code)) = mi
             val classForNameCalls = code.collect {
                 case i @ INVOKESTATIC(Class, false, "forName", ForName1MD | ForName3MD) ⇒ i
             }
             if (classForNameCalls.nonEmpty) {
-                val aiResult = BaseAI(cf, m, new DefaultDomainWithCFGAndDefUse(project, cf, m))
-                val methodLocation = MethodLocation(source, cf, m)
+                val aiResult = BaseAI(m, new DefaultDomainWithCFGAndDefUse(project, m))
+                val methodLocation = MethodLocation(source, m)
                 for {
                     (pc, i) ← classForNameCalls
                     classNameParameterIndex = i.parametersCount - 1

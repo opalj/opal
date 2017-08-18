@@ -32,16 +32,15 @@ package analyses
 package cg
 
 import scala.collection.Set
+
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.br.analyses.Project
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodSignature
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.DefaultDomainValueBinding
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.IgnoreSynchronization
-import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.TheMethod
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
@@ -67,14 +66,12 @@ class CFACallGraphDomain[Source](
         val fieldValueInformation:        FieldValueInformation,
         val methodReturnValueInformation: MethodReturnValueInformation,
         val cache:                        CallGraphCache[MethodSignature, Set[Method]],
-        val classFile:                    ClassFile,
         val method:                       Method,
         val calledMethods:                Set[Method]                                  = Set.empty
 ) extends CorrelationalDomain
     with DefaultDomainValueBinding
     with ThrowAllPotentialExceptionsConfiguration
     with TheProject
-    with TheClassFile
     with TheMethod
     with DefaultHandlingOfMethodResults
     with IgnoreSynchronization
@@ -101,10 +98,7 @@ class CFACallGraphDomain[Source](
     // we just want to be able to track "booleans"
     override def maxCardinalityOfIntegerRanges: Long = 2L
 
-    def shouldInvocationBePerformed(
-        definingClass: ClassFile,
-        method:        Method
-    ): Boolean =
+    def shouldInvocationBePerformed(method: Method): Boolean =
         (method ne this.method) &&
             // we only call methods where we have a chance that the return value
             // actually depends on the calling context and may directly affect
@@ -121,14 +115,13 @@ class CFACallGraphDomain[Source](
 
     type CalledMethodDomain = CFACallGraphDomain[Source]
 
-    override def calledMethodDomain(classFile: ClassFile, method: Method) =
+    override def calledMethodDomain(method: Method) =
         new CFACallGraphDomain(
             k,
             project,
             fieldValueInformation,
             methodReturnValueInformation,
             cache,
-            classFile,
             method,
             calledMethods + callingDomain.method
         )
@@ -136,17 +129,15 @@ class CFACallGraphDomain[Source](
     def calledMethodAI: BaseAI.type = BaseAI
 
     override protected[this] def doInvoke(
-        pc:            PC,
-        definingClass: ClassFile,
-        method:        Method,
-        operands:      Operands,
-        fallback:      () ⇒ MethodCallResult
+        pc:       PC,
+        method:   Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult
     ): MethodCallResult = {
 
-        val result = super.doInvoke(pc, definingClass, method, operands, fallback)
+        val result = super.doInvoke(pc, method, operands, fallback)
         //        if (calledMethods.isEmpty)
         //            println(s"[info - call graph] ${callingDomain.method.toJava(callingDomain.classFile)}:$pc the result of calling ${method.toJava(definingClass)} is $result")
         result
     }
 }
-

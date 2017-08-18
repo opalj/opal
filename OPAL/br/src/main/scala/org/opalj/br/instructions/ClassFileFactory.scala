@@ -238,10 +238,10 @@ object ClassFileFactory {
                 val (fieldType, index) = p
                 createField(fieldType = fieldType, name = s"staticParameter$index")
             }
-        val fields: IndexedSeq[Field] =
+        val fields: IndexedSeq[FieldTemplate] =
             receiverField ++ additionalFieldsForStaticParameters
 
-        val constructor: Method = createConstructor(definingType, fields)
+        val constructor: MethodTemplate = createConstructor(definingType, fields)
 
         val factoryMethodName: String =
             if (methodName == DefaultFactoryMethodName) {
@@ -250,7 +250,7 @@ object ClassFileFactory {
                 DefaultFactoryMethodName
             }
 
-        val methods: Array[Method] = new Array(if (bridgeMethodDescriptor.isDefined) 4 else 3)
+        val methods: Array[MethodTemplate] = new Array(if (bridgeMethodDescriptor.isDefined) 4 else 3)
         methods(0) = proxyMethod(
             definingType.objectType,
             methodName,
@@ -277,14 +277,16 @@ object ClassFileFactory {
             )
         }
 
-        ClassFile(0, 49,
+        ClassFile(
+            0, 49,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
             definingType.theSuperinterfaceTypes.toSeq,
             fields,
             methods,
-            IndexedSeq(VirtualTypeFlag))
+            IndexedSeq(VirtualTypeFlag)
+        )
     }
 
     /**
@@ -323,7 +325,7 @@ object ClassFileFactory {
         name:        String,
         fieldType:   FieldType,
         attributes:  Seq[Attribute] = Seq.empty
-    ): Field = {
+    ): FieldTemplate = {
         Field(accessFlags, name, fieldType, attributes)
     }
 
@@ -342,8 +344,8 @@ object ClassFileFactory {
      */
     def createConstructor(
         definingType: TypeDeclaration,
-        fields:       IndexedSeq[Field]
-    ): Method = {
+        fields:       IndexedSeq[FieldTemplate]
+    ): MethodTemplate = {
         // it doesn't make sense that the superClassType is not defined
         val theSuperclassType = definingType.theSuperclassType.get
         val theType = definingType.objectType
@@ -400,7 +402,7 @@ object ClassFileFactory {
      */
     def copyParametersToInstanceFields(
         declaringType: ObjectType,
-        fields:        IndexedSeq[Field]
+        fields:        IndexedSeq[FieldTemplate]
     ): Array[Instruction] = {
 
         val requiredInstructions =
@@ -458,7 +460,7 @@ object ClassFileFactory {
         typeToCreate:      ObjectType,
         fieldTypes:        IndexedSeq[FieldType],
         factoryMethodName: String
-    ): Method = {
+    ): MethodTemplate = {
         val numberOfInstructionsForParameterLoading: Int =
             computeNumberOfInstructionsForParameterLoading(fieldTypes, 0)
         val numberOfInstructions =
@@ -506,13 +508,13 @@ object ClassFileFactory {
         definingType:             ObjectType,
         methodName:               String,
         methodDescriptor:         MethodDescriptor,
-        staticParameters:         Seq[Field],
+        staticParameters:         Seq[FieldTemplate],
         receiverType:             ObjectType,
         receiverIsInterface:      Boolean,
         receiverMethodName:       String,
         receiverMethodDescriptor: MethodDescriptor,
         invocationInstruction:    Opcode
-    ): Method = {
+    ): MethodTemplate = {
 
         val code =
             createProxyMethodBytecode(
@@ -537,7 +539,7 @@ object ClassFileFactory {
         definingType:             ObjectType,
         methodName:               String,
         methodDescriptor:         MethodDescriptor,
-        staticParameters:         Seq[Field],
+        staticParameters:         Seq[FieldTemplate],
         receiverType:             ObjectType,
         receiverIsInterface:      Boolean,
         receiverMethodName:       String,
@@ -661,7 +663,7 @@ object ClassFileFactory {
         forwarderMethodDescriptor: MethodDescriptor,
         receiverMethodDescriptor:  MethodDescriptor,
         variableOffset:            Int,
-        staticParameters:          Seq[Field],
+        staticParameters:          Seq[FieldTemplate],
         definingType:              ObjectType
     ): Array[Instruction] = try {
         val receiverParameters = receiverMethodDescriptor.parameterTypes
@@ -905,7 +907,7 @@ object ClassFileFactory {
         bridgeMethodDescriptor:    MethodDescriptor,
         targetMethodDescriptor:    MethodDescriptor,
         targetMethodDeclaringType: ObjectType
-    ): Method = {
+    ): MethodTemplate = {
 
         val bridgeMethodParameters = bridgeMethodDescriptor.parameterTypes
         val targetMethodParameters = targetMethodDescriptor.parameterTypes

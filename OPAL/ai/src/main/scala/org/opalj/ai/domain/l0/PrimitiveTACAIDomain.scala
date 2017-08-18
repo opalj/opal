@@ -29,32 +29,28 @@
 package org.opalj
 package ai
 package domain
+package l0
 
-import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.analyses.Project
 
 /**
- * Provides information about the [[org.opalj.br.ClassFile]] that is currently analyzed
- *
- * ==Usage==
- * A domain that implements this trait usually defines a parameter that is set
- * at construction domain.
- *
- * E.g.,
- * {{{
- * class MyDomain{val classFile : ClassFile} extends Domain with TheMethod
- * }}}
- *
- * ==Core Properties==
- * "Just" defines the public interface. The concrete implementation will then determine
- * the further properties.
- *
- * @author Michael Eichberg
+ * This is the most primitive domain that can be used to transform the bytecode to the
+ * three address representation which is build upon the result of an abstract interpretation.
  */
-trait TheClassFile {
+class PrimitiveTACAIDomain(
+        val classHierarchy: ClassHierarchy,
+        val method:         Method
+) extends TypeLevelDomain
+    with ThrowAllPotentialExceptionsConfiguration
+    with IgnoreSynchronization
+    with DefaultTypeLevelHandlingOfMethodResults
+    with TheClassHierarchy
+    with TheMethod
+    with RecordDefUse {
 
-    /**
-     * Returns the classFile that is currently analyzed.
-     */
-    def classFile: ClassFile
-
+    def this(project: Project[_], method: Method) {
+        this(project.classHierarchy, method)
+    }
 }

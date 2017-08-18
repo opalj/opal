@@ -43,20 +43,8 @@ object NativeMethodsCounter extends DefaultOneStepAnalysis {
 
     override def description: String = "Counts the number of native methods."
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
-        val nativeMethods =
-            (
-                for {
-                    classFile ← project.allClassFiles.par
-                    method ← classFile.methods
-                    if method.isNative
-                } yield method.toJava(classFile)
-            ).seq
-
+    def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+        val nativeMethods = p.allClassFiles.flatMap(_.methods.filter(_.isNative).map(_.toJava))
         BasicReport(
             nativeMethods.mkString(nativeMethods.size+" native methods found:\n\t", "\n\t", "\n")
         )

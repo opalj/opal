@@ -93,7 +93,7 @@ class FactoryMethodAnalysis private (val project: SomeProject) extends FPCFAnaly
             // analysis.
             return ImmediateResult(method, IsFactoryMethod)
 
-        val classType = project.classFile(method).thisType
+        val classType = method.classFile.thisType
 
         val body = method.body.get
         val instructions = body.instructions

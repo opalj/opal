@@ -32,12 +32,11 @@ package analyses
 package cg
 
 import scala.collection.Set
-import org.opalj.br.ClassFile
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.MethodSignature
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
-import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.TheMethod
 import org.opalj.ai.domain.DefaultDomainValueBinding
@@ -57,13 +56,11 @@ class DefaultVTACallGraphDomain[Source](
         val fieldValueInformation:        FieldValueInformation,
         val methodReturnValueInformation: MethodReturnValueInformation,
         val cache:                        CallGraphCache[MethodSignature, Set[Method]],
-        val classFile:                    ClassFile,
         val method:                       Method
 ) extends CorrelationalDomain
     with DefaultDomainValueBinding
     with ThrowAllPotentialExceptionsConfiguration
     with TheProject
-    with TheClassFile
     with TheMethod
     with DefaultHandlingOfMethodResults
     with IgnoreSynchronization

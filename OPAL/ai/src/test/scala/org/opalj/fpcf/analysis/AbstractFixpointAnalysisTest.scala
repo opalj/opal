@@ -312,7 +312,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         val computedOProperty = propertyStore(method, propertyKey)
 
         if (computedOProperty.hasNoProperty) {
-            val classFile = project.classFile(method)
+            val classFile = method.classFile
             val message =
                 s"Method has no property: ${classFile.fqn} for: $propertyKey;"+
                     s"\n\tmethod name:     ${method.name}"+
@@ -323,11 +323,11 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != expected) {
-            val classFile = project.classFile(method)
+            val classFile = method.classFile
             val message =
                 "Wrong property computed: "+
                     s"${classFile.fqn} has the property $computedProperty for $propertyKey;"+
-                    s"\n\tmethod name:       ${method.toJava(classFile)}"+
+                    s"\n\tmethod name:       ${method.toJava}"+
                     s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $expected"
             fail(message)
@@ -364,10 +364,10 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         val expectedProperty = expectedPropertyO getOrElse {
             throw new RuntimeException("Test annotated incorrectly: "+
                 "Multiple annotations applicable "+
-                s"for method ${method.toJava(classFile)} in class ${classFile.fqn}")
+                s"for method ${method.toJava} in class ${classFile.fqn}")
         }
 
-        val doWhat = s"correctly calculate the property of  ${method.toJava(classFile)}: "+
+        val doWhat = s"correctly calculate the property of  ${method.toJava}: "+
             s"expected property $expectedProperty"
         analysisName should (doWhat) in { validatePropertyByMethod(method, expectedProperty) }
     }

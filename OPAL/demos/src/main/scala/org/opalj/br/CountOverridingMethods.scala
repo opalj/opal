@@ -54,17 +54,15 @@ object CountOverridingMethods extends AnalysisExecutor {
             parameters:    Seq[String],
             isInterrupted: () ⇒ Boolean
         ) = {
-
             val overridingMethodsInfo =
                 project.overridingMethods.view.
                     map(ms ⇒ (ms._1, ms._2 - ms._1)).
                     filter(_._2.nonEmpty).map { ms ⇒
                         val (method, allOverridingMethods) = ms
-                        val overridingMethods = allOverridingMethods.map(m ⇒ project.classFile(m).fqn)
+                        val overridingMethods = allOverridingMethods.map(m ⇒ m.classFile.fqn)
                         (method, (overridingMethods, overridingMethods.size))
                         val count = overridingMethods.size
                         method.toJava(
-                            project.classFile(method),
                             overridingMethods.mkString(s"\n\thas $count overridde(s):\n\t\t", "\n\t\t", "\n")
                         )
                     }

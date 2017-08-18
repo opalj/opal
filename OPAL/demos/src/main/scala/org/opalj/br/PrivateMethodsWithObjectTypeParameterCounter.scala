@@ -29,10 +29,11 @@
 package org.opalj
 package br
 
+import java.net.URL
+
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
-import java.net.URL
 
 /**
  * Counts the number of private methods that have at least one parameter with
@@ -66,7 +67,7 @@ object PrivateMethodsWithObjectTypeParameterCounter extends DefaultOneStepAnalys
                 if potential >= 5
             } yield {
                 overallPotential.addAndGet(potential)
-                method.toJava(classFile, s" /* Potential: $potential */ ")
+                method.toJava(s" /* Potential: $potential */ ")
             }
         ).seq
 

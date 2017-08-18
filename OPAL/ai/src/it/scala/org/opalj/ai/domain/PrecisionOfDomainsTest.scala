@@ -178,10 +178,10 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
             val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
             theProject.parForeachMethodWithBody() { methodInfo ⇒
-                val MethodInfo(_, classFile, method) = methodInfo
-                val r1 = BaseAI(classFile, method, new TypeLevelDomain(method, theProject))
-                val r2_ranges = BaseAI(classFile, method, new L1RangesDomain(method, theProject))
-                val r2_sets = BaseAI(classFile, method, new L1SetsDomain(method, theProject))
+                val MethodInfo(_, method) = methodInfo
+                val r1 = BaseAI(method, new TypeLevelDomain(method, theProject))
+                val r2_ranges = BaseAI(method, new L1RangesDomain(method, theProject))
+                val r2_sets = BaseAI(method, new L1SetsDomain(method, theProject))
 
                 def handleAbstractsOverFailure(
                     lpDomain: String,
@@ -190,13 +190,12 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                     m: String
                 ): Unit = {
                     failed.set(true)
-                    println(
-                        method.toJava(classFile, "\" /*Instructions "+
-                            method.body.get.instructions.size+"*/\n"+
+                    val bodyMessage =
+                        "\" /*Instructions "+method.body.get.instructions.size+"*/\n"+
                             s"\tthe less precise domain ($lpDomain) did not abstract "+
                             s"over the state of the more precise domain ($mpDomain)\n"+
-                            "\t"+Console.BOLD + m + Console.RESET+"\n")
-                    )
+                            "\t"+Console.BOLD + m + Console.RESET+"\n"
+                    println(method.toJava(bodyMessage))
                 }
 
                 checkAbstractsOver(r1, r2_ranges).foreach(

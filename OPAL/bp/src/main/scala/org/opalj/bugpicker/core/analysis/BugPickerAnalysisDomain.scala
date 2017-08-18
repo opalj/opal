@@ -32,24 +32,24 @@ package core
 package analysis
 
 import java.net.URL
+
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.br.PC
+import org.opalj.br.MethodSignature
+import org.opalj.br.ReferenceType
+import org.opalj.br.MethodDescriptor
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.br.MethodSignature
 import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolution
 import org.opalj.ai.domain.l2.PerformInvocationsWithRecursionDetection
-import org.opalj.br.ClassFile
 import org.opalj.ai.mapOperands
 import org.opalj.ai.TheAI
 import org.opalj.ai.domain.l2.CalledMethodsStore
 import org.opalj.ai.TheMemoryLayout
 import org.opalj.ai.util.XHTML
-import org.opalj.br.ReferenceType
-import org.opalj.br.MethodDescriptor
 import org.opalj.ai.domain.l2.ChildPerformInvocationsWithRecursionDetection
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.l2.CalledMethodsStore
@@ -136,7 +136,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
             import result._
             org.opalj.io.writeAndOpen(
                 org.opalj.ai.common.XHTML.dump(
-                    Some(project.classFile(method)),
+                    Some(method.classFile),
                     Some(method),
                     method.body.get,
                     Some(
@@ -154,15 +154,14 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     }
 
     override def doInvoke(
-        pc:            PC,
-        definingClass: ClassFile,
-        method:        Method,
-        operands:      callingDomain.Operands,
-        fallback:      () ⇒ MethodCallResult
+        pc:       PC,
+        method:   Method,
+        operands: callingDomain.Operands,
+        fallback: () ⇒ MethodCallResult
     ): MethodCallResult = {
-        val result = super.doInvoke(pc, definingClass, method, operands, fallback)
+        val result = super.doInvoke(pc, method, operands, fallback)
         if (debug) {
-            println("the result of calling "+method.toJava(definingClass)+" is "+result)
+            println("the result of calling "+method.toJava+" is "+result)
         }
         result
     }
@@ -171,10 +170,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
 
     def currentCallChainLength: Int
 
-    def shouldInvocationBePerformed(
-        definingClass: ClassFile,
-        calledMethod:  Method
-    ): Boolean = {
+    def shouldInvocationBePerformed(calledMethod: Method): Boolean = {
         val result =
             maxCallChainLength > currentCallChainLength &&
                 // TODO check me if the following makes sense:
@@ -182,9 +178,9 @@ trait BasePerformInvocationBugPickerAnalysisDomain
         if (debug) {
             val i = if (result) " invokes " else " does not invoke "
             println(s"[$currentCallChainLength]"+
-                method.toJava(project.classFile(method)) +
+                method.toJava +
                 i +
-                calledMethod.toJava(definingClass))
+                calledMethod.toJava)
         }
         result
     }
@@ -225,7 +221,7 @@ class InvocationBugPickerAnalysisDomain(
     with ChildPerformInvocationsWithRecursionDetection {
     callingDomain ⇒
 
-    override def calledMethodDomain(classFile: ClassFile, method: Method) = {
+    override def calledMethodDomain(method: Method) = {
         new InvocationBugPickerAnalysisDomain(
             project,
             fieldValueInformation,
@@ -258,7 +254,6 @@ class RootBugPickerAnalysisDomain(
         override val maxCardinalityOfIntegerRanges: Long,
         override val maxCardinalityOfLongSets:      Int,
         val maxCallChainLength:                     Int,
-        val classFile:                              ClassFile,
         val /*current*/ method:                     Method,
         val debug:                                  Boolean,
         val frequentEvaluationWarningLevel:         Int                                                           = 256
@@ -287,7 +282,7 @@ class RootBugPickerAnalysisDomain(
         )
     }
 
-    override def calledMethodDomain(classFile: ClassFile, method: Method) =
+    override def calledMethodDomain(method: Method) =
         new InvocationBugPickerAnalysisDomain(
             project,
             fieldValueInformation,

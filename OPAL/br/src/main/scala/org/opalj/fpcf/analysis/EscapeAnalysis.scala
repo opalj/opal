@@ -154,15 +154,13 @@ class EscapeAnalysis(val debug: Boolean) {
                         (potentiallyLeaksSelfReference(m) && leaksSelfReference(m)))) {
                     if (debug)
                         OPALLogger.debug(
-                            "analysis result",
-                            s"${m.toJava(classFile)} leaks its self reference"
+                            "analysis result", s"${m.toJava} leaks its self reference"
                         )
                     true
                 } else {
                     if (debug)
                         OPALLogger.debug(
-                            "analysis result",
-                            s"${m.toJava(classFile)} does not leak its self reference"
+                            "analysis result", s"${m.toJava} does not leak its self reference"
                         )
                     false
                 }

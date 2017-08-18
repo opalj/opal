@@ -32,7 +32,6 @@ package core
 package analysis
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.analyses.SomeProject
@@ -62,7 +61,6 @@ object ThrowsExceptionAnalysis {
 
     def apply(
         theProject: SomeProject,
-        classFile:  ClassFile,
         method:     Method,
         result:     AIResult { val domain: ThrowsExceptionAnalysisDomain }
     ): Chain[Issue] = {
@@ -134,7 +132,6 @@ object ThrowsExceptionAnalysis {
                     List(new InstructionLocation(
                         Some(s"evaluation of $instruction always throws: $exceptions"),
                         theProject,
-                        classFile,
                         method,
                         pc,
                         List(

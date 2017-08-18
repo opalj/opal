@@ -31,11 +31,11 @@ package ai
 package domain
 package l2
 
+import scala.util.control.ControlThrowable
+
 import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
-import scala.util.control.ControlThrowable
 
 /**
  * Stores information about how methods were called.
@@ -81,9 +81,8 @@ trait CalledMethodsStore { rootStore ⇒
     }
 
     def testOrElseUpdated(
-        definingClass: ClassFile,
-        method:        Method,
-        operands:      ValuesDomain#Operands
+        method:   Method,
+        operands: ValuesDomain#Operands
     ): Option[CalledMethodsStore { val domain: rootStore.domain.type }] = {
 
         val adaptedOperands = mapOperands(operands, domain)
@@ -110,30 +109,23 @@ trait CalledMethodsStore { rootStore ⇒
                                 "internal error",
                                 s"incompatible operands lists: $previousOperands and $adaptedOperands",
                                 t
-                            )(
-                                    domain.logContext
-                                )
+                            )(domain.logContext)
                             throw t
                     }
                 }
                 val newOperandsList = adaptedOperands :: previousOperandsList
 
                 if (((previousOperandsList.size + 1) % frequentEvaluationWarningLevel) == 0)
-                    frequentEvalution(definingClass, method, newOperandsList)
+                    frequentEvalution(method, newOperandsList)
 
                 Some(updated(method, newOperandsList))
         }
     }
 
-    def frequentEvalution(
-        definingClass: ClassFile,
-        method:        Method,
-        operandsSet:   List[Array[domain.DomainValue]]
-    ): Unit = {
+    def frequentEvalution(method: Method, operandsSet: List[Array[domain.DomainValue]]): Unit = {
         OPALLogger.info(
             "analysis configuration",
             method.toJava(
-                definingClass,
                 "is frequently evaluated using different operands ("+operandsSet.size+"): "+
                     operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
             )

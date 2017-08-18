@@ -52,9 +52,9 @@ case object ArrayAllocation {
  */
 sealed trait AllocationSite {
 
-/**
-* The method which contains this allocation site.
-*/
+	/**
+	 * The method which contains this allocation site.
+	 */
     val method: Method
 
     /**
@@ -68,10 +68,10 @@ sealed trait AllocationSite {
     */
     val pc: PC
 
-/**
-* The type of the allocation: "Object" or "Array".
-*/
-def type : AllocationType
+	/**
+	 * The type of the allocation: "Object" or "Array".
+	 */
+	def type : AllocationType
 
     final override def equals(other: Any): Boolean = {
         other match {
@@ -86,9 +86,7 @@ def type : AllocationType
 
     final override def hashCode(): Int = method.hashCode() * 111 + pc
 
-    final override def toString: String = {
-        s"${type}AllocationSite(${method.toJava(withVisibility = false)},pc=$pc)"
-    }
+    final override def toString: String = s"${type}AllocationSite(${method.toJava("pc="+pc)})"
 
 }
 

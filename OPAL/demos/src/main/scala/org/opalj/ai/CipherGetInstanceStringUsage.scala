@@ -35,7 +35,6 @@ import scala.collection.JavaConverters._
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.BasicMethodInfo
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -77,11 +76,9 @@ object CipherGetInstanceStringUsage extends DefaultOneStepAnalysis {
         val report = new ConcurrentLinkedQueue[String]
 
         project.parForeachMethodWithBody() { mi ⇒
-            val BasicMethodInfo(cf, m) = mi
-
-            val result = BaseAI(cf, m, new DefaultDomainWithCFGAndDefUse(project, cf, m))
+            val m = mi.method
+            val result = BaseAI(m, new DefaultDomainWithCFGAndDefUse(project, m))
             val code = result.domain.code
-
             for {
                 (pc, INVOKESTATIC(Cipher, false, "getInstance", _)) ← code
                 vos ← result.domain.operandOrigin(pc, 0)
@@ -89,9 +86,9 @@ object CipherGetInstanceStringUsage extends DefaultOneStepAnalysis {
                 // getInstance is static, algorithm is first param
                 code.instructions(vos) match {
                     case LoadString(value) ⇒
-                        report.add(m.toJava(cf, s"passed value ($pc): $value"))
+                        report.add(m.toJava(s"passed value ($pc): $value"))
                     case invoke @ INVOKEINTERFACE(Key, "getAlgorithm", JustReturnsString) ⇒
-                        report.add(m.toJava(cf, s"return value of ($pc): ${invoke.toString}"))
+                        report.add(m.toJava(s"return value of ($pc): ${invoke.toString}"))
 
                     case get @ GETFIELD(_, _, _) ⇒ println("uknown value: "+get)
                     case i                       ⇒ println("unsupported instruction: "+i)
