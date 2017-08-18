@@ -33,25 +33,9 @@ package analyses
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
+
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.log.OPALLogger
-
-/**
- * A set of all allocation sites.
- *
- * To initialize the set of allocation sites for an entire project use the respective
- * project information key: [[AllocationSitesKey]]. The key also provides further
- * information regarding the concrete allocation site objects and their relation
- * to the underlying method.
- *
- * @author Michael Eichberg
- */
-class AllocationSites private[analyses] (val data: Map[Method, Map[PC, AllocationSite]]) {
-
-    def apply(m: Method): Map[PC, AllocationSite] = data.getOrElse(m, Map.empty)
-
-    def allocationSites: Iterable[AllocationSite] = data.values.flatMap(_.values)
-}
 
 /**
  * The ''key'' object to collect all allocation sites in a project. If the library methods
@@ -95,13 +79,24 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
             val m = methodInfo.method
             val code = m.body.get
             val as = code.collectWithIndex {
-                case (pc, instructions.NEW(_)) ⇒ (pc, new AllocationSite(m, pc))
+                case (pc, i) if i.opcode == instructions.NEW.opcode ⇒
+                    (pc, new ObjectAllocationSite(m, pc))
+
+                case (pc, i) if (
+                    i.opcode match {
+                        case instructions.NEWARRAY.opcode |
+                            instructions.ANEWARRAY.opcode |
+                            instructions.MULTIANEWARRAY.opcode ⇒ true
+                        case _ ⇒ false
+                    }
+                ) ⇒
+                    (pc, new ArrayAllocationSite(m, pc))
             }.toMap
             if (as.nonEmpty) sites.add((m, as))
         }
 
         errors foreach { e ⇒
-            OPALLogger.error("allocation sites", "collecting all allocation sites failed", e)
+            OPALLogger.error("identifying allocation sites", "unexpected error", e)
         }
 
         new AllocationSites(Map.empty ++ sites.asScala)

@@ -29,15 +29,14 @@
 package org.opalj
 package br
 
-
-sealed trait AllocationType {
-    def type : String
+sealed abstract class AllocationType {
+    def name: String
 }
-case object ObjectAllocation {
-    def type : String = "Object"
+case object ObjectAllocation extends AllocationType {
+    def name: String = "Object"
 }
-case object ArrayAllocation {
-    def type : String = "Array"
+case object ArrayAllocation extends AllocationType {
+    def name: String = "Array"
 }
 
 /**
@@ -50,59 +49,58 @@ case object ArrayAllocation {
  *
  * @author Michael Eichberg
  */
-sealed trait AllocationSite {
+sealed abstract class AllocationSite {
 
-	/**
-	 * The method which contains this allocation site.
-	 */
+    /**
+     * The method which contains this allocation site.
+     */
     val method: Method
 
     /**
-    * The unique program counter of the allocation site. I.e., the `(multi(a))new(array)`
-    * instruction in the original bytecode as returned by the configured
-    * [[org.opalj.bi.reader.ClassFileReader]]. We use the `pc` to ensure that code
-    * optimizations/transformations (e.g., transforamtion to three-address code)
-    * do not affect the information about the allocation site as such.
-    * However, if an allocation site is defined in dead code, it may happen that the
-    * transformed/optimized code no longer contains it.
-    */
+     * The unique program counter of the allocation site. I.e., the `(multi(a))new(array)`
+     * instruction in the original bytecode as returned by the configured
+     * [[org.opalj.bi.reader.ClassFileReader]]. We use the `pc` to ensure that code
+     * optimizations/transformations (e.g., transforamtion to three-address code)
+     * do not affect the information about the allocation site as such.
+     * However, if an allocation site is defined in dead code, it may happen that the
+     * transformed/optimized code no longer contains it.
+     */
     val pc: PC
 
-	/**
-	 * The type of the allocation: "Object" or "Array".
-	 */
-	def type : AllocationType
+    /**
+     * The type of the allocation: "Object" or "Array".
+     */
+    def kind: AllocationType
 
     final override def equals(other: Any): Boolean = {
         other match {
             case that: AllocationSite ⇒
-            // We don't need to the check the type: a given pc in a very specific
-            // method never changes it's type.
-            (this.method eq that.method) && this.pc == that.pc
-            case _                    ⇒
-            false
+                // We don't need to the check the type: a given pc in a very specific
+                // method never changes it's type.
+                (this.method eq that.method) && this.pc == that.pc
+            case _ ⇒
+                false
         }
     }
 
     final override def hashCode(): Int = method.hashCode() * 111 + pc
 
-    final override def toString: String = s"${type}AllocationSite(${method.toJava("pc="+pc)})"
+    final override def toString: String = s"${kind.name}AllocationSite(${method.toJava("pc="+pc)})"
 
 }
 
 object AllocationSite {
 
-    def unapply(as: AllocationSite): Some[(Method, PC,AllocationType)] = {
-        Some((as.method, as.pc, as.type))
+    def unapply(as: AllocationSite): Some[(Method, PC, AllocationType)] = {
+        Some((as.method, as.pc, as.kind))
     }
 
 }
 
-final class ObjectAllocationSite(final val method : Method,final val pc : PC) {
-    final def type : String = "Object"
+final class ObjectAllocationSite(val method: Method, val pc: PC) extends AllocationSite {
+    final def kind: AllocationType = ObjectAllocation
 
 }
-
 
 object ObjectAllocationSite {
 
@@ -114,9 +112,8 @@ object ObjectAllocationSite {
 
 }
 
-
-final class ArrayAllocationSite(final val method : Method,final val pc : PC) {
-    final def type : String = "Array"
+final class ArrayAllocationSite(val method: Method, val pc: PC) extends AllocationSite {
+    final def kind: AllocationType = ArrayAllocation
 }
 
 object ArrayAllocationSite {

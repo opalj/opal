@@ -95,7 +95,7 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
                 val as = p.allMethodsWithBody flatMap { m ⇒
                     val code = m.body.get
                     val as = code collectWithIndex {
-                        case (pc, NEW(_)) ⇒ new AllocationSite(m, pc)
+                        case (pc, NEW(_)) ⇒ new ObjectAllocationSite(m, pc)
                     }
                     if (as.nonEmpty) allAs ::= as
                     as
