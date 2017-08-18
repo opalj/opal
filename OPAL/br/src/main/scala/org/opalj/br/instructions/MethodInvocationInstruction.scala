@@ -86,37 +86,3 @@ object MethodInvocationInstruction {
     val jvmExceptions = List(ObjectType.NullPointerException)
 
 }
-
-/**
- * Common superclass of all Invoke instructions that require virtual method resolution.
- */
-abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction {
-
-    override def isVirtualMethodCall: Boolean = true
-
-    override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
-        1 + methodDescriptor.parametersCount
-    }
-
-}
-
-object VirtualMethodInvocationInstruction {
-
-    def unapply(
-        instruction: VirtualMethodInvocationInstruction
-    ): Option[(ReferenceType, String, MethodDescriptor)] = {
-        Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
-    }
-
-}
-
-/**
- * Invocation of a method where the target method is statically resolved.
- *
- * @author Michael Eichberg
- */
-abstract class NonVirtualMethodInvocationInstruction extends MethodInvocationInstruction {
-
-    override def isVirtualMethodCall: Boolean = false
-
-}

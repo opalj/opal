@@ -26,21 +26,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package annotations.escape;
+package org.opalj
+package br
+package instructions
 
 /**
- * @author Florian Kuebler
+ * Invocation of a method where the target method is statically resolved.
+ *
+ * @author Michael Eichberg
  */
-public enum EscapeKeys {
-    ViaStaticField,
-    ViaHeapObject,
-    ViaReturnAssignment,
-    ViaParameter,
-    ViaReturn,
-    ViaException,
-    Arg,
-    No,
-    MaybeNo,
-    MaybeArg,
-    MaybeMethod;
+abstract class NonVirtualMethodInvocationInstruction extends MethodInvocationInstruction {
+
+    override def isVirtualMethodCall: Boolean = false
+
 }

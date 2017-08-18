@@ -26,21 +26,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package annotations.escape;
+package org.opalj.fpcf
 
 /**
- * @author Florian Kuebler
+ * Ordered properties define a definitive order between all properties of a respective kind;
+ * all properties that are of the same kind have to inherit from ordered property or none.
+ *
+ * This information is used by the property store when debugging is turned on to test if an
+ * analysis which derives a new property always derives a more precise property.
+ *
+ * @author Michael Eichberg
  */
-public enum EscapeKeys {
-    ViaStaticField,
-    ViaHeapObject,
-    ViaReturnAssignment,
-    ViaParameter,
-    ViaReturn,
-    ViaException,
-    Arg,
-    No,
-    MaybeNo,
-    MaybeArg,
-    MaybeMethod;
+trait OrderedProperty extends Property {
+
+    /**
+     * Returns `true`.
+     */
+    final override def isOrdered: Boolean = true
+
+    /**
+     * Returns `this`.
+     */
+    final override def asOrderedProperty: this.type = this
+
+    /**
+     * Tests if this property is a valid successor property of the other property.
+     *
+     * @return None if this property is a valid successor of the other property else
+     *         `Some(description:String)` which describes the problem is returned.
+     */
+    def isValidSuccessorOf(other: OrderedProperty): Option[String]
+
 }
