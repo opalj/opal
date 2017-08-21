@@ -753,12 +753,14 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     }
 
     /**
-     * Returns the methods that may be called by [[org.opalj.br.instructions.INVOKEINTERFACE]]
-     * if the precise runtime type is not known. (If the precise runtime type is known use
+     * Returns the methods that may be called by an [[org.opalj.br.instructions.INVOKEINTERFACE]]
+     * call if the precise runtime type is not known. (If the precise runtime type is known use
      * `instanceCall` to get the target method.)
      *
      * @note    '''Caching the result (in particular when the call graph is computed)
-     *          is recommended as the computation is expensive.'''
+     *          is recommended as the computation is expensive.''' In other words, this
+     *          function is meant to be used as a foundation for call graph construction
+     *          algorithms.
      *
      * @note    Keep in mind that the following is legal (byte)code:
      *          {{{
@@ -770,6 +772,9 @@ trait ProjectLike extends ClassFileRepository { project ⇒
      *          methods defined by subclasses is not sufficient! In other words, the result
      *          can contain methods (here, `X.m`) defined by classes which are not subtypes
      *          of the given interface type!
+     *
+     * @return  The set of potentially called methods. The set will be empty if the target class
+     *          is not defined as part of the analyzed code base.
      */
     def interfaceCall(
         declaringClass: ObjectType, // an interface or class type to be precise
@@ -779,10 +784,13 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         var methods = Set.empty[Method]
 
         // (1) consider the method defined by the super type or this type...
-        // Depending on the analysis mode it may be the case that the method cannot be
-        // a receiver, because it is actually always overridden; however, we don't
+        // Depending on the set of open/closed packages it may be the case that the method
+        // cannot be a receiver, because it is actually always overridden; however, we don't
         // do any checks related to this issue.
-        find(instanceMethods(declaringClass)) { mdc ⇒
+        val initialMethods = instanceMethods.get(declaringClass)
+        if (initialMethods.isEmpty)
+            return methods;
+        find(initialMethods.get) { mdc ⇒
             mdc.method.compare(name, descriptor)
         } foreach (mdc ⇒ methods += mdc.method)
 
@@ -835,23 +843,23 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         // is found. This is done to speed up the computation
         // of the set of methods (vs. using a very generic approach)!
 
-        val declaringClass = declaringType.asObjectType
+        val declaringClassType = declaringType.asObjectType
         var methods = Set.empty[Method]
 
-        if (classHierarchy.isUnknown(declaringClass)) {
+        val initialMethods = instanceMethods.get(declaringClassType)
+        if (initialMethods.isEmpty)
             return methods;
-        }
 
         // Let's find the (concrete) method defined by this type or a supertype if it exists.
         // We have to check the declaring package if the method has package visibility to ensure
         // that we find the correct method!
-        find(instanceMethods(declaringClass)) { mdc ⇒
+        find(initialMethods.get) { mdc ⇒
             mdc.compareAccessibilityAware(name, descriptor, callerPackageName)
         } foreach (mdc ⇒ methods += mdc.method)
 
         if (methods.nonEmpty) {
             val method = methods.head
-            if (method.classFile.thisType eq declaringClass) {
+            if (method.classFile.thisType eq declaringClassType) {
                 // The (concret) method belongs to this class... hence, we just need to
                 // get all methods which override (reflexive) this method and are done.
                 return overriddenBy(method);
@@ -859,7 +867,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 // ... we cannot use the overriddenBy methods because this could return
                 // methods belonging to classes which are not a subtype of the given
                 // declaring class.
-                classHierarchy.foreachSubtypeCF(declaringClass, reflexive = false) { subtypeCF ⇒
+                classHierarchy.foreachSubtypeCF(declaringClassType, reflexive = false) { subtypeCF ⇒
                     val subtype = subtypeCF.thisType
                     val mdcOption = find(instanceMethods(subtype)) { mdc ⇒
                         mdc.compareAccessibilityAware(name, descriptor, callerPackageName)
@@ -878,8 +886,8 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         // We just have to collect the methods in the subtypes... unless we have
         // a call to a signature polymorphic method!
 
-        if (MethodHandleClassFile.isDefined && MethodHandleSubtypes.contains(declaringClass)) {
-            val mdcOption = find(instanceMethods(declaringClass)) { mdc ⇒
+        if (MethodHandleClassFile.isDefined && MethodHandleSubtypes.contains(declaringClassType)) {
+            val mdcOption = find(instanceMethods(declaringClassType)) { mdc ⇒
                 mdc.compareAccessibilityAware(
                     name, SignaturePolymorphicMethodDescriptor, callerPackageName
                 )
@@ -892,7 +900,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
             }
         }
 
-        classHierarchy.foreachSubtypeCF(declaringClass, reflexive = false) { subtypeCF ⇒
+        classHierarchy.foreachSubtypeCF(declaringClassType, reflexive = false) { subtypeCF ⇒
             val subtype = subtypeCF.thisType
             val mdcOption = find(instanceMethods(subtype)) { mdc ⇒
                 mdc.compareAccessibilityAware(name, descriptor, callerPackageName)
