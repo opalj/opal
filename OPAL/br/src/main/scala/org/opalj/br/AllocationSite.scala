@@ -29,43 +29,99 @@
 package org.opalj
 package br
 
+sealed abstract class AllocationType {
+    def name: String
+}
+case object ObjectAllocation extends AllocationType {
+    def name: String = "Object"
+}
+case object ArrayAllocation extends AllocationType {
+    def name: String = "Array"
+}
+
 /**
- * An allocation site (a new instruction) in a method's bytecode.
+ * An allocation site (a (multi(a))new(array) instruction) in a method's bytecode.
  * (Please see [[org.opalj.br.analyses.AllocationSitesKey]] for further details regarding
  * the default set of allocation sites.)
  *
- * @param method The method which contains this allocation site.
- * @param pc     The unique program counter of the allocation site. I.e., the "new" instruction
- *               in the original bytecode as returned by the configured
- *               [[org.opalj.bi.reader.ClassFileReader]]. We use the pc to ensure that code
- *               optimizations/transformations (e.g., transforamtion to three-address code)
- *               do not affect the information about the allocation site as such.
- *               However, if an allocation site is defined in dead code, it may happen that the
- *               transformed/optimized code no longer contains it.
- *
- * @note   Information about a program's allocation sites can be made available.
+ * @note   Information about a program's allocation sites can be made available using the
+ *         respective key.
  *
  * @author Michael Eichberg
  */
-final class AllocationSite( final val method: Method, final val pc: PC) {
+sealed abstract class AllocationSite {
 
-    override def equals(other: Any): Boolean = {
+    /**
+     * The method which contains this allocation site.
+     */
+    val method: Method
+
+    /**
+     * The unique program counter of the allocation site. I.e., the `(multi(a))new(array)`
+     * instruction in the original bytecode as returned by the configured
+     * [[org.opalj.bi.reader.ClassFileReader]]. We use the `pc` to ensure that code
+     * optimizations/transformations (e.g., transforamtion to three-address code)
+     * do not affect the information about the allocation site as such.
+     * However, if an allocation site is defined in dead code, it may happen that the
+     * transformed/optimized code no longer contains it.
+     */
+    val pc: PC
+
+    /**
+     * The type of the allocation: "Object" or "Array".
+     */
+    def kind: AllocationType
+
+    final override def equals(other: Any): Boolean = {
         other match {
-            case that: AllocationSite ⇒ (this.method eq that.method) && this.pc == that.pc
-            case _                    ⇒ false
+            case that: AllocationSite ⇒
+                // We don't need to the check the type: a given pc in a very specific
+                // method never changes it's type.
+                (this.method eq that.method) && this.pc == that.pc
+            case _ ⇒
+                false
         }
     }
 
-    override def hashCode(): Int = method.hashCode() * 111 + pc
+    final override def hashCode(): Int = method.hashCode() * 111 + pc
 
-    override def toString: String = s"AllocationSite(${method.toJava("pc="+pc)})"
+    final override def toString: String = s"${kind.name}AllocationSite(${method.toJava("pc="+pc)})"
 
 }
 
 object AllocationSite {
 
-    def apply(method: Method, pc: PC): AllocationSite = new AllocationSite(method, pc)
+    def unapply(as: AllocationSite): Some[(Method, PC, AllocationType)] = {
+        Some((as.method, as.pc, as.kind))
+    }
 
-    def unapply(as: AllocationSite): Some[(Method, PC)] = Some((as.method, as.pc))
+}
+
+final class ObjectAllocationSite(val method: Method, val pc: PC) extends AllocationSite {
+    final def kind: AllocationType = ObjectAllocation
+
+}
+
+object ObjectAllocationSite {
+
+    def apply(method: Method, pc: PC): ObjectAllocationSite = new ObjectAllocationSite(method, pc)
+
+    def unapply(as: ObjectAllocationSite): Some[(Method, PC)] = {
+        Some((as.method, as.pc))
+    }
+
+}
+
+final class ArrayAllocationSite(val method: Method, val pc: PC) extends AllocationSite {
+    final def kind: AllocationType = ArrayAllocation
+}
+
+object ArrayAllocationSite {
+
+    def apply(method: Method, pc: PC): ArrayAllocationSite = new ArrayAllocationSite(method, pc)
+
+    def unapply(as: ArrayAllocationSite): Some[(Method, PC)] = {
+        Some((as.method, as.pc))
+    }
 
 }

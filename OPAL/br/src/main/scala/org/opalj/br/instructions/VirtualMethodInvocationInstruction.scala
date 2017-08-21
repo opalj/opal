@@ -31,58 +31,26 @@ package br
 package instructions
 
 /**
- * An instruction that invokes another method (does not consider invokedynamic
- * instructions.)
+ * Common superclass of all Invoke instructions that require virtual method resolution.
  *
  * @author Michael Eichberg
  */
-abstract class MethodInvocationInstruction extends InvocationInstruction {
+abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction {
 
-    /* abstract */ def declaringClass: ReferenceType
+    override def isVirtualMethodCall: Boolean = true
 
-    def isInterfaceCall: Boolean
-
-    /**
-     * Returns the number of registers required to store the method's arguments
-     * including (if required) the self reference "this".
-     */
-    def count: Int = {
-        // c.f. JVM 8 Spec. Section 6.5.
-        (if (isInstanceMethod) 1 else 0) + methodDescriptor.requiredRegisters
-    }
-
-    /**
-     * Returns `true` if the called method is an instance method and virtual method
-     * call resolution has to take place. I.e., if the underlying instruction is an
-     * invokevirtual or an invokeinterface instruction.
-     */
-    /* abstract */ def isVirtualMethodCall: Boolean
-
-    def asVirtualMethod: VirtualMethod = VirtualMethod(declaringClass, name, methodDescriptor)
-
-    override def toString: String = {
-        s"${this.getClass.getSimpleName}(${methodDescriptor.toJava(declaringClass.toJava, name)})"
+    override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+        1 + methodDescriptor.parametersCount
     }
 
 }
 
-/**
- * Defines commonly used constants and an extractor method to match [[MethodInvocationInstruction]]
- * instructions.
- */
-object MethodInvocationInstruction {
+object VirtualMethodInvocationInstruction {
 
     def unapply(
-        instruction: MethodInvocationInstruction
-    ): Option[(ReferenceType, Boolean, String, MethodDescriptor)] = {
-        Some((
-            instruction.declaringClass,
-            instruction.isInterfaceCall,
-            instruction.name,
-            instruction.methodDescriptor
-        ))
+        instruction: VirtualMethodInvocationInstruction
+    ): Option[(ReferenceType, String, MethodDescriptor)] = {
+        Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
     }
-
-    val jvmExceptions = List(ObjectType.NullPointerException)
 
 }

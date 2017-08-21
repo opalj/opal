@@ -31,14 +31,18 @@ package fpcf
 package properties
 
 sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
+
     final type Self = EscapeProperty
+
 }
 
 /**
- * Describes lifetime of object instance. This is classically used for compiler optimizations
+ * Specifies the lifetime of object instance. This is classically used for compiler optimizations
  * such as scalar replacement, stack allocation or removal of synchronization.
- * However, other usages such as finding bugs, identifying pure methods are also supported.
- * Choi et al. [1] describes two predicates that can be used to describe the properties relevant
+ * However, other usages such as finding bugs, identifying pure methods or helping to
+ * identify immutable data-structures are also supported.
+ *
+ * Choi et al. [1] describe two predicates that can be used to describe the properties relevant
  * to escape information.
  *
  * "Let O be an object instance and M be a method invocation. O is said to escape M, denoted as
@@ -92,8 +96,8 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * The same holds for [[MaybeMethodEscape]]. It should be used if we know that the actual
  * property is at most [[MethodEscape]] (i.e. neither [[NoEscape]] nor [[ArgEscape]].
  *
- * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.FormalParameter]] are used as
- * [[Entity]] in combination with this property.
+ * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.FormalParameter]] are generally
+ * used as [[Entity]] in combination with this property.
  *
  * [1] Choi, Jong-Deok, Manish Gupta, Mauricio Serrano, Vugranam C. Sreedhar, and Sam Midkiff.
  * "Escape Analysis for Java." In Proceedings of the 14th ACM SIGPLAN Conference on
@@ -104,45 +108,53 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * Compilation and Deoptimization.” In Proceedings of the 1st ACM/USENIX International Conference
  * on Virtual Execution Environments, 111–120. VEE ’05. New York, NY, USA: ACM, 2005.
  *
+ * @param  level The escape level; the higher the value the more restricted is the usage of the
+ *         respective value. The precise value is subject to change without notice and should
+ *         not be used!
+ *
  * @author Florian Kuebler
  */
-sealed abstract class EscapeProperty(private final val level: Int) extends Property with EscapePropertyMetaInformation {
+sealed abstract class EscapeProperty(
+        final val level: Int
+) extends OrderedProperty with ExplicitlyNamedProperty with EscapePropertyMetaInformation {
+
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
-    /**
-     * A smaller or equals check based on the underlying order of the property.
-     *
-     * @param that the other escape property value.
-     * @return true iff this is smaller or equal than that. As the escape property defines a total
-     *         order, it returns true iff that is greater than this.
-     * @see [[EscapeProperty]]
-     *
-     *
-     */
-    final def <=(that: EscapeProperty): Boolean = {
-        this.level <= that.level
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        other match {
+            case p: EscapeProperty ⇒
+                if (this.level <= p.level)
+                    None
+                else
+                    Some(s"non-monotonic refinement from $this to $p")
+            case p ⇒ Some(s"illegal refinement of escape property $this to $p")
+        }
     }
 
     /**
-     * Calculates the lower bound of the this and that property values.
+     * Tests if this property describes equal or less restricted escapes than the given property.
+     * E.g., returns `true` if this property identifies values which [[GlobalEscape]] and the given
+     * property (`that`) refers to values that [[NoEscape]].
+     *
+     * The test is based on the property's level [[EscapeProperty.level]].
+     *
+     * @see [[EscapeProperty]] for further details.
+     */
+    final def <=(that: EscapeProperty): Boolean = this.level <= that.level
+
+    /**
+     * Computes the lower bound of this and that property values.
      *
      * @param that the other escape property value.
      * @return this value if it is smaller or equal than that value, that otherwise.
      * @see [[EscapeProperty.<=]]
      */
-    def meet(that: EscapeProperty): EscapeProperty = {
-        if (this <= that) this else that
-    }
+    def meet(that: EscapeProperty): EscapeProperty = if (this <= that) this else that
 
-    /**
-     * Must be overridden using the short version of the name of the property used in the
-     * annotation.escape.EscapeKeys file in the bi java test fixtures.
-     * @return the short name of the property.
-     */
-    def toString: String
 }
 
 object EscapeProperty extends EscapePropertyMetaInformation {
+
     final val key: PropertyKey[EscapeProperty] = PropertyKey.create(
         // Name of the property
         "EscapeProperty",
@@ -153,52 +165,23 @@ object EscapeProperty extends EscapePropertyMetaInformation {
     )
 }
 
-/**
- * Used, when we know nothing about the escape property so far or the analysis.
- *
- * @see [[EscapeProperty]] for further details.
- */
-case object MaybeNoEscape extends EscapeProperty(3) {
-    final val isRefineable = true
-    override def toString: String = "MaybeNo"
-}
+//
+//
+// IN THE FOLLOWING THE PROPERTIES ARE ORDERED FROM MOST RESTRICTED TO UNRESTRICTED
+//
+//
 
 /**
- * ''The object is accessible only from within the method of creation. Objects with this
- * escape level are called method-local.''
+ * The object is accessible only from within the method of creation. Objects with this
+ * escape level are also referred to as being method-local.
  *
  * @see [[EscapeProperty]] for further details.
  */
 case object NoEscape extends EscapeProperty(9) {
+
     final val isRefineable = false
 
-    override def toString: String = "No"
-}
-
-/**
- * This states that an object instance could have the property [[NoEscape]] but also every other
- * final property value down to [[GlobalEscape]]. It will never be the final property value.
- * Used if we know that the escape property of an object instance on which its constructor was
- * called only depends on the escape property of the self reference of the called constructor.
- *
- * An object instance passed to a [[ConditionallyNoEscape]] constructor can be
- * at most [[ConditionallyNoEscape]] unless it is refined to [[NoEscape]].
- */
-case object ConditionallyNoEscape extends EscapeProperty(6) {
-    final val isRefineable: Boolean = true
-}
-
-/**
- * Used when the only thing we know about the escape property for an object instance is that it
- * can never be refined to [[NoEscape]]. So speaking, we know that the final property will be at
- * most [[ArgEscape]].
- *
- * @see [[EscapeProperty]] for further details.
- */
-case object MaybeArgEscape extends EscapeProperty(2) {
-    final val isRefineable = true
-
-    override def toString: String = "MaybeArg"
+    override def propertyName: String = "No"
 }
 
 /**
@@ -230,30 +213,7 @@ case object MaybeArgEscape extends EscapeProperty(2) {
 case object ArgEscape extends EscapeProperty(8) {
     final val isRefineable = false
 
-    override def toString: String = "Arg"
-}
-
-/**
- * This states that an object instance is at most [[ArgEscape]], i.e. it will never be [[NoEscape]].
- * It will never be the final property value. Used if we know that the escape property of an object
- * instance, which was passed to a method, only depends on the escape property of the formal
- * parameter of the target method of the call.
- */
-case object ConditionallyArgEscape extends EscapeProperty(5) {
-    final val isRefineable: Boolean = true
-}
-
-/**
- * Used, when the only thing we know about the escape property for an object instance, is that it
- * can never be refined to [[NoEscape]] or [[ArgEscape]]. So speaking, we know that the final
- * property  will be at most [[MethodEscape]].
- *
- * @see [[EscapeProperty]] for further details.
- */
-case object MaybeMethodEscape extends EscapeProperty(1) {
-    final val isRefineable = true
-
-    override def toString: String = "MaybeMethod"
+    override def propertyName: String = "Arg"
 }
 
 /**
@@ -294,7 +254,7 @@ sealed abstract class MethodEscape extends EscapeProperty(7) {
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
 case object MethodEscapeViaReturn extends MethodEscape {
-    override def toString: String = "ViaReturn"
+    override def propertyName: String = "ViaReturn"
 }
 
 /**
@@ -320,7 +280,7 @@ case object MethodEscapeViaReturn extends MethodEscape {
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
 case object MethodEscapeViaParameterAssignment extends MethodEscape {
-    override def toString: String = "ViaParameter"
+    override def propertyName: String = "ViaParameter"
 }
 
 /**
@@ -349,7 +309,34 @@ case object MethodEscapeViaParameterAssignment extends MethodEscape {
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
 case object MethodEscapeViaReturnAssignment extends MethodEscape {
-    override def toString: String = "ViaReturnAssignment"
+    override def propertyName: String = "ViaReturnAssignment"
+}
+
+/**
+ * This states that an object instance could have the property [[NoEscape]] but also every other
+ * final property value down to [[GlobalEscape]]. It will never be the final property value.
+ * Used if we know that the escape property of an object instance on which its constructor was
+ * called only depends on the escape property of the self reference of the called constructor.
+ *
+ * An object instance passed to a [[ConditionallyNoEscape]] constructor can be
+ * at most [[ConditionallyNoEscape]] unless it is refined to [[NoEscape]].
+ */
+case object ConditionallyNoEscape extends EscapeProperty(6) {
+    final val isRefineable: Boolean = true
+
+    override def propertyName: String = this.toString
+}
+
+/**
+ * This states that an object instance is at most [[ArgEscape]], i.e. it will never be [[NoEscape]].
+ * It will never be the final property value. Used if we know that the escape property of an object
+ * instance, which was passed to a method, only depends on the escape property of the formal
+ * parameter of the target method of the call.
+ */
+case object ConditionallyArgEscape extends EscapeProperty(5) {
+    final val isRefineable: Boolean = true
+
+    override def propertyName: String = this.toString
 }
 
 /**
@@ -360,6 +347,48 @@ case object MethodEscapeViaReturnAssignment extends MethodEscape {
  */
 case object ConditionallyMethodEscape extends EscapeProperty(4) {
     final val isRefineable: Boolean = true
+
+    override def propertyName: String = this.toString
+}
+
+/**
+ * Used, when we know nothing about the escape property so far.
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
+case object MaybeNoEscape extends EscapeProperty(3) { // TODO shouldn't "level" be "0" ... a refinement to MaybeArgEscape should be possible... right?
+    final val isRefineable = true
+    override def propertyName: String = "MaybeNo"
+}
+
+/**
+ * Used when the respective object instance definitively escapes, but the final –
+ * not yet available – escape level may just be [[ArgEscape]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
+case object MaybeArgEscape extends EscapeProperty(2) {
+
+    final val isRefineable = true
+
+    override def propertyName: String = "MaybeArg"
+}
+
+/**
+ * Used, when we know that the respective object instance definitively escapes via an argument
+ * ([[ArgEscape]]), but it is still possible that the value only escapes via the method
+ * (and not globally); however, the analysis is not yet conclusive.
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
+case object MaybeMethodEscape extends EscapeProperty(1) {
+
+    final val isRefineable = true
+
+    override def propertyName: String = "MaybeMethod"
 }
 
 /**
@@ -385,14 +414,15 @@ case object ConditionallyMethodEscape extends EscapeProperty(4) {
  * }
  * }}}
  * An analysis is only expected to return [[GlobalEscapeViaStaticFieldAssignment]] for the object o
- * instantiated in m, if the analyses knows(!) that m is called and the parameter b is
+ * instantiated in m, if the analyses ''knows'' that m is called and the parameter b is
  * potentially `true`. If the above code is found in a library it may very well be the case that
  * certain parameter values/combinations will never be used in a certain setting and – therefore –
  * o does not escape.
  *
  * However, from a pure technical point-of-view it may be useful/necessary to use
- * [[GlobalEscape]] at some point, to let depending computations know that no more
+ * [[GlobalEscape]] at some point to let depending computations know that no more
  * changes will happen and therefore the dependencies can be deleted.
+ *
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
  */
@@ -417,9 +447,11 @@ sealed abstract class GlobalEscape extends EscapeProperty(0) {
  * }
  * }}}
  *
+ * @see [[GlobalEscape]] for further details.
+ * @author Florian Kuebler
  */
 case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape {
-    override def toString: String = "ViaStaticField"
+    override def propertyName: String = "ViaStaticField"
 }
 
 /**
@@ -440,7 +472,10 @@ case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape {
  *  }
  * }
  * }}}
+ *
+ * @see [[GlobalEscape]] for further details.
+ * @author Florian Kuebler
  */
 case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape {
-    override def toString: String = "ViaHeapObject"
+    override def propertyName: String = "ViaHeapObject"
 }
