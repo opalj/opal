@@ -42,6 +42,8 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.ObjectAllocationSite
+import org.opalj.br.ArrayAllocationSite
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParameters
@@ -258,7 +260,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                 if (value.isPrecise) {
                     value.valueType match {
                         case Some(valueType) ⇒
-                            val methodO = project.instanceCall(project.classFile(m).thisType, valueType, name, descr)
+                            val methodO = project.instanceCall(m.classFile.thisType, valueType, name, descr)
                             checkParams(methodO, params)
                             if (usesDefSite(receiver)) handleCallO(methodO, 0)
                             return ;
@@ -266,7 +268,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                     }
                 }
             }
-            val packageName = project.classFile(m).thisType.packageName
+            val packageName = m.classFile.thisType.packageName
             val methods =
                 if (isI) project.interfaceCall(dc.asObjectType, name, descr)
                 else project.virtualCall(packageName, dc, name, descr)
@@ -376,7 +378,8 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
      */
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
-            case as @ AllocationSite(m, pc) ⇒
+            //TODO: AllocationType
+            case as @ ObjectAllocationSite(m, pc) ⇒
                 val TACode(_, code, _, _, _) = project.get(DefaultTACAIKey)(m)
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
@@ -385,6 +388,17 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _)) ⇒
                             doDetermineEscape(as, index, uses, code, m)
+                        case stmt ⇒
+                            throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
+                    }
+                else /* the allocation site is part of dead code */ Result(e, NoEscape)
+            case as @ ArrayAllocationSite(m, pc) ⇒
+                val TACode(_, code, _, _, _) = project.get(DefaultTACAIKey)(m)
+
+                val index = code indexWhere { stmt ⇒ stmt.pc == pc }
+
+                if (index != -1)
+                    code(index) match {
                         case Assignment(`pc`, DVar(_, uses), NewArray(`pc`, _, _)) ⇒
                             doDetermineEscape(as, index, uses, code, m)
                         case stmt ⇒
@@ -436,7 +450,7 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
         val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
         Project.recreate(project, testConfig)
 
-        SimpleAIKey.domainFactory = (p, cf, m) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
+        SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
         time {
             val tacai = project.get(DefaultTACAIKey)
             for {

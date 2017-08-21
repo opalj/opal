@@ -51,7 +51,7 @@ import org.scalatest.junit.JUnitRunner
 class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
 
     def checkProject(project: SomeProject): Unit = {
-        SimpleAIKey.domainFactory = (p, cf, m) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
+        SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
         val analysesManager = project.get(FPCFAnalysesManagerKey)

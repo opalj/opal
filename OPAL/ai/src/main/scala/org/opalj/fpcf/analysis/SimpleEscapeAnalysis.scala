@@ -41,6 +41,8 @@ import org.opalj.br.AllocationSite
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.ObjectAllocationSite
+import org.opalj.br.ArrayAllocationSite
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParameters
@@ -290,7 +292,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
      */
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
-            case as @ AllocationSite(m, pc) ⇒
+            case as @ ObjectAllocationSite(m, pc) ⇒
                 val code = project.get(DefaultTACAIKey)(m).stmts
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
@@ -299,6 +301,17 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _)) ⇒
                             doDetermineEscape(as, index, uses, code)
+                        case stmt ⇒
+                            throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
+                    }
+                else /* the allocation site is part of dead code */ Result(e, NoEscape)
+            case as @ ArrayAllocationSite(m, pc) ⇒
+                val code = project.get(DefaultTACAIKey)(m).stmts
+
+                val index = code indexWhere { stmt ⇒ stmt.pc == pc }
+
+                if (index != -1)
+                    code(index) match {
                         case Assignment(`pc`, DVar(_, uses), NewArray(`pc`, _, _)) ⇒
                             doDetermineEscape(as, index, uses, code)
                         case stmt ⇒
@@ -352,7 +365,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
         Project.recreate(project, testConfig)
 
-        SimpleAIKey.domainFactory = (p, cf, m) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, cf, m)
+        SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
         time {
             val tacai = project.get(DefaultTACAIKey)
             for {
