@@ -26,21 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package annotations.escape;
+package org.opalj
+package br
+package analyses
 
 /**
- * @author Florian Kuebler
+ * A set of all allocation sites.
+ *
+ * To initialize the set of allocation sites for an entire project use the respective
+ * project information key: [[AllocationSitesKey]]. The key also provides further
+ * information regarding the concrete allocation site objects and their relation
+ * to the underlying method.
+ *
+ * @author Michael Eichberg
  */
-public enum EscapeKeys {
-    ViaStaticField,
-    ViaHeapObject,
-    ViaReturnAssignment,
-    ViaParameter,
-    ViaReturn,
-    ViaException,
-    Arg,
-    No,
-    MaybeNo,
-    MaybeArg,
-    MaybeMethod;
+class AllocationSites private[analyses] (val data: Map[Method, Map[PC, AllocationSite]]) {
+
+    def apply(m: Method): Map[PC, AllocationSite] = data.getOrElse(m, Map.empty)
+
+    def allocationSites: Iterable[AllocationSite] = data.values.flatMap(_.values)
 }

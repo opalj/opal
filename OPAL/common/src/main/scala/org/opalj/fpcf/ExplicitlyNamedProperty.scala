@@ -26,21 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package annotations.escape;
+package org.opalj.fpcf
 
 /**
- * @author Florian Kuebler
+ * A property which has an explicit name. This is particular useful when we want to refer to a
+ * property in the context of some test cases. In general, it should be tried that the name is
+ * reasonably unique w.r.t. its usage scenario.
  */
-public enum EscapeKeys {
-    ViaStaticField,
-    ViaHeapObject,
-    ViaReturnAssignment,
-    ViaParameter,
-    ViaReturn,
-    ViaException,
-    Arg,
-    No,
-    MaybeNo,
-    MaybeArg,
-    MaybeMethod;
+trait ExplicitlyNamedProperty extends Property {
+
+    /**
+     * The name of the property.
+     */
+    def propertyName: String
+
+}
+
+/**
+ * Defines an extractor for an [[ExplicitlyNamedProperty]].
+ */
+object ExplicitlyNamedProperty {
+
+    def unapply(p: ExplicitlyNamedProperty): Some[String] = Some(p.propertyName)
+
 }

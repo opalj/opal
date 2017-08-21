@@ -26,21 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package annotations.escape;
+package org.opalj
+package br
+package instructions
 
 /**
- * @author Florian Kuebler
+ * Common superclass of all Invoke instructions that require virtual method resolution.
+ *
+ * @author Michael Eichberg
  */
-public enum EscapeKeys {
-    ViaStaticField,
-    ViaHeapObject,
-    ViaReturnAssignment,
-    ViaParameter,
-    ViaReturn,
-    ViaException,
-    Arg,
-    No,
-    MaybeNo,
-    MaybeArg,
-    MaybeMethod;
+abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction {
+
+    override def isVirtualMethodCall: Boolean = true
+
+    override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+        1 + methodDescriptor.parametersCount
+    }
+
+}
+
+object VirtualMethodInvocationInstruction {
+
+    def unapply(
+        instruction: VirtualMethodInvocationInstruction
+    ): Option[(ReferenceType, String, MethodDescriptor)] = {
+        Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
+    }
+
 }
