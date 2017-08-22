@@ -1725,8 +1725,8 @@ object Project {
                         val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
                         project.staticCall(invokestatic) match {
                             case _: Success[_] ⇒ /*OK*/
-                            case Failure       ⇒ /*OK - partial project*/
-                            case Empty ⇒
+                            case Empty         ⇒ /*OK - partial project*/
+                            case Failure ⇒
                                 val ex = InconsistentProjectException(
                                     s"target method of invokestatic call in "+
                                         m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
@@ -1742,8 +1742,8 @@ object Project {
                         val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
                         project.specialCall(invokespecial) match {
                             case _: Success[_] ⇒ /*OK*/
-                            case Failure       ⇒ /*OK - partial project*/
-                            case Empty ⇒
+                            case Empty         ⇒ /*OK - partial project*/
+                            case Failure ⇒
                                 val ex = InconsistentProjectException(
                                     s"target method of invokespecial call in "+
                                         m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+

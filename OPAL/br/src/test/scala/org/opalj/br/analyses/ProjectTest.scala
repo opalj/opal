@@ -122,9 +122,7 @@ class ProjectTest extends FlatSpec with Matchers {
     }
 
     it should "not find a method that does not exist" in {
-        resolveMethodReference(
-            SuperType, "doesNotExist", MethodDescriptor("()V")
-        ) should be('Empty)
+        resolveMethodReference(SuperType, "doesNotExist", MethodDescriptor("()V")) should be('Empty)
     }
 
     it should "find a method with default visibility" in {
@@ -419,15 +417,13 @@ class ProjectTest extends FlatSpec with Matchers {
         }
 
         val superI = ObjectType("methods/b/SuperI")
-        //val directSub = ObjectType("methods/b/DirectSub")
-        //val directSubClassFile = methodsProject.classFile(directSub).get
 
         behavior of "a Project's methods to resolve method references"
 
         it should "handle the case if an interface has no implementing class" in {
             val implementingMethods =
-                methodsProject.lookupImplementingMethods(
-                    superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid, (cf) ⇒ true
+                methodsProject.interfaceCall(
+                    superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid
                 )
             implementingMethods.size should be(0)
         }
@@ -435,8 +431,8 @@ class ProjectTest extends FlatSpec with Matchers {
         it should "find a method in a super class" in {
             val classType = ObjectType("methods/b/B")
             val implementingMethods =
-                methodsProject.lookupImplementingMethods(
-                    classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid, (cf) ⇒ true
+                methodsProject.virtualCall(
+                    "methods/b", classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid
                 )
 
             implementingMethods.size should be(1)

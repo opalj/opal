@@ -39,4 +39,8 @@ abstract class NonVirtualMethodInvocationInstruction extends MethodInvocationIns
 
     override def isVirtualMethodCall: Boolean = false
 
+    def asINVOKESTATIC: INVOKESTATIC
+
+    def asINVOKESPECIAL: INVOKESPECIAL
+
 }
