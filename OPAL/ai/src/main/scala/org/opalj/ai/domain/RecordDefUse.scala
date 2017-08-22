@@ -127,7 +127,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // negative values indicate that the values are parameters.
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _ // initialized by initProperties
 
-    abstract override def initProperties(code:    Code,cfJoins: BitSet,locals:  Locals): Unit = {
+    abstract override def initProperties(code: Code, cfJoins: BitSet, locals: Locals): Unit = {
         instructions = code.instructions
         val codeSize = instructions.length
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
