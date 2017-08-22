@@ -122,17 +122,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
     // This array contains the information where each operand value found at a
     // specific instruction was defined.
-    private[this] var defOps: Array[Chain[ValueOrigins]] = _
+    private[this] var defOps: Array[Chain[ValueOrigins]] = _ // initialized by initProperties
     // This array contains the information where each local is defined;
     // negative values indicate that the values are parameters.
-    private[this] var defLocals: Array[Registers[ValueOrigins]] = _
+    private[this] var defLocals: Array[Registers[ValueOrigins]] = _ // initialized by initProperties
 
-    abstract override def initProperties(
-        code:    Code,
-        cfJoins: BitSet,
-        locals:  Locals
-    ): Unit = {
-
+    abstract override def initProperties(code:    Code,cfJoins: BitSet,locals:  Locals): Unit = {
         instructions = code.instructions
         val codeSize = instructions.length
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
@@ -166,11 +161,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      *
      * @inheritdoc
      */
-    abstract override def properties(
-        pc:               Int,
-        propertyToString: AnyRef ⇒ String
-    ): Option[String] = {
-
+    abstract override def properties(pc: Int, propertyToString: AnyRef ⇒ String): Option[String] = {
         val thisProperty = Option(used(pc + parametersOffset)).map(_.mkString("UsedBy={", ",", "}"))
 
         super.properties(pc, propertyToString) match {

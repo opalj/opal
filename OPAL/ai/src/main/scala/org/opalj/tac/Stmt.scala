@@ -61,26 +61,26 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
 
     // TYPE CONVERSION METHODS
 
-    def asIf : If[V] = throw new ClassCastException();
-    def asGoto : Goto = throw new ClassCastException();
-    def asRet : Ret= throw new ClassCastException();
-    def asJSR : JSR = throw new ClassCastException();
+    def asIf: If[V] = throw new ClassCastException();
+    def asGoto: Goto = throw new ClassCastException();
+    def asRet: Ret = throw new ClassCastException();
+    def asJSR: JSR = throw new ClassCastException();
     def asSwitch: Switch[V] = throw new ClassCastException();
-    def asAssignment : Assignment[V]= throw new ClassCastException();
-    def asReturnValue : Return[V]= throw new ClassCastException();
-    def asReturn : Return= throw new ClassCastException();
-    def asNop : Nop= throw new ClassCastException();
-    def asMonitorEnter:MonitorEnter[V]= throw new ClassCastException();
-    def asMonitorExit:MonitorExit[V]= throw new ClassCastException();
-    def asArrayStore:ArrayStore[V]= throw new ClassCastException();
-    def asThrow : Throw[V]= throw new ClassCastException();
-    def asPutStatic : PutStatic[V]= throw new ClassCastException();
-    def asPutField : PutField[V]= throw new ClassCastException();
-    def asNonVirtualMethodCall : NonVirtualMethodCall[V]= throw new ClassCastException();
-    def asVirtualMethodCall : VirtualMethodCall[V]= throw new ClassCastException();
-    def asStaticMethodCall : StaticMethodCall[V]= throw new ClassCastException();
-    def asExprStmt : ExprStmt[V]= throw new ClassCastException();
-    def asCheckcast : Checkcast[V]= throw new ClassCastException();
+    def asAssignment: Assignment[V] = throw new ClassCastException();
+    def asReturnValue: Return[V] = throw new ClassCastException();
+    def asReturn: Return = throw new ClassCastException();
+    def asNop: Nop = throw new ClassCastException();
+    def asMonitorEnter: MonitorEnter[V] = throw new ClassCastException();
+    def asMonitorExit: MonitorExit[V] = throw new ClassCastException();
+    def asArrayStore: ArrayStore[V] = throw new ClassCastException();
+    def asThrow: Throw[V] = throw new ClassCastException();
+    def asPutStatic: PutStatic[V] = throw new ClassCastException();
+    def asPutField: PutField[V] = throw new ClassCastException();
+    def asNonVirtualMethodCall: NonVirtualMethodCall[V] = throw new ClassCastException();
+    def asVirtualMethodCall: VirtualMethodCall[V] = throw new ClassCastException();
+    def asStaticMethodCall: StaticMethodCall[V] = throw new ClassCastException();
+    def asExprStmt: ExprStmt[V] = throw new ClassCastException();
+    def asCheckcast: Checkcast[V] = throw new ClassCastException();
 
 }
 
@@ -102,7 +102,7 @@ case class If[+V <: Var[V]](
         private[tac] var target: Int
 ) extends Stmt[V] {
 
-final override def asIf : this.type = this
+    final override def asIf: this.type = this
 
     final def astID = If.ASTID
 
@@ -135,7 +135,7 @@ object If {
  */
 case class Goto(pc: PC, private var target: Int) extends Stmt[Nothing] {
 
-final override def asGoto : this.type = this
+    final override def asGoto: this.type = this
 
     final def astID = Goto.ASTID
 
@@ -166,7 +166,7 @@ object Goto {
  */
 case class Ret(pc: PC, private var returnAddresses: PCs) extends Stmt[Nothing] {
 
-final override def asRet : this.type = this
+    final override def asRet: this.type = this
 
     final def astID = Ret.ASTID
 
@@ -195,7 +195,7 @@ object Ret {
  */
 case class JSR(pc: PC, private[tac] var target: Int) extends Stmt[Nothing] {
 
-final override def asJSR : this.type = this
+    final override def asJSR: this.type = this
 
     final def astID = JSR.ASTID
 
@@ -225,7 +225,7 @@ case class Switch[+V <: Var[V]](
         private var npairs:        IndexedSeq[(Int, PC)]
 ) extends Stmt[V] {
 
-    final override def asSwitch : this.type = this
+    final override def asSwitch: this.type = this
 
     final def astID = Switch.ASTID
 
@@ -253,7 +253,7 @@ object Switch {
 
 case class Assignment[+V <: Var[V]](pc: PC, targetVar: V, expr: Expr[V]) extends Stmt[V] {
 
-final override def asAssignment : this.type = this
+    final override def asAssignment: this.type = this
 
     final def astID = Assignment.ASTID
 
@@ -271,7 +271,7 @@ object Assignment {
 
 case class ReturnValue[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
 
-    final override def asReturnValue : this.type = this
+    final override def asReturnValue: this.type = this
 
     final def astID = ReturnValue.ASTID
 
@@ -294,7 +294,7 @@ sealed abstract class SimpleStmt extends Stmt[Nothing] {
 
 case class Return(pc: PC) extends SimpleStmt {
 
-    final override def asReturn : this.type = this
+    final override def asReturn: this.type = this
 
     final def astID = Return.ASTID
 
@@ -306,7 +306,7 @@ object Return {
 
 case class Nop(pc: PC) extends SimpleStmt {
 
-    final override def asNop : this.type = this
+    final override def asNop: this.type = this
 
     final def astID = Nop.ASTID
 
@@ -327,7 +327,7 @@ sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
 
 case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
-    final override def asMonitorEnter : this.type = this
+    final override def asMonitorEnter: this.type = this
 
     final def astID = MonitorEnter.ASTID
 
@@ -339,7 +339,7 @@ object MonitorEnter {
 
 case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
-    final override def asMonitorExit : this.type = this
+    final override def asMonitorExit: this.type = this
 
     final def astID = MonitorExit.ASTID
 
@@ -357,7 +357,7 @@ case class ArrayStore[+V <: Var[V]](
         value:    Expr[V]
 ) extends Stmt[V] {
 
-    final override def asArrayStore : this.type = this
+    final override def asArrayStore: this.type = this
 
     final def astID = ArrayStore.ASTID
 
@@ -375,7 +375,7 @@ object ArrayStore {
 
 case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
 
-final override def asThrow : this.type = this
+    final override def asThrow: this.type = this
 
     final def astID = Throw.ASTID
 
@@ -401,7 +401,7 @@ case class PutStatic[+V <: Var[V]](
         value:             Expr[V]
 ) extends FieldWriteAccessStmt[V] {
 
-final override def asPutStatic : this.type = this
+    final override def asPutStatic: this.type = this
 
     final def astID = PutStatic.ASTID
 
@@ -424,7 +424,7 @@ case class PutField[+V <: Var[V]](
         value:             Expr[V]
 ) extends FieldWriteAccessStmt[V] {
 
-final override def asPutField : this.type = this
+    final override def asPutField: this.type = this
 
     final def astID = PutField.ASTID
 
@@ -478,7 +478,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends InstanceMethodCall[V] {
 
-    final override def asNonVirtualMethodCall : this.type = this
+    final override def asNonVirtualMethodCall: this.type = this
 
     final def astID = NonVirtualMethodCall.ASTID
 
@@ -503,7 +503,7 @@ case class VirtualMethodCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends InstanceMethodCall[V] {
 
-final override def asVirtualMethodCall : this.type = this
+    final override def asVirtualMethodCall: this.type = this
 
     final def astID = VirtualMethodCall.ASTID
 
@@ -527,7 +527,7 @@ case class StaticMethodCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends MethodCall[V] {
 
-final override def asStaticMethodCall : this.type = this
+    final override def asStaticMethodCall: this.type = this
 
     final def astID = StaticMethodCall.ASTID
 
@@ -549,7 +549,7 @@ object StaticMethodCall {
 /** An expression where the value is not further used. */
 case class ExprStmt[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
 
-final override def asExprStmt : this.type = this
+    final override def asExprStmt: this.type = this
 
     final def astID = ExprStmt.ASTID
 
@@ -567,7 +567,7 @@ object ExprStmt {
  */
 case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Stmt[V] {
 
-final override def asCheckcast : this.type = this
+    final override def asCheckcast: this.type = this
 
     final def astID: Int = Checkcast.ASTID
 
