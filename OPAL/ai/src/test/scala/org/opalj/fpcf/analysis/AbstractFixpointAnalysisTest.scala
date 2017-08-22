@@ -152,16 +152,16 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      *       named values within their annotation. Please note that this extraction
      *       mechanism can only be used if a single value has to be extracted.
      */
-    def propertyExtraction(annotation: AnnotationLike): Option[String] = {
-        annotation.elementValuePairs collectFirst { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
+    def propertyExtraction(elementValuePairs: ElementValuePairs): Option[String] = {
+        elementValuePairs collectFirst { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
     }
 
     /**
      * This method extracts the ep property if it is set and an array of Annotations
      * Otherwise the resulting option will be empty
      */
-    def epExtraction(annotation: AnnotationLike): Option[IndexedSeq[Annotation]] = {
-        annotation.elementValuePairs collectFirst {
+    def epExtraction(elementValuePairs: ElementValuePairs): Option[IndexedSeq[Annotation]] = {
+        elementValuePairs collectFirst {
             case ElementValuePair("eps",
                 ArrayValue(eps: IndexedSeq[_])) ⇒
                 eps map { case AnnotationValue(a) ⇒ a }
@@ -172,8 +172,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * This method extracts the algorithms property if it is set and an array of Strings
      * Otherwise the resulting option will be empty
      */
-    def algorithmExtraction(annotation: AnnotationLike): Option[IndexedSeq[String]] = {
-        annotation.elementValuePairs collectFirst {
+    def algorithmExtraction(elementValuePairs: ElementValuePairs): Option[IndexedSeq[String]] = {
+        elementValuePairs collectFirst {
             case ElementValuePair("algorithms",
                 ArrayValue(eps: IndexedSeq[_])) ⇒
                 eps map { case StringValue(algorithm) ⇒ algorithm }
@@ -183,8 +183,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     /**
      * This method extracts a string value from an annotation that has a given name
      */
-    def stringExtraction(annotation: Annotation, name: String): Option[String] = {
-        annotation.elementValuePairs collectFirst {
+    def stringExtraction(elementValuePairs: ElementValuePairs, name: String): Option[String] = {
+        elementValuePairs collectFirst {
             case ElementValuePair(`name`, StringValue(result)) ⇒ result
         }
     }
@@ -199,7 +199,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         predicate:  Option[IndexedSeq[String]] ⇒ Boolean
     ): Seq[AnnotationLike] = {
         if (annotation.annotationType == propertyAnnotation) // Single flat annotation
-            if (predicate(algorithmExtraction(annotation)))
+            if (predicate(algorithmExtraction(annotation.elementValuePairs)))
                 List(annotation)
             else
                 List.empty[Annotation]
@@ -207,7 +207,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             annotation.elementValuePairs.collectFirst {
                 case ElementValuePair("value", ArrayValue(properties: IndexedSeq[_])) ⇒
                     properties collect {
-                        case AnnotationValue(a) if predicate(algorithmExtraction(a)) ⇒ a
+                        case AnnotationValue(a) if predicate(algorithmExtraction(a.elementValuePairs)) ⇒ a
                     }
             } getOrElse List.empty[Annotation]
     }
@@ -215,17 +215,17 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     /**
      * Checks, whether all entities have the properties required for the annotation to be valid
      */
-    def fulfillsEPS(annotation: AnnotationLike): Boolean = {
-        val eps = epExtraction(annotation)
+    def fulfillsEPS(elementValuePairs: ElementValuePairs): Boolean = {
+        val eps = epExtraction(elementValuePairs)
         eps.isEmpty || eps.get.forall { ep ⇒
             if (ep.annotationType == EPType) {
-                val epEntity = stringExtraction(ep, "e").get
+                val epEntity = stringExtraction(ep.elementValuePairs, "e").get
                 val epProperty: PropertyKey[Property] = {
-                    val key = stringExtraction(ep, "pk")
+                    val key = stringExtraction(ep.elementValuePairs, "pk")
                     // If no property attribute is given, the property key tested is used
                     if (key.isDefined) propertyKeyMap(key.get) else propertyKey
                 }
-                val epValue = stringExtraction(ep, "p")
+                val epValue = stringExtraction(ep.elementValuePairs, "p")
                 val classIndex = epEntity.indexOf('.')
                 val descriptorIndex = epEntity.indexOf('(')
                 if (classIndex < 0) { // Entity is a class
@@ -294,17 +294,17 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
                 }
             }
         })
-        val specificFulfilled = specific filter fulfillsEPS
+        val specificFulfilled = specific filter { a ⇒ fulfillsEPS(a.elementValuePairs) }
         val annotatedProperties =
             if (specificFulfilled.isEmpty)
                 extractAnnotations(annotation, {
                     _.isEmpty
-                }) filter fulfillsEPS
+                }) filter { a ⇒ fulfillsEPS(a.elementValuePairs) }
             else
                 specificFulfilled
 
-        annotatedProperties map {
-            propertyExtraction(_) getOrElse defaultValue
+        annotatedProperties map { a ⇒
+            propertyExtraction(a.elementValuePairs) getOrElse defaultValue
         }
     }
 
