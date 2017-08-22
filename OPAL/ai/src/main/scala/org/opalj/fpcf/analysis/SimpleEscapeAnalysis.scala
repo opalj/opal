@@ -60,7 +60,6 @@ import org.opalj.tac.DVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.FailingExpr
 import org.opalj.tac.Invokedynamic
 import org.opalj.tac.New
 import org.opalj.tac.NewArray
@@ -113,42 +112,39 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
         def determineEscapeStmt(stmt: Stmt[V]): Unit = {
             stmt.astID match {
                 case PutStatic.ASTID ⇒
-                    val PutStatic(_, _, _, _, value) = stmt
+                    val value = stmt.asPutStatic.value
                     if (usesDefSite(value)) setWorst(GlobalEscapeViaStaticFieldAssignment)
                 // we are field insensitive, so we have to consider a field (and array) write as
                 // GlobalEscape
                 case PutField.ASTID ⇒
-                    val PutField(_, _, _, _, _, value) = stmt
+                    val value = stmt.asPutField.value
                     if (usesDefSite(value)) setWorst(MaybeNoEscape)
                 case ArrayStore.ASTID ⇒
-                    val ArrayStore(_, _, _, value) = stmt
+                    val value = stmt.asArrayStore.value
                     if (usesDefSite(value)) setWorst(MaybeNoEscape)
                 case Throw.ASTID ⇒
-                    val Throw(_, value) = stmt
+                    val value = stmt.asThrow.exception
                     // the exception could be catched, so we know nothing
                     if (usesDefSite(value)) setWorst(MaybeNoEscape)
                 // we are inter-procedural
                 case ReturnValue.ASTID ⇒
-                    val ReturnValue(_, value) = stmt
+                    val value = stmt.asReturnValue.expr
                     if (usesDefSite(value)) setWorst(MaybeMethodEscape)
                 case StaticMethodCall.ASTID ⇒
-                    val StaticMethodCall(_, _, _, _, _, params) = stmt
+                    val params = stmt.asStaticMethodCall.params
                     if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 case VirtualMethodCall.ASTID ⇒
-                    val VirtualMethodCall(_, _, _, _, _, value, params) = stmt
-                    if (usesDefSite(value) ||
-                        anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
+                    val call = stmt.asVirtualMethodCall
+                    if (usesDefSite(call.receiver) ||
+                        anyParameterUsesDefSite(call.params)) setWorst(MaybeArgEscape)
                 case NonVirtualMethodCall.ASTID ⇒
                     val NonVirtualMethodCall(_, dc, interface, name, descr, receiver, params) = stmt
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
-                case FailingExpr.ASTID ⇒
-                    //TODO there is single FailingExpr in JDK?
-                    throw new RuntimeException("not yet implemented")
                 case ExprStmt.ASTID ⇒
-                    val ExprStmt(_, expr) = stmt
+                    val expr = stmt.asExprStmt.expr
                     examineCall(expr)
                 case Assignment.ASTID ⇒
-                    val Assignment(_, _, right) = stmt
+                    val right = stmt.asAssignment.expr
                     examineCall(right)
                 case _ ⇒
             }
@@ -166,15 +162,15 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                     val NonVirtualFunctionCall(_, dc, interface, name, descr, receiver, params) = expr
                     handleNonVirtualCall(e, defSite, dc, interface, name, descr, receiver, params)
                 case VirtualFunctionCall.ASTID ⇒
-                    val VirtualFunctionCall(_, _, _, _, _, receiver, params) = expr
-                    if (usesDefSite(receiver) ||
-                        anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
+                    val call = expr.asVirtualFunctionCall
+                    if (usesDefSite(call.receiver) ||
+                        anyParameterUsesDefSite(call.params)) setWorst(MaybeArgEscape)
                 case StaticFunctionCall.ASTID ⇒
-                    val StaticFunctionCall(_, _, _, _, _, params) = expr
+                    val params = expr.asStaticFunctionCall.params
                     if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 // see Java8LambdaExpressionsRewriting
                 case Invokedynamic.ASTID ⇒
-                    val Invokedynamic(_, _, _, _, params) = expr
+                    val params = expr.asInvokedynamic.params
                     if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 case _ ⇒
             }

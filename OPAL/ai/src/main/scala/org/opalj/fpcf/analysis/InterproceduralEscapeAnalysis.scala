@@ -61,7 +61,6 @@ import org.opalj.tac.DVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.FailingExpr
 import org.opalj.tac.Invokedynamic
 import org.opalj.tac.New
 import org.opalj.tac.NewArray
@@ -116,22 +115,22 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
 
             stmt.astID match {
                 case PutStatic.ASTID ⇒
-                    val PutStatic(_, _, _, _, value) = stmt
+                    val value = stmt.asPutStatic.value
                     if (usesDefSite(value)) setWorst(GlobalEscapeViaStaticFieldAssignment)
                 // we are field insensitive, so we can not say what happens to that object
                 case PutField.ASTID ⇒
-                    val PutField(_, _, _, _, _, value) = stmt
+                    val value = stmt.asPutField.value
                     if (usesDefSite(value)) setWorst(MaybeNoEscape)
                 case ArrayStore.ASTID ⇒
-                    val ArrayStore(_, _, _, value) = stmt
+                    val value = stmt.asArrayStore.value
                     if (usesDefSite(value)) setWorst(MaybeNoEscape)
                 case Throw.ASTID ⇒
-                    val Throw(_, value) = stmt
+                    val value = stmt.asThrow.exception
                     // the exception could be catched, so we know nothing
                     if (usesDefSite(value)) setWorst(MaybeNoEscape)
                 // we are inter-procedural
                 case ReturnValue.ASTID ⇒
-                    val ReturnValue(_, value) = stmt
+                    val value = stmt.asReturnValue.expr
                     if (usesDefSite(value)) setWorst(MaybeMethodEscape)
                 case StaticMethodCall.ASTID ⇒
                     val StaticMethodCall(_, dc, isI, name, descr, params) = stmt
@@ -143,13 +142,11 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                 case NonVirtualMethodCall.ASTID ⇒
                     val NonVirtualMethodCall(_, dc, interface, name, descr, receiver, params) = stmt
                     handleNonVirtualCall(dc, interface, name, descr, receiver, params)
-                case FailingExpr.ASTID ⇒
-                    throw new RuntimeException("not yet implemented")
                 case ExprStmt.ASTID ⇒
-                    val ExprStmt(_, expr) = stmt
+                    val expr = stmt.asExprStmt.expr
                     examineCall(e, defSite, expr)
                 case Assignment.ASTID ⇒
-                    val Assignment(_, _, right) = stmt
+                    val right = stmt.asAssignment.expr
                     examineCall(e, defSite, right)
                 case _ ⇒
             }
@@ -173,7 +170,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                     handleStaticCall(dc, isI, name, descr, params)
                 // see Java8LambdaExpressionsRewriting
                 case Invokedynamic.ASTID ⇒
-                    val Invokedynamic(_, _, _, _, params) = expr
+                    val params = expr.asInvokedynamic.params
                     if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 case _ ⇒
             }
