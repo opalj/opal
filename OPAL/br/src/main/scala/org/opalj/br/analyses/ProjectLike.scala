@@ -378,9 +378,9 @@ trait ProjectLike extends ClassFileRepository { project ⇒
             }
 
         resolveClassMethodReference(receiverType, name, descriptor) match {
-            case Success(method)                                   ⇒ Some(method)
-            case Failure if !forceLookupInSuperinterfacesOnFailure ⇒ None
-            case _ /*Empty | (Failure && lookupInSuperinterfacesOnFailure) */ ⇒
+            case Success(method)                                 ⇒ Some(method)
+            case Empty if !forceLookupInSuperinterfacesOnFailure ⇒ None
+            case _ /*Failure | (Empty && lookupInSuperinterfacesOnFailure) */ ⇒
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(receiverType).get
                 val (_, methods) =
                     findMaximallySpecificSuperinterfaceMethods(
@@ -989,7 +989,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
     /**
      * @see `lookupMethodDefinition(ObjectType,String,MethodDescriptor,ClassFileRepository)`
      */
-    def lookupMethodDefinition(invocation: MethodInvocationInstruction): Option[Method] = {
+    def lookupMethodDefinition(invocation: org.opalj.br.instructions.MethodInvocationInstruction): Option[Method] = {
         val receiverType = invocation.declaringClass
 
         val effectiveReceiverType =
