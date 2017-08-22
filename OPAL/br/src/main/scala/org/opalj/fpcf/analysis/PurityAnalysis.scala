@@ -31,7 +31,6 @@ package fpcf
 package analysis
 
 import scala.annotation.switch
-import scala.util.control.ControlThrowable
 
 import org.opalj.br.PC
 import org.opalj.br.Method
@@ -68,6 +67,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EP
 import org.opalj.fpcf.Property
@@ -85,7 +85,6 @@ import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.log.OPALLogger
 
 /**
  * Analyzes the purity of a method as defined by the Purity property.
@@ -95,7 +94,7 @@ import org.opalj.log.OPALLogger
 class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
 
     import project.resolveFieldReference
-    import project.lookupMethodDefinition
+    import project.nonVirtualCall
 
     /**
      * Determines the purity of the method starting with the instruction with the given
@@ -158,26 +157,11 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                     // the computation of the method's purity and are ignored.
                     // Let's continue with the evaluation of the next instruction.
 
-                    case MethodInvocationInstruction(declaringClassType, _, methodName, methodDescriptor) ⇒
+                    case mii: NonVirtualMethodInvocationInstruction ⇒
 
-                        val calleeOption =
-                            try {
-                                val receiverType = declaringClassType.asObjectType // This is safe!
-                                lookupMethodDefinition(receiverType, methodName, methodDescriptor)
-                            } catch {
-                                case ct: ControlThrowable ⇒ throw ct
-                                case t: Throwable ⇒
-                                    val category = "internal - recoverable"
-                                    OPALLogger.error(category, "method lookup failed", t)
-                                    None
-                            }
-                        calleeOption match {
-                            case None ⇒
-                                // We know nothing about the target method (it is not
-                                // found in the scope of the current project).
-                                return ImmediateResult(method, Impure);
+                        nonVirtualCall(mii) match {
 
-                            case Some(callee) ⇒
+                            case Success(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
                                 val purity = propertyStore(callee, Purity.key)
 
@@ -194,6 +178,12 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                                     case epk ⇒
                                         dependees += epk
                                 }
+
+                            case _ /* Empty or Failure */ ⇒
+                                // We know nothing about the target method (it is not
+                                // found in the scope of the current project).
+                                return ImmediateResult(method, Impure);
+
                         }
                 }
 

@@ -637,10 +637,10 @@ object TACNaive {
                     statements(pc) = List(Goto(pc, targetPC))
                     schedule(targetPC, stack)
 
-                case JSR.opcode | JSR_W.opcode ⇒
+                case br.instructions.JSR.opcode | JSR_W.opcode ⇒
                     val targetPC = pc + as[JSRInstruction](instruction).branchoffset
                     val retVar = OperandVar(ComputationalTypeReturnAddress, stack)
-                    statements(pc) = List(JumpToSubroutine(pc, targetPC))
+                    statements(pc) = List(JSR(pc, targetPC))
                     schedule(targetPC, retVar :: stack)
 
                 case RET.opcode ⇒

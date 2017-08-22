@@ -52,12 +52,7 @@ trait CallGraphExtractor { extractor ⇒
     /**
      * This method may be executed concurrently for multiple different methods.
      */
-    def extract(
-        method: Method
-    )(
-        implicit
-        project: SomeProject
-    ): LocalCallGraphInformation
+    def extract(method: Method)(implicit project: SomeProject): LocalCallGraphInformation
 
     def cache: CallGraphCache[MethodSignature, Set[Method]]
 
