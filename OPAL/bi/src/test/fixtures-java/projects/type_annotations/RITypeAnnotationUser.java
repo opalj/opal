@@ -136,5 +136,10 @@ public abstract class RITypeAnnotationUser<@RITypeAnnotation T extends @RITypeAn
     }
 
 
-    // TODO Arrays
+    public String doArray(File[] file) throws Exception{
+        @RITypeAnnotation("the array")File[] newFiles =  file.clone();
+        Object[]@RITypeAnnotation("an inner array")[] os = new @RITypeAnnotation("a new array") Object[10]@RITypeAnnotation("a new inner array")[5];
+        process(os);
+        return newFiles[0].toString();
+    }
 }
