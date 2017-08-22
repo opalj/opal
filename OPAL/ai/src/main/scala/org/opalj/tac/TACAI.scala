@@ -795,9 +795,9 @@ object TACAI {
                         addStmt(Goto(pc, pc + branchoffset))
                     }
 
-                case JSR.opcode | JSR_W.opcode ⇒
+                case br.JSR.opcode | br.JSR_W.opcode ⇒
                     val JSRInstruction(branchoffset) = instruction
-                    addStmt(JumpToSubroutine(pc, pc + branchoffset))
+                    addStmt(JSR(pc, pc + branchoffset))
                 case RET.opcode ⇒
                     addStmt(Ret(pc, cfg.successors(pc)))
 
