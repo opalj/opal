@@ -164,7 +164,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         annotation.elementValuePairs collectFirst {
             case ElementValuePair("eps",
                 ArrayValue(eps: IndexedSeq[_])) ⇒
-                eps map { case AnnotationValue(annotation) ⇒ annotation }
+                eps map { case AnnotationValue(a) ⇒ a }
         }
     }
 
@@ -207,7 +207,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             annotation.elementValuePairs.collectFirst {
                 case ElementValuePair("value", ArrayValue(properties: IndexedSeq[_])) ⇒
                     properties collect {
-                        case AnnotationValue(annotation) if predicate(algorithmExtraction(annotation)) ⇒ annotation
+                        case AnnotationValue(a) if predicate(algorithmExtraction(a)) ⇒ a
                     }
             } getOrElse List.empty[Annotation]
     }
@@ -246,14 +246,14 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
                     val classFileO = project.classFile(ObjectType(className))
                     if (epValue.isEmpty) // No property for the entity may exist
                         !(classFileO exists {
-                            _ findField (fieldName) exists { field ⇒
+                            _ findField fieldName exists { field ⇒
                                 val eop = propertyStore(field, epProperty)
                                 eop.hasProperty
                             }
                         })
                     else
                         classFileO exists {
-                            _ findField (fieldName) exists { field ⇒
+                            _ findField fieldName exists { field ⇒
                                 val eop = propertyStore(field, epProperty)
                                 eop.hasProperty && eop.p.toString == epValue.get
                             }
@@ -448,15 +448,15 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     } {
         val expected = getExpectedProperties(annotation)
 
-        if (!expected.isEmpty) {
+        if (expected.nonEmpty) {
             val expectedProperty = if (expected.forall(_ == expected.head)) expected.head else {
                 throw new RuntimeException("Test annotated incorrectly:"+
                     s"Multiple annotations applicable for class ${classFile.fqn}")
             }
 
             val doWhat = s"correctly calculate the property of  ${classFile.fqn}: "+
-                s"expected property ${expectedProperty}"
-            analysisName should (doWhat) in {
+                s"expected property $expectedProperty"
+            analysisName should doWhat in {
                 validatePropertyByClassFile(classFile, expectedProperty)
             }
         }
@@ -471,7 +471,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     } {
         val expected = getExpectedProperties(annotation)
 
-        if (!expected.isEmpty) {
+        if (expected.nonEmpty) {
             val expectedProperty =
                 if (expected.forall(_ == expected.head)) expected.head
                 else {
@@ -482,7 +482,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
             val doWhat = s"correctly calculate the property of  ${method.toJava}: "+
                 s"expected property $expectedProperty"
-            analysisName should (doWhat) in {
+            analysisName should doWhat in {
                 validatePropertyByMethod(method, expectedProperty)
             }
         }
@@ -501,7 +501,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         } {
             val expected = getExpectedProperties(annotation)
 
-            if (!expected.isEmpty) {
+            if (expected.nonEmpty) {
                 val expectedProperty =
                     if (expected.forall(_ == expected.head)) expected.head
                     else {
@@ -532,7 +532,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             case TAOfNew(pc) ⇒
                 val expected = getExpectedProperties(annotation)
 
-                if (!expected.isEmpty) {
+                if (expected.nonEmpty) {
                     val expectedProperty =
                         if (expected.forall(_ == expected.head)) expected.head
                         else {
