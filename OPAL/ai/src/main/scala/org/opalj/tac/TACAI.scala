@@ -34,6 +34,7 @@ import scala.collection.mutable.Queue
 import org.opalj.collection.immutable.IntSetBuilder
 import org.opalj.collection.immutable.IntSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
@@ -377,7 +378,7 @@ object TACAI {
                 if (wasExecuted(nextPC)) {
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, source)
                 } else {
-                    addStmt(FailingExpr(pc, source))
+                    addExprStmt(pc, source)
                 }
             }
 
@@ -390,7 +391,7 @@ object TACAI {
                 if (wasExecuted(nextPC)) {
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, binExpr)
                 } else {
-                    addStmt(FailingExpr(pc, binExpr))
+                    addExprStmt(pc, binExpr)
                 }
             }
 
@@ -566,7 +567,7 @@ object TACAI {
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
                     } else {
-                        addStmt(FailingExpr(pc, lengthExpr))
+                        addExprStmt(pc, lengthExpr)
                     }
 
                 case BIPUSH.opcode | SIPUSH.opcode ⇒
@@ -694,7 +695,7 @@ object TACAI {
                         if (wasExecuted(nextPC)) {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
-                            addStmt(FailingExpr(pc, expr))
+                            addExprStmt(pc, expr)
                         }
                     }
 
@@ -721,7 +722,7 @@ object TACAI {
                         if (wasExecuted(nextPC)) {
                             addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                         } else {
-                            addStmt(FailingExpr(pc, expr))
+                            addExprStmt(pc, expr)
                         }
                     }
 
@@ -733,7 +734,7 @@ object TACAI {
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                     } else {
-                        addStmt(FailingExpr(pc, expr))
+                        addExprStmt(pc, expr)
                     }
 
                 case PUTSTATIC.opcode ⇒
@@ -762,7 +763,7 @@ object TACAI {
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
                     } else { // ... here: NullPointerException
-                        addStmt(FailingExpr(pc, getField))
+                        addExprStmt(pc, getField)
                     }
 
                 case NEW.opcode ⇒
@@ -783,7 +784,7 @@ object TACAI {
                     if (wasExecuted(nextPC)) {
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
                     } else { // ... here: NegativeIndex...
-                        addStmt(FailingExpr(pc, newArray))
+                        addExprStmt(pc, newArray)
                     }
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
