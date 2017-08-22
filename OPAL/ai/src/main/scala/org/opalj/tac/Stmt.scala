@@ -67,7 +67,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asJSR: JSR = throw new ClassCastException();
     def asSwitch: Switch[V] = throw new ClassCastException();
     def asAssignment: Assignment[V] = throw new ClassCastException();
-    def asReturnValue: Return[V] = throw new ClassCastException();
+    def asReturnValue: ReturnValue[V] = throw new ClassCastException();
     def asReturn: Return = throw new ClassCastException();
     def asNop: Nop = throw new ClassCastException();
     def asMonitorEnter: MonitorEnter[V] = throw new ClassCastException();
