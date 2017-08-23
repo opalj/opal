@@ -433,7 +433,9 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
                     })
             }
 
-        propertyStore <|<< (cfs, analysis.determineObjectImmutability(null, ImmutableObject))
+        propertyStore.scheduleForEntities(cfs)(
+            analysis.determineObjectImmutability(null, ImmutableObject)
+        )
 
         analysis
     }

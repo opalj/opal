@@ -260,10 +260,11 @@ object EscapeAnalysis {
 
     def analyze(implicit project: SomeProject): Unit = {
         implicit val store = project.get(PropertyStoreKey)
-        val filter: PartialFunction[Entity, ClassFile] = { case cf: ClassFile ⇒ cf }
         val debug = project.config.as[Option[Boolean]]("org.opalj.fcpf.analysis.escape.debug")
         val analysis = new EscapeAnalysis(debug.getOrElse(false))
-        store <||< (filter, analysis.determineSelfReferenceLeakage)
+        store.scheduleForCollected { case cf: ClassFile ⇒ cf }(
+            analysis.determineSelfReferenceLeakage
+        )
     }
 
 }

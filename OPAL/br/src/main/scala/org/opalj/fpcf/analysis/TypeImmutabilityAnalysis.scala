@@ -290,8 +290,9 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
         // An optimization if the analysis also includes the JDK.
         project.classFile(ObjectType.Object) foreach { ps.set(_, MutableType) }
 
-        ps <||< (
-            { case cf: ClassFile if (cf.thisType ne ObjectType.Object) ⇒ cf },
+        ps.scheduleForCollected {
+            case cf: ClassFile if (cf.thisType ne ObjectType.Object) ⇒ cf
+        }(
             analysis.step1
         )
 

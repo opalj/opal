@@ -271,10 +271,6 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
  */
 object PurityAnalysis extends FPCFAnalysisRunner {
 
-    final val entitySelector: PartialFunction[Entity, Method] = {
-        FPCFAnalysisRunner.NonAbstractMethodSelector
-    }
-
     override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
     override def derivedProperties: Set[PropertyKind] = Set(Purity)
@@ -283,7 +279,11 @@ object PurityAnalysis extends FPCFAnalysisRunner {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new PurityAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determinePurity)
+        propertyStore.scheduleForCollected(
+            FPCFAnalysisRunner.NonAbstractMethodSelector
+        )(
+                analysis.determinePurity
+            )
         analysis
     }
 }

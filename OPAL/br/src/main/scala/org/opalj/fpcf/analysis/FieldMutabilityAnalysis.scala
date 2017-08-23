@@ -97,7 +97,7 @@ object FieldMutabilityAnalysis extends FPCFAnalysisRunner {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new FieldMutabilityAnalysis(project)
-        propertyStore <||< (entitySelector(project), analysis.determineFieldMutabilities)
+        propertyStore.scheduleForCollected(entitySelector(project))(analysis.determineFieldMutabilities)
         analysis
     }
 }

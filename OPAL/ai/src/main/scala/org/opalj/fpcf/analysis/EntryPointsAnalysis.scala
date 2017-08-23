@@ -75,19 +75,16 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner {
     override def usedProperties: Set[PropertyKind] = Set.empty
     override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         import AnalysisModes._
         project.analysisMode match {
             case DesktopApplication ⇒
                 val analysis = new EntryPointsAnalysis(project)
-                propertyStore <||< (entitySelector, analysis.determineEntrypoints)
+                propertyStore.scheduleForCollected(entitySelector)(analysis.determineEntrypoints)
                 analysis
             case JEE6WebApplication ⇒
                 val analysis = new JavaEEEntryPointsAnalysis(project)
-                propertyStore <||< (JavaEEEntryPointsAnalysis.entitySelector, analysis.determineEntrypoints)
+                propertyStore.scheduleForCollected(JavaEEEntryPointsAnalysis.entitySelector)(analysis.determineEntrypoints)
                 analysis
             case (CPA | OPA) ⇒
                 val analysis = new LibraryEntryPointsAnalysis(project)
@@ -95,7 +92,7 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner {
                 analysisRunner.run(SimpleInstantiabilityAnalysis)
                 analysisRunner.run(CallableFromClassesInOtherPackagesAnalysis)
                 analysisRunner.run(MethodAccessibilityAnalysis)
-                propertyStore <||< (entitySelector, analysis.determineEntrypoints)
+                propertyStore.scheduleForCollected(entitySelector)(analysis.determineEntrypoints)
                 analysis
         }
     }

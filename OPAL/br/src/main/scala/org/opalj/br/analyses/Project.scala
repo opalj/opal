@@ -1271,9 +1271,7 @@ object Project {
             Traversable.empty,
             libraryClassFilesAreInterfacesOnly = false /*it actually doesn't matter*/ ,
             virtualClassFiles = Traversable.empty
-        )(
-                projectLogger = projectLogger
-            )
+        )(projectLogger = projectLogger)
     }
 
     def apply(
@@ -1331,10 +1329,7 @@ object Project {
             project.libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
-        )(
-                config = project.config,
-                projectLogger = OPALLogger.logger(project.logContext.successor)
-            )
+        )(config = project.config, projectLogger = OPALLogger.logger(project.logContext.successor))
     }
 
     /**
@@ -1352,10 +1347,7 @@ object Project {
             project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
-        )(
-                project.config,
-                OPALLogger.logger(project.logContext.successor)
-            )
+        )(project.config, OPALLogger.logger(project.logContext.successor))
     }
 
     def apply[Source](
