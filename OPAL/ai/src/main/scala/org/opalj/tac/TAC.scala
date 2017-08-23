@@ -93,7 +93,7 @@ object TAC {
             "[-cfg (print control-flow graph)]\n"+
             "[-open (the generated representations will be written to disk and opened)]\n"+
             "[-toString (uses the \"toString\" method to print the object graph)]\n"+
-            "Example:\n\tjava …TAC -jar /Library/jre/lib/rt.jar -class java.util.ArrayList .method toString"
+            "Example:\n\tjava …TAC -source /Library/jre/lib/rt.jar -class java.util.ArrayList -method toString"
     }
 
     def main(args: Array[String]): Unit = {
