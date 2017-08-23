@@ -202,7 +202,7 @@ object InterpretMethodsAnalysis {
                     ai.currentEvaluationCount
                 }
 
-                if (naiveEvaluatedCount > evaluatedCount) {
+                if (beVerbose && naiveEvaluatedCount > evaluatedCount) {
                     val codeLength = body.instructions.length
                     val message = method.toJava(
                         s"Evaluation steps (code length:$codeLength): "+
