@@ -1516,8 +1516,6 @@ object Project {
 
             var codeSize: Long = 0L
 
-            // TODO Get rid of "methodToClassFile"
-            val methodToClassFile = AnyRefMap.empty[Method, ClassFile]
             val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
             val sources = OpenHashMap.empty[ObjectType, Source]
 
@@ -1542,7 +1540,6 @@ object Project {
                     projectClassFilesCount += 1
                     for (method ← classFile.methods) {
                         projectMethodsCount += 1
-                        methodToClassFile.put(method, classFile)
                         method.body.foreach(codeSize += _.instructions.size)
                     }
                     projectFieldsCount += classFile.fields.size
@@ -1607,7 +1604,6 @@ object Project {
                     libraryClassFilesCount += 1
                     for (method ← libClassFile.methods) {
                         libraryMethodsCount += 1
-                        methodToClassFile.put(method, libClassFile)
                         method.body.foreach(codeSize += _.instructions.length)
                     }
                     libraryFieldsCount += libClassFile.fields.size
@@ -1617,10 +1613,13 @@ object Project {
             }
 
             val methodsWithBodySortedBySizeWithContext =
-                methodToClassFile.view.
-                    filter(_._1.body.isDefined).toArray.
-                    sortWith { (v1, v2) ⇒ v1._1.body.get.codeSize > v2._1.body.get.codeSize }.
-                    map { e ⇒ val (m, c) = e; MethodInfo(sources(c.thisType), m) }
+                // IMPROVE compute methodsWithBodyCount and then directly initialize the "final" array
+                (projectClassFiles.iterator.flatMap(_.methods) ++
+                    libraryClassFiles.iterator.flatMap(_.methods)).
+                    filter(m ⇒ m.body.isDefined).
+                    map(m ⇒ MethodInfo(sources(m.classFile.thisType), m)).
+                    toArray.
+                    sortWith { (v1, v2) ⇒ v1.method.body.get.codeSize > v2.method.body.get.codeSize }
 
             val methodsWithBodySortedBySize: Array[Method] =
                 methodsWithBodySortedBySizeWithContext.map(mi ⇒ mi.method)
