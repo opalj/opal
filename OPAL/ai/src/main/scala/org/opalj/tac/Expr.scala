@@ -466,7 +466,6 @@ object NewArray { final val ASTID = -18 }
 case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) extends Expr[V] {
 
     final override def asArrayLoad: this.type = this
-
     final override def astID: Int = ArrayLoad.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
     final override def isSideEffectFree: Boolean = true
@@ -484,14 +483,10 @@ object ArrayLoad { final val ASTID = -19 }
 case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends Expr[V] {
 
     final override def asArrayLength: this.type = this
-
-    final def astID: Int = ArrayLength.ASTID
-
-    final def cTpe: ComputationalType = ComputationalTypeInt
-
-    final def isSideEffectFree: Boolean = { assert(arrayRef.isVar); true }
-
-    final def isVar: Boolean = false
+    final override def astID: Int = ArrayLength.ASTID
+    final override def cTpe: ComputationalType = ComputationalTypeInt
+    final override def isSideEffectFree: Boolean = { assert(arrayRef.isVar); true }
+    final override def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
@@ -503,11 +498,10 @@ object ArrayLength { final val ASTID = -20 }
 
 abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
 
+    final override def cTpe: ComputationalType = declaredFieldType.computationalType
+    final override def isVar: Boolean = false
+
     def declaredFieldType: FieldType
-
-    final def cTpe: ComputationalType = declaredFieldType.computationalType
-
-    final def isVar: Boolean = false
 
 }
 
@@ -520,8 +514,7 @@ case class GetField[+V <: Var[V]](
 ) extends FieldRead[V] {
 
     final override def asGetField: this.type = this
-
-    final def astID: Int = GetField.ASTID
+    final override def astID: Int = GetField.ASTID
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         objRef.remapIndexes(pcToIndex)
@@ -543,10 +536,8 @@ case class GetStatic(
 ) extends FieldRead[Nothing] {
 
     final override def asGetStatic: this.type = this
-
-    final def astID: Int = GetStatic.ASTID
-
-    final def isSideEffectFree: Boolean = true
+    final override def astID: Int = GetStatic.ASTID
+    final override def isSideEffectFree: Boolean = true
 
     override def toString: String = {
         s"GetStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava})"
@@ -563,17 +554,11 @@ case class Invokedynamic[+V <: Var[V]](
 ) extends Expr[V] {
 
     final override def asInvokedynamic: this.type = this
-
-    final def astID: Int = Invokedynamic.ASTID
-
-    final def cTpe: ComputationalType = descriptor.returnType.computationalType
-
-    final def isSideEffectFree: Boolean = {
-        // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
-        false
-    }
-
-    final def isVar: Boolean = false
+    final override def isVar: Boolean = false
+    final override def astID: Int = Invokedynamic.ASTID
+    final override def cTpe: ComputationalType = descriptor.returnType.computationalType
+    // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
+    final override def isSideEffectFree: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -589,9 +574,8 @@ object Invokedynamic { final val ASTID = -23 }
 
 sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 
-    final def cTpe: ComputationalType = descriptor.returnType.computationalType
-
-    final def isVar: Boolean = false
+    final override def cTpe: ComputationalType = descriptor.returnType.computationalType
+    final override def isVar: Boolean = false
 
 }
 
@@ -626,10 +610,8 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
 ) extends InstanceFunctionCall[V] {
 
     final override def asNonVirtualFunctionCall: this.type = this
-
-    final def astID: Int = NonVirtualFunctionCall.ASTID
-
-    final def isSideEffectFree: Boolean = false
+    final override def astID: Int = NonVirtualFunctionCall.ASTID
+    final override def isSideEffectFree: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
@@ -656,10 +638,8 @@ case class VirtualFunctionCall[+V <: Var[V]](
 ) extends InstanceFunctionCall[V] {
 
     final override def asVirtualFunctionCall: this.type = this
-
-    final def astID: Int = VirtualFunctionCall.ASTID
-
-    final def isSideEffectFree: Boolean = false
+    final override def astID: Int = VirtualFunctionCall.ASTID
+    final override def isSideEffectFree: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
@@ -685,10 +665,8 @@ case class StaticFunctionCall[+V <: Var[V]](
 ) extends FunctionCall[V] {
 
     final override def asStaticFunctionCall: this.type = this
-
-    final def astID: Int = StaticFunctionCall.ASTID
-
-    final def isSideEffectFree: Boolean = false
+    final override def astID: Int = StaticFunctionCall.ASTID
+    final override def isSideEffectFree: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -716,9 +694,10 @@ object StaticFunctionCall { final val ASTID = -26 }
  *           the self type.
  */
 trait Var[+V <: Var[V]] extends ValueExpr[V] { this: V ⇒
-    final def isVar: Boolean = true
+
+    final override def isVar: Boolean = true
     final override def asVar: V = this
-    final def astID: Int = Var.ASTID
+    final override def astID: Int = Var.ASTID
 
     /**
      * A ''human readable'' name of the local variable.

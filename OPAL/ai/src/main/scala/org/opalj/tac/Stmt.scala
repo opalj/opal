@@ -103,12 +103,9 @@ case class If[+V <: Var[V]](
 ) extends Stmt[V] {
 
     final override def asIf: this.type = this
-
-    final def astID = If.ASTID
-
-    def leftExpr: Expr[V] = left
-
-    def rightExpr: Expr[V] = right
+    final override def astID = If.ASTID
+    final def leftExpr: Expr[V] = left
+    final def rightExpr: Expr[V] = right
 
     /**
      * The target statement that is executed if the condition evaluates to `true`.
@@ -136,8 +133,7 @@ object If {
 case class Goto(pc: PC, private var target: Int) extends Stmt[Nothing] {
 
     final override def asGoto: this.type = this
-
-    final def astID = Goto.ASTID
+    final override def astID = Goto.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = target = pcToIndex(target)
 
@@ -167,8 +163,7 @@ object Goto {
 case class Ret(pc: PC, private var returnAddresses: PCs) extends Stmt[Nothing] {
 
     final override def asRet: this.type = this
-
-    final def astID = Ret.ASTID
+    final override def astID = Ret.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         returnAddresses = returnAddresses map { pcToIndex }
@@ -196,8 +191,7 @@ object Ret {
 case class JSR(pc: PC, private[tac] var target: Int) extends Stmt[Nothing] {
 
     final override def asJSR: this.type = this
-
-    final def astID = JSR.ASTID
+    final override def astID = JSR.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
@@ -226,8 +220,7 @@ case class Switch[+V <: Var[V]](
 ) extends Stmt[V] {
 
     final override def asSwitch: this.type = this
-
-    final def astID = Switch.ASTID
+    final override def astID = Switch.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
@@ -254,8 +247,7 @@ object Switch {
 case class Assignment[+V <: Var[V]](pc: PC, targetVar: V, expr: Expr[V]) extends Stmt[V] {
 
     final override def asAssignment: this.type = this
-
-    final def astID = Assignment.ASTID
+    final override def astID = Assignment.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         targetVar.remapIndexes(pcToIndex)
@@ -272,8 +264,7 @@ object Assignment {
 case class ReturnValue[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
 
     final override def asReturnValue: this.type = this
-
-    final def astID = ReturnValue.ASTID
+    final override def astID = ReturnValue.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
 
@@ -295,8 +286,7 @@ sealed abstract class SimpleStmt extends Stmt[Nothing] {
 case class Return(pc: PC) extends SimpleStmt {
 
     final override def asReturn: this.type = this
-
-    final def astID = Return.ASTID
+    final override def astID = Return.ASTID
 
     override def toString: String = s"Return(pc=$pc)"
 }
@@ -307,8 +297,7 @@ object Return {
 case class Nop(pc: PC) extends SimpleStmt {
 
     final override def asNop: this.type = this
-
-    final def astID = Nop.ASTID
+    final override def astID = Nop.ASTID
 
     override def toString: String = s"Nop(pc=$pc)"
 }
@@ -328,8 +317,7 @@ sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
 case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
     final override def asMonitorEnter: this.type = this
-
-    final def astID = MonitorEnter.ASTID
+    final override def astID = MonitorEnter.ASTID
 
     override def toString: String = s"MonitorEnter(pc=$pc,$objRef)"
 }
@@ -340,8 +328,7 @@ object MonitorEnter {
 case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
     final override def asMonitorExit: this.type = this
-
-    final def astID = MonitorExit.ASTID
+    final override def astID = MonitorExit.ASTID
 
     override def toString: String = s"MonitorExit(pc=$pc,$objRef)"
 
@@ -358,8 +345,7 @@ case class ArrayStore[+V <: Var[V]](
 ) extends Stmt[V] {
 
     final override def asArrayStore: this.type = this
-
-    final def astID = ArrayStore.ASTID
+    final override def astID = ArrayStore.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
@@ -376,8 +362,7 @@ object ArrayStore {
 case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
 
     final override def asThrow: this.type = this
-
-    final def astID = Throw.ASTID
+    final override def astID = Throw.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = exception.remapIndexes(pcToIndex)
 
@@ -402,8 +387,7 @@ case class PutStatic[+V <: Var[V]](
 ) extends FieldWriteAccessStmt[V] {
 
     final override def asPutStatic: this.type = this
-
-    final def astID = PutStatic.ASTID
+    final override def astID = PutStatic.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
 
@@ -425,8 +409,7 @@ case class PutField[+V <: Var[V]](
 ) extends FieldWriteAccessStmt[V] {
 
     final override def asPutField: this.type = this
-
-    final def astID = PutField.ASTID
+    final override def astID = PutField.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         objRef.remapIndexes(pcToIndex)
@@ -479,8 +462,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
 ) extends InstanceMethodCall[V] {
 
     final override def asNonVirtualMethodCall: this.type = this
-
-    final def astID = NonVirtualMethodCall.ASTID
+    final override def astID = NonVirtualMethodCall.ASTID
 
     override def toString: String = {
         val sig = descriptor.toJava(name)
@@ -504,8 +486,7 @@ case class VirtualMethodCall[+V <: Var[V]](
 ) extends InstanceMethodCall[V] {
 
     final override def asVirtualMethodCall: this.type = this
-
-    final def astID = VirtualMethodCall.ASTID
+    final override def astID = VirtualMethodCall.ASTID
 
     override def toString: String = {
         val sig = descriptor.toJava(name)
@@ -528,8 +509,7 @@ case class StaticMethodCall[+V <: Var[V]](
 ) extends MethodCall[V] {
 
     final override def asStaticMethodCall: this.type = this
-
-    final def astID = StaticMethodCall.ASTID
+    final override def astID = StaticMethodCall.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -550,8 +530,7 @@ object StaticMethodCall {
 case class ExprStmt[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
 
     final override def asExprStmt: this.type = this
-
-    final def astID = ExprStmt.ASTID
+    final override def astID = ExprStmt.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
 
@@ -568,8 +547,7 @@ object ExprStmt {
 case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Stmt[V] {
 
     final override def asCheckcast: this.type = this
-
-    final def astID: Int = Checkcast.ASTID
+    final override def astID: Int = Checkcast.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
 

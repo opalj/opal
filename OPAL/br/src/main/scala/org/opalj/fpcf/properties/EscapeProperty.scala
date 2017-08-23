@@ -84,12 +84,11 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * object is accessed concurrently – the latter may be the goal of static analyses that find
  * concurrency bugs).
  *
- * The property values are totally ordered:
- * [[GlobalEscape]] < [[MaybeMethodEscape]] < [[MaybeArgEscape]] < [[MaybeNoEscape]] <
- * [[ConditionallyMethodEscape]] < [[ConditionallyArgEscape]] < [[ConditionallyNoEscape]] <
- * [[MethodEscape]] < [[ArgEscape]] < [[NoEscape]].
+ * The property values are partially ordered and form a lattice: //TODO describe the ordering
+ * //TODO see dot graph of the lattice
  * Algorithms are free to over approximate this property, i.e. for object
- * instance O with actual property P it is okay to say O has property P' if P > P'.
+ * instance O with actual property P it is okay to say O has property P' if P > P' (or in other
+ * words, P' is less restrictive than P).
  * If they simply don't know the actual property they should use [[MaybeNoEscape]].
  * If we know that the actual property is at most [[ArgEscape]] (i.e. not [[NoEscape]],
  * [[MaybeArgEscape]] should be used.
@@ -108,8 +107,12 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * Compilation and Deoptimization.” In Proceedings of the 1st ACM/USENIX International Conference
  * on Virtual Execution Environments, 111–120. VEE ’05. New York, NY, USA: ACM, 2005.
  *
- * @param  level The escape level; the higher the value the more restricted is the usage of the
- *         respective value. The precise value is subject to change without notice and should
+ * @param  level The escape level; the higher the value the more restricted can the usage of the
+ *         respective value be.
+ *         E.g., a client might only interested in objects that do not escape. In this case he
+ *         reject all objects whose escape level is smaller than the escape level of [[NoEscape]].
+ *         In the case of [[MaybeNoEscape]] he could run a more precise analysis.
+ *         The precise value is subject to change without notice and should
  *         not be used!
  *
  * @author Florian Kuebler
@@ -140,16 +143,17 @@ sealed abstract class EscapeProperty(
      *
      * @see [[EscapeProperty]] for further details.
      */
-    final def <=(that: EscapeProperty): Boolean = this.level <= that.level
+
+    def <=(that: EscapeProperty): Boolean
 
     /**
-     * Computes the lower bound of this and that property values.
+     * Computes the greatest lower bound of this and that property values.
      *
      * @param that the other escape property value.
      * @return this value if it is smaller or equal than that value, that otherwise.
      * @see [[EscapeProperty.<=]]
      */
-    def meet(that: EscapeProperty): EscapeProperty = if (this <= that) this else that
+    def meet(that: EscapeProperty): EscapeProperty
 
 }
 
@@ -177,11 +181,15 @@ object EscapeProperty extends EscapePropertyMetaInformation {
  *
  * @see [[EscapeProperty]] for further details.
  */
-case object NoEscape extends EscapeProperty(9) {
+case object NoEscape extends EscapeProperty(3) {
 
     final val isRefineable = false
 
     override def propertyName: String = "No"
+
+    override def meet(that: EscapeProperty): EscapeProperty = that
+
+    override final def <=(that: EscapeProperty): Boolean = if (this eq that) true else false
 }
 
 /**
@@ -210,10 +218,22 @@ case object NoEscape extends EscapeProperty(9) {
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
  */
-case object ArgEscape extends EscapeProperty(8) {
+case object ArgEscape extends EscapeProperty(2) {
     final val isRefineable = false
 
     override def propertyName: String = "Arg"
+
+    override def meet(that: EscapeProperty): EscapeProperty = that match {
+        case NoEscape      ⇒ this
+        case MaybeNoEscape ⇒ MaybeArgEscape
+        case _             ⇒ that
+    }
+
+    override def <=(that: EscapeProperty): Boolean = that match {
+        case NoEscape  ⇒ true
+        case ArgEscape ⇒ true
+        case _         ⇒ false
+    }
 }
 
 /**
@@ -225,8 +245,23 @@ case object ArgEscape extends EscapeProperty(8) {
  * @note This property does not refer to the identically named property defined by Kotzmann
  *       and Mössenböck
  */
-sealed abstract class MethodEscape extends EscapeProperty(7) {
+sealed abstract class MethodEscape extends EscapeProperty(1) {
     final val isRefineable = false
+
+    override def meet(that: EscapeProperty): EscapeProperty = that match {
+        case NoEscape       ⇒ this
+        case ArgEscape      ⇒ this
+        case MaybeNoEscape  ⇒ MaybeMethodEscape
+        case MaybeArgEscape ⇒ MaybeMethodEscape
+        case _              ⇒ that
+    }
+
+    override def <=(that: EscapeProperty): Boolean = that match {
+        case NoEscape        ⇒ true
+        case ArgEscape       ⇒ true
+        case _: MethodEscape ⇒ true
+        case _               ⇒ false
+    }
 }
 
 /**
@@ -313,45 +348,6 @@ case object MethodEscapeViaReturnAssignment extends MethodEscape {
 }
 
 /**
- * This states that an object instance could have the property [[NoEscape]] but also every other
- * final property value down to [[GlobalEscape]]. It will never be the final property value.
- * Used if we know that the escape property of an object instance on which its constructor was
- * called only depends on the escape property of the self reference of the called constructor.
- *
- * An object instance passed to a [[ConditionallyNoEscape]] constructor can be
- * at most [[ConditionallyNoEscape]] unless it is refined to [[NoEscape]].
- */
-case object ConditionallyNoEscape extends EscapeProperty(6) {
-    final val isRefineable: Boolean = true
-
-    override def propertyName: String = this.toString
-}
-
-/**
- * This states that an object instance is at most [[ArgEscape]], i.e. it will never be [[NoEscape]].
- * It will never be the final property value. Used if we know that the escape property of an object
- * instance, which was passed to a method, only depends on the escape property of the formal
- * parameter of the target method of the call.
- */
-case object ConditionallyArgEscape extends EscapeProperty(5) {
-    final val isRefineable: Boolean = true
-
-    override def propertyName: String = this.toString
-}
-
-/**
- * This states that an object instance is at most [[MethodEscape]], i.e. it could also be
- * [[GlobalEscape]] but not [[ArgEscape]] or [[NoEscape]]. It will never by the final property
- * value. Used if we know that the escape property of an object instance, which escapes the method, only
- * depends on the escape property of the references to this object for all callers.
- */
-case object ConditionallyMethodEscape extends EscapeProperty(4) {
-    final val isRefineable: Boolean = true
-
-    override def propertyName: String = this.toString
-}
-
-/**
  * Used, when we know nothing about the escape property so far.
  *
  * @see [[EscapeProperty]] for further details.
@@ -359,7 +355,21 @@ case object ConditionallyMethodEscape extends EscapeProperty(4) {
  */
 case object MaybeNoEscape extends EscapeProperty(3) { // TODO shouldn't "level" be "0" ... a refinement to MaybeArgEscape should be possible... right?
     final val isRefineable = true
+
     override def propertyName: String = "MaybeNo"
+
+    override def meet(that: EscapeProperty): EscapeProperty = that match {
+        case NoEscape        ⇒ this
+        case ArgEscape       ⇒ MaybeArgEscape
+        case _: MethodEscape ⇒ MaybeMethodEscape
+        case _               ⇒ that
+    }
+
+    override def <=(that: EscapeProperty): Boolean = that match {
+        case NoEscape      ⇒ true
+        case MaybeNoEscape ⇒ true
+        case _             ⇒ false
+    }
 }
 
 /**
@@ -374,6 +384,22 @@ case object MaybeArgEscape extends EscapeProperty(2) {
     final val isRefineable = true
 
     override def propertyName: String = "MaybeArg"
+
+    override def meet(that: EscapeProperty): EscapeProperty = that match {
+        case NoEscape        ⇒ this
+        case ArgEscape       ⇒ this
+        case MaybeNoEscape   ⇒ this
+        case _: MethodEscape ⇒ MaybeMethodEscape
+        case _               ⇒ that
+    }
+
+    override def <=(that: EscapeProperty): Boolean = that match {
+        case NoEscape       ⇒ true
+        case ArgEscape      ⇒ true
+        case MaybeNoEscape  ⇒ true
+        case MaybeArgEscape ⇒ true
+        case _              ⇒ false
+    }
 }
 
 /**
@@ -389,6 +415,16 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
     final val isRefineable = true
 
     override def propertyName: String = "MaybeMethod"
+
+    override def meet(that: EscapeProperty): EscapeProperty = that match {
+        case _: GlobalEscape ⇒ that
+        case _               ⇒ this
+    }
+
+    override def <=(that: EscapeProperty): Boolean = that match {
+        case _: GlobalEscape ⇒ false
+        case _               ⇒ true
+    }
 }
 
 /**
@@ -428,6 +464,8 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
  */
 sealed abstract class GlobalEscape extends EscapeProperty(0) {
     final val isRefineable = false
+    override def meet(that: EscapeProperty): EscapeProperty = this
+    override def <=(that: EscapeProperty): Boolean = true
 }
 
 /**

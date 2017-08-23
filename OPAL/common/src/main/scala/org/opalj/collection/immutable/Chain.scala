@@ -663,12 +663,15 @@ object Chain /* extends ChainLowPriorityImplicits */ {
      *           use the `singleton` method.
      */
     def apply[@specialized(Int) T](es: T*): Chain[T] = {
+        val naught = Naught
         if (es.isEmpty)
-            return Naught;
-        val result = new :&:[T](es.head, Naught)
+            return naught;
+        val result = new :&:[T](es.head, naught)
         var last = result
-        es.tail.foreach { e ⇒
-            val newLast = new :&:[T](e, Naught)
+        val it = es.iterator
+        it.next // es is non-empty
+        it foreach { e ⇒
+            val newLast = new :&:[T](e, naught)
             last.rest = newLast
             last = newLast
         }

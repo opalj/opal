@@ -1034,7 +1034,6 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         methodDescriptor: MethodDescriptor
     ): Option[Method] = {
 
-        // TODO [Java8] Support Extension Methods!
         assert(
             classHierarchy.isInterface(receiverType).isNoOrUnknown,
             s"${receiverType.toJava} is classified as an interface (looking up ${methodDescriptor.toJava(methodName)}); "+
