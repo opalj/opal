@@ -95,7 +95,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * restrictive than [[MethodEscape]]. The properties [[MaybeNoEscape]] and [[ArgEscape]] as well as
  * [[MaybeArgEscape]] and [[MethodEscape]] are incomparable.
  * A dot graph of the lattice can be found under br/src/main/resources/org/opalj/fpcf/properties.
- * 
+ *
  * Algorithms are free to over approximate this property, i.e. for object
  * instance O with actual property P it is okay to say O has property P' if P > P' (or in other
  * words, P' is less restrictive than P).
