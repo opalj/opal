@@ -1306,10 +1306,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     pc, nextPC, rest, locals, newFTOperands, newFTLocals
                                 )
                             }
-                            if (branchTargetPC > pc || operandsArray(branchTargetPC) == null) {
-                                //if (operandsArray(branchTargetPC) != null || operandsArray(nextPC) == null) {
-                                //if (operandsArray(branchTargetPC) == null && operandsArray(nextPC) != null) {
-                                //if (operandsArray(nextPC) == null) {
+                            if (branchTargetPC > pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,
