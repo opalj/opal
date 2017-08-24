@@ -43,8 +43,8 @@ import org.opalj.fpcf.properties.MutableType
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.ConditionallyImmutableType
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
-import org.opalj.fpcf.properties.UnknownObjectImmutability
-import org.opalj.fpcf.properties.ObjectImmutability
+import org.opalj.fpcf.properties.UnknownClassImmutability
+import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.MutableObjectDueToUnknownSupertypes
 import org.opalj.fpcf.properties.MutableObjectByAnalysis
 import org.opalj.fpcf.properties.MutableObject
@@ -73,7 +73,7 @@ import org.opalj.br.Field
  *
  * @author Michael Eichberg
  */
-class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
+class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /*
      * The analysis is implemented as an incremental analysis which starts with the analysis
      * of those types which directly inherit from java.lang.Object and then propagates the
@@ -98,7 +98,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
 
     @inline private[this] def createIncrementalResult(
         cf:           ClassFile,
-        cfMutability: ObjectImmutability,
+        cfMutability: ClassImmutability,
         result:       PropertyComputationResult
     ): IncrementalResult[ClassFile] = {
         var results: List[PropertyComputationResult] = List(result)
@@ -107,7 +107,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
         directSubtypes.foreach { t ⇒
             project.classFile(t) match {
                 case Some(scf) ⇒
-                    nextComputations ::= ((determineObjectImmutability(cf, cfMutability) _, scf))
+                    nextComputations ::= ((determineClassImmutability(cf, cfMutability) _, scf))
                 case None ⇒
                     OPALLogger.warn(
                         "project configuration - object immutability analysis",
@@ -128,9 +128,9 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
      *      must not be "MutableObject"; this case has to be handled explicitly. Hence,
      *      the mutability is either unknown, immutable or (at least) conditionally immutable.
      */
-    def determineObjectImmutability(
+    def determineClassImmutability(
         superClassFile:       ClassFile,
-        superClassMutability: ObjectImmutability
+        superClassMutability: ClassImmutability
     )(
         cf: ClassFile
     ): PropertyComputationResult = {
@@ -158,7 +158,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
         }
 
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
-        var maxLocalImmutability: ObjectImmutability = ImmutableObject
+        var maxLocalImmutability: ClassImmutability = ImmutableObject
         if (cf.fields.exists(f ⇒ !f.isStatic && f.fieldType.isArrayType)) {
             // IMPROVE We could analyze if the array is effectively final.
             // I.e., it is only initialized once (at construction time) and no reference to it
@@ -238,7 +238,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
             // <=> all fields are (effectively) final
             // <=> the type mutability of all fields is final
             //     (i.e., ImmutableType or ConditionallyImmutableType)
-            val immutability: ObjectImmutability = {
+            val immutability: ClassImmutability = {
                 if (maxLocalImmutability == ConditionallyImmutableObject)
                     ConditionallyImmutableObject
                 else
@@ -249,9 +249,9 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
 
         var currentSuperClassMutability = superClassMutability
 
-        val initialImmutability: ObjectImmutability = {
-            if (hasFieldsWithUnknownMutability || superClassMutability == UnknownObjectImmutability)
-                UnknownObjectImmutability
+        val initialImmutability: ClassImmutability = {
+            if (hasFieldsWithUnknownMutability || superClassMutability == UnknownClassImmutability)
+                UnknownClassImmutability
             else
                 AtLeastConditionallyImmutableObject
         }
@@ -280,7 +280,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
                         case ImmutableObject /* the super class */ ⇒
                             currentSuperClassMutability = ImmutableObject
                             dependees = dependees.filterNot { d ⇒
-                                (d.e eq e) && d.pk == ObjectImmutability.key
+                                (d.e eq e) && d.pk == ClassImmutability.key
                             }
 
                         case ConditionallyImmutableObject /* the super class */ ⇒
@@ -288,13 +288,13 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
                             maxLocalImmutability = ConditionallyImmutableObject
                             dependees = dependees.filterNot { d ⇒
                                 val pk = d.pk
-                                pk == TypeImmutability.key || pk == ObjectImmutability.key
+                                pk == TypeImmutability.key || pk == ClassImmutability.key
                             }
 
                         case AtLeastConditionallyImmutableObject ⇒
                             currentSuperClassMutability = AtLeastConditionallyImmutableObject
                             dependees = dependees.filterNot { d ⇒
-                                (d.e eq e) && d.pk == ObjectImmutability.key
+                                (d.e eq e) && d.pk == ClassImmutability.key
                             }
                             dependees = EP(e, p) :: dependees
 
@@ -351,7 +351,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
                     Result(cf, ImmutableObject)
 
             } else {
-                if (currentSuperClassMutability != UnknownObjectImmutability &&
+                if (currentSuperClassMutability != UnknownClassImmutability &&
                     !hasFieldsWithUnknownMutability) {
                     IntermediateResult(cf, AtLeastConditionallyImmutableObject, dependees, c)
                 } else {
@@ -371,11 +371,11 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
  *
  * @author Michael Eichberg
  */
-object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
+object ClassImmutabilityAnalysis extends FPCFAnalysisRunner {
 
     override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
-    override def derivedProperties: Set[PropertyKind] = Set(ObjectImmutability)
+    override def derivedProperties: Set[PropertyKind] = Set(ClassImmutability)
 
     override def usedProperties: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
 
@@ -387,7 +387,7 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
         import classHierarchy.isInterface
         implicit val logContext = project.logContext
 
-        val analysis = new ObjectImmutabilityAnalysis(project)
+        val analysis = new ClassImmutabilityAnalysis(project)
 
         // 1.1
         // java.lang.Object is by definition immutable.
@@ -434,7 +434,7 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
             }
 
         propertyStore.scheduleForEntities(cfs)(
-            analysis.determineObjectImmutability(null, ImmutableObject)
+            analysis.determineClassImmutability(null, ImmutableObject)
         )
 
         analysis
