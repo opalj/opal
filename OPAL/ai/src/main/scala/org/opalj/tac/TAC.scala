@@ -43,6 +43,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.OPALLogger
 import org.opalj.log.{Error ⇒ ErrorLogLevel}
+import org.opalj.bytecode.JRELibraryFolder
 
 /**
  * Creates the three-address representation for some method(s) and prints it to std out or writes
@@ -84,7 +85,7 @@ object TAC {
 
     def usage: String = {
         "Usage: java …TAC \n"+
-            "-source <JAR file/Folder containing class files>\n"+
+            "-source <JAR file/Folder containing class files>/-sourceJDK\n"+
             "[-sourceLib <JAR file/Folder containing library class files (which may be required to get precise/correct type information.>\n"+
             "[-domainValueInformation (prints detailed information about domain values)\n"+
             "[-class <class file name> (filters the set of classes)]\n"+
@@ -132,6 +133,7 @@ object TAC {
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")
 
+                case "-sourceJDK" ⇒ source = JRELibraryFolder.toString
                 case "-source"    ⇒ source = readNextArg()
                 case "-sourceLib" ⇒ sourceLib = Some(readNextArg())
                 case "-cfg"       ⇒ printCFG = true
