@@ -55,7 +55,7 @@ import org.opalj.br.cfg.CFG
  */
 case class TACode[P <: AnyRef, V <: Var[V]](
         params:            Parameters[P],
-        stmts:             Array[Stmt[V]], // CONST!!!
+        stmts:             Array[Stmt[V]], // CONST
         cfg:               CFG,
         exceptionHandlers: ExceptionHandlers,
         lineNumberTable:   Option[LineNumberTable]
