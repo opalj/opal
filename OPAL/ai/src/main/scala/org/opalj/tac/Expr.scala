@@ -97,6 +97,12 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
      */
     def subExprCount: Int
 
+    /**
+     * Returns the sub expression with the given index; if the index is wrong the
+     * result is undefined!
+     */
+    def subExpr(index: Int): Expr[V]
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 
     // TYPE CAST (RELATED) EXPRESSIONS
@@ -160,6 +166,7 @@ case class CaughtException[+V <: Var[V]](
      * It does not take any explicit value.
      */
     final override def subExprCount: Int = 0
+    final override def subExpr(index: Int): Expr[V] = throw new IndexOutOfBoundsException();
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         throwingStmts = throwingStmts map { stmt ⇒
@@ -209,6 +216,7 @@ case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceTyp
     final override def isSideEffectFree: Boolean = true
     final override def isVar: Boolean = false
     final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = value
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
@@ -235,6 +243,7 @@ case class Compare[+V <: Var[V]](
     final override def isSideEffectFree: Boolean = true
     final override def isVar: Boolean = false
     final override def subExprCount: Int = 2
+    final override def subExpr(index: Int): Expr[V] = if (index == 0) left else right
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
@@ -247,6 +256,7 @@ object Compare { final val ASTID = -4 }
 
 trait ValueExpr[+V <: Var[V]] extends Expr[V] {
     final override def subExprCount: Int = 0
+    final override def subExpr(index: Int): Expr[V] = throw new IndexOutOfBoundsException();
 }
 
 /**
@@ -376,6 +386,7 @@ case class BinaryExpr[+V <: Var[V]](
     final override def asBinaryExpr: this.type = this
     final override def astID: Int = BinaryExpr.ASTID
     final override def subExprCount: Int = 2
+    final override def subExpr(index: Int): Expr[V] = if (index == 0) left else right
 
     final override def isSideEffectFree: Boolean = {
         // For now, we have to consider a potential "div by zero exception";
@@ -410,6 +421,7 @@ case class PrefixExpr[+V <: Var[V]](
     final override def astID: Int = PrefixExpr.ASTID
     final override def isSideEffectFree: Boolean = true
     final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = operand
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
@@ -431,6 +443,7 @@ case class PrimitiveTypecastExpr[+V <: Var[V]](
     final override def cTpe: ComputationalType = targetTpe.computationalType
     final override def isSideEffectFree: Boolean = true
     final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = operand
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
@@ -452,6 +465,7 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
     final override def astID: Int = New.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
     final override def subExprCount: Int = 0
+    final override def subExpr(index: Int): Nothing = throw new IndexOutOfBoundsException();
 
     /**
      * Always returns `true` since the new instruction just allocates memory, but does NOT call the
@@ -476,6 +490,7 @@ case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) 
     final override def astID: Int = NewArray.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
     final override def subExprCount: Int = counts.size
+    final override def subExpr(index: Int): Expr[V] = counts(index)
 
     /**
      * Always returns `true` since the instruction just allocates memory. Hence, except of a
@@ -502,6 +517,7 @@ case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) ex
     final override def isSideEffectFree: Boolean = true
     final override def isVar: Boolean = false
     final override def subExprCount: Int = 2
+    final override def subExpr(index: Int): Expr[V] = if (index == 0) this.index else arrayRef
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         index.remapIndexes(pcToIndex)
@@ -520,6 +536,7 @@ case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends Expr[V] 
     final override def isSideEffectFree: Boolean = { assert(arrayRef.isVar); false /* potential NPE */ }
     final override def isVar: Boolean = false
     final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = arrayRef
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
@@ -549,6 +566,7 @@ case class GetField[+V <: Var[V]](
     final override def asGetField: this.type = this
     final override def astID: Int = GetField.ASTID
     final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = objRef
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         objRef.remapIndexes(pcToIndex)
@@ -573,6 +591,7 @@ case class GetStatic(
     final override def astID: Int = GetStatic.ASTID
     final override def isSideEffectFree: Boolean = true
     final override def subExprCount: Int = 0
+    final override def subExpr(index: Int): Nothing = throw new IndexOutOfBoundsException();
 
     override def toString: String = {
         s"GetStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava})"
@@ -595,6 +614,7 @@ case class Invokedynamic[+V <: Var[V]](
     // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
     final override def isSideEffectFree: Boolean = false
     final override def subExprCount: Int = params.size
+    final override def subExpr(index: Int): Expr[V] = params(index)
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -612,13 +632,14 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 
     final override def cTpe: ComputationalType = descriptor.returnType.computationalType
     final override def isVar: Boolean = false
-
+    final override def subExprCount: Int = params.size
+    final override def subExpr(index: Int): Expr[V] = params(index)
 }
 
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
+
     def receiver: Expr[V]
 
-    final override def subExprCount: Int = params.size + 1
 }
 
 /**
@@ -705,7 +726,6 @@ case class StaticFunctionCall[+V <: Var[V]](
     final override def asStaticFunctionCall: this.type = this
     final override def astID: Int = StaticFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
-    final override def subExprCount: Int = params.size
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
