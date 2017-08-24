@@ -84,8 +84,18 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * object is accessed concurrently – the latter may be the goal of static analyses that find
  * concurrency bugs).
  *
- * The property values are partially ordered and form a lattice: //TODO describe the ordering
- * //TODO see dot graph of the lattice
+ * The property values are partially ordered and form a lattice. The binary relation of the order is
+ * called `lessOrEqualRestrictive` and describes the restrictiveness of the scope in, which objects
+ * exists. The most restrictive (top) value is [[NoEscape]] and the least restrictive (bottom) one
+ * is [[GlobalEscape]]. We have [[GlobalEscape]] is less restrictive than [[MethodEscape]] is less
+ * restrictive than [[ArgEscape]] is less restrictive than [[NoEscape]]. Furthermore [[GlobalEscape]]
+ * is less restrictive than [[MaybeMethodEscape]] is less restrictive than [[MaybeArgEscape]] is
+ * less restrictive than [[MaybeNoEscape]] is less restrictive than [[NoEscape]]. Finally
+ * [[MaybeArgEscape]] is less restrictive than [[ArgEscape]] and [[MaybeMethodEscape]] is less
+ * restrictive than [[MethodEscape]]. The properties [[MaybeNoEscape]] and [[ArgEscape]] as well as
+ * [[MaybeArgEscape]] and [[MethodEscape]] are incomparable.
+ * A dot graph of the lattice can be found under br/src/main/resources/org/opalj/fpcf/properties.
+ * 
  * Algorithms are free to over approximate this property, i.e. for object
  * instance O with actual property P it is okay to say O has property P' if P > P' (or in other
  * words, P' is less restrictive than P).
@@ -139,19 +149,17 @@ sealed abstract class EscapeProperty(
      * E.g., returns `true` if this property identifies values which [[GlobalEscape]] and the given
      * property (`that`) refers to values that [[NoEscape]].
      *
-     * The test is based on the property's level [[EscapeProperty.level]].
-     *
      * @see [[EscapeProperty]] for further details.
      */
 
-    def <=(that: EscapeProperty): Boolean
+    def lessOrEqualRestrictive(that: EscapeProperty): Boolean
 
     /**
      * Computes the greatest lower bound of this and that property values.
      *
      * @param that the other escape property value.
-     * @return this value if it is smaller or equal than that value, that otherwise.
-     * @see [[EscapeProperty.<=]]
+     * @return the most restrictive escape that is less or equal restrictive than `this` and `that`.
+     * @see [[EscapeProperty.lessOrEqualRestrictive]]
      */
     def meet(that: EscapeProperty): EscapeProperty
 
@@ -189,7 +197,7 @@ case object NoEscape extends EscapeProperty(3) {
 
     override def meet(that: EscapeProperty): EscapeProperty = that
 
-    override final def <=(that: EscapeProperty): Boolean = if (this eq that) true else false
+    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean = if (this eq that) true else false
 }
 
 /**
@@ -229,7 +237,7 @@ case object ArgEscape extends EscapeProperty(2) {
         case _             ⇒ that
     }
 
-    override def <=(that: EscapeProperty): Boolean = that match {
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
         case NoEscape  ⇒ true
         case ArgEscape ⇒ true
         case _         ⇒ false
@@ -256,7 +264,7 @@ sealed abstract class MethodEscape extends EscapeProperty(1) {
         case _              ⇒ that
     }
 
-    override def <=(that: EscapeProperty): Boolean = that match {
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
         case NoEscape        ⇒ true
         case ArgEscape       ⇒ true
         case _: MethodEscape ⇒ true
@@ -365,7 +373,7 @@ case object MaybeNoEscape extends EscapeProperty(3) { // TODO shouldn't "level" 
         case _               ⇒ that
     }
 
-    override def <=(that: EscapeProperty): Boolean = that match {
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
         case NoEscape      ⇒ true
         case MaybeNoEscape ⇒ true
         case _             ⇒ false
@@ -393,7 +401,7 @@ case object MaybeArgEscape extends EscapeProperty(2) {
         case _               ⇒ that
     }
 
-    override def <=(that: EscapeProperty): Boolean = that match {
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
         case NoEscape       ⇒ true
         case ArgEscape      ⇒ true
         case MaybeNoEscape  ⇒ true
@@ -421,7 +429,7 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
         case _               ⇒ this
     }
 
-    override def <=(that: EscapeProperty): Boolean = that match {
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
         case _: GlobalEscape ⇒ false
         case _               ⇒ true
     }
@@ -465,7 +473,7 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
 sealed abstract class GlobalEscape extends EscapeProperty(0) {
     final val isRefineable = false
     override def meet(that: EscapeProperty): EscapeProperty = this
-    override def <=(that: EscapeProperty): Boolean = true
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
 }
 
 /**
