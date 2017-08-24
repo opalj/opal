@@ -32,10 +32,11 @@ package analysis
 
 import org.opalj.br.analyses.Project
 import java.net.URL
+
 import org.opalj.br.EnumValue
+import org.opalj.br.ElementValuePairs
 import org.opalj.br.ElementValuePair
 import org.opalj.br.analyses.AnalysisModeConfigFactory
-import scala.language.reflectiveCalls
 
 /**
  *
@@ -62,18 +63,18 @@ abstract class AbstractFixpointAnalysisAssumptionTest extends AbstractFixpointAn
      * PROPERTY VALIDATION
      */
 
-    override def propertyExtraction(annotation: AnnotationLike): Option[String] = {
+    override def propertyExtraction(elementValuePairs: ElementValuePairs): Option[String] = {
         analysisMode match {
             case AnalysisModes.LibraryWithOpenPackagesAssumption ⇒
-                annotation.elementValuePairs collectFirst (
+                elementValuePairs collectFirst (
                     { case ElementValuePair("opa", EnumValue(_, property)) ⇒ property }
                 )
             case AnalysisModes.LibraryWithClosedPackagesAssumption ⇒
-                annotation.elementValuePairs collectFirst (
+                elementValuePairs collectFirst (
                     { case ElementValuePair("cpa", EnumValue(_, property)) ⇒ property }
                 )
             case AnalysisModes.DesktopApplication | AnalysisModes.JEE6WebApplication ⇒
-                annotation.elementValuePairs collectFirst (
+                elementValuePairs collectFirst (
                     { case ElementValuePair("application", EnumValue(_, property)) ⇒ property }
                 )
         }
