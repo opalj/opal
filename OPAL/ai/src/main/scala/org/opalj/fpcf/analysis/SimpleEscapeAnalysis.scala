@@ -223,20 +223,20 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                 // check if the this local escapes in the callee
                                 val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
                                 escapeState match {
-                                    case EP(_, NoEscape)              ⇒
-                                    case EP(_, state: GlobalEscape)   ⇒ setWorst(state)
-                                    case EP(_, MaybeNoEscape)         ⇒ setWorst(MaybeNoEscape)
-                                    case EP(_, MaybeArgEscape)        ⇒ setWorst(MaybeArgEscape)
-                                    case EP(_, MaybeMethodEscape)     ⇒ setWorst(MaybeNoEscape)
-                                    case EP(_, ConditionallyNoEscape) ⇒ dependees += escapeState
+                                    case EP(_, NoEscape)            ⇒ //NOTHING TO DO
+                                    case EP(_, state: GlobalEscape) ⇒ setWorst(state) //TODO return
+                                    case EP(_, MaybeNoEscape)       ⇒ dependees += escapeState
+                                    case EP(_, MaybeArgEscape)      ⇒ setWorst(MaybeArgEscape)
+                                    //throw new RuntimeException("not yet implemented")
+                                    case EP(_, MaybeMethodEscape) ⇒
+                                        throw new RuntimeException("not yet implemented")
                                     case EP(_, _) ⇒
                                         throw new RuntimeException("not yet implemented")
                                     // result not yet finished
                                     case epk ⇒ dependees += epk
 
                                 }
-                            case /* unknown method */ _ ⇒
-                                setWorst(MaybeNoEscape)
+                            case /* unknown method */ _ ⇒ setWorst(MaybeNoEscape)
                         }
                     if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
                 }
@@ -257,7 +257,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             if (dependees.isEmpty)
                 Result(e, worstProperty)
             else
-                IntermediateResult(e, ConditionallyNoEscape, dependees, c)
+                IntermediateResult(e, MaybeNoEscape, dependees, c)
         }
 
         // Every entity that is not identified as escaping is not escaping
@@ -268,18 +268,21 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
         def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
             p match {
                 case state: GlobalEscape ⇒ Result(e, state)
-                case MaybeNoEscape       ⇒ meetAndFilter(other, MaybeNoEscape)
-                case MaybeArgEscape      ⇒ meetAndFilter(other, MaybeArgEscape)
-                case MaybeMethodEscape   ⇒ meetAndFilter(other, MaybeNoEscape) //TODO plausible?
                 case NoEscape            ⇒ meetAndFilter(other, NoEscape)
-                case ConditionallyNoEscape ⇒
-                    val newEP = EP(other, ConditionallyNoEscape)
-                    dependees = dependees.filter(_.e ne other) + newEP
-                    IntermediateResult(e, ConditionallyNoEscape, dependees, c)
+                case MaybeArgEscape      ⇒ meetAndFilter(other, MaybeArgEscape)
+                case MaybeNoEscape ⇒ u match {
+                    case IntermediateUpdate ⇒
+                        val newEP = EP(other, MaybeNoEscape)
+                        dependees = dependees.filter(_.e ne other) + newEP
+                        IntermediateResult(e, MaybeNoEscape, dependees, c)
+                    case _ ⇒ meetAndFilter(other, MaybeNoEscape)
+                }
+                //case MaybeMethodEscape ⇒ meetAndFilter(other, MaybeNoEscape) //TODO plausible?
+                case _ ⇒ throw new RuntimeException("not yet implemented")
             }
         }
 
-        IntermediateResult(e, ConditionallyNoEscape, dependees, c)
+        IntermediateResult(e, MaybeNoEscape, dependees, c)
     }
 
     /**
