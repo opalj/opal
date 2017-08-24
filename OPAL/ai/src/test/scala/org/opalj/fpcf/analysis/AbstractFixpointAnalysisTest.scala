@@ -328,8 +328,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         }
 
         val computedProperty = computedOProperty.p match {
-            case ExplicitlyNamedProperty(propertyName) => propertyName
-            case _ => computedOProperty.p.toString
+            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
+            case _                                     ⇒ computedOProperty.p.toString
         }
 
         if (computedProperty != expected) {
@@ -365,8 +365,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         }
 
         val computedProperty = computedOProperty.p match {
-            case ExplicitlyNamedProperty(propertyName) => propertyName
-            case _ => computedOProperty.p.toString
+            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
+            case _                                     ⇒ computedOProperty.p.toString
         }
 
         if (computedProperty != expected) {
@@ -398,8 +398,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         }
 
         val computedProperty = computedOProperty.p match {
-            case ExplicitlyNamedProperty(propertyName) => propertyName
-            case _ => computedOProperty.p.toString
+            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
+            case _                                     ⇒ computedOProperty.p.toString
         }
 
         if (computedProperty != expected) {
@@ -432,8 +432,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         }
 
         val computedProperty = computedOProperty.p match {
-            case ExplicitlyNamedProperty(propertyName) => propertyName
-            case _ => computedOProperty.p.toString
+            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
+            case _                                     ⇒ computedOProperty.p.toString
         }
 
         if (computedProperty != expected) {
