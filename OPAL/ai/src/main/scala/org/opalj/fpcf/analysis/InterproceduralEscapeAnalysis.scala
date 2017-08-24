@@ -223,13 +223,12 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                                 // check if the this local escapes in the callee
                                 val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
                                 escapeState match {
-                                    case EP(_, NoEscape)              ⇒
-                                    case EP(_, state: GlobalEscape)   ⇒ setWorst(state)
-                                    case EP(_, ArgEscape)             ⇒ setWorst(ArgEscape)
-                                    case EP(_, MaybeNoEscape)         ⇒ setWorst(MaybeNoEscape)
-                                    case EP(_, MaybeArgEscape)        ⇒ setWorst(MaybeArgEscape)
-                                    case EP(_, MaybeMethodEscape)     ⇒ setWorst(MaybeNoEscape)
-                                    case EP(_, ConditionallyNoEscape) ⇒ dependees += escapeState
+                                    case EP(_, NoEscape)            ⇒
+                                    case EP(_, state: GlobalEscape) ⇒ setWorst(state)
+                                    case EP(_, ArgEscape)           ⇒ setWorst(ArgEscape)
+                                    case EP(_, MaybeNoEscape)       ⇒ dependees += escapeState
+                                    case EP(_, MaybeArgEscape)      ⇒ dependees += escapeState
+                                    case EP(_, MaybeMethodEscape)   ⇒ dependees += escapeState
                                     case EP(_, x) ⇒
                                         throw new RuntimeException("not yet implemented "+x)
                                     // result not yet finished
@@ -299,10 +298,13 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                     case EP(_, NoEscape)            ⇒ setWorst(ArgEscape)
                     case EP(_, ArgEscape)           ⇒ setWorst(ArgEscape)
                     case EP(_, state: GlobalEscape) ⇒ setWorst(state)
-                    case EP(_, MaybeNoEscape)       ⇒ setWorst(MaybeArgEscape)
-                    case EP(_, MaybeArgEscape)      ⇒ setWorst(MaybeArgEscape)
-                    case EP(_, MaybeMethodEscape)   ⇒ setWorst(MaybeArgEscape)
-                    case EP(_, ConditionallyNoEscape) ⇒
+                    case EP(_, MaybeNoEscape) ⇒
+                        dependees += escapeState
+                        setWorst(ArgEscape)
+                    case EP(_, MaybeArgEscape) ⇒
+                        dependees += escapeState
+                        setWorst(ArgEscape)
+                    case EP(_, MaybeMethodEscape) ⇒
                         dependees += escapeState
                         setWorst(ArgEscape)
                     case EP(_, _) ⇒
@@ -325,7 +327,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
             if (dependees.isEmpty)
                 Result(e, worstProperty)
             else
-                IntermediateResult(e, ConditionallyNoEscape, dependees, c)
+                IntermediateResult(e, MaybeNoEscape meet worstProperty, dependees, c)
         }
 
         // Every entity that is not identified as escaping is not escaping
@@ -339,34 +341,63 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                 case FormalParameter(m, -1) if m.name == "<init>" ⇒ p match {
                     case state: GlobalEscape ⇒ Result(e, state)
                     //TODO cases
-                    case MaybeNoEscape       ⇒ meetAndFilter(other, MaybeNoEscape)
-                    case MaybeArgEscape      ⇒ meetAndFilter(other, MaybeArgEscape)
-                    case MaybeMethodEscape   ⇒ meetAndFilter(other, MaybeNoEscape)
-                    case NoEscape            ⇒ meetAndFilter(other, NoEscape)
-                    case ArgEscape           ⇒ meetAndFilter(other, ArgEscape)
-                    case ConditionallyNoEscape ⇒
-                        val newEP = EP(other, ConditionallyNoEscape)
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, ConditionallyNoEscape, dependees, c)
+                    case MaybeNoEscape ⇒
+                        u match {
+                            case IntermediateUpdate ⇒
+                                val newEP = EP(other, MaybeNoEscape)
+                                dependees = dependees.filter(_.e ne other) + newEP
+                                IntermediateResult(e, MaybeNoEscape, dependees, c)
+                            case _ ⇒ meetAndFilter(other, MaybeNoEscape)
+                        }
+                    case MaybeArgEscape ⇒
+                        u match {
+                            case IntermediateUpdate ⇒
+                                val newEP = EP(other, MaybeArgEscape)
+                                dependees = dependees.filter(_.e ne other) + newEP
+                                IntermediateResult(e, MaybeArgEscape, dependees, c)
+                            case _ ⇒ meetAndFilter(other, MaybeArgEscape)
+                        }
+                    case MaybeMethodEscape ⇒ u match {
+                        case IntermediateUpdate ⇒
+                            val newEP = EP(other, MaybeMethodEscape)
+                            dependees = dependees.filter(_.e ne other) + newEP
+                            IntermediateResult(e, MaybeNoEscape, dependees, c)
+                        case _ ⇒ meetAndFilter(other, MaybeNoEscape)
+                    }
+                    case NoEscape  ⇒ meetAndFilter(other, NoEscape)
+                    case ArgEscape ⇒ meetAndFilter(other, ArgEscape)
                 }
                 case FormalParameter(_, _) ⇒ p match {
                     case state: GlobalEscape ⇒ Result(e, state)
-                    case MaybeNoEscape       ⇒ meetAndFilter(other, MaybeArgEscape)
-                    case MaybeArgEscape      ⇒ meetAndFilter(other, MaybeArgEscape)
-                    case MaybeMethodEscape   ⇒ meetAndFilter(other, MaybeArgEscape)
-                    case ConditionallyNoEscape ⇒
-                        val newEP = EP(other, p.asInstanceOf[EscapeProperty])
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, ConditionallyNoEscape, dependees, c)
-
-                    case NoEscape  ⇒ meetAndFilter(other, ArgEscape)
-                    case ArgEscape ⇒ meetAndFilter(other, ArgEscape)
+                    case NoEscape            ⇒ meetAndFilter(other, ArgEscape)
+                    case ArgEscape           ⇒ meetAndFilter(other, ArgEscape)
+                    case MaybeNoEscape ⇒ u match {
+                        case IntermediateUpdate ⇒
+                            val newEP = EP(other, MaybeNoEscape)
+                            dependees = dependees.filter(_.e ne other) + newEP
+                            IntermediateResult(e, MaybeArgEscape meet worstProperty, dependees, c)
+                        case _ ⇒ meetAndFilter(other, MaybeArgEscape)
+                    }
+                    case MaybeArgEscape ⇒ u match {
+                        case IntermediateUpdate ⇒
+                            val newEP = EP(other, MaybeArgEscape)
+                            dependees = dependees.filter(_.e ne other) + newEP
+                            IntermediateResult(e, MaybeArgEscape meet worstProperty, dependees, c)
+                        case _ ⇒ meetAndFilter(other, MaybeArgEscape)
+                    }
+                    case MaybeMethodEscape ⇒ u match {
+                        case IntermediateUpdate ⇒
+                            val newEP = EP(other, MaybeMethodEscape)
+                            dependees = dependees.filter(_.e ne other) + newEP
+                            IntermediateResult(e, MaybeArgEscape meet worstProperty, dependees, c)
+                        case _ ⇒ meetAndFilter(other, MaybeArgEscape)
+                    }
                 }
             }
 
         }
 
-        IntermediateResult(e, ConditionallyNoEscape, dependees, c)
+        IntermediateResult(e, MaybeNoEscape meet worstProperty, dependees, c)
     }
 
     /**
