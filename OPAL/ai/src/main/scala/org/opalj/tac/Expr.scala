@@ -88,6 +88,15 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
      */
     def isSideEffectFree: Boolean
 
+    /**
+     * The number of sub expression directly referenced by this expression.
+     * A unary expression has one sub expression (the operand), a binary expression has
+     * two and a method has as many as explicit and implicit (`this`) parameters exist.
+     *
+     * @note Transitive dependencies are not counted.
+     */
+    def subExprCount: Int
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 
     // TYPE CAST (RELATED) EXPRESSIONS
@@ -147,6 +156,11 @@ case class CaughtException[+V <: Var[V]](
     final override def isVar: Boolean = false
     final override def isSideEffectFree: Boolean = false
 
+    /**
+     * It does not take any explicit value.
+     */
+    final override def subExprCount: Int = 0
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         throwingStmts = throwingStmts map { stmt ⇒
             if (ai.isVMLevelValue(stmt))
@@ -194,6 +208,7 @@ case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceTyp
     final override def cTpe: ComputationalType = ComputationalTypeInt
     final override def isSideEffectFree: Boolean = true
     final override def isVar: Boolean = false
+    final override def subExprCount: Int = 1
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
@@ -219,6 +234,7 @@ case class Compare[+V <: Var[V]](
     final override def cTpe: ComputationalType = ComputationalTypeInt
     final override def isSideEffectFree: Boolean = true
     final override def isVar: Boolean = false
+    final override def subExprCount: Int = 2
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
@@ -229,7 +245,9 @@ case class Compare[+V <: Var[V]](
 }
 object Compare { final val ASTID = -4 }
 
-trait ValueExpr[+V <: Var[V]] extends Expr[V]
+trait ValueExpr[+V <: Var[V]] extends Expr[V] {
+    final override def subExprCount: Int = 0
+}
 
 /**
  * Explicit reference to a parameter. Parameter statements '''are only used by the naive
@@ -357,6 +375,7 @@ case class BinaryExpr[+V <: Var[V]](
     final override def isVar: Boolean = false
     final override def asBinaryExpr: this.type = this
     final override def astID: Int = BinaryExpr.ASTID
+    final override def subExprCount: Int = 2
 
     final override def isSideEffectFree: Boolean = {
         // For now, we have to consider a potential "div by zero exception";
@@ -390,6 +409,7 @@ case class PrefixExpr[+V <: Var[V]](
     final override def asPrefixExpr: this.type = this
     final override def astID: Int = PrefixExpr.ASTID
     final override def isSideEffectFree: Boolean = true
+    final override def subExprCount: Int = 1
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
@@ -400,8 +420,9 @@ case class PrefixExpr[+V <: Var[V]](
 object PrefixExpr { final val ASTID = -15 }
 
 case class PrimitiveTypecastExpr[+V <: Var[V]](
-        pc: PC, targetTpe: BaseType,
-        operand: Expr[V]
+        pc:        PC,
+        targetTpe: BaseType,
+        operand:   Expr[V]
 ) extends Expr[V] {
 
     final override def isVar: Boolean = false
@@ -409,6 +430,7 @@ case class PrimitiveTypecastExpr[+V <: Var[V]](
     final override def astID: Int = PrimitiveTypecastExpr.ASTID
     final override def cTpe: ComputationalType = targetTpe.computationalType
     final override def isSideEffectFree: Boolean = true
+    final override def subExprCount: Int = 1
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
@@ -429,6 +451,8 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
     final override def asNew: this.type = this
     final override def astID: Int = New.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
+    final override def subExprCount: Int = 0
+
     /**
      * Always returns `true` since the new instruction just allocates memory, but does NOT call the
      * constructor. Hence, except of a `java.lang.OutOfMemoryError`. which we do not
@@ -451,6 +475,13 @@ case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) 
     final override def asNewArray: this.type = this
     final override def astID: Int = NewArray.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
+    final override def subExprCount: Int = counts.size
+
+    /**
+     * Always returns `true` since the instruction just allocates memory. Hence, except of a
+     * `java.lang.OutOfMemoryError`. which we do not model any further,
+     * nothing will happen if the value is not used any further.
+     */
     final override def isSideEffectFree: Boolean = true
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
@@ -470,6 +501,7 @@ case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) ex
     final override def cTpe: ComputationalType = ComputationalTypeReference
     final override def isSideEffectFree: Boolean = true
     final override def isVar: Boolean = false
+    final override def subExprCount: Int = 2
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         index.remapIndexes(pcToIndex)
@@ -485,8 +517,9 @@ case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends Expr[V] 
     final override def asArrayLength: this.type = this
     final override def astID: Int = ArrayLength.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeInt
-    final override def isSideEffectFree: Boolean = { assert(arrayRef.isVar); true }
+    final override def isSideEffectFree: Boolean = { assert(arrayRef.isVar); false /* potential NPE */ }
     final override def isVar: Boolean = false
+    final override def subExprCount: Int = 1
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
@@ -515,6 +548,7 @@ case class GetField[+V <: Var[V]](
 
     final override def asGetField: this.type = this
     final override def astID: Int = GetField.ASTID
+    final override def subExprCount: Int = 1
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         objRef.remapIndexes(pcToIndex)
@@ -538,6 +572,7 @@ case class GetStatic(
     final override def asGetStatic: this.type = this
     final override def astID: Int = GetStatic.ASTID
     final override def isSideEffectFree: Boolean = true
+    final override def subExprCount: Int = 0
 
     override def toString: String = {
         s"GetStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava})"
@@ -559,6 +594,7 @@ case class Invokedynamic[+V <: Var[V]](
     final override def cTpe: ComputationalType = descriptor.returnType.computationalType
     // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
     final override def isSideEffectFree: Boolean = false
+    final override def subExprCount: Int = params.size
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -581,6 +617,8 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
     def receiver: Expr[V]
+
+    final override def subExprCount: Int = params.size + 1
 }
 
 /**
@@ -667,6 +705,7 @@ case class StaticFunctionCall[+V <: Var[V]](
     final override def asStaticFunctionCall: this.type = this
     final override def astID: Int = StaticFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
+    final override def subExprCount: Int = params.size
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
