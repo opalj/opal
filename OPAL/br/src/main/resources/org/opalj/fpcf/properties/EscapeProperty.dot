@@ -1,0 +1,20 @@
+digraph item_set {
+NO [label = "NO" style=filled fillcolor="gray"];
+MAYBENO [label = "NO?" style=filled fillcolor="gray89"]
+
+A [label = "A" style=filled fillcolor="gray"]
+MAYBEA [label = "A?" style=filled fillcolor="gray89"]
+
+M [label = "M" style=filled fillcolor="gray"]
+MAYBEM [label = "M?" style=filled fillcolor="gray89"]
+
+G [label = "G" style=filled fillcolor="gray"]
+
+NO -> {A, MAYBENO} [dir = none];
+A -> {M, MAYBEA} [dir = none];
+M -> {MAYBEM} [dir = none];
+MAYBENO -> MAYBEA [dir = none];
+MAYBEA -> MAYBEM [dir = none];
+MAYBEM -> G [dir = none];
+
+ }
