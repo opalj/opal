@@ -40,11 +40,11 @@ import org.opalj.fpcf.properties.ExtensibleType
 import org.opalj.fpcf.properties.NotExtensibleType
 import org.opalj.fpcf.properties.MaybeExtensibleType
 import org.opalj.fpcf.properties.MutableType
-import org.opalj.fpcf.properties.UnknownObjectImmutability
+import org.opalj.fpcf.properties.UnknownClassImmutability
 import org.opalj.fpcf.properties.UnknownTypeImmutability
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableObject
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
-import org.opalj.fpcf.properties.ObjectImmutability
+import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.ConditionallyImmutableType
 import org.opalj.fpcf.properties.MutableObject
@@ -91,25 +91,25 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
             def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
                 p match {
-                    case UnknownObjectImmutability ⇒
+                    case UnknownClassImmutability ⇒
                         val dependees = Traversable(EP(e, p))
                         IntermediateResult(cf, UnknownTypeImmutability, dependees, c)
                     case AtLeastConditionallyImmutableObject ⇒
                         val dependees = Traversable(EP(e, p))
                         IntermediateResult(cf, AtLeastConditionallyImmutableType, dependees, c)
-                    case p: ObjectImmutability ⇒
+                    case p: ClassImmutability ⇒
                         assert(p.isFinal)
                         Result(cf, p.correspondingTypeImmutability)
                 }
             }
 
-            ps(cf, ObjectImmutability.key) match {
+            ps(cf, ClassImmutability.key) match {
                 case ep @ EP(_, p) ⇒
                     p match {
                         case _: MutableObject             ⇒ ImmediateResult(cf, MutableType)
                         case ImmutableObject              ⇒ ImmediateResult(cf, ImmutableType)
                         case ConditionallyImmutableObject ⇒ ImmediateResult(cf, ConditionallyImmutableType)
-                        case AtLeastConditionallyImmutableObject | UnknownObjectImmutability ⇒
+                        case AtLeastConditionallyImmutableObject | UnknownClassImmutability ⇒
                             // In this case we have a class who's immutability (type) depends
                             // on the immutability of its object OR where the immutability is
                             // not yet determined
@@ -282,7 +282,7 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(TypeImmutability)
 
-    override def usedProperties: Set[PropertyKind] = Set(ObjectImmutability, TypeExtensibility)
+    override def usedProperties: Set[PropertyKind] = Set(ClassImmutability, TypeExtensibility)
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new TypeImmutabilityAnalysis(project)
@@ -290,8 +290,9 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
         // An optimization if the analysis also includes the JDK.
         project.classFile(ObjectType.Object) foreach { ps.set(_, MutableType) }
 
-        ps <||< (
-            { case cf: ClassFile if (cf.thisType ne ObjectType.Object) ⇒ cf },
+        ps.scheduleForCollected {
+            case cf: ClassFile if (cf.thisType ne ObjectType.Object) ⇒ cf
+        }(
             analysis.step1
         )
 

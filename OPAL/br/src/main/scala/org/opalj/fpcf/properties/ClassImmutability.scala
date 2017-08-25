@@ -30,9 +30,9 @@ package org.opalj
 package fpcf
 package properties
 
-sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
+sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
-    final type Self = ObjectImmutability
+    final type Self = ClassImmutability
 
 }
 
@@ -103,29 +103,29 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * @author Andre Pacak
  * @author Michael Eichberg
  */
-sealed trait ObjectImmutability
+sealed trait ClassImmutability
     extends OrderedProperty
-    with ObjectImmutabilityPropertyMetaInformation {
+    with ClassImmutabilityPropertyMetaInformation {
 
     /**
-     * Returns the key used by all `ObjectImmutability` properties.
+     * Returns the key used by all `ClassImmutability` properties.
      */
-    final def key = ObjectImmutability.key
+    final def key = ClassImmutability.key
 
     def correspondingTypeImmutability: TypeImmutability
 
     def isMutable: Answer
 }
 /**
- * Common constants use by all [[ObjectImmutability]] properties associated with methods.
+ * Common constants use by all [[ClassImmutability]] properties associated with methods.
  */
-object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
+object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
 
     /**
-     * The key associated with every [[ObjectImmutability]] property.
+     * The key associated with every [[ClassImmutability]] property.
      */
-    final val key: PropertyKey[ObjectImmutability] = PropertyKey.create(
-        "ObjectImmutability",
+    final val key: PropertyKey[ClassImmutability] = PropertyKey.create(
+        "ClassImmutability",
         // The default property that will be used if no analysis is able
         // to (directly) compute the respective property.
         MutableObjectDueToUnresolvableDependency,
@@ -135,12 +135,12 @@ object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
     )
 }
 
-case object UnknownObjectImmutability extends ObjectImmutability {
+case object UnknownClassImmutability extends ClassImmutability {
     final val isRefineable = true
     final val correspondingTypeImmutability = UnknownTypeImmutability
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other == UnknownObjectImmutability)
+        if (other == UnknownClassImmutability)
             None
         else
             Some(s"impossible refinement of $other to $this")
@@ -157,7 +157,7 @@ case object UnknownObjectImmutability extends ObjectImmutability {
  * referred to by the instance in such a way that the client can observe the state change.
  *
  */
-case object ImmutableObject extends ObjectImmutability {
+case object ImmutableObject extends ClassImmutability {
     final val isRefineable = false
     final val correspondingTypeImmutability = ImmutableType
 
@@ -176,7 +176,7 @@ case object ImmutableObject extends ObjectImmutability {
  * possible for a client to set a field or to call a method that updates the internal state
  *
  */
-case object ConditionallyImmutableObject extends ObjectImmutability {
+case object ConditionallyImmutableObject extends ClassImmutability {
     final val isRefineable = false
     final val correspondingTypeImmutability = ConditionallyImmutableType
 
@@ -195,7 +195,7 @@ case object ConditionallyImmutableObject extends ObjectImmutability {
  * conditionally immutable, but has not yet analyzed all dependencies and - therefore - cannot
  * make a final decision whether the class is immutable.
  */
-case object AtLeastConditionallyImmutableObject extends ObjectImmutability {
+case object AtLeastConditionallyImmutableObject extends ClassImmutability {
     final val isRefineable = true
     final val correspondingTypeImmutability = AtLeastConditionallyImmutableType
 
@@ -209,7 +209,7 @@ case object AtLeastConditionallyImmutableObject extends ObjectImmutability {
     final def isMutable: Answer = No
 }
 
-sealed trait MutableObject extends ObjectImmutability {
+sealed trait MutableObject extends ClassImmutability {
     final val isRefineable = false
     val reason: String
     final val correspondingTypeImmutability = MutableType

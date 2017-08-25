@@ -1224,15 +1224,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 )
                             }
 
-                            // In the following we apply a heuristic to minimize the number
-                            // of evaluation steps:
-                            if (branchTargetPC > pc) { //                                                    22203130
-                                // if (operandsArray(branchTargetPC) != null || operandsArray(nextPC) == null) { // 22212781
-                                // if (operandsArray(branchTargetPC) == null && operandsArray(nextPC) != null) { // 22214663
-                                // if (operandsArray(nextPC) == null) {                                          // 22228332
-                                // in case of a loop (a jump back) we first evaluate the loop;
-                                // i.e., we first schedule the fall-through case, because
-                                // we generally perform a depth-first evaluation
+                            // We have empirically evaluated which strategy leads to the minimal
+                            // number of instruction evaluations and the following test does:
+                            if (branchTargetPC > pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,
@@ -1244,9 +1238,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     newBTOperands, newBTLocals
                                 )
                             } else {
-                                // if we have a jump forward, first evaluate the fall through;
-                                // i.e., first schedule the branch target, then the fall through
-                                // case; the latter is eventually evaluated next
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     branchTargetPC, isExceptionalControlFlow = false,
@@ -1315,10 +1306,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     pc, nextPC, rest, locals, newFTOperands, newFTLocals
                                 )
                             }
-                            if (branchTargetPC > pc || operandsArray(branchTargetPC) == null) {
-                                //if (operandsArray(branchTargetPC) != null || operandsArray(nextPC) == null) {
-                                //if (operandsArray(branchTargetPC) == null && operandsArray(nextPC) != null) {
-                                //if (operandsArray(nextPC) == null) {
+                            if (branchTargetPC > pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,

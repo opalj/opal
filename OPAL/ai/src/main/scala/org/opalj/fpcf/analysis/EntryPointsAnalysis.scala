@@ -46,9 +46,7 @@ import org.opalj.br.VoidType
  *
  * @author Michael Reif
  */
-class EntryPointsAnalysis private (
-        val project: SomeProject
-) extends FPCFAnalysis {
+class EntryPointsAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     val MainMethodDescriptor = MethodDescriptor(ArrayType(ObjectType.String), VoidType)
 
@@ -67,35 +65,31 @@ class EntryPointsAnalysis private (
 
 object EntryPointsAnalysis extends FPCFAnalysisRunner {
 
-    final def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isAbstract && !m.isNative ⇒ m
-    }
-
     override def derivedProperties: Set[PropertyKind] = Set(EntryPoint.Key)
-    override def usedProperties: Set[PropertyKind] = Set.empty
-    override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    override def usedProperties: Set[PropertyKind] = Set.empty
+
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         import AnalysisModes._
+        val ms = project.allMethods.filter(m ⇒ !m.isAbstract && !m.isNative)
         project.analysisMode match {
             case DesktopApplication ⇒
                 val analysis = new EntryPointsAnalysis(project)
-                propertyStore <||< (entitySelector, analysis.determineEntrypoints)
+                propertyStore.scheduleForEntities(ms)(analysis.determineEntrypoints)
                 analysis
             case JEE6WebApplication ⇒
-                val analysis = new JavaEEEntryPointsAnalysis(project)
-                propertyStore <||< (JavaEEEntryPointsAnalysis.entitySelector, analysis.determineEntrypoints)
-                analysis
+                val jEEAnalysis = new JavaEEEntryPointsAnalysis(project)
+                propertyStore.scheduleForCollected(JavaEEEntryPointsAnalysis.entitySelector)(
+                    jEEAnalysis.determineEntrypoints
+                )
+                jEEAnalysis
             case (CPA | OPA) ⇒
                 val analysis = new LibraryEntryPointsAnalysis(project)
                 val analysisRunner = project.get(FPCFAnalysesManagerKey)
                 analysisRunner.run(SimpleInstantiabilityAnalysis)
                 analysisRunner.run(CallableFromClassesInOtherPackagesAnalysis)
                 analysisRunner.run(MethodAccessibilityAnalysis)
-                propertyStore <||< (entitySelector, analysis.determineEntrypoints)
+                propertyStore.scheduleForEntities(ms)(analysis.determineEntrypoints)
                 analysis
         }
     }

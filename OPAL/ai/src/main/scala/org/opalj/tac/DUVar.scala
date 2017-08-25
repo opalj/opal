@@ -123,6 +123,14 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
 
     assert(origin >= 0)
 
+    def copy[V >: Value <: org.opalj.ai.ValuesDomain#DomainValue](
+        origin:   ValueOrigin = this.origin,
+        value:    V           = this.value,
+        useSites: IntSet      = this.useSites
+    ): DVar[V] = {
+        new DVar(origin, value, useSites)
+    }
+
     def definedBy: Nothing = throw new UnsupportedOperationException
 
     /**

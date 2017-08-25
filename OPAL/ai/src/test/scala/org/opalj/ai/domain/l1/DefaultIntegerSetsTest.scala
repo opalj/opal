@@ -1440,9 +1440,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                     // when we perform a depth-first evaluation we do not want to
                     // evaluate the same instruction with the same abstract state
                     // multiple times
-                    result.evaluated.head should be(24)
-                    result.evaluated.tail.head should be(23)
-                    result.evaluated.tail.tail.head should be(20)
+                    result.evaluated.size should be(39)
                 }
 
                 it("it should handle cases where we have more complex aliasing") {

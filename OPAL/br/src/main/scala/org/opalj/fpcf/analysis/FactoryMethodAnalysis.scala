@@ -126,16 +126,14 @@ object FactoryMethodAnalysis extends FPCFAnalysisRunner {
 
     def derivedProperties: Set[PropertyKind] = Set(FactoryMethod)
 
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
-        /* Selects all non-abstract static methods. */
-        def entitySelector: PartialFunction[Entity, Method] = {
-            case m: Method if m.isStatic && !m.isAbstract ⇒ m
-        }
+    protected[fpcf] def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new FactoryMethodAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
+        propertyStore.scheduleForCollected {
+            /* Selects all non-abstract static methods. */
+            case m: Method if m.isStatic && !m.isAbstract ⇒ m
+        }(
+            analysis.determineProperty
+        )
         analysis
     }
 }

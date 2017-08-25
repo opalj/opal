@@ -101,15 +101,18 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
 
 object AdvancedFieldMutabilityAnalysis extends FPCFAnalysisRunner {
 
-    def entitySelector(project: SomeProject): PartialFunction[Entity, ClassFile] = {
-        case cf: ClassFile if !project.libraryClassFilesAreInterfacesOnly || !project.isLibraryType(cf) ⇒ cf
-    }
-
     def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new AdvancedFieldMutabilityAnalysis(project)
-        propertyStore <||< (entitySelector(project), analysis.determineFieldMutabilities)
+        propertyStore.scheduleForCollected {
+            case cf: ClassFile if (
+                !project.libraryClassFilesAreInterfacesOnly || !project.isLibraryType(cf)
+            ) ⇒
+                cf
+        }(
+            analysis.determineFieldMutabilities
+        )
         analysis
     }
 }
