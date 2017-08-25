@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
- package extensible_classes.transitivity.case4;
+package extensible_classes.transitivity.case3;
 
- public class UnknownSupertype<E> extends java.util.HashSet<E> {
+public final class PublicFinalClass extends PublicClass {
 
-     static final long serialVersionUID = 4L;
- }
+}

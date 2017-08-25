@@ -1,5 +1,4 @@
-/*
- * BSD 2-Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
@@ -27,13 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+package extensible_classes.transitivity.case2;
 
-package extensible_classes.transitivity.case3;
+/* @author Michael Reif */
 
-public class EffectivelyFinalClass extends PublicClass {
+// Not extensible when this package is considered closed.
+class Class { }
 
-    private EffectivelyFinalClass(){
-        // don't instantiable.
-    }
-}
+interface Interface { }
 
+public final class TestCase extends Class implements Interface { }
+
+class PackageVisibleSubclass extends Class implements Interface { }

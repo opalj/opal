@@ -26,25 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package extensible_classes.transitivity.case2;
+package extensible_classes.transitivity.case3;
 
-/**
- *
- * @author Michael Reif
- */
-public final class TestCase extends Class implements Interface {
+public class EffectivelyFinalClass extends PublicClass {
 
-}
-
-class PackageVisibleSubclass extends Class implements Interface {
-
-}
-
-interface Interface {
-
-}
-
-// not extensible when this package is considered closed.
-class Class {
-
+    private EffectivelyFinalClass(){
+        // not instantiable
+    }
 }

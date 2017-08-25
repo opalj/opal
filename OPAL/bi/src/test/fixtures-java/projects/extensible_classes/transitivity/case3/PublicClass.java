@@ -1,5 +1,4 @@
-/*
- * BSD 2-Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
@@ -27,11 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package extensible_classes.visibility;
+package extensible_classes.transitivity.case3;
 
-public class PublicClassWithPrivConstructors {
+public class PublicClass {
 
-    private PublicClassWithPrivConstructors(){
+}
 
-    }
+class Class extends PublicClass {
+
 }
