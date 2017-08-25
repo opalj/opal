@@ -962,6 +962,8 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         final val fqn: String
 ) extends ReferenceType {
 
+    assert(fqn.indexOf('.') == -1, s"invalid object type name: $fqn")
+
     override def isObjectType: Boolean = true
 
     override def asObjectType: ObjectType = this

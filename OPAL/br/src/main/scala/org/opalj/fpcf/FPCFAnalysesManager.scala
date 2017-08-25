@@ -61,14 +61,11 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         derivedProperties ++= analysisRunner.derivedProperties.map(_.id)
     }
 
-    final def runAll(analyses: FPCFAnalysisRunner*): Unit = {
-        runAll(analyses)(true)
-    }
+    final def runAll(analyses: FPCFAnalysisRunner*): Unit = runAll(analyses, true)
 
     final def runAll(
-        analyses: Traversable[FPCFAnalysisRunner]
-    )(
-        waitOnCompletion: Boolean = true
+        analyses:         Traversable[FPCFAnalysisRunner],
+        waitOnCompletion: Boolean                         = true
     ): Unit = {
         analyses.foreach { run(_, false) }
         if (waitOnCompletion)
@@ -100,16 +97,6 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
                 "project configuration",
                 s"the analysis ${analysisRunner.name} is running/was executed for this project"
             )(project.logContext)
-        }
-    }
-
-    def runWithRecommended(runner: FPCFAnalysisRunner)(waitOnCompletion: Boolean = true): Unit = {
-        if (!isDerived(runner.derivedProperties)) {
-            val analyses =
-                (runner.recommendations ++ runner.requirements).
-                    filterNot { ar ⇒ isDerived(ar.derivedProperties) }
-            runAll(analyses)(false)
-            run(runner, waitOnCompletion)
         }
     }
 

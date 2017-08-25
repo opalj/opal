@@ -45,7 +45,7 @@ abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssump
 
     override def testFilePath = "ai"
 
-    override def analysisRunner = CallableFromClassesInOtherPackagesAnalysis
+    override def analysisRunners = Seq(CallableFromClassesInOtherPackagesAnalysis)
 
     override def propertyKey: PropertyKey[ClientCallable] = ClientCallable.Key
 

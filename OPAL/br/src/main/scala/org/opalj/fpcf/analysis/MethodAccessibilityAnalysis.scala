@@ -158,10 +158,6 @@ object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
         analysis
     }
 
-    override def recommendations: Set[FPCFAnalysisRunner] = {
-        Set(CallableFromClassesInOtherPackagesAnalysis)
-    }
-
     override def derivedProperties: Set[PropertyKind] = {
         Set(ProjectAccessibility.Key)
     }
@@ -175,10 +171,6 @@ object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
  * Companion object for the [[StaticMethodAccessibilityAnalysis]] class.
  */
 object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner {
-
-    override def recommendations: Set[FPCFAnalysisRunner] = {
-        Set(CallableFromClassesInOtherPackagesAnalysis)
-    }
 
     override def derivedProperties: Set[PropertyKind] = {
         Set(ProjectAccessibility.Key)

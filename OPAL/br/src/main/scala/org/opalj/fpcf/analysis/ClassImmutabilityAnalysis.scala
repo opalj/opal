@@ -373,8 +373,6 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
  */
 object ClassImmutabilityAnalysis extends FPCFAnalysisRunner {
 
-    override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
-
     override def derivedProperties: Set[PropertyKind] = Set(ClassImmutability)
 
     override def usedProperties: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
