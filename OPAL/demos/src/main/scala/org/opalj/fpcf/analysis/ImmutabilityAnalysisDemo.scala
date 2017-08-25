@@ -42,7 +42,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 
-import org.opalj.fpcf.properties.ObjectImmutability
+import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.ExtensibleType
 
@@ -115,7 +115,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
         manager.runAll(TypeExtensibilityAnalysis, FieldMutabilityAnalysis)
 
         time {
-            manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
+            manager.runAll(ClassImmutabilityAnalysis, TypeImmutabilityAnalysis)
         } { r ⇒ analysisTime = r }
 
         println(s"\nsetup: ${setupTime.toSeconds}; analysis: ${analysisTime.toSeconds}")
@@ -129,7 +129,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
                     mkString("\n\t\t\t", "\n\t\t\t", "\n")
 
             val immutableClasses =
-                projectStore.entities(ObjectImmutability.key).
+                projectStore.entities(ClassImmutability.key).
                     filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
                     groupBy { _.p }.map { kv ⇒
                         (

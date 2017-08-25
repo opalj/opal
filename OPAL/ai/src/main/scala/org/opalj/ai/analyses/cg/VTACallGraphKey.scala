@@ -53,7 +53,7 @@ import org.opalj.br.analyses.InjectedClassesInformationKey
  * @author Michael Eichberg
  * @author Michael Reif
  */
-object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
+object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph, Nothing] {
 
     override protected def requirements =
         Seq(

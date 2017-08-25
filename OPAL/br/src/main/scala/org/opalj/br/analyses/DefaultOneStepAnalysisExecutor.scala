@@ -39,9 +39,9 @@ import java.net.URL
  * @author Michael Eichberg
  */
 abstract class DefaultOneStepAnalysis
-        extends AnalysisExecutor
-        with OneStepAnalysis[URL, BasicReport] {
+    extends AnalysisExecutor
+    with OneStepAnalysis[URL, BasicReport] {
 
-    final override val analysis = this
+    final override val analysis: DefaultOneStepAnalysis = this
 
 }

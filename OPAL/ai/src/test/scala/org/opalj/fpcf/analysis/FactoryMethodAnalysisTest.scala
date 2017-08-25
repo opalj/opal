@@ -44,7 +44,7 @@ class FactoryMethodAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def testFilePath = "ai"
 
-    override def analysisRunner = FactoryMethodAnalysis
+    override def analysisRunners = Seq(FactoryMethodAnalysis)
 
     override def propertyKey: PropertyKey[FactoryMethod] = FactoryMethod.key
 

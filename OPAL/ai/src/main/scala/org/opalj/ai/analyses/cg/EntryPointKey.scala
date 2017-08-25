@@ -88,7 +88,7 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Michael Reif
  */
-object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
+object EntryPointKey extends ProjectInformationKey[EntryPointInformation, Nothing] {
 
     override protected def requirements = Seq(
         FPCFAnalysesManagerKey,
@@ -99,9 +99,9 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
     override protected def compute(project: SomeProject): EntryPointInformation = {
         val fpcfManager = project.get(FPCFAnalysesManagerKey)
         if (!fpcfManager.isDerived(EntryPointsAnalysis.derivedProperties))
-            fpcfManager.runWithRecommended(EntryPointsAnalysis)(true)
+            fpcfManager.run(EntryPointsAnalysis)
         else
-            OPALLogger.warn(
+            OPALLogger.info(
                 "analysis",
                 "entry points were already computed; the already available entry points are used"
             )(project.logContext)
@@ -120,7 +120,7 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
         if (!project.config.hasPath("org.opalj.callgraph.entryPoints")) {
             OPALLogger.info(
                 "project configuration",
-                "configruation key org.opalj.callgraph.entryPoints is missing; "+
+                "configuration key org.opalj.callgraph.entryPoints is missing; "+
                     "no additional entry points configured"
             )
             return entryPoints;
@@ -132,14 +132,14 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
                 case e: Throwable ⇒
                     OPALLogger.error(
                         "project configuration - recoverable",
-                        "configruation key org.opalj.callgraph.entryPoints is invalid; "+
+                        "configuration key org.opalj.callgraph.entryPoints is invalid; "+
                             "see EntryPointKey documentation",
                         e
                     )
                     return entryPoints;
             }
 
-        configEntryPoints map { ep ⇒
+        configEntryPoints foreach { ep ⇒
             val EntryPointContainer(declClass, name, descriptor) = ep
 
             project.classFile(ObjectType(declClass)) match {
@@ -190,9 +190,9 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation] {
 
 /* Needed by the `ArbitraryTypeReader` of ficus. */
 case class EntryPointContainer(
-    declaringClass: String,
-    name:           String,
-    descriptor:     Option[String]
+        declaringClass: String,
+        name:           String,
+        descriptor:     Option[String]
 )
 
 class EntryPointInformation(propertyStore: PropertyStore, configuredEntryPoints: Set[Method]) {

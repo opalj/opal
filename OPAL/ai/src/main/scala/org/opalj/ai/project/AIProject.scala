@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,8 +30,8 @@ package org.opalj
 package ai
 package project
 
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.{Project, ReportableAnalysisResult}
 
 /**
@@ -65,7 +65,7 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
      * The analysis of all entry points may happen concurrently unless
      * [[analyzeInParallel]] is `false`.
      */
-    def domain(project: Project[Source], classFile: ClassFile, method: Method): D
+    def domain(project: Project[Source], method: Method): D
 
     /**
      * A project's entry points.
@@ -85,7 +85,7 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
      *
      * @return All methods that are potential entry points.
      */
-    def entryPoints(project: Project[Source]): Iterable[(ClassFile, Method)]
+    def entryPoints(project: Project[Source]): Iterable[Method]
 
     /**
      * Analyzes the given project by first determining the entry points of the analysis
@@ -97,15 +97,11 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
      *      it is recommended to first analyze the parameters and afterwards to call
      *      this method using `super.analyze(...)`.
      */
-    def analyze(
-        project:    Project[Source],
-        parameters: Seq[String]
-    ): ReportableAnalysisResult = {
+    def analyze(project: Project[Source], parameters: Seq[String]): ReportableAnalysisResult = {
 
-        val analyze: ((ClassFile, Method)) ⇒ Option[String] = { cf_m: (ClassFile, Method) ⇒
-            val (classFile: ClassFile, method: Method) = cf_m
-            val theDomain = domain(project, classFile, method)
-            ai(classFile, method, theDomain)
+        val analyze: Method ⇒ Option[String] = { m: Method ⇒
+            val theDomain = domain(project, m)
+            ai(m, theDomain)
             theDomain.report
         }
 
@@ -116,9 +112,6 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
                 entryPoints(project) map { analyze }
 
         val theReports = reports.filter(_.isDefined).map(_.get)
-        br.analyses.BasicReport(
-            "Number of reports: "+theReports.size+"\n"+theReports.mkString("\n")
-        )
+        BasicReport("Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
     }
 }
-

@@ -53,6 +53,22 @@ public class ReferenceValuesFrenzy {
     // Test methods/Test Fixture
     //
 
+    static Object paramAsVar(Object o) {
+        do {
+            o = new Object();
+        } while (o.hashCode() % 3 == 0);
+        return o;
+    }
+
+    static Object handlingExceptions(Object o) {
+        try {
+            o = new Object();
+        } catch (Exception e) {
+            return o/*this is the parameter...*/;
+        }
+        return o;
+    }
+
     static boolean complexRefinement() {
         // get the lastChild of result.
         Object lastChild = maybeNull();

@@ -28,6 +28,10 @@
  */
 package pureness;
 
+import annotations.property.EP;
+import annotations.purity.Purity;
+import static annotations.purity.PurityKeys.*;
+
 /**
  * Some Demo code to test/demonstrate the complexity related to calculating the purity of
  * methods in the presence of mutual recursive methods.
@@ -39,22 +43,27 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
 
     private static int myValue = -1; /* the FieldMutabilityAnalysis is required to determine that this field is effectivelyFinal  */
 
+    @Purity(Pure)
     private Demo() {
         /* empty */
     }
 
+    @Purity(Pure)
     public Demo pureIdentity() {
         return this;
     }
 
+    @Purity(Pure)
     public static int pureUsesEffectivelyFinalField(int i, int j) {
         return i % j * myValue;
     }
 
+    @Purity(Pure)
     public static int pureSimpleRecursiveCall(int i, int j) {
         return i % 3 == 0 ? pureSimpleRecursiveCall(i, 0) : pureSimpleRecursiveCall(0, j);
     }
 
+    @Purity(Impure)
     public static int impureCallsSystemFunction(int i) {
         return (int) (i * System.nanoTime());
     }
@@ -62,10 +71,12 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
     // --------------------------------------------------------------------------------------------
     // The following two methods are mutually dependent and are pure.
     //
+    @Purity(Pure)
     static int pureMutualRecursiveCall1(int i) {
         return i < 0 ? i : pureMutualRecursiveCall2(i - 10);
     }
 
+    @Purity(Pure)
     static int pureMutualRecursiveCall2(int i) {
         return i % 2 == 0 ? i : pureMutualRecursiveCall1(i - 1);
     }
@@ -73,10 +84,12 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
     // --------------------------------------------------------------------------------------------
     // The following methods are not directly involved in a  mutually recursive dependency, but
     // require information about a set of mutually recursive dependent methods.
+    @Purity(Pure)
     static int pureCallsMutuallyRecursivePureMethods(int i) { // also observed by other methods
         return pureMutualRecursiveCall1(i) + pureMutualRecursiveCall2(i);
     }
 
+    @Purity(Pure)
     static int pureUnusedCallsMutuallyRecursivePureMethods(int i) {
         return pureMutualRecursiveCall1(i) + pureMutualRecursiveCall2(i);
     }
@@ -85,12 +98,14 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
     // The following two methods are mutually dependent and use an impure method.
     //
 
+    @Purity(Impure)
     static int impureMutuallyRecursiveCallCallsImpure1(int i) {
         return i < 0 ?
                 pureSimpleRecursiveCall(i, 0) :
                     impureMutuallyRecursiveCallCallsImpure2(i - 10);
     }
 
+    @Purity(Impure)
     static int impureMutuallyRecursiveCallCallsImpure2(int i) {
         return i % 2 == 0 ?
                 impureCallsSystemFunction(i) :
@@ -100,14 +115,17 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
     // --------------------------------------------------------------------------------------------
     // All three methods are actually pure but have a dependency on each other...
     //
+    @Purity(Pure)
     static int pureCyclicRecursiveCall1(int i) {
         return i < 0 ? i : pureCyclicRecursiveCall2(i - 10);
     }
 
+    @Purity(Pure)
     static int pureCyclicRecursiveCall2(int i) {
         return i % 2 == 0 ? i : pureCyclicRecursiveCall3(i - 1);
     }
 
+    @Purity(Pure)
     static int pureCyclicRecursiveCall3(int i) {
         return i % 4 == 0 ? i : pureCyclicRecursiveCall1(i - 1);
     }
@@ -117,26 +135,32 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
     // which we don't know if do not analyze the JDK!
     //
 
+    @Purity(value=Pure, eps = {@EP(e="java/lang/Math.abs(I)I", p="Pure")})
     static int cpureCallsAbs(int i) {
         return Math.abs(i) * 21;
     }
 
+    @Purity(value=Pure, eps = {@EP(e="java/lang/Math.abs(I)I", p="Pure")})
     static int cpureCallsAbsCallee(int i) {
         return cpureCallsAbs(i / 21);
     }
 
+    @Purity(value=Pure, eps = {@EP(e="java/lang/Math.abs(I)I", p="Pure")})
     static int cpureCallsAbsCalleeCallee1(int i) {
         return cpureCallsAbsCallee(i / 21);
     }
 
+    @Purity(value=Pure, eps = {@EP(e="java/lang/Math.abs(I)I", p="Pure")})
     static int cpureCallsAbsCalleeCallee2(int i) {
         return cpureCallsAbsCallee(i / 21);
     }
 
+    @Purity(value=Pure, eps = {@EP(e="java/lang/Math.abs(I)I", p="Pure")})
     static int cpureCallsAbsCalleeCalleeCalle(int i) {
         return cpureCallsAbsCalleeCallee1(i / 21) * cpureCallsAbsCalleeCallee2(i / 21);
     }
 
+    @Purity(value=Pure, eps = {@EP(e="java/lang/Math.abs(I)I", p="Pure")})
     static int cpureCallsAbsCalleeCalleeCalleCallee(int i) {
         return cpureCallsAbsCalleeCalleeCalle(1299);
     }
@@ -145,14 +169,17 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
     // All methods are involved in multiple cycles of dependent methods; one calls an impure method.
     //
 
+    @Purity(Impure)
     static int impureRecursiveCallWithDependency1(int i) {
         return i < 0 ? i : impureRecursiveCallWithDependency2(i - 10);
     }
 
+    @Purity(Impure)
     static int impureRecursiveCallWithDependency2(int i) {
         return i % 2 == 0 ? impureRecursiveCallWithDependency1(-i) : impureRecursiveCallWithDependency3(i - 1);
     }
 
+    @Purity(Impure)
     static int impureRecursiveCallWithDependency3(int i) {
         int j = pureCyclicRecursiveCall3(i);
         int k = impureRecursiveCallWithDependency1(j);
@@ -160,31 +187,37 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
         return pureCyclicRecursiveCall1(l);
     }
 
+    @Purity(Impure)
     static int impureComplex1(int i) {
         int j = impureComplex2(i-1);
         return impureComplex3(j*2);
     }
 
+    @Purity(Impure)
     static int impureComplex2(int i) {
         int j = impureComplex2(i-1);
         return impureComplex1(j*2);
     }
 
+    @Purity(Impure)
     static int impureComplex3(int i) {
         int j = impureComplex4(i-1);
         return impureComplex1(j*2);
     }
 
+    @Purity(Impure)
     static int impureComplex4(int i) {
         int j = impureComplex5(i-1);
         return impureComplex2(j*2);
     }
 
+    @Purity(Impure)
     static int impureComplex5(int i) {
         int j = impureComplex6(i-1);
         return impureComplex4(j*2);
     }
 
+    @Purity(Impure)
     static int impureComplex6(int i) {
         int j = impureComplex6(i-1);
         return impureAtLast(impureComplex4(j*2));
@@ -195,10 +228,12 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
     // the latter is also part of a mutual recursive dependency.
     //
 
+    @Purity(Pure)
     static int pureRecursiveCallWithDependency1(int i) {
         return i < 0 ? i : pureRecursiveCallWithDependency2(i - 10);
     }
 
+    @Purity(Pure)
     static int pureRecursiveCallWithDependency2(int i) {
         return i % 2 == 0 ?
                 pureRecursiveCallWithDependency1(-i) :
@@ -208,18 +243,22 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
     // --------------------------------------------------------------------------------------------
     // All methods call directly or indirectly each other; but multiple cycles exist.
     //
+    @Purity(Pure)
     static int pureClosedSCC0(int i) {
         return i < 0 ? pureClosedSCC2(i - 10) : pureClosedSCC1(i - 111);
     }
 
+    @Purity(Pure)
     static int pureClosedSCC1(int i) {
         return i % 2 == 0 ? 32424 : pureClosedSCC3(i - 1);
     }
 
+    @Purity(Pure)
     static int pureClosedSCC2(int i) {
         return i % 2 == 0 ? 1001 : pureClosedSCC3(i - 3);
     }
 
+    @Purity(Pure)
     static int pureClosedSCC3(int i) {
         return pureClosedSCC0(12121 / i);
     }
@@ -227,6 +266,7 @@ class Demo { // This class is immutable; hence, instance methods _can be_ pure!
     // --------------------------------------------------------------------------------------------
     // Impure, but takes "comparatively long to analyze"
     //
+    @Purity(Impure)
     public static int impureAtLast(int i) {
         int v = cpureCallsAbsCalleeCalleeCalleCallee(i);
         int u = impureRecursiveCallWithDependency1(impureRecursiveCallWithDependency2(v));

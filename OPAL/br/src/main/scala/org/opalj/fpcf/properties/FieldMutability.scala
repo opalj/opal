@@ -99,7 +99,9 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
                             DeclaredFinalField
                         else
                             NonFinalFieldByAnalysis
-                    case x ⇒ throw new Error(x.getClass.getSimpleName+" is not an org.opalj.br.Field")
+                    case x ⇒
+                        val m = x.getClass.getSimpleName+" is not an org.opalj.br.Field"
+                        throw new IllegalArgumentException(m)
                 }
             },
             NonFinalFieldByLackOfInformation

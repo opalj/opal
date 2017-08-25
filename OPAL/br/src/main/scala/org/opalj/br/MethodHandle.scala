@@ -69,27 +69,27 @@ sealed abstract class FieldReadAccessMethodHandle extends FieldAccessMethodHandl
 sealed abstract class FieldWriteAccessMethodHandle extends FieldAccessMethodHandle
 
 case class GetFieldMethodHandle(
-    declaringClassType: ObjectType,
-    name:               String,
-    fieldType:          FieldType
+        declaringClassType: ObjectType,
+        name:               String,
+        fieldType:          FieldType
 ) extends FieldReadAccessMethodHandle
 
 case class GetStaticMethodHandle(
-    declaringClassType: ObjectType,
-    name:               String,
-    fieldType:          FieldType
+        declaringClassType: ObjectType,
+        name:               String,
+        fieldType:          FieldType
 ) extends FieldReadAccessMethodHandle
 
 case class PutFieldMethodHandle(
-    declaringClassType: ObjectType,
-    name:               String,
-    fieldType:          FieldType
+        declaringClassType: ObjectType,
+        name:               String,
+        fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle
 
 case class PutStaticMethodHandle(
-    declaringClassType: ObjectType,
-    name:               String,
-    fieldType:          FieldType
+        declaringClassType: ObjectType,
+        name:               String,
+        fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle
 
 sealed abstract class MethodCallMethodHandle extends MethodHandle {
@@ -107,8 +107,11 @@ sealed abstract class MethodCallMethodHandle extends MethodHandle {
 
 object MethodCallMethodHandle {
 
-    def unapply(handle: MethodCallMethodHandle): Option[(ReferenceType, String, MethodDescriptor)] =
+    def unapply(
+        handle: MethodCallMethodHandle
+    ): Option[(ReferenceType, String, MethodDescriptor)] = {
         Some((handle.receiverType, handle.name, handle.methodDescriptor))
+    }
 
 }
 
@@ -118,7 +121,7 @@ case class InvokeVirtualMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    override def opcodeOfUnderlyingInstruction = instructions.INVOKEVIRTUAL.opcode
+    override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKEVIRTUAL.opcode
 }
 
 case class InvokeStaticMethodHandle(
@@ -128,7 +131,7 @@ case class InvokeStaticMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    override def opcodeOfUnderlyingInstruction = instructions.INVOKESTATIC.opcode
+    override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESTATIC.opcode
 
     final override def isInvokeStaticMethodHandle: Boolean = true
 }
@@ -140,7 +143,7 @@ case class InvokeSpecialMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    override def opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
+    override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
 }
 
 case class NewInvokeSpecialMethodHandle(
@@ -149,7 +152,7 @@ case class NewInvokeSpecialMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    override def opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
+    override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
 }
 
 case class InvokeInterfaceMethodHandle(
@@ -158,5 +161,5 @@ case class InvokeInterfaceMethodHandle(
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 
-    override val opcodeOfUnderlyingInstruction = instructions.INVOKEINTERFACE.opcode
+    override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKEINTERFACE.opcode
 }

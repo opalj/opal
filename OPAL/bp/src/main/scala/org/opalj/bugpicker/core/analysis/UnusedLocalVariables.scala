@@ -35,7 +35,6 @@ import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -94,7 +93,6 @@ object UnusedLocalVariables {
         theProject:    SomeProject,
         propertyStore: PropertyStore,
         callGraph:     CallGraph,
-        classFile:     ClassFile,
         method:        Method,
         result:        AIResult { val domain: Domain with TheCode with RecordDefUse }
     ): Seq[Issue] = {
@@ -115,7 +113,7 @@ object UnusedLocalVariables {
             (vo < 0 && (
                 (
                     method.isPrivate &&
-                    !CallGraphFactory.isPotentiallySerializationRelated(classFile, method)(theProject.classHierarchy)
+                    !CallGraphFactory.isPotentiallySerializationRelated(method)(theProject.classHierarchy)
                 )
             ) ||
                     method.isStatic) ||
@@ -303,9 +301,9 @@ object UnusedLocalVariables {
                     Set(IssueKind.UnusedLocalVariable),
                     List(
                         if (vo >= 0)
-                            new InstructionLocation(None, theProject, classFile, method, vo)
+                            new InstructionLocation(None, theProject, method, vo)
                         else
-                            new MethodLocation(None, theProject, classFile, method)
+                            new MethodLocation(None, theProject, method)
                     )
                 )
             }

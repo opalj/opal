@@ -149,7 +149,7 @@ trait APIFeatureQuery extends FeatureQuery {
         } {
             mii match {
                 case APIMethod() ⇒
-                    val l = InstructionLocation(source, cf, m, pc)
+                    val l = InstructionLocation(source, m, pc)
                     locations += ((featureID, l :&: locations.getOrElse(featureID, Naught)))
                     val count = occurrencesCount.get(featureID).get + 1
                     occurrencesCount = occurrencesCount + ((featureID, count))

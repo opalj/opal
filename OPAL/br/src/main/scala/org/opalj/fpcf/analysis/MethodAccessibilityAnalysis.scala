@@ -77,7 +77,7 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         method: Method
     ): PropertyComputationResult = {
 
-        val classFile = project.classFile(method)
+        val classFile = method.classFile
         if (classFile.isPublic && (method.isPublic || (!classFile.isFinal && method.isProtected)))
             return ImmediateResult(method, Global);
 
@@ -113,9 +113,11 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         ImmediateResult(method, PackageLocal)
     }
 
-    private[this] def determineInstanceMethodAccessibility(method: Method): PropertyComputationResult = {
+    private[this] def determineInstanceMethodAccessibility(
+        method: Method
+    ): PropertyComputationResult = {
 
-        val classFile = project.classFile(method)
+        val classFile = method.classFile
         val isFinalClass = classFile.isFinal
         val isPublicClass = classFile.isPublic
 
@@ -146,21 +148,14 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
  */
 object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
 
-    def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
-    }
-
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new MethodAccessibilityAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
+        propertyStore.scheduleForCollected {
+            case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
+        }(
+            analysis.determineProperty
+        )
         analysis
-    }
-
-    override def recommendations: Set[FPCFAnalysisRunner] = {
-        Set(CallableFromClassesInOtherPackagesAnalysis)
     }
 
     override def derivedProperties: Set[PropertyKind] = {
@@ -177,14 +172,6 @@ object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
  */
 object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner {
 
-    final def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if m.isStatic && !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
-    }
-
-    override def recommendations: Set[FPCFAnalysisRunner] = {
-        Set(CallableFromClassesInOtherPackagesAnalysis)
-    }
-
     override def derivedProperties: Set[PropertyKind] = {
         Set(ProjectAccessibility.Key)
     }
@@ -193,12 +180,13 @@ object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner {
         Set(ClientCallable.Key)
     }
 
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new MethodAccessibilityAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
+        propertyStore.scheduleForCollected {
+            case m: Method if m.isStatic && !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
+        }(
+            analysis.determineProperty
+        )
         analysis
     }
 }

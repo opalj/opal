@@ -140,7 +140,7 @@ object CHADemo extends DefaultOneStepAnalysis {
             println("\n SIZE: "+differenceCpa.size)
             println(differenceCpa.collect {
                 case m: org.opalj.br.Method ⇒
-                    val cf = project.classFile(m)
+                    val cf = m.classFile
                     cf.thisType.toJava+" with method: "+m.descriptor.toJava(m.name)
             }.mkString("\n\n", "\n", "\n\n"))
 
@@ -149,7 +149,7 @@ object CHADemo extends DefaultOneStepAnalysis {
             println("\n SIZE: "+differenceOpa.size)
             println(differenceOpa.collect {
                 case m: org.opalj.br.Method ⇒
-                    val cf = project.classFile(m)
+                    val cf = m.classFile
                     cf.thisType.toJava+" with method: "+m.descriptor.toJava(m.name)
             }.mkString("\n\n", "\n", "\n\n"))
 

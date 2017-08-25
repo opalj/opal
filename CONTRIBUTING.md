@@ -25,5 +25,15 @@ Ensure that the code conventions w.r.t. naming and formatting are followed.
 
 Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, **a line should not have more than 100 chars** (unless Scalariform always reformats the code such that the line has more than 100 chars which is, e.g., often the case for type declarations).
 
+## One Import Per Line
+We do not use Scala's feature to import multiple classes/objects from the same package using the corresponding syntax (e.g., `import scala.collcation.immutable.{HashMap,LinkedList,Stack}`). Using such imports does not play well with certain editors. 
+
+(This behaviour can be configured in *IntelliJ*)
+
+## Do Not Use Wildcard Imports
+Do not used wildcard imports, e.g., `import scala.collection._`, unless you import a huge (> 64) number of classes. Such imports are very brittle and can lead to strange behavior.
+
+(This behaviour can be configured in *IntelliJ*)
+
 ## Do Not Change Unrelated Code
 Never reformat code that is not related to your task at hand; unless explicitly asked to do so. The commit should focus solely on your feature.

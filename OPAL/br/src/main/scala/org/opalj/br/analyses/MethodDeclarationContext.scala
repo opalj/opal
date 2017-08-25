@@ -36,8 +36,8 @@ import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PRIVATE
 
 /**
- * Encapsulates the information about  '''non-abstract''', '''non-private''', '''non-static''
- * methods which are '''not initializers''' (`<(cl)init>`) and which is required when determining
+ * Encapsulates the information about a '''non-abstract''', '''non-private''', '''non-static'''
+ * method which is '''not an initializer''' (`<(cl)init>`) and which is required when determining
  * potential call targets.
  *
  * @note    A class may have -- w.r.t. a given package name -- at most one package
@@ -50,16 +50,14 @@ import org.opalj.bi.ACC_PRIVATE
  *
  * @author Michael Eichberg
  */
-final class MethodDeclarationContext(
-        val method:         Method,
-        val declaringClass: ObjectType
-) extends Ordered[MethodDeclarationContext] {
+case class MethodDeclarationContext(method: Method) extends Ordered[MethodDeclarationContext] {
 
     assert(!method.isPrivate)
     assert(!method.isStatic)
     assert(!method.isInitializer)
 
-    def packageName = declaringClass.packageName
+    def declaringClassType: ObjectType = method.declaringClassFile.thisType
+    def packageName: String = declaringClassType.packageName
     def isPublic: Boolean = method.isPublic
     def name: String = method.name
     def descriptor: MethodDescriptor = method.descriptor
@@ -80,11 +78,13 @@ final class MethodDeclarationContext(
 
     /**
      * The hash code is equal to the ``"hashCode of the descriptor of the underlying method"
-     * * 113 + "the hashCode of the package of the declaring class".
+     * * 113 + "the hashCode of the package of the declaring class"``.
      */
     override def hashCode: Int = method.descriptor.hashCode * 113 + packageName.hashCode()
 
-    override def toString: String = s"MethodDeclarationContext($packageName, ${method.toJava()})"
+    override def toString: String = {
+        s"MethodDeclarationContext($packageName, ${method.signatureToJava()})"
+    }
 
     /**
      * Compares this `MethodDeclarationContext` with the given one. Defines a total order w.r.t.
@@ -124,7 +124,7 @@ final class MethodDeclarationContext(
     }
 
     /**
-     * Returns true if this method directly overrides the given method.
+     * Returns `true` if this method directly overrides the given method.
      *
      * (Note: indirect overriding can only be determined if all intermediate methods
      * are known; only in that case it is possible to test if, e.g., a public method
@@ -174,26 +174,8 @@ final class MethodDeclarationContext(
     ): Boolean = {
         visibility match {
             case Some(ACC_PUBLIC) | Some(ACC_PROTECTED) ⇒ true
-            case None                                   ⇒ this.packageName == packageName
             case Some(ACC_PRIVATE)                      ⇒ false
+            case None                                   ⇒ this.packageName == packageName
         }
-    }
-}
-
-/**
- * Definition of factory and extractor methods for [[MethodDeclarationContext]] objects.
- */
-object MethodDeclarationContext {
-
-    def apply(method: Method, declaringClassFile: ClassFile): MethodDeclarationContext = {
-        new MethodDeclarationContext(method, declaringClassFile.thisType)
-    }
-
-    def apply(method: Method, declaringClass: ObjectType): MethodDeclarationContext = {
-        new MethodDeclarationContext(method, declaringClass)
-    }
-
-    def unapply(mi: MethodDeclarationContext): Some[(Method, ObjectType)] = {
-        Some((mi.method, mi.declaringClass))
     }
 }

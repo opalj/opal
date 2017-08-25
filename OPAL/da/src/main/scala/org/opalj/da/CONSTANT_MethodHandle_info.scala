@@ -30,6 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
+
 import org.opalj.bi.ConstantPoolTag
 
 /**
@@ -53,8 +55,20 @@ case class CONSTANT_MethodHandle_info(
                 case 3 ⇒ "REF_putField putfield C.f:T"
                 case 4 ⇒ "REF_putStatic putstatic C.f:T"
                 case 5 ⇒ "REF_invokeVirtual invokevirtual C.m:(A*)T"
-                case 6 ⇒ "REF_invokeStatic invokestatic C.m:(A*)T"
-                case 7 ⇒ "REF_invokeSpecial invokespecial C.m:(A*)T"
+                case 6 ⇒
+                    cp(reference_index) match {
+                        case _: CONSTANT_InterfaceMethodref_info ⇒
+                            "REF_invokeStatic(interface) invokestatic C.m:(A*)T"
+                        case _: CONSTANT_Methodref_info ⇒
+                            "REF_invokeStatic(class) invokestatic C.m:(A*)T"
+                    }
+                case 7 ⇒
+                    cp(reference_index) match {
+                        case _: CONSTANT_InterfaceMethodref_info ⇒
+                            "REF_invokeSpecial(interface) invokeSpecial C.m:(A*)T"
+                        case _: CONSTANT_Methodref_info ⇒
+                            "REF_invokeSpecial(class) invokeSpecial C.m:(A*)T"
+                    }
                 case 8 ⇒ "REF_newInvokeSpecial new C; dup; invokespecial C.<init>:(A*)V"
                 case 9 ⇒ "REF_invokeInterface invokeinterface C.m:(A*)T"
             }
@@ -74,11 +88,11 @@ case class CONSTANT_MethodHandle_info(
             */)
         </span>
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq =
         <span class="method_handle">MethodHandle(kind={
             refrenceKindAsNode
         }, {
-            cp(reference_index).asInlineNode
+            cp(reference_index).asInstructionParameter
         })</span>
 
     override def toString(implicit cp: Constant_Pool): String = {

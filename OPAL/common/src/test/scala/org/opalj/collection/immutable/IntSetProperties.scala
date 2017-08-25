@@ -55,6 +55,25 @@ object IntSetProperties extends Properties("IntSet") {
         s == fl1.head && fl1.head == fl2.head && fl2.head == fl3.head
     }
 
+    property("create two values IntSet") = forAll { (s1: Int, s2: Int) ⇒
+        val fl1 = IntSet(s1, s2)
+        val fl2 = (new IntSetBuilder += s1 += s2).result
+        val fl3 = Set(s1, s2)
+        (fl1.size == fl2.size) :| "fl1.size == fl2.size" &&
+            (fl2.size == fl3.size) :| "fl2.size == fl3.size" &&
+            fl3.contains(fl1.min) :| "fl3.contains(fl1.min)" &&
+            fl3.contains(fl1.max) :| "fl3.contains(fl1.max)" &&
+            fl1 == fl2
+    }
+
+    property("create three values IntSet") = forAll { (s1: Int, s2: Int, s3: Int) ⇒
+        val fl1 = IntSet(s1, s2, s3)
+        val fl2 = (new IntSetBuilder += s1 += s2 += s3).result
+        val fl3 = Set(s1, s2, s3)
+        fl1.size == fl2.size && fl2.size == fl3.size &&
+            (fl1.size < 3 || (fl3.contains(fl1(1)) && fl3.contains(fl1(2)) && fl3.contains(fl1(2))))
+    }
+
     property("size|empty|nonEmpty|hasMultipleElements") = forAll { s: Set[Int] ⇒
         val fl1 = IntSetBuilder(s).result
         s.isEmpty == fl1.isEmpty && fl1.isEmpty != fl1.nonEmpty &&

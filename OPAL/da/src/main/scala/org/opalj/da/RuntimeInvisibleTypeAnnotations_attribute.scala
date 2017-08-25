@@ -44,10 +44,10 @@ case class RuntimeInvisibleTypeAnnotations_attribute(
 ) extends TypeAnnotations_attribute {
 
     final override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="attribute type_annotations runtime_invisible">
-            <span>Runtime Invisible Type Annotations</span>
+        <details class="attribute type_annotations runtime_invisible">
+            <summary>Runtime Invisible Type Annotations</summary>
             { typeAnnotationsToXHTML(cp) }
-        </div>
+        </details>
     }
 
 }

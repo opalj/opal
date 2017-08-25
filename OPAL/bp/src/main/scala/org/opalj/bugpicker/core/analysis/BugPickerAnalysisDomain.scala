@@ -32,24 +32,24 @@ package core
 package analysis
 
 import java.net.URL
+
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.br.PC
+import org.opalj.br.MethodSignature
+import org.opalj.br.ReferenceType
+import org.opalj.br.MethodDescriptor
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.br.MethodSignature
 import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolution
 import org.opalj.ai.domain.l2.PerformInvocationsWithRecursionDetection
-import org.opalj.br.ClassFile
 import org.opalj.ai.mapOperands
 import org.opalj.ai.TheAI
 import org.opalj.ai.domain.l2.CalledMethodsStore
 import org.opalj.ai.TheMemoryLayout
 import org.opalj.ai.util.XHTML
-import org.opalj.br.ReferenceType
-import org.opalj.br.MethodDescriptor
 import org.opalj.ai.domain.l2.ChildPerformInvocationsWithRecursionDetection
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.l2.CalledMethodsStore
@@ -63,30 +63,30 @@ import org.opalj.collection.immutable.Chain
  * @author Michael Eichberg
  */
 trait BaseBugPickerAnalysisDomain
-        extends CorrelationalDomain
-        with domain.TheProject
-        with domain.TheMethod
-        with domain.DefaultDomainValueBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        //with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.la.RefinedTypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.la.RefinedTypeLevelInvokeInstructions
-        with domain.SpecialMethodsHandling
-        with domain.l1.DefaultIntegerRangeValues
-        // with domain.l1.DefaultIntegerSetValues
-        // [CURRENTLY ONLY A WASTE OF RESOURCES] with domain.l1.ConstraintsBetweenIntegerValues
-        with domain.l1.DefaultLongSetValues
-        with domain.l1.LongSetValuesShiftOperators
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l1.ConcretePrimitiveValuesConversions
-        //with domain.l1.DefaultReferenceValuesBinding [implicitly mixed in via StringValuesBinding]
-        //with domain.l1.DefaultStringValuesBinding [implicitly mixed in via ClassValuesBinding]
-        with domain.l1.NullPropertyRefinement
-        with domain.l1.MaxArrayLengthRefinement
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization {
+    extends CorrelationalDomain
+    with domain.TheProject
+    with domain.TheMethod
+    with domain.DefaultDomainValueBinding
+    with domain.ThrowAllPotentialExceptionsConfiguration
+    //with domain.l0.TypeLevelFieldAccessInstructions
+    with domain.la.RefinedTypeLevelFieldAccessInstructions
+    with domain.l0.TypeLevelInvokeInstructions
+    with domain.la.RefinedTypeLevelInvokeInstructions
+    with domain.SpecialMethodsHandling
+    with domain.l1.DefaultIntegerRangeValues
+    // with domain.l1.DefaultIntegerSetValues
+    // [CURRENTLY ONLY A WASTE OF RESOURCES] with domain.l1.ConstraintsBetweenIntegerValues
+    with domain.l1.DefaultLongSetValues
+    with domain.l1.LongSetValuesShiftOperators
+    with domain.l0.DefaultTypeLevelFloatValues
+    with domain.l0.DefaultTypeLevelDoubleValues
+    with domain.l1.ConcretePrimitiveValuesConversions
+    //with domain.l1.DefaultReferenceValuesBinding [implicitly mixed in via StringValuesBinding]
+    //with domain.l1.DefaultStringValuesBinding [implicitly mixed in via ClassValuesBinding]
+    with domain.l1.NullPropertyRefinement
+    with domain.l1.MaxArrayLengthRefinement
+    with domain.DefaultHandlingOfMethodResults
+    with domain.IgnoreSynchronization {
     // We want to get the special treatment of calls on "Class" objects
     // and do not want to perform invocations in this case;
     // hence, we have to mix in this domain AFTER the PerformInvocations domain!
@@ -98,28 +98,28 @@ trait BaseBugPickerAnalysisDomain
  * a method without invoking called methods.
  */
 class FallbackBugPickerAnalysisDomain(
-    val project:                                Project[URL],
-    val fieldValueInformation:                  FieldValueInformation,
-    val methodReturnValueInformation:           MethodReturnValueInformation,
-    val cache:                                  CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    override val maxCardinalityOfIntegerRanges: Long,
-    override val maxCardinalityOfLongSets:      Int,
-    val /*current*/ method:                     Method
+        val project:                                Project[URL],
+        val fieldValueInformation:                  FieldValueInformation,
+        val methodReturnValueInformation:           MethodReturnValueInformation,
+        val cache:                                  CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+        override val maxCardinalityOfIntegerRanges: Long,
+        override val maxCardinalityOfLongSets:      Int,
+        val /*current*/ method:                     Method
 ) extends BaseBugPickerAnalysisDomain
-        with domain.l1.DefaultClassValuesBinding
-        with domain.l1.RecordAllThrownExceptions
-        with domain.RecordCFG
-        with domain.RecordDefUse
+    with domain.l1.DefaultClassValuesBinding
+    with domain.l1.RecordAllThrownExceptions
+    with domain.RecordCFG
+    with domain.RecordDefUse
 
 /**
  * The base domain that is shared by all domains that are used to perform abstract
  * interpretations of methods where methods are potentially called.
  */
 trait BasePerformInvocationBugPickerAnalysisDomain
-        extends BaseBugPickerAnalysisDomain
-        with PerformInvocationsWithRecursionDetection
-        with PerformInvocationsWithBasicVirtualMethodCallResolution
-        with domain.l1.DefaultClassValuesBinding { callingDomain ⇒
+    extends BaseBugPickerAnalysisDomain
+    with PerformInvocationsWithRecursionDetection
+    with PerformInvocationsWithBasicVirtualMethodCallResolution
+    with domain.l1.DefaultClassValuesBinding { callingDomain ⇒
 
     def debug: Boolean
 
@@ -136,7 +136,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
             import result._
             org.opalj.io.writeAndOpen(
                 org.opalj.ai.common.XHTML.dump(
-                    Some(project.classFile(method)),
+                    Some(method.classFile),
                     Some(method),
                     method.body.get,
                     Some(
@@ -154,15 +154,14 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     }
 
     override def doInvoke(
-        pc:            PC,
-        definingClass: ClassFile,
-        method:        Method,
-        operands:      callingDomain.Operands,
-        fallback:      () ⇒ MethodCallResult
+        pc:       PC,
+        method:   Method,
+        operands: callingDomain.Operands,
+        fallback: () ⇒ MethodCallResult
     ): MethodCallResult = {
-        val result = super.doInvoke(pc, definingClass, method, operands, fallback)
+        val result = super.doInvoke(pc, method, operands, fallback)
         if (debug) {
-            println("the result of calling "+method.toJava(definingClass)+" is "+result)
+            println("the result of calling "+method.toJava+" is "+result)
         }
         result
     }
@@ -171,10 +170,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
 
     def currentCallChainLength: Int
 
-    def shouldInvocationBePerformed(
-        definingClass: ClassFile,
-        calledMethod:  Method
-    ): Boolean = {
+    def shouldInvocationBePerformed(calledMethod: Method): Boolean = {
         val result =
             maxCallChainLength > currentCallChainLength &&
                 // TODO check me if the following makes sense:
@@ -182,9 +178,9 @@ trait BasePerformInvocationBugPickerAnalysisDomain
         if (debug) {
             val i = if (result) " invokes " else " does not invoke "
             println(s"[$currentCallChainLength]"+
-                method.toJava(project.classFile(method)) +
+                method.toJava +
                 i +
-                calledMethod.toJava(definingClass))
+                calledMethod.toJava)
         }
         result
     }
@@ -207,25 +203,25 @@ trait BasePerformInvocationBugPickerAnalysisDomain
 }
 
 class InvocationBugPickerAnalysisDomain(
-    val project:                                Project[URL],
-    val fieldValueInformation:                  FieldValueInformation,
-    val methodReturnValueInformation:           MethodReturnValueInformation,
-    val cache:                                  CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    override val maxCardinalityOfIntegerRanges: Long,
-    override val maxCardinalityOfLongSets:      Int,
-    val maxCallChainLength:                     Int,
-    val callerDomain:                           BasePerformInvocationBugPickerAnalysisDomain,
-    val /*current*/ method:                     Method,
-    val currentCallChainLength:                 Int,
-    val debug:                                  Boolean
+        val project:                                Project[URL],
+        val fieldValueInformation:                  FieldValueInformation,
+        val methodReturnValueInformation:           MethodReturnValueInformation,
+        val cache:                                  CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+        override val maxCardinalityOfIntegerRanges: Long,
+        override val maxCardinalityOfLongSets:      Int,
+        val maxCallChainLength:                     Int,
+        val callerDomain:                           BasePerformInvocationBugPickerAnalysisDomain,
+        val /*current*/ method:                     Method,
+        val currentCallChainLength:                 Int,
+        val debug:                                  Boolean
 ) extends BasePerformInvocationBugPickerAnalysisDomain
-        with domain.RecordMethodCallResults
-        with domain.RecordLastReturnedValues
-        with domain.RecordAllThrownExceptions
-        with ChildPerformInvocationsWithRecursionDetection {
+    with domain.RecordMethodCallResults
+    with domain.RecordLastReturnedValues
+    with domain.RecordAllThrownExceptions
+    with ChildPerformInvocationsWithRecursionDetection {
     callingDomain ⇒
 
-    override def calledMethodDomain(classFile: ClassFile, method: Method) = {
+    override def calledMethodDomain(method: Method) = {
         new InvocationBugPickerAnalysisDomain(
             project,
             fieldValueInformation,
@@ -251,26 +247,25 @@ class InvocationBugPickerAnalysisDomain(
  * @author Michael Eichberg
  */
 class RootBugPickerAnalysisDomain(
-    val project:                                Project[URL],
-    val fieldValueInformation:                  FieldValueInformation,
-    val methodReturnValueInformation:           MethodReturnValueInformation,
-    val cache:                                  CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    override val maxCardinalityOfIntegerRanges: Long,
-    override val maxCardinalityOfLongSets:      Int,
-    val maxCallChainLength:                     Int,
-    val classFile:                              ClassFile,
-    val /*current*/ method:                     Method,
-    val debug:                                  Boolean,
-    val frequentEvaluationWarningLevel:         Int                                                           = 256
+        val project:                                Project[URL],
+        val fieldValueInformation:                  FieldValueInformation,
+        val methodReturnValueInformation:           MethodReturnValueInformation,
+        val cache:                                  CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+        override val maxCardinalityOfIntegerRanges: Long,
+        override val maxCardinalityOfLongSets:      Int,
+        val maxCallChainLength:                     Int,
+        val /*current*/ method:                     Method,
+        val debug:                                  Boolean,
+        val frequentEvaluationWarningLevel:         Int                                                           = 256
 ) extends BasePerformInvocationBugPickerAnalysisDomain
-        with TheAI[BaseBugPickerAnalysisDomain]
-        with TheMemoryLayout // required to extract the initial operands
-        // the following two are required to detect instructions that always throw
-        // an exception (such as div by zero, a failing checkcast, a method call that
-        // always fails etc.)
-        with domain.l1.RecordAllThrownExceptions
-        with domain.RecordCFG
-        with domain.RecordDefUse { callingDomain ⇒
+    with TheAI[BaseBugPickerAnalysisDomain]
+    with TheMemoryLayout // required to extract the initial operands
+    // the following two are required to detect instructions that always throw
+    // an exception (such as div by zero, a failing checkcast, a method call that
+    // always fails etc.)
+    with domain.l1.RecordAllThrownExceptions
+    with domain.RecordCFG
+    with domain.RecordDefUse { callingDomain ⇒
 
     final def currentCallChainLength: Int = 0
     final def calledMethodAI = ai
@@ -287,7 +282,7 @@ class RootBugPickerAnalysisDomain(
         )
     }
 
-    override def calledMethodDomain(classFile: ClassFile, method: Method) =
+    override def calledMethodDomain(method: Method) =
         new InvocationBugPickerAnalysisDomain(
             project,
             fieldValueInformation,

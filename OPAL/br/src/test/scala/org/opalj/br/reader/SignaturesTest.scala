@@ -32,7 +32,7 @@ package reader
 
 import org.scalatest.FunSuite
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * Tests the parsing and reconstructing of signatures.

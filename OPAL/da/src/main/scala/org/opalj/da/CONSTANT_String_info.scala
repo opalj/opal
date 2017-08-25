@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -50,7 +51,7 @@ case class CONSTANT_String_info(string_index: Constant_Pool_Index) extends Const
 
     override def toString(implicit cp: Constant_Pool): String = cp(string_index).toString
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node = {
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
         <span class="constant_value">{ '"' + cp(string_index).toString + '"' }</span>
     }
 }

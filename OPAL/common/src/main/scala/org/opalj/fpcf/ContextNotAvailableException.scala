@@ -34,8 +34,8 @@ import scala.reflect.runtime.universe.Type
  * @author Michael Eichberg
  */
 case class ContextNotAvailableException(
-    context:         AnyRef,
-    completeContext: Map[Type, AnyRef]
+        context:         AnyRef,
+        completeContext: Map[Type, AnyRef]
 ) extends RuntimeException(
     completeContext.keys.mkString(s"unknown context $context; available: ", ", ", "")
 )

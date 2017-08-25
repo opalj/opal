@@ -31,7 +31,7 @@ package checking
 
 import org.junit.runner.RunWith
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.{BooleanValue, StringValue}
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
@@ -337,7 +337,8 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                             "entity.annotation.Column",
                             "name" → StringValue("id"), "nullable" → BooleanValue(false)
                         )
-                    ))
+                    )
+                )
         }
 
         specification.analyze() should be(empty)
@@ -360,7 +361,8 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                             "entity.annotation.Column",
                             "name" → StringValue("id"), "nullable" → BooleanValue(true)
                         )
-                    ))
+                    )
+                )
         }
 
         specification.analyze() should not be (empty)

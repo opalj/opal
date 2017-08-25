@@ -84,7 +84,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     //
     // PROJECT SETUP
     //
-    def file = org.opalj.bi.TestSupport.locateTestResources(testFileName, testFilePath)
+    def file = org.opalj.bi.TestResources.locateTestResources(testFileName, testFilePath)
     val project = org.opalj.br.analyses.Project(file)
 
     //
@@ -154,7 +154,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             }.flatten
 
         if (callees.isEmpty) {
-            val className = project.classFile(method).fqn
+            val className = method.classFile.fqn
             val message = className+" { "+method+" } has no callees; expected: "+annotation.toJava
             fail(message)
         }
@@ -165,7 +165,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 val Some(line) = method.body.get.lineNumberTable.get.lookupLineNumber(pc)
 
                 calledMethod.name == methodName &&
-                    (project.classFile(calledMethod).thisType eq receiver) &&
+                    (calledMethod.classFile.thisType eq receiver) &&
                     line == lineNumber
             }
 
@@ -184,34 +184,34 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             (!receiverClassIsUnknown || unresolvedReceiverCalleesWithMatchingAnnotation.isEmpty) && preciselyResolvable
 
         if (algorithmSpecified && !preciselyResolvable && calleeMatchingAnnotation.nonEmpty) {
-            val className = project.classFile(method).fqn
+            val className = method.classFile.fqn
             val message = className+" { "+method+" } has more than the specified callees; "+
                 "This edge should not exist using "+testCallGraphAlgorithm+
                 "\nexpected: "+annotation.toJava+
                 "\n actual: "+callees.map { callee ⇒
                     val (pc, method) = callee
-                    (method.body.get.lineNumber(pc), method, project.classFile(method).thisType)
+                    (method.body.get.lineNumber(pc), method, method.classFile.thisType)
                 }
             fail(message)
         }
 
         if (algorithmSpecified && preciselyResolvable && failCriteria) {
-            val className = project.classFile(method).fqn
+            val className = method.classFile.fqn
             val message = className+" { "+method+" } has more than the specified callees; expected: "+annotation.toJava+
                 "\n actual: "+callees.map { callee ⇒
                     val (pc, method) = callee
-                    (method.body.get.lineNumber(pc), method, project.classFile(method).thisType)
+                    (method.body.get.lineNumber(pc), method, method.classFile.thisType)
                 }
             fail(message)
         }
 
         if (failCriteria) {
-            val className = project.classFile(method).fqn
+            val className = method.classFile.fqn
             val message =
                 className+" { "+method+" } has none of the specified callees; expected: "+annotation.toJava+
                     "\n actual: "+callees.map { callee ⇒
                         val (pc, method) = callee
-                        (method.body.get.lineNumber(pc), method, project.classFile(method).thisType)
+                        (method.body.get.lineNumber(pc), method, method.classFile.thisType)
                     }
             fail(message)
         }
@@ -219,7 +219,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         calleeMatchingAnnotation foreach { callee ⇒
             val (_, method) = callee
             method.name should be(methodName)
-            project.classFile(method).thisType should be(receiver)
+            method.classFile.thisType should be(receiver)
         }
     }
 
@@ -259,7 +259,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             }.flatten
 
         if (callees.isEmpty) {
-            val className = project.classFile(method).fqn
+            val className = method.classFile.fqn
             val message = className+" { "+method+" } has no called constructors; expected: "+annotation.toJava
             fail(message)
         }
@@ -269,7 +269,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 val (pc, calledMethod) = callee
                 val Some(line) = method.body.get.lineNumberTable.get.lookupLineNumber(pc)
                 calledMethod.name.equals("<init>") &&
-                    project.classFile(calledMethod).thisType.equals(receiver) &&
+                    calledMethod.classFile.thisType.equals(receiver) &&
                     line == lineNumber
             }
 
@@ -283,16 +283,16 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         }
 
         if (calleeMatchingAnnotation.isEmpty && (!receiverClassIsUnknown || unresolvedReceiverCalleesWithMatchingAnnotation.isEmpty)) {
-            val className = project.classFile(method).fqn
+            val className = method.classFile.fqn
             val message = className+" { "+method+" } has none of the specified constructor calls; expected: "+annotation.toJava+
-                "\n actual: "+callees.map(f ⇒ (method.body.get.lineNumber(f._1), f._2, project.classFile(f._2).thisType))
+                "\n actual: "+callees.map(f ⇒ (method.body.get.lineNumber(f._1), f._2, f._2.classFile.thisType))
             fail(message)
         }
 
         calleeMatchingAnnotation foreach { callee ⇒
             val (_, calledMethod) = callee
             calledMethod.name should be("<init>")
-            project.classFile(calledMethod).thisType should be(receiver)
+            calledMethod.classFile.thisType should be(receiver)
         }
     }
 
@@ -336,7 +336,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         classFile ← project.allClassFiles
         method ← classFile.methods
     } {
-        it should ("correctly identify all call targets for "+method.toJava(classFile)) in {
+        it should ("correctly identify all call targets for "+method.toJava) in {
 
             // single invocation per method
             method.runtimeVisibleAnnotations filter { annotation ⇒

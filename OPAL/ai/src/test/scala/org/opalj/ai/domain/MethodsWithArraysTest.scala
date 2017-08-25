@@ -34,7 +34,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -51,22 +51,22 @@ class MethodsWithArraysTest extends FlatSpec with Matchers {
     import MethodsWithArraysTest._
 
     class TestDomain
-            extends Domain
-            with DefaultDomainValueBinding
-            with DefaultReferenceValuesBinding
-            with DefaultTypeLevelIntegerValues
-            with DefaultTypeLevelLongValues
-            with DefaultTypeLevelFloatValues
-            with DefaultTypeLevelDoubleValues
-            with TypeLevelPrimitiveValuesConversions
-            with TypeLevelLongValuesShiftOperators
-            with TypeLevelFieldAccessInstructions
-            with SimpleTypeLevelInvokeInstructions
-            with ThrowAllPotentialExceptionsConfiguration
-            with IgnoreSynchronization
-            with DefaultHandlingOfMethodResults
-            with RecordLastReturnedValues
-            with PredefinedClassHierarchy {
+        extends Domain
+        with DefaultDomainValueBinding
+        with DefaultReferenceValuesBinding
+        with DefaultTypeLevelIntegerValues
+        with DefaultTypeLevelLongValues
+        with DefaultTypeLevelFloatValues
+        with DefaultTypeLevelDoubleValues
+        with TypeLevelPrimitiveValuesConversions
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelFieldAccessInstructions
+        with SimpleTypeLevelInvokeInstructions
+        with ThrowAllPotentialExceptionsConfiguration
+        with IgnoreSynchronization
+        with DefaultHandlingOfMethodResults
+        with RecordLastReturnedValues
+        with PredefinedClassHierarchy {
 
         type Id = String
         def id = "MethodsWithArraysTestDomain"
@@ -77,7 +77,7 @@ class MethodsWithArraysTest extends FlatSpec with Matchers {
 
         val method = classFile.methods.find(_.name == name).get
         val code = method.body.get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }

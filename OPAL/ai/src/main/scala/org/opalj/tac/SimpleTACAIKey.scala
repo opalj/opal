@@ -32,7 +32,6 @@ package tac
 import scala.collection.concurrent.TrieMap
 
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.ai.domain.RecordDefUse
@@ -42,7 +41,7 @@ import org.opalj.ai.Domain
 /**
  * ''Key'' to get the 3-address based code of a method computed using the configured
  * domain/data-flow analysis. This key performs the underlying data-flow analysis on demand using
- * the configured data-flow analyses; the results of the data-flow analysis are NOT shared. Hence,
+ * the configured data-flow analyses; the results of the data-flow analyses are NOT shared. Hence,
  * this ''key'' should only be used if the result of the underlying analysis is no longer
  * required after generating the TAC.
  *
@@ -52,15 +51,14 @@ import org.opalj.ai.Domain
  */
 object SimpleTACAIKey extends TACAIKey {
 
-    @volatile var domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse =
-        (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-            new ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, cf, m)
-        }
+    @volatile var domainFactory: (SomeProject, Method) ⇒ Domain with RecordDefUse = {
+        (p: SomeProject, m: Method) ⇒ new ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+    }
 
     /**
      * TACAI code has no special prerequisites.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an object which computes and caches the 3-address code of a method when required.
@@ -73,10 +71,9 @@ object SimpleTACAIKey extends TACAIKey {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[DUVar[_ <: Domain#DomainValue]] = {
+    ): Method ⇒ TACode[TACMethodParameter, DUVar[_ <: (Domain with RecordDefUse)#DomainValue]] = {
         val domainFactory = this.domainFactory
-
-        val taCodes = TrieMap.empty[Method, TACode[DUVar[Domain#DomainValue]]]
+        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
 
         (m: Method) ⇒ taCodes.get(m) match {
             case Some(taCode) ⇒ taCode
@@ -88,13 +85,12 @@ object SimpleTACAIKey extends TACAIKey {
                     taCodes.get(m) match {
                         case Some(taCode) ⇒ taCode
                         case None ⇒
-                            val cf = project.classFile(m)
-                            val domain = domainFactory(project, cf, m)
-                            val aiResult = BaseAI(cf, m, domain)
+                            val domain = domainFactory(project, m)
+                            val aiResult = BaseAI(m, domain)
                             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
                             // well... the following cast safe is safe, because the underlying
                             // datastructure is actually, conceptually immutable
-                            val taCode = code.asInstanceOf[TACode[DUVar[Domain#DomainValue]]]
+                            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
                             taCodes.put(m, taCode)
                             taCode
                     }

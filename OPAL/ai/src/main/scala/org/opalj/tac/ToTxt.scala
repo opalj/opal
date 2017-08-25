@@ -31,6 +31,7 @@ package tac
 
 import org.opalj.br.Method
 import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.BasicBlock
@@ -42,7 +43,8 @@ import org.opalj.br.Type
 import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
- * Converts a list of three-address instructions into a text-based representation.
+ * Converts a list of three-address instructions into a text-based representation for comprehension
+ * purposes only.
  *
  * @note This representation is primarily provided for debugging purposes and is not
  *       performance optimized.
@@ -53,7 +55,7 @@ import org.opalj.br.ComputationalTypeReturnAddress
 object ToTxt {
 
     def callToTxt[V <: Var[V]](name: String, params: Seq[Expr[V]]): String = {
-        params.reverse map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
+        params map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
     }
 
     @inline final def toTxtExpr[V <: Var[V]](expr: Expr[V]): String = {
@@ -70,6 +72,8 @@ object ToTxt {
             case DoubleConst(_, value)         ⇒ value.toString+"d"
             case ClassConst(_, value)          ⇒ value.toJava+".class"
             case StringConst(_, value)         ⇒ s""""$value""""
+            case MethodHandleConst(_, value)   ⇒ s"""MethodHandle("${value.toJava}")"""
+            case MethodTypeConst(_, value)     ⇒ s"""MethodType("${value.toJava}")"""
             case NullExpr(_)                   ⇒ "null"
 
             case PrefixExpr(_, _, op, operand) ⇒ op.toString+" "+toTxtExpr[V](operand)
@@ -81,9 +85,6 @@ object ToTxt {
 
             case InstanceOf(_, value, tpe) ⇒
                 s"${toTxtExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
-
-            case Checkcast(_, value, tpe) ⇒
-                s"(${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
 
             case Compare(_, left, op, right) ⇒
                 toTxtExpr(left)+" "+op.toString+" "+toTxtExpr[V](right)
@@ -122,6 +123,10 @@ object ToTxt {
 
             case GetField(_, declaringClass, name, _, receiver) ⇒
                 s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
+
+            case e @ CaughtException(_, exceptionType, _) ⇒
+                val t = { exceptionType.map(_.toJava).getOrElse("<ANY>") }
+                s"caught $t /* <= ${e.exceptionLocations.mkString("{", ",", "}")}*/"
         }
     }
 
@@ -152,8 +157,8 @@ object ToTxt {
                 val Goto(_, target) = stmt
                 s"$pc goto $target"
 
-            case JumpToSubroutine.ASTID ⇒
-                val JumpToSubroutine(_, target) = stmt
+            case JSR.ASTID ⇒
+                val JSR(_, target) = stmt
                 s"$pc jsr $target"
             case Ret.ASTID ⇒
                 val Ret(_, targets) = stmt
@@ -173,10 +178,6 @@ object ToTxt {
             case Assignment.ASTID ⇒
                 val Assignment(_, variable, expr) = stmt
                 s"$pc ${variable.name} = ${toTxtExpr(expr)}"
-
-            case ExprStmt.ASTID ⇒
-                val ExprStmt(_, expr) = stmt
-                s"$pc expression value is ignored:*/${toTxtExpr(expr)}"
 
             case ArrayStore.ASTID ⇒
                 val ArrayStore(_, arrayRef, index, operandVar) = stmt
@@ -205,22 +206,36 @@ object ToTxt {
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(rec)}/*(non-virtual) ${declClass.toJava}*/$call"
 
-            case FailingExpression.ASTID ⇒
-                val FailingExpression(_, fExpr) = stmt
-                s"$pc expression evaluation will throw exception: ${toTxtExpr(fExpr)}"
+            case Checkcast.ASTID ⇒
+                val Checkcast(_, value, tpe) = stmt
+                s"$pc (${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
 
-            case FailingStatement.ASTID ⇒
-                val FailingStatement(_, fStmt) = stmt
-                s"$pc statement always throws an exception: ${toTxtStmt(fStmt, includePC)}"
+            case ExprStmt.ASTID ⇒
+                val ExprStmt(_, expr) = stmt
+                s"$pc /*expression value is ignored:*/${toTxtExpr(expr)}"
 
         }
     }
 
-    /**
-     * Converts the statements to some human readable text.
-     */
-    def apply[V <: Var[V]](stmts: Array[Stmt[V]], cfg: Option[CFG]): String = {
-        apply(stmts, cfg, true, true).mkString("\n")
+    private def qualify(index: Int, javaLikeStmt: String, indented: Boolean): String = {
+        if (indented)
+            f"$index%5d:${javaLikeStmt.replace("\n", "\n       ")}"
+        else
+            s"$index:$javaLikeStmt"
+    }
+
+    final def stmtsToTxtStmt[V <: Var[V]](
+        stmts:     Array[Stmt[V]],
+        includePC: Boolean
+    ): String = {
+        stmts.zipWithIndex.map { stmtWithIndex ⇒
+            val (stmt, index) = stmtWithIndex
+            qualify(index, toTxtStmt(stmt, includePC), indented = false)
+        }.mkString("\n")
+    }
+
+    def apply[P <: AnyRef, V <: Var[V]](tac: TACode[P, V]): Seq[String] = {
+        apply(tac.params, tac.stmts, tac.cfg, false, true, false)
     }
 
     /**
@@ -228,56 +243,81 @@ object ToTxt {
      *
      * @param includePC If `true` the original program counter is also shown in the output.
      */
-    def apply[V <: Var[V]](
-        stmts:     Array[Stmt[V]],
-        cfg:       Option[CFG],
-        indented:  Boolean,
-        includePC: Boolean
+    def apply[P <: AnyRef, V <: Var[V]](
+        params:     Parameters[P],
+        stmts:      Array[Stmt[V]],
+        cfg:        CFG,
+        skipParams: Boolean,
+        indented:   Boolean,
+        includePC:  Boolean
     ): Seq[String] = {
-
+        val indention = " " * (if (indented) 6 else 0)
         val max = stmts.length
         val javaLikeCode = new scala.collection.mutable.ArrayBuffer[String](stmts.length * 3)
+
+        if (!skipParams) {
+            if (params.parameters.nonEmpty) {
+                javaLikeCode += indention+"/* PARAMETERS:"
+                params.parameters.zipWithIndex foreach { paramWithIndex ⇒
+                    val (param, index) = paramWithIndex
+                    if (param ne null) {
+                        val paramTxt = indention+"   param"+index+": "+param.toString()
+                        javaLikeCode += (param match {
+                            case v: DVar[_] ⇒ v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
+                            case _          ⇒ paramTxt
+                        })
+                    }
+                }
+                javaLikeCode += indention+"*/"
+            } else {
+                javaLikeCode += "/* NO PARAMETERS */"
+            }
+        }
+
         var index = 0
         while (index < max) {
 
-            def qualify(javaLikeStmt: String): String = {
-                if (indented)
-                    f"$index%5d:${javaLikeStmt.replace("\n", "\n       ")}"
-                else
-                    s"$index:$javaLikeStmt"
-            }
+            def catchTypeToString(t: Option[Type]): String = t.map(_.toJava).getOrElse("<FINALLY>")
 
-            def catchTypeToString(t: Option[Type]): String = {
-                t.map(_.toJava).getOrElse("<FINALLY>")
-            }
-
-            val bb = cfg.map(_.bb(index))
-            if (bb.isDefined && bb.get.startPC == index) {
+            val bb = cfg.bb(index)
+            assert(
+                bb ne null,
+                s"index: $index; max: $max; catchNodes:${cfg.catchNodes.mkString("{", ", ", "}")}"
+            )
+            if (bb.startPC == index) {
                 // we are at the beginning of a basic block
                 if (index > 0) javaLikeCode += "" // an empty line
-                val predecessors = bb.get.predecessors
+                val predecessors = bb.predecessors
                 if (predecessors.nonEmpty) {
                     javaLikeCode +=
                         predecessors.map {
                             case bb: BasicBlock ⇒ bb.endPC.toString
                             case cn: CatchNode  ⇒ catchTypeToString(cn.catchType)
-                        }.mkString((" " * (if (indented) 6 else 0))+"// → ", ", ", "")
+                        }.mkString(
+                            indention+"// "+(if (index == 0) "<start>, " else ""),
+                            ", ",
+                            " →"
+                        )
                 }
             }
 
-            javaLikeCode += qualify(toTxtStmt(stmts(index), includePC))
+            javaLikeCode += qualify(index, toTxtStmt(stmts(index), includePC), indented)
 
-            if (bb.isDefined && bb.get.endPC == index && bb.get.successors.exists(!_.isBasicBlock)) {
+            if (bb.endPC == index && bb.successors.exists(!_.isBasicBlock)) {
                 val successors =
-                    bb.get.successors.map {
-                        case cn: CatchNode   ⇒ s"⚡️ ${catchTypeToString(cn.catchType)} → ${cn.handlerPC}"
-                        case ExitNode(false) ⇒ "⚠️ - uncaught exception/abnormal return"
-                        case _               ⇒ null
-                    }.filterNot(_ == null)
+                    bb.successors.collect {
+                        case cn: CatchNode ⇒
+                            s"⚡️ ${catchTypeToString(cn.catchType)} → ${cn.handlerPC}"
+                        case ExitNode(false) ⇒
+                            "⚡️ <uncaught exception ⇒ abnormal return>"
+                    }
 
+                var head = (" " * (if (indented) 6 else 0))+"// "
+                if (stmts(index).astID != Throw.ASTID && bb.successors.forall(!_.isBasicBlock))
+                    head += "⚠️ ALWAYS THROWS EXCEPTION – "
                 if (successors.nonEmpty)
                     javaLikeCode +=
-                        successors.mkString((" " * (if (indented) 6 else 0))+"// → ", ", ", "")
+                        successors.mkString(head, ", ", "")
             }
 
             index += 1
@@ -287,33 +327,23 @@ object ToTxt {
     }
 
     /**
-     * @see `apply(Array,Boolean,Boolean)`
-     */
-    def apply[V <: Var[V]](
-        stmts:     IndexedSeq[Stmt[V]],
-        cfg:       Option[CFG],
-        indented:  Boolean,
-        includePC: Boolean
-    ): Seq[String] = {
-        apply(stmts.toArray, cfg, indented, includePC)
-    }
-
-    /**
      *  Creates a text based representation of the three address code generated for the given
      *  method.
      */
     def apply(
         method:         Method,
-        classHierarchy: ClassHierarchy                                = Code.BasicClassHierarchy,
-        aiResult:       Option[AIResult { val domain: RecordDefUse }] = None
+        classHierarchy: ClassHierarchy                                            = Code.BasicClassHierarchy,
+        aiResult:       Option[AIResult { val domain: Domain with RecordDefUse }] = None
     ): String = {
-        aiResult map { aiResult ⇒
-            val taCode = TACAI(method, classHierarchy, aiResult)(Nil)
-            ToTxt(taCode.stmts, Some(taCode.cfg))
-        } getOrElse {
-            val (stmts, cfg, _) = TACNaive(method, classHierarchy, List(SimplePropagation), false)
-            ToTxt(stmts, cfg)
-        }
+        (
+            aiResult map { aiResult ⇒
+                val taCode = TACAI(method, classHierarchy, aiResult)(Nil)
+                ToTxt(taCode.params, taCode.stmts, taCode.cfg, skipParams = false, true, true)
+            } getOrElse {
+                val TACode(params, stmts, cfg, _, _) = TACNaive(method, classHierarchy, List(SimplePropagation))
+                ToTxt(params, stmts, cfg, skipParams = true, true, true)
+            }
+        ).mkString("\n")
     }
 
 }

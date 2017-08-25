@@ -87,4 +87,15 @@ package object domain {
 
     final val EmptyUpperTypeBound = UIDSet.empty[ReferenceType]
 
+    /**
+     * Tries to determine the name of the method/class that is analyzed;
+     * the result depends on the mixed-in domain.
+     */
+    def analyzedEntity(domain: Domain): String = {
+        domain match {
+            case d: TheMethod ⇒ d.method.toJava
+            case _            ⇒ "<Unknown (the domain does not provide source information)>\n"
+        }
+    }
+
 }

@@ -42,7 +42,7 @@ import org.opalj.br.analyses.PropertyStoreKey
  *
  * @author Michael Reif
  */
-object FPCFAnalysesManagerKey extends ProjectInformationKey[FPCFAnalysesManager] {
+object FPCFAnalysesManagerKey extends ProjectInformationKey[FPCFAnalysesManager, Nothing] {
 
     protected def requirements = List(PropertyStoreKey)
 

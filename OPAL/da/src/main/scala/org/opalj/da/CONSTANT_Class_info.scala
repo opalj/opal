@@ -30,6 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
+
 import org.opalj.bi.ConstantPoolTag
 
 /**
@@ -48,8 +50,21 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
      * Should be called if and only if the referenced type is known not be an array type and
      * therefore the underlying descriptor does not encode a field type descriptor.
      */
-    def asJavaClassOrInterfaceType(implicit cp: Constant_Pool): String = {
+    def asJavaClassOrInterfaceType(implicit cp: Constant_Pool): ObjectTypeInfo = {
         asJavaObjectType(cp(name_index).asConstantUTF8.value)
+    }
+
+    override def asCPNode(implicit cp: Constant_Pool): Node = {
+        <span class="cp_entry">
+            CONSTANT_Class_info(name_index=
+            { name_index }
+            &laquo;
+            <span class="cp_ref">
+                { cp(name_index).asCPNode }
+            </span>
+            &raquo;
+            )
+        </span>
     }
 
     // OLD CONVERSION METHODS
@@ -57,28 +72,16 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
     def asJavaType(implicit cp: Constant_Pool): String = {
         val classInfo = cp(name_index).toString
         if (classInfo.charAt(0) == '[')
-            parseFieldType(classInfo).asJavaType
+            parseFieldType(classInfo).asJava
         else
             classInfo
     }
 
-    override def asCPNode(implicit cp: Constant_Pool): Node =
-        <span class="cp_entry">
-            CONSTANT_Class_info(name_index={ name_index }
-            &laquo;
-            <span class="cp_ref">{ cp(name_index).asCPNode }</span>
-            &raquo;)
-        </span>
-
-    override def asInlineNode(implicit cp: Constant_Pool): Node = {
-        <span class="fqn">{ toString }</span>
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+        asJavaReferenceType(name_index).asSpan("")
     }
 
     override def toString(implicit cp: Constant_Pool): String = {
-        val classInfo = cp(name_index).toString
-        if (classInfo.charAt(0) == '[')
-            parseFieldType(classInfo).asJavaType
-        else
-            classInfo.replace('/', '.')
+        asJavaReferenceType(name_index).asJava
     }
 }

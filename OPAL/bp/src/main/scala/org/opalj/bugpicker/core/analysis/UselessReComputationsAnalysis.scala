@@ -33,7 +33,7 @@ package analysis
 
 import org.opalj.collection.immutable.:&:
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.Method
 import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.ConcreteIntegerValues
@@ -60,7 +60,7 @@ import org.opalj.issues.InstructionLocation
 object UselessReComputationsAnalysis {
 
     def apply(
-        theProject: SomeProject, classFile: ClassFile, method: Method,
+        theProject: SomeProject, method: Method,
         result: AIResult { val domain: TheCode with ConcreteIntegerValues with ConcreteLongValues with ValuesDomain }
     ): Seq[Issue] = {
 
@@ -107,9 +107,7 @@ object UselessReComputationsAnalysis {
             val lv = code.localVariable(pc, index).get
             val details = List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
             val location = new InstructionLocation(
-                Some("useless (re-)assignment"),
-                theProject, classFile, method, pc,
-                details
+                Some("useless (re-)assignment"), theProject, method, pc, details
             )
 
             Issue(

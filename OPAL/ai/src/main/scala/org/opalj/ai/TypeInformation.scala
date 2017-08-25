@@ -108,56 +108,56 @@ object IsPrimitiveValue {
 }
 
 trait IsBooleanValue[DomainBooleanValue <: AnyRef]
-        extends IsPrimitiveValue[BooleanType, DomainBooleanValue] {
+    extends IsPrimitiveValue[BooleanType, DomainBooleanValue] {
     this: DomainBooleanValue ⇒
 
     final def primitiveType: BooleanType = BooleanType
 }
 
 trait IsByteValue[DomainByteValue <: AnyRef]
-        extends IsPrimitiveValue[ByteType, DomainByteValue] {
+    extends IsPrimitiveValue[ByteType, DomainByteValue] {
     this: DomainByteValue ⇒
 
     final def primitiveType: ByteType = ByteType
 }
 
 trait IsCharValue[DomainCharValue <: AnyRef]
-        extends IsPrimitiveValue[CharType, DomainCharValue] {
+    extends IsPrimitiveValue[CharType, DomainCharValue] {
     this: DomainCharValue ⇒
 
     final def primitiveType: CharType = CharType
 }
 
 trait IsShortValue[DomainShortValue <: AnyRef]
-        extends IsPrimitiveValue[ShortType, DomainShortValue] {
+    extends IsPrimitiveValue[ShortType, DomainShortValue] {
     this: DomainShortValue ⇒
 
     final def primitiveType: ShortType = ShortType
 }
 
 trait IsIntegerValue[DomainIntegerValue <: AnyRef]
-        extends IsPrimitiveValue[IntegerType, DomainIntegerValue] {
+    extends IsPrimitiveValue[IntegerType, DomainIntegerValue] {
     this: DomainIntegerValue ⇒
 
     final def primitiveType: IntegerType = IntegerType
 }
 
 trait IsFloatValue[DomainFloatValue <: AnyRef]
-        extends IsPrimitiveValue[FloatType, DomainFloatValue] {
+    extends IsPrimitiveValue[FloatType, DomainFloatValue] {
     this: DomainFloatValue ⇒
 
     final def primitiveType: FloatType = FloatType
 }
 
 trait IsLongValue[DomainLongValue <: AnyRef]
-        extends IsPrimitiveValue[LongType, DomainLongValue] {
+    extends IsPrimitiveValue[LongType, DomainLongValue] {
     this: DomainLongValue ⇒
 
     final def primitiveType: LongType = LongType
 }
 
 trait IsDoubleValue[DomainDoubleValue <: AnyRef]
-        extends IsPrimitiveValue[DoubleType, DomainDoubleValue] {
+    extends IsPrimitiveValue[DoubleType, DomainDoubleValue] {
     this: DomainDoubleValue ⇒
 
     final def primitiveType: DoubleType = DoubleType
@@ -279,7 +279,7 @@ trait IsReferenceValue[DomainReferenceValue <: AnyRef] extends KnownType {
      * In general an `IsReferenceValue` abstracts over all potential values and this information is
      * sufficient for subsequent analyses; but in some cases, analyzing the set of underlying values
      * may increase the overall precision and this set is returned by this function. In other
-     * words: if `baseValues` is nonEmpty, then the properties return by `this` value are derived
+     * words: if `baseValues` is nonEmpty, then the properties returned by `this` value are derived
      * from the base values, but still maybe more specific. For example,
      * {{{
      *     Object o = _;
@@ -294,10 +294,10 @@ trait IsReferenceValue[DomainReferenceValue <: AnyRef] extends KnownType {
      * }}}
      *
      * @note A reference value which belongs to the base values by some other reference value
-     *       '''never''' has base values itself.
+     *       '''never''' has itself as a '''direct''' base value.
      *
-     * @return the set of values this reference value abstracts over. The set is empty if this
-     *         value is already a base base value.
+     * @return The set of values this reference value abstracts over. The set is empty if this
+     *         value is already a base value.
      */
     def baseValues: Traversable[DomainReferenceValue]
 

@@ -42,7 +42,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.analyses.BasicMethodInfo
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.reader.Java8LambdaExpressionsRewriting.{defaultConfig ⇒ lambdasRewritingConfig}
 
@@ -79,17 +78,19 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
         val invokedynamics = new ConcurrentLinkedQueue[String]()
-        project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
-            val BasicMethodInfo(classFile, method @ MethodWithBody(body)) = methodInfo
+        project.parForeachMethodWithBody(isInterrupted) { mi ⇒
+            val method = mi.method
+            val classFile = method.classFile
+            val body = method.body.get
             invokedynamics.addAll(
                 body.collectWithIndex {
-                case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
-                    classFile.thisType.toJava+" {\n  "+method.toJava()+"{ "+pc+": \n"+
-                        s"    ${bootstrap.toJava}\n"+
-                        bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +
-                        s"    Calling:   ${descriptor.toJava(name)}\n"+
-                        "} }\n"
-            }.toList.asJava
+                    case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
+                        classFile.thisType.toJava+" {\n  "+method.signatureToJava()+"{ "+pc+": \n"+
+                            s"    ${bootstrap.toJava}\n"+
+                            bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +
+                            s"    Calling:   ${descriptor.toJava(name)}\n"+
+                            "} }\n"
+                }.toList.asJava
             )
         }
         val result = invokedynamics.asScala.toSeq.sorted

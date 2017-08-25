@@ -32,29 +32,41 @@ package tac
 import org.opalj.br.Attribute
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.LineNumberTable
+import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.cfg.CFG
 
 /**
- * Representation of the 3-address code of a method.
+ * Contains the 3-address code of a method.
  *
  * == Attributes ==
- * The following attributes are directly reused: LineNumberTableAttribute; the statements keep
- * the reference to the underlying/original instruction which is used to retrieve the respective
- * information.
+ * The following code attributes are `directly` reused (i.e., the PCs are not transformed):
+ * - LineNumberTableAttribute; the statements keep the reference to the underlying/original
+ *   instruction which is used to retrieve the respective information.
  *
+ * @param params The variables which store the method's explicit and implicit (`this` in case
+ *               of an instance method) parameters.
+ *               In case of the ai-based representation (TACAI - default representation),
+ *               the variables are returned which store (the initial) parameters. If these variables
+ *               are written and we have a loop which includes the very first instruction, the
+ *               value will reflect this usage.
+ *               In case of the naive representation it "just" contains the names of the
+ *               registers which store the parameters.
  * @author Michael Eichberg
  */
-case class TACode[V <: Var[V]](
-        stmts:             Array[Stmt[V]], // CONST!!!
+case class TACode[P <: AnyRef, V <: Var[V]](
+        params:            Parameters[P],
+        stmts:             Array[Stmt[V]], // CONST
         cfg:               CFG,
         exceptionHandlers: ExceptionHandlers,
         lineNumberTable:   Option[LineNumberTable]
 // TODO Support the rewriting of TypeAnnotations etc.
 ) extends Attribute {
 
-    def kindId: Int = TACode.KindId
+    override def kindId: Int = TACode.KindId
 
-    def similar(other: Attribute): Boolean = this equals other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this equals other
+    }
 
     def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber())
 
@@ -63,6 +75,7 @@ case class TACode[V <: Var[V]](
     }
 
     override def toString: String = {
+        val txtParams = s"params=($params)"
         val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e ⇒ val (s, i) = e; s"$i: $s" }
         val txtStmts = stmtsWithIndex.mkString("stmts=(\n\t", ",\n\t", "\n)")
         val txtExceptionHandlers =
@@ -75,7 +88,7 @@ case class TACode[V <: Var[V]](
                 case Some(lnt) ⇒ lnt.lineNumbers.mkString(",lineNumberTable=(\n\t", ",\n\t", "\n)")
                 case None      ⇒ ""
             }
-        s"TACode($txtStmts,$cfg$txtExceptionHandlers$txtLineNumbers)"
+        s"TACode($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers$txtLineNumbers)"
     }
 
 }

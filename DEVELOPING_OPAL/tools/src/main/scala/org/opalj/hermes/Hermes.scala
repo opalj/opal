@@ -33,86 +33,75 @@ import java.io.File
 import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.prefs.Preferences
 
+import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-import com.fasterxml.jackson.dataformat.csv.CsvSchema
-import com.fasterxml.jackson.dataformat.csv.CsvFactory
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
-
+import org.chocosolver.solver.Model
+import org.chocosolver.solver.variables.IntVar
+import javafx.stage.Screen
 import javafx.scene.control.TableColumn
 import javafx.scene.control.SelectionMode
 import javafx.scene.layout.Priority
-import javafx.stage.Screen
 
 import org.controlsfx.control.PopOver
 import org.controlsfx.control.HiddenSidesPane
 import org.controlsfx.control.PopOver.ArrowLocation
 
 import scalafx.Includes._
+import scalafx.collections.ObservableBuffer
 import scalafx.application.JFXApp
 import scalafx.application.Platform
 import scalafx.application.JFXApp.PrimaryStage
-import scalafx.collections.ObservableBuffer
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
 import scalafx.stage.Stage
 import scalafx.stage.Modality
-import scalafx.scene.Scene
-import scalafx.scene.Group
-import scalafx.scene.layout.BorderPane
-import scalafx.scene.control.TableView
-import scalafx.scene.control.CheckBox
-import scalafx.scene.control.ProgressBar
-import scalafx.scene.control.Label
-import scalafx.scene.control.ListView
-import scalafx.scene.control.TextArea
-import scalafx.scene.control.TableCell
-import scalafx.scene.control.Button
-import scalafx.scene.control.Dialog
-import scalafx.scene.control.ButtonType
-import scalafx.scene.layout.HBox
-import scalafx.scene.image.Image
-import scalafx.scene.web.WebView
-import scalafx.scene.layout.VBox
-import scalafx.scene.layout.GridPane
-import scalafx.beans.property.BooleanProperty
-import scalafx.beans.property.IntegerProperty
-import scalafx.scene.control.MenuItem
 import scalafx.stage.FileChooser
 import scalafx.stage.FileChooser.ExtensionFilter
-import scalafx.scene.control.MenuBar
-import scalafx.scene.control.Menu
+import scalafx.scene.Scene
+import scalafx.scene.Group
+import scalafx.scene.image.Image
+import scalafx.scene.web.WebView
 import scalafx.scene.input.KeyCombination
-import scalafx.beans.property.LongProperty
+import scalafx.scene.layout.VBox
+import scalafx.scene.layout.GridPane
+import scalafx.scene.layout.BorderPane
+import scalafx.scene.layout.HBox
 import scalafx.scene.layout.StackPane
 import scalafx.scene.chart.XYChart
 import scalafx.scene.chart.CategoryAxis
 import scalafx.scene.chart.NumberAxis
 import scalafx.scene.chart.BarChart
 import scalafx.scene.chart.PieChart
-import org.chocosolver.solver.Model
-import org.chocosolver.solver.variables.IntVar
+import scalafx.scene.control.MenuItem
+import scalafx.scene.control.TextArea
+import scalafx.scene.control.ProgressBar
+import scalafx.scene.control.ButtonType
+import scalafx.scene.control.Dialog
+import scalafx.scene.control.TableCell
+import scalafx.scene.control.Button
+import scalafx.scene.control.Label
+import scalafx.scene.control.CheckBox
+import scalafx.scene.control.TableView
+import scalafx.scene.control.ListView
+import scalafx.scene.control.ChoiceDialog
+import scalafx.scene.control.MenuBar
+import scalafx.scene.control.Menu
 
-import org.opalj.util.Nanoseconds
-import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFileReader
+import org.opalj.util.Nanoseconds
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
  *
  * @author Michael Eichberg
+ * @author Christian Schaarschmidt (JavaFX Data Visualization)
  */
-object Hermes extends JFXApp {
+object Hermes extends JFXApp with HermesCore {
 
     if (parameters.unnamed.size != 1 ||
         parameters.named.size > 1 || (
@@ -130,154 +119,21 @@ object Hermes extends JFXApp {
         System.exit(1)
     }
 
-    // ---------------------------------------------------------------------------------------------
-    //
-    //
-    // STATIC CONFIGURATION
-    //
-    //
-    // ---------------------------------------------------------------------------------------------
+    initialize(new File(parameters.unnamed(0)))
 
-    // We use standard preferences for saving the state of the application only; not for
+    if (parameters.named.size == 1) {
+        // when the CSV was requested, we perform the analysis and then finish Hermes
+        analysesFinished onChange { (_, _, isFinished) ⇒
+            if (isFinished) {
+                exportCSV(new File(parameters.named("csv")))
+                stage.close() // <=> quit Hermes
+            }
+        }
+    }
+
+    // We use standard preferences for saving the application state; not for
     // permanent configuration settings!
     val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
-
-    /** Creates the initial, overall configuration. */
-    private[this] def initConfig(configFile: File): Config = {
-        import Console.err
-        if (!configFile.exists || !configFile.canRead()) {
-            err.println(s"The config file cannot be found or read: $configFile")
-            System.exit(2)
-        }
-        try {
-            ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
-        } catch {
-            case t: Throwable ⇒
-                err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
-                System.exit(3)
-                //... if System.exit does not terminate the app; this will at least kill the
-                // the current call.
-                throw t;
-
-        }
-    }
-
-    /** The base configuration of OPAL and Hermes. */
-    Globals.setConfig(initConfig(new File(parameters.unnamed(0))))
-
-    /** The list of all registered feature queries. */
-    val registeredQueries: List[Query] = {
-        Globals.Config.as[List[Query]]("org.opalj.hermes.queries.registered")
-    }
-
-    /** The list of enabled feature queries. */
-    val featureQueries: List[FeatureQuery] = {
-        registeredQueries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
-    }
-
-    /**
-     * The list of unique features derived by enabled feature queries; one ''feature query'' may
-     * be referenced by multiple unique feature queries.
-     */
-    val featureIDs: List[(String, FeatureQuery)] = {
-        var featureIDs: List[(String, FeatureQuery)] = List.empty
-
-        for {
-            featureQuery ← featureQueries
-            featureID ← featureQuery.featureIDs
-        } {
-            if (!featureIDs.exists(_._1 == featureID))
-                featureIDs :+= ((featureID, featureQuery))
-            else
-                throw DuplicateFeatureIDException(
-                    featureID,
-                    featureQuery,
-                    featureIDs.collectFirst { case (`featureID`, fq) ⇒ fq }.get
-                )
-        }
-
-        featureIDs
-    }
-
-    /** The set of all project configurations. */
-    val projectConfigurations = {
-        val pcs = Globals.Config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
-        if (pcs.map(_.id).toSet.size != pcs.size) {
-            throw new RuntimeException("some project names are not unique")
-        }
-        pcs
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    //
-    //
-    // FIELDS FOR STORING QUERY RESULTS
-    //
-    //
-    // ---------------------------------------------------------------------------------------------
-
-    /** The matrix containing for each project the extensions of all features. */
-    private[this] val featureMatrix: ObservableBuffer[ProjectFeatures[URL]] = {
-        val featureMatrix = ObservableBuffer.empty[ProjectFeatures[URL]]
-        for { projectConfiguration ← projectConfigurations } {
-            val features = featureQueries map { fe ⇒ (fe, fe.createInitialFeatures[URL]) }
-            featureMatrix += ProjectFeatures(projectConfiguration, features)
-        }
-        featureMatrix
-    }
-
-    /** Summary of the number of occurrences of a feature across all projects. */
-    val perFeatureCounts: Array[IntegerProperty] = {
-        val perFeatureCounts = Array.fill(featureIDs.size)(IntegerProperty(0))
-        featureMatrix.foreach { projectFeatures ⇒
-            projectFeatures.features.view.zipWithIndex foreach { fi ⇒
-                val (feature, index) = fi
-                feature.onChange { (_, oldValue, newValue) ⇒
-                    val change = newValue.count - oldValue.count
-                    if (change != 0) {
-                        perFeatureCounts(index).value = perFeatureCounts(index).value + change
-                    }
-                }
-            }
-        }
-        perFeatureCounts
-    }
-
-    def exportCSV(file: File): Unit = {
-        // Create the set of all names of all project-wide statistics
-        var projectStatisticsIDs = Set.empty[String]
-        featureMatrix.foreach { pf ⇒
-            projectStatisticsIDs ++= pf.projectConfiguration.statistics.keySet
-        }
-
-        // Logic to create the csv file:
-        val csvSchemaBuilder = CsvSchema.builder().addColumn("Project")
-        projectStatisticsIDs.foreach { id ⇒ csvSchemaBuilder.addColumn(id) }
-        val csvSchema =
-            featureIDs.
-                foldLeft(csvSchemaBuilder) { (schema, feature) ⇒
-                    schema.addColumn(feature._1, CsvSchema.ColumnType.NUMBER)
-                }.
-                setUseHeader(true).
-                build()
-        val writer = new BufferedWriter(new FileWriter(file))
-        val csvGenerator = new CsvFactory().createGenerator(writer)
-        csvGenerator.setSchema(csvSchema)
-        featureMatrix.foreach { pf ⇒
-            csvGenerator.writeStartArray()
-            csvGenerator.writeString(pf.id.value)
-            projectStatisticsIDs.foreach { id ⇒
-                pf.projectConfiguration.statistics.get(id) match {
-                    case Some(number) ⇒ csvGenerator.writeNumber(number)
-                    case None         ⇒ csvGenerator.writeString("N/A")
-                }
-            }
-            pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.value.count) }
-            csvGenerator.flush()
-            csvGenerator.writeEndArray()
-        }
-        csvGenerator.close()
-    }
 
     def exportFlare(file: File): Unit = {
         val writer = new BufferedWriter(new FileWriter(file))
@@ -334,88 +190,15 @@ object Hermes extends JFXApp {
         jsonGenerator.close()
     }
 
-    /* @stable */ private[this] val analysesFinished: BooleanProperty = BooleanProperty(false)
-    if (parameters.named.size == 1) {
-        analysesFinished onChange { (_, _, isFinished) ⇒
-            if (isFinished) {
-                exportCSV(new File(parameters.named("csv")))
-                stage.close()
-            }
-        }
+    override def updateProjectData(f: ⇒ Unit): Unit = Platform.runLater {
+        // We have to ensure that we are not calling this too often to avoid that the
+        // UI starts to lag
+        f
     }
 
-    // some statistics
-    val corpusAnalysisTime = new LongProperty
-
-    /**
-     * Executes the queries for all projects. Basically, the queries are executed in parallel
-     * for each project.
-     */
-    private[this] def analyzeCorpus(): Thread = {
-
-        def isValid(
-            projectFeatures:          ProjectFeatures[URL],
-            project:                  Project[URL],
-            projectAnalysisStartTime: Long
-        ): Boolean = {
-            if (project.projectClassFilesCount == 0) {
-                Platform.runLater { projectFeatures.id.value = "! "+projectFeatures.id.value }
-                false
-            } else {
-                true
-            }
-        }
-
-        val analysesStartTime = System.nanoTime()
-        val t = new Thread {
-            override def run(): Unit = {
-                val totalSteps = (featureQueries.size * projectConfigurations.size).toDouble
-                val stepsDone = new AtomicInteger(0)
-                for {
-                    // Using an iterator is required to avoid eager initialization of all projects!
-                    projectFeatures ← featureMatrix.toIterator
-                    if !Thread.currentThread.isInterrupted()
-                    projectConfiguration = projectFeatures.projectConfiguration
-                    projectAnalysisStartTime = System.nanoTime()
-                    projectInstantiation = projectConfiguration.instantiate
-                    project = projectInstantiation.project
-                    rawClassFiles = projectInstantiation.rawClassFiles
-                    if isValid(projectFeatures, project, projectAnalysisStartTime)
-                    (featureQuery, features) ← projectFeatures.featureGroups.par
-                    featuresMap = features.map(f ⇒ (f.value.id, f)).toMap
-                    if !Thread.currentThread.isInterrupted()
-                } {
-                    val featureAnalysisStartTime = System.nanoTime()
-                    val features = featureQuery(projectConfiguration, project, rawClassFiles)
-                    val featureAnalysisEndTime = System.nanoTime()
-                    val featureAnalysisTime = featureAnalysisEndTime - featureAnalysisStartTime
-
-                    Platform.runLater {
-                        featureQuery.accumulatedAnalysisTime.value =
-                            featureQuery.accumulatedAnalysisTime.value + featureAnalysisTime
-                        corpusAnalysisTime.value = featureAnalysisEndTime - analysesStartTime
-                        // (implicitly) update the feature matrix
-                        features.foreach { f ⇒ featuresMap(f.id).value = f }
-
-                        val progress = stepsDone.incrementAndGet() / totalSteps
-                        if (progressBar.getProgress < progress) {
-                            progressBar.setProgress(progress)
-                        }
-                    }
-                }
-
-                // we are done with everything
-                Platform.runLater {
-                    rootPane.getChildren().remove(progressBar)
-                    analysesFinished.value = true
-                    val analysesEndTime = System.nanoTime()
-                    corpusAnalysisTime.value = analysesEndTime - analysesStartTime
-                }
-            }
-        }
-        t.setDaemon(true)
-        t.start()
-        t
+    override def reportProgress(f: ⇒ Double): Unit = Platform.runLater {
+        val progress = f
+        if (progress >= 1.0d) rootPane.getChildren().remove(progressBar)
     }
 
     // Must only be called after all features were computed.
@@ -449,14 +232,14 @@ object Hermes extends JFXApp {
         model.setObjective(Model.MINIMIZE, overallSize)
         val solver = model.getSolver
 
-        val solutionTextArea = new TextArea() {
+        val solutionTextArea = new TextArea {
             editable = false
             prefHeight = 300
             prefWidth = 450
             vgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
         }
-        val solverProgressBar = new ProgressBar() {
+        val solverProgressBar = new ProgressBar {
             hgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
         }
@@ -506,7 +289,7 @@ object Hermes extends JFXApp {
     //
     // ---------------------------------------------------------------------------------------------
 
-    val progressBar = new ProgressBar { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
+    private[this] val progressBar = new ProgressBar { hgrow = Priority.ALWAYS; maxWidth = Double.MaxValue }
 
     val projectColumn = new TableColumn[ProjectFeatures[URL], String]("Project")
     // TODO Make the project configuration observable to fill the statistics table automatically.
@@ -730,7 +513,7 @@ object Hermes extends JFXApp {
                 val classFile = ClassFileReader.ClassFile(
                     () ⇒ newLocation.source.get.openConnection().getInputStream
                 )(0)
-                webView.engine.loadContent(classFile.toXHTML().toString())
+                webView.engine.loadContent(classFile.toXHTML(newLocation.source).toString())
             } catch { case t: Throwable ⇒ t.printStackTrace() }
         }
     }
@@ -739,36 +522,36 @@ object Hermes extends JFXApp {
     mainPane.setContent(featuresTableView);
     mainPane.setRight(
         new VBox(
-        new Label(s"Locations (at most ${Globals.MaxLocations} are shown)") {
-            padding = Insets(5, 5, 5, 5)
-            hgrow = Priority.ALWAYS
-            maxWidth = Double.MaxValue
-            alignment = Pos.Center
-            style = "-fx-background-color: #ccc"
-        },
-        locationsView
-    ) {
-        padding = Insets(100, 0, 100, 5)
-        vgrow = Priority.ALWAYS
-        maxHeight = Double.MaxValue
-    }.delegate
+            new Label(s"Locations (at most ${Globals.MaxLocations} are shown)") {
+                padding = Insets(5, 5, 5, 5)
+                hgrow = Priority.ALWAYS
+                maxWidth = Double.MaxValue
+                alignment = Pos.Center
+                style = "-fx-background-color: #ccc"
+            },
+            locationsView
+        ) {
+            padding = Insets(100, 0, 100, 5)
+            vgrow = Priority.ALWAYS
+            maxHeight = Double.MaxValue
+        }.delegate
     )
     mainPane.setTop(
         new VBox(
-        new Label(s"Table Configuration") {
-            padding = Insets(5, 5, 5, 5)
+            new Label(s"Table Configuration") {
+                padding = Insets(5, 5, 5, 5)
+                hgrow = Priority.ALWAYS
+                maxWidth = Double.MaxValue
+                alignment = Pos.Center
+                style = "-fx-background-color: #ccc"
+            },
+            onlyShowNotAvailableFeatures,
+            showFeatureQueryResults
+        ) {
+            padding = Insets(0, 250, 0, 250)
             hgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
-            alignment = Pos.Center
-            style = "-fx-background-color: #ccc"
-        },
-        onlyShowNotAvailableFeatures,
-        showFeatureQueryResults
-    ) {
-        padding = Insets(0, 250, 0, 250)
-        hgrow = Priority.ALWAYS
-        maxWidth = Double.MaxValue
-    }.delegate
+        }.delegate
     )
 
     def createFileMenuItems(): List[MenuItem] = {
@@ -790,33 +573,63 @@ object Hermes extends JFXApp {
         val showAnalysisTimes = new MenuItem("Show Analysis Times...") {
             onAction = handle { analysisTimesStage.show() }
         }
-        val showMethodDistribution = new MenuItem("Show Method Distribution...") {
+        val showProjectStatistics = new MenuItem("Project Statistics...") {
             // IMPROVE Move it to a "permanent stage" and make the project statistics observable to make it possible to react on changes and to get proper JavaFX behavior
-            disable <== analysesFinished.not
-            onAction = handle {
-                new Stage {
-                    title = "Method Distribution Across All Projects"
-                    scene = new Scene(900, 600) {
-                        root = new StackPane {
-                            val pieChartData = ObservableBuffer.empty[javafx.scene.chart.PieChart.Data]
-                            val pieChart = new PieChart {
-                                data = pieChartData
-                                title = "Method Distribution Across All Projects"
-                            }
-                            pieChart.legendVisible = true
-                            children = pieChart
 
-                            featureMatrix foreach { pf ⇒
-                                val statistics = pf.projectConfiguration.statistics
-                                val numberOfMethods = statistics.get("ProjectMethods")
-                                pieChartData.add(PieChart.Data(pf.id.value, numberOfMethods.get))
-                            }
+            // Container to store the stages; currently, we have to create the stages lazily
+            // because the statistics are not yet observable.
+            val pieChartStages: mutable.Map[String, Stage] = mutable.Map.empty
+            def createPieChartStage(statistic: String): Stage = {
+                val pieChartStage = new Stage {
+                    title = statistic
+                    scene = new Scene(950, 600) {
+                        val pieChartData = ObservableBuffer.empty[javafx.scene.chart.PieChart.Data]
+                        val pieChart = new PieChart {
+                            data = pieChartData
+                            //title = statistic
+                            legendVisible = true
                         }
+
+                        featureMatrix foreach { pf ⇒
+                            val statistics = pf.projectConfiguration.statistics.get(statistic)
+                            pieChartData.add(PieChart.Data(pf.id.value, statistics.get))
+                        }
+
+                        val legendButton = new CheckBox("Show Legend (If Place is Sufficient)")
+                        pieChart.legendVisible <== legendButton.selected
+                        val bp = new BorderPane {
+                            center = pieChart
+                            top = legendButton
+                        }
+                        root = bp
                     }
                     initOwner(stage)
-                }.show()
+                }
+
+                pieChartStage
+            }
+
+            disable <== analysesFinished.not
+            onAction = handle {
+                // all project's have the same statistics, hence, it is sufficient to
+                // collect those of the first project
+                val someProjectConfiguration = featureMatrix.get(0).projectConfiguration
+                val projectStatisticsList = someProjectConfiguration.statistics.keySet
+
+                val statisticDialog =
+                    new ChoiceDialog(projectStatisticsList.head, projectStatisticsList) {
+                        initOwner(stage)
+                        title = "Project Statistics"
+                        headerText = "Choose the project statistic to visualize."
+                        contentText = "Project Statistic:"
+                    }
+
+                statisticDialog.showAndWait() foreach { choice ⇒
+                    pieChartStages.getOrElseUpdate(choice, createPieChartStage(choice)).show()
+                }
             }
         }
+
         val fileExport = new MenuItem("Export As...") {
             disable <== analysesFinished.not
             accelerator = KeyCombination.keyCombination("Ctrl +Alt +S")
@@ -847,7 +660,7 @@ object Hermes extends JFXApp {
         }
         List(
             showConfig,
-            showAnalysisTimes, showMethodDistribution,
+            showAnalysisTimes, showProjectStatistics,
             fileExport,
             computeProjectsForCorpus
         )
@@ -869,7 +682,7 @@ object Hermes extends JFXApp {
             title = "Hermes - "+parameters.unnamed.head
             root = rootPane
 
-            analyzeCorpus()
+            analyzeCorpus(runAsDaemons = true)
         }
         icons += new Image(getClass.getResource("OPAL-Logo-Small.png").toExternalForm)
 

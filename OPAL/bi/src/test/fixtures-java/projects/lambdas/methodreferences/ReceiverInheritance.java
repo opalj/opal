@@ -31,13 +31,18 @@ package lambdas.methodreferences;
 import java.util.LinkedHashSet;
 import java.util.function.*;
 
+import annotations.target.InvokedMethod;
+import static annotations.target.TargetResolution.DYNAMIC;
+
 /**
- * This class contains examples for method references dealing with proxy class receiver inheritance.
+ * This class contains examples for method references where the called method is implemented
+ * by a supertype of the receiver.
  *
  * <!--
  *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
- * SPECIFIED LINE NUMBERS ARE STABLE.
+ * SPECIFIED LINE NUMBERS ARE STABLE).
+ *
  *
  * -->
  *
@@ -54,20 +59,24 @@ public class ReceiverInheritance {
         return state;
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "<init>", parameterTypes = { }, line = 68)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "add", line = 69)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "addAll", line = 70)
     public static <T> LinkedHashSet<T> callBiConsumer(T t) {
         LinkedHashSet<T> lhm = ReceiverInheritance.<T, LinkedHashSet<T>>someBiConsumerParameter(
-                LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll, t);
+                LinkedHashSet::new,
+                LinkedHashSet::add,
+                LinkedHashSet::addAll,
+                t
+        );
 
         return lhm;
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "contains", line = 80)
     public static <T> void instanceBiConsumer(T t) {
         LinkedHashSet<T> lhm = new LinkedHashSet<T>();
         Consumer<T> bc = lhm::contains;
         bc.accept(t);
-
-        lhm.contains("foo");
     }
 }
-
-

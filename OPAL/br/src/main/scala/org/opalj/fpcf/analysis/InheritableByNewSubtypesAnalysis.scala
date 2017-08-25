@@ -85,11 +85,7 @@ class InheritableByNewSubtypesAnalysis private (val project: SomeProject) extend
      * This should not be called if the current analysis mode is application-related.
      *
      */
-    def subtypeInheritability(
-        isApplicationMode: Boolean
-    )(
-        e: Entity
-    ): Property = {
+    def subtypeInheritability(isApplicationMode: Boolean)(e: Entity): Property = {
         val method = e.asInstanceOf[Method]
 
         if (isApplicationMode)
@@ -98,7 +94,7 @@ class InheritableByNewSubtypesAnalysis private (val project: SomeProject) extend
         if (method.isPrivate)
             return NotInheritableByNewTypes;
 
-        val classFile = project.classFile(method)
+        val classFile = method.classFile
         if (classFile.isEffectivelyFinal)
             return NotInheritableByNewTypes;
 
@@ -146,10 +142,7 @@ object InheritableByNewSubtypesAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(InheritableByNewTypes.Key)
 
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    protected[fpcf] def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new InheritableByNewSubtypesAnalysis(project)
         val isApplicationMode: Boolean = AnalysisModes.isApplicationLike(project.analysisMode)
         propertyStore scheduleOnDemandComputation (

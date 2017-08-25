@@ -53,8 +53,8 @@ class TACNaiveSwitchTest extends TACNaiveTest {
 
     describe("the naive TAC of switch instructions") {
         it("should correctly reflect tableswitch case") {
-            val statements = TACNaive(method = TableSwitchMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, true)
+            val statements = TACNaive(method = TableSwitchMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, true)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -88,12 +88,12 @@ class TACNaiveSwitchTest extends TACNaiveTest {
                 "9:/*pc=33:*/ return op_0",
                 "10:/*pc=34:*/ op_0 = 0",
                 "11:/*pc=35:*/ return op_0"
-            ))
+            ).mkString("\n"))
         }
 
         it("should correctly reflect lookupswitch case") {
-            val statements = TACNaive(method = LookupSwitchMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, true)
+            val statements = TACNaive(method = LookupSwitchMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, true)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
@@ -120,7 +120,7 @@ class TACNaiveSwitchTest extends TACNaiveTest {
                 "7:/*pc=34:*/ return op_0",
                 "8:/*pc=35:*/ op_0 = 0",
                 "9:/*pc=36:*/ return op_0"
-            ))
+            ).mkString("\n"))
         }
 
     }

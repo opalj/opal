@@ -37,7 +37,6 @@ import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
-import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.collection.immutable.IntSet
@@ -82,12 +81,12 @@ object TACNaive {
      *          `Code.BasicClassHierarchy`.
      * @return The array with the generated statements.
      */
+    // IMPROVE Make it explicit that op0 is the thrown exception in case of an exception handler! (Currently, op0 just exists and only by checking the exception handler table it becomes obvious where op0 is comming from.)
     def apply(
-        method:           Method,
-        classHierarchy:   ClassHierarchy,
-        optimizations:    List[TACOptimization[IdBasedVar]] = List.empty,
-        forceCFGCreation: Boolean                           = false
-    ): (Array[Stmt[IdBasedVar]], Option[CFG], ExceptionHandlers) = {
+        method:         Method,
+        classHierarchy: ClassHierarchy,
+        optimizations:  List[TACOptimization[Param, IdBasedVar]] = List.empty
+    ): TACode[Param, IdBasedVar] = {
 
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -98,12 +97,8 @@ object TACNaive {
         val instructions = code.instructions
         val codeSize = instructions.length
 
-        // used if we find jsr/ret instructions or want to do optimizations
-        var theCFG: CFG = null
-        def cfg(): CFG = {
-            if (theCFG eq null) theCFG = CFGFactory(code, classHierarchy)
-            theCFG
-        }
+        // (only) used if the code contains jsr/ret instructions or if an optimization requires it
+        val cfg = CFGFactory(code, classHierarchy)
 
         // Used to determine if we have already transformed the respective instruction.
         val processed = new BitSet(codeSize)
@@ -510,7 +505,8 @@ object TACNaive {
                     val invoke = as[MethodInvocationInstruction](instruction)
                     val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
-                    val (params, List(receiver)) = operands.splitAt(numOps - 1)
+                    val (paramsInOperandsOrder, List(receiver)) = operands.splitAt(numOps - 1)
+                    val params = paramsInOperandsOrder.reverse
                     import invoke.{methodDescriptor, declaringClass, isInterfaceCall, name}
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
@@ -549,7 +545,8 @@ object TACNaive {
                 case INVOKESTATIC.opcode ⇒
                     val invoke = as[INVOKESTATIC](instruction)
                     val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
-                    val (params, rest) = stack.splitAt(numOps)
+                    val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
+                    val params = paramsInOperandsOrder.reverse
                     import invoke.{declaringClass, methodDescriptor, name, isInterface}
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
@@ -576,9 +573,11 @@ object TACNaive {
                 case INVOKEDYNAMIC.opcode ⇒
                     val call @ INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
                     val numOps = call.numberOfPoppedOperands(x ⇒ stack.drop(x).head.cTpe.category)
-                    val (operands, rest) = stack.splitAt(numOps)
+                    val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
+                    val params = paramsInOperandsOrder.reverse
+
                     val returnType = methodDescriptor.returnType
-                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, operands)
+                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
                     val newVar = OperandVar(returnType.computationalType, rest)
                     statements(pc) = List(Assignment(pc, newVar, expr))
                     schedule(pcOfNextInstruction(pc), newVar :: rest)
@@ -638,10 +637,10 @@ object TACNaive {
                     statements(pc) = List(Goto(pc, targetPC))
                     schedule(targetPC, stack)
 
-                case JSR.opcode | JSR_W.opcode ⇒
+                case br.instructions.JSR.opcode | JSR_W.opcode ⇒
                     val targetPC = pc + as[JSRInstruction](instruction).branchoffset
                     val retVar = OperandVar(ComputationalTypeReturnAddress, stack)
-                    statements(pc) = List(JumpToSubroutine(pc, targetPC))
+                    statements(pc) = List(JSR(pc, targetPC))
                     schedule(targetPC, retVar :: stack)
 
                 case RET.opcode ⇒
@@ -692,7 +691,7 @@ object TACNaive {
                     val resultVar = OperandVar(ComputationalTypeReference, rest)
                     val targetType = as[CHECKCAST](instruction).referenceType
                     val checkcast = Checkcast(pc, value1, targetType)
-                    statements(pc) = List(Assignment(pc, resultVar, checkcast))
+                    statements(pc) = List(checkcast)
                     schedule(pcOfNextInstruction(pc), resultVar :: rest)
 
                 case MONITORENTER.opcode ⇒
@@ -806,22 +805,32 @@ object TACNaive {
         // However, before we can do that we first add the register initialization
         // statements.
         var index = 0
-        val finalStatements = new ArrayBuffer[Stmt[IdBasedVar]](codeSize)
         var registerIndex = 0
-        if (!method.isStatic) {
+        val finalStatements = new ArrayBuffer[Stmt[IdBasedVar]](codeSize)
+        val descriptor = method.descriptor
+        val isStatic = method.isStatic
+        val parameterTypes = descriptor.parameterTypes
+        val paramsCount = descriptor.parametersCount + 1
+        val tacParams = new Array[Param](paramsCount)
+
+        if (!isStatic) {
             val targetVar = RegisterVar(ComputationalTypeReference, 0)
             val sourceParam = Param(ComputationalTypeReference, "this")
+            tacParams(0) = sourceParam
             finalStatements += Assignment[IdBasedVar](-1, targetVar, sourceParam)
             index += 1
             registerIndex += 1
         }
-        method.descriptor.parameterTypes foreach { parameterType ⇒
-            val varName = code.localVariable(0, registerIndex).map(_.name).getOrElse("p_"+index)
+        var tacIndex = 1
+        parameterTypes foreach { parameterType ⇒
+            val varName = code.localVariable(0, registerIndex).map(_.name).getOrElse("p_"+tacIndex)
             val cTpe = parameterType.computationalType
             val targetVar = RegisterVar(cTpe, registerIndex)
             val sourceParam = Param(cTpe, varName)
+            tacParams(tacIndex) = sourceParam
             finalStatements += Assignment[IdBasedVar](-1, targetVar, sourceParam)
             index += 1
+            tacIndex += 1
             registerIndex += cTpe.operandSize
         }
 
@@ -847,21 +856,85 @@ object TACNaive {
         // add the artificial lastPC + 1 instruction to enable the mapping of exception handlers
         pcToIndex(currentPC /* == codeSize +1 */ ) = index
 
-        if (forceCFGCreation || optimizations.nonEmpty) cfg()
-        val tacCFG = Option(theCFG).map(cfg ⇒ cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1))
+        // HERE, we accept that the boundaries of the exception handlers may not cover
+        // all instructions which conceptually belong in the try block if the additional
+        // instruction cannot throw exceptions. I.e., if the try block just encompassed a
+        // single instruction and that instruction was transformed such that we have multiple
+        // instructions now. In such a case (e.g., the rewriting of swap...) the additional
+        // instructions will never cause any exceptions.
+        val tacCFG = cfg.mapPCsToIndexes(pcToIndex, (i) ⇒ i, lastIndex = index - 1)
 
         finalStatements.foreach(_.remapIndexes(pcToIndex))
         val tacCode = finalStatements.toArray
 
+        def getStartAndEndIndex(
+            oldEH:      ExceptionHandler,
+            newIndexes: Array[Int]
+        ): (Int, Int) = {
+            val oldStartPC = oldEH.startPC
+            val newStartIndex = newIndexes(oldStartPC)
+            var newEndIndex = newIndexes(oldEH.endPC)
+            // In some code (in particular groovy related code), we have found code
+            // where the end of the try block is unreachable. I.e., no control flow path
+            // exists that will reach the instruction... and – after removing the dead
+            // instructions the exception handler collapses
+            if (newEndIndex == Int.MinValue) {
+                var lastPC = oldEH.endPC
+                while (newEndIndex <= 0 && lastPC >= oldStartPC) {
+                    lastPC -= 1
+                    newEndIndex = newIndexes(lastPC)
+                }
+                if (newEndIndex == newStartIndex) {
+                    newEndIndex += 1
+                }
+            }
+            assert(newStartIndex < newEndIndex, s"old: $oldEH => [$newStartIndex,$newEndIndex]")
+            (newStartIndex, newEndIndex)
+        }
+
+        /*
+          * Updates the exception handlers by adjusting the start, end and handler index (pc).
+          *
+          * This method can only be used in simple cases where the order of instructions remains
+          * the same and the start and end still map to valid exception handlers -
+          * deleting/adding instructions is supported.
+          *
+          * @param exceptionHandlers The code's exception handlers.
+          * @param newIndexes A map that contains for each previous index the new index
+          *                   that should be used.
+          * @return The new exception handler.
+          */
+        def updateExceptionHandlers(
+            exceptionHandlers: ExceptionHandlers,
+            newIndexes:        Array[Int]
+        ): ExceptionHandlers = {
+            exceptionHandlers map { old ⇒
+                // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
+                // included in the handler block, the endPC is equal to `(pc of last instruction) +
+                // instruction.size`; however, this is already handled by the caller!
+                val (newStartIndex, newEndIndex) = getStartAndEndIndex(old, newIndexes)
+
+                val newEH = old.copy(
+                    startPC = newStartIndex,
+                    endPC = newEndIndex,
+                    handlerPC = newIndexes(old.handlerPC)
+                )
+                assert(
+                    newEH.startPC <= newEH.endPC,
+                    s"startPC=${old.startPC} => ${newEH.startPC};endPC=${old.endPC} => ${newEH.endPC}"
+                )
+                newEH
+            }
+        }
+
         val tacEHs = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
 
         if (optimizations.nonEmpty) {
-            val initialTACode = TACode(tacCode, tacCFG.get, tacEHs, code.lineNumberTable)
-            val base = TACOptimizationResult[IdBasedVar](initialTACode, wasTransformed = false)
-            val result = optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac))
-            (result.code.stmts, Some(result.code.cfg), result.code.exceptionHandlers)
+            val initialTACode = TACode(new Parameters(tacParams), tacCode, tacCFG, tacEHs, code.lineNumberTable)
+            val base = TACOptimizationResult[Param, IdBasedVar](initialTACode, wasTransformed = false)
+            optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac)).code
         } else {
-            (tacCode, tacCFG, tacEHs)
+            TACode(new Parameters(tacParams), tacCode, tacCFG, tacEHs, code.lineNumberTable)
         }
     }
 

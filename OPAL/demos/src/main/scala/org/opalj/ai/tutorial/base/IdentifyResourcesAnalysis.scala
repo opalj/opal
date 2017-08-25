@@ -66,44 +66,44 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
                                 SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
                             ) ⇒ pc
                     }
-                (cf, m, pcs)
-            }).filter(_._3.size > 0)
+                (m, pcs)
+            }).filter(_._2.size > 0)
 
         // Step 2
         // Perform a simple abstract interpretation to check if there is some
         // method that pass a constant string to a method
         class AnalysisDomain(
-            override val project: Project[URL],
-            val method:           Method
+                override val project: Project[URL],
+                val method:           Method
         ) extends CorrelationalDomain
-                with domain.TheProject
-                with domain.TheMethod
-                with domain.DefaultDomainValueBinding
-                with domain.ThrowAllPotentialExceptionsConfiguration
-                with domain.l0.DefaultTypeLevelIntegerValues
-                with domain.l0.DefaultTypeLevelLongValues
-                with domain.l0.TypeLevelPrimitiveValuesConversions
-                with domain.l0.TypeLevelLongValuesShiftOperators
-                with domain.l0.DefaultTypeLevelFloatValues
-                with domain.l0.DefaultTypeLevelDoubleValues
-                with domain.l0.TypeLevelFieldAccessInstructions
-                with domain.l0.TypeLevelInvokeInstructions
-                with domain.l1.DefaultStringValuesBinding
-                with domain.DefaultHandlingOfMethodResults
-                with domain.IgnoreSynchronization
+            with domain.TheProject
+            with domain.TheMethod
+            with domain.DefaultDomainValueBinding
+            with domain.ThrowAllPotentialExceptionsConfiguration
+            with domain.l0.DefaultTypeLevelIntegerValues
+            with domain.l0.DefaultTypeLevelLongValues
+            with domain.l0.TypeLevelPrimitiveValuesConversions
+            with domain.l0.TypeLevelLongValuesShiftOperators
+            with domain.l0.DefaultTypeLevelFloatValues
+            with domain.l0.DefaultTypeLevelDoubleValues
+            with domain.l0.TypeLevelFieldAccessInstructions
+            with domain.l0.TypeLevelInvokeInstructions
+            with domain.l1.DefaultStringValuesBinding
+            with domain.DefaultHandlingOfMethodResults
+            with domain.IgnoreSynchronization
 
         val callSitesWithConstantStringParameter =
             for {
-                (cf, m, pcs) ← callSites
-                result = BaseAI(cf, m, new AnalysisDomain(theProject, m))
+                (m, pcs) ← callSites
+                result = BaseAI(m, new AnalysisDomain(theProject, m))
                 (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
                     case (pc, result.domain.StringValue(value) :&: _) ⇒ (pc, value)
                 }
-            } yield (cf, m, pc, value)
+            } yield (m, pc, value)
 
-        def callSiteToString(callSite: (ClassFile, Method, PC, String)): String = {
-            val (cf, m, pc, v) = callSite
-            m.toJava(cf, s"$pc: $v")
+        def callSiteToString(callSite: (Method, PC, String)): String = {
+            val (m, pc, v) = callSite
+            m.toJava(s"$pc: $v")
         }
 
         BasicReport(

@@ -33,13 +33,13 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 
 /**
- * A `java.io.ByteArrayOutputStream` that throws an exception after writing
- * some bytes, if the given boudary (`failAfter`) is surpased.
+ * A `java.io.ByteArrayOutputStream` that throws an `IOException` after writing
+ * some bytes, if the given boundary (`failAfter`) is surpased.
  *
- * @param failAfter Sets the boundary after which a `write` will throw an
- *      exception.
- * @param initialSize Sets the initial size of the array used to the store the content.
- *      This serves optimization purposes only.
+ * @param  failAfter Sets the boundary after which a `write` will throw an
+ *         exception.
+ * @param  initialSize Sets the initial size of the array used to the store the content.
+ *         This serves optimization purposes only.
  * @author Michael Eichberg
  */
 class FailAfterByteArrayOutputStream(
@@ -50,7 +50,7 @@ class FailAfterByteArrayOutputStream(
 
     /**
      * Writes the given byte value to the underlying array and then checks if the
-     * given boundary `failAfter` was (already) passed.
+     * given boundary (`failAfter`) was (already) passed.
      *
      * I.e., the underlying array contains the given values.
      */

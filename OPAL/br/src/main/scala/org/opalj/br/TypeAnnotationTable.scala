@@ -49,7 +49,7 @@ trait TypeAnnotationTable extends Attribute {
      */
     def typeAnnotations: TypeAnnotations
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: TypeAnnotationTable ⇒ this.similar(that)
             case _                         ⇒ false

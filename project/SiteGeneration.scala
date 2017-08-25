@@ -57,7 +57,7 @@ object SiteGeneration {
                 (sourceFolder ** "*").get.exists { sourceFile ⇒
                     if (sourceFile.newerThan(targetFolder) && !sourceFile.isHidden) {
                         log.info(
-                            s"at least $sourceFile was updated: "+
+                            s"At least $sourceFile was updated: "+
                                 s"${sourceFile.lastModified} > ${targetFolder.lastModified}"+
                                 s"(current time: ${System.currentTimeMillis})"
                         )
@@ -70,10 +70,10 @@ object SiteGeneration {
         // 0.1. generate OPALDisassembler.
         val disassemblerJARTarget = targetFolder / "artifacts" / disassemblerJAR.getName
         IO.copyFile(disassemblerJAR, disassemblerJARTarget)
-        log.info("copied bytecode disassembler to: "+disassemblerJARTarget)
+        log.info("Copied bytecode disassembler to: "+disassemblerJARTarget)
 
         if (siteGenerationNecessary) {
-            log.info("generating site using: "+sourceFolder / "site.conf")
+            log.info("Generating site using: "+sourceFolder / "site.conf")
 
             import java.io.File
             import java.nio.charset.Charset
@@ -196,7 +196,7 @@ object SiteGeneration {
                     )
                 )
                 Files.write(htmlFile.toPath, completePage.getBytes(Charset.forName("UTF8")))
-                log.info(s"converted $sourceFile to $htmlFile using $defaultTemplate")
+                log.info(s"Converted $sourceFile to $htmlFile using $defaultTemplate")
             }
         }
 

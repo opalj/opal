@@ -62,6 +62,7 @@ import org.opalj.log.OPALLogger.{warn ⇒ logWarn}
 import org.opalj.log.{LogContext, OPALLogger}
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.UID
+import org.opalj.util.AnyToAnyThis
 
 /**
  * The property store manages the execution of computations of properties related to specific
@@ -1041,10 +1042,12 @@ class PropertyStore private (
                         if (remainingEntities.nonEmpty) {
                             val nextEntity = remainingEntities.head
                             remainingEntities = remainingEntities.tail
-                            if (entitySelector.isDefinedAt(nextEntity))
-                                entitySelector(nextEntity)
-                            else
+                            val r: Any = entitySelector.applyOrElse(nextEntity, AnyToAnyThis)
+                            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                                r.asInstanceOf[E]
+                            } else {
                                 null
+                            }
                         } else
                             null
                     }
@@ -1127,15 +1130,14 @@ class PropertyStore private (
     }
 
     /**
-     * Registers a function that calculates a property for all or some elements
-     * of the store.
+     * Registers a property computation function that is called for all known entities.
      *
      * This store ensures that the property
      * computation function `pc` is never invoked more than once for the
      * same element at the same time. If `pc` is invoked again for a specific element
      * then only because a dependee has changed!
      */
-    def <<(pc: SomePropertyComputation): Unit = bulkScheduleComputations(keysList, pc)
+    def schedule(pc: SomePropertyComputation): Unit = bulkScheduleComputations(keysList, pc)
 
     /**
      * Registers a function that calculates a property for those elements
@@ -1147,7 +1149,7 @@ class PropertyStore private (
      *      For which the analysis may compute some property.
      *      The filter function is performed in the context of the calling thread.
      */
-    def <|<(f: Entity ⇒ Boolean, c: SomePropertyComputation): Unit = {
+    def scheduleForFiltered(f: Entity ⇒ Boolean)(c: SomePropertyComputation): Unit = {
         val it = keys.iterator()
         var es: List[Entity] = Nil
         while (it.hasNext) {
@@ -1170,7 +1172,11 @@ class PropertyStore private (
      *         passed to the function`c` and for which the analysis may compute some property.
      *         The function pf is performed in the context of the calling thread.
      */
-    def <||<[E <: Entity](pf: PartialFunction[Entity, E], c: PropertyComputation[E]): Unit = {
+    def scheduleForCollected[E <: Entity](
+        pf: PartialFunction[Entity, E]
+    )(
+        c: PropertyComputation[E]
+    ): Unit = {
         val es = keysList.collect(pf)
         if (es.isEmpty) {
             logWarn("project", s"the entity selector function $pf did not select any entity")
@@ -1178,11 +1184,15 @@ class PropertyStore private (
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
 
-    def <|<<[E <: Entity](es: Traversable[E], c: PropertyComputation[E]): Unit = {
+    /**
+     * Will call the given function `c` for all elements of `es` in parallel; all elements of `es`
+     * have to be entities known to the property store.
+     */
+    def scheduleForEntities[E <: Entity](es: Traversable[E])(c: PropertyComputation[E]): Unit = {
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
 
-    def schedulePropertyComputation[E <: Entity](e: E, pc: SomePropertyComputation): Unit = {
+    def scheduleSinglePropertyComputation[E <: Entity](e: E)(pc: SomePropertyComputation): Unit = {
         if (!isInterrupted()) scheduleComputation(e, pc)
     }
 
@@ -1231,7 +1241,7 @@ class PropertyStore private (
      *
      * @note This method will not trigger lazy or direct property computations.
      */
-    def collect[T](collect: PartialFunction[(Entity, Property), T]): Traversable[T] = {
+    def collect[T](pf: PartialFunction[(Entity, Property), T]): Traversable[T] = {
         accessStore {
             for {
                 (e, eps) ← entries
@@ -1241,9 +1251,10 @@ class PropertyStore private (
                 if p ne null
                 if !p.isBeingComputed
                 ep /*: (Entity, Property)*/ = (e, p)
-                if collect.isDefinedAt(ep)
+                // IMPROVE Rewrite the split isDefinedAt + pf.apply using pf.applyOrElse
+                if pf.isDefinedAt(ep)
             } yield {
-                collect(ep)
+                pf(ep)
             }
         }
     }
@@ -2310,8 +2321,8 @@ object PropertyStoreContext {
 //--------------------------------------------------------------------------------------------------
 
 private[fpcf] final class PropertyAndObservers(
-    final val p:  Property  = null,
-    final val os: Observers = null
+        final val p:  Property  = null,
+        final val os: Observers = null
 )
 
 private[fpcf] object PropertyAndObservers {
@@ -2329,10 +2340,7 @@ private[fpcf] object PropertyAndObservers {
 private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObservers, Property] {
 
     def isDefinedAt(pos: PropertyAndObservers): Boolean = {
-        (pos ne null) && {
-            val p = pos.p
-            (p ne null) && !p.isBeingComputed
-        }
+        (pos ne null) && { val p = pos.p; (p ne null) && !p.isBeingComputed }
     }
 
     def apply(pos: PropertyAndObservers): Property = pos.p
@@ -2345,9 +2353,9 @@ private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObserve
  * @param ps A mutable map of the entities properties; the key is the id of the property's kind.
  */
 private[fpcf] final class EntityProperties(
-    final val id: Int,
-    final val l:  ReentrantReadWriteLock = new ReentrantReadWriteLock,
-    final val ps: Properties             = ArrayMap(sizeHint = Math.max(3, PropertyKey.maxId))
+        final val id: Int,
+        final val l:  ReentrantReadWriteLock = new ReentrantReadWriteLock,
+        final val ps: Properties             = ArrayMap(sizeHint = Math.max(3, PropertyKey.maxId))
 ) extends UID
 
 private[fpcf] object PropertiesOfEntity {

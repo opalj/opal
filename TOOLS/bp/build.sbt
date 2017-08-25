@@ -10,10 +10,10 @@ import sbtassembly.AssemblyPlugin.autoImport._
 name := "BugPicker"
 
 organization	in ThisBuild := "de.opal-project"
-homepage 		in ThisBuild := Some(url("http://www.opal-project.de/tools/bugpicker/"))
+homepage 		in ThisBuild := Some(url("http://www.opal-project.de/"))
 licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 version 		in ThisBuild := "1.3.0-Snapshot"
-scalaVersion 	in ThisBuild := "2.11.8"
+scalaVersion 	in ThisBuild := "2.11.11"
 
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 

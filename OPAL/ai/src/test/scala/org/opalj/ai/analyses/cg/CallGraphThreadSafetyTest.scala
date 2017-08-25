@@ -33,7 +33,7 @@ package cg
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework
 

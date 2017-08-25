@@ -94,18 +94,18 @@ class TACNaiveArrayTest extends TACNaiveTest {
             "10: op_0 = op_0[op_1]",
             "11: r_2 = op_0",
             "12: return"
-        )
+        ).mkString("\n")
 
         it("should correctly reflect reference array instructions") {
-            val statements = TACNaive(method = RefArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val stmts = TACNaive(method = RefArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
-            assert(statements.nonEmpty)
+            assert(stmts.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(Array(
+            stmts.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
-                Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), ArrayType.ArrayOfObjects)),
+                Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), ArrayType.ArrayOfObject)),
                 Assignment(4, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(5, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(6, SimpleVar(1, ComputationalTypeInt), IntConst(6, 4)),
@@ -135,16 +135,16 @@ class TACNaiveArrayTest extends TACNaiveTest {
                 "12: op_0 = op_0[op_1]",
                 "13: r_2 = op_0",
                 "14: return"
-            ))
+            ).mkString("\n"))
         }
 
         it("should correctly reflect multidimensional array instructions") {
-            val statements = TACNaive(method = MultidimArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val stmts = TACNaive(method = MultidimArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
-            assert(statements.nonEmpty)
+            assert(stmts.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(Array[Stmt[IdBasedVar]](
+            stmts.shouldEqual(Array[Stmt[IdBasedVar]](
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
                 Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
@@ -166,76 +166,76 @@ class TACNaiveArrayTest extends TACNaiveTest {
                 "6: op_0 = op_0.length",
                 "7: r_2 = op_0",
                 "8: return"
-            ))
+            ).mkString("\n"))
         }
 
         it("should correctly reflect double array instructions") {
-            val statements = TACNaive(method = DoubleArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val stmts = TACNaive(method = DoubleArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
-            assert(statements.nonEmpty)
+            assert(stmts.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(expectedAST(ComputationalTypeDouble, ArrayType(DoubleType), DoubleConst(6, 1.0d)))
+            stmts.shouldEqual(expectedAST(ComputationalTypeDouble, ArrayType(DoubleType), DoubleConst(6, 1.0d)))
             javaLikeCode.shouldEqual(expectedJLC("double", "1.0d"))
         }
 
         it("should correctly reflect float array instructions") {
-            val statements = TACNaive(method = FloatArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val stmts = TACNaive(method = FloatArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
-            assert(statements.nonEmpty)
+            assert(stmts.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(expectedAST(ComputationalTypeFloat, ArrayType(FloatType), FloatConst(6, 2.0f)))
+            stmts.shouldEqual(expectedAST(ComputationalTypeFloat, ArrayType(FloatType), FloatConst(6, 2.0f)))
             javaLikeCode.shouldEqual(expectedJLC("float", "2.0f"))
         }
 
         it("should correctly reflect int array instructions") {
-            val statements = TACNaive(method = IntArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val stmts = TACNaive(method = IntArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
-            assert(statements.nonEmpty)
+            assert(stmts.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(IntegerType), IntConst(6, 2)))
+            stmts.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(IntegerType), IntConst(6, 2)))
             javaLikeCode.shouldEqual(expectedJLC("int", "2"))
         }
 
         it("should correctly reflect long array instructions") {
-            val statements = TACNaive(method = LongArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val stmts = TACNaive(method = LongArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
-            assert(statements.nonEmpty)
+            assert(stmts.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(expectedAST(ComputationalTypeLong, ArrayType(LongType), LongConst(6, 1)))
+            stmts.shouldEqual(expectedAST(ComputationalTypeLong, ArrayType(LongType), LongConst(6, 1)))
             javaLikeCode.shouldEqual(expectedJLC("long", "1l"))
         }
 
         it("should correctly reflect short array instructions") {
-            val statements = TACNaive(method = ShortArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val stmts = TACNaive(method = ShortArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
-            assert(statements.nonEmpty)
+            assert(stmts.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ShortType), IntConst(6, 2)))
+            stmts.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ShortType), IntConst(6, 2)))
             javaLikeCode.shouldEqual(expectedJLC("short", "2"))
         }
 
         it("should correctly reflect byte array instructions") {
-            val statements = TACNaive(method = ByteArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val stmts = TACNaive(method = ByteArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
-            assert(statements.nonEmpty)
+            assert(stmts.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ByteType), IntConst(6, 2)))
+            stmts.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ByteType), IntConst(6, 2)))
             javaLikeCode.shouldEqual(expectedJLC("byte", "2"))
         }
 
         it("should correctly reflect char array instructions") {
-            val statements = TACNaive(method = CharArrayMethod, classHierarchy = Code.BasicClassHierarchy)._1
-            val javaLikeCode = ToTxt(statements, None, false, false)
+            val stmts = TACNaive(method = CharArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
-            assert(statements.nonEmpty)
+            assert(stmts.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(CharType), IntConst(6, 2)))
+            stmts.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(CharType), IntConst(6, 2)))
             javaLikeCode.shouldEqual(expectedJLC("char", "2"))
         }
     }

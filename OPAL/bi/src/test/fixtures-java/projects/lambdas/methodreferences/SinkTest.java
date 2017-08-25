@@ -30,6 +30,9 @@ package lambdas.methodreferences;
 
 import java.util.ArrayList;
 
+import annotations.target.InvokedMethod;
+import static annotations.target.TargetResolution.DYNAMIC;
+
 /**
  * This class contains examples for method references in sink.
  *
@@ -37,7 +40,7 @@ import java.util.ArrayList;
  *
  *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
- * SPECIFIED LINE NUMBERS ARE STABLE.
+ * SPECIFIED LINE NUMBERS ARE STABLE).
  *
  *
  * -->
@@ -80,6 +83,7 @@ public class SinkTest {
         }
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/SinkTest$SinkOfInt", name = "accept", parameterTypes = { Object.class }, line = 90)
     public static void downstreamTest() {
         ArrayList<Integer> list = new ArrayList<Integer>();
         Sink<Integer> downstream = new SinkOfInt();

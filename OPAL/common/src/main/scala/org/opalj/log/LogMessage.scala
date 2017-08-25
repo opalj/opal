@@ -112,9 +112,9 @@ case class BasicLogMessage(
  * @author Michael Eichberg
  */
 case class StandardLogMessage(
-    level:    Level          = Info,
-    category: Option[String] = None,
-    message:  String
+        level:    Level          = Info,
+        category: Option[String] = None,
+        message:  String
 ) extends LogMessage
 
 case class ExceptionLogMessage(

@@ -35,7 +35,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 
 import reader.Java8Framework.ClassFiles
 
@@ -122,9 +122,7 @@ class ProjectTest extends FlatSpec with Matchers {
     }
 
     it should "not find a method that does not exist" in {
-        resolveMethodReference(
-            SuperType, "doesNotExist", MethodDescriptor("()V")
-        ) should be('Empty)
+        resolveMethodReference(SuperType, "doesNotExist", MethodDescriptor("()V")) should be('Empty)
     }
 
     it should "find a method with default visibility" in {
@@ -159,7 +157,7 @@ class ProjectTest extends FlatSpec with Matchers {
             forceLookupInSuperinterfacesOnFailure = true
         )
         r should be('Defined)
-        assert(project.classFile(r.get).thisType === ObjectType("methods/b/SubI"))
+        assert(r.get.classFile.thisType === ObjectType("methods/b/SubI"))
     }
 
     it should "find a method declared by an indirectly implemented interface" in {
@@ -168,7 +166,7 @@ class ProjectTest extends FlatSpec with Matchers {
             forceLookupInSuperinterfacesOnFailure = true
         )
         r should be('Defined)
-        assert(project.classFile(r.get).thisType === ObjectType("methods/b/SuperI"))
+        assert(r.get.classFile.thisType === ObjectType("methods/b/SuperI"))
     }
 
     behavior of "A Project's information management methods"
@@ -305,17 +303,16 @@ class ProjectTest extends FlatSpec with Matchers {
             }
             assert(
                 missedMethods.isEmpty, {
-                s"; missed ${missedMethods.size} methods: "+
-                    missedMethods.map { mm ⇒
-                        val (c, m) = mm
-                        val belongsToProject = project.isProjectType(c.thisType)
-                        m.toJava(
-                            c,
-                            m.body.get.instructions.length.toString+
-                                "; belongs to project = "+belongsToProject
-                        )
-                    }.mkString("\n\t", "\n\t", "\n")
-            }
+                    s"; missed ${missedMethods.size} methods: "+
+                        missedMethods.map { mm ⇒
+                            val (c, m) = mm
+                            val belongsToProject = project.isProjectType(c.thisType)
+                            m.toJava(
+                                m.body.get.instructions.length.toString+
+                                    "; belongs to project = "+belongsToProject
+                            )
+                        }.mkString("\n\t", "\n\t", "\n")
+                }
             )
             val methodsCount = methods.size
             info(s"parForeachMethodWithBody iterated over $methodsCount methods")
@@ -420,15 +417,13 @@ class ProjectTest extends FlatSpec with Matchers {
         }
 
         val superI = ObjectType("methods/b/SuperI")
-        //val directSub = ObjectType("methods/b/DirectSub")
-        //val directSubClassFile = methodsProject.classFile(directSub).get
 
         behavior of "a Project's methods to resolve method references"
 
         it should "handle the case if an interface has no implementing class" in {
             val implementingMethods =
-                methodsProject.lookupImplementingMethods(
-                    superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid, (cf) ⇒ true
+                methodsProject.interfaceCall(
+                    superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid
                 )
             implementingMethods.size should be(0)
         }
@@ -436,8 +431,8 @@ class ProjectTest extends FlatSpec with Matchers {
         it should "find a method in a super class" in {
             val classType = ObjectType("methods/b/B")
             val implementingMethods =
-                methodsProject.lookupImplementingMethods(
-                    classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid, (cf) ⇒ true
+                methodsProject.virtualCall(
+                    "methods/b", classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid
                 )
 
             implementingMethods.size should be(1)
@@ -449,17 +444,17 @@ class ProjectTest extends FlatSpec with Matchers {
     }
 }
 
-private class TestProjectInformationKey extends ProjectInformationKey[Object] {
+private class TestProjectInformationKey extends ProjectInformationKey[Object, Nothing] {
 
     val theResult = new Object()
 
     protected def compute(project: SomeProject): Object = theResult
 
-    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
+    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
 
 }
 
-private class TestProjectInformationWithDependenciesKey extends ProjectInformationKey[Object] {
+private class TestProjectInformationWithDependenciesKey extends ProjectInformationKey[Object, Nothing] {
 
     val theResult = new Object()
 
@@ -467,7 +462,7 @@ private class TestProjectInformationWithDependenciesKey extends ProjectInformati
 
     protected def compute(project: SomeProject): Object = theResult
 
-    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = depdencies
+    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = depdencies
 
 }
 

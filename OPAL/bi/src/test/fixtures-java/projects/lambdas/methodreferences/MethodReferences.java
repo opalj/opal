@@ -40,7 +40,7 @@ import static annotations.target.TargetResolution.*;
  * <!--
  *
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
- * SPECIFIED LINE NUMBERS ARE STABLE.
+ * SPECIFIED LINE NUMBERS ARE STABLE).
  *
  * -->
  * @author Arne Lottmann
@@ -68,19 +68,20 @@ public class MethodReferences {
 		return v.newValue(value);
 	}
 
-    // @InvokedMethod(...)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/String", name = "length", line = 73)
     public int instanceMethod() {
         Function<String, Integer> i = String::length;
         return i.apply("instanceMethod");
 
     }
 
-    // @InvokedMethod(...)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/System", name = "currentTimeMillis", line = 80)
     public long staticMethod() {
         LongSupplier t = System::currentTimeMillis;
         return t.getAsLong();
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/List", name = "size", line = 86)
     public int explicitTypeArgs() {
         Function<List<String>, Integer> t = List<String>::size;
         ArrayList<String> stringArray = new ArrayList<>();
@@ -89,12 +90,14 @@ public class MethodReferences {
         return t.apply(stringArray);
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/List", name = "add", line = 96)
     public void partialBound(List<Object> someList) {
         // add(int index, E element)
         BiConsumer<Integer, Object> s = someList::add;
         s.accept(0, new Object());
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/List", name = "size", line = 102)
     public int inferredTypeArgs() {
         @SuppressWarnings("rawtypes") Function<List, Integer> t = List::size;
         ArrayList<String> stringArray = new ArrayList<>();
@@ -103,6 +106,7 @@ public class MethodReferences {
         return t.apply(stringArray);
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences", name = "lambda$0", line = 112)
     public int[] intArrayClone() {
         int[] intArray = { 0, 1, 2, 42 };
         Function<int[], int[]> t = int[]::clone;
@@ -110,6 +114,7 @@ public class MethodReferences {
         return t.apply(intArray);
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences", name = "lambda$1", line = 120)
     public int[][] intArrayArrayClone() {
         int[][] intArray = { { 0, 1, 2, 42 } };
         Function<int[][], int[][]> t = int[][]::clone;
@@ -117,22 +122,26 @@ public class MethodReferences {
         return t.apply(intArray);
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$Value", name = "isEmpty", line = 120)
     public boolean objectMethod() {
         Value v = new Value("foo");
         BooleanSupplier t = v::isEmpty;
         return t.getAsBoolean();
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/io/PrintStream", name = "println", line = 134)
     public void referencePrintln() {
         Consumer<String> c = System.out::println;
         c.accept("Hello World!");
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/String", name = "length", line = 140)
     public int referenceLength() {
         Supplier<Integer> s = "foo"::length;
         return s.get();
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/String", name = "length", line = 148)
     public int arrayMethod() {
         String[] stringArray = { "0", "1", "2", "42" };
 
@@ -141,6 +150,7 @@ public class MethodReferences {
         return s.getAsInt();
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/ArrayList", name = "iterator", line = 164)
     public Iterator<String> ternaryIterator(boolean t) {
         ArrayList<String> stringArray1 = new ArrayList<>();
         stringArray1.add("1");
@@ -161,11 +171,13 @@ public class MethodReferences {
         return s.get();
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/String", name = "valueOf", parameterTypes = { Object.class }, line = 176)
     public String overloadResolution() {
         Function<Double, String> f = String::valueOf;
         return f.apply(3.14);
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/Arrays", name = "sort", parameterTypes = { int[].class }, line = 182)
     public int[] typeArgsFromContext() {
         Consumer<int[]> c = Arrays::sort;
 
@@ -175,6 +187,7 @@ public class MethodReferences {
         return someInts;
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences", name = "lambda$2", line = 192)
     public int[] typeArgsExplicit() {
         Consumer<int[]> c = Arrays::<int[]>asList;
 
@@ -184,31 +197,37 @@ public class MethodReferences {
         return someInts;
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/ArrayList", name = "<init>", parameterTypes = {  }, line = 202)
     public ArrayList<String> parameterizedConstructor() {
         Supplier<ArrayList<String>> s = ArrayList<String>::new;
         return s.get();
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/ArrayList", name = "<init>", parameterTypes = {  }, line = 208)
     @SuppressWarnings("rawtypes") public ArrayList inferredConstructor() {
         Supplier<ArrayList> s = ArrayList::new;
         return s.get();
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$GenericConstructor", name = "<init>", line = 214)
     public GenericConstructor genericConstructor() {
         Function<String, GenericConstructor> f = GenericConstructor::<String>new;
         return f.apply("42");
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$GenericClass", name = "<init>", line = 220)
     public GenericClass<String> genericClass() {
         Function<String, GenericClass<String>> f = GenericClass<String>::<String>new;
         return f.apply("42");
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$Outer$Inner", name = "<init>", line = 226)
     public Outer.Inner nestedClass() {
         Supplier<Outer.Inner> s = Outer.Inner::new;
         return s.get();
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences", name = "lambda$3", line = 232)
     public int[] arrayNew() {
         Function<Integer, int[]> f = int[]::new;
         return f.apply(42);
@@ -251,6 +270,7 @@ public class MethodReferences {
 			return a.value.compareTo(b.value);
 		}
 
+        @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$Child", name = "access$0", line = 275)
         public Supplier<String> getSuperToString() {
             return super::toString;
         }

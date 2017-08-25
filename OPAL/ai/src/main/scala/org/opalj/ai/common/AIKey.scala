@@ -33,7 +33,6 @@ package common
 import scala.collection.concurrent.TrieMap
 
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.RecordDefUse
@@ -43,10 +42,10 @@ import org.opalj.ai.domain.RecordDefUse
  *
  * @author Michael Eichberg
  */
-trait AIKey extends ProjectInformationKey[Method ⇒ AIResult { val domain: RecordDefUse }]
+trait AIKey extends ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, Nothing]
 
 /**
- * Key to get the result of the abstract interpreation of a method using a configured domain
+ * Key to get the result of the abstract interpretation of a method using a configured domain
  * factory.
  *
  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
@@ -56,15 +55,14 @@ trait AIKey extends ProjectInformationKey[Method ⇒ AIResult { val domain: Reco
  */
 object SimpleAIKey extends AIKey {
 
-    @volatile var domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse =
-        (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-            new domain.l1.DefaultDomainWithCFGAndDefUse(p, cf, m)
-        }
+    @volatile var domainFactory: (SomeProject, Method) ⇒ Domain with RecordDefUse = {
+        (p: SomeProject, m: Method) ⇒ new domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+    }
 
     /**
      * The SimpleAIKey has no special prerequisites.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an object which performs and caches the result of the abstract interpretation of a
@@ -78,10 +76,10 @@ object SimpleAIKey extends AIKey {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ AIResult { val domain: RecordDefUse } = {
+    ): Method ⇒ AIResult { val domain: Domain with RecordDefUse } = {
         val domainFactory = this.domainFactory
 
-        val aiResults = TrieMap.empty[Method, AIResult { val domain: RecordDefUse }]
+        val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
 
         (m: Method) ⇒ {
             aiResults.get(m) match {
@@ -94,9 +92,7 @@ object SimpleAIKey extends AIKey {
                         aiResults.get(m) match {
                             case Some(aiResult) ⇒ aiResult
                             case None ⇒
-                                val cf = project.classFile(m)
-                                val domain = domainFactory(project, cf, m)
-                                val aiResult = BaseAI(cf, m, domain)
+                                val aiResult = BaseAI(m, domainFactory(project, m))
                                 aiResults.put(m, aiResult)
                                 aiResult
                         }

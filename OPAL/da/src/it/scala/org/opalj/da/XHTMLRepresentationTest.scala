@@ -46,14 +46,15 @@ import org.opalj.io.writeAndOpen
 class XHTMLRepresentationTest extends FlatSpec with Matchers {
 
     behavior of "the Disassembler"
-    for { file ← bi.TestSupport.allBITestJARs ++ Traversable(bytecode.JRELibraryFolder) } {
 
-        it should (s"be able to create the xHTML representation of every class of $file") in {
+    for { file ← bi.TestResources.allBITestJARs ++ Traversable(bytecode.JRELibraryFolder) } {
+
+        it should s"be able to create the xHTML representation of every class of $file" in {
 
             val Lock = new Object
             var exceptions: List[Throwable] = Nil
             val exceptionHandler = (source: AnyRef, exception: Throwable) ⇒ {
-                Lock.synchronized { exceptions = exception :: exceptions }
+                Lock.synchronized { exceptions ::= exception }
             }
 
             val classFiles = ClassFileReader.ClassFiles(file, exceptionHandler)
@@ -64,7 +65,7 @@ class XHTMLRepresentationTest extends FlatSpec with Matchers {
 
             val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
                 val (classFile, _ /*url*/ ) = e
-                val fqn = classFile.thisType
+                val fqn = classFile.thisType.asJava
                 if (fqn.contains('.'))
                     fqn.substring(0, fqn.lastIndexOf('.'))
                 else
@@ -81,7 +82,7 @@ class XHTMLRepresentationTest extends FlatSpec with Matchers {
                 parClassFiles.foreach { e ⇒
                     val (classFile, url) = e
                     try {
-                        classFile.toXHTML().toString.length() should be > (0)
+                        classFile.toXHTML(None).toString.length() should be > (0)
                         transformationCounter.incrementAndGet()
                         // ideally: should be valid HTML
                     } catch {

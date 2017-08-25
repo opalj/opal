@@ -218,15 +218,15 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
  */
 object SimpleInstantiabilityAnalysis extends FPCFAnalysisRunner {
 
-    import FPCFAnalysisRunner.ClassFileSelector
-
     final def definingPackage(cf: ClassFile): String = cf.thisType.packageName
 
     override def derivedProperties: Set[PropertyKind] = Set(Instantiability)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new SimpleInstantiabilityAnalysis(project)
-        propertyStore.execute(ClassFileSelector, groupBy = definingPackage)(analysis.determineProperty)
+        propertyStore.execute(PropertyStore.entitySelector[ClassFile], groupBy = definingPackage)(
+            analysis.determineProperty
+        )
         analysis
     }
 }

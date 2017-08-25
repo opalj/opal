@@ -42,25 +42,25 @@ import org.opalj.ai._
 object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
-        override val project: Project[URL],
-        val method:           Method
+            override val project: Project[URL],
+            val method:           Method
     ) extends CorrelationalDomain
-            with domain.DefaultDomainValueBinding
-            with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelIntegerValues
-            with domain.l0.DefaultTypeLevelLongValues
-            with domain.l0.TypeLevelPrimitiveValuesConversions
-            with domain.l0.TypeLevelLongValuesShiftOperators
-            with domain.l0.DefaultTypeLevelFloatValues
-            with domain.l0.DefaultTypeLevelDoubleValues
-            with domain.l0.TypeLevelFieldAccessInstructions
-            with domain.l0.TypeLevelInvokeInstructions
-            // NOT NEEDED: with domain.l1.DefaultReferenceValuesBinding
-            with domain.l1.DefaultStringValuesBinding
-            with domain.DefaultHandlingOfMethodResults
-            with domain.IgnoreSynchronization
-            with domain.TheProject
-            with domain.TheMethod
+        with domain.DefaultDomainValueBinding
+        with domain.ThrowAllPotentialExceptionsConfiguration
+        with domain.l0.DefaultTypeLevelIntegerValues
+        with domain.l0.DefaultTypeLevelLongValues
+        with domain.l0.TypeLevelPrimitiveValuesConversions
+        with domain.l0.TypeLevelLongValuesShiftOperators
+        with domain.l0.DefaultTypeLevelFloatValues
+        with domain.l0.DefaultTypeLevelDoubleValues
+        with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.TypeLevelInvokeInstructions
+        // NOT NEEDED: with domain.l1.DefaultReferenceValuesBinding
+        with domain.l1.DefaultStringValuesBinding
+        with domain.DefaultHandlingOfMethodResults
+        with domain.IgnoreSynchronization
+        with domain.TheProject
+        with domain.TheMethod
 
     override def title: String = "Creation of Resources Using Constant Strings"
 
@@ -91,8 +91,8 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
                             ) ⇒ pc
                     }
 
-                (cf, m, pcs)
-            }).filter(_._3.size > 0)
+                (m, pcs)
+            }).filter(_._2.size > 0)
         } { ns ⇒ println(s"Finding candidates took: ${ns.toSeconds}") }
 
         // Step 2
@@ -100,17 +100,17 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         // method that pass a constant string to a method
         val callSitesWithConstantStringParameter = time {
             for {
-                (cf, m, pcs) ← callSites
-                result = BaseAI(cf, m, new AnalysisDomain(theProject, m))
+                (m, pcs) ← callSites
+                result = BaseAI(m, new AnalysisDomain(theProject, m))
                 (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
                     case (pc, result.domain.StringValue(value) :&: _) ⇒ (pc, value)
                 }
-            } yield (cf, m, pc, value)
+            } yield (m, pc, value)
         } { ns ⇒ println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
 
-        def callSiteToString(callSite: (ClassFile, Method, PC, String)): String = {
-            val (cf, m, pc, v) = callSite
-            m.toJava(cf, s"$pc: $v")
+        def callSiteToString(callSite: (Method, PC, String)): String = {
+            val (m, pc, v) = callSite
+            m.toJava(s"$pc: $v")
         }
 
         BasicReport(

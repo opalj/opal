@@ -45,6 +45,10 @@ case class INVOKESPECIAL(
 
     final def isInterfaceCall: Boolean = isInterface
 
+    final def asINVOKESTATIC: INVOKESTATIC = throw new ClassCastException();
+
+    final def asINVOKESPECIAL: INVOKESPECIAL = this
+
     final def opcode: Opcode = INVOKESPECIAL.opcode
 
     final def mnemonic: String = "invokespecial"

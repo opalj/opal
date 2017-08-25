@@ -394,7 +394,7 @@ trait ValuesDomain {
          * The type kind of the values, if the value has a specific type kind; `None` if and
          * only if the underlying value is `null`.
          *
-         * @return The type/The upper type bound of the value. If the type is a base type, then
+         * @return The type/the upper type bound of the value. If the type is a base type, then
          *         the type is necessarily precise. In case of a reference type the type may be
          *         an upper type bound or may be precise. In the latter case, using the
          *         concrete domain it may be possible to get further information.
@@ -417,8 +417,8 @@ trait ValuesDomain {
     val DomainReferenceValue: ClassTag[DomainReferenceValue]
 
     trait ReferenceValue
-            extends TypedValue[ReferenceType]
-            with IsReferenceValue[DomainReferenceValue] {
+        extends TypedValue[ReferenceType]
+        with IsReferenceValue[DomainReferenceValue] {
         this: DomainReferenceValue ⇒
 
         /**

@@ -90,7 +90,7 @@ object XHTML {
 
     def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
         val typeName = classFile.map(_.thisType.toJava).getOrElse("")
-        val methodName = method.map(m ⇒ m.toJava(false)).getOrElse("&lt; method &gt;")
+        val methodName = method.map(m ⇒ m.signatureToJava(false)).getOrElse("&lt; method &gt;")
         s"$typeName{ $methodName }"
     }
 

@@ -32,10 +32,10 @@ package ba
 import scala.collection.mutable
 
 private[ba] class ExceptionHandlerBuilder(
-    var startPC:   br.PC                 = -1,
-    var endPC:     br.PC                 = -1,
-    var handlerPC: br.PC                 = -1,
-    var catchType: Option[br.ObjectType] = None
+        var startPC:   br.PC                 = -1,
+        var endPC:     br.PC                 = -1,
+        var handlerPC: br.PC                 = -1,
+        var catchType: Option[br.ObjectType] = None
 )
 
 /**

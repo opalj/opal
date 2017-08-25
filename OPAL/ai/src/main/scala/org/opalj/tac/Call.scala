@@ -40,6 +40,10 @@ trait Call[+V <: Var[V]] {
     def isInterface: Boolean
     def name: String
     def descriptor: MethodDescriptor
+
+    /**
+     * The parameters of the method call (including the implicit `this` reference if necessary.)
+     */
     def params: Seq[Expr[V]] // TODO IndexedSeq
 }
 
@@ -50,4 +54,16 @@ object Call {
     ): Some[(ReferenceType, Boolean, String, MethodDescriptor)] = {
         Some((call.declaringClass, call.isInterface, call.name, call.descriptor))
     }
+}
+
+object MethodCallParameters {
+
+    def unapply[V <: Var[V]](astNode: ASTNode[V]): Option[Seq[Expr[V]]] = {
+        astNode match {
+            case c: Call[V @unchecked]                   ⇒ Some(c.params)
+            case Assignment(_, _, c: Call[V @unchecked]) ⇒ Some(c.params)
+            case _                                       ⇒ None
+        }
+    }
+
 }

@@ -71,7 +71,7 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
 
         import projectIndex.findMethods
 
-        val interfaceClassFile = project.classFile(method)
+        val interfaceClassFile = method.classFile
         val interfaceType = interfaceClassFile.thisType
 
         val cbsTargets = mutable.Set.empty[Method]
@@ -86,7 +86,7 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
             if (!isInheritableMethod(cbsCallee))
                 return ;
 
-            val cbsCalleeDeclaringClass = project.classFile(cbsCallee)
+            val cbsCalleeDeclaringClass = cbsCallee.classFile
 
             if (!cbsCalleeDeclaringClass.isClassDeclaration)
                 return ;
@@ -170,8 +170,6 @@ object CallBySignatureTargetAnalysis extends FPCFAnalysisRunner {
     override def derivedProperties: Set[PropertyKind] = Set(CallBySignature.Key)
 
     override def usedProperties: Set[PropertyKind] = Set(InheritableByNewTypes.Key)
-
-    override def requirements: Set[FPCFAnalysisRunner] = Set(InheritableByNewSubtypesAnalysis)
 
     protected[fpcf] def start(
         project:       SomeProject,

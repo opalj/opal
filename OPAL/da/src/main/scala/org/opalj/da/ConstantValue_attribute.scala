@@ -45,7 +45,7 @@ case class ConstantValue_attribute(
     final override def attribute_length = 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>=<span class="constant_value"> { cp(constantValue_index).asInlineNode }</span></span>
+        <span>=<span class="constant_value"> { cp(constantValue_index).asInstructionParameter }</span></span>
     }
 
 }

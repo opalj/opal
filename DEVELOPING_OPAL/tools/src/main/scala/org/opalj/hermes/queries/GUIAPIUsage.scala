@@ -65,7 +65,7 @@ object GUIAPIUsage extends FeatureQuery {
 
         for {
             (classFile, source) ← rawClassFiles
-            location = ClassFileLocation(Some(source), classFile.thisType)
+            location = ClassFileLocation(Some(source), classFile.thisType.asJava)
             CONSTANT_Utf8_info(_, entry) ← classFile.constant_pool
         } {
             if (entry.startsWith("javafx/")) {

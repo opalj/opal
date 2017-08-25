@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import java.net.URL
+
 import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
@@ -52,15 +54,16 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
         val testProject = biProject("proxy.jar")
 
-        val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.allMethodsWithContext map { mc ⇒
-            val (m, classFile) = mc
+        val proxies: Seq[(ClassFile, URL)] = testProject.allMethods.map { m ⇒
+            val classFile = m.classFile
             val t = classFile.thisType
             var proxy: ClassFile = null
 
-            describe(s"generating a valid proxy for ${t.toJava} { ${m.toJava(false)} }") {
+            describe(s"generating a valid proxy for ${m.toJava}") {
+                val typeName = "ProxyValidation$"+t.fqn+":"+m.name + m.descriptor.toJVMDescriptor+"$"
                 val definingType =
                     TypeDeclaration(
-                        ObjectType("ProxyValidation$"+t.toJava+":"+m.toJava(false).replace(' ', '_')+"$"),
+                        ObjectType(typeName),
                         false,
                         Some(ObjectType.Object),
                         UIDSet.empty
@@ -88,9 +91,9 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         invocationInstruction
                     )
 
-                def verifyMethod(classFile: ClassFile, method: Method): Unit = {
-                    val domain = new BaseDomain(testProject, classFile, method)
-                    val result = BaseAI(classFile, method, domain)
+                def verifyMethod(method: Method): Unit = {
+                    val domain = new BaseDomain(testProject, method)
+                    val result = BaseAI(method, domain)
 
                     // the abstract interpretation succeed
                     result should not be ('wasAborted)
@@ -117,12 +120,12 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
                 val proxyMethod = proxy.findMethod(proxyMethodName).head
                 it("should produce a correct forwarding method") {
-                    verifyMethod(proxy, proxyMethod)
+                    verifyMethod(proxyMethod)
                 }
 
                 val constructor = proxy.findMethod("<init>").head
                 it("should produce a correct constructor") {
-                    verifyMethod(proxy, constructor)
+                    verifyMethod(constructor)
                 }
 
                 val factoryMethod =
@@ -130,12 +133,12 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         proxy.findMethod("$createInstance").head
                     )
                 it("should produce a correct factory method") {
-                    verifyMethod(proxy, factoryMethod)
+                    verifyMethod(factoryMethod)
                 }
 
             }
             proxy → testProject.source(t).get
-        }
+        }.toSeq
 
         describe("the project should be extendable with the generated proxies") {
             val extendedProject = testProject.extend(proxies)

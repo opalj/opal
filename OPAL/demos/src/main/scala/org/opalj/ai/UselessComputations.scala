@@ -30,7 +30,7 @@ package org.opalj
 package ai
 
 import java.net.URL
-import org.opalj.br.ClassFile
+
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
@@ -42,29 +42,29 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 
 /**
- * A shallow analysis that tries to identify useless computations.
+ * A shallow analysis that identifies useless computations.
  *
  * @author Michael Eichberg
  */
 object UselessComputations extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
-            extends CorrelationalDomain
-            with domain.DefaultDomainValueBinding
-            with domain.TheProject
-            with domain.TheMethod
-            with domain.DefaultHandlingOfMethodResults
-            with domain.IgnoreSynchronization
-            with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelFloatValues
-            with domain.l0.DefaultTypeLevelDoubleValues
-            with domain.l0.TypeLevelFieldAccessInstructions
-            with domain.l0.TypeLevelInvokeInstructions
-            with domain.l1.DefaultReferenceValuesBinding
-            with domain.l1.DefaultIntegerRangeValues
-            with domain.l1.DefaultLongValues
-            with domain.l1.ConcretePrimitiveValuesConversions
-            with domain.l1.LongValuesShiftOperators {
+        extends CorrelationalDomain
+        with domain.DefaultDomainValueBinding
+        with domain.TheProject
+        with domain.TheMethod
+        with domain.DefaultHandlingOfMethodResults
+        with domain.IgnoreSynchronization
+        with domain.ThrowAllPotentialExceptionsConfiguration
+        with domain.l0.DefaultTypeLevelFloatValues
+        with domain.l0.DefaultTypeLevelDoubleValues
+        with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.TypeLevelInvokeInstructions
+        with domain.l1.DefaultReferenceValuesBinding
+        with domain.l1.DefaultIntegerRangeValues
+        with domain.l1.DefaultLongValues
+        with domain.l1.ConcretePrimitiveValuesConversions
+        with domain.l1.LongValuesShiftOperators {
 
         override def maxCardinalityOfIntegerRanges: Long = 4L
     }
@@ -86,7 +86,7 @@ object UselessComputations extends DefaultOneStepAnalysis {
             val results = for {
                 classFile ← theProject.allProjectClassFiles.par
                 method @ MethodWithBody(body) ← classFile.methods
-                result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
+                result = BaseAI(method, new AnalysisDomain(theProject, method))
             } yield {
                 import result._
                 val results = collectPCWithOperands(domain)(body, operandsArray) {
@@ -95,19 +95,19 @@ object UselessComputations extends DefaultOneStepAnalysis {
                         IFNULL(_) | IFNONNULL(_),
                         Seq(domain.DomainReferenceValue(value), _*)
                         ) if value.isNull.isYesOrNo ⇒
-                        UselessComputation(classFile, method, pc, "useless comparison with null")
+                        UselessComputation(method, pc, "useless comparison with null")
                     case (
                         pc,
                         _: IFICMPInstruction,
                         Seq(domain.ConcreteIntegerValue(a), domain.ConcreteIntegerValue(b), _*)
                         ) ⇒
-                        UselessComputation(classFile, method, pc, "comparison of constant values: "+a+", "+b)
+                        UselessComputation(method, pc, "comparison of constant values: "+a+", "+b)
                     case (
                         pc,
                         _: IF0Instruction,
                         Seq(domain.ConcreteIntegerValue(a), _*)
                         ) ⇒
-                        UselessComputation(classFile, method, pc, "comparison of 0 with constant value: "+a)
+                        UselessComputation(method, pc, "comparison of 0 with constant value: "+a)
                 }
                 // Let's do some filtering to get rid of some "false positives"
                 // (from the point of view of the Java source code).
@@ -135,12 +135,7 @@ object UselessComputations extends DefaultOneStepAnalysis {
     }
 }
 
-case class UselessComputation(
-        classFile: ClassFile,
-        method:    Method,
-        pc:        PC,
-        message:   String
-) {
+case class UselessComputation(method: Method, pc: PC, message: String) {
 
     def opcode: Int = method.body.get.instructions(pc).opcode
 
@@ -151,7 +146,7 @@ case class UselessComputation(
 
         val line = this.line.map("(line:"+_+")").getOrElse("")
 
-        "useless computation "+method.toJava(classFile, s"$BLUE$pc$line: $RED$message$RESET")
+        "useless computation "+method.toJava(s"$BLUE$pc$line: $RED$message$RESET")
     }
 
 }

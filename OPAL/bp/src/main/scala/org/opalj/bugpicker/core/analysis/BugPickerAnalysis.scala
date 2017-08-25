@@ -200,7 +200,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         step(7, "[FPCF-Analysis] executing fixpoint analyses") {
             (
                 {
-                    fpcfAnalyses.foreach(analysesManager.runWithRecommended(_)(false))
+                    fpcfAnalyses.foreach(analysesManager.run(_, false))
                     propertyStore.waitOnPropertyComputationCompletion(true)
                 },
                 None
@@ -244,7 +244,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
 
-        def analyzeMethod(classFile: ClassFile, method: Method, body: Code): Unit = {
+        def analyzeMethod(method: Method, body: Code): Unit = {
+            val classFile: ClassFile = method.classFile
             // USED DURING DEVELEOPMENT; e.g., if we see a specific method.
             val debug = false
 
@@ -256,9 +257,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             // CHECK IF THE METHOD IS USED
             //
             addResults(
-                UnusedMethodsAnalysis(
-                    theProject, computedCallGraph, callGraphEntryPoints, classFile, method
-                )
+                UnusedMethodsAnalysis(theProject, computedCallGraph, callGraphEntryPoints, method)
             )
 
             // ---------------------------------------------------------------------------
@@ -273,7 +272,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     cache,
                     maxCardinalityOfIntegerRanges,
                     maxCardinalityOfLongSets, maxCallChainLength,
-                    classFile, method,
+                    method,
                     debug
                 )
             val ai0 =
@@ -284,10 +283,10 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     doInterrupt
                 )
             val result = {
-                val result0 = ai0(classFile, method, analysisDomain)
+                val result0 = ai0(method, analysisDomain)
                 if (result0.wasAborted && maxCallChainLength > 0) {
                     val logMessage =
-                        s"analysis of ${method.fullyQualifiedSignature(classFile.thisType)} with method call execution aborted "+
+                        s"analysis of ${method.fullyQualifiedSignature} with method call execution aborted "+
                             s"after ${ai0.currentEvaluationCount} steps "+
                             s"(code size: ${method.body.get.instructions.length})"
                     // let's try it again, but without performing method calls;
@@ -309,13 +308,12 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                             doInterrupt
                         )
 
-                    val result1 = ai1(classFile, method, fallbackAnalysisDomain)
+                    val result1 = ai1(method, fallbackAnalysisDomain)
 
                     if (result1.wasAborted)
                         OPALLogger.warn(
                             "configuration",
-                            logMessage+
-                                ": retry without performing invocations also failed"
+                            logMessage+": retry without performing invocations also failed"
                         )
                     else
                         OPALLogger.info("configuration", logMessage)
@@ -349,46 +347,46 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 //
                 // FIND DEAD CODE
                 //
-                addResults(DeadEdgesAnalysis(theProject, classFile, method, result))
+                addResults(DeadEdgesAnalysis(theProject, method, result))
 
                 //
                 // FIND SUSPICIOUS CODE
                 //
-                addResults(GuardedAndUnguardedAccessAnalysis(theProject, classFile, method, result))
+                addResults(GuardedAndUnguardedAccessAnalysis(theProject, method, result))
 
                 //
                 // FIND INSTRUCTIONS THAT ALWAYS THROW AN EXCEPTION
                 //
-                addResults(ThrowsExceptionAnalysis(theProject, classFile, method, result).toIterable)
+                addResults(ThrowsExceptionAnalysis(theProject, method, result).toIterable)
 
                 //
                 // FIND USELESS COMPUTATIONS
                 //
-                addResults(UselessComputationsAnalysis(theProject, classFile, method, result))
+                addResults(UselessComputationsAnalysis(theProject, method, result))
 
                 //
                 // FIND USELESS REEVALUATIONS OF COMPUTATIONS
                 //
-                addResults(UselessReComputationsAnalysis(theProject, classFile, method, result))
+                addResults(UselessReComputationsAnalysis(theProject, method, result))
 
                 //
                 // FIND UNUSED LOCAL VARIABLES
                 //
                 addResults(
-                    UnusedLocalVariables(theProject, propertyStore, callGraph, classFile, method, result)
+                    UnusedLocalVariables(theProject, propertyStore, callGraph, method, result)
                 )
 
                 //
                 // FIND STRANGE USES OF THE COLLECTIONS API
                 //
                 addResults(
-                    CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
+                    CollectionsUsage(theProject, propertyStore, callGraph, method, result)
                 )
 
             } else if (!doInterrupt()) {
                 OPALLogger.error(
                     "internal error",
-                    s"analysis of ${method.fullyQualifiedSignature(classFile.thisType)} aborted "+
+                    s"analysis of ${method.fullyQualifiedSignature} aborted "+
                         s"after ${ai0.currentEvaluationCount} steps "+
                         s"(code size: ${method.body.get.instructions.length})"
                 )
@@ -430,18 +428,17 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
                     for (method @ MethodWithBody(body) ← classFile.methods) {
                         try {
-                            analyzeMethod(classFile, method, body)
+                            analyzeMethod(method, body)
                         } catch {
                             case afe: InterpretationFailedException ⇒
-                                val ms = method.fullyQualifiedSignature(classFile.thisType)
+                                val ms = method.fullyQualifiedSignature
                                 val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
                                 val message =
-                                    s"the analysis of $ms "+
-                                        s"failed/was aborted after $steps steps"
+                                    s"the analysis of $ms failed/was aborted after $steps steps"
                                 exceptions add (AnalysisException(message, afe))
                             case ct: ControlThrowable ⇒ throw ct
                             case t: Throwable ⇒
-                                val ms = method.fullyQualifiedSignature(classFile.thisType)
+                                val ms = method.fullyQualifiedSignature
                                 val message = s"the analysis of ${ms} failed"
                                 exceptions add (AnalysisException(message, t))
                         }

@@ -31,16 +31,13 @@ package br
 package cp
 
 /**
- * Common super trait of all constant pool entries that represent method refs.
+ * Constant pool entry that represents method refs.
  *
  * The created `MethodRef` is cached.
  *
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-import org.opalj.br.ReferenceType
-import org.opalj.br.MethodDescriptor
-
 trait AsMethodref extends Constant_Pool_Entry {
 
     def class_index: Constant_Pool_Index
@@ -53,7 +50,7 @@ trait AsMethodref extends Constant_Pool_Entry {
     private[this] var methodref: (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) = null
     override def asMethodref(cp: Constant_Pool): (ReferenceType, Boolean, String, MethodDescriptor) = {
         // The following solution is sufficiently thread safe; i.e.,
-        // it may happen that two or more methodref instances  
+        // it may happen that two or more methodref instances
         // are created, but these instances are guaranteed to
         // be equal (`==`).
 

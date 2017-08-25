@@ -235,13 +235,17 @@ sealed trait ThrowsSignature extends SignatureElement
  */
 sealed abstract class Signature extends SignatureElement with Attribute {
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this == other
+    }
 
 }
 
 object Signature {
 
-    private[br] def formalTypeParametersToJVMSignature(formalTypeParameters: List[FormalTypeParameter]): String = {
+    private[br] def formalTypeParametersToJVMSignature(
+        formalTypeParameters: List[FormalTypeParameter]
+    ): String = {
         if (formalTypeParameters.isEmpty) {
             ""
         } else {
@@ -635,12 +639,8 @@ object UpperTypeBound {
 object LowerTypeBound {
 
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
-
-        case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ot)) ⇒
-            Some(ot)
-
-        case _ ⇒
-            None
+        case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ot)) ⇒ Some(ot)
+        case _ ⇒ None
     }
 }
 
@@ -667,11 +667,8 @@ object GenericTypeArgument {
         pta: ProperTypeArgument
     ): Option[(Option[VarianceIndicator], ClassTypeSignature)] = {
         pta match {
-            case ProperTypeArgument(variance, cts: ClassTypeSignature) ⇒
-                Some((variance, cts))
-
-            case _ ⇒
-                None
+            case ProperTypeArgument(variance, cts: ClassTypeSignature) ⇒ Some((variance, cts))
+            case _ ⇒ None
         }
     }
 }

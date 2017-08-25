@@ -308,14 +308,14 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * and the register assignment and updates the operands and the register
      * assignment w.r.t. the given value and the modeled constraint.
      */
-    private[ai]type SingleValueConstraint = ((PC, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
+    private[ai] type SingleValueConstraint = ((PC, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
 
     /**
      * A function that takes a program counter (`PC`), two values, the current operands
      * and the register assignment and updates the operands and the register
      * assignment w.r.t. the given values and the modeled constraint.
      */
-    private[ai]type TwoValuesConstraint = ((PC, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
+    private[ai] type TwoValuesConstraint = ((PC, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
 
     private[ai] final def IntIsGreaterThan: TwoValuesConstraint =
         (pc: PC, left: DomainValue, right: DomainValue, operands: Operands, locals: Locals) ⇒

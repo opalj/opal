@@ -32,7 +32,6 @@ package core
 package analysis
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.AIResult
@@ -60,11 +59,14 @@ import org.opalj.issues.Relevance
  */
 object CollectionsUsage {
 
+    final val Collection = ObjectType("java/util/Collection")
+    final val unmodifiableCollectionMethodDescriptor = MethodDescriptor(Collection, Collection)
+    final val Collections = ObjectType("java/util/Collections")
+
     def apply(
         theProject:    SomeProject,
         propertyStore: PropertyStore,
         callGraph:     CallGraph,
-        classFile:     ClassFile,
         method:        Method,
         result:        AIResult { val domain: Domain with TheCode with RecordDefUse }
     ): Seq[Issue] = {
@@ -107,11 +109,11 @@ object CollectionsUsage {
                                         List(
                                             new InstructionLocation(
                                                 Some("directly use Collections.emptyList/Collections.emptySet"),
-                                                theProject, classFile, method, pc
+                                                theProject, method, pc
                                             ),
                                             new InstructionLocation(
                                                 Some("useless"),
-                                                theProject, classFile, method, origins.head
+                                                theProject, method, origins.head
                                             )
 
                                         )
@@ -153,11 +155,11 @@ object CollectionsUsage {
                                     List(
                                         new InstructionLocation(
                                             Some("directly use Collections.singletonList/Collections.singletonSet"),
-                                            theProject, classFile, method, pc
+                                            theProject, method, pc
                                         ),
                                         new InstructionLocation(
                                             Some("useless"),
-                                            theProject, classFile, method, origins.head
+                                            theProject, method, origins.head
                                         )
                                     )
                                 )
@@ -171,7 +173,4 @@ object CollectionsUsage {
         issues
     }
 
-    final val Collection = ObjectType("java/util/Collection")
-    final val unmodifiableCollectionMethodDescriptor = MethodDescriptor(Collection, Collection)
-    final val Collections = ObjectType("java/util/Collections")
 }

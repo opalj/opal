@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.xml.Text
 
 import org.opalj.bi.AccessFlagsContexts.FIELD
 
@@ -58,22 +57,33 @@ case class Field_Info(
     /**
      * The type of the field.
      */
-    def fieldType(definingType: String)(implicit cp: Constant_Pool): Node = {
-        val TypeInfo(fieldType, isBaseType) = parseFieldType(cp(descriptor_index).asString)
-        if (isBaseType) Text(fieldType) else abbreviateType(definingType, fieldType)
+    def fieldType(implicit cp: Constant_Pool): FieldTypeInfo = {
+        parseFieldType(cp(descriptor_index).asString)
     }
 
     /**
-     * @param definingType The name of the class defining this field.
+     * @param definingType The class defining this field.
      */
-    def toXHTML(definingType: String)(implicit cp: Constant_Pool): Node = {
+    def toXHTML(definingType: ObjectTypeInfo)(implicit cp: Constant_Pool): Node = {
         val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, FIELD)
-        <div class="field" data-access-flags={ explicitAccessFlags }>
-            { accessFlags }
-            { fieldType(definingType) }
-            <span class="name"> { fieldName } </span>
-            { attributesToXHTML(cp) }
-        </div>
+        val fieldName = this.fieldName
+        val fieldDeclaration =
+            <span class="field_declaration">
+                { accessFlags }
+                { fieldType.asSpan("field_type") }
+                <span class="name">{ fieldName }</span>
+            </span>
+
+        if (attributes.isEmpty) {
+            <div class="details field" data-name={ fieldName } data-access-flags={ explicitAccessFlags }>
+                { fieldDeclaration }
+            </div>
+        } else {
+            <details class="field" data-name={ fieldName } data-access-flags={ explicitAccessFlags }>
+                <summary>{ fieldDeclaration }</summary>
+                { attributesToXHTML }
+            </details>
+        }
     }
 
     def attributesToXHTML(implicit cp: Constant_Pool): Seq[Node] = attributes.map(_.toXHTML)

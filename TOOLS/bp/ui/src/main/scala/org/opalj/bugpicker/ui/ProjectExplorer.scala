@@ -30,6 +30,8 @@ package org.opalj
 package bugpicker
 package ui
 
+import scala.language.existentials
+
 import java.io.File
 import java.io.FilenameFilter
 import java.net.URL
@@ -59,7 +61,7 @@ import scalafx.scene.layout.Priority
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.tac.AsQuadruples
+import org.opalj.tac.TACAI
 import org.opalj.tac.ToTxt
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.PropertyKey
@@ -295,7 +297,7 @@ class ProjectExplorer(
             classFile,
             method
         )
-        val aiResult = BaseAI(classFile, method, domain)
+        val aiResult = BaseAI(method, domain)
         val aiResultXHTML =
             XHTML.dump(
                 classFile, method, "Result of Abstract Interpretation", aiResult
@@ -400,9 +402,10 @@ class ProjectExplorer(
                 s"class <b>${cf.thisType.toJava}</b> {<br/>"+
                     methods.
                     map { m ⇒
-                        val method = scala.xml.Text(m.toJava)
+                        val method = scala.xml.Text(m.toJava())
                         s"<i>${method.toString}</i><pre>{\n${
-                            scala.xml.Text(ToTxt(AsQuadruples(m, project.classHierarchy, None)._1, indented = true).mkString("\n")).toString
+                            val tac = TACAI(project, m)()
+                            scala.xml.Text(ToTxt(tac.stmts, cfg = Some(tac.cfg), true, true).mkString("\n")).toString
                         }\n}</pre>"
                     }.
                     mkString("<br/>")+
@@ -431,7 +434,7 @@ class ProjectExplorer(
         } else {
             val header = classMember match {
                 case Some(method: Method) ⇒
-                    val methodAsJava = scala.xml.Text(method.toJava)
+                    val methodAsJava = scala.xml.Text(method.toJava())
                     s"class <b>${cf.thisType.toJava}</b> <i>${methodAsJava}</i>{<br/>"
                 case Some(field: Field) ⇒
                     val fieldAsJava = scala.xml.Text(field.toJava)

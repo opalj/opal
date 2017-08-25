@@ -51,7 +51,7 @@ import org.opalj.ai.analyses.cg.CallGraphFactory
  * @author Michael Reif
  */
 class LibraryEntryPointsAnalysis private[analysis] (
-    val project: SomeProject
+        val project: SomeProject
 ) extends {
     private[this] final val AccessKey = ProjectAccessibility.Key
     private[this] final val InstantiabilityKey = Instantiability.key
@@ -66,7 +66,7 @@ class LibraryEntryPointsAnalysis private[analysis] (
     }
 
     def determineEntrypoints(method: Method): PropertyComputationResult = {
-        val classFile = project.classFile(method)
+        val classFile = method.classFile
 
         if (project.libraryClassFilesAreInterfacesOnly && project.isLibraryType(classFile))
             // if the analyze the library with the the public interface of third party libraries
@@ -83,7 +83,7 @@ class LibraryEntryPointsAnalysis private[analysis] (
         }
 
         /* Code from CallGraphFactory.defaultEntryPointsForLibraries */
-        if (CallGraphFactory.isPotentiallySerializationRelated(classFile, method)(project.classHierarchy)) {
+        if (CallGraphFactory.isPotentiallySerializationRelated(method)(project.classHierarchy)) {
             return ImmediateResult(method, IsEntryPoint);
         }
 

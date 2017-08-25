@@ -31,9 +31,9 @@ package collection
 package immutable
 
 import scala.language.implicitConversions
-
 import scala.collection.GenIterable
 import scala.collection.GenTraversableOnce
+import scala.collection.AbstractIterator
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.generic.FilterMonadic
@@ -57,9 +57,9 @@ import scala.collection.generic.FilterMonadic
  * @author Michael Eichberg
  */
 sealed trait Chain[@specialized(Int) +T]
-        extends TraversableOnce[T]
-        with FilterMonadic[T, Chain[T]]
-        with Serializable { self ⇒
+    extends TraversableOnce[T]
+    with FilterMonadic[T, Chain[T]]
+    with Serializable { self ⇒
 
     /**
      * Represents a filtered [[Chain]]. Instances of [[ChainWithFilter]] are typically
@@ -522,7 +522,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     def toIterator: Iterator[T] = {
-        new Iterator[T] {
+        new AbstractIterator[T] {
             private var rest = self
             def hasNext: Boolean = rest.nonEmpty
             def next(): T = {
@@ -663,12 +663,15 @@ object Chain /* extends ChainLowPriorityImplicits */ {
      *           use the `singleton` method.
      */
     def apply[@specialized(Int) T](es: T*): Chain[T] = {
+        val naught = Naught
         if (es.isEmpty)
-            return Naught;
-        val result = new :&:[T](es.head, Naught)
+            return naught;
+        val result = new :&:[T](es.head, naught)
         var last = result
-        es.tail.foreach { e ⇒
-            val newLast = new :&:[T](e, Naught)
+        val it = es.iterator
+        it.next // es is non-empty
+        it foreach { e ⇒
+            val newLast = new :&:[T](e, naught)
             last.rest = newLast
             last = newLast
         }

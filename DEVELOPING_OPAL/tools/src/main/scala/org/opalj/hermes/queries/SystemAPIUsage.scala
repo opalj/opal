@@ -55,11 +55,11 @@ object SystemAPIUsage extends APIFeatureQuery {
 
         object Network {
             val Socket = ObjectType("java/net/Socket")
-            val SSLSocket = ObjectType("javax.net.ssl.SSLSocket")
+            val SSLSocket = ObjectType("javax/net/ssl/SSLSocket")
             val ServerSocket = ObjectType("java/net/ServerSocket")
-            val SSLServerSocket = ObjectType("javax.net.ssl.SSLServerSocket")
-            val DatagramSocket = ObjectType("javax.net.DatagramSocket")
-            val MulticastSocket = ObjectType("javax.net.MulticastSocket")
+            val SSLServerSocket = ObjectType("javax/net/ssl/SSLServerSocket")
+            val DatagramSocket = ObjectType("javax/net/DatagramSocket")
+            val MulticastSocket = ObjectType("javax/net/MulticastSocket")
 
             val DatagramPacket = ObjectType("java/net/DatagramPacket")
             val InetAddress = ObjectType("java/net/InetAddress")

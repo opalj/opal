@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-
 import org.opalj.bi.AccessFlagsContexts.METHOD_PARAMETERS
 
 /**
@@ -46,11 +45,13 @@ case class MethodParameters_attribute(
 
     final override def attribute_length = 1 /*parameters_count*/ + parameters.size * 4
 
+    // Primarily implemented to handle the case if the attribute is not found where expected.
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ cp(attribute_name_index).toString(cp) }({ parametersToXHTML(cp) })</span>
+        <details>
+            <summary>Method Parameters</summary>
+            <ol>{ parameters.map[Node, Seq[Node]] { p ⇒ <li>{ p.toXHTML(cp) }</li> } }</ol>
+        </details>
     }
-
-    def parametersToXHTML(implicit cp: Constant_Pool) = parameters.map(_.toXHTML(cp))
 
 }
 
@@ -61,11 +62,13 @@ case class MethodParameter(
 
     def toXHTML(implicit cp: Constant_Pool): Seq[Node] = {
         val (accessFlags, _) = accessFlagsToXHTML(access_flags, METHOD_PARAMETERS)
-        val parameterName =
-            if (name_index == 0)
-                "<Formal Parameter>"
-            else
-                cp(name_index).toString(cp)
-        List(accessFlags, <span>{ parameterName }</span>)
+        val name = if (name_index == 0) "<Formal Parameter>" else cp(name_index).toString(cp)
+        <li>{ accessFlags }<span>{ name }</span></li>
+    }
+
+    def toXHTML(parameterTypeInfo: FieldTypeInfo)(implicit cp: Constant_Pool): Node = {
+        val (accessFlags, _) = accessFlagsToXHTML(access_flags, METHOD_PARAMETERS)
+        val parameterName = if (name_index == 0) "<_>" else cp(name_index).toString(cp)
+        <span>{ List(accessFlags, parameterTypeInfo.asSpan(""), <span> { parameterName }</span>) }</span>
     }
 }

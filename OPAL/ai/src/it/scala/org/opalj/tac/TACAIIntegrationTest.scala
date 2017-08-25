@@ -33,23 +33,21 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.bytecode.JRELibraryFolder
-import java.io.File
 
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.TestSupport.createJREProject
+
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.Method
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.Domain
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.br.analyses.SomeProject
 
 /**
- * Tests that all methods of the JDK can be converted to a three address representation.
+ * Tests that all methods of the JDK can be converted to the ai-based three address representation.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -57,41 +55,44 @@ import org.opalj.br.analyses.SomeProject
 @RunWith(classOf[JUnitRunner])
 class TACAIIntegrationTest extends FunSpec with Matchers {
 
-    val jreLibFolder: File = JRELibraryFolder
-    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
-
-    def checkFolder(
-        folder:        File,
-        domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse
+    def checkProject(
+        project:       SomeProject,
+        domainFactory: (SomeProject, Method) ⇒ Domain with RecordDefUse
     ): Unit = {
+        if (Thread.currentThread().isInterrupted) return ;
+
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
         val mutex = new Object
+        val ch = project.classHierarchy
         for {
-            file ← folder.listFiles()
-            if file.isFile && file.canRead && file.getName.endsWith(".jar")
-            project = Project(file)
-            ch = project.classHierarchy
             cf ← project.allProjectClassFiles.par
+            if !Thread.currentThread().isInterrupted
             m ← cf.methods
             body ← m.body
-            aiResult = BaseAI(cf, m, domainFactory(project, cf, m))
+            aiResult = BaseAI(m, domainFactory(project, m))
         } {
             try {
-                val TACode(tacAICode, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
-                ToTxt(tacAICode, Some(cfg))
+                val TACode(params, tacAICode, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
+                ToTxt(params, tacAICode, cfg, false, true, true)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
-                    val methodSignature = m.toJava(cf)
+                    val methodSignature = m.toJava
                     mutex.synchronized {
                         println(methodSignature+" - size: "+body.instructions.length)
                         e.printStackTrace(Console.out)
                         if (e.getCause != null) {
                             println("\tcause:")
-                            e.getCause.printStackTrace()
+                            e.getCause.printStackTrace(Console.out)
                         }
-                        println(body.instructions.zipWithIndex.filter(_._1 != null).map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n"))
-                        errors ::= ((file+":"+methodSignature, e))
+                        val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
+                        println(
+                            instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
+                        )
+                        println(
+                            body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
+                        )
+                        errors ::= ((project.source(cf)+":"+methodSignature, e))
                     }
                 }
             }
@@ -104,30 +105,43 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                     mkString(
                         "Errors thrown:\n",
                         "\n",
-                        "successfully transformed methods: "+successfullyCompleted.get+
+                        s"successfully transformed ${successfullyCompleted.get} methods: "+
                             "; failed methods: "+errors.size+"\n"
                     )
             fail(message)
         }
     }
 
-    describe("creating the three-address representation using the results of an abstract interpretation") {
-
-        val domainFactory = (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-            new DefaultDomainWithCFGAndDefUse(p, cf, m)
-        }
-
-        it("it should be able to create fully typed TAC for the set of collected class files") {
-            time {
-                checkFolder(biClassfilesFolder, domainFactory)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
-        }
-
-        it("it should be able to create fully typed TAC for the JDK") {
-            time {
-                checkFolder(jreLibFolder, domainFactory)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
-        }
+    protected def domainFactories = {
+        Seq(
+            (
+                "DefaultDomainWithCFGAndDefUse",
+                (p: SomeProject, m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(p, m)
+            ),
+            (
+                "PrimitiveTACAIDomain",
+                (p: SomeProject, m: Method) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, m)
+            )
+        )
     }
 
+    domainFactories foreach { domainInformation ⇒
+        val (domainName, domainFactory) = domainInformation
+        describe(s"creating the 3-address code using $domainName") {
+            allBIProjects() foreach { biProject ⇒
+                val (name, projectFactory) = biProject
+                it(s"it should be able to create the TAC for $name using $domainName") {
+                    time {
+                        checkProject(projectFactory(), domainFactory)
+                    } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+                }
+            }
+
+            it(s"it should be able to create the TAC for the JDK using $domainName") {
+                time {
+                    checkProject(createJREProject(), domainFactory)
+                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
+        }
+    }
 }

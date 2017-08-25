@@ -30,6 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.xml.Text
 
 /**
  * @author Michael Eichberg
@@ -58,7 +60,7 @@ trait BaseElementValue extends ElementValue {
     def const_value_index: Constant_Pool_Index
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="constant_value">{ cp(const_value_index).asInlineNode(cp) }</span>
+        <div class="constant_value">{ cp(const_value_index).asInstructionParameter }</div>
     }
 
 }
@@ -110,7 +112,7 @@ case class StringValue(const_value_index: Constant_Pool_Index) extends ElementVa
     final override def tag: Int = StringValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="constant_value">"{ cp(const_value_index).toString }"</span>
+        <div class="constant_value">"{ cp(const_value_index).toString }"</div>
     }
 }
 object StringValue { final val tag: Int = 's' }
@@ -122,7 +124,7 @@ case class ClassValue(class_info_index: Constant_Pool_Index) extends ElementValu
     final override def tag: Int = ClassValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="constant_value type">{ returnTypeAsJavaType(class_info_index) }.class</span>
+        <div class="constant_value type">{ returnTypeAsJavaType(class_info_index).asSpan("") }.class</div>
     }
 
 }
@@ -139,29 +141,29 @@ case class EnumValue(
     final override def tag: Int = EnumValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val et = parseFieldType(type_name_index).asJavaType
+        val et = parseFieldType(type_name_index).asSpan("")
         val ec = cp(const_name_index).toString
 
-        <span class="constant_value"><span class="type">{ et }</span>.<span class="field_name">{ ec }</span></span>
+        <div class="constant_value">{ et }.<span class="field_name">{ ec }</span></div>
     }
 
 }
 object EnumValue { final val tag: Int = 'e' }
 
-case class AnnotationValue(val annotation: Annotation) extends StructuredElementValue {
+case class AnnotationValue(annotation: Annotation) extends StructuredElementValue {
 
     final override def attribute_length: Int = 1 + annotation.attribute_length
 
     final override def tag: Int = AnnotationValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="constant_value">{ annotation.toXHTML }</span>
+        <div class="constant_value">{ annotation.toXHTML }</div>
     }
 
 }
 object AnnotationValue { final val tag: Int = '@' }
 
-case class ArrayValue(val values: Seq[ElementValue]) extends StructuredElementValue {
+case class ArrayValue(values: Seq[ElementValue]) extends StructuredElementValue {
 
     final override def attribute_length: Int = {
         1 + values.foldLeft(2 /*num_values*/ )((c, n) ⇒ c + n.attribute_length)
@@ -170,8 +172,12 @@ case class ArrayValue(val values: Seq[ElementValue]) extends StructuredElementVa
     final override def tag: Int = ArrayValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val values = this.values.map(v ⇒ { v.toXHTML })
-        <span class="constant_value">[{ values }]</span>
+        val valueNodes =
+            if (values.nonEmpty)
+                this.values.map(v ⇒ Seq(v.toXHTML)).reduce((c, n) ⇒ c ++: (Text(", ") +: n))
+            else
+                NodeSeq.Empty
+        <div class="constant_value">[{ valueNodes }]</div>
     }
 
 }

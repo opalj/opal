@@ -41,7 +41,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.UIDSet2
 import org.opalj.collection.immutable.Chain
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
@@ -614,7 +614,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val classFile = classFiles.find(_._1.thisType.fqn == "cornercases/ThrowsNullValue").get._1
                 val method = classFile.methods.find(_.name == "main").get
                 val theDomain = new TheDomain
-                val result = BaseAI(classFile, method, theDomain)
+                val result = BaseAI(method, theDomain)
                 val exception = result.operandsArray(20)
                 theDomain.refIsNull(-1, exception.head) should be(No)
             }
@@ -626,7 +626,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("it should be able to handle basic aliasing (method: \"aliases\"") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "aliases").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
                 import result.operandsArray
                 import result.domain.IsNull
 
@@ -649,7 +649,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("it should be able to handle complex refinements (method: \"complexRefinement\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "complexRefinement").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
 
                 val theDomain.IsNull(lastChildAtPC22) = result.operandsArray(22).head
                 lastChildAtPC22 should be(Unknown)
@@ -658,7 +658,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("it should be possible to get precise information about a method's return values (method: \"maybeNull\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "maybeNull").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
 
                 val theDomain.IsNull(firstReturn) = result.operandsArray(15).head
                 firstReturn should be(Yes)
@@ -670,7 +670,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("it should be possible to handle conditional assignments (method: \"simpleConditionalAssignment\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "simpleConditionalAssignment").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
                 val result.domain.DomainReferenceValue(head) = result.operandsArray(26).head
                 val value @ BaseReferenceValues(values) = head
                 value.isNull should be(No)
@@ -686,7 +686,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("it should be possible to handle conditional assignments (method: \"conditionalAssignment1\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "conditionalAssignment1").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
                 val result.domain.DomainReferenceValue(head) = result.operandsArray(46).head
                 val value @ BaseReferenceValues(values) = head
                 value.isNull should be(Unknown)
@@ -703,7 +703,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("it should be able to correctly track a MultipleReferenceValue's values in the presence of aliasing (method: \"complexAliasing\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "complexAliasing").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
 
                 val theDomain.IsNull(doItCallParameter) = result.operandsArray(23).head
                 doItCallParameter should be(Unknown)
@@ -719,7 +719,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("it should be able to correctly determine the value's properties in the presence of aliasing (method: \"iterativelyUpdated\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "iterativelyUpdated").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
 
                 val result.domain.DomainReferenceValue(head) = result.operandsArray(5).head
                 val value @ BaseReferenceValues(values) = head
@@ -734,7 +734,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("it should be able to handle control flow dependent values (method: \"cfDependentValues\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "cfDependentValues").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
 
                 val BaseReferenceValues(values1) = result.operandsArray(43).head.asDomainReferenceValue; {
                     // the original value is null
@@ -766,7 +766,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("it should be able to correctly refine a MultipleReferenceValues") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "multipleReferenceValues").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
                 import result.domain.asReferenceValue
 
                 // u != null test
@@ -786,7 +786,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val methods = ReferenceValuesFrenzy.methods
                 val method = methods.find(_.name == "relatedMultipleReferenceValues").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
 
                 val BaseReferenceValues(values1) = result.operandsArray(77).head.asDomainReferenceValue
                 values1.size should be(3)
@@ -834,7 +834,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val methods = ReferenceValuesFrenzy.methods
                 val method = methods.find(_.name == "refiningNullnessOfMultipleReferenceValues").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
 
                 val value35 @ BaseReferenceValues(values35) = result.operandsArray(35).head.asDomainReferenceValue
                 value35.isNull should be(Yes)
@@ -852,7 +852,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val methods = ReferenceValuesFrenzy.methods
                 val method = methods.find(_.name == "refiningTypeBoundOfMultipleReferenceValues").get
                 val theDomain = new TheDomain
-                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+                val result = BaseAI(method, theDomain)
 
                 assert(theDomain.isSubtypeOf(ObjectType.Exception, ObjectType.Throwable).isYes)
 

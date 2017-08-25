@@ -462,18 +462,20 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 classFile ← project.classFile(sourceElement.classType.asObjectType)
                 annotations = sourceElement match {
                     case s: VirtualClass ⇒ classFile.annotations
-                    case s: VirtualField ⇒ classFile.fields.collectFirst {
-                        case field if field.asVirtualField(classFile).compareTo(s) == 0 ⇒ field
-                    } match {
-                        case Some(f) ⇒ f.annotations
-                        case _       ⇒ IndexedSeq.empty
-                    }
-                    case s: VirtualMethod ⇒ classFile.methods.collectFirst {
-                        case method if method.asVirtualMethod(classFile).compareTo(s) == 0 ⇒ method
-                    } match {
-                        case Some(m) ⇒ m.annotations
-                        case _       ⇒ IndexedSeq.empty
-                    }
+                    case s: VirtualField ⇒
+                        classFile.fields collectFirst {
+                            case field if field.asVirtualField(classFile).compareTo(s) == 0 ⇒ field
+                        } match {
+                            case Some(f) ⇒ f.annotations
+                            case _       ⇒ IndexedSeq.empty
+                        }
+                    case s: VirtualMethod ⇒
+                        classFile.methods collectFirst {
+                            case m if m.asVirtualMethod(classFile.thisType).compareTo(s) == 0 ⇒ m
+                        } match {
+                            case Some(m) ⇒ m.annotations
+                            case _       ⇒ IndexedSeq.empty
+                        }
                     case _ ⇒ IndexedSeq.empty
                 }
 
@@ -521,10 +523,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *  @param methodPredicate The method to match.
      */
     case class LocalOutgoingShouldImplementMethodConstraint(
-        sourceEnsemble:  Symbol,
-        methodPredicate: SourceElementPredicate[Method]
+            sourceEnsemble:  Symbol,
+            methodPredicate: SourceElementPredicate[Method]
     )
-            extends PropertyChecker {
+        extends PropertyChecker {
 
         override def property: String = methodPredicate.toDescription
 

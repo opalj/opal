@@ -31,7 +31,6 @@ package bugpicker
 package core
 package analysis
 
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.instructions.IFXNullInstruction
@@ -87,7 +86,7 @@ object GuardedAndUnguardedAccessAnalysis {
     type UnGuardedAccessAnalysisDomain = Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions
 
     def apply(
-        theProject: SomeProject, classFile: ClassFile, method: Method,
+        theProject: SomeProject, method: Method,
         result: AIResult { val domain: UnGuardedAccessAnalysisDomain }
     ): List[Issue] = {
 
@@ -189,14 +188,14 @@ object GuardedAndUnguardedAccessAnalysis {
                     unguardedAccesses.map { ua ⇒
                         val unguardedAccessPC = ua._3
                         new InstructionLocation(
-                            Some("unguarded access"), theProject, classFile, method, unguardedAccessPC
+                            Some("unguarded access"), theProject, method, unguardedAccessPC
                         )
                     }.toSeq
 
                 val locations =
                     unguardedLocations :+
                         new InstructionLocation(
-                            Some("guard"), theProject, classFile, method, guardPC
+                            Some("guard"), theProject, method, guardPC
                         )
 
                 Issue(

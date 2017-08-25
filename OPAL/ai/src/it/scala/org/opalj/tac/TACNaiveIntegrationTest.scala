@@ -33,11 +33,11 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 import java.io.File
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -54,29 +54,33 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
     val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
     def checkFolder(folder: File): Unit = {
+        if (Thread.currentThread().isInterrupted) return ;
+
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
         val mutex = new Object
         for {
             file ← folder.listFiles()
+            if !Thread.currentThread().isInterrupted
             if file.isFile && file.canRead && file.getName.endsWith(".jar")
             project = Project(file)
             ch = project.classHierarchy
             cf ← project.allProjectClassFiles.par
+            if !Thread.currentThread().isInterrupted
             m ← cf.methods
             body ← m.body
         } {
             try {
                 // without using AIResults
-                val (tacNaiveCode, cfg, _) = TACNaive(
+                val TACode(params, tacNaiveCode, cfg, _, _) = TACNaive(
                     method = m,
                     classHierarchy = ch,
                     optimizations = AllTACNaiveOptimizations
                 )
-                ToTxt(tacNaiveCode, cfg)
+                ToTxt(params, tacNaiveCode, cfg, true, true, true)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
-                    val methodSignature = m.toJava(cf)
+                    val methodSignature = m.toJava
                     mutex.synchronized {
                         println(methodSignature+" - size: "+body.instructions.length)
                         e.printStackTrace(Console.out)
@@ -90,6 +94,9 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
                                 filter(_._1 != null).
                                 map(_.swap).
                                 mkString("Instructions:\n\t", "\n\t", "\n")
+                        )
+                        println(
+                            body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
                         )
                         errors ::= ((file+":"+methodSignature, e))
                     }

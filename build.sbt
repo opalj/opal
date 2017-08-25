@@ -34,6 +34,8 @@ scalacOptions 	in ThisBuild ++= Seq(
     "-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code"
 )
 
+scalacOptions in ThisBuild += "-Xdisable-assertions"
+
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 
@@ -90,7 +92,8 @@ lazy val buildSettings =
 		Seq(Defaults.itSettings : _*) ++
 		Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
 		Seq(unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil) ++
-		Seq(unmanagedSourceDirectories in IntegrationTest := (scalaSource in IntegrationTest).value :: Nil)
+		Seq(unmanagedSourceDirectories in IntegrationTest := (scalaSource in IntegrationTest).value :: Nil) ++
+		Seq(scalacOptions in (Compile, console) := Seq("-deprecation"))
 
 def getScalariformPreferences(dir: File) = {
 		val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
@@ -136,11 +139,10 @@ lazy val common = Project(
 			// scaladoc as errors using the standard compiler setting. (This case is only true, when
 			// we publish the projects.)
 			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL-Common"),
-			scalacOptions in (Compile, console) := Seq("-deprecation"),
-      //library dependencies
+      		//library dependencies
 			libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
 			libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-			libraryDependencies += "com.typesafe.play" %% "play-json" % "2.5.15",
+			libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.2",
 			libraryDependencies += "com.iheart" %% "ficus" % "1.4.1"
 		)
 ).configs(IntegrationTest)
@@ -154,12 +156,42 @@ lazy val bi = Project(
     Seq(
       name := "Bytecode Infrastructure",
       scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure"),
-      scalacOptions in (Compile, console) := Seq("-deprecation"),
       //library dependencies
-      libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
+		libraryDependencies += "org.apache.commons" % "commons-text" % "1.1"
     )
 ).dependsOn(common % "it->test;test->test;compile->compile")
  .configs(IntegrationTest)
+ .enablePlugins(JavaFixtureCompiler)
+ .settings(
+   buildSettings ++ Seq(
+     name := "Bytecode Infrastructure",
+     scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure")//,
+     //library dependencies
+    // libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
+   ),
+
+  /* The following settings relate to the java-fixture-compiler plugin, which
+  compiles the java fixture projects in the BytecodeInfrastructure project for testing.
+  For information about the java fixtures, see: OPAL/bi/src/test/fixtures-java/Readme.md
+
+  The default settings for the fixture compilations are used.
+  For details on the plugin and how to change its settings, see:
+  DEVELOPING_OPAL/plugins/sbt-java-fixture-compiler/Readme.md */
+
+   inConfig(Test)(
+     JavaFixtureCompiler.baseJavafixtureSettings ++
+     Seq(
+       unmanagedResourceDirectories ++= Seq(
+         (javaFixtureProjectsDir in javaFixtureDiscovery).value,
+         (javaFixtureSupportDir in javaFixtureDiscovery).value
+       ),
+       resourceGenerators += Def.task {
+           (javaFixturePackage in Test).value flatMap (_.generatedFiles)
+       }
+     )
+   )
+
+ )
 
 lazy val br = Project(
 		id = "BytecodeRepresentation",
@@ -171,9 +203,8 @@ lazy val br = Project(
 			// scaladoc as errors if we publish the projects; hence, we do not use the
 			// standard compiler settings!
 			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation"),
-			scalacOptions in (Compile, console) := Seq("-deprecation"),
-      //library dependencies
-			libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5"
+      		//library dependencies
+			libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6"
 		)
 ).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
  .configs(IntegrationTest)
@@ -185,7 +216,6 @@ lazy val da = Project(
 		Seq(
 			name := "Bytecode Disassembler",
 			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Disassembler"),
-			scalacOptions in (Compile, console) := Seq("-deprecation"),
 			//[currently we can only use an unversioned version] assemblyJarName
 			//in assembly := "OPALBytecodeDisassembler.jar-" + version.value
 			assemblyJarName in assembly := "OPALDisassembler.jar",
@@ -200,8 +230,7 @@ lazy val bc = Project(
 		settings = buildSettings ++
 		Seq(
 			name := "Bytecode Creator",
-			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Creator"),
-			scalacOptions in (Compile, console) := Seq("-deprecation")
+			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Creator")
 		)
 ).dependsOn(da % "it->it;it->test;test->test;compile->compile")
  .configs(IntegrationTest)
@@ -212,8 +241,7 @@ lazy val ba = Project(
 		settings = buildSettings ++
 		Seq(
 			name := "Bytecode Assembler",
-			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Assembler"),
-			scalacOptions in (Compile, console) := Seq("-deprecation")
+			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Assembler")
 		)
 ).dependsOn(
 		bc % "it->it;it->test;test->test;compile->compile",
@@ -227,7 +255,6 @@ lazy val ai = Project(
 		Seq(
 			name := "Abstract Interpretation Framework",
 			scalacOptions in (Compile, doc) := (Opts.doc.title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
-			scalacOptions in (Compile, console) := Seq("-deprecation"),
 			unmanagedSourceDirectories in Test := ((javaSource in Test).value :: (scalaSource in Test).value :: Nil),
 			fork in run := true
 		)
@@ -243,8 +270,7 @@ lazy val de = Project(
 		settings = buildSettings ++
 		Seq(
 			name := "Dependencies Extraction Library",
-			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Dependencies Extraction Library"),
-			scalacOptions in (Compile, console) := Seq("-deprecation")
+			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Dependencies Extraction Library")
 		)
 ).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
  .configs(IntegrationTest)
@@ -258,8 +284,7 @@ lazy val bp = Project(
 			// We don't want the build to be aborted by inter-project links that are reported by
 			// scaladoc as errors if we publish the projects; hence, we do not use the
 			// standard compiler settings!
-			scalacOptions in (Compile, doc) := Opts.doc.title("BugPicker - Core"),
-			scalacOptions in (Compile, console) := Seq("-deprecation")
+			scalacOptions in (Compile, doc) := Opts.doc.title("BugPicker - Core")
 		)
 ).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
  .configs(IntegrationTest)
@@ -270,8 +295,7 @@ lazy val av = Project(
 		settings = buildSettings ++
 		Seq(
 			name := "Architecture Validation",
-			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Architecture Validation"),
-			scalacOptions in (Compile, console) := Seq("-deprecation")
+			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Architecture Validation")
 		)
 ).dependsOn(de % "it->it;it->test;test->test;compile->compile")
  .configs(IntegrationTest)
@@ -286,10 +310,10 @@ lazy val DeveloperTools = Project(
       scalacOptions in (Compile, console) := Seq("-deprecation"),
       //library dependencies
       libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.102-R11" withSources() withJavadoc(),
-      libraryDependencies += "org.controlsfx" % "controlsfx" % "8.40.12" withJavadoc(),
+      libraryDependencies += "org.controlsfx" % "controlsfx" % "8.40.13" withJavadoc(),
       libraryDependencies += "es.nitaur.markdown" % "txtmark" % "0.16" withJavadoc(),
-      libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % "2.8.8" withJavadoc(),
-      libraryDependencies += "org.choco-solver" % "choco-solver" % "4.0.3" withSources() withJavadoc(),
+      libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % "2.9.0" withJavadoc(),
+      libraryDependencies += "org.choco-solver" % "choco-solver" % "4.0.4" withSources() withJavadoc(),
       // Required by Java/ScalaFX
       fork := true
     )
@@ -308,8 +332,7 @@ lazy val Validate = Project(
 		settings = buildSettings ++ Seq(
       publishArtifact := false,
       name := "OPAL-Validate",
-      scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Validate"),
-      scalacOptions in (Compile, console) := Seq("-deprecation")
+      scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Validate")
     )
 ).dependsOn(
 		DeveloperTools % "compile->compile;test->test;it->it;it->test")
@@ -322,7 +345,6 @@ lazy val demos = Project(
 		Seq(
 			name := "Demos",
 			scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Demos"),
-			scalacOptions in (Compile, console) := Seq("-deprecation"),
 			unmanagedSourceDirectories in Compile :=  (javaSource in Compile).value :: (scalaSource in Compile).value :: Nil,
 			fork in run := true
 		)
@@ -343,7 +365,6 @@ lazy val incubation = Project(
       // INCUBATION CODE IS NEVER EVEN CONSIDERED TO BE ALPHA QUALITY
       version := "ALWAYS-SNAPSHOT",
       scalacOptions in (Compile, doc) := Opts.doc.title("Incubation"),
-      scalacOptions in (Compile, console) := Seq("-deprecation"),
       fork in run := true,
       publishArtifact := false
     )

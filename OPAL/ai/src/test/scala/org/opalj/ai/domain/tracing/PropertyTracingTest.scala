@@ -35,7 +35,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -51,23 +51,23 @@ class PropertyTracingTest extends FlatSpec with Matchers {
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)
-            extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with PredefinedClassHierarchy
-            with SimpleBooleanPropertyTracing
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l1.DefaultIntegerRangeValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with l1.DefaultReferenceValuesBinding
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
-            with TheMethod {
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with PredefinedClassHierarchy
+        with SimpleBooleanPropertyTracing
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l1.DefaultIntegerRangeValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l1.DefaultReferenceValuesBinding
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with TheMethod {
 
         override def maxCardinalityOfIntegerRanges: Long = 16L
 
@@ -107,7 +107,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
         val method = classFile.findMethod(name).head
         val domain = new AnalysisDomain(method)
         val code = method.body.get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
         dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }
 

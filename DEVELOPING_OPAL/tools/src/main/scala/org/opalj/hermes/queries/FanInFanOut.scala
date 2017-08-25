@@ -156,9 +156,9 @@ object FanInFanOut extends FeatureQuery {
 
         for {
             (classFile, source) ← rawClassFiles
-            objectTypeId = ObjectType(classFile.thisType).id
-            location = ClassFileLocation(Some(source), classFile.thisType)
-
+            classFileType = classFile.thisType.asJVMType
+            objectTypeId = ObjectType(classFileType).id
+            location = ClassFileLocation(Some(source), classFileType)
         } {
             implicit val constantPool = classFile.constant_pool
             val cpEntryPredicate: PartialFunction[Constant_Pool_Entry, Constant_Pool_Entry] = {

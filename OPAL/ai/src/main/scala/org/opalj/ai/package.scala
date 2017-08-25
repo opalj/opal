@@ -30,6 +30,9 @@ package org.opalj
 
 import scala.language.existentials
 
+import scala.collection.AbstractIterator
+
+import org.opalj.util.AnyToAnyThis
 import org.opalj.collection.immutable.Chain
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
@@ -64,17 +67,16 @@ import org.opalj.br.instructions.Instruction
  */
 package object ai {
 
-    final val FrameworkName = "Abstract Interpretation Framework"
+    final val FrameworkName = "OPAL - Abstract Interpretation Framework"
 
     {
         implicit val logContext = GlobalLogContext
         try {
             scala.Predef.assert(false) // <= tests whether assertions are on or off...
-            OPALLogger.info("OPAL", s"$FrameworkName - Production Build")
+            OPALLogger.info(FrameworkName, "Production Build")
         } catch {
             case _: AssertionError ⇒
-                val message = s"$FrameworkName - Development Build (Assertions are enabled)"
-                OPALLogger.info("OPAL", message)
+                OPALLogger.info(FrameworkName, "Development Build (Assertions are enabled)")
         }
     }
 
@@ -94,9 +96,23 @@ package object ai {
     final def NoPCs = org.opalj.br.NoPCs
 
     /**
-     * A value of type `ValueOrigin` identifies the origin of a value. In most cases the
-     * value is equal to the program counter of the instruction that created the value.
-     * However, for the values passed to a method, the index is conceptually:
+     * A `ValueOrigin` identifies the origin of a value.
+     * In most cases the origin is equal to the program counter of the instruction that created
+     * the value. However, several negative values do have special semantics which are explained
+     * in the following.
+     *
+     * == Parameter Identification ==
+     *
+     * In general, parameters are identified by using negative origin information as described below.
+     * But, given that
+     *  - the maximum size of the method parameters array is 255 and
+     *  - that the first slot is required for the `this` reference in case of instance methods and
+     *  - that `long` and `double` values* require two slots
+     * the smallest number used to encode that the value is an actual parameter is `-256`.
+     *
+     * === AI Framework ===
+     *
+     * In case of the ai framework, values passed to a method get indexes as follows:
      *  `-1-(isStatic ? 0 : 1)-(the index of the parameter adjusted by the computational
      * type of the previous parameters)`.
      *
@@ -112,27 +128,27 @@ package object ai {
      *  - The value `-4` identifies the parameter `o`. (The parameter `d` is a value of
      * computational-type category 2 and needs two stack/operands values.)
      *
-     * The range of standard value origins is: [-257,65535]. Hence, whenever a value of
-     * type `ValueOrigin` is required/is expected it is possible to use a value with
-     * type `PC` unless the program counter identifies the start of a subroutine
-     * ([[SUBROUTINE_START]], [[SUBROUTINE_END]], [[SUBROUTINE]]).
+     * === Three-address Code ===
+     * In case of the three address code the parameters are normalized (see [[org.opalj.tac.TACAI]]
+     * for further details).
      *
-     * Recall that the maximum size of the method
-     * parameters array is 255. If necessary, the first slot is required for the `this`
-     * reference. Furthermore, for `long` and `double` values two slots are necessary; hence
-     * the smallest number used to encode that the value is an actual parameter is
-     * `-256`.
+     * == Subroutines JSR/RET ==
+     * Some special values are used when methods have subroutines:
+     * ([[SUBROUTINE_START]], [[SUBROUTINE_END]], [[SUBROUTINE]]). These methods, never show
+     * up at the def-use or cfg level, but will show up in the evaluation trace.
      *
-     * The value `-257` is used to encode that the origin of the value is out
-     * of the scope of the analyzed program ([[ConstantValueOrigin]]). This value is
-     * currently only used for the implicit value of `IF_XXX` instructions.
+     * == Implicit JVM Constants ==
+     * The value `-333` is used to encode that the value is an implicit constant
+     * ([[ConstantValueOrigin]]). This value is used for the implicit value of `IF_XXX`
+     * instructions to facilitates a generalized handling of ifs.
      *
-     * Values in the range [ [[SpecialValuesOriginOffset]] (`-10000000`) ,
-     * [[VMLevelValuesOriginOffset]] (`-100000`) ] are used to identify values that are
-     * created by the VM while evaluating the instruction with the `pc = origin+100000`.
+     * Values in the range [ [[SpecialValuesOriginOffset]] (`-10,000,000`) ,
+     * [[VMLevelValuesOriginOffset]] (`-100,000`) ] are used to identify values that are
+     * created by the VM (in particular exceptions) while evaluating the instruction with
+     * the `pc = -origin-100,000`.
      *
      * @see For further information see [[isVMLevelValue]],
-     *      [[ValueOriginForVMLevelValue]], [[PCOfVMLevelValue]].
+     *      [[ValueOriginForVMLevelValue]], [[pcOfVMLevelValue]].
      */
     type ValueOrigin = Int
 
@@ -150,19 +166,20 @@ package object ai {
     /**
      * Returns `true` if the value with the given origin was (implicitly) created
      * by the JVM while executing an instruction with the program counter
-     * [[PCOfVMLevelValue]]`(origin)`.
+     * [[pcOfVMLevelValue]]`(origin)`.
      *
      * @see [[ValueOriginForVMLevelValue]] for further information.
      */
-    final def isVMLevelValue(origin: ValueOrigin): Boolean =
-        origin <= VMLevelValuesOriginOffset && origin > -SpecialValuesOriginOffset
+    final def isVMLevelValue(origin: ValueOrigin): Boolean = {
+        origin <= VMLevelValuesOriginOffset && origin > SpecialValuesOriginOffset
+    }
 
     /**
      * Creates the origin information for a VM level value (typically an exception) that
      * was (implicitly) created while evaluating the instruction with the given
      * program counter (`pc`).
      *
-     * @see [[PCOfVMLevelValue]] for further information.
+     * @see [[pcOfVMLevelValue]] for further information.
      */
     final def ValueOriginForVMLevelValue(pc: PC): ValueOrigin = {
         val origin = VMLevelValuesOriginOffset - pc
@@ -180,9 +197,9 @@ package object ai {
      *
      * @see [[ValueOriginForVMLevelValue]] for further information.
      */
-    final def PCOfVMLevelValue(origin: ValueOrigin): PC = {
+    final def pcOfVMLevelValue(origin: ValueOrigin): PC = {
         assert(origin <= VMLevelValuesOriginOffset)
-        origin + VMLevelValuesOriginOffset
+        -origin + VMLevelValuesOriginOffset
     }
 
     /**
@@ -192,7 +209,7 @@ package object ai {
      * values (specified in the JVM Spec.). The origin associated with such values is
      * determined by this value.
      */
-    final val ConstantValueOrigin /*: ValueOrigin*/ = -257
+    final val ConstantValueOrigin /*: ValueOrigin*/ = -333
 
     /**
      * Calculates the initial `ValueOrigin` associated with a method's explicit parameter.
@@ -285,6 +302,98 @@ package object ai {
     }
 
     /**
+     * Extracts the domain variables (register values) related to the method's parameters;
+     * see [[org.opalj.tac.Parameters]] for the detailed layout of the returned array.
+     *
+     * Recall that at the bytecode level long and double values use two register values. The
+     * returned array will, however, abstract over the difference between so-called computational
+     * type category I and II values. Furthermore, the explicitly specified parameters are
+     * always stored in the indexes [1..parametersCount] to enable unifor access to a method's
+     * parameters whether the method is static or not. Furthermore, the returned array will
+     * contain the self reference (`this`) at index 0 if the method is an instance method;
+     * otherwise index 0 will be `null`.
+     *
+     * @note   If a parameter (variable) is used as a variable and updated,
+     *         then the returned domain value will reflect this behavior.
+     *         For example, given the following code:
+     *         {{{
+     *         // Given: class X extends Object
+     *         foo(X x) { do { x = new Y(); System.out.println(x) } while(true;)}
+     *         }}}
+     *         The type of the domain value will be (as expected) x; however - depending on the
+     *         domain - it may contain the information that x may also reference the created
+     *         object Y.
+     *
+     * @param  isStatic `true` if the method is static (we have no `this` reference).
+     * @param  descriptor The method descriptor.
+     *
+     * @return The local variables which represent the parameters. The size of the returned array
+     *         is the sum of the operand sizes of the parameters + 1 if the method is an instance
+     *         method. (@see [[parameterIndexToValueOrigin]] and [[mapOperandsToParameters]]
+     *         for further details.)
+     */
+    def parameterVariables(
+        aiResult: AIResult
+    )(
+        isStatic:   Boolean,
+        descriptor: MethodDescriptor
+    ): Array[aiResult.domain.DomainValue] = {
+        val locals: Locals[aiResult.domain.DomainValue] = aiResult.localsArray(0)
+        // To enable uniform access, we always reserve space for the `this` parameter;
+        // even if it is not used.
+        val parametersCount = descriptor.parametersCount + 1
+        val params = aiResult.domain.DomainValue.newArray(parametersCount)
+
+        var localsIndex = 0
+        if (!isStatic) {
+            params(0) = locals(0)
+            localsIndex = 1
+        }
+        var paramIndex = 1
+        descriptor.parameterTypes.foreach { t ⇒
+            params(paramIndex) = locals(localsIndex)
+            localsIndex += t.computationalType.operandSize
+            paramIndex += 1
+        }
+        params
+    }
+
+    /**
+     * Iterates over all im-/explicit parameter related variables.
+     *
+     * @param isStatic Has to be `true` iff the method for which the abstract interpretation was
+     *                 performed is static.
+     */
+    def parameterVariablesIterator(
+        aiResult: AIResult
+    )(
+        isStatic:   Boolean,
+        descriptor: MethodDescriptor
+    ): Iterator[aiResult.domain.DomainValue] = {
+        new AbstractIterator[aiResult.domain.DomainValue] {
+
+            private[this] var parameterIndex = 0
+            private[this] val totalParameters = descriptor.parametersCount + (if (isStatic) 0 else 1)
+            private[this] var localsIndex = 0
+
+            override def hasNext: Boolean = parameterIndex < totalParameters
+
+            override def next(): aiResult.domain.DomainValue = {
+                if (parameterIndex == 0 && !isStatic) {
+                    parameterIndex = 1
+                    localsIndex = 1
+                    aiResult.localsArray(0)(0)
+                } else {
+                    val v = aiResult.localsArray(0)(localsIndex)
+                    parameterIndex += 1
+                    localsIndex += v.computationalType.operandSize
+                    v
+                }
+            }
+        }
+    }
+
+    /**
      * Maps a list of operands (e.g., as passed to the `invokeXYZ` instructions) to
      * the list of parameters for the given method. The parameters are stored in the
      * local variables ([[Locals]])/registers of the method; i.e., this method
@@ -317,8 +426,8 @@ package object ai {
 
         assert(
             operands.size == calledMethod.actualArgumentsCount,
-            (if (calledMethod.isStatic) "static" else "/*virtual*/") +
-                s" ${calledMethod.toJava()}(Arguments: ${calledMethod.actualArgumentsCount}) "+
+            (if (calledMethod.isStatic) "static " else "/*virtual*/ ") +
+                s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) "+
                 s"${operands.mkString("Operands(", ",", ")")}"
         )
 
@@ -407,21 +516,22 @@ package object ai {
         f: PartialFunction[(PC, Instruction, domain.Operands), B]
     ): Seq[B] = {
         val instructions = code.instructions
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc = 0
-        var result: List[B] = List.empty
+        val result = List.newBuilder[B]
         while (pc < max_pc) {
             val instruction = instructions(pc)
             val operands = operandsArray(pc)
             if (operands ne null) {
                 val params = (pc, instruction, operands)
-                if (f.isDefinedAt(params)) {
-                    result = f(params) :: result
+                val r: Any = f.applyOrElse(params, AnyToAnyThis)
+                if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                    result += r.asInstanceOf[B]
                 }
             }
             pc = instruction.indexOfNextInstruction(pc)(code)
         }
-        result.reverse
+        result.result()
     }
 
     def foreachPCWithOperands[U](

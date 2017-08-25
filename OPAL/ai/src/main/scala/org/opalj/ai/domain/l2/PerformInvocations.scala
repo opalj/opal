@@ -63,7 +63,7 @@ trait PerformInvocations extends MethodCallsHandling {
      * In general, explicit support is required to identify recursive calls
      * if the domain also follows method invocations,
      */
-    protected[this] def calledMethodDomain(classFile: ClassFile, method: Method): CalledMethodDomain
+    protected[this] def calledMethodDomain(method: Method): CalledMethodDomain
 
     /**
      *  The abstract interpreter that will be used for the abstract interpretation.
@@ -155,28 +155,25 @@ trait PerformInvocations extends MethodCallsHandling {
     /**
      * Returns `true` if the given method should be invoked.
      */
-    def shouldInvocationBePerformed(definingClass: ClassFile, method: Method): Boolean
+    def shouldInvocationBePerformed(method: Method): Boolean
 
     /**
      * Performs the invocation of the given method using the given operands.
      */
     protected[this] def doInvoke(
-        pc:            PC,
-        definingClass: ClassFile,
-        method:        Method,
-        operands:      Operands,
-        fallback:      () ⇒ MethodCallResult
+        pc:       PC,
+        method:   Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult
     ): MethodCallResult = {
 
-        assert(definingClass.methods.contains(method))
         assert(
             method.body.isDefined,
-            s"the method ${project.source(definingClass.thisType)}: "+
-                s"${method.toJava(definingClass)} does not have a body "+
-                "(is the project self-consistent?)"
+            s"${project.source(method.classFile.thisType)} - the method: "+
+                s"${method.toJava} does not have a body (is the project self-consistent?)"
         )
 
-        val calledMethodDomain = this.calledMethodDomain(definingClass, method)
+        val calledMethodDomain = this.calledMethodDomain(method)
         val parameters = mapOperandsToParameters(operands, method, calledMethodDomain)
         val aiResult = doInvoke(method, calledMethodDomain)(parameters)
 
@@ -187,28 +184,26 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     protected[this] def testAndDoInvoke(
-        pc:            PC,
-        definingClass: ClassFile,
-        method:        Method,
-        operands:      Operands,
-        fallback:      () ⇒ MethodCallResult
+        pc:       PC,
+        method:   Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult
     ): MethodCallResult = {
 
-        if (project.isLibraryType(definingClass.thisType))
+        if (project.isLibraryType(method.classFile.thisType))
             return fallback();
 
         if (method.isAbstract) {
             OPALLogger.logOnce(Error(
                 "project configuration",
-                "the resolved method on a concrete object is abstract: "+
-                    method.toJava(definingClass)
+                "the resolved method on a concrete object is abstract: "+method.classFile
             ))
             fallback()
         } else if (!method.isNative) {
-            if (!shouldInvocationBePerformed(definingClass, method))
+            if (!shouldInvocationBePerformed(method))
                 fallback()
             else {
-                doInvoke(pc, definingClass, method, operands, fallback)
+                doInvoke(pc, method, operands, fallback)
             }
         } else
             fallback()
@@ -257,9 +252,7 @@ trait PerformInvocations extends MethodCallsHandling {
             }
 
         methodOption match {
-            case Some(method) ⇒
-                val classFile = project.classFile(method)
-                testAndDoInvoke(pc, classFile, method, operands, fallback)
+            case Some(method) ⇒ testAndDoInvoke(pc, method, operands, fallback)
             case _ ⇒
                 OPALLogger.logOnce(Warn(
                     "project configuration",

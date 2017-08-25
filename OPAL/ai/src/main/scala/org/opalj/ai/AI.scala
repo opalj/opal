@@ -185,19 +185,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     /**
      *  Performs an abstract interpretation of the given method using the given domain.
      *
-     *  @param classFile The method's defining class file.
      *  @param method A non-native, non-abstract method of the given class file that
      *      will be analyzed. All parameters are automatically initialized with sensible
      *      default values.
      *  @param theDomain The domain that will be used to perform computations related
      *      to values.
      */
-    def apply(
-        classFile: ClassFile,
-        method:    Method,
-        theDomain: D
-    ): AIResult { val domain: theDomain.type } = {
-        perform(classFile, method, theDomain)(None)
+    def apply(method: Method, theDomain: D): AIResult { val domain: theDomain.type } = {
+        perform(method, theDomain)(None)
     }
 
     /**
@@ -210,11 +205,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      * This method is called by the `perform` method with the same signature. It
      * may be overridden by subclasses to perform some additional processing.
      */
-    def initialOperands(
-        classFile: ClassFile,
-        method:    Method,
-        domain:    D
-    ): domain.Operands = Naught
+    def initialOperands(method: Method, domain: D): domain.Operands = Naught
 
     /**
      * Returns the initial register assignment (the initialized locals) that is
@@ -231,16 +222,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      * that case, however, it is highly recommended to call this method to finalize the
      * initial assignment.
      *
-     * @param classFile The class file which defines the given method.
      * @param method A non-native, non-abstract method. I.e., a method that has an
      *      implementation in Java bytecode (e.g., `method.body.isDefined === true`).
      * @param domain The domain that will be used to perform computations related
      *      to values.
      */
     def initialLocals(
-        classFile: ClassFile,
-        method:    Method,
-        domain:    D
+        method: Method,
+        domain: D
     )(
         someLocals: SomeLocals[domain.DomainValue] = None
     ): domain.Locals = {
@@ -278,7 +267,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             @inline def origin(localVariableIndex: Int) = -localVariableIndex - 1
 
             if (!method.isStatic) {
-                val thisType = classFile.thisType
+                val thisType = method.classFile.thisType
                 val thisValue =
                     domain.NonNullObjectValue(origin(localVariableIndex), thisType)
                 locals.set(localVariableIndex, thisValue)
@@ -311,8 +300,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      * The abstract interpretation of a method is aborted if the AI's `isInterrupted`
      * method returns true.
      *
-     * @param classFile Some class file; needed to determine the type of `this` if
-     *      the method is an instance method.
      * @param method A non-abstract, non-native method of the given class file. I.e.,
      *      a method with a body.
      * @param theDomain The abstract domain that will be used for the abstract interpretation
@@ -332,17 +319,15 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      *      if needed/desired.
      */
     def perform(
-        classFile: ClassFile,
         method:    Method,
         theDomain: D
     )(
         someLocals: Option[IndexedSeq[theDomain.DomainValue]] = None
     ): AIResult { val domain: theDomain.type } = {
-
         val body = method.body.get
         performInterpretation(method.isStrict, body, theDomain)(
-            initialOperands(classFile, method, theDomain),
-            initialLocals(classFile, method, theDomain)(someLocals)
+            initialOperands(method, theDomain),
+            initialLocals(method, theDomain)(someLocals)
         )
     }
 
@@ -614,6 +599,25 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             }
         }
 
+        def abstractInterpretationEnded(): AIResult { val domain: theDomain.type } = {
+
+            integrateSubroutineInformation()
+            val result =
+                AIResultBuilder.completed(
+                    code, cfJoins, liveVariables, theDomain
+                )(
+                    evaluated, operandsArray, localsArray
+                )
+            try {
+                theDomain.abstractInterpretationEnded(result)
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable         ⇒ throwInterpretationFailedException(t, instructions.length)
+            }
+            if (tracer.isDefined) tracer.get.result(result)
+            result
+        }
+
         // -------------------------------------------------------------------------------
         //
         // Main loop of the abstract interpreter
@@ -684,14 +688,17 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             // When we have an abrupt termination of a subroutine, we have to make
             // sure that we are actually scheduling the operation in the handling
             // (sub)routine and use the handling subroutine's operands and locals array.
-            val (targetOperandsArray, targetLocalsArray) =
-                if (abruptSubroutineTerminationCount == 0)
-                    (operandsArray, localsArray)
-                else {
-                    val (_, operandsArray, localsArray) =
-                        memoryLayoutBeforeSubroutineCall(abruptSubroutineTerminationCount - 1)
-                    (operandsArray, localsArray)
-                }
+            var targetOperandsArray: theDomain.OperandsArray = null
+            var targetLocalsArray: theDomain.LocalsArray = null
+            if (abruptSubroutineTerminationCount == 0) {
+                targetOperandsArray = operandsArray
+                targetLocalsArray = localsArray
+            } else {
+                val (_, operandsArray, localsArray) =
+                    memoryLayoutBeforeSubroutineCall(abruptSubroutineTerminationCount - 1)
+                targetOperandsArray = operandsArray
+                targetLocalsArray = localsArray
+            }
 
             /* Handles the case that a subroutine (jsr/ret) is abruptly terminated due
              * to an exception.
@@ -823,11 +830,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // 3: } while (i<5)
                     //
                     // In this case, it may happen that (we are primarily doing
-                    // depth-first evaluation)
-                    // we are reanalyzing the loop (1-3) before we analyze the second
-                    // branch of the if (e.g., case "B"). However, the "pc" of the
-                    // second branch is already scheduled and we don't want/need to
-                    // reschedule it again.
+                    // depth-first evaluation) we are reanalyzing the loop (1-3)
+                    // before we analyze the second branch of the if (e.g., case "B").
+                    // However, the "pc" of the second branch is already scheduled
+                    // and we don't want/need to reschedule it again.
                     isTargetScheduled = Yes // it is already or will be scheduled...
                     targetOperandsArray(targetPC) = operands
                     targetLocalsArray(targetPC) = locals
@@ -1137,15 +1143,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // one further instruction, but we may have evaluated that one
                     // already and the evaluation context didn't change).
                     if (worklist.isEmpty) {
-                        integrateSubroutineInformation()
-                        val result =
-                            AIResultBuilder.completed(
-                                code, cfJoins, liveVariables, theDomain
-                            )(
-                                evaluated, operandsArray, localsArray
-                            )
-                        if (tracer.isDefined) tracer.get.result(result)
-                        return result;
+                        return abstractInterpretationEnded();
                     }
                 }
                 // [THE DEFAULT CASE] the PC of the next instruction...
@@ -1207,34 +1205,48 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 rest, locals
                             )
                         case Unknown ⇒
-                            {
-                                val (newOperands, newLocals) =
-                                    yesConstraint(branchTargetPC, operand, rest, locals)
-                                if (tracer.isDefined &&
-                                    ((rest ne newOperands) || (locals ne newLocals))) {
-                                    tracer.get.establishedConstraint(theDomain)(
-                                        pc, branchTargetPC, rest, locals, newOperands, newLocals
-                                    )
-                                }
-                                gotoTarget(
-                                    pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
-                                    newOperands, newLocals
+                            // BT = Branch Target
+                            val (newBTOperands, newBTLocals) =
+                                yesConstraint(branchTargetPC, operand, rest, locals)
+                            if (tracer.isDefined &&
+                                ((rest ne newBTOperands) || (locals ne newBTLocals))) {
+                                tracer.get.establishedConstraint(theDomain)(
+                                    pc, branchTargetPC, rest, locals, newBTOperands, newBTLocals
                                 )
                             }
-                            {
-                                val (newOperands, newLocals) =
-                                    noConstraint(nextPC, operand, rest, locals)
-                                if (tracer.isDefined &&
-                                    ((rest ne newOperands) || (locals ne newLocals))) {
-                                    tracer.get.establishedConstraint(theDomain)(
-                                        pc, nextPC, rest, locals, newOperands, newLocals
-                                    )
-                                }
+                            // FT = Fall Through
+                            val (newFTOperands, newFTLocals) =
+                                noConstraint(nextPC, operand, rest, locals)
+                            if (tracer.isDefined &&
+                                ((rest ne newFTOperands) || (locals ne newFTLocals))) {
+                                tracer.get.establishedConstraint(theDomain)(
+                                    pc, nextPC, rest, locals, newFTOperands, newFTLocals
+                                )
+                            }
+
+                            // We have empirically evaluated which strategy leads to the minimal
+                            // number of instruction evaluations and the following test does:
+                            if (branchTargetPC > pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,
-                                    newOperands, newLocals
+                                    newFTOperands, newFTLocals
+                                )
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    newBTOperands, newBTLocals
+                                )
+                            } else {
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    newBTOperands, newBTLocals
+                                )
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    nextPC, isExceptionalControlFlow = false,
+                                    newFTOperands, newFTLocals
                                 )
                             }
                     }
@@ -1274,34 +1286,47 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 rest, locals
                             )
                         case Unknown ⇒
-                            {
-                                val (newOperands, newLocals) =
-                                    yesConstraint(branchTargetPC, left, right, rest, locals)
-                                if (tracer.isDefined &&
-                                    ((rest ne newOperands) || (locals ne newLocals))) {
-                                    tracer.get.establishedConstraint(theDomain)(
-                                        pc, branchTargetPC, rest, locals, newOperands, newLocals
-                                    )
-                                }
-                                gotoTarget(
-                                    pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
-                                    newOperands, newLocals
+                            // BT = Branch Target
+                            // FT = Fall Through
+                            // See ifXX for details regarding the heuristic for selecting the next
+                            // instruction to evaluate.
+                            val (newBTOperands, newBTLocals) =
+                                yesConstraint(branchTargetPC, left, right, rest, locals)
+                            if (tracer.isDefined &&
+                                ((rest ne newBTOperands) || (locals ne newBTLocals))) {
+                                tracer.get.establishedConstraint(theDomain)(
+                                    pc, branchTargetPC, rest, locals, newBTOperands, newBTLocals
                                 )
                             }
-                            {
-                                val (newOperands, newLocals) =
-                                    noConstraint(nextPC, left, right, rest, locals)
-                                if (tracer.isDefined &&
-                                    ((rest ne newOperands) || (locals ne newLocals))) {
-                                    tracer.get.establishedConstraint(theDomain)(
-                                        pc, nextPC, rest, locals, newOperands, newLocals
-                                    )
-                                }
+                            val (newFTOperands, newFTLocals) =
+                                noConstraint(nextPC, left, right, rest, locals)
+                            if (tracer.isDefined &&
+                                ((rest ne newFTOperands) || (locals ne newFTLocals))) {
+                                tracer.get.establishedConstraint(theDomain)(
+                                    pc, nextPC, rest, locals, newFTOperands, newFTLocals
+                                )
+                            }
+                            if (branchTargetPC > pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,
-                                    newOperands, newLocals
+                                    newFTOperands, newFTLocals
+                                )
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    newBTOperands, newBTLocals
+                                )
+                            } else {
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    newBTOperands, newBTLocals
+                                )
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    nextPC, isExceptionalControlFlow = false,
+                                    newFTOperands, newFTLocals
                                 )
                             }
                     }
@@ -1312,8 +1337,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                  *
                  * Called when an exception was explicitly (by means of an athrow
                  * instruction) or implicitly raised as a side effect of
-                 * evaluating the current instruction. In this case the corresponding
-                 * handler is searched and the control is transfered to it.
+                 * evaluating the current instruction. In this case, the corresponding
+                 * handler is searched and the control is transferred to it.
                  * If no handler is found the domain is
                  * informed that the method invocation completed abruptly.
                  *
@@ -1390,39 +1415,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 def handleException(exceptionValue: ExceptionValue): PCs = {
-                    // potentially iterating over the individual exceptions is potentially
+                    // iterating over the individual exceptions is potentially
                     // more precise than just iterating over the "abstraction"
-                    /*
-                    theDomain.typeOfValue(exceptionValue) match {
-
-                        case IsReferenceValue(exceptionValues) ⇒
-                            if (exceptionValues.tail.isEmpty) {
-                                val exceptionValue = exceptionValues.head
-                                exceptionValue.isNull match {
-                                    case No ⇒ // just forward
-                                        val ev = exceptionValue.asDomainValue(theDomain)
-                                        doHandleTheException(ev, false)
-                                    case Unknown ⇒
-                                        val npeHandlerPC =
-                                            if (theDomain.throwNullPointerExceptionOnThrow) {
-                                                val npe = theDomain.VMNullPointerException(pc)
-                                                doHandleTheException(npe, false)
-                                            } else
-                                                IntSet.empty
-                                        val ev = exceptionValue.asDomainValue(theDomain)
-                                        npeHandlerPC ++ doHandleTheException(ev, true)
-                                    case Yes ⇒
-                                        val npe = theDomain.VMNullPointerException(pc)
-                                        doHandleTheException(npe, false)
-                                }
-                            } else {
-                                handleExceptions(exceptionValues.map(_.asDomainValue(theDomain)))
-                            }
-
-                        case exceptionType ⇒
-                            throw DomainException(s"unexpected exception type: $exceptionType")
-                    }
-                    */
                     val baseValues = exceptionValue.baseValues
                     if (baseValues.isEmpty) {
                         exceptionValue.isNull match {
@@ -2581,21 +2575,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             }
         }
 
-        integrateSubroutineInformation()
-        val result =
-            AIResultBuilder.completed(
-                code, cfJoins, liveVariables, theDomain
-            )(
-                evaluated, operandsArray, localsArray
-            )
-        try {
-            theDomain.abstractInterpretationEnded(result)
-        } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case t: Throwable         ⇒ throwInterpretationFailedException(t, instructions.length)
-        }
-        if (tracer.isDefined) tracer.get.result(result)
-        result
+        abstractInterpretationEnded()
     }
 }
 

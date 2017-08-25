@@ -38,6 +38,7 @@ import org.scalatest.Matchers
 import org.opalj.collection.immutable.Chain
 
 import org.opalj.br.TestSupport.biProject
+import org.opalj.br.instructions.NEW
 
 /**
  * Tests the `ProjectIndex`.
@@ -80,30 +81,28 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
         }
     }
 
-    describe("using EntityDerivationFunctions PropertyStoreKey") {
+    describe("using EntityDerivationFunctions") {
 
         val p: SomeProject = biProject("ai.jar")
 
-        PropertyStoreKey.addEntityDerivationFunction[Map[Method, Map[PC, AllocationSite]]](
+        PropertyStoreKey.addEntityDerivationFunction[Map[Method, Map[PC, AllocationSite]]](p)(
+            // Callback function which is called, when the information is actually required
             (p: SomeProject) ⇒ {
 
                 var allAs: List[Chain[AllocationSite]] = Nil
 
                 // Associate every new instruction in a method with an allocation site object
-                val as = p.allMethods.flatMap { m ⇒
-                    m.body match {
-                        case None ⇒ Nil
-                        case Some(code) ⇒
-                            val as = code.collectWithIndex {
-                                case (pc, instructions.NEW(_)) ⇒ new AllocationSite(m, pc)
-                            }
-                            if (as.nonEmpty) allAs ::= as
-                            as
+                val as = p.allMethodsWithBody flatMap { m ⇒
+                    val code = m.body.get
+                    val as = code collectWithIndex {
+                        case (pc, NEW(_)) ⇒ new ObjectAllocationSite(m, pc)
                     }
+                    if (as.nonEmpty) allAs ::= as
+                    as
                 }
 
                 // In the context we store a map which makes the set of allocation sites
-                // easily accessible
+                // easily accessible.
                 val mToPCToAs = allAs.map { asPerMethod ⇒
                     val pcToAs = asPerMethod.map(as ⇒ as.pc → as).toMap
                     val m = pcToAs.head._2.method
@@ -119,8 +118,9 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
         it("should contain the additionally derived entities") {
 
-            val allAs: Iterable[AllocationSite] =
+            val allAs: Iterable[AllocationSite] = {
                 ps.context[Map[Method, Map[PC, AllocationSite]]].values.flatMap(_.values)
+            }
 
             val allocationSiteCount = allAs.size
 
@@ -140,8 +140,8 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
                     code.forall(
                         (pc, i) ⇒
                             i.opcode match {
-                                case instructions.NEW.opcode ⇒ mToPCToAs(m).get(pc).isDefined
-                                case _                       ⇒ mToPCToAs(m).get(pc).isEmpty
+                                case NEW.opcode ⇒ mToPCToAs(m).get(pc).isDefined
+                                case _          ⇒ mToPCToAs(m).get(pc).isEmpty
                             }
                     )
                 } else {
@@ -149,7 +149,7 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
                     code.iterate((pc, i) ⇒
                         if (i.opcode == instructions.NEW.opcode) {
                             info("allocation sites: "+mToPCToAs.mkString("\n"))
-                            val error = m.toJava(p.classFile(m), s"missing allocation site $pc:$i")
+                            val error = m.toJava(s"missing allocation site $pc:$i")
                             fail(error)
                         })
                 }
@@ -157,4 +157,54 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
         }
     }
+
+    describe("using makeFormalParametersAvailable") {
+
+        val p: SomeProject = biProject("ai.jar")
+
+        PropertyStoreKey.makeFormalParametersAvailable(p)
+
+        // WE HAVE TO USE THE KEY TO TRIGGER THE COMPUTATION OF THE ENTITY DERIVATION FUNCTION(S)
+        val ps = p.get(PropertyStoreKey)
+
+        assert(p.has(FormalParametersKey).isDefined)
+
+        it("should contain the formal parameters") {
+
+            val allFPs: Iterable[FormalParameter] = ps.context[FormalParameters].formalParameters
+
+            val formalParametersCount = allFPs.size
+
+            assert(formalParametersCount >= p.allMethods.map(m ⇒ m.descriptor.parametersCount).sum)
+            info(s"contains $formalParametersCount formal parameters")
+
+            assert(allFPs.forall(ps.isKnown))
+        }
+    }
+
+    describe("using makeAllocationSitesAvailable") {
+
+        val p: SomeProject = biProject("ai.jar")
+
+        PropertyStoreKey.makeAllocationSitesAvailable(p)
+
+        // WE HAVE TO USE THE KEY TO TRIGGER THE COMPUTATION OF THE ENTITY DERIVATION FUNCTION(S)
+        val ps = p.get(PropertyStoreKey)
+
+        assert(p.has(AllocationSitesKey).isDefined)
+
+        it("should contain the allocation sites") {
+
+            val allAs: Iterable[AllocationSite] = ps.context[AllocationSites].allocationSites
+
+            val allocationSiteCount = allAs.size
+
+            assert(allocationSiteCount > 0)
+            info(s"contains $allocationSiteCount allocation sites")
+
+            val allAdded: Boolean = allAs.forall(ps.isKnown)
+            assert(allAdded)
+        }
+    }
+
 }

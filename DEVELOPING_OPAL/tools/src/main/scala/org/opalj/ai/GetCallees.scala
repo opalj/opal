@@ -28,12 +28,13 @@
  */
 package org.opalj
 package ai
-package debug
 
 import scala.Console.RED
 import scala.Console.RESET
 
-import org.opalj.ai.InterpretationFailedException
+import org.opalj.br.Method
+import org.opalj.br.MethodSignature
+import org.opalj.br.analyses.Project
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.util.XHTML
@@ -42,10 +43,6 @@ import org.opalj.ai.analyses.cg.CHACallGraphExtractor
 import org.opalj.ai.analyses.cg.CallGraphExtractor
 import org.opalj.ai.analyses.cg.DefaultVTACallGraphDomain
 import org.opalj.ai.analyses.cg.VTACallGraphExtractor
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.MethodSignature
-import org.opalj.br.analyses.Project
 import org.opalj.ai.analyses.cg.CallGraphCache
 
 /**
@@ -126,12 +123,12 @@ object GetCallees {
         val extractor: CallGraphExtractor =
             if (useVTA) {
                 println("USING VTA")
-                def Domain(classFile: ClassFile, method: Method) =
+                def Domain(method: Method) =
                     new DefaultVTACallGraphDomain(
                         project,
                         project.get(FieldValuesKey), project.get(MethodReturnValuesKey),
                         cache,
-                        classFile, method /*, 4*/ )
+                        method /*, 4*/ )
                 new VTACallGraphExtractor(
                     new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project),
                     Domain
@@ -146,12 +143,12 @@ object GetCallees {
             }
 
         try {
-            val (allCallEdges, allUnresolvableMethodCalls) = extractor.extract(classFile, method)
+            val (allCallEdges, allUnresolvableMethodCalls) = extractor.extract(method)
             val (_, callees) = allCallEdges
             for ((pc, methods) ← callees) {
                 println("\n"+pc+":"+method.body.get.instructions(pc)+" calls: ")
                 for (method ← methods) {
-                    println(Console.GREEN+"\t\t+ "+method.toJava(project.classFile(method)))
+                    println(Console.GREEN+"\t\t+ "+method.toJava)
                 }
                 allUnresolvableMethodCalls.find(_.pc == pc).foreach { unresolvedCall ⇒
                     println(Console.RED+"\t\t- "+
