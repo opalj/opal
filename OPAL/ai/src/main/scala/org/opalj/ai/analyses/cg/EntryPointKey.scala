@@ -99,9 +99,9 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation, Nothin
     override protected def compute(project: SomeProject): EntryPointInformation = {
         val fpcfManager = project.get(FPCFAnalysesManagerKey)
         if (!fpcfManager.isDerived(EntryPointsAnalysis.derivedProperties))
-            fpcfManager.runWithRecommended(EntryPointsAnalysis)(true)
+            fpcfManager.run(EntryPointsAnalysis)
         else
-            OPALLogger.warn(
+            OPALLogger.info(
                 "analysis",
                 "entry points were already computed; the already available entry points are used"
             )(project.logContext)
@@ -120,7 +120,7 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation, Nothin
         if (!project.config.hasPath("org.opalj.callgraph.entryPoints")) {
             OPALLogger.info(
                 "project configuration",
-                "configruation key org.opalj.callgraph.entryPoints is missing; "+
+                "configuration key org.opalj.callgraph.entryPoints is missing; "+
                     "no additional entry points configured"
             )
             return entryPoints;
@@ -132,7 +132,7 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation, Nothin
                 case e: Throwable ⇒
                     OPALLogger.error(
                         "project configuration - recoverable",
-                        "configruation key org.opalj.callgraph.entryPoints is invalid; "+
+                        "configuration key org.opalj.callgraph.entryPoints is invalid; "+
                             "see EntryPointKey documentation",
                         e
                     )

@@ -1,0 +1,21 @@
+graph escape_properties {
+
+    NO [label = "No" style=filled fillcolor="gray"];
+    MAYBENO [label = "No?" style=filled fillcolor="gray89"]
+
+    A [label = "Arg" style=filled fillcolor="gray"]
+    MAYBEA [label = "Arg?" style=filled fillcolor="gray89"]
+
+    M [label = "Method" style=filled fillcolor="gray"]
+    MAYBEM [label = "Method?" style=filled fillcolor="gray89"]
+
+    G [label = "Global" style=filled fillcolor="gray"]
+
+    NO -- {A, MAYBENO};
+    A -- {M, MAYBEA};
+    M -- {G, MAYBEM};
+    MAYBENO -- MAYBEA;
+    MAYBEA -- MAYBEM;
+    MAYBEM -- G;
+
+}

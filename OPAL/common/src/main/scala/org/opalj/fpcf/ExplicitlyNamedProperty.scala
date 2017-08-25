@@ -26,41 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
-package analysis
-
-import org.opalj.br.ObjectType
-import org.opalj.fpcf.properties.ClientCallable
-import org.opalj.fpcf.properties.IsClientCallable
+package org.opalj.fpcf
 
 /**
- * @author Michael Reif
+ * A property which has an explicit name. This is particular useful when we want to refer to a
+ * property in the context of some test cases. In general, it should be tried that the name is
+ * reasonably unique w.r.t. its usage scenario.
  */
-abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+trait ExplicitlyNamedProperty extends Property {
 
-    def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
+    /**
+     * The name of the property.
+     */
+    def propertyName: String
 
-    override def testFileName = "classfiles/clientCallableTest.jar"
-
-    override def testFilePath = "ai"
-
-    override def analysisRunners = Seq(CallableFromClassesInOtherPackagesAnalysis)
-
-    override def propertyKey: PropertyKey[ClientCallable] = ClientCallable.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
-
-    def defaultValue = IsClientCallable.toString
 }
 
-class ClientCallableAnalysisCPATest
-    extends ClientCallableAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
+/**
+ * Defines an extractor for an [[ExplicitlyNamedProperty]].
+ */
+object ExplicitlyNamedProperty {
 
-class ClientCallableAnalysisOPATest
-    extends ClientCallableAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+    def unapply(p: ExplicitlyNamedProperty): Some[String] = Some(p.propertyName)
+
 }

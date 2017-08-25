@@ -34,7 +34,23 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 
 /**
- * The common super trait of all entry point properties.
+ * Identifies those methods where the calling context can never be (completely) deduced from the
+ * given code, because the methods may be called by some unknonwn code/code which necessarily
+ * is outside of the scope of the current analysis.
+ *
+ * In general, the main methods of desktop applications are entry points, other examples are
+ * the servlet methods; e.g, `doPost`. In the latter case, the servlet container guarantees
+ * that the `HTTPServletRequest` object is non null, but the content is basically unconstrained
+ * and no analysis should make any assumptions about it. In case of a library, all
+ * public methods of all public types are entry points. Furthermore, protected methods of public,
+ * extensible classes are also callable by unknown code and, hence, are also entry points.
+ *
+ * Entry points are modelled as properties, because an advanced analysis may only identify those
+ * methods of objects as entry points that are actually callable by the end user, because the
+ * end user can get access to an instance of a non-public class of the respective type.
+ *
+ * @author Michael Reif
+ * @author Michael Eichberg
  */
 sealed trait EntryPoint extends Property {
 
@@ -65,11 +81,16 @@ object EntryPoint {
 }
 
 /**
- * The respective method is an entry point.
+ *  The respective method is an entry point; the calling context is not completely known.
  */
-case object IsEntryPoint extends EntryPoint { final val isRefineable: Boolean = false }
+case object IsEntryPoint extends EntryPoint { final def isRefineable: Boolean = false }
+
+/**
+ * It is not yet known if the respective method is an entry point or not.
+ */
+case object MayBeEntryPoint extends EntryPoint { final def isRefineable: Boolean = true }
 
 /**
  * The respective method is not an entry point.
  */
-case object NoEntryPoint extends EntryPoint { final val isRefineable: Boolean = false }
+case object NoEntryPoint extends EntryPoint { final def isRefineable: Boolean = false }

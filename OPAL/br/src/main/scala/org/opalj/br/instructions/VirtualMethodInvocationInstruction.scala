@@ -27,40 +27,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package analysis
-
-import org.opalj.br.ObjectType
-import org.opalj.fpcf.properties.ClientCallable
-import org.opalj.fpcf.properties.IsClientCallable
+package br
+package instructions
 
 /**
- * @author Michael Reif
+ * Common superclass of all Invoke instructions that require virtual method resolution.
+ *
+ * @author Michael Eichberg
  */
-abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction {
 
-    def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
+    override def isVirtualMethodCall: Boolean = true
 
-    override def testFileName = "classfiles/clientCallableTest.jar"
+    override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+        1 + methodDescriptor.parametersCount
+    }
 
-    override def testFilePath = "ai"
-
-    override def analysisRunners = Seq(CallableFromClassesInOtherPackagesAnalysis)
-
-    override def propertyKey: PropertyKey[ClientCallable] = ClientCallable.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
-
-    def defaultValue = IsClientCallable.toString
 }
 
-class ClientCallableAnalysisCPATest
-    extends ClientCallableAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
+object VirtualMethodInvocationInstruction {
 
-class ClientCallableAnalysisOPATest
-    extends ClientCallableAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+    def unapply(
+        instruction: VirtualMethodInvocationInstruction
+    ): Option[(ReferenceType, String, MethodDescriptor)] = {
+        Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
+    }
+
 }

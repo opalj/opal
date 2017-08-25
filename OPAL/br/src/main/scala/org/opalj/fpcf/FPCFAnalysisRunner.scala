@@ -30,21 +30,16 @@ package org.opalj
 package fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.PropertyStoreKey
 
 /**
  * Provides the generic infrastructure that is implemented by all factories for
  * FPCF analyses.
- * Analyses that are created sing this
- * factory will then be run using the [[PropertyStore]].
+ * Analyses that are created sing this factory will then be run using the [[PropertyStore]].
  * I.e., this trait is typically implemented by the singleton object that facilitates
  * the creation of analyses.
- * @example
- * {{{
- * }}}
  *
  * @note It is possible to use an analysis that directly uses the property store and
  *      an analysis that uses this factory infrastructure at the same time.
@@ -75,38 +70,6 @@ trait FPCFAnalysisRunner {
         else
             nameCandidate
     }
-
-    /**
-     * Returns the information which other analyses strictly need to be executed
-     * before this analysis can be performed.
-     *
-     * @note
-     *      An analysis should be listed as a requirement if and only if the analysis
-     *      strictly depends on the computed property of the analysis and the property
-     *      has no fallback (which is generally not the case!).
-     *      If no strict requirements are defined then this analysis can be run even
-     *      if no other analyses are executed. This provides the end user more leeway
-     *      in specifying the analyses that should be analyzed.
-     */
-    def requirements: Set[FPCFAnalysisRunner] = Set.empty
-
-    /**
-     * Returns the information which kind of analyses should be executed to achieve
-     * more precise analysis results.
-     *
-     * This set should include all analyses that are required to get the most precise
-     * result.
-     * FIXME Transitively used analyses also should be added here since more than one analysis
-     * could depend on the same property.
-     *
-     * Real requirements of the analysis should be added to the requirements definition. The set for
-     * recommendations should be disjunct to the requirements set.
-     *
-     * @note These analyses are not required. Hence, the analysis will always compute a correct
-     * result. If the set of recommendations is not empty, you may lose precision for every analysis
-     * that is not executed in parallel.
-     */
-    def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
     /**
      * Returns a set of integers that contains the id of every [[Property]] that is derived by
@@ -161,19 +124,4 @@ object FPCFAnalysisRunner {
 
     private[FPCFAnalysisRunner] def nextId: Int = idGenerator.getAndIncrement()
 
-    final val ClassFileSelector: PartialFunction[Entity, ClassFile] = {
-        case cf: ClassFile ⇒ cf
-    }
-
-    final val MethodSelector: PartialFunction[Entity, Method] = {
-        case m: Method ⇒ m
-    }
-
-    final val NonAbstractMethodSelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isAbstract ⇒ m
-    }
-
-    final val MethodsWithBodySelector: PartialFunction[Entity, Method] = {
-        case m: Method if m.body.isDefined ⇒ m
-    }
 }

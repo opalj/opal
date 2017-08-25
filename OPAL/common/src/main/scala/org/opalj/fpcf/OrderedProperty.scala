@@ -26,41 +26,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
-package analysis
-
-import org.opalj.br.ObjectType
-import org.opalj.fpcf.properties.ClientCallable
-import org.opalj.fpcf.properties.IsClientCallable
+package org.opalj.fpcf
 
 /**
- * @author Michael Reif
+ * Ordered properties define a definitive order between all properties of a respective kind;
+ * all properties that are of the same kind have to inherit from ordered property or none.
+ *
+ * This information is used by the property store when debugging is turned on to test if an
+ * analysis which derives a new property always derives a more precise property.
+ *
+ * @author Michael Eichberg
  */
-abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+trait OrderedProperty extends Property {
 
-    def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
+    /**
+     * Returns `true`.
+     */
+    final override def isOrdered: Boolean = true
 
-    override def testFileName = "classfiles/clientCallableTest.jar"
+    /**
+     * Returns `this`.
+     */
+    final override def asOrderedProperty: this.type = this
 
-    override def testFilePath = "ai"
+    /**
+     * Tests if this property is a valid successor property of the other property.
+     *
+     * @return None if this property is a valid successor of the other property else
+     *         `Some(description:String)` which describes the problem is returned.
+     */
+    def isValidSuccessorOf(other: OrderedProperty): Option[String]
 
-    override def analysisRunners = Seq(CallableFromClassesInOtherPackagesAnalysis)
-
-    override def propertyKey: PropertyKey[ClientCallable] = ClientCallable.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
-
-    def defaultValue = IsClientCallable.toString
-}
-
-class ClientCallableAnalysisCPATest
-    extends ClientCallableAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class ClientCallableAnalysisOPATest
-    extends ClientCallableAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

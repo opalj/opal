@@ -27,40 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package analysis
-
-import org.opalj.br.ObjectType
-import org.opalj.fpcf.properties.ClientCallable
-import org.opalj.fpcf.properties.IsClientCallable
+package br
+package analyses
 
 /**
- * @author Michael Reif
+ * A set of all allocation sites.
+ *
+ * To initialize the set of allocation sites for an entire project use the respective
+ * project information key: [[AllocationSitesKey]]. The key also provides further
+ * information regarding the concrete allocation site objects and their relation
+ * to the underlying method.
+ *
+ * @author Michael Eichberg
  */
-abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+class AllocationSites private[analyses] (val data: Map[Method, Map[PC, AllocationSite]]) {
 
-    def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
+    def apply(m: Method): Map[PC, AllocationSite] = data.getOrElse(m, Map.empty)
 
-    override def testFileName = "classfiles/clientCallableTest.jar"
-
-    override def testFilePath = "ai"
-
-    override def analysisRunners = Seq(CallableFromClassesInOtherPackagesAnalysis)
-
-    override def propertyKey: PropertyKey[ClientCallable] = ClientCallable.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
-
-    def defaultValue = IsClientCallable.toString
-}
-
-class ClientCallableAnalysisCPATest
-    extends ClientCallableAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class ClientCallableAnalysisOPATest
-    extends ClientCallableAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+    def allocationSites: Iterable[AllocationSite] = data.values.flatMap(_.values)
 }

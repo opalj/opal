@@ -148,21 +148,14 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
  */
 object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
 
-    def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
-    }
-
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new MethodAccessibilityAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
+        propertyStore.scheduleForCollected {
+            case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
+        }(
+            analysis.determineProperty
+        )
         analysis
-    }
-
-    override def recommendations: Set[FPCFAnalysisRunner] = {
-        Set(CallableFromClassesInOtherPackagesAnalysis)
     }
 
     override def derivedProperties: Set[PropertyKind] = {
@@ -179,14 +172,6 @@ object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
  */
 object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner {
 
-    final def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if m.isStatic && !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
-    }
-
-    override def recommendations: Set[FPCFAnalysisRunner] = {
-        Set(CallableFromClassesInOtherPackagesAnalysis)
-    }
-
     override def derivedProperties: Set[PropertyKind] = {
         Set(ProjectAccessibility.Key)
     }
@@ -195,12 +180,13 @@ object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner {
         Set(ClientCallable.Key)
     }
 
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new MethodAccessibilityAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
+        propertyStore.scheduleForCollected {
+            case m: Method if m.isStatic && !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
+        }(
+            analysis.determineProperty
+        )
         analysis
     }
 }

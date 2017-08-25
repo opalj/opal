@@ -26,33 +26,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-//package org.opalj.fpcf
-//package analysis
-//
-//import org.opalj.br.ObjectType
-//import org.opalj.fpcf.test.annotations.InstantiabilityKeys
-//
-///**
-// *
-// * This class tests the [[InstantiabilityAnalysis]].
-// *
-// * @author Michael Reif
-// */
-//class InstantiabilityAnalysisTest extends AbstractFixpointAnalysisTest {
-//
-//    override def analysisName = "InstantiabilityAnalysis"
-//
-//    override def testFileName = "classfiles/factorymethodTest.jar"
-//
-//    override def testFilePath = "fpcfa"
-//
-//    override def analysisRunner = InstantiabilityAnalysis
-//
-//    override def propertyKey: PropertyKey[Instantiability] = Instantiability.key
-//
-//    override def propertyAnnotation: ObjectType = {
-//        ObjectType("org/opalj/fpcf/test/annotations/InstantiabilityProperty")
-//    }
-//
-//    override def defaultValue = InstantiabilityKeys.Instantiable.toString
-//}
+package org.opalj
+package br
+package instructions
+
+/**
+ * Invocation of a method where the target method is statically resolved.
+ *
+ * @author Michael Eichberg
+ */
+abstract class NonVirtualMethodInvocationInstruction extends MethodInvocationInstruction {
+
+    override def isVirtualMethodCall: Boolean = false
+
+    def asINVOKESTATIC: INVOKESTATIC
+
+    def asINVOKESPECIAL: INVOKESPECIAL
+
+}

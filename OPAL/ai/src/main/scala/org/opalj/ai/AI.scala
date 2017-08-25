@@ -688,14 +688,17 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             // When we have an abrupt termination of a subroutine, we have to make
             // sure that we are actually scheduling the operation in the handling
             // (sub)routine and use the handling subroutine's operands and locals array.
-            val (targetOperandsArray, targetLocalsArray) =
-                if (abruptSubroutineTerminationCount == 0)
-                    (operandsArray, localsArray)
-                else {
-                    val (_, operandsArray, localsArray) =
-                        memoryLayoutBeforeSubroutineCall(abruptSubroutineTerminationCount - 1)
-                    (operandsArray, localsArray)
-                }
+            var targetOperandsArray: theDomain.OperandsArray = null
+            var targetLocalsArray: theDomain.LocalsArray = null
+            if (abruptSubroutineTerminationCount == 0) {
+                targetOperandsArray = operandsArray
+                targetLocalsArray = localsArray
+            } else {
+                val (_, operandsArray, localsArray) =
+                    memoryLayoutBeforeSubroutineCall(abruptSubroutineTerminationCount - 1)
+                targetOperandsArray = operandsArray
+                targetLocalsArray = localsArray
+            }
 
             /* Handles the case that a subroutine (jsr/ret) is abruptly terminated due
              * to an exception.
@@ -827,11 +830,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // 3: } while (i<5)
                     //
                     // In this case, it may happen that (we are primarily doing
-                    // depth-first evaluation)
-                    // we are reanalyzing the loop (1-3) before we analyze the second
-                    // branch of the if (e.g., case "B"). However, the "pc" of the
-                    // second branch is already scheduled and we don't want/need to
-                    // reschedule it again.
+                    // depth-first evaluation) we are reanalyzing the loop (1-3)
+                    // before we analyze the second branch of the if (e.g., case "B").
+                    // However, the "pc" of the second branch is already scheduled
+                    // and we don't want/need to reschedule it again.
                     isTargetScheduled = Yes // it is already or will be scheduled...
                     targetOperandsArray(targetPC) = operands
                     targetLocalsArray(targetPC) = locals
@@ -1203,34 +1205,48 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 rest, locals
                             )
                         case Unknown ⇒
-                            {
-                                val (newOperands, newLocals) =
-                                    yesConstraint(branchTargetPC, operand, rest, locals)
-                                if (tracer.isDefined &&
-                                    ((rest ne newOperands) || (locals ne newLocals))) {
-                                    tracer.get.establishedConstraint(theDomain)(
-                                        pc, branchTargetPC, rest, locals, newOperands, newLocals
-                                    )
-                                }
-                                gotoTarget(
-                                    pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
-                                    newOperands, newLocals
+                            // BT = Branch Target
+                            val (newBTOperands, newBTLocals) =
+                                yesConstraint(branchTargetPC, operand, rest, locals)
+                            if (tracer.isDefined &&
+                                ((rest ne newBTOperands) || (locals ne newBTLocals))) {
+                                tracer.get.establishedConstraint(theDomain)(
+                                    pc, branchTargetPC, rest, locals, newBTOperands, newBTLocals
                                 )
                             }
-                            {
-                                val (newOperands, newLocals) =
-                                    noConstraint(nextPC, operand, rest, locals)
-                                if (tracer.isDefined &&
-                                    ((rest ne newOperands) || (locals ne newLocals))) {
-                                    tracer.get.establishedConstraint(theDomain)(
-                                        pc, nextPC, rest, locals, newOperands, newLocals
-                                    )
-                                }
+                            // FT = Fall Through
+                            val (newFTOperands, newFTLocals) =
+                                noConstraint(nextPC, operand, rest, locals)
+                            if (tracer.isDefined &&
+                                ((rest ne newFTOperands) || (locals ne newFTLocals))) {
+                                tracer.get.establishedConstraint(theDomain)(
+                                    pc, nextPC, rest, locals, newFTOperands, newFTLocals
+                                )
+                            }
+
+                            // We have empirically evaluated which strategy leads to the minimal
+                            // number of instruction evaluations and the following test does:
+                            if (branchTargetPC > pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,
-                                    newOperands, newLocals
+                                    newFTOperands, newFTLocals
+                                )
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    newBTOperands, newBTLocals
+                                )
+                            } else {
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    newBTOperands, newBTLocals
+                                )
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    nextPC, isExceptionalControlFlow = false,
+                                    newFTOperands, newFTLocals
                                 )
                             }
                     }
@@ -1270,34 +1286,47 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 rest, locals
                             )
                         case Unknown ⇒
-                            {
-                                val (newOperands, newLocals) =
-                                    yesConstraint(branchTargetPC, left, right, rest, locals)
-                                if (tracer.isDefined &&
-                                    ((rest ne newOperands) || (locals ne newLocals))) {
-                                    tracer.get.establishedConstraint(theDomain)(
-                                        pc, branchTargetPC, rest, locals, newOperands, newLocals
-                                    )
-                                }
-                                gotoTarget(
-                                    pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
-                                    newOperands, newLocals
+                            // BT = Branch Target
+                            // FT = Fall Through
+                            // See ifXX for details regarding the heuristic for selecting the next
+                            // instruction to evaluate.
+                            val (newBTOperands, newBTLocals) =
+                                yesConstraint(branchTargetPC, left, right, rest, locals)
+                            if (tracer.isDefined &&
+                                ((rest ne newBTOperands) || (locals ne newBTLocals))) {
+                                tracer.get.establishedConstraint(theDomain)(
+                                    pc, branchTargetPC, rest, locals, newBTOperands, newBTLocals
                                 )
                             }
-                            {
-                                val (newOperands, newLocals) =
-                                    noConstraint(nextPC, left, right, rest, locals)
-                                if (tracer.isDefined &&
-                                    ((rest ne newOperands) || (locals ne newLocals))) {
-                                    tracer.get.establishedConstraint(theDomain)(
-                                        pc, nextPC, rest, locals, newOperands, newLocals
-                                    )
-                                }
+                            val (newFTOperands, newFTLocals) =
+                                noConstraint(nextPC, left, right, rest, locals)
+                            if (tracer.isDefined &&
+                                ((rest ne newFTOperands) || (locals ne newFTLocals))) {
+                                tracer.get.establishedConstraint(theDomain)(
+                                    pc, nextPC, rest, locals, newFTOperands, newFTLocals
+                                )
+                            }
+                            if (branchTargetPC > pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,
-                                    newOperands, newLocals
+                                    newFTOperands, newFTLocals
+                                )
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    newBTOperands, newBTLocals
+                                )
+                            } else {
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    newBTOperands, newBTLocals
+                                )
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    nextPC, isExceptionalControlFlow = false,
+                                    newFTOperands, newFTLocals
                                 )
                             }
                     }

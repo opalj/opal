@@ -200,7 +200,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         step(7, "[FPCF-Analysis] executing fixpoint analyses") {
             (
                 {
-                    fpcfAnalyses.foreach(analysesManager.runWithRecommended(_)(false))
+                    fpcfAnalyses.foreach(analysesManager.run(_, false))
                     propertyStore.waitOnPropertyComputationCompletion(true)
                 },
                 None

@@ -52,7 +52,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
         val ps = project.get(PropertyStoreKey)
-        ps <||< (PropertyStore.entitySelector[Method], new ThrownExceptionsFallbackAnalysis(ps))
+        ps.scheduleForCollected(PropertyStore.entitySelector[Method])(new ThrownExceptionsFallbackAnalysis(ps))
         ps.waitOnPropertyComputationCompletion(true)
 
         val methodsWithCompleteThrownExceptionsInfo = ps.collect {

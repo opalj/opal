@@ -37,15 +37,17 @@ import org.opalj.fpcf.properties.ProjectAccessibility
 /**
  * @author Michael Reif
  */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
+abstract class MethodAccessibilityTest extends AbstractFixpointAnalysisAssumptionTest {
 
-    def analysisName = "MethodvisibilityAnalysis"
+    def analysisName = "MethodVisibilityAnalysis"
 
     override def testFileName = "classfiles/methodVisibilityTest.jar"
 
     override def testFilePath = "ai"
 
-    override def analysisRunner = MethodAccessibilityAnalysis
+    override def analysisRunners = {
+        Seq(CallableFromClassesInOtherPackagesAnalysis, MethodAccessibilityAnalysis)
+    }
 
     override def propertyKey: PropertyKey[ProjectAccessibility] = ProjectAccessibility.Key
 
@@ -56,12 +58,12 @@ abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTe
     def defaultValue = ProjectAccessibilityKeys.Global.toString
 }
 
-class MethodvisibilityCPATest extends MethodvisibilityTest {
+class MethodAccessibilityCPATest extends MethodAccessibilityTest {
 
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }
 
-class MethodvisibilityOPATest extends MethodvisibilityTest {
+class MethodAccessibilityOPATest extends MethodAccessibilityTest {
 
     override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }
