@@ -33,7 +33,7 @@ package analyses
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import com.typesafe.config.ConfigFactory
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.TestSupport.biProject
 
 /**
  *
@@ -43,7 +43,7 @@ import org.opalj.bi.TestSupport.locateTestResources
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class DirectTypeExtensibilityTest extends FunSpec with Matchers {
 
-    val testProject = Project(locateTestResources("extensible_classes.jar", "bi"))
+    val testProject = biProject("extensible_classes.jar")
 
     /*
     * Can be used as prefix when ObjectTypes are created.

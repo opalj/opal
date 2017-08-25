@@ -64,7 +64,7 @@ import org.opalj.log.OPALLogger.error
  * @note The default configuration is the rather conservative [[OpenCodeBase]] analysis.
  * @author Michael Reif
  */
-object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesInformation] {
+object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesInformation, Nothing] {
 
     private[this] final val _defautlPackageContext = "org.opalj.br.analyses.OpenCodeBase"
 
@@ -75,7 +75,7 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesInformation
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     override protected def compute(project: SomeProject): ClosedPackagesInformation = {
         val packageContext = project.config.as[Option[String]](ConfigKeyPrefix+"packageContext").getOrElse(_defautlPackageContext)

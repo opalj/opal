@@ -38,7 +38,7 @@ package analyses
  * @author Michael Eichberg
  * @author Michael Reif
  */
-object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer] {
+object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, ObjectType ⇒ Answer] {
 
     /**
      * The [[TypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.

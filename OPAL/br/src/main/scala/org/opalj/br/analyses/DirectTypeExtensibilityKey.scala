@@ -42,7 +42,7 @@ import org.opalj.log.OPALLogger.error
  *
  * @author Michael Reif
  */
-object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer] {
+object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.DirectTypeExtensibilityKey."
 
