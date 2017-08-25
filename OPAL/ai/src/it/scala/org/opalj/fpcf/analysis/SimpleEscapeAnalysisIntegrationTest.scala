@@ -55,7 +55,7 @@ class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
-        analysesManager.runWithRecommended(SimpleEscapeAnalysis)(waitOnCompletion = true)
+        analysesManager.run(SimpleEscapeAnalysis)
     }
 
     allBIProjects() foreach { biProject ⇒

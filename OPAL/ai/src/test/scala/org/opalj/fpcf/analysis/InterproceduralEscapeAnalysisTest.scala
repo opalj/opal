@@ -50,7 +50,7 @@ class InterproceduralEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def testFilePath = "bi"
 
-    override def analysisRunner = InterproceduralEscapeAnalysis
+    override def analysisRunners = List(InterproceduralEscapeAnalysis)
 
     override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
 

@@ -277,7 +277,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
 
         def checkParams(methodO: org.opalj.Result[Method], params: Seq[Expr[V]]) = {
             for (i ← params.indices) {
-                if (usesDefSite(params(params.length - (i + 1))))
+                if (usesDefSite(params(i)))
                     handleCallO(methodO, i + 1)
             }
         }
@@ -331,7 +331,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
         }
 
         // Every entity that is not identified as escaping is not escaping
-        if (dependees.isEmpty)
+        if (dependees.isEmpty || worstProperty.isInstanceOf[GlobalEscape])
             return Result(e, worstProperty)
 
         // we depend on the result for other entities, lets construct a continuation
@@ -456,7 +456,7 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new InterproceduralEscapeAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineEscape)
+        propertyStore.scheduleForCollected(entitySelector)(analysis.determineEscape)
         analysis
     }
 
@@ -492,7 +492,7 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
         PropertyStoreKey.makeFormalParametersAvailable(project)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         time {
-            analysesManager.runWithRecommended(InterproceduralEscapeAnalysis)(waitOnCompletion = true)
+            analysesManager.run(InterproceduralEscapeAnalysis)
         } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
 
         val propertyStore = project.get(PropertyStoreKey)

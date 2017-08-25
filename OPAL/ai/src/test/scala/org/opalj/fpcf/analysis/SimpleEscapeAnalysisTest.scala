@@ -48,7 +48,7 @@ class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def testFilePath = "bi"
 
-    override def analysisRunner = SimpleEscapeAnalysis
+    override def analysisRunners = List(SimpleEscapeAnalysis)
 
     override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
 

@@ -322,7 +322,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
                 val thisParam = params.thisParameter
                 doDetermineEscape(e, thisParam.origin, thisParam.useSites, code)
-            case fp: FormalParameter ⇒ Result(fp, MaybeNoEscape)
+            case fp: FormalParameter ⇒ ImmediateResult(fp, MaybeNoEscape)
         }
 
     }
@@ -342,7 +342,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new SimpleEscapeAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineEscape)
+        propertyStore.scheduleForCollected(entitySelector)(analysis.determineEscape)
         analysis
     }
 
@@ -378,7 +378,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         PropertyStoreKey.makeFormalParametersAvailable(project)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         time {
-            analysesManager.runWithRecommended(SimpleEscapeAnalysis)(waitOnCompletion = true)
+            analysesManager.run(SimpleEscapeAnalysis)
         } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
 
         val propertyStore = project.get(PropertyStoreKey)
