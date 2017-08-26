@@ -44,7 +44,6 @@ import org.opalj.br.analyses.BasicReport
 
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.ExtensibleType
 
 /**
  * Determines the immutability of the classes of a project.
@@ -112,7 +111,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
         //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)
-        manager.runAll(TypeExtensibilityAnalysis, FieldMutabilityAnalysis)
+        manager.runAll(FieldMutabilityAnalysis)
 
         time {
             manager.runAll(ClassImmutabilityAnalysis, TypeImmutabilityAnalysis)
@@ -122,11 +121,6 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
         () ⇒ {
             projectStore.validate(None)
-
-            val extensibleClasses =
-                projectStore.entities(ExtensibleType).
-                    map(_.asInstanceOf[ClassFile].thisType.toJava).toList.sorted.
-                    mkString("\n\t\t\t", "\n\t\t\t", "\n")
 
             val immutableClasses =
                 projectStore.entities(ClassImmutability.key).
@@ -164,7 +158,6 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
                 }.mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
 
             "Details:\n"+
-                extensibleClasses.mkString("\tExtensible Classes:\n\t\t", "\n\t\t", "\n") +
                 immutableClassesInfo+
                 "\nSummary (w.r.t classes):\n"+
                 "\tObject Immutability:\n"+

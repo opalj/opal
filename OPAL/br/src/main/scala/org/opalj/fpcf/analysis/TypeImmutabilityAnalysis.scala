@@ -31,14 +31,10 @@ package fpcf
 package analysis
 
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.TypeExtensibilityKey
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.log.OPALLogger
-import scala.Traversable
-import org.opalj.fpcf.properties.TypeExtensibility
-import org.opalj.fpcf.properties.ExtensibleType
-import org.opalj.fpcf.properties.NotExtensibleType
-import org.opalj.fpcf.properties.MaybeExtensibleType
 import org.opalj.fpcf.properties.MutableType
 import org.opalj.fpcf.properties.UnknownClassImmutability
 import org.opalj.fpcf.properties.UnknownTypeImmutability
@@ -54,32 +50,22 @@ import org.opalj.fpcf.properties.TypeImmutability
 
 /**
  * Determines the mutability of a specific type.
+ *
+ * @author Michael Eichberg
  */
 class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * @param cf A class file which is not the class file of `java.lang.Object`.
      */
-    def step1(cf: ClassFile): PropertyComputationResult = {
-
-        propertyStore(cf, TypeExtensibility.key) match {
-            case EP(_, ExtensibleType)    ⇒ ImmediateResult(cf, MutableType)
-            case EP(_, NotExtensibleType) ⇒ step2(cf)
-            case epk /* either MaybeExtensibleType or not yet available at all... */ ⇒
-                val dependees = Traversable(epk)
-                def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
-                    p match {
-                        case ExtensibleType    ⇒ ImmediateResult(cf, MutableType)
-                        case NotExtensibleType ⇒ step2(cf)
-                        case MaybeExtensibleType ⇒ IntermediateResult(
-                            cf,
-                            UnknownTypeImmutability,
-                            dependees, c
-
-                        )
-                    }
-                }
-                IntermediateResult(cf, UnknownTypeImmutability, dependees, c)
+    def step1(
+        typeExtensibility: ObjectType ⇒ Answer
+    )(
+        cf: ClassFile
+    ): PropertyComputationResult = {
+        typeExtensibility(cf.thisType) match {
+            case Yes | Unknown ⇒ ImmediateResult(cf, MutableType)
+            case No            ⇒ step2(cf)
         }
     }
 
@@ -282,9 +268,10 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(TypeImmutability)
 
-    override def usedProperties: Set[PropertyKind] = Set(ClassImmutability, TypeExtensibility)
+    override def usedProperties: Set[PropertyKind] = Set(ClassImmutability)
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+        val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(project)
 
         // An optimization if the analysis also includes the JDK.
@@ -293,7 +280,7 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
         ps.scheduleForCollected {
             case cf: ClassFile if (cf.thisType ne ObjectType.Object) ⇒ cf
         }(
-            analysis.step1
+            analysis.step1(typeExtensibility)
         )
 
         analysis

@@ -32,6 +32,7 @@ package core
 package analysis
 
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.TypeExtensibilityKey
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
@@ -45,8 +46,6 @@ import org.opalj.issues.FieldLocation
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.properties.NotExtensibleType
-import org.opalj.fpcf.properties.TypeExtensibility
 
 /**
  * Identifies fields (static or instance) that are not used and which are also not useable.
@@ -62,6 +61,8 @@ object UnusedFields {
         stringConstantsInformation: StringConstantsInformation,
         classFile:                  ClassFile
     ): Seq[Issue] = {
+
+        val typeExtensibility = theProject.get(TypeExtensibilityKey)
 
         val candidateFields = classFile.fields.filterNot { field ⇒
             (field.isSynthetic) ||
@@ -121,11 +122,7 @@ object UnusedFields {
             } else if (analysisMode == AnalysisModes.CPA) {
                 unusedAndNotReflectivelyAccessedFields.filter(f ⇒
                     f.isPrivate || f.isPackagePrivate || {
-                        // IMPROVE Test if the "isExtensible" property was properly computed!
-                        f.isProtected && {
-                            val p = propertyStore(classFile, TypeExtensibility.key)
-                            p.hasProperty && p.p == NotExtensibleType
-                        }
+                        f.isProtected && typeExtensibility(classFile.thisType).isNo
                     })
             } else {
                 val message = s"the analysis mode $analysisMode is unknown"
