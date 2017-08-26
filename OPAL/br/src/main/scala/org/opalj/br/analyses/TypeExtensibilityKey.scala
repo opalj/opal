@@ -41,9 +41,9 @@ package analyses
 object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, ObjectType ⇒ Answer] {
 
     /**
-     * The [[TypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
+     * The [[TypeExtensibilityKey]] has the [[DirectTypeExtensibilityKey]] as prerequisite.
      *
-     * @return Seq(ClosedPackagesKey).
+     * @return Seq(DirectTypeExtensibilityKey).
      */
     override protected def requirements = Seq(DirectTypeExtensibilityKey)
 
