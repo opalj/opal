@@ -33,11 +33,12 @@ package analyses
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.TestSupport.biProject
 
 /**
  * This tests the basic functionality of the [[TypeExtensibilityKey]] and determines whether the
- * computed information are reliable. Beneath the basics, the test also contains an integration test
+ * computed information is correct. Beneath the basics, the test also contains an integration test
  * that ensures that all directly extensible types (see [[DirectTypeExtensibilityTest]]) are also
  * transitively extensible.
  *
@@ -49,13 +50,11 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
     val testProject = biProject("extensible_classes.jar")
 
     /*
-  * Can be used as prefix when ObjectTypes are created.
-   */
+     * Can be used as prefix when ObjectTypes are created.
+     */
     val testPackage = "extensible_classes/transitivity/"
 
-    def mergeConfigString(extConf: String, pkgConf: String): String = {
-        extConf+"\n"+pkgConf
-    }
+    def mergeConfigString(extConf: String, pkgConf: String): String = extConf+"\n"+pkgConf
 
     describe("all directly extensible types") {
 
@@ -76,7 +75,6 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
         it("should also be transitively extensible") {
 
             // open package
-
             var project = Project.recreate(testProject, openConf, true)
             var isDirectlyExtensible = project.get(DirectTypeExtensibilityKey)
             var isExtensible = project.get(TypeExtensibilityKey)
@@ -104,20 +102,18 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
             if (relevantTypes.isEmpty)
                 fail("No directly extensible types found!")
 
-            relevantTypes.foreach { objectType ⇒
-                isExtensible(objectType) should be(Yes)
-            }
+            relevantTypes.foreach { objectType ⇒ isExtensible(objectType) should be(Yes) }
         }
     }
 
-    describe("when a type is located a closed package") {
+    describe("when a type is located in a closed package") {
 
-        val confString = mergeConfigString(
+        val configString = mergeConfigString(
             DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
             ClosedPackagesConfig.closedCodeBase
         )
 
-        val config = ConfigFactory.parseString(confString)
+        val config = ConfigFactory.parseString(configString)
         val project = Project.recreate(testProject, config, true)
         val isExtensible = project.get(TypeExtensibilityKey)
 
@@ -126,7 +122,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
             isExtensible(objectType) should be(Yes)
         }
 
-        it("a package visible class should be NOT transitively extensible when all subclasses"+
+        it("a package visible class should NOT be transitively extensible when all subclasses"+
             " are (effectively) final") {
             val classOt = ObjectType(s"${testPackage}case2/Class")
             val interfaceOt = ObjectType(s"${testPackage}case2/Interface")
@@ -154,12 +150,12 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
     describe("when a type is located an open package") {
 
-        val confString = mergeConfigString(
+        val configString = mergeConfigString(
             DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
             ClosedPackagesConfig.openCodeBase
         )
 
-        val config = ConfigFactory.parseString(confString)
+        val config = ConfigFactory.parseString(configString)
         val project = Project.recreate(testProject, config, true)
         val isExtensible = project.get(TypeExtensibilityKey)
 

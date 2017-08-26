@@ -31,7 +31,7 @@ package br
 package analyses
 
 /**
- * Common trait that analyses should inherit from that want to use the general
+ * Common trait that analyses can inherit from when they want to use the general
  * analysis framework [[AnalysisExecutor]].
  *
  * ==Conceptual Idea==
@@ -150,4 +150,3 @@ trait Analysis[Source, +AnalysisResult] {
             name
     }
 }
-

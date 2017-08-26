@@ -34,8 +34,8 @@ package analyses
  * Explicitly models a formal parameter of a method to make it possible to store it in the
  * property store and to compute properties for it. The first parameter explicitly defined by
  * the method will have the origin `-2`, the second one will have the origin `-3` and so on.
- * That is, the origin of an explicitly declared parameter is always `-(p_index + 2)`.
- * In case of an instance method the origin of the this parameter is `-1`.
+ * That is, the origin of an explicitly declared parameter is always `-(parameter_index + 2)`.
+ * In case of an instance method the origin of the `this` parameter is `-1`.
  *
  * @note The computational type category of the parameters is ignored to ease the mapping.
  *
@@ -56,7 +56,7 @@ package analyses
 final class FormalParameter( final val method: Method, final val origin: Int) {
 
     /**
-     * @return The index of the parameter or -1 if this Formal Parameter reflects the
+     * @return The index of the parameter or -1 if this formal parameter reflects the
      *         implicit `this` value.
      */
     def parameterIndex = -origin - 2

@@ -32,7 +32,6 @@ package analyses
 
 import net.ceedubs.ficus.Ficus._
 
-import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 
 /**
@@ -49,7 +48,7 @@ object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ A
 
     final val DefaultExtensibilityAnalysis = {
         "org.opalj.br.analyses.DirectTypeExtensibilityInformation"
-}
+    }
 
     /**
      * The [[DirectTypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
@@ -60,30 +59,32 @@ object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ A
      * Computes the direct type extensibility information for the given project.
      */
     override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
+        implicit val logContext = project.logContext
+
         val configKey = ConfigKeyPrefix+"analysis"
-        reify(
-            project,
-            project.config.as[Option[String]](configKey).getOrElse(DefaultExtensibilityAnalysis)
-        )
+        try {
+            reify(
+                project,
+                project.config.as[Option[String]](configKey).getOrElse(DefaultExtensibilityAnalysis)
+            )
+        } catch {
+            case t: Throwable ⇒
+                error(
+                    "project configuration",
+                    "failed to compute \"direct extensibility information\""+
+                        "; \"Unknown extensibility\" will now be used as the fallback",
+                    t
+                )
+                (o: ObjectType) ⇒ Unknown
+        }
     }
 
     /**
      * Reflectively instantiates the configured analysis. The instantiated class has to satisfy the
      * interface and has to provide a single constructor parameterized over a [[Project]].
      */
-    private[this] def reify(
-        project: SomeProject,
-        analysisName: String
-    ): ObjectType ⇒ Answer = {
-        implicit val logContext = project.logContext
-        try {
-            val clazz = Class.forName(analysisName)
-            val constructor = clazz.getConstructors.head
-            constructor.newInstance(project).asInstanceOf[ObjectType ⇒ Answer]
-        } catch {
-            case t: Throwable ⇒
-                error("project configuration", s"failed to load: $analysisName", t)
-                (o : ObjectType) => Unknown
-        }
+    private[this] def reify(project: SomeProject, analysisName: String): ObjectType ⇒ Answer = {
+        val constructor = Class.forName(analysisName).getConstructors.head
+        constructor.newInstance(project).asInstanceOf[ObjectType ⇒ Answer]
     }
 }

@@ -35,16 +35,21 @@ import scala.collection.mutable
 import net.ceedubs.ficus.Ficus._
 
 /**
- * An analysis that determines whether a class/interface is directly extensible by a (yet unknown)
- * client application/library.
+ * Determines whether a type (class or interface) is directly extensible by a (yet unknown)
+ * client application/library. A type is directly extensible if a developer could have
+ * defined a direct - not transitive - subtype that is not part of the given application/library.
  *
  * @author Michael Reif
  */
-class DirectTypeExtensibilityInformation(
-        val project: SomeProject
-) extends (ObjectType ⇒ Answer) {
+class DirectTypeExtensibilityInformation(val project: SomeProject) extends (ObjectType ⇒ Answer) {
 
     private[this] lazy val typeExtensibility: Map[ObjectType, Answer] = compute
+
+    /**
+     * Determines whether the given type can directly be extended by a (yet unknown)
+     * library/application.
+     */
+    def apply(t: ObjectType): Answer = typeExtensibility.get(t).getOrElse(Unknown)
 
     def compute: Map[ObjectType, Answer] = {
         val extensibility = mutable.Map.empty[ObjectType, Answer]
@@ -87,14 +92,8 @@ class DirectTypeExtensibilityInformation(
     def overwriteTypeExtensibility: Set[(ObjectType, Answer)] = Set.empty
 
     /**
-     * Determines whether the given type can be directly extended by a (yet unknown) library/application.
      *
-     */
-    def apply(t: ObjectType): Answer = typeExtensibility.get(t).getOrElse(Unknown)
-
-    /**
-     *
-     * @param key Precise config key that has to be parsed. The prefix of the key is defined by
+     * @param key The config key that will be parsed. The prefix of the key is defined by
      *            [[DirectTypeExtensibilityKey.ConfigKeyPrefix]].
      * @return A list of ObjectTypes that fulfill a certain property. The semantic of those types
      *         has to be encoded in [[DirectTypeExtensibilityInformation.overwriteTypeExtensibility]].
@@ -139,7 +138,7 @@ class DirectTypeExtensibilityInformation(
  * }}}
  */
 class ConfigureExtensibleTypes(
-        override val project: SomeProject
+        project: SomeProject
 ) extends DirectTypeExtensibilityInformation(project) {
 
     /**
@@ -154,7 +153,7 @@ class ConfigureExtensibleTypes(
 }
 
 /**
- * An analysis that determines whether a class/interface is directly extensible by a (yet unknown)
+ * Determines whether a class/interface is directly extensible by a (yet unknown)
  * client application/library. Beneath the computation it allows a user to configure additional
  * types that shall not be considered as extensible. Therefore, it allows a user to integrate domain
  * knowledge into the analysis.
@@ -164,14 +163,13 @@ class ConfigureExtensibleTypes(
  *
  * [[DirectTypeExtensibilityKey.ConfigKeyPrefix]] + finalTypes
  *
- * ## Example configuration ##
+ * @example The following example configuration would consider ''java/util/Math'' and
+ *          ''com/exmamle/Type'' as ''not extensible''.
  *
- * The following example configuration would consider ''java/util/Math'' and ''com/exmamle/Type''
- * not as extensible.
- *
- * {{{
- *   org.opalj.br.analyses.DirectTypeExtensibilityKey.finalTypes = ["java/util/Math", "com/example/Type"]
- * }}}
+ *          {{{
+ *          org.opalj.br.analyses.DirectTypeExtensibilityKey.finalTypes =
+ *              ["java/util/Math", "com/example/Type"]
+ *          }}}
  */
 class ConfigureFinalTypes(
         override val project: SomeProject
