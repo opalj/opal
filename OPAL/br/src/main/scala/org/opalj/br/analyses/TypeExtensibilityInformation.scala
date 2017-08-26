@@ -41,8 +41,6 @@ class TypeExtensibilityInformationAnalysis(
         val project: SomeProject
 ) extends (ObjectType ⇒ Answer) {
 
-    private lazy val isDirectlyExtensible = project.get(DirectTypeExtensibilityKey)
-
     lazy val typeExtensibility: Map[ObjectType, Answer] = initTypeExtensibilityInformation.toMap
 
     override def apply(t: ObjectType): Answer = typeExtensibility.getOrElse(t, Unknown)
@@ -74,15 +72,18 @@ class TypeExtensibilityInformationAnalysis(
             hasExtensibleSubtype, hasUnknownSubtype,
             isEnqueued,
             isExtensibleMap
-        )
+        )(project.get(DirectTypeExtensibilityKey))
     }
 
-    @tailrec final def determineExtensibility(
+    @tailrec final private[this] def determineExtensibility(
         typesToProcess:       Queue[ObjectType],
         hasExtensibleSubtype: Array[Boolean],
         hasUnknownSubtype:    Array[Boolean],
         isEnqueued:           Array[Boolean],
         typeExtensibilityMap: mutable.Map[ObjectType, Answer]
+    )(
+        implicit
+        isDirectlyExtensible: ObjectType ⇒ Answer
     ): mutable.Map[ObjectType, Answer] = {
         //         We use a queue to ensure that we always first process all subtypes of a type to
         //         ensure that we have final knowledge about the subtypes' extensibility.
