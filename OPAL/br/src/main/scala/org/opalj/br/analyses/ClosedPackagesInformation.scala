@@ -105,7 +105,7 @@ class ClosedCodeBase(val project: SomeProject) extends ClosedPackagesInformation
  */
 class OpenCodeBase(val project: SomeProject) extends ClosedPackagesInformation {
 
-    override def apply(packageName: String): Boolean = packageName.startsWith("java.")
+    override def apply(packageName: String): Boolean = packageName.startsWith("java/")
 
 }
 
