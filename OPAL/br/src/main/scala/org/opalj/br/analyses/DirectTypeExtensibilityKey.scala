@@ -36,9 +36,10 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 
 /**
- * The ''key'' object to get a function that determines whether a type is directly extensible or not.
- * A type is directly extensible if a developer could have defined a direct - not transitive - subtype
- * that is not part of the given application/library.
+ * The ''key'' object to get a function that determines whether a type is directly
+ * extensible or not.
+ *
+ * @see [[DirectTypeExtensibilityInformation]] for further information.
  *
  * @author Michael Reif
  */
@@ -46,7 +47,9 @@ object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ A
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.DirectTypeExtensibilityKey."
 
-    private[this] final val _defaultExtensibilityAnalysis = "org.opalj.br.analyses.DirectTypeExtensibilityInformation"
+    final val DefaultExtensibilityAnalysis = {
+        "org.opalj.br.analyses.DirectTypeExtensibilityInformation"
+}
 
     /**
      * The [[DirectTypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
@@ -54,32 +57,33 @@ object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ A
     override protected def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
 
     /**
-     * Computes the information for the given project.
-     *
-     * @note Classes that inherit from this trait are ''not'' expected to
-     *       make this method public. This method is only expected to be called
-     *       by an instance of a `Project`.
+     * Computes the direct type extensibility information for the given project.
      */
     override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
-        val className = project.config.as[Option[String]](
-            ConfigKeyPrefix+"extensibilityAnalysis"
-        ).getOrElse(_defaultExtensibilityAnalysis)
-        reify(project, className).get
+        val configKey = ConfigKeyPrefix+"analysis"
+        reify(
+            project,
+            project.config.as[Option[String]](configKey).getOrElse(DefaultExtensibilityAnalysis)
+        )
     }
 
-    /*
-     * Reflectively instantiates a ClosedPackagesContext. The instantiated class has to satisfy the
-     * interface and needs to provide a single constructor parameterized over a Project.
+    /**
+     * Reflectively instantiates the configured analysis. The instantiated class has to satisfy the
+     * interface and has to provide a single constructor parameterized over a [[Project]].
      */
-    private[this] def reify(project: SomeProject, packageContext: String): Option[DirectTypeExtensibilityInformation] = {
+    private[this] def reify(
+        project: SomeProject,
+        analysisName: String
+    ): ObjectType ⇒ Answer = {
+        implicit val logContext = project.logContext
         try {
-            val cls = Class.forName(packageContext)
-            val cons = cls.getConstructors.head
-            Some(cons.newInstance(project).asInstanceOf[DirectTypeExtensibilityInformation])
+            val clazz = Class.forName(analysisName)
+            val constructor = clazz.getConstructors.head
+            constructor.newInstance(project).asInstanceOf[ObjectType ⇒ Answer]
         } catch {
             case t: Throwable ⇒
-                error("project configuration", s"failed to load: $packageContext", t)(GlobalLogContext)
-                None
+                error("project configuration", s"failed to load: $analysisName", t)
+                (o : ObjectType) => Unknown
         }
     }
 }
