@@ -28,29 +28,34 @@
  */
 package org.opalj
 package fpcf
+package analyses
 
 import java.net.URL
 
-import org.opalj.br.analyses.PropertyStoreKey
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.Method
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.Purity
+import org.opalj.br.analyses.PropertyStoreKey
+import org.opalj.br.ClassFile
+import org.opalj.fpcf.properties.SelfReferenceLeakage
+import org.opalj.fpcf.properties.DoesNotLeakSelfReference
 
 /**
- * Runs the purity analysis including all analyses that may improve the overall result.
+ * Runs the default escape analysis.
  *
  * @author Michael Eichberg
  */
-object PurityAnalysisRunner extends DefaultOneStepAnalysis {
+object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
-    override def title: String = "assess the purity of methods"
+    override def title: String = "shallow escape analysis"
 
-    override def description: String = { "assess the purity of some methods" }
+    override def description: String = {
+        "determins escape information related to objects belonging to a specific class"
+    }
 
-    override def doAnalyze(
+    def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
@@ -58,29 +63,32 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val projectStore = project.get(PropertyStoreKey)
 
-        org.opalj.fpcf.analyses.FieldMutabilityAnalysis.start(project, projectStore)
+        var analysisTime = Seconds.None
+        time {
+            EscapeAnalysis.analyze(project)
+            projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+        } { t ⇒ analysisTime = t.toSeconds }
 
-        projectStore.debug = true
-        org.opalj.fpcf.analyses.PurityAnalysis.start(project, projectStore)
+        val notLeakingEntities: Traversable[EP[Entity, SelfReferenceLeakage]] =
+            projectStore.entities(SelfReferenceLeakage.Key) filter { ep ⇒
+                ep.p == DoesNotLeakSelfReference
+            }
+        val notLeakingClasses = notLeakingEntities.map { ep ⇒
+            val classFile = ep.e.asInstanceOf[ClassFile]
+            val classType = classFile.thisType
+            val className = classFile.thisType.toJava
+            if (project.classHierarchy.isInterface(classType).isYes)
+                "interface "+className
+            else
+                "class "+className
+        }
 
-        projectStore.waitOnPropertyComputationCompletion(true)
-
-        val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
-        val pureMethods: Traversable[(Method, Property)] =
-            pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
-        val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
-
-        val methodInfo =
-            pureMethodsAsStrings.toList.sorted.mkString(
-                "\nPure methods:\n",
+        val leakageInfo =
+            notLeakingClasses.toList.sorted.mkString(
+                "\nClasses not leaking self reference:\n",
                 "\n",
-                s"\nTotal: ${pureMethods.size}\n"
+                s"\nTotal: ${notLeakingEntities.size}\n"
             )
-
-        val result = methodInfo +
-            projectStore.toString(false)+
-            "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size
-
-        BasicReport(result)
+        BasicReport(leakageInfo + projectStore+"\nAnalysis time: "+analysisTime)
     }
 }

@@ -29,34 +29,56 @@
 package org.opalj
 package fpcf
 package analyses
+package demo
 
-import org.opalj.br.ObjectType
+import java.net.URL
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.InstantiableClasses
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+import org.opalj.fpcf.properties.Instantiable
 
 /**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
- *
- * @author MichaelReif
+ * @author Michael Reif
  */
-object LibraryInstantiableClassesAnalysis {
+object SimpleInstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
-    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
+    override def title: String = "class instantiablility computation"
+
+    override def description: String = "determines the instantiable classes of a library/application"
+
+    override def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
+        val executer = project.get(FPCFAnalysesManagerKey)
+        var analysisTime = org.opalj.util.Seconds.None
+
+        org.opalj.util.PerformanceEvaluation.time {
+
+            executer.run(SimpleInstantiabilityAnalysis)
+
+        } { t ⇒ analysisTime = t.toSeconds }
+
+        val instantiableClasses: Traversable[EP[Entity, Instantiability]] =
+            propertyStore.entities(Instantiability.key).filter { ep ⇒ ep.p == Instantiable }
+
+        val classInfo = instantiableClasses.map { e ⇒
+            val classFile = e._1.asInstanceOf[ClassFile]
+            classFile.thisType.toJava
         }
 
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
+        BasicReport(classInfo.mkString(
+            "\ninstantiable classes:\n\n\t",
+            "\n\t",
+            s"\n# instantiable classes: ${instantiableClasses.size}\n"
+        ) +
+            s"\n #classes: ${project.classFilesCount}\n"+
+            "\nanalysis time: "+analysisTime)
     }
 }

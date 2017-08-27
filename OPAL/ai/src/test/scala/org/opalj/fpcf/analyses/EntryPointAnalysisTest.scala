@@ -26,37 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf
 package analyses
 
 import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.InstantiableClasses
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+import org.opalj.AnalysisModes
+import org.opalj.fpcf.test.annotations.EntryPointKeys
+import org.opalj.fpcf.properties.EntryPoint
 
 /**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
  *
- * @author MichaelReif
+ * @author Michael Reif
  */
-object LibraryInstantiableClassesAnalysis {
+abstract class EntryPointAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
 
-    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
+    def analysisName = "EntryPointAnalysis"
 
-        val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
-        }
+    override def testFileName = "classfiles/entryPointTest.jar"
 
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
-    }
+    override def testFilePath = "ai"
+
+    override def analysisRunners = Seq(EntryPointsAnalysis)
+
+    override def propertyKey: PropertyKey[EntryPoint] = EntryPoint.Key
+
+    override def propertyAnnotation: ObjectType =
+        ObjectType("org/opalj/fpcf/test/annotations/EntryPointProperty")
+
+    def defaultValue = EntryPointKeys.IsEntryPoint.toString
+}
+
+class EntryPointAnalysisCPATest extends EntryPointAnalysisTest {
+
+    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
+}
+
+class EntryPointAnalysisOPATest extends EntryPointAnalysisTest {
+
+    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

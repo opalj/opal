@@ -26,37 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf
 package analyses
 
 import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.InstantiableClasses
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+import org.opalj.fpcf.properties.NotFactoryMethod
+import org.opalj.fpcf.properties.FactoryMethod
 
 /**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
- *
- * @author MichaelReif
+ * @author Michael Reif
  */
-object LibraryInstantiableClassesAnalysis {
+class FactoryMethodAnalysisTest extends AbstractFixpointAnalysisTest {
 
-    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
+    override def analysisName = "FactoryMethodAnalysis"
 
-        val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
-        }
+    override def testFileName = "classfiles/factorymethodTest.jar"
 
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
-    }
+    override def testFilePath = "ai"
+
+    override def analysisRunners = Seq(FactoryMethodAnalysis)
+
+    override def propertyKey: PropertyKey[FactoryMethod] = FactoryMethod.key
+
+    override def propertyAnnotation: ObjectType =
+        ObjectType("org/opalj/fpcf/test/annotations/FactoryMethodProperty")
+
+    override def defaultValue = NotFactoryMethod.toString
 }

@@ -37,11 +37,11 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
-import org.opalj.fpcf.analysis.FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
 import org.opalj.fpcf.properties.ClassImmutability
-import org.opalj.fpcf.analysis.ClassImmutabilityAnalysis
+import org.opalj.fpcf.analyses.ClassImmutabilityAnalysis
 import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.analysis.TypeImmutabilityAnalysis
+import org.opalj.fpcf.analyses.TypeImmutabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.

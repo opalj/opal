@@ -27,36 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package bugpicker
+package core
 package analyses
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.InstantiableClasses
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+import org.opalj.bugpicker.core.analyses.BugPickerAnalysis._
+import org.opalj.util.Milliseconds
 
-/**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
- *
- * @author MichaelReif
- */
-object LibraryInstantiableClassesAnalysis {
+case class AnalysisParameters(
+        maxEvalTime:                   Milliseconds = DefaultMaxEvalTime,
+        maxEvalFactor:                 Double       = DefaultMaxEvalFactor,
+        maxCardinalityOfIntegerRanges: Long         = DefaultMaxCardinalityOfIntegerRanges,
+        maxCardinalityOfLongSets:      Int          = DefaultMaxCardinalityOfLongSets,
+        maxCallChainLength:            Int          = DefaultMaxCallChainLength,
+        fixpointAnalyses:              Seq[String]  = DefaultFixpointAnalyses
+) {
 
-    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
-
-        val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
-        }
-
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
-    }
+    def toStringParameters: Seq[String] = Seq(
+        s"-maxEvalFactor=$maxEvalFactor",
+        s"-maxEvalTime=$maxEvalTime",
+        s"-maxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges",
+        s"-maxCardinalityOfLongSets=$maxCardinalityOfLongSets",
+        s"-maxCallChainLength=$maxCallChainLength",
+        s"-fixpointAnalyses=${fixpointAnalyses.mkString(";")}"
+    )
 }

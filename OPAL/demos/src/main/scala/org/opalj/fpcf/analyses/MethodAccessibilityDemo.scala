@@ -28,59 +28,62 @@
  */
 package org.opalj
 package fpcf
+package analyses
+
+import org.opalj.br.analyses.BasicReport
 
 import java.net.URL
-
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.Method
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.Purity
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.fpcf.properties.Global
+import org.opalj.fpcf.properties.PackageLocal
+import org.opalj.fpcf.properties.ClassLocal
 
 /**
- * Runs the purity analysis including all analyses that may improve the overall result.
- *
- * @author Michael Eichberg
+ * @author Michael Reif
  */
-object PurityAnalysisRunner extends DefaultOneStepAnalysis {
+object MethodAccessibilityAnalysisDemo extends MethodAnalysisDemo {
 
-    override def title: String = "assess the purity of methods"
+    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
 
-    override def description: String = { "assess the purity of some methods" }
+    override def title: String =
+        "entry point computation"
+
+    override def description: String =
+        "determines the factory methods of a library"
 
     override def doAnalyze(
-        project:       Project[URL],
+        project:       org.opalj.br.analyses.Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val projectStore = project.get(PropertyStoreKey)
+        val executer = project.get(FPCFAnalysesManagerKey)
 
-        org.opalj.fpcf.analyses.FieldMutabilityAnalysis.start(project, projectStore)
+        var analysisTime = org.opalj.util.Seconds.None
+        org.opalj.util.PerformanceEvaluation.time {
 
-        projectStore.debug = true
-        org.opalj.fpcf.analyses.PurityAnalysis.start(project, projectStore)
-
-        projectStore.waitOnPropertyComputationCompletion(true)
-
-        val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
-        val pureMethods: Traversable[(Method, Property)] =
-            pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
-        val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
-
-        val methodInfo =
-            pureMethodsAsStrings.toList.sorted.mkString(
-                "\nPure methods:\n",
-                "\n",
-                s"\nTotal: ${pureMethods.size}\n"
+            executer.runAll(
+                CallableFromClassesInOtherPackagesAnalysis,
+                MethodAccessibilityAnalysis
             )
 
-        val result = methodInfo +
-            projectStore.toString(false)+
-            "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size
+        } { t ⇒ analysisTime = t.toSeconds }
 
-        BasicReport(result)
+        val propertyStore = project.get(PropertyStoreKey)
+
+        val global = entitiesByProperty(Global)(propertyStore)
+        val packgeLocal = entitiesByProperty(PackageLocal)(propertyStore)
+        val classLocal = entitiesByProperty(ClassLocal)(propertyStore)
+
+        BasicReport(
+            s"\nglobal            : ${global.size}"+
+                s"\npackageLocal  : ${packgeLocal.size}"+
+                s"\nclassLocal    : ${classLocal.size}"+
+                "\nAnalysis time: "+analysisTime
+        )
     }
 }

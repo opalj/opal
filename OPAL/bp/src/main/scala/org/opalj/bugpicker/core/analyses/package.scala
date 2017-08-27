@@ -27,36 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package analyses
+package bugpicker
+package core
 
+import org.opalj.util.Nanoseconds
 import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.InstantiableClasses
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+import org.opalj.br.analyses.AnalysisException
+import org.opalj.br.BooleanType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.IntegerType
+import org.opalj.issues.Issue
 
 /**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
+ * Common constants and helper methods used by the BugPicker's analyses.
  *
- * @author MichaelReif
+ * @author Michael Eichberg
  */
-object LibraryInstantiableClassesAnalysis {
+package object analyses {
 
-    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
+    type BugPickerResults = (Nanoseconds, Iterable[Issue], Iterable[AnalysisException])
 
-        val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
-        }
+    final val AssertionError = ObjectType("java/lang/AssertionError")
 
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
-    }
+    final val ObjectEqualsMethodDescriptor = MethodDescriptor(ObjectType.Object, BooleanType)
+
+    final val ObjectHashCodeMethodDescriptor = MethodDescriptor.withNoArgs(IntegerType)
 }

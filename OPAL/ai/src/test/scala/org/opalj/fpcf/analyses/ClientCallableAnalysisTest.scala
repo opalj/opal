@@ -31,32 +31,36 @@ package fpcf
 package analyses
 
 import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.InstantiableClasses
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+import org.opalj.fpcf.properties.ClientCallable
+import org.opalj.fpcf.properties.IsClientCallable
 
 /**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
- *
- * @author MichaelReif
+ * @author Michael Reif
  */
-object LibraryInstantiableClassesAnalysis {
+abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
 
-    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
+    def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
 
-        val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
-        }
+    override def testFileName = "classfiles/clientCallableTest.jar"
 
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
-    }
+    override def testFilePath = "ai"
+
+    override def analysisRunners = Seq(CallableFromClassesInOtherPackagesAnalysis)
+
+    override def propertyKey: PropertyKey[ClientCallable] = ClientCallable.Key
+
+    override def propertyAnnotation: ObjectType =
+        ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
+
+    def defaultValue = IsClientCallable.toString
+}
+
+class ClientCallableAnalysisCPATest
+    extends ClientCallableAnalysisTest {
+    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
+}
+
+class ClientCallableAnalysisOPATest
+    extends ClientCallableAnalysisTest {
+    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

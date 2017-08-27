@@ -27,68 +27,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
+package fpcf
+package analyses
 
-import java.net.URL
-
-import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-
 import org.opalj.br.analyses.BasicReport
-import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.FPCFAnalysesManagerKey
+import java.net.URL
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.Warn
 import org.opalj.fpcf.properties.IsClientCallable
 import org.opalj.fpcf.properties.NotClientCallable
-import org.opalj.fpcf.analyses.CallableFromClassesInOtherPackagesAnalysis
 
 /**
- * @author Mario Trageser
+ * @author Michael Reif
  */
-object RefineableNativeMethods extends DefaultOneStepAnalysis {
+object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
 
-    override def title: String = "native methods with refineable paramter type(s)"
+    override def title: String = "method leakage analysis"
 
     override def description: String = {
-        "identifies all native methods that are not directly client callable and "+
-            "which have a refineable paramter type"
+        "determines if the method is exposed to the client via subclasses"
     }
 
-    override def doAnalyze(
+    def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val callGraph = project.get(VTACallGraphKey).callGraph
-
-        val nativeMethods = project.allClassFiles.flatMap(_.methods.view.filter(_.isNative))
-        val nativeMethodsPercentage = (nativeMethods.size.toDouble / project.projectMethodsCount) * 100.0d
-        val statistics =
-            s"Number of all methods: ${project.projectMethodsCount}.\n"+
-                s"Number of native methods: ${nativeMethods.size} "+
-                f"($nativeMethodsPercentage%2.2f%%).\n"
+        OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
 
         val propertyStore = project.get(PropertyStoreKey)
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        fpcfManager.run(CallableFromClassesInOtherPackagesAnalysis)
+        val executer = project.get(FPCFAnalysesManagerKey)
 
-        val refineableNativeMethods =
-            for {
-                method ← nativeMethods
-                callableInformation = propertyStore(method, IsClientCallable.key)
-                if callableInformation.hasProperty
-                if callableInformation.p == NotClientCallable
-                if callGraph.calledBy(method).size > 0
-            } yield method
+        var analysisTime = org.opalj.util.Seconds.None
+        org.opalj.util.PerformanceEvaluation.time {
+            executer.run(CallableFromClassesInOtherPackagesAnalysis)
+        } { t ⇒ analysisTime = t.toSeconds }
 
-        val refineableNativeMethodsInfo =
-            refineableNativeMethods.map(method ⇒ method.toJava).mkString("\n")
+        val leakedMethods = propertyStore.entities { (p: Property) ⇒ p == IsClientCallable }
 
+        val notLeakedMethods = propertyStore.entities { (p: Property) ⇒ p == NotClientCallable }
         BasicReport(
-            statistics +
-                s"\nIdentified ${refineableNativeMethods.size} refineable native methods:"+
-                refineableNativeMethodsInfo
+            //            nonOverriddenInfoString +
+            propertyStore.toString+
+                "\nAnalysis time: "+analysisTime +
+                s"\nleaked: ${leakedMethods.size}"+
+                s"\n not leaked: ${notLeakedMethods.size}"
         )
     }
 }

@@ -29,34 +29,44 @@
 package org.opalj
 package fpcf
 package analyses
+package complexity
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.InstantiableClasses
+import java.net.URL
+import org.opalj.br.analyses.Project
+import org.opalj.br.Method
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+import org.opalj.fpcf.properties.MethodComplexity
 
 /**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
+ * Demonstrates how to use an analysis that was developed using the FPCF framework.
  *
- * @author MichaelReif
+ * @author Michael Eichberg
  */
-object LibraryInstantiableClassesAnalysis {
+object MethodComplexityDemo extends DefaultOneStepAnalysis {
 
-    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
+    override def title: String = "assesses the complexity of methods"
 
-        val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
+    override def description: String =
+        """|a very simple assessment of a method that primarily serves
+      |the goal to make decisions about those methods that may be inlined""".stripMargin('|')
+
+    override def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
+        implicit val theProject = project
+        implicit val theProjectStore = theProject.get(PropertyStoreKey)
+
+        val analysis = new MethodComplexityAnalysis
+        theProjectStore.execute { case m: Method if m.body.isDefined ⇒ m } { m ⇒ Seq(EP(m, analysis(m))) }
+        theProjectStore.waitOnPropertyComputationCompletion(true)
+        println(theProjectStore.toString)
+        val ratings = theProjectStore.collect[(String, Property)] {
+            case (e, p @ MethodComplexity(c)) if c < Int.MaxValue ⇒ (e.toString, p)
         }
-
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
+        BasicReport(ratings.mkString("\n", "\n", s"\n${ratings.size} simple methods found - Done."))
     }
 }
