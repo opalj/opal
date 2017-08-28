@@ -279,7 +279,7 @@ object TACAI {
                 }
             }
 
-            def addNOP(pc: Int): Unit = {
+            def addNOP(pcHint: Int): Unit = {
                 if (addExceptionHandlerInitializer)
                     // We do not have to add the NOP, because the code to initialize the
                     // variable which references the exception is already added.
@@ -289,7 +289,7 @@ object TACAI {
                 // we want to ensure that we don't have to rewrite the CFG during the initial
                 // transformation
                 if (cfg.bb(pc).startPC == pc) {
-                    statements(index) = Nop(pc)
+                    statements(index) = Nop(pcHint)
                     pcToIndex(pc) = index
                     index += 1
                 } else {
