@@ -40,7 +40,7 @@ import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.properties.IsClientCallable
 import org.opalj.fpcf.properties.NotClientCallable
-import org.opalj.fpcf.analysis.CallableFromClassesInOtherPackagesAnalysis
+import org.opalj.fpcf.analyses.CallableFromClassesInOtherPackagesAnalysis
 
 /**
  * @author Mario Trageser

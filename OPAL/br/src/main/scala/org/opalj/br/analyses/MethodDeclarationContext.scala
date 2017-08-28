@@ -50,7 +50,7 @@ import org.opalj.bi.ACC_PRIVATE
  *
  * @author Michael Eichberg
  */
-case class MethodDeclarationContext(method: Method) extends Ordered[MethodDeclarationContext] {
+final class MethodDeclarationContext(val method: Method) extends Ordered[MethodDeclarationContext] {
 
     assert(!method.isPrivate)
     assert(!method.isStatic)
@@ -89,7 +89,7 @@ case class MethodDeclarationContext(method: Method) extends Ordered[MethodDeclar
     /**
      * Compares this `MethodDeclarationContext` with the given one. Defines a total order w.r.t.
      * the name, descriptor and declaring package of a method. (The declaring class is not
-     * considered and, therefore, two `MethodDeclarationContext` may be considered equal
+     * considered and, therefore, two `MethodDeclarationContext`s may be considered equal
      * even though the underlying method is not the same one.)
      */
     def compare(that: MethodDeclarationContext): Int = {
@@ -98,6 +98,11 @@ case class MethodDeclarationContext(method: Method) extends Ordered[MethodDeclar
             this.packageName compareTo that.packageName
         else
             result
+    }
+
+    def compareWithPublicMethod(thatMethod: Method): Int = {
+        assert(thatMethod.isPublic, s"${thatMethod.toJava} is not public")
+        this.method compare thatMethod
     }
 
     /**
@@ -110,9 +115,9 @@ case class MethodDeclarationContext(method: Method) extends Ordered[MethodDeclar
      * contexts.
      */
     def compareAccessibilityAware(
+        packageName: String, // only considered if name and descriptor already match...
         name:        String,
-        descriptor:  MethodDescriptor,
-        packageName: String // only considered if name and descriptor already match...
+        descriptor:  MethodDescriptor
     ): Int = {
         val method = this.method
         val result = method.compare(name, descriptor)
@@ -121,6 +126,13 @@ case class MethodDeclarationContext(method: Method) extends Ordered[MethodDeclar
         } else {
             result
         }
+    }
+
+    def compareAccessibilityAware(
+        declaringClass: ObjectType,
+        m:              Method
+    ): Int = {
+        compareAccessibilityAware(declaringClass.packageName, m.name, m.descriptor)
     }
 
     /**
@@ -178,4 +190,17 @@ case class MethodDeclarationContext(method: Method) extends Ordered[MethodDeclar
             case None                                   ⇒ this.packageName == packageName
         }
     }
+}
+
+/**
+ * Definition of factory and extractor methods for [[MethodDeclarationContext]] objects.
+ */
+object MethodDeclarationContext {
+
+    def apply(method: Method): MethodDeclarationContext = {
+        new MethodDeclarationContext(method)
+    }
+
+    def unapply(mdc: MethodDeclarationContext): Some[Method] = Some(mdc.method)
+
 }

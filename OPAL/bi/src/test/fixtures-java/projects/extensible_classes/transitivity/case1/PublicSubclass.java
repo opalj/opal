@@ -1,5 +1,4 @@
-/*
- * BSD 2-Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
@@ -29,15 +28,11 @@
  */
 package extensible_classes.transitivity.case1;
 
+// Not extensible when this package is considered closed.
+class Class { }
+
 /**
-* This case shows in a closed package scenario that the class '''Class'''
-* is transitively extensiblie over the a direct subtype.
-*/
-public class PublicSubclass extends Class {
-
-}
-
-// not extensible when this package is considered closed.
-class Class {
-
-}
+ * This case shows in a closed package scenario that the class <code>Class</code>
+ * is transitively extensiblie over this (direct) subtype.
+ */
+public class PublicSubclass extends Class { }

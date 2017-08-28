@@ -486,8 +486,8 @@ object Method {
 
     /**
      * Returns `true` if the method is object serialization related.
-     * That is, if the declaring class is `Externalizable` then the methods readObject and
-     * writeObject are unused.
+     * That is, if the declaring class is `Externalizable` then the methods `readObject` and
+     * `writeObject` are unused.
      * If the declaring class is '''only''' `Seralizable` then the write and read
      * external methods are not serialization related unless a subclass exists that inherits
      * these two methods and implements the interface `Externalizable`.

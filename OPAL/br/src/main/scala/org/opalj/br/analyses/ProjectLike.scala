@@ -63,7 +63,7 @@ import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePo
  *
  * @author Michael Eichberg
  */
-trait ProjectLike extends ClassFileRepository { project ⇒
+abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     implicit def classHierarchy: ClassHierarchy
 
@@ -279,7 +279,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
             return Empty;
         }
         find(definedMethodsOption.get) { mdc ⇒
-            mdc.compareAccessibilityAware(name, descriptor, callingContextType.packageName)
+            mdc.compareAccessibilityAware(callingContextType.packageName, name, descriptor)
         } match {
             case Some(mdc) ⇒ Success(mdc)
             case None ⇒
@@ -868,7 +868,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         // We have to check the declaring package if the method has package visibility to ensure
         // that we find the correct method!
         find(initialMethods.get) { mdc ⇒
-            mdc.compareAccessibilityAware(name, descriptor, callerPackageName)
+            mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
         } foreach (mdc ⇒ methods += mdc.method)
 
         if (methods.nonEmpty) {
@@ -884,7 +884,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
                 classHierarchy.foreachSubtypeCF(declaringClassType, reflexive = false) { subtypeCF ⇒
                     val subtype = subtypeCF.thisType
                     val mdcOption = find(instanceMethods(subtype)) { mdc ⇒
-                        mdc.compareAccessibilityAware(name, descriptor, callerPackageName)
+                        mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
                     }
                     if (mdcOption.nonEmpty && (mdcOption.get.method ne method)) {
                         methods ++= overriddenBy(mdcOption.get.method)
@@ -903,7 +903,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         if (MethodHandleClassFile.isDefined && MethodHandleSubtypes.contains(declaringClassType)) {
             val mdcOption = find(instanceMethods(declaringClassType)) { mdc ⇒
                 mdc.compareAccessibilityAware(
-                    name, SignaturePolymorphicMethodDescriptor, callerPackageName
+                    callerPackageName, name, SignaturePolymorphicMethodDescriptor
                 )
             }
             if (mdcOption.isDefined) {
@@ -917,7 +917,7 @@ trait ProjectLike extends ClassFileRepository { project ⇒
         classHierarchy.foreachSubtypeCF(declaringClassType, reflexive = false) { subtypeCF ⇒
             val subtype = subtypeCF.thisType
             val mdcOption = find(instanceMethods(subtype)) { mdc ⇒
-                mdc.compareAccessibilityAware(name, descriptor, callerPackageName)
+                mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
             }
             mdcOption match {
                 case Some(mdc) ⇒

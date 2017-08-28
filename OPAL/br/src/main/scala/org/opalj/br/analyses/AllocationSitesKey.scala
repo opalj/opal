@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.JavaConverters._
 
 import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
 
 /**
  * The ''key'' object to collect all allocation sites in a project. If the library methods
@@ -44,7 +44,7 @@ import org.opalj.log.OPALLogger
  * @note    An allocation site object is created for each `NEW` instruction found in a
  *          method's body. However, this does not guarantee that the allocation site
  *          will ever be reached or is found in code derived from the method's bytecode.
- *          In particular the JDK is known for containing a lot of dead code
+ *          In particular, the JDK is known for containing a lot of dead code
  *          [[http://dl.acm.org/citation.cfm?id=2786865 Hidden Truths in Dead Software Paths]]
  *          and this code is automatically filtered when OPAL creates the 3-address code
  *          representation. The default analysis done when creating the 3-address code is
@@ -95,9 +95,7 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
             if (as.nonEmpty) sites.add((m, as))
         }
 
-        errors foreach { e ⇒
-            OPALLogger.error("identifying allocation sites", "unexpected error", e)
-        }
+        errors foreach { e ⇒ error("identifying allocation sites", "unexpected error", e) }
 
         new AllocationSites(Map.empty ++ sites.asScala)
     }

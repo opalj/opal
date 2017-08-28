@@ -32,41 +32,37 @@ package analyses
 
 import net.ceedubs.ficus.Ficus._
 
-import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 
 /**
  * The ''key'' object to get a function that determines whether a package is closed or not.
- * A package is closed if a developer cannot add new classes into the package, i.e., a developer
- * is not able to create new class in the namespace of some dependee library.
+ * See [[ClosedPackagesInformation]] for further details.
  *
  * This ''key'' reflectively instantiates the analysis that determines whether a package is closed
- * or not. All instantiated analyses have to extend the abstract [[ClosedPackagesInformation]] class.
- * To configure which analysis is used - it has to be configured in the project's configuration.
- * Please you the key '''org.opalj.br.analyses.ClosedPackagesKey.{ClosedPackagesContext}'''. Please
- * find the example configuration below:
+ * or not. The respective analysis has to extend the abstract [[ClosedPackagesInformation]] class.
+ * To configure which analysis is used use the key
+ * `org.opalj.br.analyses.ClosedPackagesKey.analysis` to specify the name of the class which
+ * implements the analysis.
  *
- * {{{
- *   org.opalj {
- *    br {
- *      analyses{
- *        ClosedPackagesKey {
- *          packageContext = "org.opalj.br.analyses.ClosedPackagesConfiguration"
- *          closedPackages = "java(/.*)*"
- *       }
- *     }
- *   }
- *  }
- * }}}
+ * @example
+ *      {{{
+ *      org.opalj.br.analyses {
+ *          ClosedPackagesKey {
+ *              analysis = "org.opalj.br.analyses.ClosedPackagesConfiguration"
+ *              closedPackages = "java(/.*)*"
+ *          }
+ *      }
+ *      }}}
  *
- * @note Please see the documentation of [[ClosedPackagesInformation]] and its sub types for more
+ * @note Please see the documentation of [[ClosedPackagesInformation]] and its subtypes for more
  *       information.
- * @note The default configuration is the rather conservative [[OpenCodeBase]] analysis.
+ * @note The default configuration is the conservative [[OpenCodeBase]] analysis.
+ *
  * @author Michael Reif
  */
-object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesInformation, Nothing] {
+object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean, Nothing] {
 
-    private[this] final val _defautlPackageContext = "org.opalj.br.analyses.OpenCodeBase"
+    final val DefaultClosedPackagesAnalysis = "org.opalj.br.analyses.OpenCodeBase"
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.ClosedPackagesKey."
 
@@ -77,24 +73,35 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackagesInformation
      */
     override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
-    override protected def compute(project: SomeProject): ClosedPackagesInformation = {
-        val packageContext = project.config.as[Option[String]](ConfigKeyPrefix+"packageContext").getOrElse(_defautlPackageContext)
-        reify(project, packageContext).get
-    }
+    override protected def compute(project: SomeProject): String ⇒ Boolean = {
+        implicit val logContext = project.logContext
 
-    /*
-     * Reflectively instantiates a ClosedPackagesContext. The instantiated class has to satisfy the
-     * interface and needs to provide a single constructor parameterized over a Project.
-     */
-    private[this] def reify(project: SomeProject, packageContext: String): Option[ClosedPackagesInformation] = {
         try {
-            val cls = Class.forName(packageContext)
-            val cons = cls.getConstructors.head
-            Some(cons.newInstance(project).asInstanceOf[ClosedPackagesInformation])
+            val analysisClassName =
+                project.config.as[Option[String]](ConfigKeyPrefix+"analysis").
+                    getOrElse(DefaultClosedPackagesAnalysis)
+            reify(project, analysisClassName)
         } catch {
             case t: Throwable ⇒
-                error("project configuration", s"failed to load: $packageContext", t)(GlobalLogContext)
-                None
+                error(
+                    "project configuration",
+                    "failed to compute \"closed packages information\""+
+                        "; all packages are now considered open",
+                    t
+                )
+                (s: String) ⇒ false
         }
+    }
+
+    /**
+     * Reflectively instantiates a ''ClosedPackagesAnalysis''. The instantiated class has to
+     * satisfy the interface and needs to provide a single constructor parameterized over a Project.
+     */
+    private[this] def reify(
+        project:      SomeProject,
+        analysisName: String
+    ): ClosedPackagesInformation = {
+        val constructor = Class.forName(analysisName).getConstructors.head
+        constructor.newInstance(project).asInstanceOf[ClosedPackagesInformation]
     }
 }

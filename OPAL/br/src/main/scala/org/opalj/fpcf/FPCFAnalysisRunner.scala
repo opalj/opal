@@ -81,16 +81,12 @@ trait FPCFAnalysisRunner {
     protected[fpcf] def derivedProperties: Set[PropertyKind]
 
     /**
-     * Returns a set of integers that contains the id of every [[Property]] or [SetProperty] that
-     * is used by the underlying analysis which is described by this [[FPCFAnalysisRunner]].
+     * Returns the kinds of properties which are queried by this analysis.
      *
-     * The analyses with this id's are not explicitly required which is the case when the used properties
-     * define a (save) fallback value which is set by the [[PropertyStore]] if required.
+     * @note   This set consists only of property kinds which are directly used by the analysis.
      *
-     * This set consists only of property id's which are directly used by the analysis.
-     *
-     * Self usages don't have to be documented since the analysis will derive this property during
-     * the computation.
+     * @note   Self usages don't have to be documented since the analysis will derive this
+     *         property during the computation.
      */
     protected[fpcf] def usedProperties: Set[PropertyKind] = Set.empty
 
