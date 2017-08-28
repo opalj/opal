@@ -200,10 +200,11 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
         var isSynchronizationUsed = false
 
         var isLocalVariable0Updated = false
-        var fielAccessMayThrowNullPointerException = false
+        var fieldAccessMayThrowNullPointerException = false
         var isFieldAccessed = false
 
-        /*
+        /* Implicitly (i.e., as a side effect) collects the thrown exceptions in the exceptions set.
+         *
          * @return `true` if it is possible to collect all potentially thrown exceptions.
          */
         def collectAllExceptions(pc: PC, instruction: Instruction): Boolean = {
@@ -241,13 +242,13 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                 case ISTORE.opcode | LSTORE.opcode |
                     FSTORE.opcode | DSTORE.opcode |
                     ASTORE.opcode ⇒
-                    if (instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex == 0)
-                        isLocalVariable0Updated = true
+                    val LocalVariableAccessIndex(lvIndex) = instruction
++                    if (lvIndex == 0) isLocalVariable0Updated = true
                     true
 
                 case GETFIELD.opcode ⇒
                     isFieldAccessed = true
-                    fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
+                    fieldAccessMayThrowNullPointerException ||=
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
                         cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
@@ -256,7 +257,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
 
                 case PUTFIELD.opcode ⇒
                     isFieldAccessed = true
-                    fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
+                    fieldAccessMayThrowNullPointerException = fieldAccessMayThrowNullPointerException ||
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
                         cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
@@ -268,7 +269,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                             instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
                                 valueInstruction.isInstanceOf[StackManagementInstruction] ||
                                 // we have to ensure that our "this" reference is not used for something else... =>
-                                valueInstruction.numberOfPoppedOperands { idx ⇒ throw new UnknownError } > 0
+                                valueInstruction.numberOfPoppedOperands(NotRequired) > 0
                             // the number of pushed operands is always equal or smaller than 1
                             // except of the stack management instructions
                         }
@@ -290,7 +291,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (lci: LoadConstantInstruction[Int] @unchecked) if lci.value != 0 ⇒
+                            case (i: LoadConstantInstruction[Int] @unchecked) if i.value != 0 ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -307,7 +308,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (lci: LoadConstantInstruction[Long] @unchecked) if lci.value != 0L ⇒
+                            case (i: LoadConstantInstruction[Long] @unchecked) if i.value != 0L ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒

@@ -30,13 +30,14 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
+import org.opalj.br.Field
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.NonFinalField
 import org.opalj.fpcf.properties.FinalField
-import org.opalj.log.OPALLogger
 import org.opalj.fpcf.properties.UnknownTypeImmutability
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.MutableType
@@ -51,7 +52,6 @@ import org.opalj.fpcf.properties.MutableObject
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ConditionallyImmutableObject
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableObject
-import org.opalj.br.Field
 
 /**
  * Determines the mutability of instances of a specific class. In case the class
@@ -139,7 +139,9 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         // If the mutability of the super class is not yet finally determined, we have to
         // keep a dependency to it.
-        if (superClassMutability.isRefineable) dependees ::= EP(superClassFile, superClassMutability)
+        if (superClassMutability.isRefineable) {
+            dependees ::= EP(superClassFile, superClassMutability)
+        }
 
         // Collect all fields for which we need to determine the effective mutability!
         var hasFieldsWithUnknownMutability = false
@@ -400,8 +402,11 @@ object ClassImmutabilityAnalysis extends FPCFAnalysisRunner {
         // 2.
         // All classes that do not have complete superclass information are mutable
         // due to the lack of knowledge.
-        val typesForWhichItMayBePossibleToComputeTheMutability = allSubtypes(ObjectType.Object, reflexive = true)
-        val unexpectedRootTypes = rootTypes.filter(rt ⇒ (rt ne ObjectType.Object) && isInterface(rt).isNo)
+        val typesForWhichItMayBePossibleToComputeTheMutability =
+            allSubtypes(ObjectType.Object, reflexive = true)
+        val unexpectedRootTypes =
+            rootTypes.filter(rt ⇒ (rt ne ObjectType.Object) && isInterface(rt).isNo)
+
         unexpectedRootTypes.flatMap(rt ⇒ allSubtypes(rt, reflexive = true)).view.
             // TODO Either remove the following filter call or document why it is usefull!
             filter(ot ⇒ !typesForWhichItMayBePossibleToComputeTheMutability.contains(ot)).
@@ -424,7 +429,7 @@ object ClassImmutabilityAnalysis extends FPCFAnalysisRunner {
                     // class...
                     OPALLogger.warn(
                         "project configuration - object immutability analysis",
-                        s"the class file of ${t.toJava}, which extends java.lang.Object, is not available"
+                        s"${t.toJava}'s class file is not available"
                     )
                     allSubtypes(t, reflexive = true).foreach(project.classFile(_).foreach { cf ⇒
                         handleResult(ImmediateResult(cf, MutableObjectDueToUnknownSupertypes))

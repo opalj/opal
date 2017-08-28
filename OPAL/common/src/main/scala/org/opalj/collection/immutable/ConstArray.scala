@@ -39,6 +39,7 @@ import scala.collection.IndexedSeqOptimized
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.control.{find ⇒ findInArray}
 
 /**
@@ -107,11 +108,12 @@ object ConstArray extends LowLevelConstArrayImplicits {
         builder mapResult (r ⇒ ConstArray(r.toArray[Object].asInstanceOf[Array[T]]))
     }
 
-    implicit def canBuildFrom[T <: AnyRef]: CanBuildFrom[ConstArray[_ <: AnyRef], T, ConstArray[T]] =
+    implicit def canBuildFrom[T <: AnyRef]: CanBuildFrom[ConstArray[_ <: AnyRef], T, ConstArray[T]] = {
         new CanBuildFrom[ConstArray[_], T, ConstArray[T]] {
             def apply(): Builder[T, ConstArray[T]] = newBuilder[T]()
             def apply(from: ConstArray[_]): Builder[T, ConstArray[T]] = newBuilder[T](from.size)
         }
+    }
 
     final val EmptyConstArray = new ConstArray[Null](new Array[Null](0))
 
