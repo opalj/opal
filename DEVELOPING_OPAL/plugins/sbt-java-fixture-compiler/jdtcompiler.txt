@@ -1,6 +1,4 @@
 Documentation of the command-line parameters offered by the used Eclipse compiler:
----
-
 
 Eclipse Compiler for Java(TM) v20160829-0950, 3.12.1
 Copyright IBM Corp 2000, 2015. All rights reserved.

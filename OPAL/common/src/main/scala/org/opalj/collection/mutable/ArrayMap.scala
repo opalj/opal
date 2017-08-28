@@ -107,7 +107,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     }
 
     /**
-     * Sets the value for the given key to the given value. If the key cannot be stored  in
+     * Sets the value for the given key to the given value. If the key cannot be stored in
      * the currently used array, the underlying array is immediately resized to make
      * it possible to store the new value.
      */

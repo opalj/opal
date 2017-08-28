@@ -35,13 +35,34 @@ import scala.collection.mutable
 import scala.collection.mutable.Queue
 
 /**
+ * Determines if a type (class, interface) is further extensible by yet unknown
+ * types (that is, can be (transitively) inherited from).
+ * == Special cases ==
+ *
+ * If a class is defined in a package starting with '''java.*''', it always has to be treated like
+ * classes that belong to a closed package. This is necessary because the
+ * default `ClassLoader` prevents the definition of further classes within these packages, hence,
+ * they are closed by definition.
+ *
+ * If the analyzed codebase has an incomplete type hierarchy, which leads to unknown subtype
+ * relationships, it is necessary to add these particular classes to the computed set of
+ * extensible classes.
+ *
+ * == Extensibility w.r.t. Open Packages ==
+ * A class is extensible if:
+ *  - the class is not (effectively) final
+ *  - one of its subclasses is extensible
+ *
+ * == Extensibility w.r.t. Closed Packages ==
+ * A class is extensible if:
+ *  - the class is public and not (effectively) final
+ *  - one of its subclasses is extensible
+ *
  * @author Michael Reif
  */
 class TypeExtensibilityInformationAnalysis(
         val project: SomeProject
 ) extends (ObjectType ⇒ Answer) {
-
-    private lazy val isDirectlyExtensible = project.get(DirectTypeExtensibilityKey)
 
     lazy val typeExtensibility: Map[ObjectType, Answer] = initTypeExtensibilityInformation.toMap
 
@@ -74,15 +95,18 @@ class TypeExtensibilityInformationAnalysis(
             hasExtensibleSubtype, hasUnknownSubtype,
             isEnqueued,
             isExtensibleMap
-        )
+        )(project.get(DirectTypeExtensibilityKey))
     }
 
-    @tailrec final def determineExtensibility(
+    @tailrec final private[this] def determineExtensibility(
         typesToProcess:       Queue[ObjectType],
         hasExtensibleSubtype: Array[Boolean],
         hasUnknownSubtype:    Array[Boolean],
         isEnqueued:           Array[Boolean],
         typeExtensibilityMap: mutable.Map[ObjectType, Answer]
+    )(
+        implicit
+        isDirectlyExtensible: ObjectType ⇒ Answer
     ): mutable.Map[ObjectType, Answer] = {
         //         We use a queue to ensure that we always first process all subtypes of a type to
         //         ensure that we have final knowledge about the subtypes' extensibility.
