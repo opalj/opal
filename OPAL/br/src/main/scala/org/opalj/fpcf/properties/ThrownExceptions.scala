@@ -242,8 +242,8 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                 case ISTORE.opcode | LSTORE.opcode |
                     FSTORE.opcode | DSTORE.opcode |
                     ASTORE.opcode ⇒
-                    val LocalVariableAccessIndex(lvIndex) = instruction
-+                    if (lvIndex == 0) isLocalVariable0Updated = true
+                    val lvIndex = instruction.indexOfWrittenLocal
+                    if (lvIndex == 0) isLocalVariable0Updated = true
                     true
 
                 case GETFIELD.opcode ⇒
@@ -330,10 +330,8 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
             assert(result ne null)
             return result;
         }
-        if (
-            fieldAccessMayThrowNullPointerException ||
-            (isFieldAccessed && isLocalVariable0Updated)
-        ) {
+        if (fieldAccessMayThrowNullPointerException ||
+            (isFieldAccessed && isLocalVariable0Updated)) {
             exceptions += ObjectType.NullPointerException
         }
         if (isSynchronizationUsed) {
