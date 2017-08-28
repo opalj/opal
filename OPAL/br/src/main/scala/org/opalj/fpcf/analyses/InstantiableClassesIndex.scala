@@ -39,11 +39,9 @@ import org.opalj.fpcf.properties.Instantiability
 import org.opalj.fpcf.properties.NotInstantiable
 
 /**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
+ * Analyzes which classes are instantiable.
  *
- * @author MichaelReif
+ * @author Michael Reif
  */
 object LibraryInstantiableClassesAnalysis {
 
