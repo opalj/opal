@@ -78,7 +78,7 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
      * Enables subclasses to explicitly specify the extensibility of some types. This enables
      * users to use domain knowledge to override the result of the base analysis.
      *
-     * @note See [[DirectTypeExtensibilityInformation.parseConfig()]] for how to use OPAL's
+     * @note See [[DirectTypeExtensibilityInformation#parseConfig]] for how to use OPAL's
      *       configuration to configure sets of object types.
      *
      * @return  Those types for which the direct extensibility is explicit configured.
@@ -94,7 +94,7 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
      *          configured object types. [[DirectTypeExtensibilityKey.ConfigKeyPrefix]].
      * @return  A list of [[ObjectType]]s. The semantic of those types is encoded by the
      *          respective analysis;
-     *          [[DirectTypeExtensibilityInformation.overwriteTypeExtensibility]].
+     *          [[DirectTypeExtensibilityInformation#configuredTypeExtensibilities]].
      */
     protected[this] def parseConfig(simpleKey: String): List[ObjectType] = {
         val completeKey = DirectTypeExtensibilityKey.ConfigKeyPrefix + simpleKey
