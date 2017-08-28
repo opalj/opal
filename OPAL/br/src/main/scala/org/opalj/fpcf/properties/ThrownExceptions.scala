@@ -325,23 +325,24 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
             }
         }
         val areAllExceptionsCollected = code.forall(collectAllExceptions)
-        if (fielAccessMayThrowNullPointerException || (isFieldAccessed && isLocalVariable0Updated)) {
+        if (!areAllExceptionsCollected) {
+            assert(result ne null)
+            return result;
+        }
+        if (
+            fieldAccessMayThrowNullPointerException ||
+            (isFieldAccessed && isLocalVariable0Updated)
+        ) {
             exceptions += ObjectType.NullPointerException
         }
         if (isSynchronizationUsed) {
             exceptions += ObjectType.IllegalMonitorStateException
         }
 
-        if (areAllExceptionsCollected) {
-            assert(result eq null)
-            if (exceptions.isEmpty)
-                NoExceptionsAreThrown.NoInstructionThrowsExceptions
-            else
-                new AllThrownExceptions(exceptions, false)
-        } else {
-            assert(result ne null)
-            result
-        }
+        if (exceptions.isEmpty)
+            NoExceptionsAreThrown.NoInstructionThrowsExceptions
+        else
+            new AllThrownExceptions(exceptions, false)
     }
 
 }
