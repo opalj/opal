@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.analysis
+package org.opalj.fpcf.analyses
 
 import java.net.URL
 
@@ -40,15 +40,15 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 
-class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
+class InterproceduralEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
-    def analysisName = "SimpleEscapeAnalysis"
+    def analysisName = "InterproceduralEscapeAnalysis"
 
     override def testFileName = "escape-1.8-g-parameters-genericsignature.jar"
 
     override def testFilePath = "bi"
 
-    override def analysisRunners = List(SimpleEscapeAnalysis)
+    override def analysisRunners = List(InterproceduralEscapeAnalysis)
 
     override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
 

@@ -28,48 +28,47 @@
  */
 package org.opalj
 package fpcf
-package analysis
+package analyses
 
-import org.junit.runner.RunWith
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.br.TestSupport.allBIProjects
-import org.opalj.br.TestSupport.createJREProject
+import java.net.URL
+
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.AnalysisModeConfigFactory
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.util.PerformanceEvaluation.time
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.NoEscape
 
-/**
- * Tests that all methods of the JDK can be converted to the ai-based three address representation.
- *
- * @author Florian Kübler
- */
-@RunWith(classOf[JUnitRunner])
-class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
+class SimpleEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
-    def checkProject(project: SomeProject): Unit = {
-        SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
+    def analysisName = "SimpleEscapeAnalysis"
+
+    override def testFileName = "escape-1.8-g-parameters-genericsignature.jar"
+
+    override def testFilePath = "bi"
+
+    override def analysisRunners = List(SimpleEscapeAnalysis)
+
+    override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
+
+    override def propertyAnnotation: ObjectType = ObjectType("annotations/escape/Escapes")
+
+    override def containerAnnotation: ObjectType = ObjectType("annotations/escape/EscapeProperties")
+
+    /**
+     * Add all AllocationsSites and FormalParameters found in the project to the entities in the
+     * property stores created with the PropertyStoreKey.
+     */
+    override def init(): Unit = {
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
-        analysesManager.run(SimpleEscapeAnalysis)
     }
 
-    allBIProjects() foreach { biProject ⇒
-        val (name, projectFactory) = biProject
-        it(s"it should be able to run the analysis with $name") {
-            time {
-                checkProject(projectFactory())
-            } { t ⇒ info(s"analysis took ${t.toSeconds}") }
-        }
+    override def loadProject: Project[URL] = {
+        val project = org.opalj.br.analyses.Project(file)
+        val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
+        Project.recreate(project, testConfig)
     }
 
-    it(s"it should be able to run the analysis with the JDK") {
-        time {
-            checkProject(createJREProject())
-        } { t ⇒ info(s"analysis took ${t.toSeconds}") }
-    }
+    def defaultValue: String = NoEscape.toString
 }
