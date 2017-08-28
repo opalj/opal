@@ -73,6 +73,13 @@ trait Instruction extends InstructionLike {
      */
     def similar(other: Instruction): Boolean = this == other
 
+    // ---------------------------------------------------------------------------------------------
+    //
+    // TYPE TEST AND TYPE CAST RELATED INSTRUCTIONS
+    //
+    // ---------------------------------------------------------------------------------------------
+
+    def isGotoInstruction: Boolean = false
 }
 
 /**
