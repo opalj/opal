@@ -78,7 +78,8 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
      * has to be guaranteed that the exception is '''NEVER''' thrown. For example, a div instruction
      * is sideeffect free if it is (statically) known that the divisor is always not equal to zero;
      * otherwise, even if the result value is not used, the expression is not (potentially) side
-     * effect free.
+     * effect free. An array load is only side effect free if the array reference is non-null and
+     * if the index is valid.
      *
      * @note '''Nested expressions are not supported'''; i.e. a sub-expression has to be a [[Var]]
      *       or [[Const]].
@@ -468,11 +469,9 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
     final override def subExpr(index: Int): Nothing = throw new IndexOutOfBoundsException();
 
     /**
-     * Always returns `true` since the new instruction just allocates memory, but does NOT call the
-     * constructor. Hence, except of a `java.lang.OutOfMemoryError`. which we do not
-     * model any further, nothing will happen if the value is not used any further.
+     * Returns `false` because an `OutOfMemoryError` may be thrown.
      */
-    final override def isSideEffectFree: Boolean = true
+    final override def isSideEffectFree: Boolean = false
 
     override def toString: String = s"New(pc=$pc,${tpe.toJava})"
 }
@@ -493,11 +492,10 @@ case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) 
     final override def subExpr(index: Int): Expr[V] = counts(index)
 
     /**
-     * Always returns `true` since the instruction just allocates memory. Hence, except of a
-     * `java.lang.OutOfMemoryError`. which we do not model any further,
-     * nothing will happen if the value is not used any further.
+     * Returns `false` by default, because a `NewArray` instruction may throw
+     * `NegativeIndexSizeException` (and also `OutOfMemoryError`.)
      */
-    final override def isSideEffectFree: Boolean = true
+    final override def isSideEffectFree: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         counts.foreach { c ⇒ c.remapIndexes(pcToIndex) }
@@ -514,7 +512,7 @@ case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) ex
     final override def asArrayLoad: this.type = this
     final override def astID: Int = ArrayLoad.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
-    final override def isSideEffectFree: Boolean = true
+    final override def isSideEffectFree: Boolean = false
     final override def isVar: Boolean = false
     final override def subExprCount: Int = 2
     final override def subExpr(index: Int): Expr[V] = if (index == 0) this.index else arrayRef

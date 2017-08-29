@@ -57,7 +57,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         pc:               PC,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         refIsNull(pc, operands.last) match {
             case Yes ⇒
                 justThrows(VMNullPointerException(pc))
@@ -77,6 +77,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
                 else
                     ComputedValue(TypedValue(pc, returnType))
         }
+    }
 
     /*override*/ def invokevirtual(
         pc:               PC,
@@ -99,6 +100,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     /*override*/ def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -108,6 +110,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     /*override*/ def invokestatic(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -133,4 +136,3 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
             ComputedValue(TypedValue(pc, returnType))
     }
 }
-

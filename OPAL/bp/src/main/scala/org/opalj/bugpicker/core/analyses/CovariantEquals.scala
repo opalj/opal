@@ -95,9 +95,9 @@ object CovariantEquals {
             return false;
 
         import MethodDescriptor.JustReturnsInteger
-        project.lookupMethodDefinition(superclassType, "hashCode", JustReturnsInteger) match {
-            case Some(m) ⇒ m.classFile.thisType ne ObjectType.Object
-            case _       ⇒ false
+        project.resolveClassMethodReference(superclassType, "hashCode", JustReturnsInteger) match {
+            case Success(m) ⇒ m.classFile.thisType ne ObjectType.Object
+            case _          ⇒ false
         }
     }
 
@@ -105,16 +105,16 @@ object CovariantEquals {
      * Runs this analysis on the given project.
      *
      * @param project The project to analyze.
-     * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
     def apply(
-
         classFile: ClassFile
     )(
         implicit
         project: SomeProject
     ): Iterable[Issue] = {
+        if (classFile.isInterfaceDeclaration)
+            return Iterable.empty;
 
         if (hasEqualsButNotEqualsObject(classFile)) {
             var message = "missing equals(Object) to override Object.equals(Object)"

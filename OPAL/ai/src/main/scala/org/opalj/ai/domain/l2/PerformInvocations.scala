@@ -31,13 +31,16 @@ package ai
 package domain
 package l2
 
-import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.Error
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
-import org.opalj.br._
+import org.opalj.br.Method
+import org.opalj.br.VoidType
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.MethodDescriptor
 
 /**
  * Mix in this trait if methods that are called by `invokeXYZ` instructions should
@@ -178,7 +181,7 @@ trait PerformInvocations extends MethodCallsHandling {
         val aiResult = doInvoke(method, calledMethodDomain)(parameters)
 
         if (aiResult.wasAborted)
-            fallback();
+            fallback()
         else
             transformResult(pc, method, operands, calledMethodDomain)(parameters, aiResult)
     }
@@ -216,49 +219,29 @@ trait PerformInvocations extends MethodCallsHandling {
     // -----------------------------------------------------------------------------------
 
     protected[this] def doInvokeNonVirtual(
-        pc:                 PC,
-        declaringClassType: ObjectType, // ... arrays do not have any static/special methods
-        methodName:         String,
-        methodDescriptor:   MethodDescriptor,
-        operands:           Operands,
-        fallback:           () ⇒ MethodCallResult
+        pc:             PC,
+        declaringClass: ObjectType, // ... arrays do not have any static/special methods
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands,
+        fallback:       () ⇒ MethodCallResult
     ): MethodCallResult = {
 
-        val methodOption =
-            try {
-                project.resolveMethodReference(declaringClassType, methodName, methodDescriptor)
-            } catch {
-                case ct: ControlThrowable ⇒ throw ct;
+        val resolvedMethod =
+            if (isInterface)
+                project.resolveInterfaceMethodReference(declaringClass, name, descriptor)
+            else
+                project.resolveMethodReference(declaringClass, name, descriptor)
 
-                case e: AssertionError ⇒
-                    OPALLogger.logOnce(Error(
-                        "internal error - recoverable",
-                        "exception occured while resolving method reference: "+
-                            declaringClassType.toJava+
-                            "{ static "+methodDescriptor.toJava(methodName)+"}"+
-                            ": "+e.getMessage
-                    ))
-                    return fallback();
-
-                case e: Throwable ⇒
-                    OPALLogger.error(
-                        "internal error - recoverable",
-                        "exception occured while resolving method reference: "+
-                            declaringClassType.toJava+
-                            "{ static "+methodDescriptor.toJava(methodName)+"}",
-                        e
-                    )
-                    return fallback();
-            }
-
-        methodOption match {
+        resolvedMethod match {
             case Some(method) ⇒ testAndDoInvoke(pc, method, operands, fallback)
             case _ ⇒
+                // IMPROVE Get rid of log once...
                 OPALLogger.logOnce(Warn(
                     "project configuration",
                     "method reference cannot be resolved: "+
-                        declaringClassType.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"
+                        declaringClass.toJava+"{ (static?) "+descriptor.toJava(name)+"}"
                 ))
                 fallback()
         }
@@ -271,6 +254,7 @@ trait PerformInvocations extends MethodCallsHandling {
     def doInvokeVirtual(
         pc:             PC,
         declaringClass: ReferenceType,
+        isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
         operands:       Operands,
@@ -282,8 +266,24 @@ trait PerformInvocations extends MethodCallsHandling {
                 refValue.isNull.isNo && // IMPROVE support the case that null is unknown
                 refValue.upperTypeBound.isSingletonSet &&
                 refValue.upperTypeBound.head.isObjectType ⇒
+
                 val receiverClass = refValue.upperTypeBound.head.asObjectType
-                doInvokeNonVirtual(pc, receiverClass, name, descriptor, operands, fallback)
+                classHierarchy.isInterface(receiverClass) match {
+                    case Yes ⇒
+                        doInvokeNonVirtual(
+                            pc,
+                            receiverClass, true, name, descriptor,
+                            operands, fallback
+                        )
+                    case No ⇒
+                        doInvokeNonVirtual(
+                            pc,
+                            receiverClass, false, name, descriptor,
+                            operands, fallback
+                        )
+                    case unknown ⇒
+                        fallback()
+                }
 
             case _ ⇒
                 fallback()
@@ -299,7 +299,7 @@ trait PerformInvocations extends MethodCallsHandling {
         operands:       Operands
     ): MethodCallResult = {
         def fallback() = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
-        doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback)
+        doInvokeVirtual(pc, declaringClass, false, name, descriptor, operands, fallback)
     }
 
     abstract override def invokeinterface(
@@ -310,18 +310,21 @@ trait PerformInvocations extends MethodCallsHandling {
         operands:       Operands
     ): MethodCallResult = {
         def fallback() = super.invokeinterface(pc, declaringClass, name, descriptor, operands)
-        doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback)
+        doInvokeVirtual(pc, declaringClass, true, name, descriptor, operands, fallback)
     }
 
     abstract override def invokespecial(
         pc:             PC,
         declaringClass: ObjectType,
+        isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
         operands:       Operands
     ): MethodCallResult = {
-        def fallback() = super.invokespecial(pc, declaringClass, name, descriptor, operands)
-        doInvokeNonVirtual(pc, declaringClass, name, descriptor, operands, fallback)
+        def fallback() = {
+            super.invokespecial(pc, declaringClass, isInterface, name, descriptor, operands)
+        }
+        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback)
     }
 
     /**
@@ -332,14 +335,15 @@ trait PerformInvocations extends MethodCallsHandling {
     abstract override def invokestatic(
         pc:             PC,
         declaringClass: ObjectType,
+        isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
         operands:       Operands
     ): MethodCallResult = {
-
-        def fallback() = super.invokestatic(pc, declaringClass, name, descriptor, operands)
-
-        doInvokeNonVirtual(pc, declaringClass, name, descriptor, operands, fallback)
+        def fallback() = {
+            super.invokestatic(pc, declaringClass, isInterface, name, descriptor, operands)
+        }
+        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback)
     }
 
 }
