@@ -30,16 +30,15 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.Set
+
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.Method
 import org.opalj.ai.ComputationWithSideEffectOnly
 import org.opalj.ai.MethodCallsDomain
 import org.opalj.ai.ReferenceValuesDomain
 import org.opalj.ai.TypedValuesFactory
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-
-import org.opalj.br.Method
-
-import scala.collection.Set
 
 /**
  * Support for handling method invocations.
@@ -178,4 +177,3 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
 }
-
