@@ -37,7 +37,6 @@ import org.opalj.ai.domain
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger
@@ -191,8 +190,8 @@ object TAC {
                             // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
                             Class.
                                 forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
-                                getConstructor(classOf[Project[_]], classOf[ClassFile], classOf[Method]).
-                                newInstance(project, cf, m)
+                                getConstructor(classOf[Project[_]], classOf[Method]).
+                                newInstance(project, m)
                         }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
                         val aiResult = BaseAI(m, d)
