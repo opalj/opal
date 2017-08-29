@@ -62,90 +62,85 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
      * returned.
      */
     protected[this] def doVirtualInvoke(
-        pc:                 PC,
-        declaringClassType: ObjectType,
-        methodName:         String,
-        methodDescriptor:   MethodDescriptor,
-        operands:           Operands,
-        fallback:           () ⇒ MethodCallResult
+        pc:            PC,
+        declaringType: ObjectType,
+        isInterface:   Boolean,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands,
+        fallback:      () ⇒ MethodCallResult
     ): MethodCallResult = {
 
-        try {
-            val DomainReferenceValue(receiver) = operands.last
-            val receiverUTB = receiver.upperTypeBound
-            if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.head.isObjectType)
-                return fallback();
+        val DomainReferenceValue(receiver) = operands.last
+        val receiverUTB = receiver.upperTypeBound
+        if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.head.isObjectType)
+            return fallback();
 
-            val receiverType = receiverUTB.head.asObjectType
-            // We can resolve (statically) all calls where the type information is precise
-            // or where the declaring class is final or where the called method is final.
+        val receiverType = receiverUTB.head.asObjectType
+        // We can resolve (statically) all calls where the type information is precise
+        // or where the declaring class is final or where the called method is final.
 
-            if (receiver.isPrecise) {
-                doNonVirtualInvoke(
-                    pc,
-                    receiverType, methodName, methodDescriptor, operands,
-                    fallback
-                )
-            } else {
-                project.classFile(receiverType).map { receiverClassFile ⇒
-                    if (receiverClassFile.isFinal)
-                        doNonVirtualInvoke(
-                            pc, receiverType, methodName, methodDescriptor, operands, fallback
-                        )
-                    else {
-                        val targetMethod =
-                            if (receiverClassFile.isInterfaceDeclaration)
-                                project.resolveInterfaceMethodReference(receiverType, methodName, methodDescriptor)
-                            else
-                                project.resolveMethodReference(receiverType, methodName, methodDescriptor)
-
-                        targetMethod match {
-                            case Some(method) if method.isFinal ⇒
-                                doInvoke(pc, method, operands, fallback)
-                            case _ ⇒
-                                fallback()
-                        }
-                    }
-                }.getOrElse {
+        if (receiver.isPrecise) {
+            classHierarchy.isInterface(receiverType) match {
+                case Yes ⇒
+                    doNonVirtualInvoke(
+                        pc, receiverType, true, name, descriptor, operands, fallback
+                    )
+                case No ⇒
+                    doNonVirtualInvoke(
+                        pc, receiverType, false, name, descriptor, operands, fallback
+                    )
+                case Unknown ⇒
                     fallback()
-                }
             }
+        } else {
+            project.classFile(receiverType).map { receiverClassFile ⇒
+                if (receiverClassFile.isFinal) {
+                    val isInterface = receiverClassFile.isInterfaceDeclaration
+                    doNonVirtualInvoke(
+                        pc, receiverType, isInterface, name, descriptor, operands, fallback
+                    )
+                } else {
+                    val targetMethod =
+                        if (receiverClassFile.isInterfaceDeclaration)
+                            project.resolveInterfaceMethodReference(receiverType, name, descriptor)
+                        else
+                            project.resolveMethodReference(receiverType, name, descriptor)
 
-        } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case t: Throwable ⇒
-                OPALLogger.error(
-                    "internal, project configuration",
-                    "resolving the method reference resulted in an exception: "+
-                        project.classFile(declaringClassType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
-                        declaringClassType.toJava+
-                        "{ "+methodDescriptor.toJava(methodName)+" }",
-                    t
-                )
+                    targetMethod match {
+                        case Some(method) if method.isFinal ⇒
+                            doInvoke(pc, method, operands, fallback)
+                        case _ ⇒
+                            fallback()
+                    }
+                }
+            }.getOrElse {
                 fallback()
+            }
         }
     }
 
     protected[this] def doNonVirtualInvoke(
-        pc:                 PC,
-        declaringClassType: ObjectType,
-        methodName:         String,
-        methodDescriptor:   MethodDescriptor,
-        operands:           Operands,
-        fallback:           () ⇒ MethodCallResult
+        pc:            PC,
+        declaringType: ObjectType,
+        isInterface:   Boolean,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands,
+        fallback:      () ⇒ MethodCallResult
     ): MethodCallResult = {
 
         try {
             val resolvedMethod =
-                project.classFile(declaringClassType) match {
+                project.classFile(declaringType) match {
                     case Some(classFile) ⇒
                         if (classFile.isInterfaceDeclaration)
                             project.resolveInterfaceMethodReference(
-                                declaringClassType, methodName, methodDescriptor
+                                declaringType, name, descriptor
                             )
                         else
                             project.resolveMethodReference(
-                                declaringClassType, methodName, methodDescriptor
+                                declaringType, name, descriptor
                             )
                     case _ ⇒
                         return fallback();
@@ -161,8 +156,8 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                     OPALLogger.logOnce(Warn(
                         "project configuration",
                         "method reference cannot be resolved: "+
-                            declaringClassType.toJava+
-                            "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}"
+                            declaringType.toJava+
+                            "{ /*non virtual*/ "+descriptor.toJava(name)+"}"
                     ))
                     fallback()
             }
@@ -172,9 +167,8 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                 OPALLogger.error(
                     "internal, project configuration",
                     "resolving the method reference resulted in an exception: "+
-                        project.classFile(declaringClassType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
-                        declaringClassType.toJava+
-                        "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}",
+                        project.classFile(declaringType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
+                        declaringType.toJava+"{ /*non virtual*/ "+descriptor.toJava(name)+"}",
                     t
                 )
                 fallback()
@@ -188,53 +182,60 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
     // -----------------------------------------------------------------------------------
 
     abstract override def invokevirtual(
-        pc:               PC,
-        declaringClass:   ReferenceType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:            PC,
+        declaringType: ReferenceType,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands
     ): MethodCallResult = {
 
-        def fallback() =
-            super.invokevirtual(pc, declaringClass, methodName, methodDescriptor, operands)
+        def fallback() = {
+            super.invokevirtual(pc, declaringType, name, descriptor, operands)
+        }
 
-        if (declaringClass.isArrayType)
+        if (declaringType.isArrayType)
             fallback()
         else
             doVirtualInvoke(
-                pc,
-                declaringClass.asObjectType, methodName, methodDescriptor,
-                operands,
-                fallback
+                pc, declaringType.asObjectType, false, name, descriptor, operands, fallback
             )
     }
 
     abstract override def invokeinterface(
-        pc:               PC,
-        declaringClass:   ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:            PC,
+        declaringType: ObjectType,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands
     ): MethodCallResult = {
 
-        def fallback() =
-            super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
+        def fallback() = {
+            super.invokeinterface(pc, declaringType, name, descriptor, operands)
+        }
 
-        doVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback)
+        doVirtualInvoke(pc, declaringType, true, name, descriptor, operands, fallback)
     }
 
     abstract override def invokespecial(
-        pc:               PC,
-        declaringClass:   ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:            PC,
+        declaringType: ObjectType,
+        isInterface:   Boolean,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands
     ): MethodCallResult = {
 
-        def fallback() =
-            super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
+        def fallback() = {
+            super.invokespecial(
+                pc,
+                declaringType, isInterface, name, descriptor,
+                operands
+            )
+        }
 
-        doNonVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback)
+        doNonVirtualInvoke(
+            pc, declaringType, isInterface, name, descriptor, operands, fallback
+        )
     }
 
     /**
@@ -243,17 +244,23 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
      * if have a recursive invocation are delegated to the super class.
      */
     abstract override def invokestatic(
-        pc:               PC,
-        declaringClass:   ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:            PC,
+        declaringType: ObjectType,
+        isInterface:   Boolean,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands
     ): MethodCallResult = {
 
-        def fallback() =
-            super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+        def fallback() = {
+            super.invokestatic(
+                pc,
+                declaringType, isInterface, name, descriptor,
+                operands
+            )
+        }
 
-        doNonVirtualInvoke(pc, declaringClass, methodName, methodDescriptor, operands, fallback)
+        doNonVirtualInvoke(pc, declaringType, isInterface, name, descriptor, operands, fallback)
     }
 
 }

@@ -197,13 +197,13 @@ object JDKTaintAnalysis
 //   */
 //  var cachedInterfaceCalls: List[CachedInterfaceCall] = List.empty
 //
-//  case class CachedInterfaceCall(methodName: String, methodDescriptor: MethodDescriptor, operands: List[DomainValue]) {
+//  case class CachedInterfaceCall(name: String, descriptor: MethodDescriptor, operands: List[DomainValue]) {
 //    override def equals(obj: Any) = {
 //      obj match {
 //        case that: CachedInterfaceCall => {
 //
-//          methodName == that.methodName &&
-//            methodDescriptor == that.methodDescriptor &&
+//          name == that.name &&
+//            descriptor == that.descriptor &&
 //            operands.forall(p => that.operands.contains(p))
 //        }
 //        case _ => false
@@ -252,12 +252,12 @@ trait TaintAnalysisDomain[Source]
 
     protected def declaringClass = id.method.classFile.thisType
     def method: Method = id.method
-    protected def methodName = id.method.name
-    protected def methodDescriptor = id.method.descriptor
+    protected def name = id.method.name
+    protected def descriptor = id.method.descriptor
     def code: Code = method.body.get
 
     protected def contextIdentifier = {
-        s"${declaringClass.fqn}{ ${methodDescriptor.toJava(methodName)} }"
+        s"${declaringClass.fqn}{ ${descriptor.toJava(name)} }"
     }
 
     /**
@@ -368,7 +368,7 @@ trait TaintAnalysisDomain[Source]
      * has completed.
      */
     lazy val report = {
-        postAnalysis();
+        postAnalysis()
         if (isRelevantValueReturned && callToClassForNameFound) {
             val createdDot = toDot(Set(callerNode))
             TaintAnalysisDomain.numberOfReports.incrementAndGet()
@@ -383,14 +383,14 @@ trait TaintAnalysisDomain[Source]
      * object for which we have no further type information.
      */
     private def isRelevantCall(
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        descriptor: MethodDescriptor,
+        operands:   Operands
     ): Boolean = {
         operands.exists { op ⇒
             origin(op).exists(pc ⇒ contextNode.identifier._1.union(taintedPCs).contains(pc))
         } && (
-            methodDescriptor.returnType == Object ||
-            methodDescriptor.returnType == Class
+            descriptor.returnType == Object ||
+            descriptor.returnType == Class
         )
     }
 
@@ -405,15 +405,15 @@ trait TaintAnalysisDomain[Source]
 
     //TODO check compatibility with Java8 Extension Methods
     override def invokeinterface(
-        pc:               Int,
-        declaringClass:   ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:             Int,
+        declaringClass: ObjectType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
     ): MethodCallResult = {
 
         def doTypeLevelInvoke =
-            super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokeinterface(pc, declaringClass, name, descriptor, operands)
 
         /*
        *invokeinterface is currently disabled due to the following reasons
@@ -427,7 +427,7 @@ trait TaintAnalysisDomain[Source]
         //  - caching interfaces does not work properly:
         //problem with adepting some values the cached domain
 
-        //    if (isIrrelevantInvoke(methodDescriptor, declaringClass))
+        //    if (isIrrelevantInvoke(descriptor, declaringClass))
         //      return doTypeLevelInvoke;
         //
         //    val relevantOperands = computeRelevantOperands(operands)
@@ -440,15 +440,15 @@ trait TaintAnalysisDomain[Source]
         //    val method: Method =
         //      classHierarchy.resolveInterfaceMethodReference(
         //        declaringClass.asObjectType,
-        //        methodName,
-        //        methodDescriptor,
+        //        name,
+        //        descriptor,
         //        project).getOrElse {
         //          return doTypeLevelInvoke
         //        }
         //
         //    var cachedInterfaceCall = TaintAnalysisDomain.CachedInterfaceCall(
-        //      methodName,
-        //      methodDescriptor,
+        //      name,
+        //      descriptor,
         //      operands.reverse.tail.map(operand => operand.adapt(TaintAnalysisDomain, 0)))
         //
         //
@@ -480,8 +480,8 @@ trait TaintAnalysisDomain[Source]
         //    // instantiated
         //    val implementingMethods = classHierarchy.lookupImplementingMethods(
         //      declaringClass.asObjectType,
-        //      methodName,
-        //      methodDescriptor,
+        //      name,
+        //      descriptor,
         //      project,
         //      filter)
         //
@@ -495,24 +495,24 @@ trait TaintAnalysisDomain[Source]
     }
 
     override def invokevirtual(
-        pc:               Int,
-        declaringClass:   ReferenceType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:             Int,
+        declaringClass: ReferenceType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
     ): MethodCallResult = {
 
         def doTypeLevelInvoke =
-            super.invokevirtual(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokevirtual(pc, declaringClass, name, descriptor, operands)
 
         // check if we have a call to Class.newInstance...
-        if (methodName == "newInstance") {
-            if (isRelevantCall(methodDescriptor, operands)) {
+        if (name == "newInstance") {
+            if (isRelevantCall(descriptor, operands)) {
                 relevantValuesOrigins = (pc, new CallerNode("newInstance")) :: relevantValuesOrigins
             }
         }
 
-        if (isIrrelevantInvoke(methodDescriptor, declaringClass))
+        if (isIrrelevantInvoke(descriptor, declaringClass))
             return doTypeLevelInvoke;
 
         val relevantOperands = computeRelevantOperands(operands)
@@ -523,10 +523,12 @@ trait TaintAnalysisDomain[Source]
         // with a relevant parameter that is not our final sink...
 
         val method: Method =
-            project.lookupMethodDefinition(
-                declaringClass.asObjectType, methodName, methodDescriptor
-            ).getOrElse {
-                    return doTypeLevelInvoke;
+            project.lookupVirtualMethod(
+                this.declaringClass,
+                declaringClass.asObjectType, name, descriptor
+            ) match {
+                    case Success(mdc) ⇒ mdc.method
+                    case _            ⇒ return doTypeLevelInvoke;
                 }
 
         if (method.body.isEmpty) {
@@ -539,17 +541,18 @@ trait TaintAnalysisDomain[Source]
     }
 
     abstract override def invokespecial(
-        pc:               Int,
-        declaringClass:   ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:             Int,
+        declaringClass: ObjectType,
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
     ): MethodCallResult = {
 
         def doTypeLevelInvoke =
-            super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokespecial(pc, declaringClass, isInterface, name, descriptor, operands)
 
-        if (isIrrelevantInvoke(methodDescriptor, declaringClass))
+        if (isIrrelevantInvoke(descriptor, declaringClass))
             return doTypeLevelInvoke;
 
         val relevantOperands = computeRelevantOperands(operands)
@@ -560,7 +563,7 @@ trait TaintAnalysisDomain[Source]
         // with a relevant parameter that is not our final sink...
         val method: Method =
             project.resolveMethodReference(
-                declaringClass, methodName, methodDescriptor
+                declaringClass, name, descriptor
             ).getOrElse {
                 return doTypeLevelInvoke;
             }
@@ -571,17 +574,18 @@ trait TaintAnalysisDomain[Source]
     }
 
     override def invokestatic(
-        pc:               Int,
-        declaringClass:   ObjectType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
+        pc:             Int,
+        declaringClass: ObjectType,
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
     ): MethodCallResult = {
 
         def doTypeLevelInvoke =
-            super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokestatic(pc, declaringClass, isInterface, name, descriptor, operands)
 
-        if (isIrrelevantInvoke(methodDescriptor, declaringClass))
+        if (isIrrelevantInvoke(descriptor, declaringClass))
             return doTypeLevelInvoke;
 
         val relevantOperands = computeRelevantOperands(operands)
@@ -591,7 +595,7 @@ trait TaintAnalysisDomain[Source]
 
         // If we reach this point, we have an invocation of a relevant method
         // with a relevant parameter...
-        if (checkForSink(declaringClass, methodDescriptor, methodName)) {
+        if (checkForSink(declaringClass, descriptor, name)) {
             registerSink(pc, operands)
             return doTypeLevelInvoke;
         }
@@ -601,8 +605,8 @@ trait TaintAnalysisDomain[Source]
         val method: Method =
             project.resolveMethodReference(
                 declaringClass.asObjectType,
-                methodName,
-                methodDescriptor
+                name,
+                descriptor
             ).getOrElse {
                     return doTypeLevelInvoke;
                 }
@@ -617,10 +621,10 @@ trait TaintAnalysisDomain[Source]
      * call.
      */
     def isRecursiveCall(
-        declaringClass:   ReferenceType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        parameters:       DomainValues
+        declaringClass: ReferenceType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        parameters:     DomainValues
     ): Boolean
 
     final def isRecursiveCall(method: Method, parameters: DomainValues): Boolean = {
@@ -716,13 +720,13 @@ trait TaintAnalysisDomain[Source]
      * and its declaring Class must be an ObjectType
      */
     def isIrrelevantInvoke(
-        methodDescriptor: MethodDescriptor,
-        declaringClass:   ReferenceType
+        descriptor:     MethodDescriptor,
+        declaringClass: ReferenceType
     ): Boolean = {
         (!declaringClass.isObjectType || (
-            methodDescriptor.returnType != Class &&
-            methodDescriptor.returnType != Object &&
-            methodDescriptor.returnType != String
+            descriptor.returnType != Class &&
+            descriptor.returnType != Object &&
+            descriptor.returnType != String
         ))
     }
 
@@ -744,13 +748,13 @@ trait TaintAnalysisDomain[Source]
      * case the analysis has found a sink and this method returns true.
      */
     def checkForSink(
-        declaringClass:   ObjectType,
-        methodDescriptor: MethodDescriptor,
-        methodName:       String
+        declaringClass: ObjectType,
+        descriptor:     MethodDescriptor,
+        name:           String
     ): Boolean = {
         (declaringClass == ObjectType.Class &&
-            methodName == "forName" &&
-            methodDescriptor.parameterTypes == Seq(String))
+            name == "forName" &&
+            descriptor.parameterTypes == Seq(String))
     }
 
     /**
@@ -878,7 +882,7 @@ class RootTaintAnalysisDomain[Source](
         var nextIndex = if (id.method.isStatic) 1 else 2
         val relevantParameters =
             //compute correct index (double, long take two slots)
-            methodDescriptor.parameterTypes.zipWithIndex.map { param_idx ⇒
+            descriptor.parameterTypes.zipWithIndex.map { param_idx ⇒
                 val (parameterType, _ /*index*/ ) = param_idx;
                 val currentIndex = nextIndex
                 nextIndex += parameterType.computationalType.operandSize
@@ -892,14 +896,14 @@ class RootTaintAnalysisDomain[Source](
     }
 
     def isRecursiveCall(
-        declaringClass:   ReferenceType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        parameters:       DomainValues
+        declaringClass: ReferenceType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        parameters:     DomainValues
     ): Boolean = {
         this.declaringClass == declaringClass &&
-            this.methodName == methodName &&
-            this.methodDescriptor == methodDescriptor // &&
+            this.name == name &&
+            this.descriptor == descriptor // &&
         // TODO check that the analysis would be made under the same assumption (same parameters!)
     }
 
@@ -931,20 +935,20 @@ class CalledTaintAnalysisDomain[Source](
      * up to the RootTaintAnalysisDomain
      */
     def isRecursiveCall(
-        declaringClass:   ReferenceType,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        parameters:       DomainValues
+        declaringClass: ReferenceType,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        parameters:     DomainValues
     ): Boolean = {
         (this.declaringClass == declaringClass &&
-            this.methodName == methodName &&
-            this.methodDescriptor == methodDescriptor // && // TODO check that the analysis would be made under the same assumption (same parameters!)
+            this.name == name &&
+            this.descriptor == descriptor // && // TODO check that the analysis would be made under the same assumption (same parameters!)
         ) || (
                 declaringClass.isObjectType &&
                 previousTaintAnalysisDomain.isRecursiveCall(
                     declaringClass.asObjectType,
-                    methodName,
-                    methodDescriptor,
+                    name,
+                    descriptor,
                     parameters
                 )
             )

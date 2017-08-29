@@ -175,6 +175,7 @@ trait StringValues
     abstract override def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -220,7 +221,7 @@ trait StringValues
                 updateAfterEvaluation(newStringValue, newStringValue.update())
             }
         }
-        super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
+        super.invokespecial(pc, declaringClass, isInterface, name, methodDescriptor, operands)
     }
 
     final override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue = {
