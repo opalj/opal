@@ -62,6 +62,7 @@ trait MethodCallsDomain { this: ValuesDomain ⇒
     def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -70,6 +71,7 @@ trait MethodCallsDomain { this: ValuesDomain ⇒
     def invokestatic(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands

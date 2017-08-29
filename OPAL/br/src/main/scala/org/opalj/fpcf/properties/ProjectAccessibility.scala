@@ -69,18 +69,11 @@ object ProjectAccessibility {
         }
     }
 
-    final val cycleResolutionStrategy: PropertyKey.CycleResolutionStrategy = (
-        ps: PropertyStore,
-        epks: PropertyKey.SomeEPKs
-    ) ⇒ {
-        throw new Error("there should be no cycles")
-    }
-
     final val Key = {
         PropertyKey.create[ProjectAccessibility](
             "ProjectAccessibility",
             fallbackProperty = fallback,
-            cycleResolutionStrategy = cycleResolutionStrategy
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ { throw new UnsupportedOperationException(); }
         )
     }
 }
@@ -97,8 +90,7 @@ case object Global extends ProjectAccessibility
 case object PackageLocal extends ProjectAccessibility
 
 /**
- * Entities with `PackageLocal` project accessibility can be accessed by every entity within
+ * Entities with `ClassLocal` project accessibility can be accessed by every entity within
  * the class where the entity is defined.
  */
 case object ClassLocal extends ProjectAccessibility
-

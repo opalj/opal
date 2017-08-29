@@ -80,11 +80,12 @@ class PropertyTracingTest extends FlatSpec with Matchers {
         override def propertyName = "isSanitized"
 
         override def invokestatic(
-            pc:               Int,
-            declaringClass:   ObjectType,
-            name:             String,
-            methodDescriptor: MethodDescriptor,
-            operands:         Operands
+            pc:             Int,
+            declaringClass: ObjectType,
+            isInterface:    Boolean,
+            name:           String,
+            descriptor:     MethodDescriptor,
+            operands:       Operands
         ): MethodCallResult = {
 
             // let's check if the first parameter (_ == -2) passed to a method is
@@ -92,7 +93,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
             if (name == "sanitize" && origin(operands.head).exists(_ == -2)) {
                 updateProperty(pc, true)
             }
-            super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+            super.invokestatic(pc, declaringClass, isInterface, name, descriptor, operands)
         }
 
         def isSanitized(): Boolean = hasPropertyOnExit

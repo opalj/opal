@@ -114,5 +114,5 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
 object FPCFAnalysesManager {
 
-    final val ConfigKey = "org.opalj.fcpf.analysis.manager.debug"
+    final val ConfigKey = "org.opalj.fcpf.analyses.manager.debug"
 }

@@ -2037,6 +2037,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             theDomain.invokespecial(
                                 pc,
                                 invoke.declaringClass,
+                                invoke.isInterface,
                                 invoke.name,
                                 invoke.methodDescriptor,
                                 operands.take(argsCount + 1)
@@ -2053,6 +2054,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             theDomain.invokestatic(
                                 pc,
                                 invoke.declaringClass,
+                                invoke.isInterface,
                                 invoke.name,
                                 invoke.methodDescriptor,
                                 operands.take(argsCount)

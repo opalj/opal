@@ -152,4 +152,10 @@ package object opalj {
         (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
     }
 
+    def notRequired(): Nothing = {
+        throw new UnknownError("providing an implementation was not expected to be required")
+    }
+
+    final val NotRequired: (Any) ⇒ Nothing = (a: Any) ⇒ { notRequired() }
+
 }

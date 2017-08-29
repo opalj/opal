@@ -1,5 +1,5 @@
-/* BSD 2Clause License:
- * Copyright (c) 2009 - 2015
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
