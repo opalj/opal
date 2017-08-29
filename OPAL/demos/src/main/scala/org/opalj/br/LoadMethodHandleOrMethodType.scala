@@ -63,7 +63,7 @@ object LoadMethodHandleOrMethodType extends DefaultOneStepAnalysis {
                     case LoadMethodType_W(md)   ⇒ md
                 }
             } yield {
-                method.toJava(classFile, s"pc=$pc;load constant=${instruction.valueToString}") +
+                method.toJava(s"pc=$pc;load constant=${instruction.valueToString}") +
                     s"<${project.source(classFile.thisType).map(_.toString()).getOrElse("N/A")}>"
             }
 

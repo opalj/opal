@@ -108,11 +108,14 @@ final class ClassFile private (
         val accessFlags:    Int,
         val thisType:       ObjectType,
         val superclassType: Option[ObjectType],
-        val interfaceTypes: Seq[ObjectType], // TODO Use a UIDSet over here and in the class hierarchy!
+        val interfaceTypes: Seq[ObjectType], // IMPROVE Use a UIDSet over here and in the class hierarchy!
         val fields:         Fields,
         val methods:        Methods,
         val attributes:     Attributes
 ) extends ConcreteSourceElement {
+
+    methods.foreach { m ⇒ assert(m.declaringClassFile == null); m.declaringClassFile = this }
+    fields.foreach { f ⇒ assert(f.declaringClassFile == null); f.declaringClassFile = this }
 
     /**
      * Compares this class file with the given one; returns (the first) differences if any. The
@@ -208,26 +211,23 @@ final class ClassFile private (
 
     /**
      * Creates a shallow copy of this class file object.
-     *
-     * @param   fields The new set of fields; it need to be ordered by means of the ordering
-     *          defined by [[Field]].
-     * @param   methods The new set of methods; it need to be ordered by means of the ordering
-     *          defined by [[Method]].
      */
     def copy(
-        version:        UShortPair         = this.version,
-        accessFlags:    Int                = this.accessFlags,
-        thisType:       ObjectType         = this.thisType,
-        superclassType: Option[ObjectType] = this.superclassType,
-        interfaceTypes: Seq[ObjectType]    = this.interfaceTypes,
-        fields:         Fields             = this.fields,
-        methods:        Methods            = this.methods,
-        attributes:     Attributes         = this.attributes
+        version:        UShortPair                 = this.version,
+        accessFlags:    Int                        = this.accessFlags,
+        thisType:       ObjectType                 = this.thisType,
+        superclassType: Option[ObjectType]         = this.superclassType,
+        interfaceTypes: Seq[ObjectType]            = this.interfaceTypes,
+        fields:         IndexedSeq[FieldTemplate]  = this.fields.map(f ⇒ f.copy()),
+        methods:        IndexedSeq[MethodTemplate] = this.methods.map(m ⇒ m.copy()),
+        attributes:     Attributes                 = this.attributes
     ): ClassFile = {
-        new ClassFile(
-            version, accessFlags,
+        ClassFile(
+            version.minor, version.major, accessFlags,
             thisType, superclassType, interfaceTypes,
-            fields, methods, attributes
+            fields,
+            methods,
+            attributes
         )
     }
 
@@ -772,7 +772,7 @@ final class ClassFile private (
         findMethod(name, descriptor).filter(m ⇒ !m.isStatic).flatMap { candidateMethod ⇒
             if (candidateMethod.isPrivate) {
                 val message =
-                    s"the private method ${candidateMethod.toJava(this)} "+
+                    s"the private method ${candidateMethod.toJava} "+
                         "\"overrides\" a non-private one defined by a superclass"
                 val logMessage = StandardLogMessage(Warn, Some("project configuration"), message)
                 OPALLogger.logOnce(logMessage)
@@ -862,6 +862,28 @@ object ClassFile {
      *         `java.lang.Object`.
      */
     def apply(
+        minorVersion:   Int                        = 0,
+        majorVersion:   Int                        = 50,
+        accessFlags:    Int                        = { ACC_PUBLIC.mask | ACC_SUPER.mask },
+        thisType:       ObjectType,
+        superclassType: Option[ObjectType]         = Some(ObjectType.Object),
+        interfaceTypes: Seq[ObjectType]            = IndexedSeq.empty,
+        fields:         IndexedSeq[FieldTemplate]  = IndexedSeq.empty,
+        methods:        IndexedSeq[MethodTemplate] = IndexedSeq.empty,
+        attributes:     Attributes                 = IndexedSeq.empty
+    ): ClassFile = {
+        new ClassFile(
+            UShortPair(minorVersion, majorVersion),
+            accessFlags,
+            thisType, superclassType, interfaceTypes,
+            fields.sortWith((f1, f2) ⇒ f1 < f2).map(f ⇒ f.prepareClassFileAttachement),
+            methods.sortWith((m1, m2) ⇒ m1 < m2).map(f ⇒ f.prepareClassFileAttachement),
+            attributes
+        )
+    }
+
+    // This method is only intended to be called by the ClassFileReader/ClassFileBinding!
+    protected[br] def reify(
         minorVersion:   Int                = 0,
         majorVersion:   Int                = 50,
         accessFlags:    Int                = { ACC_PUBLIC.mask | ACC_SUPER.mask },
@@ -876,13 +898,15 @@ object ClassFile {
             UShortPair(minorVersion, majorVersion),
             accessFlags,
             thisType, superclassType, interfaceTypes,
-            fields sortWith { (f1, f2) ⇒ f1 < f2 },
-            methods sortWith { (m1, m2) ⇒ m1 < m2 },
+            fields.sortWith((f1, f2) ⇒ f1 < f2),
+            methods.sortWith((m1, m2) ⇒ m1 < m2),
             attributes
         )
     }
 
-    def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
+    def unapply(
+        classFile: ClassFile
+    ): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
         import classFile._
         Some((accessFlags, thisType, superclassType, interfaceTypes))
     }

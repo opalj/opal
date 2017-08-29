@@ -34,11 +34,17 @@ package br
  *
  * @author Michael Eichberg
  */
-case class MethodParameterTable(parameters: MethodParameters) extends Attribute {
+case class MethodParameterTable(parameters: MethodParameters)
+    extends (Int ⇒ MethodParameter)
+    with Attribute {
 
     override def kindId: Int = MethodParameterTable.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this == other
+    }
+
+    final override def apply(parameterIndex: Int): MethodParameter = parameters(parameterIndex)
 
 }
 

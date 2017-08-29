@@ -42,7 +42,7 @@ import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.Project
 import org.opalj.log.{GlobalLogContext, OPALLogger}
 import org.opalj.util.Nanoseconds
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
+import org.opalj.bugpicker.core.analyses.BugPickerAnalysis.resultsAsXHTML
 import scala.util.control.ControlThrowable
 import org.opalj.issues.Issue
 

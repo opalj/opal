@@ -29,6 +29,8 @@
 package org.opalj.br
 package cfg
 
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
 import org.opalj.collection.immutable.IntSet
@@ -53,11 +55,11 @@ class CFGFactoryTest extends CFGTests {
     def doAnalyzeProject(project: SomeProject): Unit = {
         implicit val classHierarchy = project.classHierarchy
         val methodsWithBodyCount = project.allMethodsWithBody.size
-        val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
-        val executionTime = new java.util.concurrent.atomic.AtomicLong(0L)
+        val methodsCount = new AtomicInteger(0)
+        val executionTime = new AtomicLong(0L)
 
-        val errors = project.parForeachMethodWithBody() { m ⇒
-            val method = m.method
+        val errors = project.parForeachMethodWithBody() { mi ⇒
+            val method = mi.method
             implicit val code = method.body.get
 
             val cfg = time { CFGFactory(code) } { t ⇒ executionTime.addAndGet(t.timeSpan) }
@@ -90,7 +92,7 @@ class CFGFactoryTest extends CFGTests {
                 else
                     allEndPCs += bb.endPC
             }
-            cfgNodesCheck(code, cfg, classHierarchy)
+            cfgNodesCheck(method.toJava, code, cfg, classHierarchy)
 
             // check the wiring
             cfg.allBBs.foreach { bb ⇒

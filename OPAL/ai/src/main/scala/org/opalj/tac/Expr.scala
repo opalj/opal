@@ -53,9 +53,10 @@ import org.opalj.br.PC
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
- * the child expressions are just `Var`s. However, when the code is going to be transformed to
- * human readable code (e.g., Java oder Scala), then it is possible to build up complex/nested
- * expressions '''after''' all transformations and static analyses have been performed.
+ * the child expressions are just [[Var]]s or [[Const]]s.
+ * However, when the code is going to be transformed to human readable code (e.g., Java oder
+ * Scala), then it is possible to build up complex/nested expressions '''after''' all
+ * transformations and static analyses have been performed.
  *
  * @tparam V
  */
@@ -79,18 +80,70 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
      * otherwise, even if the result value is not used, the expression is not (potentially) side
      * effect free.
      *
-     * @note Nested expressions are not supported!
+     * @note '''Nested expressions are not supported'''; i.e. a sub-expression has to be a [[Var]]
+     *       or [[Const]].
      *
      * @return `true` if the expression is ''GUARENTEED'' to have no side effect other than
      *        wasting some CPU cycles if it is not executed.
      */
     def isSideEffectFree: Boolean
 
-    def isVar: Boolean
+    /**
+     * The number of sub expression directly referenced by this expression.
+     * A unary expression has one sub expression (the operand), a binary expression has
+     * two and a method has as many as explicit and implicit (`this`) parameters exist.
+     *
+     * @note Transitive dependencies are not counted.
+     */
+    def subExprCount: Int
 
-    def asVar: V = throw new ClassCastException
+    /**
+     * Returns the sub expression with the given index; if the index is wrong the
+     * result is undefined!
+     */
+    def subExpr(index: Int): Expr[V]
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+
+    // TYPE CAST (RELATED) EXPRESSIONS
+
+    /** `true` if ''this'' expression is a [[Var]]. */
+    def isVar: Boolean
+    def asVar: V = throw new ClassCastException();
+    def asCaughtException: CaughtException[V] = throw new ClassCastException();
+    def asInstanceOf: InstanceOf[V] = throw new ClassCastException();
+    def asCompare: Compare[V] = throw new ClassCastException();
+    def asParam: Param = throw new ClassCastException();
+    def asMethodTypeConst: MethodTypeConst = throw new ClassCastException();
+    def asMethodHandleConst: MethodHandleConst = throw new ClassCastException();
+    def isIntConst: Boolean = false
+    def asIntConst: IntConst = throw new ClassCastException();
+    def isLongConst: Boolean = false
+    def asLongConst: LongConst = throw new ClassCastException();
+    def isFloatConst: Boolean = false
+    def asFloatConst: FloatConst = throw new ClassCastException();
+    def isDoubleConst: Boolean = false
+    def asDoubleConst: DoubleConst = throw new ClassCastException();
+    def isStringConst: Boolean = false
+    def asStringConst: StringConst = throw new ClassCastException();
+    def isClassConst: Boolean = false
+    def asClassConst: ClassConst = throw new ClassCastException();
+    def isNullExpr: Boolean = false
+    def asNullExpr: NullExpr = throw new ClassCastException();
+    def asBinaryExpr: BinaryExpr[V] = throw new ClassCastException();
+    def asPrefixExpr: PrefixExpr[V] = throw new ClassCastException();
+    def asPrimitiveTypeCastExpr: PrimitiveTypecastExpr[V] = throw new ClassCastException();
+    def asNew: New = throw new ClassCastException();
+    def asNewArray: NewArray[V] = throw new ClassCastException();
+    def asArrayLoad: ArrayLoad[V] = throw new ClassCastException();
+    def asArrayLength: ArrayLength[V] = throw new ClassCastException();
+    def asGetField: GetField[V] = throw new ClassCastException();
+    def asGetStatic: GetStatic = throw new ClassCastException();
+    def asInvokedynamic: Invokedynamic[V] = throw new ClassCastException();
+    def asNonVirtualFunctionCall: NonVirtualFunctionCall[V] = throw new ClassCastException();
+    def asVirtualFunctionCall: VirtualFunctionCall[V] = throw new ClassCastException();
+    def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
+
 }
 
 /**
@@ -103,13 +156,17 @@ case class CaughtException[+V <: Var[V]](
         private var throwingStmts: IntSet
 ) extends Expr[V] {
 
-    final def astID: Int = CaughtException.ASTID
+    final override def asCaughtException: this.type = this
+    final override def astID: Int = CaughtException.ASTID
+    final override def cTpe: ComputationalType = ComputationalTypeReference
+    final override def isVar: Boolean = false
+    final override def isSideEffectFree: Boolean = false
 
-    final def cTpe: ComputationalType = ComputationalTypeReference
-
-    final def isVar: Boolean = false
-
-    final def isSideEffectFree: Boolean = false
+    /**
+     * It does not take any explicit value.
+     */
+    final override def subExprCount: Int = 0
+    final override def subExpr(index: Int): Expr[V] = throw new IndexOutOfBoundsException();
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         throwingStmts = throwingStmts map { stmt ⇒
@@ -153,13 +210,13 @@ object CaughtException {
  */
 case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Expr[V] {
 
-    final def astID: Int = InstanceOf.ASTID
-
-    final def cTpe: ComputationalType = ComputationalTypeInt
-
-    final def isSideEffectFree: Boolean = true
-
-    final def isVar: Boolean = false
+    final override def asInstanceOf: this.type = this
+    final override def astID: Int = InstanceOf.ASTID
+    final override def cTpe: ComputationalType = ComputationalTypeInt
+    final override def isSideEffectFree: Boolean = true
+    final override def isVar: Boolean = false
+    final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = value
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         value.remapIndexes(pcToIndex)
@@ -180,16 +237,13 @@ case class Compare[+V <: Var[V]](
         right:     Expr[V]
 ) extends Expr[V] {
 
-    final def astID: Int = Compare.ASTID
-
-    final def cTpe: ComputationalType = ComputationalTypeInt
-
-    final def isSideEffectFree: Boolean = {
-        assert(left.isVar && right.isVar)
-        true
-    }
-
-    final def isVar: Boolean = false
+    final override def asCompare: this.type = this
+    final override def astID: Int = Compare.ASTID
+    final override def cTpe: ComputationalType = ComputationalTypeInt
+    final override def isSideEffectFree: Boolean = true
+    final override def isVar: Boolean = false
+    final override def subExprCount: Int = 2
+    final override def subExpr(index: Int): Expr[V] = if (index == 0) left else right
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
@@ -200,7 +254,10 @@ case class Compare[+V <: Var[V]](
 }
 object Compare { final val ASTID = -4 }
 
-trait ValueExpr[+V <: Var[V]] extends Expr[V]
+trait ValueExpr[+V <: Var[V]] extends Expr[V] {
+    final override def subExprCount: Int = 0
+    final override def subExpr(index: Int): Expr[V] = throw new IndexOutOfBoundsException();
+}
 
 /**
  * Explicit reference to a parameter. Parameter statements '''are only used by the naive
@@ -208,12 +265,10 @@ trait ValueExpr[+V <: Var[V]] extends Expr[V]
  * of the register values.
  */
 case class Param(cTpe: ComputationalType, name: String) extends ValueExpr[Nothing] {
-
-    final def astID: Int = Param.ASTID
-
-    final def isVar: Boolean = false
-
-    final def isSideEffectFree: Boolean = true
+    final override def asParam: this.type = this
+    final override def astID: Int = Param.ASTID
+    final override def isVar: Boolean = false
+    final override def isSideEffectFree: Boolean = true
 }
 
 object Param { final val ASTID = -1 }
@@ -222,86 +277,97 @@ object Param { final val ASTID = -1 }
  * A constant value expression.
  */
 sealed abstract class Const extends ValueExpr[Nothing] {
-
-    final def isVar: Boolean = false
-
-    final def isSideEffectFree: Boolean = true
-
+    final override def isVar: Boolean = false
+    final override def isSideEffectFree: Boolean = true
+    def tpe: Type
 }
 
 case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
-    final def astID: Int = MethodTypeConst.ASTID
-    final def tpe = ObjectType.MethodType
-    final def cTpe: ComputationalType = ComputationalTypeReference
+    final override def asMethodTypeConst: this.type = this
+    final override def astID: Int = MethodTypeConst.ASTID
+    final override def tpe = ObjectType.MethodType
+    final override def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"MethodTypeConst(pc=$pc,${value.toJava})"
 }
 object MethodTypeConst { final val ASTID = -10 }
 
 case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
-    final def astID: Int = MethodHandleConst.ASTID
-    final def tpe = ObjectType.MethodHandle
-    final def cTpe: ComputationalType = ComputationalTypeReference
+    final override def asMethodHandleConst: this.type = this
+    final override def astID: Int = MethodHandleConst.ASTID
+    final override def tpe = ObjectType.MethodHandle
+    final override def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"MethodHandleConst(pc=$pc,${value.toJava})"
 }
 object MethodHandleConst { final val ASTID = -11 }
 
-sealed abstract class SimpleValueConst extends Const {
-
-    def tpe: Type
-}
+sealed abstract class SimpleValueConst extends Const
 
 case class IntConst(pc: PC, value: Int) extends SimpleValueConst {
-    final def astID: Int = IntConst.ASTID
-    final def tpe = IntegerType
-    final def cTpe: ComputationalType = ComputationalTypeInt
+    final override def isIntConst: Boolean = true
+    final override def asIntConst: this.type = this
+    final override def astID: Int = IntConst.ASTID
+    final override def tpe = IntegerType
+    final override def cTpe: ComputationalType = ComputationalTypeInt
     override def toString: String = s"IntConst(pc=$pc,$value)"
 }
 object IntConst { final val ASTID = -5 }
 
 case class LongConst(pc: PC, value: Long) extends SimpleValueConst {
-    final def astID: Int = LongConst.ASTID
-    final def tpe = LongType
-    final def cTpe: ComputationalType = ComputationalTypeLong
+    final override def isLongConst: Boolean = true
+    final override def asLongConst: this.type = this
+    final override def astID: Int = LongConst.ASTID
+    final override def tpe = LongType
+    final override def cTpe: ComputationalType = ComputationalTypeLong
     override def toString: String = s"LongConst(pc=$pc,$value)"
 }
 object LongConst { final val ASTID = -6 }
 
 case class FloatConst(pc: PC, value: Float) extends SimpleValueConst {
-    final def astID: Int = FloatConst.ASTID
-    final def tpe = FloatType
-    final def cTpe: ComputationalType = ComputationalTypeFloat
+    final override def isFloatConst: Boolean = true
+    final override def asFloatConst: this.type = this
+    final override def astID: Int = FloatConst.ASTID
+    final override def tpe = FloatType
+    final override def cTpe: ComputationalType = ComputationalTypeFloat
     override def toString: String = s"FloatConst(pc=$pc,$value)"
 }
 object FloatConst { final val ASTID = -7 }
 
 case class DoubleConst(pc: PC, value: Double) extends SimpleValueConst {
-    final def astID: Int = DoubleConst.ASTID
-    final def tpe = DoubleType
-    final def cTpe: ComputationalType = ComputationalTypeDouble
+    final override def isDoubleConst: Boolean = true
+    final override def asDoubleConst: this.type = this
+    final override def astID: Int = DoubleConst.ASTID
+    final override def tpe = DoubleType
+    final override def cTpe: ComputationalType = ComputationalTypeDouble
     override def toString: String = s"DoubleConst(pc=$pc,$value)"
 }
 object DoubleConst { final val ASTID = -8 }
 
 case class StringConst(pc: PC, value: String) extends SimpleValueConst {
-    final def astID: Int = StringConst.ASTID
-    final def tpe = ObjectType.String
-    final def cTpe: ComputationalType = ComputationalTypeReference
+    final override def isStringConst: Boolean = true
+    final override def asStringConst: this.type = this
+    final override def astID: Int = StringConst.ASTID
+    final override def tpe = ObjectType.String
+    final override def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"StringConst(pc=$pc,$value)"
 }
 object StringConst { final val ASTID = -9 }
 
 case class ClassConst(pc: PC, value: ReferenceType) extends SimpleValueConst {
-    final def astID: Int = ClassConst.ASTID
-    final def tpe = ObjectType.Class
-    final def cTpe: ComputationalType = ComputationalTypeReference
+    final override def isClassConst: Boolean = true
+    final override def asClassConst: this.type = this
+    final override def astID: Int = ClassConst.ASTID
+    final override def tpe = ObjectType.Class
+    final override def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"ClassConst(pc=$pc,${value.toJava})"
 }
 object ClassConst { final val ASTID = -12 }
 
 case class NullExpr(pc: PC) extends SimpleValueConst {
-    final def astID: Int = NullExpr.ASTID
-    final def tpe = ObjectType.Object // TODO Should we introduce a fake type such as "java.null"
-    final def cTpe: ComputationalType = ComputationalTypeReference
+    final override def isNullExpr: Boolean = true
+    final override def asNullExpr: this.type = this
+    final override def astID: Int = NullExpr.ASTID
+    final override def tpe = ObjectType.Object // TODO Should we introduce a fake type such as "java.null"
+    final override def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"NullExpr(pc=$pc)"
 }
 object NullExpr { final val ASTID = -13 }
@@ -316,16 +382,20 @@ case class BinaryExpr[+V <: Var[V]](
         left: Expr[V], right: Expr[V]
 ) extends Expr[V] {
 
-    final def astID: Int = BinaryExpr.ASTID
+    final override def isVar: Boolean = false
+    final override def asBinaryExpr: this.type = this
+    final override def astID: Int = BinaryExpr.ASTID
+    final override def subExprCount: Int = 2
+    final override def subExpr(index: Int): Expr[V] = if (index == 0) left else right
 
-    final def isSideEffectFree: Boolean = {
+    final override def isSideEffectFree: Boolean = {
         // For now, we have to consider a potential "div by zero exception";
         // a better handling is only possible if we know that the value is not zero (0).
         op != BinaryArithmeticOperators.Divide ||
-            (right.cTpe != ComputationalTypeInt && right.cTpe != ComputationalTypeLong)
+            (right.cTpe != ComputationalTypeInt && right.cTpe != ComputationalTypeLong) ||
+            (right.isLongConst && right.asLongConst.value != 0) ||
+            (right.isIntConst && right.asIntConst.value != 0)
     }
-
-    final def isVar: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         left.remapIndexes(pcToIndex)
@@ -346,11 +416,12 @@ case class PrefixExpr[+V <: Var[V]](
         operand: Expr[V]
 ) extends Expr[V] {
 
-    final def astID: Int = PrefixExpr.ASTID
-
-    final def isSideEffectFree: Boolean = { assert(operand.isVar); true }
-
-    final def isVar: Boolean = false
+    final override def isVar: Boolean = false
+    final override def asPrefixExpr: this.type = this
+    final override def astID: Int = PrefixExpr.ASTID
+    final override def isSideEffectFree: Boolean = true
+    final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = operand
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
@@ -361,21 +432,23 @@ case class PrefixExpr[+V <: Var[V]](
 object PrefixExpr { final val ASTID = -15 }
 
 case class PrimitiveTypecastExpr[+V <: Var[V]](
-        pc: PC, targetTpe: BaseType,
-        operand: Expr[V]
+        pc:        PC,
+        targetTpe: BaseType,
+        operand:   Expr[V]
 ) extends Expr[V] {
 
-    final def astID: Int = PrimitiveTypecastExpr.ASTID
-
-    final def cTpe: ComputationalType = targetTpe.computationalType
-
-    final def isSideEffectFree: Boolean = { assert(operand.isVar); true }
-
-    final def isVar: Boolean = false
+    final override def isVar: Boolean = false
+    final override def asPrimitiveTypeCastExpr: this.type = this
+    final override def astID: Int = PrimitiveTypecastExpr.ASTID
+    final override def cTpe: ComputationalType = targetTpe.computationalType
+    final override def isSideEffectFree: Boolean = true
+    final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = operand
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         operand.remapIndexes(pcToIndex)
     }
+
     override def toString: String = s"PrimitiveTypecastExpr(pc=$pc,$targetTpe,$operand)"
 }
 object PrimitiveTypecastExpr { final val ASTID = -16 }
@@ -387,18 +460,19 @@ object PrimitiveTypecastExpr { final val ASTID = -16 }
  */
 case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
 
-    final def astID: Int = New.ASTID
-
-    final def cTpe: ComputationalType = ComputationalTypeReference
+    final override def isVar: Boolean = false
+    final override def asNew: this.type = this
+    final override def astID: Int = New.ASTID
+    final override def cTpe: ComputationalType = ComputationalTypeReference
+    final override def subExprCount: Int = 0
+    final override def subExpr(index: Int): Nothing = throw new IndexOutOfBoundsException();
 
     /**
      * Always returns `true` since the new instruction just allocates memory, but does NOT call the
      * constructor. Hence, except of a `java.lang.OutOfMemoryError`. which we do not
      * model any further, nothing will happen if the value is not used any further.
      */
-    final def isSideEffectFree: Boolean = true
-
-    final def isVar: Boolean = false
+    final override def isSideEffectFree: Boolean = true
 
     override def toString: String = s"New(pc=$pc,${tpe.toJava})"
 }
@@ -411,13 +485,19 @@ object New { final val ASTID = -17 }
  */
 case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) extends Expr[V] {
 
-    final def astID: Int = NewArray.ASTID
+    final override def isVar: Boolean = false
+    final override def asNewArray: this.type = this
+    final override def astID: Int = NewArray.ASTID
+    final override def cTpe: ComputationalType = ComputationalTypeReference
+    final override def subExprCount: Int = counts.size
+    final override def subExpr(index: Int): Expr[V] = counts(index)
 
-    final def cTpe: ComputationalType = ComputationalTypeReference
-
-    final def isSideEffectFree: Boolean = { assert(counts.forall(_.isVar)); true }
-
-    final def isVar: Boolean = false
+    /**
+     * Always returns `true` since the instruction just allocates memory. Hence, except of a
+     * `java.lang.OutOfMemoryError`. which we do not model any further,
+     * nothing will happen if the value is not used any further.
+     */
+    final override def isSideEffectFree: Boolean = true
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         counts.foreach { c ⇒ c.remapIndexes(pcToIndex) }
@@ -431,13 +511,13 @@ object NewArray { final val ASTID = -18 }
 
 case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) extends Expr[V] {
 
-    final def astID: Int = ArrayLoad.ASTID
-
-    final def cTpe: ComputationalType = ComputationalTypeReference
-
-    final def isSideEffectFree: Boolean = { assert(index.isVar && arrayRef.isVar); true }
-
-    final def isVar: Boolean = false
+    final override def asArrayLoad: this.type = this
+    final override def astID: Int = ArrayLoad.ASTID
+    final override def cTpe: ComputationalType = ComputationalTypeReference
+    final override def isSideEffectFree: Boolean = true
+    final override def isVar: Boolean = false
+    final override def subExprCount: Int = 2
+    final override def subExpr(index: Int): Expr[V] = if (index == 0) this.index else arrayRef
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         index.remapIndexes(pcToIndex)
@@ -450,13 +530,13 @@ object ArrayLoad { final val ASTID = -19 }
 
 case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends Expr[V] {
 
-    final def astID: Int = ArrayLength.ASTID
-
-    final def cTpe: ComputationalType = ComputationalTypeInt
-
-    final def isSideEffectFree: Boolean = { assert(arrayRef.isVar); true }
-
-    final def isVar: Boolean = false
+    final override def asArrayLength: this.type = this
+    final override def astID: Int = ArrayLength.ASTID
+    final override def cTpe: ComputationalType = ComputationalTypeInt
+    final override def isSideEffectFree: Boolean = { assert(arrayRef.isVar); false /* potential NPE */ }
+    final override def isVar: Boolean = false
+    final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = arrayRef
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
@@ -468,11 +548,10 @@ object ArrayLength { final val ASTID = -20 }
 
 abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
 
+    final override def cTpe: ComputationalType = declaredFieldType.computationalType
+    final override def isVar: Boolean = false
+
     def declaredFieldType: FieldType
-
-    final def cTpe: ComputationalType = declaredFieldType.computationalType
-
-    final def isVar: Boolean = false
 
 }
 
@@ -484,7 +563,10 @@ case class GetField[+V <: Var[V]](
         objRef:            Expr[V]
 ) extends FieldRead[V] {
 
-    final def astID: Int = GetField.ASTID
+    final override def asGetField: this.type = this
+    final override def astID: Int = GetField.ASTID
+    final override def subExprCount: Int = 1
+    final override def subExpr(index: Int): Expr[V] = objRef
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         objRef.remapIndexes(pcToIndex)
@@ -505,9 +587,11 @@ case class GetStatic(
         declaredFieldType: FieldType
 ) extends FieldRead[Nothing] {
 
-    final def astID: Int = GetStatic.ASTID
-
-    final def isSideEffectFree: Boolean = true
+    final override def asGetStatic: this.type = this
+    final override def astID: Int = GetStatic.ASTID
+    final override def isSideEffectFree: Boolean = true
+    final override def subExprCount: Int = 0
+    final override def subExpr(index: Int): Nothing = throw new IndexOutOfBoundsException();
 
     override def toString: String = {
         s"GetStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava})"
@@ -523,16 +607,14 @@ case class Invokedynamic[+V <: Var[V]](
         params:          Seq[Expr[V]]
 ) extends Expr[V] {
 
-    final def astID: Int = Invokedynamic.ASTID
-
-    final def cTpe: ComputationalType = descriptor.returnType.computationalType
-
-    final def isSideEffectFree: Boolean = {
-        // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
-        false
-    }
-
-    final def isVar: Boolean = false
+    final override def asInvokedynamic: this.type = this
+    final override def isVar: Boolean = false
+    final override def astID: Int = Invokedynamic.ASTID
+    final override def cTpe: ComputationalType = descriptor.returnType.computationalType
+    // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
+    final override def isSideEffectFree: Boolean = false
+    final override def subExprCount: Int = params.size
+    final override def subExpr(index: Int): Expr[V] = params(index)
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -548,14 +630,16 @@ object Invokedynamic { final val ASTID = -23 }
 
 sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 
-    final def cTpe: ComputationalType = descriptor.returnType.computationalType
-
-    final def isVar: Boolean = false
-
+    final override def cTpe: ComputationalType = descriptor.returnType.computationalType
+    final override def isVar: Boolean = false
+    final override def subExprCount: Int = params.size
+    final override def subExpr(index: Int): Expr[V] = params(index)
 }
 
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
+
     def receiver: Expr[V]
+
 }
 
 /**
@@ -584,9 +668,9 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends InstanceFunctionCall[V] {
 
-    final def astID: Int = NonVirtualFunctionCall.ASTID
-
-    final def isSideEffectFree: Boolean = false
+    final override def asNonVirtualFunctionCall: this.type = this
+    final override def astID: Int = NonVirtualFunctionCall.ASTID
+    final override def isSideEffectFree: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
@@ -612,9 +696,9 @@ case class VirtualFunctionCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends InstanceFunctionCall[V] {
 
-    final def astID: Int = VirtualFunctionCall.ASTID
-
-    final def isSideEffectFree: Boolean = false
+    final override def asVirtualFunctionCall: this.type = this
+    final override def astID: Int = VirtualFunctionCall.ASTID
+    final override def isSideEffectFree: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
@@ -639,9 +723,9 @@ case class StaticFunctionCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends FunctionCall[V] {
 
-    final def astID: Int = StaticFunctionCall.ASTID
-
-    final def isSideEffectFree: Boolean = false
+    final override def asStaticFunctionCall: this.type = this
+    final override def astID: Int = StaticFunctionCall.ASTID
+    final override def isSideEffectFree: Boolean = false
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -670,17 +754,14 @@ object StaticFunctionCall { final val ASTID = -26 }
  */
 trait Var[+V <: Var[V]] extends ValueExpr[V] { this: V ⇒
 
-    final def astID: Int = Var.ASTID
+    final override def isVar: Boolean = true
+    final override def asVar: V = this
+    final override def astID: Int = Var.ASTID
 
     /**
      * A ''human readable'' name of the local variable.
      */
     def name: String
-
-    final def isVar: Boolean = true
-
-    final override def asVar: V = this
-
 }
 
 object Var {

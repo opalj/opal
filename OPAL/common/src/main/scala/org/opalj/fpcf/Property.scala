@@ -82,36 +82,11 @@ trait Property extends PropertyMetaInformation {
 
 }
 
-/**
- * Ordered properties define a definitive order between all properties of a respective kind;
- * all properties that are of the same kind have to inherit from ordered property or none.
- *
- * This information is used by the property store when debugging is turned on to test if an
- * analysis which derives a new property always derives a more precise property.
- *
- * @author Michael Eichberg
- */
-trait OrderedProperty extends Property {
-
-    /**
-     * Returns `true`.
-     */
-    final override def isOrdered: Boolean = true
-
-    /**
-     * Returns `this`.
-     */
-    final override def asOrderedProperty: this.type = this
-
-    /**
-     * Tests if this property is a valid successor property of the other property.
-     *
-     * @return None if this property is a valid successor of the other property else
-     *         `Some(description:String)` which describes the problem is returned.
-     */
-    def isValidSuccessorOf(other: OrderedProperty): Option[String]
-
-}
+//
+//
+// FRAMEWORK INTERNAL PROPERTIES
+//
+//
 
 private[fpcf] trait PropertyIsBeingComputed extends Property {
 
@@ -133,10 +108,10 @@ private[fpcf] object PropertyIsBeingComputed {
  *
  * This property is used to synchronize access to the property if the property
  * is computed using a direct property computation; in this case the first process - which also
- * performs the computation - decrements the CountDownLatch once the computation has succeed.
+ * performs the computation - decrements the CountDownLatch once the computation has succeeded.
  * All other processes just wait until the CountDownLatch is decremented.
  *
- * Recall that a direct property computation is executed by the thread that querys the thread and
+ * Recall that a direct property computation is executed by the thread that queries the thread and
  * that a direct property computation is always only allowed to depend on either previously
  * computed properties or properties whose computation must not have a dependency on the currently
  * computed property.

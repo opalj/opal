@@ -30,13 +30,14 @@ package org.opalj
 package fpcf
 package properties
 
-//import scala.collection.Set
 import org.opalj.fpcf.PropertyComputation
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.br.PC
 import org.opalj.br.ObjectType
+import org.opalj.br.BooleanType
 import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
 
@@ -45,20 +46,20 @@ import org.opalj.br.instructions._
  * This includes the set of exceptions thrown by called methods (if any). The property '''does not
  * take the exceptions of methods which override the respective method into account'''.
  * Nevertheless, in case of a method call all potential receiver methods are
- * taken into consideration.
+ * taken into consideration; if the set is unbounded, `ThrownExceptionsAreUnknown` is returned.
  *
  * Note that it may be possible to compute some meaningful upper type bound for the set of
  * thrown exceptions even if methods are called for which the set of thrown exceptions is unknown.
  * This is generally the case if those calls are all done in a try block but the catch/finally
- * blocks only call known methods - if any.
+ * blocks only calls known methods - if any.
  * An example is shown next and even if we assume that we don't know
  * the exceptions potentially thrown by `Class.forName` we could still determine that this method
  * will never throw an exception.
  * {{{
  * object Validator {
- *  def isAvailable(s : String) : Boolean = {
- *      try { Class.forName(s); true} finally {return false;}
- *  }
+ *      def isAvailable(s : String) : Boolean = {
+ *          try { Class.forName(s); true} finally {return false;}
+ *      }
  * }
  * }}}
  *
@@ -112,6 +113,7 @@ object NoExceptionsAreThrown {
     }
 
     final val MethodIsAbstract = NoExceptionsAreThrown("method is abstract")
+
 }
 
 final case class ThrownExceptionsAreUnknown(reason: String) extends ThrownExceptions {
@@ -123,24 +125,23 @@ final case class ThrownExceptionsAreUnknown(reason: String) extends ThrownExcept
 object ThrownExceptionsAreUnknown {
 
     final val UnableToComputeThrownException = {
-        ThrownExceptionsAreUnknown("a complex cycle was detected which the analysis could not resolve")
+        ThrownExceptionsAreUnknown("a cycle was detected which the analysis could not resolve")
     }
 
     final val UnknownExceptionIsThrown = {
-        ThrownExceptionsAreUnknown("the precise type(s) of a thrown exception could not be determined")
+        ThrownExceptionsAreUnknown("unable to determine the precise type(s) of a thrown exception")
     }
 
     final val SomeCallerThrowsUnknownExceptions = {
         ThrownExceptionsAreUnknown("called method throws unknown exceptions")
     }
 
-    final val MethodIsNative = {
-        ThrownExceptionsAreUnknown("the method is native")
-    }
+    final val MethodIsNative = ThrownExceptionsAreUnknown("the method is native")
 
     final val MethodBodyIsNotAvailable = {
         ThrownExceptionsAreUnknown("the method body is not available")
     }
+
 }
 
 //
@@ -158,7 +159,7 @@ object ThrownExceptionsAreUnknown {
  * The analysis has limited support for the following cases to be more precise in case of
  * common code patterns (e.g., a standard getter):
  *  - If all instance based field reads are using the self reference "this" and
- *    "this" is used in the expected manner the [[org.opalj.br.instructions.GETFIELD]]
+ *    "this" is used in the expected manner
  *  - If no [[org.opalj.br.instructions.MONITORENTER]]/[[org.opalj.br.instructions.MONITOREXIT]]
  *    instructions are found, the return instructions will not throw
  *    `IllegalMonitorStateException`s.
@@ -167,6 +168,8 @@ object ThrownExceptionsAreUnknown {
  * to '''never throw exceptions'''.
  */
 object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ ThrownExceptions) {
+
+    final val ObjectEqualsMethodDescriptor = MethodDescriptor(ObjectType.Object, BooleanType)
 
     def apply(ps: PropertyStore, e: Entity): ThrownExceptions = {
         e match { case m: Method ⇒ this(ps, m) }
@@ -196,10 +199,11 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
         var isSynchronizationUsed = false
 
         var isLocalVariable0Updated = false
-        var fielAccessMayThrowNullPointerException = false
+        var fieldAccessMayThrowNullPointerException = false
         var isFieldAccessed = false
 
-        /*
+        /* Implicitly (i.e., as a side effect) collects the thrown exceptions in the exceptions set.
+         *
          * @return `true` if it is possible to collect all potentially thrown exceptions.
          */
         def collectAllExceptions(pc: PC, instruction: Instruction): Boolean = {
@@ -208,8 +212,21 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                 case ATHROW.opcode ⇒
                     result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
                     false
+                case INVOKESPECIAL.opcode ⇒
+                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
+                    if ((declaringClass eq ObjectType.Object) && (
+                        (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
+                        (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
+                        (name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
+                        (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
+                    )) {
+                        true
+                    } else {
+                        result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                        false
+                    }
                 case INVOKEDYNAMIC.opcode |
-                    INVOKESPECIAL.opcode | INVOKESTATIC.opcode |
+                    INVOKESTATIC.opcode |
                     INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode ⇒
                     result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
                     false
@@ -224,13 +241,13 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                 case ISTORE.opcode | LSTORE.opcode |
                     FSTORE.opcode | DSTORE.opcode |
                     ASTORE.opcode ⇒
-                    if (instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex == 0)
-                        isLocalVariable0Updated = true
+                    val lvIndex = instruction.indexOfWrittenLocal
+                    if (lvIndex == 0) isLocalVariable0Updated = true
                     true
 
                 case GETFIELD.opcode ⇒
                     isFieldAccessed = true
-                    fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
+                    fieldAccessMayThrowNullPointerException ||=
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
                         cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
@@ -239,7 +256,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
 
                 case PUTFIELD.opcode ⇒
                     isFieldAccessed = true
-                    fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
+                    fieldAccessMayThrowNullPointerException = fieldAccessMayThrowNullPointerException ||
                         isStaticMethod || // <= the receiver is some object
                         isLocalVariable0Updated || // <= we don't know the receiver object at all
                         cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
@@ -251,7 +268,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                             instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
                                 valueInstruction.isInstanceOf[StackManagementInstruction] ||
                                 // we have to ensure that our "this" reference is not used for something else... =>
-                                valueInstruction.numberOfPoppedOperands { idx ⇒ throw new UnknownError } > 0
+                                valueInstruction.numberOfPoppedOperands(NotRequired) > 0
                             // the number of pushed operands is always equal or smaller than 1
                             // except of the stack management instructions
                         }
@@ -273,7 +290,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (lci: LoadConstantInstruction[Int] @unchecked) if lci.value != 0 ⇒
+                            case (i: LoadConstantInstruction[Int] @unchecked) if i.value != 0 ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -290,7 +307,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (lci: LoadConstantInstruction[Long] @unchecked) if lci.value != 0L ⇒
+                            case (i: LoadConstantInstruction[Long] @unchecked) if i.value != 0L ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -308,29 +325,30 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
             }
         }
         val areAllExceptionsCollected = code.forall(collectAllExceptions)
-        if (fielAccessMayThrowNullPointerException || (isFieldAccessed && isLocalVariable0Updated)) {
+        if (!areAllExceptionsCollected) {
+            assert(result ne null)
+            return result;
+        }
+        if (fieldAccessMayThrowNullPointerException ||
+            (isFieldAccessed && isLocalVariable0Updated)) {
             exceptions += ObjectType.NullPointerException
         }
         if (isSynchronizationUsed) {
             exceptions += ObjectType.IllegalMonitorStateException
         }
 
-        if (areAllExceptionsCollected) {
-            assert(result eq null)
-            if (exceptions.isEmpty)
-                NoExceptionsAreThrown.NoInstructionThrowsExceptions
-            else
-                new AllThrownExceptions(exceptions, false)
-        } else {
-            assert(result ne null)
-            result
-        }
+        if (exceptions.isEmpty)
+            NoExceptionsAreThrown.NoInstructionThrowsExceptions
+        else
+            new AllThrownExceptions(exceptions, false)
     }
 
 }
 
 class ThrownExceptionsFallbackAnalysis(ps: PropertyStore) extends PropertyComputation[Method] {
+
     def apply(m: Method): PropertyComputationResult = {
         ImmediateResult(m, ThrownExceptionsFallbackAnalysis(ps, m))
     }
+
 }

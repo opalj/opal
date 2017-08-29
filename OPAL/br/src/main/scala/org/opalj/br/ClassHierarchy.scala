@@ -174,7 +174,8 @@ class ClassHierarchy private (
     }
 
     /**
-     * Iterates over all interfaces which only inherit from java.lang.Object; that is, Iterates
+     * Iterates over all interfaces which only inherit from `java.lang.Object` and adds the
+     * types to the given `Growable` collection. I.e.,iterates
      * over all interfaces which are at the top of the interface inheritance hierarchy.
      */
     def rootInterfaceTypes(coll: Growable[ObjectType]): coll.type = {
@@ -481,7 +482,17 @@ class ClassHierarchy private (
      *          set.
      * @return  The set of all direct and indirect subtypes of the given type.
      */
-    def allSubtypes(objectType: ObjectType, reflexive: Boolean): mutable.Set[ObjectType] = {
+    def allSubtypes(objectType: ObjectType, reflexive: Boolean): Set[ObjectType] = {
+        subtypes.get(objectType) match {
+            case Some(subtypeInformation) ⇒
+                val result = subtypeInformation.all
+                if (reflexive)
+                    result + objectType
+                else
+                    result
+            case None ⇒ if (reflexive) UIDSet1(objectType) else UIDSet.empty
+        }
+        /* REMOVE as of 27.7.2017
         val subtypes =
             if (reflexive)
                 mutable.HashSet(objectType)
@@ -489,12 +500,75 @@ class ClassHierarchy private (
                 mutable.HashSet.empty[ObjectType]
         foreachSubtype(objectType) { subtype ⇒ subtypes add subtype }
         subtypes
+    */
+    }
+
+    /**
+     * Enables the guided processing of all subtypes of the given type. This function enables you
+     * to compute some value based on the subtypes of the given type and – at the same time – to
+     * control the process of traversing the subtypes.
+     *
+     * @param initial The initial value of the computation. This is also the value that
+     *        will be returned if the given type has no subtypes and `reflexive` is `false`.
+     * @param f A function that computes the new value given the current value and which also
+     *        returns the information whether the computation should be aborted using the
+     *        current value of type `t` or if the subtypes of the current subtype should be
+     *        traversed. The commented signature of `f` is:
+     *        {{{
+     *        f: (T, ObjectType) ⇒ (T /*result*/ , Boolean /*skip subtypes*/ , Boolean /*abort*/ )
+     *        }}}
+     */
+    def processSubtypes[@specialized(Boolean) T](
+        objectType: ObjectType,
+        reflexive:  Boolean    = false
+    )(
+        initial: T
+    )(
+        f: (T, ObjectType) ⇒ (T /*result*/ , Boolean /*skip subtypes*/ , Boolean /*abort*/ )
+    ): T = {
+        if (isUnknown(objectType))
+            return initial;
+
+        var processed = UIDSet.empty[ObjectType]
+
+        def forallSubtypes(initial: T, objectType: ObjectType): (T, Boolean /*continue*/ ) = {
+            val oid = objectType.id
+            var t: T = initial
+            val continue = {
+                subclassTypesMap(oid).forall { subtype ⇒
+                    val (newT, continue) = process(t, subtype); t = newT; continue
+                } &&
+                    subinterfaceTypesMap(oid).forall { subtype ⇒
+                        val (newT, continue) = process(t, subtype); t = newT; continue
+                    }
+            }
+            (t, continue)
+        }
+
+        def process(t: T, objectType: ObjectType): (T, Boolean /*continue*/ ) = {
+            if (processed.contains(objectType))
+                return (t, true);
+
+            processed += objectType
+
+            val (newT, skipSubtypes, abort) = f(t, objectType)
+            if (abort) (newT, false)
+            else if (skipSubtypes) (newT, true)
+            else forallSubtypes(newT, objectType)
+        }
+
+        val (newResult, _) = {
+            if (reflexive) {
+                process(initial, objectType)
+            } else {
+                forallSubtypes(initial, objectType)
+            }
+        }
+        newResult
     }
 
     /**
      * Calls the function `f` for each known (direct or indirect) subtype of the given type.
-     * If the given `objectType` identifies an interface type then it is possible
-     * that `f` is passed the same `ObjectType` multiple times.
      *
      * @note    No explicit `isKnown` check is required; if the type is unknown nothing
      *          will happen.
@@ -506,6 +580,9 @@ class ClassHierarchy private (
         if (isUnknown(objectType))
             return ;
 
+        subtypes.get(objectType) foreach { subtypeInformation ⇒ subtypeInformation.foreach(f) }
+
+        /* REMOVE as of 27.7.2017
         // We had to change this method to get better performance.
         // The naive implementation using foreach and (mutual) recursion
         // didn't perform well.
@@ -527,6 +604,7 @@ class ClassHierarchy private (
                         allSubtypes
             }
         }
+        */
     }
 
     /**
@@ -752,13 +830,16 @@ class ClassHierarchy private (
 
     /**
      * Calls the given function `f` for each of the given type's supertypes.
-     * It is possible that the same super interface type `I` is passed multiple
-     * times to `f` when `I` is implemented multiple times by the given type's supertypes.
+     *
+     * This function is not reflexive.
      */
     def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
         if (isUnknown(objectType))
             return ;
 
+        supertypes.get(objectType).foreach(supertypes ⇒ supertypes.foreach(f))
+
+        /* REMOVE as of 27.7.2017
         val oid = objectType.id
         val superclassType = superclassTypeMap(oid)
         if (superclassType ne null) {
@@ -773,6 +854,7 @@ class ClassHierarchy private (
                 foreachSupertype(superinterfaceType)(f)
             }
         }
+        */
     }
 
     /**
@@ -838,16 +920,18 @@ class ClassHierarchy private (
     /**
      * The set of all supertypes of the given type.
      *
+     * @note  Whenever possible, one of the higher-order functions should be used to avoid the
+     *        creation of intermediate data-structures.
+     *
      * @param reflexive If `true` the returned set will also contain the given type.
      */
-    def allSupertypes(
-        objectType: ObjectType,
-        reflexive:  Boolean    = false
-    ): UIDSet[ObjectType] = {
-        var supertypes: UIDSet[ObjectType] = UIDSet.empty
-        foreachSupertype(objectType) { supertype ⇒ supertypes += supertype }
-        if (reflexive) supertypes += objectType
-        supertypes
+    def allSupertypes(objectType: ObjectType, reflexive: Boolean = false): UIDSet[ObjectType] = {
+        if (isUnknown(objectType))
+            return UIDSet.empty
+
+        var ts = supertypes.get(objectType).get.all
+        if (reflexive) ts += objectType
+        ts
     }
 
     /**
@@ -2348,14 +2432,14 @@ class ClassHierarchy private (
                     utbB.head.asObjectType,
                     utbA.asInstanceOf[UIDSet[ObjectType]],
                     true
-                ).asInstanceOf[UpperTypeBound]
+                )
             }
         } else {
             joinUpperTypeBounds(
                 utbA.asInstanceOf[UIDSet[ObjectType]],
                 utbB.asInstanceOf[UIDSet[ObjectType]],
                 true
-            ).asInstanceOf[UpperTypeBound]
+            )
         }
     }
 
@@ -2682,7 +2766,7 @@ object ClassHierarchy {
             }
 
             leafTypes.foreach { t ⇒
-                subtypes += ((t, SubtypeInformation.empty))
+                subtypes += ((t, SubtypeInformation.None))
                 scheduleSupertypes(t)
             }
             var madeProgress = false
@@ -2814,7 +2898,7 @@ object ClassHierarchy {
             }
 
             var supertypes: Map[ObjectType, SupertypeInformation] =
-                Map((ObjectType.Object, SupertypeInformation.none))
+                Map((ObjectType.Object, SupertypeInformation.None))
 
             val typesToProcess = mutable.Queue.empty[ObjectType] ++ rootInterfaceTypes
 
@@ -2849,7 +2933,8 @@ object ClassHierarchy {
                 }) {
                     supertypes += ((
                         t,
-                        SupertypeInformationForInterfaces(
+                        SupertypeInformation(
+                            ClassHierarchy.JustObject,
                             allSuperSuperinterfaceTypes ++ superinterfaceTypes
                         )
                     ))
@@ -2984,7 +3069,7 @@ object ClassHierarchy {
             superinterfaceTypesMap,
             subclassTypesMap,
             subinterfaceTypesMap,
-            // DERIVE INFORMATION
+            // DERIVED INFORMATION
             rootTypes,
             leafTypes,
             isSupertypeInformationCompleteMap,

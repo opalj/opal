@@ -63,7 +63,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
             classFile ← theProject.allProjectClassFiles.par
             method ← classFile.methods
             body ← method.body.toSeq
-            result = BaseAI(classFile, method, new ExceptionUsageAnalysisDomain(theProject, method))
+            result = BaseAI(method, new ExceptionUsageAnalysisDomain(theProject, method))
         } yield {
             import scala.collection.mutable._
 
@@ -148,8 +148,13 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
             }
 
             val usages =
+<<<<<<< HEAD
                 for { ((pc, typeName), exceptionUsage) ← exceptionUsages }
                     yield ExceptionUsage(classFile, method, pc, typeName, exceptionUsage)
+=======
+                for { (key @ (pc, typeName), exceptionUsage) ← exceptionUsages }
+                    yield ExceptionUsage(method, pc, typeName, exceptionUsage)
+>>>>>>> develop
 
             if (usages.isEmpty)
                 None
@@ -168,7 +173,6 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
 }
 
 case class ExceptionUsage(
-        classFile:        ClassFile,
         method:           Method,
         definitionSite:   PC,
         exceptionType:    String,
@@ -179,7 +183,6 @@ case class ExceptionUsage(
         val lineNumber = method.body.get.lineNumber(definitionSite).map("line="+_+";").getOrElse("")
         import Console._
         method.toJava(
-            classFile,
             usageInformation.mkString(
                 s"$BOLD[$lineNumber;pc=$definitionSite]$exceptionType => ", ", ", RESET
             )

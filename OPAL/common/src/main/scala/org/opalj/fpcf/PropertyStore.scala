@@ -1130,15 +1130,14 @@ class PropertyStore private (
     }
 
     /**
-     * Registers a function that calculates a property for all or some elements
-     * of the store.
+     * Registers a property computation function that is called for all known entities.
      *
      * This store ensures that the property
      * computation function `pc` is never invoked more than once for the
      * same element at the same time. If `pc` is invoked again for a specific element
      * then only because a dependee has changed!
      */
-    def <<(pc: SomePropertyComputation): Unit = bulkScheduleComputations(keysList, pc)
+    def schedule(pc: SomePropertyComputation): Unit = bulkScheduleComputations(keysList, pc)
 
     /**
      * Registers a function that calculates a property for those elements
@@ -1150,7 +1149,7 @@ class PropertyStore private (
      *      For which the analysis may compute some property.
      *      The filter function is performed in the context of the calling thread.
      */
-    def <|<(f: Entity ⇒ Boolean, c: SomePropertyComputation): Unit = {
+    def scheduleForFiltered(f: Entity ⇒ Boolean)(c: SomePropertyComputation): Unit = {
         val it = keys.iterator()
         var es: List[Entity] = Nil
         while (it.hasNext) {
@@ -1173,7 +1172,11 @@ class PropertyStore private (
      *         passed to the function`c` and for which the analysis may compute some property.
      *         The function pf is performed in the context of the calling thread.
      */
-    def <||<[E <: Entity](pf: PartialFunction[Entity, E], c: PropertyComputation[E]): Unit = {
+    def scheduleForCollected[E <: Entity](
+        pf: PartialFunction[Entity, E]
+    )(
+        c: PropertyComputation[E]
+    ): Unit = {
         val es = keysList.collect(pf)
         if (es.isEmpty) {
             logWarn("project", s"the entity selector function $pf did not select any entity")
@@ -1181,11 +1184,15 @@ class PropertyStore private (
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
 
-    def <|<<[E <: Entity](es: Traversable[E], c: PropertyComputation[E]): Unit = {
+    /**
+     * Will call the given function `c` for all elements of `es` in parallel; all elements of `es`
+     * have to be entities known to the property store.
+     */
+    def scheduleForEntities[E <: Entity](es: Traversable[E])(c: PropertyComputation[E]): Unit = {
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
 
-    def schedulePropertyComputation[E <: Entity](e: E, pc: SomePropertyComputation): Unit = {
+    def scheduleSinglePropertyComputation[E <: Entity](e: E)(pc: SomePropertyComputation): Unit = {
         if (!isInterrupted()) scheduleComputation(e, pc)
     }
 

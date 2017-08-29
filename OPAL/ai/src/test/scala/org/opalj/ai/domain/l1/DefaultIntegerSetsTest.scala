@@ -1292,7 +1292,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
                     val domain = new IntegerSetsTestDomain
                     val method = IntegerValues.findMethod("someSwitch").head
-                    /*val result =*/ BaseAI(IntegerValues, method, domain)
+                    /*val result =*/ BaseAI(method, domain)
                     if (domain.allReturnedValues.size != 1)
                         fail("expected one result; found: "+domain.allReturnedValues)
 
@@ -1302,7 +1302,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should be able to track integer values such that it is possible to potentially identify an array index out of bounds exception") {
                     val domain = new IntegerSetsTestDomain(20) // the array has a maximum size of 10
                     val method = IntegerValues.findMethod("array10").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
                     if (domain.allReturnedValues.size != 1)
                         fail("expected one result; found: "+domain.allReturnedValues)
 
@@ -1319,7 +1319,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should be possible to identify dead code - even for complex conditions") {
                     val domain = new IntegerSetsTestDomain
                     val method = IntegerValues.findMethod("deadCode").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
                     result.operandsArray(47) should be(null)
                     result.operandsArray(48) should be(null)
                     result.operandsArray(50) should be(null)
@@ -1336,7 +1336,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v1)") {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues1_v1").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
 
                     if (result.operandsArray(37) != null) {
                         result.operandsArray(37).head should be(domain.AnIntegerValue)
@@ -1350,7 +1350,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v2)") {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues1_v2").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
 
                     if (result.operandsArray(37) != null) {
                         result.operandsArray(37).head should be(domain.AnIntegerValue)
@@ -1364,7 +1364,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v3)") {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues1_v3").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
 
                     if (result.operandsArray(38) != null) {
                         result.operandsArray(38).head should be(domain.AnIntegerValue)
@@ -1378,7 +1378,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues2)") {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues2").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
                     result.operandsArray(38).head should be(domain.AnIntegerValue)
                     result.operandsArray(42).head should be(domain.IntegerSet(SortedSet[Int](0)))
                 }
@@ -1386,7 +1386,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues3)") {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues3").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
                     result.operandsArray(45).head should be(domain.AnIntegerValue)
                     result.operandsArray(49).head should be(domain.IntegerSet(SortedSet[Int](0)))
                 }
@@ -1394,7 +1394,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues4)") {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues4").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
                     result.operandsArray(46).head should be(domain.IntegerSet(SortedSet[Int](2)))
                     result.operandsArray(50).head should be(domain.AnIntegerValue)
                     result.operandsArray(54).head should be(domain.AnIntegerValue)
@@ -1405,7 +1405,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues5)") {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues5").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
                     result.operandsArray(47).head should be(domain.IntegerSet(SortedSet[Int](2)))
                     result.operandsArray(51).head should be(domain.IntegerSet(SortedSet[Int](0, 1)))
                     result.operandsArray(55).head should be(domain.AnIntegerValue)
@@ -1414,7 +1414,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues6)") {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("cfDependentValues6").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
 
                     result.operandsArray(77).head should be(domain.IntegerSet(SortedSet[Int](0)))
                     result.operandsArray(81).head should be(domain.AnIntegerValue)
@@ -1435,20 +1435,18 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
                 it("it should not perform useless evaluations") {
                     val domain = new IntegerSetsTestDomain(8)
                     val method = IntegerValues.findMethod("complexLoop").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
                     result.operandsArray(35).head should be(domain.IntegerSet(SortedSet[Int](0, 1, 2)))
                     // when we perform a depth-first evaluation we do not want to
                     // evaluate the same instruction with the same abstract state
                     // multiple times
-                    result.evaluated.head should be(24)
-                    result.evaluated.tail.head should be(23)
-                    result.evaluated.tail.tail.head should be(20)
+                    result.evaluated.size should be(39)
                 }
 
                 it("it should handle cases where we have more complex aliasing") {
                     val domain = new IntegerSetsTestDomain(4)
                     val method = IntegerValues.findMethod("moreComplexAliasing").head
-                    val result = BaseAI(IntegerValues, method, domain)
+                    val result = BaseAI(method, domain)
 
                     result.operandsArray(20).head should be(domain.AnIntegerValue)
                 }

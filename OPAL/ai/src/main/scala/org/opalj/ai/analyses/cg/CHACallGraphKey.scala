@@ -28,7 +28,7 @@
  */
 package org.opalj
 package fpcf
-package analysis
+package analyses
 package cg
 package cha
 

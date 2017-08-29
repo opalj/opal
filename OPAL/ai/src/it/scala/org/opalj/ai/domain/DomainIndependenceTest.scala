@@ -181,20 +181,19 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             def TheAI() = new InstructionCountBoundedAI[Domain](body)
 
             val a1 = TheAI()
-            val r1 = a1(classFile, method, new Domain1(body))
+            val r1 = a1(method, new Domain1(body))
             aiCount.incrementAndGet()
             val a2 = TheAI()
-            val r2 = a2(classFile, method, new Domain2(body))
+            val r2 = a2(method, new Domain2(body))
             aiCount.incrementAndGet()
             val a3 = TheAI()
-            val r3 = a3(classFile, method, new Domain3(body))
+            val r3 = a3(method, new Domain3(body))
             aiCount.incrementAndGet()
 
             def abort(ai: InstructionCountBoundedAI[_], r: AIResult): Unit = {
                 fail(
                     "the abstract interpretation of "+
                         method.toJava(
-                            classFile,
                             "was aborted after evaluating "+
                                 ai.currentEvaluationCount+" instructions;\n"+r.stateToString
                         )
@@ -209,19 +208,19 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                 failed.incrementAndGet()
                 // let's test if r1 is stable....
                 val a1_2 = TheAI()
-                val r1_2 = a1_2(classFile, method, new Domain1(body))
+                val r1_2 = a1_2(method, new Domain1(body))
                 if (corresponds(r1, r1_2).nonEmpty) {
                     failed.incrementAndGet()
                     info(
                         classFile.thisType.toJava+"{ "+
-                            method.toJava(false)+"(Instructions "+method.body.get.instructions.size+")}\n"+
+                            method.signatureToJava(false)+"(Instructions "+method.body.get.instructions.size+")}\n"+
                             Console.BLUE+"\t// domain r1 is not deterministic (concurrency bug?)\n"+
                             Console.RESET
                     )
                 } else
                     info(
                         classFile.thisType.toJava+"{ "+
-                            method.toJava(false)+"(Instructions "+method.body.get.instructions.size+")} \n"+
+                            method.signatureToJava(false)+"(Instructions "+method.body.get.instructions.size+")} \n"+
                             "\t// the results of r1 and r2 do not correspond\n"+
                             "\t// "+Console.BOLD + m + Console.RESET+"\n"
                     )
@@ -233,7 +232,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                 failed.incrementAndGet()
                 info(
                     classFile.thisType.toJava+"{ "+
-                        method.toJava(false)+"(Instructions "+method.body.get.instructions.size+")} \n"+
+                        method.signatureToJava(false)+"(Instructions "+method.body.get.instructions.size+")} \n"+
                         "\t// the results of r2 and r3 do not correspond\n"+
                         "\t// "+Console.BOLD + m + Console.RESET+"\n"
                 )

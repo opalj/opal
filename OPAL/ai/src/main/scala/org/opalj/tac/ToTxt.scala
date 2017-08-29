@@ -55,7 +55,7 @@ import org.opalj.br.ComputationalTypeReturnAddress
 object ToTxt {
 
     def callToTxt[V <: Var[V]](name: String, params: Seq[Expr[V]]): String = {
-        params.reverse map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
+        params map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
     }
 
     @inline final def toTxtExpr[V <: Var[V]](expr: Expr[V]): String = {
@@ -157,8 +157,8 @@ object ToTxt {
                 val Goto(_, target) = stmt
                 s"$pc goto $target"
 
-            case JumpToSubroutine.ASTID ⇒
-                val JumpToSubroutine(_, target) = stmt
+            case JSR.ASTID ⇒
+                val JSR(_, target) = stmt
                 s"$pc jsr $target"
             case Ret.ASTID ⇒
                 val Ret(_, targets) = stmt
@@ -213,10 +213,6 @@ object ToTxt {
             case ExprStmt.ASTID ⇒
                 val ExprStmt(_, expr) = stmt
                 s"$pc /*expression value is ignored:*/${toTxtExpr(expr)}"
-
-            case FailingExpr.ASTID ⇒
-                val FailingExpr(_, fExpr) = stmt
-                s"$pc expression evaluation will throw exception: ${toTxtExpr(fExpr)}"
 
         }
     }

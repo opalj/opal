@@ -130,5 +130,12 @@ public abstract class RVTypeAnnotationUser<@RVTypeAnnotation T extends @RVTypeAn
         }
     }
 
-    // TODO Arrays
+    public String doArray(File[] file) throws Exception{
+        @RVTypeAnnotation("the array")File[] newFiles =  file.clone();
+
+        Object[]@RVTypeAnnotation("an inner array")[] os = new @RVTypeAnnotation("a new array") Object[10]@RVTypeAnnotation("a new inner array")[5];
+        process(os);
+
+        return newFiles[0].toString();
+    }
 }

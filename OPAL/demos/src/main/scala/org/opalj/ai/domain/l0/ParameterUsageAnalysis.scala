@@ -44,7 +44,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.instructions.ReturnInstruction
-import org.opalj.br.analyses.BasicMethodInfo
 
 /**
  * Simple analysis that identifies unused and passed through parameters; i.e., those that are
@@ -74,15 +73,15 @@ object ParameterUsageAnalysis extends DefaultOneStepAnalysis {
             val ai = new InterruptableAI[Domain]
 
             val exceptions = theProject.parForeachMethodWithBody() { m ⇒
-                val BasicMethodInfo(classFile, method) = m
+                val method = m.method
                 val psCount = method.actualArgumentsCount // includes "this" in case of instance methods
                 if (psCount > 0) {
                     val isStatic = method.isStatic
                     val descriptor = method.descriptor
-                    val domain = new BaseDomainWithDefUse(theProject, classFile, method)
-                    val result = ai(classFile, method, domain)
+                    val domain = new BaseDomainWithDefUse(theProject, method)
+                    val result = ai(method, domain)
                     val instructions = result.domain.code.instructions
-                    val methodSignature = method.toJava(classFile)
+                    val methodSignature = method.toJava
                     def validateArgument(valueOrigin: ValueOrigin): Unit = {
                         val usedBy = result.domain.usedBy(valueOrigin)
                         if (usedBy eq null) {

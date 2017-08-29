@@ -80,7 +80,7 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
                 ToTxt(params, tacNaiveCode, cfg, true, true, true)
             } catch {
                 case e: Throwable ⇒ this.synchronized {
-                    val methodSignature = m.toJava(cf)
+                    val methodSignature = m.toJava
                     mutex.synchronized {
                         println(methodSignature+" - size: "+body.instructions.length)
                         e.printStackTrace(Console.out)

@@ -30,21 +30,18 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj.br.ObjectType
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.InstantiableClasses
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.analysis.SimpleInstantiabilityAnalysis
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.ObjectType
+import org.opalj.fpcf.properties.Instantiability
 import org.opalj.fpcf.properties.NotInstantiable
-import org.opalj.br.ClassFile
 
 /**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
+ * Analyzes which classes are instantiable.
  *
- * @author MichaelReif
+ * @author Michael Reif
  */
 object LibraryInstantiableClassesAnalysis {
 

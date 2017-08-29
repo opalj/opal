@@ -143,8 +143,8 @@ package object ba { ba ⇒
                 thisType:       ObjectType,
                 superclassType: Option[ObjectType],
                 interfaceTypes: Seq[ObjectType], // TODO Use a UIDSet here ...
-                fields:         br.Fields,
-                methods:        br.Methods
+                fields:         Seq[br.FieldTemplate],
+                methods:        Seq[br.MethodTemplate]
             ): Attribute = {
                 a
             }
@@ -896,7 +896,7 @@ package object ba { ba ⇒
                         parameters.map { p ⇒
                             da.MethodParameter(
                                 if (p.name.isDefined) CPEUtf8(p.name.get) else 0,
-                                p.access_flags
+                                p.accessFlags
                             )
                         }
                     )

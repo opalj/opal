@@ -64,11 +64,10 @@ import org.opalj.br.MethodSignature
  * @author Michael Eichberg
  */
 class BaseFieldValuesAnalysisDomain(
-        override val project: SomeProject,
-        val classFile:        ClassFile
+        val project:   SomeProject,
+        val classFile: ClassFile
 ) extends Domain
     with domain.TheProject
-    with domain.TheClassFile
     with domain.TheCode
     with domain.DefaultDomainValueBinding
     with domain.ThrowAllPotentialExceptionsConfiguration

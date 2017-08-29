@@ -48,7 +48,7 @@ sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInforma
  * collection. If this is not the case, the collection is only conditionally immutable.
  *
  * This property is of particular interest if the precise type cannot be computed statically and
- * basically depends on the [[AnalysisMode]] and [[ObjectImmutability]].
+ * basically depends on the [[AnalysisMode]] and [[ClassImmutability]].
  *
  * @author Michael Eichberg
  */

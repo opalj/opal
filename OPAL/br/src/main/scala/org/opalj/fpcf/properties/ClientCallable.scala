@@ -40,7 +40,6 @@ import org.opalj.fpcf.PropertyKey
  * - the method can become visible by a visible subclass which inherits the respective method
  * - the method can become pseudo-visible by a call on a superclass/interface (if the class is upcasted)
  *
- * @note This property is computed on-demand by a direct property computation.
  * @author Michael Reif
  */
 sealed trait ClientCallable extends Property {
@@ -53,19 +52,11 @@ sealed trait ClientCallable extends Property {
 
 object ClientCallable {
 
-    final val cycleResolutionStrategy: PropertyKey.CycleResolutionStrategy = (
-        ps: PropertyStore,
-        epks: PropertyKey.SomeEPKs
-    ) ⇒ {
-        //TODO fill in cycle resolution strategy
-        throw new Error("there should be no cycles")
-    }
-
     final val Key = {
         PropertyKey.create[ClientCallable](
             "ClientCallable",
-            fallbackProperty = (ps: PropertyStore, e: Entity) ⇒ IsClientCallable,
-            cycleResolutionStrategy = cycleResolutionStrategy
+            IsClientCallable,
+            IsClientCallable
         )
     }
 }

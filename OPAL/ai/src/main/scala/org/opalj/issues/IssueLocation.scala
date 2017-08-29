@@ -200,10 +200,9 @@ class ClassLocation(
 class MethodLocation(
         description: Option[String],
         theProject:  SomeProject,
-        classFile:   ClassFile,
         val method:  Method,
         details:     Seq[IssueDetails] = List.empty
-) extends ClassLocation(description, theProject, classFile, details)
+) extends ClassLocation(description, theProject, method.classFile, details)
     with MethodComprehension {
 
     val firstLineOfMethod: Option[String] = {
@@ -243,12 +242,10 @@ class MethodLocation(
 class InstructionLocation(
         description: Option[String],
         theProject:  SomeProject,
-        classFile:   ClassFile,
         method:      Method,
         val pc:      PC,
         details:     Seq[IssueDetails] = List.empty
-) extends MethodLocation(description, theProject, classFile, method, details)
-    with PCLineComprehension {
+) extends MethodLocation(description, theProject, method, details) with PCLineComprehension {
 
     assert(method.body.isDefined)
 

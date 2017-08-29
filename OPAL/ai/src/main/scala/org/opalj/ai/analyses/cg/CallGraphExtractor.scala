@@ -31,16 +31,16 @@ package ai
 package analyses.cg
 
 import scala.collection.Set
-import scala.collection.mutable.OpenHashMap
 import scala.collection.Map
-import org.opalj.br.ClassFile
+import scala.collection.immutable.HashSet
+import scala.collection.mutable.OpenHashMap
+
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodSignature
-import scala.collection.immutable.HashSet
+import org.opalj.br.analyses.SomeProject
 
 /**
  * @author Michael Eichberg
@@ -52,20 +52,13 @@ trait CallGraphExtractor { extractor ⇒
     /**
      * This method may be executed concurrently for multiple different methods.
      */
-    def extract(
-        classFile: ClassFile,
-        method:    Method
-    )(
-        implicit
-        project: SomeProject
-    ): LocalCallGraphInformation
+    def extract(method: Method)(implicit project: SomeProject): LocalCallGraphInformation
 
     def cache: CallGraphCache[MethodSignature, Set[Method]]
 
     abstract protected[this] class AnalysisContext extends Callees {
 
         def project: SomeProject
-        def classFile: ClassFile
         def method: Method
 
         @inline final def cache: CallGraphCache[MethodSignature, Set[Method]] = extractor.cache
@@ -79,13 +72,11 @@ trait CallGraphExtractor { extractor ⇒
         var unresolvableMethodCalls = List.empty[UnresolvedMethodCall]
 
         @inline def addUnresolvedMethodCall(
-            callerClass: ReferenceType, caller: Method, pc: PC,
+            caller: Method, pc: PC,
             calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor
         ): Unit = {
-            unresolvableMethodCalls =
-                new UnresolvedMethodCall(
-                    callerClass, caller, pc, calleeClass, calleeName, calleeDescriptor
-                ) :: unresolvableMethodCalls
+            unresolvableMethodCalls ::=
+                new UnresolvedMethodCall(caller, pc, calleeClass, calleeName, calleeDescriptor)
         }
 
         def allUnresolvableMethodCalls: List[UnresolvedMethodCall] = unresolvableMethodCalls
@@ -105,18 +96,15 @@ trait CallGraphExtractor { extractor ⇒
 
         def allCallEdges: (Method, Map[PC, Set[Method]]) = (method, callEdgesMap)
 
-        def addCallToNullPointerExceptionConstructor(
-            callerType: ObjectType, callerMethod: Method, pc: PC
-        ): Unit = {
+        def addCallToNullPointerExceptionConstructor(callerMethod: Method, pc: PC): Unit = {
 
             cache.NullPointerExceptionDefaultConstructor match {
-                case Some(defaultConstructor) ⇒
-                    addCallEdge(pc, HashSet(defaultConstructor))
+                case Some(defaultConstructor) ⇒ addCallEdge(pc, HashSet(defaultConstructor))
                 case _ ⇒
                     val defaultConstructorDescriptor = MethodDescriptor.NoArgsAndReturnVoid
                     val NullPointerException = ObjectType.NullPointerException
                     addUnresolvedMethodCall(
-                        callerType, callerMethod, pc,
+                        callerMethod, pc,
                         NullPointerException, "<init>", defaultConstructorDescriptor
                     )
             }

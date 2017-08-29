@@ -15,7 +15,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.0")
 // to make it possible to check for outdated dependencies
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.1")
 
-addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
+addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 
 // FOR THE DEPLOYMENT TO MAVEN CENTRAL
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "1.1")

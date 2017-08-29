@@ -86,18 +86,12 @@ sealed trait CallGraphDifferenceReport {
     val callTargets: Iterable[Method]
 
     final override def toString: String = {
-        val thisClassType = project.classFile(method).thisType
+        val thisClassType = method.classFile.thisType
         differenceClassifier+" "+
             project.source(thisClassType).getOrElse("<Source File Not Available>")+": "+
-            method.toJava(thisClassType)+
+            method.toJava+
             "pc="+pc+"(line="+method.body.get.lineNumber(pc).getOrElse("NotAvailable")+"): "+
-            (
-                callTargets map { method ⇒
-                    BLUE + project.classFile(method).thisType.toJava+"{ "+
-                        CYAN + method.descriptor.toJava(method.name) + RESET+
-                        " }"
-                }
-            ).mkString(BOLD+"; "+RESET)+" } }"
+            callTargets.map(method ⇒ BLUE + method.toJava + RESET).mkString(BOLD+"; "+RESET)
     }
 }
 
@@ -106,22 +100,17 @@ case class AdditionalCallTargets(
         method:      Method,
         pc:          PC,
         callTargets: Iterable[Method]
-)
-    extends CallGraphDifferenceReport {
+) extends CallGraphDifferenceReport {
 
     final val differenceClassifier = BLUE+"[Additional]"+RESET
 }
 
-/**
- *
- */
 case class UnexpectedCallTargets(
         project:     SomeProject,
         method:      Method,
         pc:          PC,
         callTargets: Iterable[Method]
-)
-    extends CallGraphDifferenceReport {
+) extends CallGraphDifferenceReport {
 
     final val differenceClassifier = RED+"[Unexpected]"+RESET
 }

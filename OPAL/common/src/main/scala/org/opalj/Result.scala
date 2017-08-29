@@ -65,6 +65,13 @@ object Result {
             case _ /*None*/  ⇒ Empty
         }
     }
+
+    def successOrFailure[T](result: Option[T]): Result[T] = {
+        result match {
+            case Some(value) ⇒ Success(value)
+            case _ /*None*/  ⇒ Failure
+        }
+    }
 }
 
 /**

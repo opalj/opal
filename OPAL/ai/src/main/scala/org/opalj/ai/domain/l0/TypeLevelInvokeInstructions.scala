@@ -68,6 +68,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     /*override*/ def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -77,6 +78,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     /*override*/ def invokestatic(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -93,4 +95,3 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
         handleInvoke(pc, methodDescriptor)
 
 }
-

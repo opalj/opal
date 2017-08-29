@@ -39,7 +39,12 @@ abstract class SimilarityTestConfiguration {
     /**
      * Selects those fields which should be compared. By default all fields are selected.
      */
-    def compareFields(leftContext: ClassFile, left: Fields, right: Fields): (Fields, Fields)
+    def compareFields(
+        leftContext: ClassFile,
+        left:        Seq[JVMField],
+        right:       Seq[JVMField]
+    ): (Seq[JVMField], Seq[JVMField])
+
     /**
      * Selects those methods which should be compared. By default all methods are selected.
      *
@@ -49,9 +54,9 @@ abstract class SimilarityTestConfiguration {
      */
     def compareMethods(
         leftContext: ClassFile,
-        left:        Methods,
-        right:       Methods
-    ): (Methods, Methods)
+        left:        Seq[JVMMethod],
+        right:       Seq[JVMMethod]
+    ): (Seq[JVMMethod], Seq[JVMMethod])
 
     /**
      * Selects the attributes which should be compared.
@@ -63,7 +68,7 @@ abstract class SimilarityTestConfiguration {
     ): (Attributes, Attributes)
 
     def compareCode(
-        leftContext: Method,
+        leftContext: JVMMethod,
         left:        Option[Code],
         right:       Option[Code]
     ): (Option[Code], Option[Code])
@@ -74,17 +79,17 @@ class CompareAllConfiguration extends SimilarityTestConfiguration {
 
     override def compareFields(
         leftContext: ClassFile,
-        left:        Fields,
-        right:       Fields
-    ): (Fields, Fields) = {
+        left:        Seq[JVMField],
+        right:       Seq[JVMField]
+    ): (Seq[JVMField], Seq[JVMField]) = {
         (left, right)
     }
 
     override def compareMethods(
         leftContext: ClassFile,
-        left:        Methods,
-        right:       Methods
-    ): (Methods, Methods) = {
+        left:        Seq[JVMMethod],
+        right:       Seq[JVMMethod]
+    ): (Seq[JVMMethod], Seq[JVMMethod]) = {
         (left, right)
     }
 
@@ -103,7 +108,7 @@ class CompareAllConfiguration extends SimilarityTestConfiguration {
     }
 
     override def compareCode(
-        leftContext: Method,
+        leftContext: JVMMethod,
         left:        Option[Code],
         right:       Option[Code]
     ): (Option[Code], Option[Code]) = {

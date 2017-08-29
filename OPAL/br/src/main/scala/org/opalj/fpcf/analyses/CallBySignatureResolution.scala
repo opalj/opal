@@ -36,7 +36,6 @@ import org.opalj.br.{Method, MethodDescriptor, ObjectType}
 import org.opalj.fpcf.properties.CallBySignature
 import org.opalj.fpcf.properties.NoCBSTargets
 import org.opalj.fpcf.properties.CBSTargets
-import org.opalj.fpcf.analysis.CallBySignatureTargetAnalysis
 
 /**
  * An index that enables the efficient lookup of potential
@@ -107,13 +106,7 @@ class CallBySignatureResolution private (
  */
 object CallBySignatureResolution {
 
-    def apply(project: SomeProject): CallBySignatureResolution = {
-        val analysisManager = project.get(FPCFAnalysesManagerKey)
-        analysisManager.runWithRecommended(CallBySignatureTargetAnalysis)(waitOnCompletion = false)
-
-        new CallBySignatureResolution(
-            project,
-            project.get(PropertyStoreKey)
-        )
+    def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): CallBySignatureResolution = {
+        new CallBySignatureResolution(project, project.get(PropertyStoreKey))
     }
 }

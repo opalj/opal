@@ -97,7 +97,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
                 }
             }
         println(
-            calledNativeMethods.map(_.toJava(false)).toList.sorted.
+            calledNativeMethods.map(_.signatureToJava(false)).toList.sorted.
                 mkString("Called Native Methods ("+calledNativeMethods.size+"):\n", "\n", "")
         )
 
@@ -122,8 +122,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             stackIndexes = parameterIndexes.map((parametersCount - 1) - _)
             (caller, callerPCs) ← callGraph.calledBy(nativeMethod)
             domain = new AnalysisDomain(theProject, caller)
-            callerClassFile = theProject.classFile(caller)
-            result = BaseAI(callerClassFile, caller, domain)
+            result = BaseAI(caller, domain)
         } {
             val pcs: org.opalj.collection.immutable.IntSet = callerPCs //.iterable.toSeq
             for { pc ← pcs } {
@@ -155,7 +154,9 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
 
         BasicReport(
             "Unbounded calls: "+unboundedCalls.get+"\n"+
-                results.sortWith((l, r) ⇒ theProject.classFile(l.caller).thisType.id < theProject.classFile(r.caller).thisType.id).
+                results.
+                sortWith((l, r) ⇒
+                    l.caller.classFile.thisType.id < r.caller.classFile.thisType.id).
                 mkString("Bounded calls:\n", "\n\n", "\n")
         )
 
@@ -205,9 +206,9 @@ case class NativeCallWithBoundedMethodParameter(
         import Console._
 
         "The method "+
-            BOLD + caller.toJava(project.classFile(caller)) + RESET+
+            BOLD + caller.toJava + RESET+
             " calls in line "+caller.body.get.lineNumber(callSite).getOrElse("N/A")+" the native method "+
-            BOLD + BLUE + nativeMethod.toJava(project.classFile(nativeMethod)) + RESET+
+            BOLD + BLUE + nativeMethod.toJava + RESET+
             " and passes in as the "+parameterIndex+
             ". parameter a bounded value: ["+lowerBound+","+upperBound+"]."
     }

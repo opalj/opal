@@ -62,7 +62,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
         val method = classFile.methods.find(_.name == name).get
         val code = method.body.get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }

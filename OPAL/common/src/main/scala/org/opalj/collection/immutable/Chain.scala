@@ -41,9 +41,9 @@ import scala.collection.generic.FilterMonadic
 /**
  * A linked list which does not perform any length related checks. I.e., it fails in
  * case of `drop` and `take` etc. if the size of the list is smaller than expected.
- * Furthermore, all directly implemented methods use `while` loops for maxium
+ * Furthermore, all directly implemented methods use `while` loops for maximum
  * efficiency and the list is also specialized for primitive `int` values which
- * makes this list far more efficient when use for storing lists of int values.
+ * makes this list far more efficient when used for storing lists of `int` values.
  *
  * @note    In most cases a `Chain` can be used as a drop-in replacement for a standard
  *          Scala List.
@@ -310,12 +310,21 @@ sealed trait Chain[@specialized(Int) +T]
         result
     }
 
+    /**
+     * Prepends the given element to this Chain.
+     */
     def :&:[X >: T](x: X): Chain[X] = new :&:(x, this)
 
+    /**
+     * Prepends the given `int` value to this Chain if this chain is a chain of int values.
+     */
     def :&:(x: Int)(implicit ev: this.type <:< Chain[Int]): Chain[Int] = {
         new :&:[Int](x, ev(this))
     }
 
+    /**
+     * Prepends the given `Chain` to `this` chain.
+     */
     def :&::[X >: T](x: Chain[X]): Chain[X]
 
     /**
@@ -663,12 +672,15 @@ object Chain /* extends ChainLowPriorityImplicits */ {
      *           use the `singleton` method.
      */
     def apply[@specialized(Int) T](es: T*): Chain[T] = {
+        val naught = Naught
         if (es.isEmpty)
-            return Naught;
-        val result = new :&:[T](es.head, Naught)
+            return naught;
+        val result = new :&:[T](es.head, naught)
         var last = result
-        es.tail.foreach { e ⇒
-            val newLast = new :&:[T](e, Naught)
+        val it = es.iterator
+        it.next // es is non-empty
+        it foreach { e ⇒
+            val newLast = new :&:[T](e, naught)
             last.rest = newLast
             last = newLast
         }

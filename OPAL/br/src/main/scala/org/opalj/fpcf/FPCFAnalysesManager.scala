@@ -61,14 +61,11 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         derivedProperties ++= analysisRunner.derivedProperties.map(_.id)
     }
 
-    final def runAll(analyses: FPCFAnalysisRunner*): Unit = {
-        runAll(analyses)(true)
-    }
+    final def runAll(analyses: FPCFAnalysisRunner*): Unit = runAll(analyses, true)
 
     final def runAll(
-        analyses: Traversable[FPCFAnalysisRunner]
-    )(
-        waitOnCompletion: Boolean = true
+        analyses:         Traversable[FPCFAnalysisRunner],
+        waitOnCompletion: Boolean                         = true
     ): Unit = {
         analyses.foreach { run(_, false) }
         if (waitOnCompletion)
@@ -103,16 +100,6 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         }
     }
 
-    def runWithRecommended(runner: FPCFAnalysisRunner)(waitOnCompletion: Boolean = true): Unit = {
-        if (!isDerived(runner.derivedProperties)) {
-            val analyses =
-                (runner.recommendations ++ runner.requirements).
-                    filterNot { ar ⇒ isDerived(ar.derivedProperties) }
-            runAll(analyses)(false)
-            run(runner, waitOnCompletion)
-        }
-    }
-
     def isDerived(pKind: PropertyKind): Boolean = derivedProperties.synchronized {
         derivedProperties contains pKind.id
     }
@@ -127,5 +114,5 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
 object FPCFAnalysesManager {
 
-    final val ConfigKey = "org.opalj.fcpf.analysis.manager.debug"
+    final val ConfigKey = "org.opalj.fcpf.analyses.manager.debug"
 }

@@ -59,7 +59,7 @@ class CodePropertiesTest extends FunSuite {
         val analyzedMethodsCount = new AtomicInteger(0)
         val errors = project.parForeachMethodWithBody(() ⇒ false) { m ⇒
 
-            val MethodInfo(src, classFile, method) = m
+            val MethodInfo(src, method) = m
             val code = method.body.get
             val instructions = code.instructions
             val eh = code.exceptionHandlers
@@ -69,21 +69,21 @@ class CodePropertiesTest extends FunSuite {
             val liveVariables = code.liveVariables(ch)
             assert(
                 code.programCounters.forall(pc ⇒ liveVariables(pc) ne null),
-                s"computation of liveVariables fail for ${method.toJava(classFile)}"
+                s"computation of liveVariables fail for ${method.toJava}"
             )
 
             for { (pc, LocalVariableAccess(i, isRead)) ← code } {
                 val isLive = liveVariables(pc).contains(i)
                 if (isRead)
-                    assert(isLive, s"$i is not live at $pc in ${method.toJava(classFile)}")
+                    assert(isLive, s"$i is not live at $pc in ${method.toJava}")
                 else
-                    assert(!isLive, s"$i is live at $pc in ${method.toJava(classFile)}")
+                    assert(!isLive, s"$i is live at $pc in ${method.toJava}")
             }
 
             val computedMaxLocals = Code.computeMaxLocalsRequiredByCode(instructions)
             if (computedMaxLocals > specifiedMaxLocals) {
                 fail(
-                    s"$src: computed max locals is too large - ${method.toJava(classFile)}}: "+
+                    s"$src: computed max locals is too large - ${method.toJava}}: "+
                         s"$specifiedMaxLocals(specified) vs. $computedMaxLocals(computed):\n"+
                         code.toString
                 )
@@ -93,7 +93,7 @@ class CodePropertiesTest extends FunSuite {
             analyzedMethodsCount.incrementAndGet()
             if (specifiedMaxStack < computedMaxStack) {
                 fail(
-                    s"$src: computed max stack is too large - ${method.toJava(classFile)}}: "+
+                    s"$src: computed max stack is too large - ${method.toJava}}: "+
                         s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed):\n"+
                         code.toString
                 )

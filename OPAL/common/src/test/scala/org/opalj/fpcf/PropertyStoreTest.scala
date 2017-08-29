@@ -343,7 +343,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             // let's fill the property store with:
             //  - an entity based property and
             //  - an on property derivation function
-            ps << { e: Entity ⇒
+            ps schedule { e: Entity ⇒
                 val property = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
                 ImmediateResult(e, property)
             }
@@ -364,7 +364,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         val triggeredComputations = new java.util.concurrent.atomic.AtomicInteger(0)
         @volatile var doInterrupt = false
         val ps = PropertyStore(entities, () ⇒ doInterrupt, debug = false)(GlobalLogContext)
-        ps << { e: Entity ⇒
+        ps schedule { e: Entity ⇒
             triggeredComputations.incrementAndGet()
             Thread.sleep(50)
             ImmediateResult(e, BitsProperty(Integer.bitCount(e.asInstanceOf[Integer])))
@@ -382,7 +382,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             it("every element can have an individual property instance") {
                 val ps = psStrings
 
-                ps << { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
+                ps schedule { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
 
                 ps.waitOnPropertyComputationCompletion(true)
 
@@ -398,7 +398,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 // Idea... only if data is tainted we check if it is a palindrome...
 
-                ps << { e: Entity ⇒
+                ps schedule { e: Entity ⇒
                     ps.require(e, PalindromeKey, e, TaintedKey) { (e: Entity, p: Property) ⇒
                         if (p == Tainted) {
                             if (e.toString.reverse == e.toString())
@@ -445,7 +445,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 val ps = psStrings
                 val results = mutable.Map.empty[Property, mutable.Set[String]]
 
-                ps << { e: Entity ⇒
+                ps schedule { e: Entity ⇒
                     if (e.toString.reverse == e.toString())
                         ImmediateResult(e, Palindrome)
                     else
@@ -477,7 +477,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     results.getOrElseUpdate(p, mutable.Set.empty).add(e.toString())
                 })
 
-                ps << { e: Entity ⇒
+                ps schedule { e: Entity ⇒
                     if (e.toString.reverse == e.toString())
                         ImmediateResult(e, Palindrome)
                     else
@@ -499,17 +499,15 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
             it("should be possible to store some \"final\" information about some properties concurrently") {
                 val ps = psStringsAndSetsOfStrings
-                ps <||< (
-                    { case s: Set[String @unchecked] ⇒ s },
-                    { (s: Set[String]) ⇒
-                        // the following property is derived concurrently and multiple
-                        // times
-                        s.foreach { e ⇒
-                            ps.put(e, if (e.toString.reverse == e.toString) Palindrome else NoPalindrome)
-                        }
-                        ImmediateResult(s, BitsProperty(Integer.bitCount(s.size)))
+                ps.scheduleForCollected { case s: Set[String @unchecked] ⇒ s } { s: Set[String] ⇒
+                    // the following property is derived concurrently and multiple
+                    // times
+                    s.foreach { e ⇒
+                        ps.put(e, if (e.toString.reverse == e.toString) Palindrome else NoPalindrome)
                     }
-                )
+                    ImmediateResult(s, BitsProperty(Integer.bitCount(s.size)))
+                }
+
                 ps.waitOnPropertyComputationCompletion(true)
 
                 val expectedResult = mutable.SortedSet(
@@ -526,41 +524,39 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             it("should be possible to compute the information about some properties collaboratively and concurrently") {
                 val ps = psStringsAndSetsOfStrings
                 time {
-                    ps <||< (
-                        { case s: Set[String @unchecked] ⇒ s },
-                        { (s: Set[String]) ⇒
-                            // the following property is derived concurrently and multiple
-                            // times
-                            val count = s.foldLeft(0) { (c, e) ⇒
-                                c + e.foldLeft(0) { (c, n) ⇒ c + (if (n == 'a') 1 else 0) }
-                            }
-                            val primaryResult = ImmediateResult(s, BitsProperty(Integer.bitCount(s.size)))
-
-                            if (count == 0)
-                                primaryResult
-                            else {
-                                val secondaryResult = ConcurrentResult[String, Count](
-                                    "a",
-                                    CountKey,
-                                    { (e, pOpt) ⇒
-                                        pOpt match {
-                                            case Some(Count(oldCount)) ⇒
-                                                Some((
-                                                    Count(oldCount + count),
-                                                    IntermediateUpdate
-                                                ))
-                                            case None ⇒
-                                                Some((
-                                                    Count(count),
-                                                    IntermediateUpdate
-                                                ))
-                                        }
-                                    }
-                                )
-                                Results(primaryResult, secondaryResult)
-                            }
+                    ps.scheduleForCollected { case s: Set[String @unchecked] ⇒ s } { s: Set[String] ⇒
+                        // the following property is derived concurrently and multiple
+                        // times
+                        val count = s.foldLeft(0) { (c, e) ⇒
+                            c + e.foldLeft(0) { (c, n) ⇒ c + (if (n == 'a') 1 else 0) }
                         }
-                    )
+                        val primaryResult = ImmediateResult(s, BitsProperty(Integer.bitCount(s.size)))
+
+                        if (count == 0)
+                            primaryResult
+                        else {
+                            val secondaryResult = ConcurrentResult[String, Count](
+                                "a",
+                                CountKey,
+                                { (e, pOpt) ⇒
+                                    pOpt match {
+                                        case Some(Count(oldCount)) ⇒
+                                            Some((
+                                                Count(oldCount + count),
+                                                IntermediateUpdate
+                                            ))
+                                        case None ⇒
+                                            Some((
+                                                Count(count),
+                                                IntermediateUpdate
+                                            ))
+                                    }
+                                }
+                            )
+                            Results(primaryResult, secondaryResult)
+                        }
+                    }
+
                     ps.waitOnPropertyComputationCompletion(true)
                 } { t ⇒ info(s"the analysis took:${t.toSeconds}") }
                 // the expected result is computed sequentiall using:
@@ -608,7 +604,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 // Here, only if data is tainted we check if it is a palindrome...
 
-                ps << { e: Entity ⇒
+                ps schedule { e: Entity ⇒
                     ps.require(e, PalindromeKey, e, TaintedKey) { (e: Entity, p: Property) ⇒
                         if (p == Tainted) {
                             if (e.toString.reverse == e.toString())
@@ -621,7 +617,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     }
                 }
 
-                ps << { e: Entity ⇒
+                ps schedule { e: Entity ⇒
                     ps.require(e, TaintedKey, e, StringLengthKey) { (e: Entity, p) ⇒
                         if (p.length % 2 == 0) {
                             ImmediateResult(e, Tainted)
@@ -631,7 +627,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     }
                 }
 
-                ps << { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
+                ps schedule { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
 
                 ps.waitOnPropertyComputationCompletion(true)
 
@@ -662,7 +658,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     }
 
                     // the dot in ".<||<" is necessary to shut-up scalariform...
-                    ps.<||<[Node]({ case n @ `nodeRoot` ⇒ n.asInstanceOf[Node] }, analysis(0))
+                    ps.scheduleForCollected[Node] { case n @ `nodeRoot` ⇒ n.asInstanceOf[Node] }(
+                        analysis(0)
+                    )
+
                     ps.waitOnPropertyComputationCompletion(true)
 
                     try {
@@ -735,7 +734,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         }
                     }
                     // 4. execute analysis
-                    store <||< ({ case n: Node ⇒ n }, purityAnalysis)
+                    store.scheduleForCollected { case n: Node ⇒ n }(purityAnalysis)
                     store.waitOnPropertyComputationCompletion(true)
 
                     // 5. let's evaluate the result
@@ -816,7 +815,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         IntermediateResult(n, intermediateP, dependeePs, c)
                     }
 
-                    ps <||< ({ case n: Node ⇒ n }, analysis)
+                    ps.scheduleForCollected { case n: Node ⇒ n }(analysis)
                     ps.waitOnPropertyComputationCompletion(false)
 
                     try {
@@ -929,7 +928,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         IntermediateResult(n, intermediateP, dependeePs, c)
                     }
 
-                    ps <||< ({ case n: Node ⇒ n }, analysis)
+                    ps.scheduleForCollected { case n: Node ⇒ n }(analysis)
                     ps.waitOnPropertyComputationCompletion(false)
 
                     try {

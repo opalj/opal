@@ -32,7 +32,7 @@ package analyses
 package cg
 
 import scala.collection.Set
-import org.opalj.br.ClassFile
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.MethodSignature
@@ -48,13 +48,11 @@ class BasicVTAWithPreAnalysisCallGraphDomain[Source](
         val fieldValueInformation:        FieldValueInformation,
         val methodReturnValueInformation: MethodReturnValueInformation,
         val cache:                        CallGraphCache[MethodSignature, Set[Method]],
-        val classFile:                    ClassFile,
         val method:                       Method
 ) extends CorrelationalDomain
     with DefaultDomainValueBinding
     with ThrowAllPotentialExceptionsConfiguration
     with TheProject
-    with TheClassFile
     with TheMethod
     with DefaultHandlingOfMethodResults
     with IgnoreSynchronization
@@ -69,4 +67,3 @@ class BasicVTAWithPreAnalysisCallGraphDomain[Source](
     with la.RefinedTypeLevelInvokeInstructions
     //with l0.TypeLevelFieldAccessInstructions
     with la.RefinedTypeLevelFieldAccessInstructions
-

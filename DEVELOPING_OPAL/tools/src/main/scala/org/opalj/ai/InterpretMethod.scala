@@ -32,17 +32,18 @@ package ai
 import java.util.Date
 import java.net.URL
 
-import org.opalj.br.{ClassFile, Method}
-import org.opalj.br.analyses.{Project, SomeProject}
+import org.opalj.io.writeAndOpen
+import org.opalj.graphs.toDot
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.domain.TheCode
 import org.opalj.ai.util.XHTML
 import org.opalj.ai.common.XHTML.dump
 import org.opalj.ai.common.XHTML.dumpAIState
-import org.opalj.io.writeAndOpen
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.graphs.toDot
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -130,21 +131,15 @@ object InterpretMethod {
             return ;
         }
 
-        def createDomain[Source: reflect.ClassTag](
-            project:   SomeProject,
-            classFile: ClassFile,
-            method:    Method
-        ): Domain = {
+        def createDomain[Source: reflect.ClassTag](project: SomeProject, method: Method): Domain = {
 
             scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
                 val constructor = domainClass.getConstructor(classOf[Object])
-                return constructor.newInstance(classFile);
+                return constructor.newInstance(method.classFile);
             }
 
-            val constructor =
-                domainClass.getConstructor(classOf[Project[URL]], classOf[ClassFile], classOf[Method])
-
-            constructor.newInstance(project, classFile, method)
+            val constructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
+            constructor.newInstance(project, method)
         }
 
         val file = new java.io.File(fileName)
@@ -196,22 +191,18 @@ object InterpretMethod {
         try {
             val result =
                 if (doTrace)
-                    new IMAI(doIdentifyDeadVariables)(
-                        classFile, method, createDomain(project, classFile, method)
-                    )
+                    new IMAI(doIdentifyDeadVariables)(method, createDomain(project, method))
                 else {
                     val body = method.body.get
                     println("Starting abstract interpretation of: ")
                     println("\t"+classFile.thisType.toJava+"{")
-                    println("\t\t"+method.toJava(true)+
+                    println("\t\t"+method.signatureToJava(true)+
                         "[instructions="+body.instructions.size+
                         "; #max_stack="+body.maxStack+
                         "; #locals="+body.maxLocals+"]")
                     println("\t}")
                     val result =
-                        new BaseAI(doIdentifyDeadVariables)(
-                            classFile, method, createDomain(project, classFile, method)
-                        )
+                        new BaseAI(doIdentifyDeadVariables)(method, createDomain(project, method))
                     println("Finished abstract interpretation.")
                     result
                 }

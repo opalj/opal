@@ -464,18 +464,16 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     case _: VirtualClass ⇒ classFile.annotations
 
                     case vf: VirtualField ⇒
-                        classFile.fields.collectFirst {
-                            case field if field.asVirtualField(classFile).compareTo(vf) == 0 ⇒
-                                field
+                        classFile.fields collectFirst {
+                            case f if f.asVirtualField(classFile).compareTo(vf) == 0 ⇒ f
                         } match {
                             case Some(f) ⇒ f.annotations
                             case _       ⇒ IndexedSeq.empty
                         }
-
+                        
                     case vm: VirtualMethod ⇒
-                        classFile.methods.collectFirst {
-                            case method if method.asVirtualMethod(classFile).compareTo(vm) == 0 ⇒
-                                method
+                        classFile.methods collectFirst {
+                            case m if m.asVirtualMethod(classFile.thisType).compareTo(vm) == 0 ⇒ m
                         } match {
                             case Some(m) ⇒ m.annotations
                             case _       ⇒ IndexedSeq.empty

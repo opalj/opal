@@ -77,7 +77,9 @@ class CallGraphCache[Contour, Value] private[this] (
                         case c @ Some(_ /*defaultConstructor*/ ) ⇒ c
 
                         case _ ⇒
-                            throw new UnknownError("java.lang.NullPointerException does not define a default constructor")
+                            throw new UnknownError(
+                                "java.lang.NullPointerException has no default constructor"
+                            )
                     }
                 case None ⇒ None
             }

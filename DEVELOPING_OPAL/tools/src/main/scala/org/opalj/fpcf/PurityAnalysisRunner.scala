@@ -58,18 +58,17 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val projectStore = project.get(PropertyStoreKey)
 
-        org.opalj.fpcf.analysis.FieldMutabilityAnalysis.start(project, projectStore)
+        org.opalj.fpcf.analyses.FieldMutabilityAnalysis.start(project, projectStore)
 
         projectStore.debug = true
-        org.opalj.fpcf.analysis.PurityAnalysis.start(project, projectStore)
+        org.opalj.fpcf.analyses.PurityAnalysis.start(project, projectStore)
 
         projectStore.waitOnPropertyComputationCompletion(true)
 
         val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
         val pureMethods: Traversable[(Method, Property)] =
             pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
-        val pureMethodsAsStrings =
-            pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
+        val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
 
         val methodInfo =
             pureMethodsAsStrings.toList.sorted.mkString(

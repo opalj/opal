@@ -32,12 +32,10 @@ package analyses
 package cg
 
 import org.opalj.br.analyses.Project
-import br.ClassFile
-import br.Method
-import br.analyses.Project
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
 import org.opalj.br.MethodSignature
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
-import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.TheMethod
 import org.opalj.ai.domain.DefaultDomainValueBinding
@@ -50,15 +48,13 @@ import org.opalj.ai.domain.l0
  * @author Michael Eichberg
  */
 class DefaultCHACallGraphDomain[Source](
-        val project:   Project[Source],
-        val cache:     CallGraphCache[MethodSignature, Set[Method]],
-        val classFile: ClassFile,
-        val method:    Method
+        val project: Project[Source],
+        val cache:   CallGraphCache[MethodSignature, Set[Method]],
+        val method:  Method
 ) extends Domain
     with DefaultDomainValueBinding
     with ThrowAllPotentialExceptionsConfiguration
     with TheProject
-    with TheClassFile
     with TheMethod
     with DefaultHandlingOfMethodResults
     with IgnoreSynchronization
@@ -71,4 +67,3 @@ class DefaultCHACallGraphDomain[Source](
     with l0.DefaultReferenceValuesBinding
     with l0.TypeLevelInvokeInstructions
     with l0.TypeLevelFieldAccessInstructions
-

@@ -40,6 +40,10 @@ trait Call[+V <: Var[V]] {
     def isInterface: Boolean
     def name: String
     def descriptor: MethodDescriptor
+
+    /**
+     * The parameters of the method call (including the implicit `this` reference if necessary.)
+     */
     def params: Seq[Expr[V]] // TODO IndexedSeq
 }
 

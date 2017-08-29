@@ -31,7 +31,6 @@ package ai
 
 import java.net.URL
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -100,15 +99,13 @@ object CallGraphDiff extends DefaultOneStepAnalysis {
                 project,
                 entryPoints,
                 new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
-                    override def Domain(
-                        classFile: ClassFile,
-                        method:    Method
-                    ) =
+                    override def Domain(method: Method) = {
                         new DefaultVTACallGraphDomain(
                             project, fieldValueInformation, methodReturnValueInformation,
                             cache,
-                            classFile, method //, 4
+                            method //, 4
                         )
+                    }
                 }
             )
         } { ns ⇒ println("creating the more precise call graph took "+ns.toSeconds) }

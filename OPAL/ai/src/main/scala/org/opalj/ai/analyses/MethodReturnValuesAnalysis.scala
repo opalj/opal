@@ -63,7 +63,6 @@ object MethodReturnValuesAnalysis {
         val candidates = new AtomicInteger(0)
 
         theProject.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
-            val classFile = methodInfo.classFile
             val method = methodInfo.method
             val originalReturnType = method.returnType
 
@@ -79,7 +78,7 @@ object MethodReturnValuesAnalysis {
                 candidates.incrementAndGet()
                 val ai = new InterruptableAI[Domain]
                 val domain = createDomain(ai, method)
-                ai(classFile, method, domain)
+                ai(method, domain)
                 if (!ai.isInterrupted) {
                     results.put(method, domain.returnedValue)
                 }

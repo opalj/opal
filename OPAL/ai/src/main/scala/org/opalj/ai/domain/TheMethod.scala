@@ -30,7 +30,9 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.{Method, Code}
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.Code
 
 /**
  * Provides information about the method that is currently analyzed.
@@ -57,6 +59,8 @@ trait TheMethod extends TheCode {
      * Returns the method that is currently analyzed.
      */
     def method: Method
+
+    @inline final def classFile: ClassFile = method.classFile
 
     /**
      * Returns the code block that is currently analyzed.
