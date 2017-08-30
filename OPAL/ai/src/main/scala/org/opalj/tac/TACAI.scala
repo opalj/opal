@@ -279,7 +279,7 @@ object TACAI {
                 }
             }
 
-            def addNOP(): Unit = {
+            def addNOP(pcHint: Int): Unit = {
                 if (addExceptionHandlerInitializer)
                     // We do not have to add the NOP, because the code to initialize the
                     // variable which references the exception is already added.
@@ -289,7 +289,7 @@ object TACAI {
                 // we want to ensure that we don't have to rewrite the CFG during the initial
                 // transformation
                 if (cfg.bb(pc).startPC == pc) {
-                    statements(index) = Nop(pc)
+                    statements(index) = Nop(pcHint)
                     pcToIndex(pc) = index
                     index += 1
                 } else {
@@ -352,7 +352,7 @@ object TACAI {
 
             def addNOPAndKillOperandBasedUsages(valuesCount: Int): Unit = {
                 killOperandBasedUsages(pc, valuesCount)
-                addNOP()
+                addNOP(-pc - 1)
             }
 
             /**
@@ -373,7 +373,7 @@ object TACAI {
                     if (instruction.opcode == IINC.opcode) {
                         val IINC(index, _) = instruction
                         killRegisterBasedUsages(pc, index)
-                        addNOP()
+                        addNOP(-pc - 1)
                     } else {
                         addNOPAndKillOperandBasedUsages(expr.subExprCount)
                     }
@@ -570,7 +570,7 @@ object TACAI {
                     LLOAD.opcode |
                     LSTORE_0.opcode | LSTORE_1.opcode | LSTORE_2.opcode | LSTORE_3.opcode |
                     LSTORE.opcode ⇒
-                    addNOP()
+                    addNOP(pc)
 
                 case IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
                     ARETURN.opcode ⇒
@@ -629,7 +629,7 @@ object TACAI {
                 case DCMPL.opcode | FCMPL.opcode ⇒ compareValues(CMPL)
                 case LCMP.opcode                 ⇒ compareValues(CMP)
 
-                case SWAP.opcode                 ⇒ addNOP()
+                case SWAP.opcode                 ⇒ addNOP(pc)
 
                 case DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode ⇒
                     binaryArithmeticOperation(Add)
@@ -822,7 +822,7 @@ object TACAI {
                     val GotoInstruction(branchoffset) = instruction
                     if (cfg.bb(pc).endPC != pc) {
                         // this goto "jumps" to the immediately succeeding instruction
-                        addNOP()
+                        addNOP(pc)
                     } else {
                         addStmt(Goto(pc, pc + branchoffset))
                     }
@@ -833,7 +833,7 @@ object TACAI {
                 case RET.opcode ⇒
                     addStmt(Ret(pc, cfg.successors(pc)))
 
-                case NOP.opcode | POP.opcode | POP2.opcode ⇒ addNOP()
+                case NOP.opcode | POP.opcode | POP2.opcode ⇒ addNOP(pc)
 
                 case INSTANCEOF.opcode ⇒
                     val value1 = operandUse(0)
@@ -874,7 +874,7 @@ object TACAI {
                     addStmt(Switch(pc, defaultTarget, index, npairs))
 
                 case DUP.opcode | DUP_X1.opcode | DUP_X2.opcode
-                    | DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode ⇒ addNOP()
+                    | DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode ⇒ addNOP(pc)
 
                 case D2F.opcode | I2F.opcode | L2F.opcode ⇒ primitiveCastOperation(FloatType)
                 case D2I.opcode | F2I.opcode | L2I.opcode ⇒ primitiveCastOperation(IntegerType)
@@ -886,7 +886,7 @@ object TACAI {
 
                 case ATHROW.opcode                        ⇒ addStmt(Throw(pc, operandUse(0)))
 
-                case WIDE.opcode                          ⇒ addNOP()
+                case WIDE.opcode                          ⇒ addNOP(pc)
 
                 case opcode ⇒
                     throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
