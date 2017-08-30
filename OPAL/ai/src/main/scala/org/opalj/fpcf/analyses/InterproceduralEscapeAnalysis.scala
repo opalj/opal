@@ -30,10 +30,10 @@ package org.opalj
 package fpcf
 package analyses
 
+import scala.annotation.switch
+
 import java.io.File
 
-import org.opalj.Success
-import org.opalj.AnalysisModes
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.common.SimpleAIKey
@@ -44,8 +44,6 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.ObjectAllocationSite
-import org.opalj.br.ArrayAllocationSite
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParameters
@@ -53,20 +51,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntSet
-import org.opalj.fpcf.FPCFAnalysis
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.UpdateType
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.IntermediateResult
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.EP
-import org.opalj.fpcf.IntermediateUpdate
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.FPCFAnalysisRunner
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
@@ -109,18 +93,19 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
      */
     private def doDetermineEscape(e: Entity, defSite: ValueOrigin, uses: IntSet,
                                   code: Array[Stmt[V]], m: Method): PropertyComputationResult = {
-        var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
+        var dependees = Set.empty[EOptionP[Entity, Property]]
 
-        var worstProperty: EscapeProperty = NoEscape
+        var leastRestrictiveProperty: EscapeProperty = NoEscape
         for (use ← uses) {
             determineEscapeStmt(code(use), e, defSite)
         }
 
         /**
-         * Sets worstProperty to the minimum of its current value and the given one.
+         * Sets leastRestrictiveProperty to the greatest lower bound of its current value and the
+         * given one.
          */
-        def setWorst(prop: EscapeProperty) = {
-            worstProperty = worstProperty meet prop
+        @inline def calcLeastRestrictive(prop: EscapeProperty) = {
+            leastRestrictiveProperty = leastRestrictiveProperty meet prop
         }
 
         /**
@@ -129,25 +114,25 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
          */
         def determineEscapeStmt(stmt: Stmt[V], e: Entity, defSite: Int): Unit = {
 
-            stmt.astID match {
+            (stmt.astID: @switch) match {
                 case PutStatic.ASTID ⇒
                     val value = stmt.asPutStatic.value
-                    if (usesDefSite(value)) setWorst(GlobalEscapeViaStaticFieldAssignment)
+                    if (usesDefSite(value)) calcLeastRestrictive(GlobalEscapeViaStaticFieldAssignment)
                 // we are field insensitive, so we can not say what happens to that object
                 case PutField.ASTID ⇒
                     val value = stmt.asPutField.value
-                    if (usesDefSite(value)) setWorst(MaybeNoEscape)
+                    if (usesDefSite(value)) calcLeastRestrictive(MaybeNoEscape)
                 case ArrayStore.ASTID ⇒
                     val value = stmt.asArrayStore.value
-                    if (usesDefSite(value)) setWorst(MaybeNoEscape)
+                    if (usesDefSite(value)) calcLeastRestrictive(MaybeNoEscape)
                 case Throw.ASTID ⇒
                     val value = stmt.asThrow.exception
                     // the exception could be catched, so we know nothing
-                    if (usesDefSite(value)) setWorst(MaybeNoEscape)
+                    if (usesDefSite(value)) calcLeastRestrictive(MaybeNoEscape)
                 // we are inter-procedural
                 case ReturnValue.ASTID ⇒
                     val value = stmt.asReturnValue.expr
-                    if (usesDefSite(value)) setWorst(MaybeMethodEscape)
+                    if (usesDefSite(value)) calcLeastRestrictive(MaybeMethodEscape)
                 case StaticMethodCall.ASTID ⇒
                     val StaticMethodCall(_, dc, isI, name, descr, params) = stmt
                     handleStaticCall(dc, isI, name, descr, params)
@@ -174,7 +159,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
          * GlobalEscape.
          */
         def examineCall(e: Entity, defSite: Int, expr: Expr[V]): Unit = {
-            expr.astID match {
+            (expr.astID: @switch) match {
                 case NonVirtualFunctionCall.ASTID ⇒
                     val NonVirtualFunctionCall(_, dc, interface, name, descr, receiver, params) = expr
                     handleNonVirtualCall(dc, interface, name, descr, receiver, params)
@@ -187,7 +172,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                 // see Java8LambdaExpressionsRewriting
                 case Invokedynamic.ASTID ⇒
                     val params = expr.asInvokedynamic.params
-                    if (anyParameterUsesDefSite(params)) setWorst(MaybeArgEscape)
+                    if (anyParameterUsesDefSite(params)) calcLeastRestrictive(MaybeArgEscape)
                 case _ ⇒
             }
         }
@@ -240,18 +225,17 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                                 val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
                                 escapeState match {
                                     case EP(_, NoEscape)            ⇒
-                                    case EP(_, state: GlobalEscape) ⇒ setWorst(state)
-                                    case EP(_, ArgEscape)           ⇒ setWorst(ArgEscape)
-                                    case EP(_, MaybeNoEscape)       ⇒ dependees += escapeState
-                                    case EP(_, MaybeArgEscape)      ⇒ dependees += escapeState
-                                    case EP(_, MaybeMethodEscape)   ⇒ dependees += escapeState
+                                    case EP(_, state: GlobalEscape) ⇒ calcLeastRestrictive(state)
+                                    case EP(_, ArgEscape)           ⇒ calcLeastRestrictive(ArgEscape)
+                                    case EP(_, MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape) ⇒
+                                        dependees += escapeState
                                     case EP(_, x) ⇒
                                         throw new RuntimeException("not yet implemented "+x)
                                     // result not yet finished
                                     case epk ⇒ dependees += epk
                                 }
                             case /* unknown method */ _ ⇒
-                                setWorst(MaybeNoEscape)
+                                calcLeastRestrictive(MaybeNoEscape)
                         }
                     checkParams(methodO, params)
                 } else /* Object constructor does escape by def. */ NoEscape
@@ -301,7 +285,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
         def handleCallO(methodO: org.opalj.Result[Method], param: Int) = {
             methodO match {
                 case Success(m) ⇒ handleCall(m, param)
-                case _          ⇒ setWorst(MaybeArgEscape)
+                case _          ⇒ calcLeastRestrictive(MaybeArgEscape)
             }
         }
 
@@ -311,101 +295,69 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
             try {
                 val escapeState = propertyStore(fp(m)(param), EscapeProperty.key)
                 escapeState match {
-                    case EP(_, NoEscape)            ⇒ setWorst(ArgEscape)
-                    case EP(_, ArgEscape)           ⇒ setWorst(ArgEscape)
-                    case EP(_, state: GlobalEscape) ⇒ setWorst(state)
-                    case EP(_, MaybeNoEscape) ⇒
+                    case EP(_, NoEscape | ArgEscape) ⇒ calcLeastRestrictive(ArgEscape)
+                    case EP(_, state: GlobalEscape)  ⇒ calcLeastRestrictive(state)
+                    case EP(_, MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape) ⇒
                         dependees += escapeState
-                        setWorst(ArgEscape)
-                    case EP(_, MaybeArgEscape) ⇒
-                        dependees += escapeState
-                        setWorst(ArgEscape)
-                    case EP(_, MaybeMethodEscape) ⇒
-                        dependees += escapeState
-                        setWorst(ArgEscape)
+                        calcLeastRestrictive(ArgEscape)
                     case EP(_, _) ⇒
                         throw new RuntimeException("not yet implemented")
                     // result not yet finished
                     case epk ⇒
                         dependees += epk
-                        setWorst(ArgEscape)
+                        calcLeastRestrictive(ArgEscape)
                 }
             } catch {
                 case _: ArrayIndexOutOfBoundsException ⇒
                     //TODO params to array
-                    setWorst(MaybeArgEscape)
+                    calcLeastRestrictive(MaybeArgEscape)
             }
         }
 
         def meetAndFilter(other: Entity, p: EscapeProperty) = {
-            setWorst(p)
+            calcLeastRestrictive(p)
             dependees = dependees filter (_.e ne other)
-            if (dependees.isEmpty)
-                Result(e, worstProperty)
+            if (dependees.isEmpty || leastRestrictiveProperty.isInstanceOf[GlobalEscape])
+                Result(e, leastRestrictiveProperty)
             else
-                IntermediateResult(e, MaybeNoEscape meet worstProperty, dependees, c)
+                IntermediateResult(e, MaybeNoEscape meet leastRestrictiveProperty, dependees, c)
         }
 
         // Every entity that is not identified as escaping is not escaping
-        if (dependees.isEmpty || worstProperty.isInstanceOf[GlobalEscape])
-            return Result(e, worstProperty)
+        if (dependees.isEmpty || leastRestrictiveProperty.isInstanceOf[GlobalEscape])
+            return Result(e, leastRestrictiveProperty)
 
         // we depend on the result for other entities, lets construct a continuation
         def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
             other match {
                 // constructor
                 case FormalParameter(m, -1) if m.name == "<init>" ⇒ p match {
-                    case state: GlobalEscape ⇒ Result(e, state)
-                    //TODO cases
-                    case MaybeNoEscape ⇒
+                    case state: GlobalEscape  ⇒ Result(e, state)
+                    case NoEscape | ArgEscape ⇒ meetAndFilter(other, p.asInstanceOf[EscapeProperty])
+                    case MaybeNoEscape | MaybeArgEscape ⇒
                         u match {
                             case IntermediateUpdate ⇒
                                 val newEP = EP(other, MaybeNoEscape)
                                 dependees = dependees.filter(_.e ne other) + newEP
-                                IntermediateResult(e, MaybeNoEscape, dependees, c)
-                            case _ ⇒ meetAndFilter(other, MaybeNoEscape)
-                        }
-                    case MaybeArgEscape ⇒
-                        u match {
-                            case IntermediateUpdate ⇒
-                                val newEP = EP(other, MaybeArgEscape)
-                                dependees = dependees.filter(_.e ne other) + newEP
-                                IntermediateResult(e, MaybeArgEscape, dependees, c)
-                            case _ ⇒ meetAndFilter(other, MaybeArgEscape)
+                                IntermediateResult(e, p.asInstanceOf[EscapeProperty] meet leastRestrictiveProperty, dependees, c)
+                            case _ ⇒ meetAndFilter(other, p.asInstanceOf[EscapeProperty])
                         }
                     case MaybeMethodEscape ⇒ u match {
                         case IntermediateUpdate ⇒
                             val newEP = EP(other, MaybeMethodEscape)
                             dependees = dependees.filter(_.e ne other) + newEP
-                            IntermediateResult(e, MaybeNoEscape, dependees, c)
+                            IntermediateResult(e, MaybeNoEscape meet leastRestrictiveProperty, dependees, c)
                         case _ ⇒ meetAndFilter(other, MaybeNoEscape)
                     }
-                    case NoEscape  ⇒ meetAndFilter(other, NoEscape)
-                    case ArgEscape ⇒ meetAndFilter(other, ArgEscape)
                 }
                 case FormalParameter(_, _) ⇒ p match {
-                    case state: GlobalEscape ⇒ Result(e, state)
-                    case NoEscape            ⇒ meetAndFilter(other, ArgEscape)
-                    case ArgEscape           ⇒ meetAndFilter(other, ArgEscape)
-                    case MaybeNoEscape ⇒ u match {
+                    case state: GlobalEscape  ⇒ Result(e, state)
+                    case NoEscape | ArgEscape ⇒ meetAndFilter(other, ArgEscape)
+                    case MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape ⇒ u match {
                         case IntermediateUpdate ⇒
-                            val newEP = EP(other, MaybeNoEscape)
+                            val newEP = EP(other, p.asInstanceOf[EscapeProperty])
                             dependees = dependees.filter(_.e ne other) + newEP
-                            IntermediateResult(e, MaybeArgEscape meet worstProperty, dependees, c)
-                        case _ ⇒ meetAndFilter(other, MaybeArgEscape)
-                    }
-                    case MaybeArgEscape ⇒ u match {
-                        case IntermediateUpdate ⇒
-                            val newEP = EP(other, MaybeArgEscape)
-                            dependees = dependees.filter(_.e ne other) + newEP
-                            IntermediateResult(e, MaybeArgEscape meet worstProperty, dependees, c)
-                        case _ ⇒ meetAndFilter(other, MaybeArgEscape)
-                    }
-                    case MaybeMethodEscape ⇒ u match {
-                        case IntermediateUpdate ⇒
-                            val newEP = EP(other, MaybeMethodEscape)
-                            dependees = dependees.filter(_.e ne other) + newEP
-                            IntermediateResult(e, MaybeArgEscape meet worstProperty, dependees, c)
+                            IntermediateResult(e, MaybeArgEscape meet leastRestrictiveProperty, dependees, c)
                         case _ ⇒ meetAndFilter(other, MaybeArgEscape)
                     }
                 }
@@ -413,7 +365,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
 
         }
 
-        IntermediateResult(e, MaybeNoEscape meet worstProperty, dependees, c)
+        IntermediateResult(e, MaybeNoEscape meet leastRestrictiveProperty, dependees, c)
     }
 
     /**
@@ -422,33 +374,21 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
      */
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
-            //TODO: AllocationType
-            case as @ ObjectAllocationSite(m, pc) ⇒
-                val TACode(_, code, _, _, _) = project.get(DefaultTACAIKey)(m)
+            case as @ AllocationSite(m, pc, _) ⇒
+                val code = project.get(DefaultTACAIKey)(m).stmts
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
                 if (index != -1)
                     code(index) match {
-                        case Assignment(`pc`, DVar(_, uses), New(`pc`, _)) ⇒
+                        case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
                             doDetermineEscape(as, index, uses, code, m)
+                        case ExprStmt(`pc`, NewArray(`pc`, _, _)) ⇒
+                            ImmediateResult(e, NoEscape)
                         case stmt ⇒
                             throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
                     }
-                else /* the allocation site is part of dead code */ Result(e, NoEscape)
-            case as @ ArrayAllocationSite(m, pc) ⇒
-                val TACode(_, code, _, _, _) = project.get(DefaultTACAIKey)(m)
-
-                val index = code indexWhere { stmt ⇒ stmt.pc == pc }
-
-                if (index != -1)
-                    code(index) match {
-                        case Assignment(`pc`, DVar(_, uses), NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, m)
-                        case stmt ⇒
-                            throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
-                    }
-                else /* the allocation site is part of dead code */ Result(e, NoEscape)
+                else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
             case FormalParameter(m, _) if m.body.isEmpty ⇒ Result(e, MaybeNoEscape)
             case FormalParameter(m, i) ⇒
                 val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
@@ -461,9 +401,9 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
 object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
     type V = DUVar[Domain#DomainValue]
 
-    def entitySelector: PartialFunction[Entity, Entity] = {
-        case as: AllocationSite  ⇒ as
-        case fp: FormalParameter ⇒ fp
+    def entitySelector(propertyStore: PropertyStore): PartialFunction[Entity, Entity] = {
+        case as: AllocationSite /*if !propertyStore(as, EscapeProperty.key).isPropertyFinal */  ⇒ as
+        case fp: FormalParameter /*if !propertyStore(fp, EscapeProperty.key).isPropertyFinal */ ⇒ fp
     }
 
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
@@ -471,8 +411,10 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
     override def usedProperties: Set[PropertyKind] = Set.empty
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        //val analysesManager = project.get(FPCFAnalysesManagerKey)
+        //analysesManager.run(SimpleEscapeAnalysis)
         val analysis = new InterproceduralEscapeAnalysis(project)
-        propertyStore.scheduleForCollected(entitySelector)(analysis.determineEscape)
+        propertyStore.scheduleForCollected(entitySelector(propertyStore))(analysis.determineEscape)
         analysis
     }
 
