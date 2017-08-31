@@ -30,15 +30,16 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.fpcf.PropertyKey.SomeEPKs
+
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = Purity
 }
 
 /**
- * Describes the purity of a method. A method is pure; i.e., the method
- * only operates on the given state or depends on other state/mutable global
- * state; the given state may include the state of the
- * current object that is the receiver of the call if the object/receiver is immutable.
+ * Describes the purity of a method. A method is pure if its result only depends on its inputs
+ * and/or immutable global state and the execution of the method does not have any side effects;
+ * the method's inputs include the current object that is the receiver of the call.
  *
  * '''This analysis follows the definition found on wikipedia:'''
  *
@@ -51,9 +52,9 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  *
  *      '''Hence, using true constants (e.g., Math.e) is not a problem as well as creating
  *      intermediate (mutable) data structures.
- *      Furthermore, instance method based calls can also be pure if
- *      the receiving object is (effectively final) or was created as part of the evaluation
- *      of the method.'''
+ *      More precisely, methods are pure if the values they refer to are always (even across program
+ *      runs) have an identical shape and the precise location in the heap is not relevant (e.g.
+ *      java.lang.Object.hashCode and toString are not pure).'''
  *
  *  -   Evaluation of the result does not cause any semantically observable side effect or output,
  *      such as mutation of mutable objects or output to I/O devices.
@@ -62,7 +63,46 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  *      values and these conditions must apply to all returned values for the function to be
  *      considered pure. If an argument is "call-by-reference", any parameter mutation will alter
  *      the value of the argument outside the function, which will render the function impure.
- *      '''However, if the referenced object is immutable it is ok.'''
+ *
+ * Based on these two requirements, purity of a method can have varying degrees, represented by the
+ * subclasses of this property:
+ *
+ * [[Impure]] methods have no constraints on their behavior. They may have side effect and depend
+ * on all accessible state. Analyses can always return [[Impure]] as a safe default value - even if
+ * they are not able to prove that a method is Impure.
+ *
+ * [[SideEffectFree]] methods may still depend on all accessible state, but may not have any side
+ * effects. In single-threaded execution, this means that the object graph of the program may not
+ * have changed between invocation of the method and its return, except for potentially additional
+ * objects allocated by the method. For multi-threaded execution, the object graph may not change
+ * due to the invocation of the method (although it may change due to other methods executing on
+ * concurrent threads). The method must not have any effects (beside consumption of resources like
+ * memory and processor time) on methods executing concurrently, in particular it may not acquire
+ * any locks on objects that concurrent methods could also try to acquire. Analyses may return
+ * [[SideEffectFree]] as a safe default value if they are unable to guarantee that a method is
+ * [[Pure]], even if it is, as long as they can guarantee that the method does not have any side
+ * effects.
+ *
+ * [[Pure]] methods must be side effect free as above, but additionally, their result may only
+ * depend on their parameters (including the receiver object) and global constants. In particular,
+ * the result of a Pure method must be structurally identical each time the method is invoked with
+ * structurally identical parameters. Pure methods may depend on the aliasing relation between their
+ * parameters or between their parameters and global constants. In multi-threaded execution, Pure
+ * methods can not depend on any mutable state of their parameters if that state might be mutated
+ * by concurrently executing methods. Analyses may return [[Pure]] only if they are able to
+ * guarantee that a method fulfills these requirements. Otherwise they must return a weaker safe
+ * value as stated above.
+ *
+ * [[ConditionallySideEffectFree]] and [[ConditionallyPure]] can be used by analyses to specify
+ * intermediate results. ConditionallySideEffect free methods are methods that may still become
+ * [[SideEffectFree]], but that result depends on other analysis results not yet available.
+ * ConditionallySideEffectFree methods may not become [[Pure]] anymore. ConditionallyPure methods
+ * are methods that may still become [[Pure]], but that result depends on other analysis results not
+ * yet available. Depending on these results, ConditionallyPure methods might also become [[Impure]]
+ * or [[SideEffectFree]], or, for another intermediate result, [[ConditionallySideEffectFree]].
+ *
+ * [[MaybePure]] is used as a default fallback value if no purity information could be computed for
+ * a method. Clients must treat this in the same way as [[Impure]].
  *
  * @author Michael Eichberg
  * @author Dominik Helm
@@ -87,9 +127,24 @@ object Purity extends PurityPropertyMetaInformation {
         // The default property that will be used if no analysis is able
         // to (directly) compute the respective property.
         MaybePure,
-        // When we have a cycle all properties are necessarily conditionally pure
-        // hence, we can leverage the "pureness"
-        Pure
+        // When we have a cycle, we can leverage the "purity" if all properties are either
+        // conditionally pure or conditionally side-effect free
+        (propertyStore: PropertyStore, epks: SomeEPKs) ⇒ {
+            val purity: Purity = epks.foldLeft(Pure.asInstanceOf[Purity]) { (purity, epk) ⇒
+                epk match {
+                    case EPK(e, `key`) if purity == Pure && propertyStore(e, key).p == ConditionallyPure ⇒
+                        Pure
+                    case EPK(e, `key`) if purity != MaybePure ⇒
+                        val p = propertyStore(e, key).p
+                        if (p == ConditionallyPure || p == ConditionallySideEffectFree)
+                            SideEffectFree
+                        else
+                            MaybePure
+                    case _ ⇒ MaybePure
+                }
+            }
+            Iterable(Result(epks.head.e, purity))
+        }
     // NOTE
     // We DO NOT increase the pureness of all methods as this will happen automatically
     // as a sideeffect of setting the pureness of one method!
