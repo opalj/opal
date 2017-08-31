@@ -26,14 +26,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.analysis
+package org.opalj
+package fpcf
+package analyses
 
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntSet
-import org.opalj.fpcf._
-import org.opalj.fpcf.properties.{DeclaredFinalField, EffectivelyFinalField, FieldMutability, NonFinalFieldByAnalysis}
-import org.opalj.tac._
+import org.opalj.fpcf.properties.DeclaredFinalField
+import org.opalj.fpcf.properties.EffectivelyFinalField
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.NonFinalFieldByAnalysis
+import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.PutStatic
+import org.opalj.tac.PutField
+import org.opalj.tac.UVar
 
 /**
  * Determines if a field is always initialized at most once or if a field is or can be
