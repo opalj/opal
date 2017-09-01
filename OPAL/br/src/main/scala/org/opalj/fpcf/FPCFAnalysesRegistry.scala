@@ -79,7 +79,7 @@ object FPCFAnalysesRegistry {
             OPALLogger.error(
                 "setup",
                 s"Unknown fix-point analysis. Analysis runner could not be instantiated: $analysisFactory"
-            )(                    GlobalLogContext                )
+            )(GlobalLogContext)
         }
     }
 
