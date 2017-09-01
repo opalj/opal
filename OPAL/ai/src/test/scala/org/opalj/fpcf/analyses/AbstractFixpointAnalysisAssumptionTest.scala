@@ -30,12 +30,12 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.analyses.Project
 import java.net.URL
 
 import org.opalj.br.EnumValue
 import org.opalj.br.ElementValuePairs
 import org.opalj.br.ElementValuePair
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 
 /**
