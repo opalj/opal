@@ -80,6 +80,8 @@ trait Instruction extends InstructionLike {
     // ---------------------------------------------------------------------------------------------
 
     def isGotoInstruction: Boolean = false
+
+    def asGotoInstruction: GotoInstruction = throw new ClassCastException();
 }
 
 /**
