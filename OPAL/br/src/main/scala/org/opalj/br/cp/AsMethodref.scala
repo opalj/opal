@@ -30,8 +30,6 @@ package org.opalj
 package br
 package cp
 
-import scala.annotation.volatile
-
 /**
  * Constant pool entry that represents method refs.
  *
@@ -49,7 +47,7 @@ trait AsMethodref extends Constant_Pool_Entry {
     def isInterfaceMethodRef: Boolean
 
     // to cache the result
-    private[this] @volatile var methodref: (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) = null
+    @volatile private[this] var methodref: (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) = null
     override def asMethodref(cp: Constant_Pool): (ReferenceType, Boolean, String, MethodDescriptor) = {
         // The following solution is sufficiently thread safe; i.e.,
         // it may happen that two or more methodref instances
