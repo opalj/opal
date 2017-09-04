@@ -33,7 +33,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.Naught
 
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -191,7 +191,7 @@ class CodeAttributeTest extends FlatSpec with Matchers {
         cfForks.size should be(1)
         cfForks should contain(8)
         forkTargetPCs.size should be(1)
-        forkTargetPCs(8) should be(IntSet(15, 11))
+        forkTargetPCs(8) should be(IntArraySet(15, 11))
     }
 
     behavior of "the \"Code\" attribute's localVariableTable method"

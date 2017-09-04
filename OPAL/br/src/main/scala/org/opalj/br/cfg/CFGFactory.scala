@@ -34,7 +34,7 @@ import scala.annotation.switch
 
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.HashMap
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
@@ -130,7 +130,7 @@ object CFGFactory {
         // 2. iterate over the code to determine basic block boundaries
         var runningBB: BasicBlock = null
         var previousPC: PC = 0
-        var subroutineReturnPCs = IntMap.empty[IntSet] // PC => IntSet
+        var subroutineReturnPCs = IntMap.empty[IntArraySet] // PC => IntArraySet
         code.iterate { (pc, instruction) ⇒
             if (runningBB eq null) {
                 runningBB = bbs(pc)
@@ -266,7 +266,7 @@ object CFGFactory {
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     val subroutinePC = pc + jsrInstr.branchoffset
                     val thisSubroutineReturnPCs =
-                        subroutineReturnPCs.getOrElse(subroutinePC, IntSet.empty)
+                        subroutineReturnPCs.getOrElse(subroutinePC, IntArraySet.empty)
                     subroutineReturnPCs += (
                         subroutinePC →
                         (thisSubroutineReturnPCs + jsrInstr.indexOfNextInstruction(pc))

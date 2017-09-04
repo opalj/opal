@@ -32,7 +32,7 @@ package analyses.cg
 
 import scala.collection.{Set, Map}
 
-import org.opalj.collection.immutable.IntSet1
+import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br._
 
@@ -96,13 +96,13 @@ class CallGraphBuilder(val project: SomeProject) {
                         val newPCs = pcs + pc
                         if (pcs ne newPCs) callers.update(caller, newPCs)
                     case None ⇒
-                        val newPCs = IntSet1(pc)
+                        val newPCs = IntArraySet1(pc)
                         callers.put(caller, newPCs)
                 }
                 // USING AN IMMUTABLE MAP - ROUGHLY 5% SLOWER AND 10% MEMORY OVERHEAD
                 // val callers = calledByMap(callee.id)
                 // if (callers eq null) {
-                //  calledByMap(callee.id) = new Map.Map1(caller, IntSet1(pc))
+                //  calledByMap(callee.id) = new Map.Map1(caller, IntArraySet1(pc))
                 // } else {
                 //  callers.get(caller) match {
                 //      case Some(pcs) ⇒
@@ -110,7 +110,7 @@ class CallGraphBuilder(val project: SomeProject) {
                 //          if (pcs ne newPCs)
                 //              calledByMap(callee.id) = callers.updated(caller, newPCs)
                 //      case None ⇒
-                //          val newPCs = IntSet1(pc)
+                //          val newPCs = IntArraySet1(pc)
                 //          calledByMap(callee.id) = callers.updated(caller, newPCs)
                 //      }
                 // }

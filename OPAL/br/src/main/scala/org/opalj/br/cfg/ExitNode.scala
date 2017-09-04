@@ -43,6 +43,8 @@ class ExitNode( final val normalReturn: Boolean) extends CFGNode {
     final override def isBasicBlock: Boolean = false
     final override def isCatchNode: Boolean = false
     final override def isExitNode: Boolean = true
+    final override def isAbnormalReturnExitNode: Boolean = !normalReturn
+    final override def isNormalReturnExitNode: Boolean = normalReturn
 
     final override def isStartOfSubroutine: Boolean = false
 

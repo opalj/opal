@@ -118,6 +118,11 @@ case class If[+V <: Var[V]](
         target = pcToIndex(target)
     }
 
+    final override def isSideEffectFree: Boolean = {
+        assert(left.isValueExpression && right.isValueExpression)
+        true
+    }
+
     override def toString: String = s"If(pc=$pc,$left,$condition,$right,target=$target)"
 
 }
@@ -136,6 +141,8 @@ case class Goto(pc: PC, private var target: Int) extends Stmt[Nothing] {
     final override def astID = Goto.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = target = pcToIndex(target)
+
+    final override def isSideEffectFree: Boolean = true
 
     /**
      * @note Calling this method is only supported after the quadruples representation
@@ -169,6 +176,8 @@ case class Ret(pc: PC, private var returnAddresses: PCs) extends Stmt[Nothing] {
         returnAddresses = returnAddresses map { pcToIndex }
     }
 
+    final override def isSideEffectFree: Boolean = true
+
     override def toString: String = {
         s"Ret(pc=$pc,returnAddresses=${returnAddresses.mkString("(", ",", ")")})"
     }
@@ -196,6 +205,8 @@ case class JSR(pc: PC, private[tac] var target: Int) extends Stmt[Nothing] {
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
     }
+
+    final override def isSideEffectFree: Boolean = true
 
     /**
      * The first statement of the called subroutine.
@@ -227,6 +238,11 @@ case class Switch[+V <: Var[V]](
         defaultTarget = pcToIndex(defaultTarget)
     }
 
+    final override def isSideEffectFree: Boolean = {
+        assert(index.isValueExpression)
+        true
+    }
+
     // Calling this method is only supported after the quadruples representation
     // is created and the remapping of pcs to instruction indexes has happened!
     def caseStmts: IndexedSeq[Int] = npairs.map(x ⇒ x._2)
@@ -254,6 +270,8 @@ case class Assignment[+V <: Var[V]](pc: PC, targetVar: V, expr: Expr[V]) extends
         expr.remapIndexes(pcToIndex)
     }
 
+    final override def isSideEffectFree: Boolean = expr.isSideEffectFree
+
     override def toString: String = s"Assignment(pc=$pc,$targetVar,$expr)"
 
 }
@@ -267,6 +285,11 @@ case class ReturnValue[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
     final override def astID = ReturnValue.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+
+    final override def isSideEffectFree: Boolean = {
+        // IMPROVE Check if the method does call synchronization statements; if so we may get an exception when we return from the method; otherwise the method is side-effect free
+        false
+    }
 
     override def toString: String = s"ReturnValue(pc=$pc,$expr)"
 }
@@ -288,6 +311,11 @@ case class Return(pc: PC) extends SimpleStmt {
     final override def asReturn: this.type = this
     final override def astID = Return.ASTID
 
+    final override def isSideEffectFree: Boolean = {
+        // IMPROVE Check if the method does call synchronization statements; if so we may get an exception when we return from the method; otherwise the method is side-effect free
+        false
+    }
+
     override def toString: String = s"Return(pc=$pc)"
 }
 object Return {
@@ -298,6 +326,8 @@ case class Nop(pc: PC) extends SimpleStmt {
 
     final override def asNop: this.type = this
     final override def astID = Nop.ASTID
+
+    final override def isSideEffectFree: Boolean = true
 
     override def toString: String = s"Nop(pc=$pc)"
 }
@@ -319,6 +349,11 @@ case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends Synchroni
     final override def asMonitorEnter: this.type = this
     final override def astID = MonitorEnter.ASTID
 
+    final override def isSideEffectFree: Boolean = {
+        // IMPROVE Is the lock as such ever used (do we potentially have concurrency)?
+        false
+    }
+
     override def toString: String = s"MonitorEnter(pc=$pc,$objRef)"
 }
 object MonitorEnter {
@@ -329,6 +364,11 @@ case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends Synchroniz
 
     final override def asMonitorExit: this.type = this
     final override def astID = MonitorExit.ASTID
+
+    final override def isSideEffectFree: Boolean = {
+        // IMPROVE Is the lock as such ever used (do we potentially have concurrency)?
+        false
+    }
 
     override def toString: String = s"MonitorExit(pc=$pc,$objRef)"
 
@@ -346,6 +386,11 @@ case class ArrayStore[+V <: Var[V]](
 
     final override def asArrayStore: this.type = this
     final override def astID = ArrayStore.ASTID
+
+    final override def isSideEffectFree: Boolean = {
+        // IMPROVE Is it a redundant write?
+        false
+    }
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         arrayRef.remapIndexes(pcToIndex)
@@ -365,6 +410,8 @@ case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
     final override def astID = Throw.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = exception.remapIndexes(pcToIndex)
+
+    final override def isSideEffectFree: Boolean = false
 
     override def toString: String = s"Throw(pc=$pc,$exception)"
 }
@@ -391,6 +438,11 @@ case class PutStatic[+V <: Var[V]](
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
 
+    final override def isSideEffectFree: Boolean = {
+        // IMPROVE Is it a redundant write?
+        false
+    }
+
     override def toString: String = {
         s"PutStatic(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$value)"
     }
@@ -416,6 +468,11 @@ case class PutField[+V <: Var[V]](
         value.remapIndexes(pcToIndex)
     }
 
+    final override def isSideEffectFree: Boolean = {
+        // IMPROVE Is it a redundant write?
+        false
+    }
+
     override def toString: String = {
         s"PutField(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$objRef,$value)"
     }
@@ -424,7 +481,14 @@ object PutField {
     final val ASTID = 14
 }
 
-sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V]
+sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
+
+    final override def isSideEffectFree: Boolean = {
+        // IMPROVE if the call is side-effect free...
+        false
+    }
+
+}
 
 sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
 
@@ -534,6 +598,14 @@ case class ExprStmt[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
 
+    final override def isSideEffectFree: Boolean = {
+        assert(
+            !expr.isSideEffectFree,
+            "useless ExprStmt - the referenced expression is side-effect free"
+        )
+        false
+    }
+
     override def toString: String = s"ExprStmt(pc=$pc,$expr)"
 
 }
@@ -550,6 +622,11 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
     final override def astID: Int = Checkcast.ASTID
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
+
+    final override def isSideEffectFree: Boolean = {
+        // IMPROVE a safe checkcast (i.e., one where we statically know that it will never fail) is side-effect free
+        false
+    }
 
     override def toString: String = s"Checkcast(pc=$pc,$value,${cmpTpe.toJava})"
 

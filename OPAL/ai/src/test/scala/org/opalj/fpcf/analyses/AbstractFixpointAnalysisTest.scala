@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package analyses
 
+import scala.language.reflectiveCalls
+
 import java.io.File
 import java.net.URL
 
@@ -43,8 +45,6 @@ import org.opalj.br.analyses.PropertyStoreKey
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
-
-import scala.language.reflectiveCalls
 
 /**
  * Tests a fix-point analysis implementation using the classes in the configured
@@ -327,10 +327,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.p match {
-            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
-            case _                                     ⇒ computedOProperty.p.toString
-        }
+        val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != expected) {
             val className = classFile.fqn
@@ -364,10 +361,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.p match {
-            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
-            case _                                     ⇒ computedOProperty.p.toString
-        }
+        val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != expected) {
             val classFile = method.classFile
@@ -397,10 +391,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.p match {
-            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
-            case _                                     ⇒ computedOProperty.p.toString
-        }
+        val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != expected) {
             val classFile = method.classFile
@@ -431,10 +422,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.p match {
-            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
-            case _                                     ⇒ computedOProperty.p.toString
-        }
+        val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != expected) {
             val classFile = method.classFile
