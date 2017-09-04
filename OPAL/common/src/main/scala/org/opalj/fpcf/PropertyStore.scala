@@ -1190,6 +1190,11 @@ class PropertyStore private (
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
 
+    /**
+     * Schedules the execution of the given PropertyComputation function for the given entity.
+     * This is of particular interest to start an incremental computation
+     * (cf. [[IncrementalResult]]) which, e.g., processes the class hierachy in a top-down manner.
+     */
     def scheduleSinglePropertyComputation[E <: Entity](e: E)(pc: SomePropertyComputation): Unit = {
         if (!isInterrupted()) scheduleComputation(e, pc)
     }
