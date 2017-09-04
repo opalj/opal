@@ -29,7 +29,7 @@
 package org.opalj
 package tac
 
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
@@ -137,7 +137,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
 case class CaughtException[+V <: Var[V]](
         pc:                        PC,
         exceptionType:             Option[ObjectType],
-        private var throwingStmts: IntSet
+        private var throwingStmts: IntArraySet
 ) extends Expr[V] {
 
     final override def asCaughtException: this.type = this

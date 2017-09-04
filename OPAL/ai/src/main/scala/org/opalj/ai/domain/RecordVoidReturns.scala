@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 
 /**
  * Records the program counters of all return (void) instructions that are reached.
@@ -55,7 +55,7 @@ import org.opalj.collection.immutable.IntSet
 trait RecordVoidReturns extends ReturnInstructionsDomain {
     domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
 
-    private[this] var returnVoidInstructions: IntSet = IntSet.empty
+    private[this] var returnVoidInstructions: IntArraySet = IntArraySet.empty
 
     def allReturnVoidInstructions: PCs = returnVoidInstructions
 

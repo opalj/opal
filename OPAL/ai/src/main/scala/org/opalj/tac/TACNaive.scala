@@ -39,7 +39,7 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 
 /**
  * Converts the bytecode of a method into a three address representation using a very naive
@@ -644,7 +644,7 @@ object TACNaive {
                     schedule(targetPC, retVar :: stack)
 
                 case RET.opcode ⇒
-                    var successors = IntSet.empty
+                    var successors = IntArraySet.empty
                     cfg.bb(pc).successors foreach { successorNode ⇒
                         val successor = successorNode match {
                             case cn: CatchNode  ⇒ cn.handlerPC

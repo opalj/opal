@@ -35,7 +35,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br._
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
@@ -101,7 +101,7 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that catches everything" in {
         evaluateMethod("alwaysCatch") { domain ⇒
             import domain._
-            allReturnVoidInstructions should be(IntSet(7)) // <= void return
+            allReturnVoidInstructions should be(IntArraySet(7)) // <= void return
         }
     }
 
@@ -121,14 +121,14 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
         evaluateMethod("throwsNoException") { domain ⇒
             import domain._
             allThrownExceptions should be(Map.empty)
-            allReturnVoidInstructions should be(IntSet(39)) // <= void return
+            allReturnVoidInstructions should be(IntArraySet(39)) // <= void return
         }
     }
 
     it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
         evaluateMethod("leverageException") { domain ⇒
             import domain._
-            allReturnVoidInstructions should be(IntSet(38)) // <= void return
+            allReturnVoidInstructions should be(IntArraySet(38)) // <= void return
             allThrownExceptions should be(Map.empty)
             // Due to the simplicity of the domain I(the exceptions of called methods are
             // not yet analyze) we cannot determine that the following exception
