@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import java.io.File
 
 import org.opalj.ai.Domain
@@ -43,13 +42,18 @@ import org.opalj.br.AllocationSite
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.Method
+import org.opalj.br.ObjectAllocationSite
+import org.opalj.br.ArrayAllocationSite
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.AnalysisModeConfigFactory
-import org.opalj.collection.immutable.IntSet
+import org.opalj.br.analyses.AllocationSites
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.EmptyIntArraySet
 import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
@@ -76,6 +80,11 @@ import org.opalj.tac.Throw
 import org.opalj.tac.UVar
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.FunctionCall
+import org.opalj.tac.Const
+import org.opalj.tac.ArrayLoad
+import org.opalj.tac.GetStatic
+import org.opalj.tac.GetField
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -90,36 +99,12 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
      * Determines whether the given entity on the given definition site with given uses of that
      * allocation/parameter escapes in the given code.
      */
-    private def doDetermineEscape(e: Entity, defSite: ValueOrigin, uses: IntSet,
-                                  code: Array[Stmt[V]]): PropertyComputationResult = {
+    private def doDetermineEscape(e: Entity, defSite: ValueOrigin, uses: IntArraySet,
+                                  code: Array[Stmt[V]], m: Method): PropertyComputationResult = {
         var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
         var leastRestrictiveProperty: EscapeProperty = NoEscape
         for (use ← uses)
             checkStmtForEscape(code(use))
-
-        // Every entity that is not identified as escaping is not escaping
-        if (dependees.isEmpty)
-            return Result(e, leastRestrictiveProperty)
-
-        // we depend on the result for other entities, lets construct a continuation
-        def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
-            p match {
-                case state: GlobalEscape ⇒ Result(e, state)
-                case NoEscape            ⇒ meetAndFilter(other, NoEscape)
-                case MaybeArgEscape      ⇒ meetAndFilter(other, MaybeArgEscape)
-                case MaybeMethodEscape   ⇒ meetAndFilter(other, MaybeNoEscape)
-                case MaybeNoEscape /* could be an intermediate result */ ⇒ u match {
-                    case IntermediateUpdate ⇒
-                        val newEP = EP(other, MaybeNoEscape)
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, MaybeNoEscape, dependees, c)
-                    case _ ⇒ meetAndFilter(other, MaybeNoEscape)
-                }
-                case _ ⇒ throw new RuntimeException("not yet implemented")
-            }
-        }
-
-        IntermediateResult(e, MaybeNoEscape, dependees, c)
 
         /**
          * Sets leastRestrictiveProperty to the greatest lower bound of its current value and the
@@ -139,26 +124,14 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 case PutStatic.ASTID ⇒
                     val value = stmt.asPutStatic.value
                     if (usesDefSite(value)) calcLeastRestrictive(GlobalEscapeViaStaticFieldAssignment)
-                // we are field insensitive, so we have to consider a field (and array) write as
-                // GlobalEscape
                 case PutField.ASTID ⇒
                     val value = stmt.asPutField.value
-                    if (usesDefSite(value)) {
-                        for (defSite ← stmt.asPutField.objRef.asVar.definedBy) {
-                            if (defSite >= 0) {
-                                val uses = code(defSite).asAssignment.targetVar.usedBy
-                                println(uses)
-                                //doDetermineEscape(e, defSite, uses, code)
-                            } else {
-                                // assigned to field of parameter
-                                calcLeastRestrictive(MaybeMethodEscape)
-                            }
-                        }
-                        calcLeastRestrictive(MaybeNoEscape)
-                    }
+                    if (usesDefSite(value))
+                        bla(stmt.asPutField.objRef.asVar.definedBy)
                 case ArrayStore.ASTID ⇒
                     val value = stmt.asArrayStore.value
-                    if (usesDefSite(value)) calcLeastRestrictive(MaybeNoEscape)
+                    if (usesDefSite(value))
+                        bla(stmt.asArrayStore.arrayRef.asVar.definedBy)
                 case Throw.ASTID ⇒
                     val value = stmt.asThrow.exception
                     // the exception could be catched, so we know nothing
@@ -166,7 +139,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 // we are intra-procedural
                 case ReturnValue.ASTID ⇒
                     val value = stmt.asReturnValue.expr
-                    if (usesDefSite(value)) calcLeastRestrictive(MaybeMethodEscape)
+                    if (usesDefSite(value)) calcLeastRestrictive(MethodEscapeViaReturn)
                 case StaticMethodCall.ASTID ⇒
                     val params = stmt.asStaticMethodCall.params
                     if (anyParameterUsesDefSite(params)) calcLeastRestrictive(MaybeArgEscape)
@@ -187,6 +160,45 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             }
         }
 
+        def bla(defSites: IntArraySet): Unit = {
+            var worklist = defSites
+            var seen: IntArraySet = EmptyIntArraySet
+            while (worklist.nonEmpty) {
+                val defSite = worklist.head
+                worklist = worklist - defSite
+                seen = seen + defSite
+
+                if (defSite >= 0) {
+                    code(defSite) match {
+                        case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
+                            val allocationSites = propertyStore.context[AllocationSites]
+                            val allocationSite = allocationSites(m)(pc)
+                            val escapeState = propertyStore(allocationSite, EscapeProperty.key)
+                            escapeState match {
+                                case EP(_, MethodEscapeViaReturn) ⇒ calcLeastRestrictive(MethodEscapeViaReturnAssignment)
+                                case EP(_, p) if p.isFinal        ⇒ calcLeastRestrictive(p)
+                                case _                            ⇒ dependees += escapeState
+                            }
+                        case Assignment(_, _, GetStatic(_, _, _, _)) ⇒ calcLeastRestrictive(GlobalEscapeViaHeapObjectAssignment)
+                        case Assignment(_, _, GetField(_, _, _, _, objRef)) ⇒
+                            objRef.asVar.definedBy foreach { x ⇒
+                                if (!seen.contains(x)) worklist = worklist + x
+
+                            }
+                        case Assignment(_, _, ArrayLoad(_, _, arrayRef)) ⇒
+                            arrayRef.asVar.definedBy foreach { x ⇒
+                                if (!seen.contains(x)) worklist = worklist + x
+                            }
+                        case Assignment(_, _, _: FunctionCall[_]) ⇒ calcLeastRestrictive(MaybeNoEscape)
+                        case Assignment(_, _, _: Const)           ⇒ // Nothing to do
+                        case _                                    ⇒ throw new RuntimeException("not yet implemented")
+                    }
+                } else {
+                    // assigned to field of parameter
+                    calcLeastRestrictive(MethodEscapeViaParameterAssignment)
+                }
+            }
+        }
         /**
          * For a given entity with defSite, check whether the expression is a function call.
          * For function call mark parameters and receiver objects that use the defSite as
@@ -262,15 +274,16 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                                 escapeState match {
                                     case EP(_, NoEscape)            ⇒ //NOTHING TO DO
                                     case EP(_, state: GlobalEscape) ⇒ calcLeastRestrictive(state) //TODO return
+                                    case EP(_, _: MethodEscape) ⇒
+                                        /*println(fp.toString+" "+m.classFile); */ calcLeastRestrictive(NoEscape) //TODO make sense?
                                     case EP(_, state @ (MaybeArgEscape | MaybeMethodEscape)) ⇒
                                         calcLeastRestrictive(state)
                                     case EP(_, MaybeNoEscape) ⇒ dependees += escapeState
                                     case EP(_, _) ⇒
                                         // other types of escape should not occur on this analysis
-                                        throw new RuntimeException("not yet implemented")
+                                        throw new RuntimeException("not yet implemented "+escapeState)
                                     // result not yet finished
                                     case epk ⇒ dependees += epk
-
                                 }
                             case /* unknown method */ _ ⇒ calcLeastRestrictive(MaybeNoEscape)
                         }
@@ -280,8 +293,8 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 if (usesDefSite(receiver) || anyParameterUsesDefSite(params))
                     calcLeastRestrictive(MaybeArgEscape)
             }
-        }
 
+        }
         /**
          * Sets leastRestrictiveProperty to the lower bound of p and the current worst and remove entity
          * other from dependees. If this entity does not depend on any more results it has
@@ -295,6 +308,58 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             else
                 IntermediateResult(e, MaybeNoEscape, dependees, c)
         }
+
+        // Every entity that is not identified as escaping is not escaping
+        if (dependees.isEmpty)
+            return Result(e, leastRestrictiveProperty)
+
+        // we depend on the result for other entities, lets construct a continuation
+        def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
+            other match {
+                case FormalParameter(_, _) ⇒ p match {
+                    case state: GlobalEscape ⇒ Result(e, state)
+                    case NoEscape            ⇒ meetAndFilter(other, NoEscape)
+                    case _: MethodEscape ⇒
+                        /*println(other.toString+" "+other.asInstanceOf[FormalParameter].method.classFile);*/ meetAndFilter(other, NoEscape)
+                    case MaybeArgEscape    ⇒ meetAndFilter(other, MaybeArgEscape)
+                    case MaybeMethodEscape ⇒ meetAndFilter(other, MaybeNoEscape)
+                    case MaybeNoEscape /* could be an intermediate result */ ⇒ u match {
+                        case IntermediateUpdate ⇒
+                            val newEP = EP(other, MaybeNoEscape)
+                            dependees = dependees.filter(_.e ne other) + newEP
+                            IntermediateResult(e, MaybeNoEscape, dependees, c)
+                        case _ ⇒ meetAndFilter(other, MaybeNoEscape)
+                    }
+                    case _ ⇒ throw new RuntimeException("not yet implemented")
+                }
+                case ObjectAllocationSite(_, _) ⇒ p match {
+                    case MethodEscapeViaReturn                  ⇒ meetAndFilter(other, MethodEscapeViaReturnAssignment)
+                    case state: EscapeProperty if state.isFinal ⇒ meetAndFilter(other, state)
+                    case state: EscapeProperty ⇒ u match {
+                        case IntermediateUpdate ⇒
+                            val newEP = EP(other, state)
+                            dependees = dependees.filter(_.e ne other) + newEP
+                            IntermediateResult(e, state, dependees, c)
+                        case _ ⇒ meetAndFilter(other, state)
+                    }
+                }
+                case ArrayAllocationSite(_, _) ⇒ p match {
+                    case MethodEscapeViaReturn                  ⇒ meetAndFilter(other, MethodEscapeViaReturnAssignment)
+                    case state: EscapeProperty if state.isFinal ⇒ meetAndFilter(other, state)
+                    case state: EscapeProperty ⇒ u match {
+                        case IntermediateUpdate ⇒
+                            val newEP = EP(other, state)
+                            dependees = dependees.filter(_.e ne other) + newEP
+                            IntermediateResult(e, state, dependees, c)
+                        case _ ⇒ meetAndFilter(other, state)
+                    }
+                }
+            }
+
+        }
+
+        IntermediateResult(e, MaybeNoEscape, dependees, c)
+
     }
 
     /**
@@ -311,7 +376,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
                 if (index != -1)
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code)
+                            doDetermineEscape(as, index, uses, code, m)
                         case ExprStmt(`pc`, NewArray(`pc`, _, _)) ⇒
                             ImmediateResult(e, NoEscape)
                         case stmt ⇒
@@ -322,7 +387,7 @@ class SimpleEscapeAnalysis private ( final val project: SomeProject) extends FPC
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
                 val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
                 val thisParam = params.thisParameter
-                doDetermineEscape(e, thisParam.origin, thisParam.useSites, code)
+                doDetermineEscape(e, thisParam.origin, thisParam.useSites, code, m)
             case fp: FormalParameter ⇒ ImmediateResult(fp, MaybeNoEscape)
         }
     }
@@ -383,6 +448,7 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         val propertyStore = project.get(PropertyStoreKey)
         val staticEscapes =
             propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
+        val heapEscapes = propertyStore.entities(GlobalEscapeViaHeapObjectAssignment)
         val maybeNoEscape =
             propertyStore.entities(MaybeNoEscape)
         val maybeArgEscape =
@@ -391,22 +457,33 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
             propertyStore.entities(MaybeMethodEscape)
         val argEscapes = propertyStore.entities(ArgEscape)
         val noEscape = propertyStore.entities(NoEscape)
+        val methodReturnEscapes = propertyStore.entities(MethodEscapeViaReturn)
+        val methodParameterEscapes = propertyStore.entities(MethodEscapeViaParameterAssignment)
+        val methodReturnFieldEscapes = propertyStore.entities(MethodEscapeViaReturnAssignment)
 
         println("ALLOCATION SITES:")
-        println(s"# of global escaping objects: ${sizeAsAS(staticEscapes)}")
         println(s"# of maybe no escaping objects: ${sizeAsAS(maybeNoEscape)}")
         println(s"# of maybe arg escaping objects: ${sizeAsAS(maybeArgEscape)}")
         println(s"# of maybe method escaping objects: ${sizeAsAS(maybeMethodEscape)}")
-        println(s"# of arg escaping objects: ${sizeAsAS(argEscapes)}")
         println(s"# of local objects: ${sizeAsAS(noEscape)}")
+        println(s"# of arg escaping objects: ${sizeAsAS(argEscapes)}")
+        println(s"# of method escaping objects via return : ${sizeAsAS(methodReturnEscapes)}")
+        println(s"# of method escaping objects via parameter: ${sizeAsAS(methodParameterEscapes)}")
+        println(s"# of method escaping objects via return assignment: ${sizeAsAS(methodReturnFieldEscapes)}")
+        println(s"# of direct global escaping objects: ${sizeAsAS(staticEscapes)}")
+        println(s"# of indirect global escaping objects: ${sizeAsAS(heapEscapes)}")
 
         println("FORMAL PARAMETERS:")
-        println(s"# of global escaping objects: ${sizeAsFP(staticEscapes)}")
         println(s"# of maybe no escaping objects: ${sizeAsFP(maybeNoEscape)}")
         println(s"# of maybe arg escaping objects: ${sizeAsFP(maybeArgEscape)}")
         println(s"# of maybe method escaping objects: ${sizeAsFP(maybeMethodEscape)}")
-        println(s"# of arg escaping objects: ${sizeAsFP(argEscapes)}")
         println(s"# of local objects: ${sizeAsFP(noEscape)}")
+        println(s"# of arg escaping objects: ${sizeAsFP(argEscapes)}")
+        println(s"# of method escaping objects via return : ${sizeAsFP(methodReturnEscapes)}")
+        println(s"# of method escaping objects via parameter: ${sizeAsFP(methodParameterEscapes)}")
+        println(s"# of method escaping objects via return assignment: ${sizeAsFP(methodReturnFieldEscapes)}")
+        println(s"# of direct global escaping objects: ${sizeAsFP(staticEscapes)}")
+        println(s"# of indirect global escaping objects: ${sizeAsFP(heapEscapes)}")
 
         def sizeAsAS(entities: Traversable[Entity]) = entities.collect { case x: AllocationSite ⇒ x }.size
         def sizeAsFP(entities: Traversable[Entity]) = entities.collect { case x: FormalParameter ⇒ x }.size
