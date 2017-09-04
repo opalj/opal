@@ -38,25 +38,21 @@ import static annotations.escape.EscapeKeys.*;
 public class Test {
 
     public static Object returnEscape() {
-        return new @Escapes(ViaReturn) @Escapes(value = MaybeMethod, algorithms = {
-                "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" }) Object();
+        return new @Escapes(ViaReturn) Object();
     }
 
     public static Object multipleEscapes(ClassWithFields param) {
         ClassWithFields.global = new @Escapes(ViaStaticField) Object();
         if (param == null) {
-            throw new @Escapes(ViaReturn) @Escapes(value = MaybeNo, algorithms = {
-                    "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" }) RuntimeException();
+            throw new @Escapes(ViaReturn) RuntimeException();
         }
-        param.f = new @Escapes(ViaParameter) @Escapes(value = MaybeNo, algorithms = {
-                "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" }) Object();
+        param.f = new @Escapes(ViaParameter) Object();
         Object local = new @Escapes(No) Object();
         Object noLocal = new @Escapes(ViaStaticField) @Escapes(value = MaybeArg, algorithms = "SimpleEscapeAnalysis") Object();
         if (local != null) {
             formalParamEscape(noLocal);
         }
-        return new @Escapes(ViaReturn) @Escapes(value = MaybeMethod, algorithms = {
-                "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" }) Object();
+        return new @Escapes(ViaReturn) Object();
     }
 
     public static void globalFieldEscape() {
@@ -66,21 +62,18 @@ public class Test {
     public static void instanceFieldEscape(ClassWithFields param) {
     }
 
-    public static void instanceFieldNoEscpa() {
+    public static void instanceFieldNoEscape() {
         ClassWithFields c = new ClassWithFields();
-        c.f = new @Escapes(No) @Escapes(value = MaybeNo, algorithms = { "SimpleEscapeAnalysis",
-                "InterproceduralEscapeAnalysis" }) Object();
+        c.f = new @Escapes(No) Object();
     }
 
     public static void arrayEscape(Object[] param) {
         if (param.length > 0)
-            param[0] = new @Escapes(ViaParameter) @Escapes(value = MaybeNo, algorithms = {
-                    "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" }) Object();
+            param[0] = new @Escapes(ViaParameter) Object();
     }
 
     public static void parameterEscape(ClassWithFields param) {
-        param.f = new @Escapes(ViaParameter) @Escapes(value = MaybeNo, algorithms = {
-                "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" }) Object();
+        param.f = new @Escapes(ViaParameter) Object();
     }
 
     public static void exceptionEscape() {
