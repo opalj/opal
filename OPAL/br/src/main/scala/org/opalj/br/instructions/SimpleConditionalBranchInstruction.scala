@@ -56,11 +56,15 @@ trait SimpleConditionalBranchInstructionLike
     }
 }
 
-trait SimpleConditionalBranchInstruction
+trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction[T]]
     extends ConditionalBranchInstruction
     with SimpleConditionalBranchInstructionLike {
 
     def branchoffset: Int
+
+    def copy(branchoffset: Int): SimpleConditionalBranchInstruction[T]
+
+    final override def asSimpleConditionalBranchInstruction: this.type = this
 
     /**
      * @inheritdoc
@@ -99,6 +103,6 @@ object SimpleConditionalBranchInstruction {
     /**
      * Extracts the instructions branchoffset.
      */
-    def unapply(i: SimpleConditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
+    def unapply(i: SimpleConditionalBranchInstruction[_ <: SimpleConditionalBranchInstruction[_]]): Some[Int] = Some(i.branchoffset)
 
 }

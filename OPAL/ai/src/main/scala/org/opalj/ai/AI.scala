@@ -1183,7 +1183,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     noConstraint:  SingleValueConstraint
                 ): Unit = {
 
-                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
+                    val branchInstruction = instruction.asSimpleConditionalBranchInstruction
                     val operand = operands.head
                     val rest = operands.tail
                     val nextPC = pcOfNextInstruction
@@ -1262,7 +1262,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     noConstraint:  TwoValuesConstraint
                 ): Unit = {
 
-                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
+                    val branchInstruction = instruction.asSimpleConditionalBranchInstruction
                     val right = operands.head
                     val remainingOperands = operands.tail
                     val left = remainingOperands.head

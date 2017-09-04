@@ -47,7 +47,9 @@ trait IFEQLike extends IF0InstructionLike {
 
 }
 
-case class IFEQ(branchoffset: Int) extends IF0Instruction with IFEQLike
+case class IFEQ(branchoffset: Int) extends IF0Instruction[IFEQ] with IFEQLike {
+    def copy(branchoffset: Int): IFEQ = new IFEQ(branchoffset)
+}
 
 /**
  * Defines constants and factory methods.

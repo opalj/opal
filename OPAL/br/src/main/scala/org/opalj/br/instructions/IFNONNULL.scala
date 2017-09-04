@@ -46,7 +46,9 @@ trait IFNONNULLLike extends IFXNullInstructionLike {
     final def condition: RelationalOperator = RelationalOperators.NE
 }
 
-case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction with IFNONNULLLike
+case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction[IFNONNULL] with IFNONNULLLike {
+    def copy(branchoffset: Int): IFNONNULL = new IFNONNULL(branchoffset)
+}
 
 /**
  * Defines constants and factory methods.

@@ -47,7 +47,9 @@ trait IFLELike extends IF0InstructionLike {
 
 }
 
-case class IFLE(branchoffset: Int) extends IF0Instruction with IFLELike
+case class IFLE(branchoffset: Int) extends IF0Instruction[IFLE] with IFLELike {
+    def copy(branchoffset: Int): IFLE = new IFLE(branchoffset)
+}
 
 /**
  * Defines constants and factory methods.

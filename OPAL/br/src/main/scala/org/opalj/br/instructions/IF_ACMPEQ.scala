@@ -47,7 +47,9 @@ trait IF_ACMPEQLike extends IFACMPInstructionLike {
 
 }
 
-case class IF_ACMPEQ(branchoffset: Int) extends IFACMPInstruction with IF_ACMPEQLike
+case class IF_ACMPEQ(branchoffset: Int) extends IFACMPInstruction[IF_ACMPEQ] with IF_ACMPEQLike {
+    def copy(branchoffset: Int): IF_ACMPEQ = new IF_ACMPEQ(branchoffset)
+}
 
 /**
  * Defines constants and factory methods.

@@ -47,7 +47,9 @@ trait IF_ACMPNELike extends IFACMPInstructionLike {
 
 }
 
-case class IF_ACMPNE(branchoffset: Int) extends IFACMPInstruction with IF_ACMPNELike
+case class IF_ACMPNE(branchoffset: Int) extends IFACMPInstruction[IF_ACMPNE] with IF_ACMPNELike {
+    def copy(branchoffset: Int): IF_ACMPNE = new IF_ACMPNE(branchoffset)
+}
 
 /**
  * Defines constants and factory methods.

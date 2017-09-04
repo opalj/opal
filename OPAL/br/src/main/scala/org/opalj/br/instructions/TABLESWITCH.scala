@@ -68,6 +68,8 @@ case class TABLESWITCH(
         jumpOffsets:   IndexedSeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
 
+    final override def asTABLESWITCH: this.type = this
+
     def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
         var caseValues = Chain.empty[Int]
         var i = jumpOffsets.length - 1
