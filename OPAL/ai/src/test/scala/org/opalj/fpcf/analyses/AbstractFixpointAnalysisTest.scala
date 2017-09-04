@@ -348,8 +348,6 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      */
     def validatePropertyByMethod(method: Method, expected: String): Unit = {
 
-        assert(method ne null, "method is empty")
-
         val computedOProperty = propertyStore(method, propertyKey)
 
         if (computedOProperty.hasNoProperty) {
@@ -377,7 +375,6 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     def validatePropertyByParameterAnnotation(fp: FormalParameter, expected: String): Unit = {
         val method = fp.method
-        assert(method ne null, "method is empty")
 
         val computedOProperty = propertyStore(fp, propertyKey)
 
@@ -408,7 +405,6 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     def validatePropertyByAllocationSite(as: AllocationSite, expected: String): Unit = {
         val method = as.method
-        assert(method ne null, "method is empty")
 
         val computedOProperty = propertyStore(as, propertyKey)
 
