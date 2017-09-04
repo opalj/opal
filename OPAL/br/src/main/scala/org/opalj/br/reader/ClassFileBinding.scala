@@ -60,7 +60,7 @@ trait ClassFileBinding extends ClassFileReader {
                 false
         }
         OPALLogger.info(
-            "project configuration",
+            "class file reader",
             if (delete) {
                 "information about class files synthesized at parsing time is removed"
             } else {

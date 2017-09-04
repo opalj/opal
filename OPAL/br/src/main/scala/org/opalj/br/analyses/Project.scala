@@ -343,7 +343,7 @@ class Project[Source] private (
         classHierarchy.rootTypes foreach { t ⇒ tasks.submit(t) }
         val exceptions = tasks.join()
         exceptions foreach { e ⇒
-            OPALLogger.error("project configuration", "computing the defined methods failed", e)
+            OPALLogger.error("project setup", "computing the defined methods failed", e)
         }
 
         val result = new AnyRefMap[ObjectType, ConstArray[MethodDeclarationContext]](methods.size)
