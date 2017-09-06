@@ -92,7 +92,7 @@ object TACAI {
         while (i < parametersCount) {
             aiVOToTACVo(-aiVO - 1) = tacVO
             tacVO -= 1
-            aiVO -= parameterTypes(0).computationalType.operandSize
+            aiVO -= parameterTypes(i).computationalType.operandSize
             i += 1
         }
 
@@ -203,7 +203,9 @@ object TACAI {
                     if (aiVOs eq null) {
                         IntArraySet.empty
                     } else {
-                        aiVOs.map { aiVO ⇒ if (aiVO < 0) aiVOToTACVo(-aiVO - 1) else aiVO }
+                        aiVOs map { aiVO ⇒
+                            if (aiVO < 0) aiVOToTACVo(-aiVO - 1) else aiVO
+                        }
                     }
                 }
             }
