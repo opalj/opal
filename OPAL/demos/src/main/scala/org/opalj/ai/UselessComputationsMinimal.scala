@@ -80,7 +80,7 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
             collectPCWithOperands(result.domain)(method.body.get, result.operandsArray) {
                 case (
                     pc,
-                    _: IFICMPInstruction,
+                    _: IFICMPInstruction[_],
                     Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                     ) ⇒
                     val context = method.toJava
