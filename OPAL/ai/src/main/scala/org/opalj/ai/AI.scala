@@ -1226,7 +1226,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                             // We have empirically evaluated which strategy leads to the minimal
                             // number of instruction evaluations and the following test does:
-                            if (branchTargetPC > pc) {
+                            // (The following relies on a control-flow where
+                            // if instructions related to loops "jump back"!)
+                            // This property is widely ensured by the current bytecode
+                            // optimizer.
+                            if (branchTargetPC < pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,
