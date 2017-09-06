@@ -47,7 +47,12 @@ trait IFGTLike extends IF0InstructionLike {
 }
 
 case class IFGT(branchoffset: Int) extends IF0Instruction[IFGT] with IFGTLike {
+
     def copy(branchoffset: Int): IFGT = new IFGT(branchoffset)
+
+    def negate(newBranchoffset: Int = branchoffset): IFLE = {
+        IFLE(newBranchoffset)
+    }
 }
 
 /**

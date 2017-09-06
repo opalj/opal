@@ -47,7 +47,12 @@ trait IFNONNULLLike extends IFXNullInstructionLike {
 }
 
 case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction[IFNONNULL] with IFNONNULLLike {
+
     def copy(branchoffset: Int): IFNONNULL = new IFNONNULL(branchoffset)
+
+    def negate(newBranchoffset: Int = branchoffset): IFNULL = {
+        IFNULL(newBranchoffset)
+    }
 }
 
 /**

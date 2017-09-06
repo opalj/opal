@@ -48,7 +48,12 @@ trait IF_ICMPEQLike extends IFICMPInstructionLike {
 }
 
 case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction[IF_ICMPEQ] with IF_ICMPEQLike {
+
     def copy(branchoffset: Int): IF_ICMPEQ = new IF_ICMPEQ(branchoffset)
+
+    def negate(newBranchoffset: Int = branchoffset): IF_ICMPNE = {
+        IF_ICMPNE(newBranchoffset)
+    }
 }
 
 /**

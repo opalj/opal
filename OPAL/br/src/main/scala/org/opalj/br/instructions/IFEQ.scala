@@ -48,7 +48,12 @@ trait IFEQLike extends IF0InstructionLike {
 }
 
 case class IFEQ(branchoffset: Int) extends IF0Instruction[IFEQ] with IFEQLike {
+
     def copy(branchoffset: Int): IFEQ = new IFEQ(branchoffset)
+
+    def negate(newBranchoffset: Int = branchoffset): IFNE = {
+        IFNE(newBranchoffset)
+    }
 }
 
 /**

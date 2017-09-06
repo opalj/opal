@@ -64,6 +64,15 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
 
     def copy(branchoffset: Int): SimpleConditionalBranchInstruction[T]
 
+    /**
+     * Returns the IF instruction that - when compared with this if instruction -
+     * performs a jump in case of a fall-through and vice-versa. I.e., given the
+     * following condition: `(a < b)`, the negation is performend: `!(a < b)` which
+     * is equivalent to `(a &geq; b)`. In other words,  if this IF instruction is an
+     * IFGT instruction and IFLE instruction is returned.
+     */
+    def negate(newBranchoffset: Int = branchoffset): SimpleConditionalBranchInstruction[_]
+
     final override def asSimpleConditionalBranchInstruction: this.type = this
 
     /**
