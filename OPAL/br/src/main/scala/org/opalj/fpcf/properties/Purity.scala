@@ -97,7 +97,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * structurally identical parameters.
  * I.e., pure methods may depend on the aliasing relation between their
  * parameters or between their parameters and global constants.  E.g., the following method is
- * pure (''Strings are immutable''):
+ * pure:
  * {{{
  * def cmp(s: String) : Boolean = {
  *      // Reference(!) comparison of s with the interned string "Demo":
@@ -195,8 +195,8 @@ case object MaybePure extends Purity { final val isRefineable = true }
 case object ConditionallyPure extends Purity { final val isRefineable = true }
 
 /**
- * Used if the freeness of a method only depends on the side-effect freeness of one or more target
- * methods.
+ * Used if the side-effect freeness of a method only depends on the side-effect freeness of
+ * one or more target methods.
  *
  * A method calling a `ConditionallySideEffectFree` method can at most be
  * `ConditionallySideEffectFree` itself, unless `ConditionallySideEffectFree` is refined to
