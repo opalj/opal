@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 
 /**
  * Records the program counters of all instructions that lead to a (ab)normal
@@ -53,7 +53,7 @@ import org.opalj.collection.immutable.IntSet
 trait RecordReturnFromMethodInstructions extends ai.ReturnInstructionsDomain {
     domain: ValuesDomain ⇒
 
-    @volatile private[this] var returnFromMethodInstructions: IntSet = IntSet.empty
+    @volatile private[this] var returnFromMethodInstructions: IntArraySet = IntArraySet.empty
 
     def allReturnFromMethodInstructions: PCs = returnFromMethodInstructions
 

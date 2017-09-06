@@ -30,7 +30,7 @@ package org.opalj
 package graphs
 
 import scala.collection.mutable.BitSet
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -58,7 +58,7 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
      *          `Control(X)/*the returned set*/` and X, whose selection is controlled by Y and
      *          which contains no nodes that may prevent the execution of X.
      */
-    def xIsDirectlyControlDependentOn(x: Int): IntSet = {
+    def xIsDirectlyControlDependentOn(x: Int): IntArraySet = {
         dominanceFrontiers(x)
     }
 
@@ -69,7 +69,7 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
     def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit = {
         val maxNodeId = dominanceFrontiers.maxNode
 
-        // TODO Evaluate if a typed chain or an IntSet is more efficient...
+        // TODO Evaluate if a typed chain or an IntArraySet is more efficient...
         val seen = new BitSet(dominanceFrontiers.maxNode)
         val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
         worklist.push(x)

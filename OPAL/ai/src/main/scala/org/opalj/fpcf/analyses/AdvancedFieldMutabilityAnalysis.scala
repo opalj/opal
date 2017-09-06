@@ -32,7 +32,7 @@ package analyses
 
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.fpcf.properties.DeclaredFinalField
 import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.FieldMutability
@@ -80,7 +80,7 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
                             val UVar(_, defSites) = objRef
                             // if the field that is written is not the one of the this local
                             // it is not effectively final
-                            if (defSites != IntSet(-1)) {
+                            if (defSites != IntArraySet(-1)) {
                                 effectivelyFinalFields -= f
                             }
 

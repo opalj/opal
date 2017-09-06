@@ -126,7 +126,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             domain = new AnalysisDomain(theProject, caller)
             result = BaseAI(caller, domain)
         } {
-            val pcs: org.opalj.collection.immutable.IntSet = callerPCs //.iterable.toSeq
+            val pcs: org.opalj.collection.immutable.IntArraySet = callerPCs //.iterable.toSeq
             for { pc: Int ← pcs } {
                 val operands = result.operandsArray(pc)
                 if (operands != null)

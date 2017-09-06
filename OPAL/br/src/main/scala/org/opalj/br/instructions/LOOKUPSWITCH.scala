@@ -30,8 +30,8 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.immutable.IntSet
-import org.opalj.collection.immutable.IntSet1
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.Chain
 
 /**
@@ -98,7 +98,7 @@ case class LOOKUPSWITCH(
     ): Chain[PC] = {
         val defaultTarget = currentPC + defaultOffset
         var pcs = Chain.singleton(defaultTarget)
-        var seen: IntSet = new IntSet1(defaultTarget)
+        var seen: IntArraySet = new IntArraySet1(defaultTarget)
         npairs foreach { npair ⇒
             val (_, offset) = npair
             val nextTarget = (currentPC + offset)
