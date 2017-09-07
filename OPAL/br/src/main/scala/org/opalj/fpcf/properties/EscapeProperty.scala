@@ -170,6 +170,10 @@ sealed abstract class EscapeProperty(
      */
     def meet(that: EscapeProperty): EscapeProperty
 
+    def isBottom: Boolean
+
+    def isTop: Boolean
+
 }
 
 object EscapeProperty extends EscapePropertyMetaInformation {
@@ -211,6 +215,9 @@ case object NoEscape extends EscapeProperty(3) {
     override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         this.propertyValueID == that.propertyValueID
 
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = true
 }
 
 /**
@@ -261,6 +268,10 @@ case object ArgEscape extends EscapeProperty(2) {
             case ArgEscape.PID ⇒ true
             case _             ⇒ false
         }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -290,6 +301,10 @@ sealed abstract class MethodEscape extends EscapeProperty(1) {
             case MethodEscapeViaParameterAssignment.PID ⇒ true
             case _                                      ⇒ false
         }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -412,6 +427,10 @@ case object MaybeNoEscape extends EscapeProperty(3) {
             case NoEscape.PID | MaybeNoEscape.PID ⇒ true
             case _                                ⇒ false
         }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -445,6 +464,10 @@ case object MaybeArgEscape extends EscapeProperty(2) {
             case NoEscape.PID | ArgEscape.PID | MaybeNoEscape.PID | MaybeArgEscape.PID ⇒ true
             case _ ⇒ false
         }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -478,6 +501,10 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
             case GlobalEscapeViaHeapObjectAssignment.PID  ⇒ false
             case _                                        ⇒ true
         }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -519,6 +546,8 @@ sealed abstract class GlobalEscape extends EscapeProperty(0) {
     final val isRefineable = false
     override def meet(that: EscapeProperty): EscapeProperty = this
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
+    override def isBottom: Boolean = true
+    override def isTop: Boolean = false
 }
 
 /**
