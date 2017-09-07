@@ -34,6 +34,7 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
@@ -60,15 +61,16 @@ import org.opalj.tac.TACMethodParameter
 
 import scala.annotation.switch
 
-abstract class AbstractEntityEscapeAnalysis(
-        e:       Entity,
-        defSite: ValueOrigin,
-        uses:    IntArraySet,
-        code:    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        params:  Parameters[TACMethodParameter],
-        m:       Method
-) {
+trait AbstractEntityEscapeAnalysis {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    val e: Entity
+    val defSite: ValueOrigin
+    val uses: IntArraySet
+    val code: Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]]
+    val params: Parameters[TACMethodParameter]
+    val m: Method
+    val propertyStore: PropertyStore
+    val project: SomeProject
     var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
     var leastRestrictiveProperty: EscapeProperty = NoEscape
 

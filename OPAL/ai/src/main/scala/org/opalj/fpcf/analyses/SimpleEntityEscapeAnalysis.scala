@@ -81,16 +81,7 @@ import org.opalj.tac.VirtualFunctionCall
 
 import scala.annotation.switch
 
-class SimpleEntityEscapeAnalysis(
-        e:             Entity,
-        defSite:       ValueOrigin,
-        uses:          IntArraySet,
-        code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        params:        Parameters[TACMethodParameter],
-        m:             Method,
-        propertyStore: PropertyStore,
-        project:       SomeProject
-) extends AbstractEntityEscapeAnalysis(e, defSite, uses, code, params, m) {
+trait FieldSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
     override def visitPutField(putField: PutField[V]): Unit = {
         if (usesDefSite(putField.value))
@@ -100,44 +91,6 @@ class SimpleEntityEscapeAnalysis(
     override def visitArrayStore(arrayStore: ArrayStore[V]): Unit = {
         if (usesDefSite(arrayStore.value))
             handleField(arrayStore.arrayRef.asVar.definedBy)
-    }
-
-    override def visitNonVirtualCall(call: NonVirtualMethodCall[V]): Unit = {
-        handleNonVirtualCall(call.declaringClass, call.isInterface, call.name, call.descriptor, call.receiver, call.params)
-    }
-
-    def visitExprStmt(exprStmt: ExprStmt[V]): Unit = examineCall(exprStmt.expr)
-    def visitAssignment(assignment: Assignment[V]): Unit = examineCall(assignment.expr)
-
-    def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
-        other match {
-            case FormalParameter(_, _) ⇒ p match {
-                case state: GlobalEscape ⇒ Result(e, state)
-                case NoEscape            ⇒ meetAndFilter(other, NoEscape)
-                case _: MethodEscape     ⇒ meetAndFilter(other, NoEscape)
-                case MaybeArgEscape      ⇒ meetAndFilter(other, MaybeArgEscape)
-                case MaybeMethodEscape   ⇒ meetAndFilter(other, MaybeNoEscape)
-                case MaybeNoEscape /* could be an intermediate result */ ⇒ u match {
-                    case IntermediateUpdate ⇒
-                        val newEP = EP(other, MaybeNoEscape)
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, MaybeNoEscape, dependees, c)
-                    case _ ⇒ meetAndFilter(other, MaybeNoEscape)
-                }
-                case _ ⇒ throw new RuntimeException("not yet implemented")
-            }
-            case ObjectAllocationSite(_, _) | ArrayAllocationSite(_, _) ⇒ p match {
-                case MethodEscapeViaReturn ⇒ meetAndFilter(other, MethodEscapeViaReturnAssignment)
-                case state: EscapeProperty if state.isFinal ⇒ meetAndFilter(other, state)
-                case state: EscapeProperty ⇒ u match {
-                    case IntermediateUpdate ⇒
-                        val newEP = EP(other, state)
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, state, dependees, c)
-                    case _ ⇒ meetAndFilter(other, state)
-                }
-            }
-        }
     }
 
     /**
@@ -192,6 +145,16 @@ class SimpleEntityEscapeAnalysis(
                 }
         }
     }
+}
+
+trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+    override def visitNonVirtualCall(call: NonVirtualMethodCall[V]): Unit = {
+        handleNonVirtualCall(call.declaringClass, call.isInterface, call.name, call.descriptor, call.receiver, call.params)
+    }
+
+    override def visitExprStmt(exprStmt: ExprStmt[V]): Unit = examineCall(exprStmt.expr)
+
+    override def visitAssignment(assignment: Assignment[V]): Unit = examineCall(assignment.expr)
 
     /**
      * For a given entity with defSite, check whether the expression is a function call.
@@ -267,6 +230,49 @@ class SimpleEntityEscapeAnalysis(
         } else {
             if (usesDefSite(receiver) || anyParameterUsesDefSite(params))
                 calcLeastRestrictive(MaybeArgEscape)
+        }
+    }
+}
+
+class SimpleEntityEscapeAnalysis(
+        val e:             Entity,
+        val defSite:       ValueOrigin,
+        val uses:          IntArraySet,
+        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val params:        Parameters[TACMethodParameter],
+        val m:             Method,
+        val propertyStore: PropertyStore,
+        val project:       SomeProject
+) extends ConstructorSensitiveEntityEscapeAnalysis with FieldSensitiveEntityEscapeAnalysis {
+
+    def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
+        other match {
+            case FormalParameter(_, _) ⇒ p match {
+                case state: GlobalEscape ⇒ Result(e, state)
+                case NoEscape            ⇒ meetAndFilter(other, NoEscape)
+                case _: MethodEscape     ⇒ meetAndFilter(other, NoEscape)
+                case MaybeArgEscape      ⇒ meetAndFilter(other, MaybeArgEscape)
+                case MaybeMethodEscape   ⇒ meetAndFilter(other, MaybeNoEscape)
+                case MaybeNoEscape /* could be an intermediate result */ ⇒ u match {
+                    case IntermediateUpdate ⇒
+                        val newEP = EP(other, MaybeNoEscape)
+                        dependees = dependees.filter(_.e ne other) + newEP
+                        IntermediateResult(e, MaybeNoEscape, dependees, c)
+                    case _ ⇒ meetAndFilter(other, MaybeNoEscape)
+                }
+                case _ ⇒ throw new RuntimeException("not yet implemented")
+            }
+            case ObjectAllocationSite(_, _) | ArrayAllocationSite(_, _) ⇒ p match {
+                case MethodEscapeViaReturn                  ⇒ meetAndFilter(other, MethodEscapeViaReturnAssignment)
+                case state: EscapeProperty if state.isFinal ⇒ meetAndFilter(other, state)
+                case state: EscapeProperty ⇒ u match {
+                    case IntermediateUpdate ⇒
+                        val newEP = EP(other, state)
+                        dependees = dependees.filter(_.e ne other) + newEP
+                        IntermediateResult(e, state, dependees, c)
+                    case _ ⇒ meetAndFilter(other, state)
+                }
+            }
         }
     }
 }
