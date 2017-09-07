@@ -95,7 +95,7 @@ trait BytecodeOptimizer extends MethodsBinding {
     this: ClassFileBinding with ConstantPoolBinding with AttributeBinding ⇒
 
     final val PerformControlFlowSimplifications: Boolean = {
-        val key = BytecodeOptimizer.BytecodeOptimizerConfigKeyPrefix+"simplifyControlFlow"
+        val key = BytecodeOptimizer.SimplifyControlFlowKey
         val simplifyControlFlow: Boolean = config.as[Option[Boolean]](key).getOrElse(true)
         if (simplifyControlFlow) {
             info("class file reader", "the control-flow is simplified")
@@ -493,5 +493,7 @@ object BytecodeOptimizer {
     final val BytecodeOptimizerConfigKeyPrefix = {
         ClassFileReaderConfiguration.ConfigKeyPrefix+"BytecodeOptimizer."
     }
+
+    final val SimplifyControlFlowKey = BytecodeOptimizerConfigKeyPrefix+"simplifyControlFlow"
 
 }
