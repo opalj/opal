@@ -39,7 +39,6 @@ import org.opalj.br.AllocationSite
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.Project
 import org.opalj.tac.Stmt
 import org.opalj.collection.immutable.IntArraySet
@@ -64,7 +63,7 @@ import org.opalj.tac.New
 import org.opalj.tac.NewArray
 import org.opalj.tac.DUVar
 import org.opalj.util.PerformanceEvaluation.time
-class SimpleEscapeAnalysis(final val project: SomeProject) extends AbstractEscapeAnalysis {
+class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEscapeAnalysis {
     override def entityEscapeAnalysis(
         e:       Entity,
         defSite: ValueOrigin,
@@ -131,11 +130,9 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         val managementagent = new File("/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre/lib/management-agent.jar")
         val plugin = new File("/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre/lib/plugin.jar")
         val resources = new File("/Library/Java/JavaVirtualMachines/jdk1.8.0_131.jdk/Contents/Home/jre/lib/resources.jar")
+
         val project = Project(Array(rt, charsets, deploy, javaws, jce, jfr, jfxswt, jsse,
             managementagent, plugin, resources), Array.empty[File])
-
-        val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
-        Project.recreate(project, testConfig)
 
         //SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
         time {
@@ -155,20 +152,17 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
         } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
 
         val propertyStore = project.get(PropertyStoreKey)
-        val staticEscapes =
-            propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
-        val heapEscapes = propertyStore.entities(GlobalEscapeViaHeapObjectAssignment)
-        val maybeNoEscape =
-            propertyStore.entities(MaybeNoEscape)
-        val maybeArgEscape =
-            propertyStore.entities(MaybeArgEscape)
-        val maybeMethodEscape =
-            propertyStore.entities(MaybeMethodEscape)
-        val argEscapes = propertyStore.entities(ArgEscape)
+        val maybeNoEscape = propertyStore.entities(MaybeNoEscape)
+        val maybeArgEscape = propertyStore.entities(MaybeArgEscape)
+        val maybeMethodEscape = propertyStore.entities(MaybeMethodEscape)
         val noEscape = propertyStore.entities(NoEscape)
         val methodReturnEscapes = propertyStore.entities(MethodEscapeViaReturn)
         val methodParameterEscapes = propertyStore.entities(MethodEscapeViaParameterAssignment)
         val methodReturnFieldEscapes = propertyStore.entities(MethodEscapeViaReturnAssignment)
+        val argEscapes = propertyStore.entities(ArgEscape)
+        val staticEscapes =
+            propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
+        val heapEscapes = propertyStore.entities(GlobalEscapeViaHeapObjectAssignment)
 
         println("ALLOCATION SITES:")
         println(s"# of maybe no escaping objects: ${sizeAsAS(maybeNoEscape)}")
@@ -196,5 +190,78 @@ object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
 
         def sizeAsAS(entities: Traversable[Entity]) = entities.collect { case x: AllocationSite ⇒ x }.size
         def sizeAsFP(entities: Traversable[Entity]) = entities.collect { case x: FormalParameter ⇒ x }.size
+
+        val project2 = Project(Array(rt, charsets, deploy, javaws, jce, jfr, jfxswt, jsse,
+            managementagent, plugin, resources), Array.empty[File])
+
+        //SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
+        time {
+            val tacai = project2.get(DefaultTACAIKey)
+            for {
+                m ← project2.allMethodsWithBody.par
+            } {
+                tacai(m)
+            }
+        } { t ⇒ println(s"tac took ${t.toSeconds}") }
+
+        PropertyStoreKey.makeAllocationSitesAvailable(project2)
+        PropertyStoreKey.makeFormalParametersAvailable(project2)
+        val analysesManager2 = project2.get(FPCFAnalysesManagerKey)
+        time {
+            analysesManager2.run(SimpleEscapeAnalysis)
+        } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
+
+        val propertyStore2 = project2.get(PropertyStoreKey)
+
+        def toDescrSet(e1: Traversable[Entity]): Set[(String, Int)] =
+            e1.collect {
+                case fp: FormalParameter ⇒ (fp.method.toJava, fp.origin)
+                case as: AllocationSite  ⇒ (as.method.toJava, as.pc)
+            }.toSet
+
+        val maybeNoEscape2 = propertyStore2.entities(MaybeNoEscape)
+        val maybeArgEscape2 = propertyStore2.entities(MaybeArgEscape)
+        val maybeMethodEscape2 = propertyStore2.entities(MaybeMethodEscape)
+        val noEscape2 = propertyStore2.entities(NoEscape)
+        val methodReturnEscapes2 = propertyStore2.entities(MethodEscapeViaReturn)
+        val methodParameterEscapes2 = propertyStore2.entities(MethodEscapeViaParameterAssignment)
+        val methodReturnFieldEscapes2 = propertyStore2.entities(MethodEscapeViaReturnAssignment)
+        val argEscapes2 = propertyStore2.entities(ArgEscape)
+        val staticEscapes2 =
+            propertyStore2.entities(GlobalEscapeViaStaticFieldAssignment)
+        val heapEscapes2 = propertyStore2.entities(GlobalEscapeViaHeapObjectAssignment)
+
+        val maybeNoDiff = (toDescrSet(maybeNoEscape2) -- toDescrSet(maybeNoEscape)) ++ (toDescrSet(maybeNoEscape) -- toDescrSet(maybeNoEscape2))
+        val maybeArgDiff = (toDescrSet(maybeArgEscape2) -- toDescrSet(maybeArgEscape)) ++ (toDescrSet(maybeArgEscape) -- toDescrSet(maybeArgEscape2))
+        val maybeMethodDiff = (toDescrSet(maybeMethodEscape2) -- toDescrSet(maybeMethodEscape)) ++ (toDescrSet(maybeMethodEscape2) -- toDescrSet(maybeMethodEscape))
+
+        println("ALLOCATION SITES:")
+        println(s"# of maybe no escaping objects: ${sizeAsAS(maybeNoEscape2)}")
+        println(s"# of maybe arg escaping objects: ${sizeAsAS(maybeArgEscape2)}")
+        println(s"# of maybe method escaping objects: ${sizeAsAS(maybeMethodEscape2)}")
+        println(s"# of local objects: ${sizeAsAS(noEscape2)}")
+        println(s"# of arg escaping objects: ${sizeAsAS(argEscapes2)}")
+        println(s"# of method escaping objects via return : ${sizeAsAS(methodReturnEscapes2)}")
+        println(s"# of method escaping objects via parameter: ${sizeAsAS(methodParameterEscapes2)}")
+        println(s"# of method escaping objects via return assignment: ${sizeAsAS(methodReturnFieldEscapes2)}")
+        println(s"# of direct global escaping objects: ${sizeAsAS(staticEscapes2)}")
+        println(s"# of indirect global escaping objects: ${sizeAsAS(heapEscapes2)}")
+
+        println("FORMAL PARAMETERS:")
+        println(s"# of maybe no escaping objects: ${sizeAsFP(maybeNoEscape2)}")
+        println(s"# of maybe arg escaping objects: ${sizeAsFP(maybeArgEscape2)}")
+        println(s"# of maybe method escaping objects: ${sizeAsFP(maybeMethodEscape2)}")
+        println(s"# of local objects: ${sizeAsFP(noEscape2)}")
+        println(s"# of arg escaping objects: ${sizeAsFP(argEscapes2)}")
+        println(s"# of method escaping objects via return : ${sizeAsFP(methodReturnEscapes2)}")
+        println(s"# of method escaping objects via parameter: ${sizeAsFP(methodParameterEscapes2)}")
+        println(s"# of method escaping objects via return assignment: ${sizeAsFP(methodReturnFieldEscapes2)}")
+        println(s"# of direct global escaping objects: ${sizeAsFP(staticEscapes2)}")
+        println(s"# of indirect global escaping objects: ${sizeAsFP(heapEscapes2)}")
+
+        println(s"MaybeNo difference ${maybeNoDiff}")
+        println(s"MaybeNo difference ${maybeArgDiff}")
+        println(s"MaybeNo difference ${maybeMethodDiff}")
+
     }
 }

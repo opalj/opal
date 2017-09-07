@@ -39,6 +39,8 @@ import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.GlobalEscapeViaStaticFieldAssignment
 import org.opalj.fpcf.properties.MaybeNoEscape
+import org.opalj.fpcf.properties.MethodEscapeViaReturn
+import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.UVar
@@ -156,13 +158,22 @@ abstract class AbstractEntityEscapeAnalysis(
             IntermediateResult(e, MaybeNoEscape, dependees, c)
     }
 
-    def visitPutField(asPutField: PutField[V]): Unit
-    def visitArrayStore(asArrayStore: ArrayStore[V]): Unit
-    def visitThrow(asThrow: Throw[V]): Unit
-    def visitReturnValue(returnValue: ReturnValue[V]): Unit
-    def visitStaticMethodCall(asStaticMethodCall: StaticMethodCall[V]): Unit
-    def visitVirtualMethodCall(asVirtualMethodCall: VirtualMethodCall[V]): Unit
-    def visitNonVirtualCall(asNonVirtualMethodCall: NonVirtualMethodCall[V]): Unit
+    def visitPutField(putField: PutField[V]): Unit = if (usesDefSite(putField.value))
+        calcLeastRestrictive(MaybeNoEscape)
+    def visitArrayStore(arrayStore: ArrayStore[V]): Unit = if (usesDefSite(arrayStore.value))
+        calcLeastRestrictive(MaybeNoEscape)
+    def visitThrow(aThrow: Throw[V]): Unit = if (usesDefSite(aThrow.exception))
+        calcLeastRestrictive(MaybeNoEscape)
+    def visitReturnValue(returnValue: ReturnValue[V]): Unit = if (usesDefSite(returnValue.expr))
+        calcLeastRestrictive(MethodEscapeViaReturn)
+    def visitStaticMethodCall(call: StaticMethodCall[V]): Unit =
+        if (anyParameterUsesDefSite(call.params)) calcLeastRestrictive(MaybeArgEscape)
+    def visitVirtualMethodCall(call: VirtualMethodCall[V]): Unit =
+        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
+            calcLeastRestrictive(MaybeArgEscape)
+    def visitNonVirtualCall(call: NonVirtualMethodCall[V]): Unit =
+        if (usesDefSite(call.receiver) ||
+            anyParameterUsesDefSite(call.params)) calcLeastRestrictive(MaybeArgEscape)
     def visitExprStmt(asExprStmt: ExprStmt[V]): Unit
     def visitAssignment(asAssignment: Assignment[V]): Unit
     def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult

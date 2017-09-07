@@ -57,13 +57,10 @@ import org.opalj.fpcf.properties.MaybeMethodEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.MethodEscape
 import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.Throw
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Expr
 import org.opalj.tac.PutField
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.StaticMethodCall
-import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.Assignment
 import org.opalj.tac.Stmt
 import org.opalj.tac.Parameters
@@ -76,7 +73,6 @@ import org.opalj.tac.GetStatic
 import org.opalj.tac.New
 import org.opalj.tac.FunctionCall
 import org.opalj.tac.NewArray
-import org.opalj.tac.ReturnValue
 import org.opalj.tac.UVar
 import org.opalj.tac.Invokedynamic
 import org.opalj.tac.StaticFunctionCall
@@ -96,39 +92,20 @@ class SimpleEntityEscapeAnalysis(
         project:       SomeProject
 ) extends AbstractEntityEscapeAnalysis(e, defSite, uses, code, params, m) {
 
-    def visitPutField(putField: PutField[V]): Unit = {
+    override def visitPutField(putField: PutField[V]): Unit = {
         if (usesDefSite(putField.value))
-            bla(putField.objRef.asVar.definedBy)
+            handleField(putField.objRef.asVar.definedBy)
     }
 
-    def visitArrayStore(arrayStore: ArrayStore[V]): Unit = {
+    override def visitArrayStore(arrayStore: ArrayStore[V]): Unit = {
         if (usesDefSite(arrayStore.value))
-            bla(arrayStore.arrayRef.asVar.definedBy)
+            handleField(arrayStore.arrayRef.asVar.definedBy)
     }
 
-    def visitThrow(aThrow: Throw[V]): Unit = {
-        // the exception could be catched, so we know nothing
-        if (usesDefSite(aThrow.exception)) calcLeastRestrictive(MaybeNoEscape)
-    }
-
-    def visitReturnValue(returnValue: ReturnValue[V]): Unit = {
-        if (usesDefSite(returnValue.expr)) calcLeastRestrictive(MethodEscapeViaReturn)
-    }
-
-    def visitStaticMethodCall(staticMethodCall: StaticMethodCall[V]): Unit = {
-        val params = staticMethodCall.params
-        if (anyParameterUsesDefSite(params)) calcLeastRestrictive(MaybeArgEscape)
-    }
-
-    def visitVirtualMethodCall(virtualMethodCall: VirtualMethodCall[V]): Unit = {
-        val call = virtualMethodCall
-        if (usesDefSite(call.receiver) ||
-            anyParameterUsesDefSite(call.params)) calcLeastRestrictive(MaybeArgEscape)
-    }
-
-    def visitNonVirtualCall(call: NonVirtualMethodCall[V]): Unit = {
+    override def visitNonVirtualCall(call: NonVirtualMethodCall[V]): Unit = {
         handleNonVirtualCall(call.declaringClass, call.isInterface, call.name, call.descriptor, call.receiver, call.params)
     }
+
     def visitExprStmt(exprStmt: ExprStmt[V]): Unit = examineCall(exprStmt.expr)
     def visitAssignment(assignment: Assignment[V]): Unit = examineCall(assignment.expr)
 
@@ -149,19 +126,8 @@ class SimpleEntityEscapeAnalysis(
                 }
                 case _ ⇒ throw new RuntimeException("not yet implemented")
             }
-            case ObjectAllocationSite(_, _) ⇒ p match {
-                case MethodEscapeViaReturn                  ⇒ meetAndFilter(other, MethodEscapeViaReturnAssignment)
-                case state: EscapeProperty if state.isFinal ⇒ meetAndFilter(other, state)
-                case state: EscapeProperty ⇒ u match {
-                    case IntermediateUpdate ⇒
-                        val newEP = EP(other, state)
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, state, dependees, c)
-                    case _ ⇒ meetAndFilter(other, state)
-                }
-            }
-            case ArrayAllocationSite(_, _) ⇒ p match {
-                case MethodEscapeViaReturn                  ⇒ meetAndFilter(other, MethodEscapeViaReturnAssignment)
+            case ObjectAllocationSite(_, _) | ArrayAllocationSite(_, _) ⇒ p match {
+                case MethodEscapeViaReturn ⇒ meetAndFilter(other, MethodEscapeViaReturnAssignment)
                 case state: EscapeProperty if state.isFinal ⇒ meetAndFilter(other, state)
                 case state: EscapeProperty ⇒ u match {
                     case IntermediateUpdate ⇒
@@ -178,7 +144,7 @@ class SimpleEntityEscapeAnalysis(
      * TODO
      * @param defSites
      */
-    def bla(defSites: IntArraySet): Unit = {
+    def handleField(defSites: IntArraySet): Unit = {
         var worklist = defSites
         var seen: IntArraySet = EmptyIntArraySet
         while (worklist.nonEmpty) {
