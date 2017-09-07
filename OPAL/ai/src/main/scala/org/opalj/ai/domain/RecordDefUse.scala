@@ -226,6 +226,21 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      */
     def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
+    private[this] def updateUsageInformation(usedValues: ValueOrigins, useSite: PC): Unit = {
+        usedValues foreach { usedValue ⇒
+            val usedIndex = usedValue + parametersOffset
+
+            val oldUsedInfo: ValueOrigins = used(usedIndex)
+            if (oldUsedInfo eq null) {
+                used(usedIndex) = ValueOrigins(useSite)
+            } else {
+                val newUsedInfo = oldUsedInfo + useSite
+                if (newUsedInfo ne oldUsedInfo)
+                    used(usedIndex) = newUsedInfo
+            }
+        }
+    }
+
     /**
      * Updates/computes the def/use information when the instruction with
      * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
@@ -246,20 +261,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         //
         // HELPER METHODS
         //
-        def updateUsageInformation(usedValues: ValueOrigins, useSite: PC): Unit = {
-            usedValues foreach { usedValue ⇒
-                val usedIndex = usedValue + parametersOffset
-
-                val oldUsedInfo: ValueOrigins = used(usedIndex)
-                if (oldUsedInfo eq null) {
-                    used(usedIndex) = ValueOrigins(useSite)
-                } else {
-                    val newUsedInfo = oldUsedInfo + useSite
-                    if (newUsedInfo ne oldUsedInfo)
-                        used(usedIndex) = newUsedInfo
-                }
-            }
-        }
 
         def propagate(
             newDefOps:    Chain[ValueOrigins],
@@ -755,16 +756,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             case opcode ⇒ throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
         }
 
-        (successorInstruction.opcode: @annotation.switch) match {
-            case ARETURN.opcode |
-                DRETURN.opcode | FRETURN.opcode | IRETURN.opcode | LRETURN.opcode |
-                ATHROW.opcode ⇒
-                val usedValues = defOps(successorPC).head
-                updateUsageInformation(usedValues, successorPC)
-
-            case _ ⇒ /* let's continue with the standard handling */
-        }
-
         scheduleNextPC
     }
 
@@ -905,8 +896,18 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 }
             }
 
-            regularSuccessorsOf(currPC) foreach { handleSuccessor(false) }
-            exceptionHandlerSuccessorsOf(currPC) foreach { handleSuccessor(true) }
+            val currentSuccessors = regularSuccessorsOf(currPC)
+            currentSuccessors foreach { handleSuccessor(false) }
+            val currentExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(currPC)
+            currentExceptionHandlerSuccessors foreach { handleSuccessor(true) }
+            if (currentSuccessors.isEmpty && currentExceptionHandlerSuccessors.isEmpty) {
+                // e.g., athrow, return or any instruction which potentially leads to an abnormal
+                // return (this excludes, notably, iinc; hence, it has to be an instruction which
+                // just operates on the stack and which is not a stack management instruction (dup,
+                // ...))
+                val usedValues = instructions(currPC).numberOfPoppedOperands(NotRequired)
+                defOps(currPC).forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currPC) }
+            }
         }
     }
 
