@@ -50,7 +50,7 @@ import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
@@ -91,7 +91,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
      * Determines whether the given entity on the given definition site with given uses of that
      * allocation/parameter escapes in the given code.
      */
-    private def doDetermineEscape(e: Entity, defSite: ValueOrigin, uses: IntSet,
+    private def doDetermineEscape(e: Entity, defSite: ValueOrigin, uses: IntArraySet,
                                   code: Array[Stmt[V]], m: Method): PropertyComputationResult = {
         var dependees = Set.empty[EOptionP[Entity, Property]]
 
