@@ -40,20 +40,21 @@ import org.opalj.bi.reader.CodeReader
  * @author Michael Eichberg
  */
 class Java8FrameworkWithCaching(
-    val cache: BytecodeInstructionsCache
+        val cache: BytecodeInstructionsCache
 ) extends Java8LibraryFramework
-        with CodeAttributeBinding
-        with SourceDebugExtension_attributeBinding
-        // THOUGH THE BOOTSTRAPMETHODS ATTRIBTUE IS A CLASS-LEVEL ATTRIBUTE
-        // IT IS OF NO USE IF WE DO NOT ALSO REIFY THE METHOD BODY
-        with BootstrapMethods_attributeBinding
-        with StackMapTable_attributeBinding
-        with CompactLineNumberTable_attributeBinding
-        with LocalVariableTable_attributeBinding
-        with LocalVariableTypeTable_attributeBinding
-        with Exceptions_attributeBinding
-        with CachedBytecodeReaderAndBinding
-        with CodeReader {
+    with CodeAttributeBinding
+    with SourceDebugExtension_attributeBinding
+    // THOUGH THE BOOTSTRAPMETHODS ATTRIBTUE IS A CLASS-LEVEL ATTRIBUTE
+    // IT IS OF NO USE IF WE DO NOT ALSO REIFY THE METHOD BODY
+    with BootstrapMethods_attributeBinding
+    with StackMapTable_attributeBinding
+    with CompactLineNumberTable_attributeBinding
+    with LocalVariableTable_attributeBinding
+    with LocalVariableTypeTable_attributeBinding
+    with Exceptions_attributeBinding
+    with CachedBytecodeReaderAndBinding
+    with BytecodeOptimizer
+    with CodeReader {
 
     final override def loadsInterfacesOnly: Boolean = false
 }

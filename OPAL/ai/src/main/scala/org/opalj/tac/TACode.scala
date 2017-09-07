@@ -32,6 +32,7 @@ package tac
 import org.opalj.br.Attribute
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.LineNumberTable
+import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.cfg.CFG
 
 /**
@@ -54,16 +55,18 @@ import org.opalj.br.cfg.CFG
  */
 case class TACode[P <: AnyRef, V <: Var[V]](
         params:            Parameters[P],
-        stmts:             Array[Stmt[V]], // CONST!!!
+        stmts:             Array[Stmt[V]], // CONST
         cfg:               CFG,
         exceptionHandlers: ExceptionHandlers,
         lineNumberTable:   Option[LineNumberTable]
 // TODO Support the rewriting of TypeAnnotations etc.
 ) extends Attribute {
 
-    def kindId: Int = TACode.KindId
+    override def kindId: Int = TACode.KindId
 
-    def similar(other: Attribute): Boolean = this equals other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this equals other
+    }
 
     def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber())
 
@@ -85,7 +88,7 @@ case class TACode[P <: AnyRef, V <: Var[V]](
                 case Some(lnt) ⇒ lnt.lineNumbers.mkString(",lineNumberTable=(\n\t", ",\n\t", "\n)")
                 case None      ⇒ ""
             }
-        s"TACode($txtParams,$txtStmts,$cfg$txtExceptionHandlers$txtLineNumbers)"
+        s"TACode($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers$txtLineNumbers)"
     }
 
 }

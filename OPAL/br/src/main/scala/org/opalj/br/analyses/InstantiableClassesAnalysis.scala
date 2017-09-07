@@ -102,11 +102,11 @@ object InstantiableClassesAnalysis {
                         {
 
                             method.isNative
-                            // If the method is static method we don't know what the method may do, 
+                            // If the method is static method we don't know what the method may do,
                             // hence, we assume that it may act as a factory method.
                         } || {
                             method.body.isEmpty
-                            // We have a static method without a body; this is only possible if the 
+                            // We have a static method without a body; this is only possible if the
                             // bytecode reader does not read method bodies; otherwise this can't happen;
                             // such a class file would be invalid.
                         } || {

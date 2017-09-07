@@ -46,4 +46,5 @@ trait SourceElement extends CommonSourceElementAttributes {
     def asClassFile: ClassFile = throw new UnsupportedOperationException
     def asMethod: Method = throw new UnsupportedOperationException
     def asField: Field = throw new UnsupportedOperationException
+
 }

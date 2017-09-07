@@ -75,7 +75,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
      * are actually represented by the same class (object) value at runtime.
      */
     protected class ClassValue(origin: ValueOrigin, val value: Type, t: Timestamp)
-            extends SObjectValue(origin, No, true, ObjectType.Class, t) {
+        extends SObjectValue(origin, No, true, ObjectType.Class, t) {
         this: DomainClassValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(
@@ -176,6 +176,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     abstract override def invokestatic(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -199,12 +200,12 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
                 case _ ⇒
                     // call default handler (the first argument is not a string)
-                    super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+                    super.invokestatic(pc, declaringClass, isInterface, name, methodDescriptor, operands)
 
             }
         } else {
             // call default handler
-            super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+            super.invokestatic(pc, declaringClass, isInterface, name, methodDescriptor, operands)
         }
     }
 

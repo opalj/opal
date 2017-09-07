@@ -56,11 +56,11 @@ case object ComputationalTypeDouble extends ComputationalType(Category2Computati
     def isComputationalTypeReturnAddress: Boolean = false
 }
 case object ComputationalTypeReference
-        extends ComputationalType(Category1ComputationalTypeCategory) {
+    extends ComputationalType(Category1ComputationalTypeCategory) {
     def isComputationalTypeReturnAddress: Boolean = false
 }
 case object ComputationalTypeReturnAddress
-        extends ComputationalType(Category1ComputationalTypeCategory) {
+    extends ComputationalType(Category1ComputationalTypeCategory) {
     def isComputationalTypeReturnAddress: Boolean = true
 }
 

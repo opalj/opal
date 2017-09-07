@@ -34,8 +34,17 @@ import scala.collection.Set
 
 /**
  * Stores the information about those classes that are not instantiable. The set of
- * classes that are not instantiable is usually only a small fraction of all classes and hence, more
- * efficient to store/access).
+ * classes that are not instantiable is usually only a small fraction of all classes
+ * and hence, more efficient to store/access.
+ *
+ * A class is considered instantiable if it is possible that at some point in time an
+ * instance of the respective class is created (via a direct constructor call, a factory method
+ * call, an indirect instance creation by means of creating an instance of a subtype.)
+ *
+ * An example of a class which is not instaniable is a class which defines a private constructor
+ * which is not called by other (factory) methods and which is also not serializable. A class
+ * which defines no constructor at all (not possible using Java, but still valid bytecode) is
+ * also not instantiable.
  *
  * @author Michael Eichberg
  */

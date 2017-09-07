@@ -60,7 +60,7 @@ object MethodAnnotationsPrinter extends AnalysisExecutor {
                     method ← classFile.methods
                     annotation ← method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
                 } yield {
-                    method.toJava(classFile) +
+                    method.toJava +
                         annotation.elementValuePairs.
                         map { pair ⇒ "%-15s: %s".format(pair.name, pair.value.toJava) }.
                         mkString(s"\n\t@${annotation.annotationType.toJava}\n\t", "\n\t", "\n")

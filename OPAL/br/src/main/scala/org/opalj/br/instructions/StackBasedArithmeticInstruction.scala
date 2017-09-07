@@ -37,8 +37,8 @@ package instructions
  * @author Michael Eichberg
  */
 abstract class StackBasedArithmeticInstruction
-        extends ArithmeticInstruction
-        with ConstantLengthInstruction {
+    extends ArithmeticInstruction
+    with ConstantLengthInstruction {
 
     final def length: Int = 1
 

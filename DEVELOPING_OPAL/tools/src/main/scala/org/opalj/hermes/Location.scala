@@ -166,9 +166,10 @@ case class MethodLocation[S](
 }
 object MethodLocation {
 
-    def apply[S](source: S, classFile: ClassFile, method: Method): MethodLocation[S] = {
+    def apply[S](source: S, method: Method): MethodLocation[S] = {
+        val cf = method.classFile
         val md = method.descriptor.toJava(method.name)
-        new MethodLocation(ClassFileLocation(source, classFile), md)
+        new MethodLocation(ClassFileLocation(source, cf), md)
     }
 
     def apply[S](classFileLocation: ClassFileLocation[S], method: Method): MethodLocation[S] = {
@@ -176,7 +177,7 @@ object MethodLocation {
     }
 
     final def apply[S](methodInfo: MethodInfo[S]): MethodLocation[S] = {
-        MethodLocation(methodInfo.source, methodInfo.classFile, methodInfo.method)
+        MethodLocation(methodInfo.source, methodInfo.method)
     }
 
 }
@@ -201,13 +202,8 @@ case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: PC) ext
 }
 object InstructionLocation {
 
-    def apply[S](
-        source:    S,
-        classFile: ClassFile,
-        method:    Method,
-        pc:        PC
-    ): InstructionLocation[S] = {
-        val classFileLocation = ClassFileLocation(source, classFile)
+    def apply[S](source: S, method: Method, pc: PC): InstructionLocation[S] = {
+        val classFileLocation = ClassFileLocation(source, method.classFile)
         val methodLocation = MethodLocation(classFileLocation, method.name + method.descriptor)
         new InstructionLocation(methodLocation, pc)
     }

@@ -34,7 +34,8 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
+
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
@@ -57,7 +58,7 @@ class MethodsWithLoopsTest extends FlatSpec with Matchers {
     //    private def evaluateMethod(name: String, f: BaseDomain ⇒ Unit) {
     //        val domain = new BaseDomain()
     //        val method = classFile.methods.find(_.name == name).get
-    //        val result = BaseAI(classFile, method, domain)
+    //        val result = BaseAI(method, domain)
     //
     //        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
     //            Some(classFile),
@@ -92,7 +93,7 @@ class MethodsWithLoopsTest extends FlatSpec with Matchers {
             with IgnoreSynchronization
 
         val method = findMethod("endless")
-        /*val result =*/ BaseAI(classFile, method, MostBasicDomain)
+        /*val result =*/ BaseAI(method, MostBasicDomain)
         // if we reach this point, everything is OK
     }
 

@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import scala.annotation.switch
+
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.bi.ACC_BRIDGE
@@ -48,7 +50,7 @@ object ClassFileFactory {
     /**
      * Name used to store the final receiver object in generated proxy classes.
      */
-    final val ReceiverFieldName = "$receiver";
+    final val ReceiverFieldName = "$receiver"
 
     /**
      * This is the default name for the factory method of a proxy class that is created by
@@ -236,10 +238,10 @@ object ClassFileFactory {
                 val (fieldType, index) = p
                 createField(fieldType = fieldType, name = s"staticParameter$index")
             }
-        val fields: IndexedSeq[Field] =
+        val fields: IndexedSeq[FieldTemplate] =
             receiverField ++ additionalFieldsForStaticParameters
 
-        val constructor: Method = createConstructor(definingType, fields)
+        val constructor: MethodTemplate = createConstructor(definingType, fields)
 
         val factoryMethodName: String =
             if (methodName == DefaultFactoryMethodName) {
@@ -248,7 +250,7 @@ object ClassFileFactory {
                 DefaultFactoryMethodName
             }
 
-        val methods: Array[Method] = new Array(if (bridgeMethodDescriptor.isDefined) 4 else 3)
+        val methods: Array[MethodTemplate] = new Array(if (bridgeMethodDescriptor.isDefined) 4 else 3)
         methods(0) = proxyMethod(
             definingType.objectType,
             methodName,
@@ -275,14 +277,16 @@ object ClassFileFactory {
             )
         }
 
-        ClassFile(0, 49,
+        ClassFile(
+            0, 49,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
             definingType.theSuperinterfaceTypes.toSeq,
             fields,
             methods,
-            IndexedSeq(VirtualTypeFlag))
+            IndexedSeq(VirtualTypeFlag)
+        )
     }
 
     /**
@@ -321,8 +325,7 @@ object ClassFileFactory {
         name:        String,
         fieldType:   FieldType,
         attributes:  Seq[Attribute] = Seq.empty
-    ): Field = {
-
+    ): FieldTemplate = {
         Field(accessFlags, name, fieldType, attributes)
     }
 
@@ -341,8 +344,8 @@ object ClassFileFactory {
      */
     def createConstructor(
         definingType: TypeDeclaration,
-        fields:       IndexedSeq[Field]
-    ): Method = {
+        fields:       IndexedSeq[FieldTemplate]
+    ): MethodTemplate = {
         // it doesn't make sense that the superClassType is not defined
         val theSuperclassType = definingType.theSuperclassType.get
         val theType = definingType.objectType
@@ -351,7 +354,7 @@ object ClassFileFactory {
                 copyParametersToInstanceFields(theType, fields) :+
                 RETURN
         val maxStack =
-            1 + ( // for `this` when invoking the super constructor
+            1 /* for `this` when invoking the super constructor*/ + (
                 if (fields.isEmpty)
                     0 // nothing extra needed if no fields are being set
                 /*
@@ -399,7 +402,7 @@ object ClassFileFactory {
      */
     def copyParametersToInstanceFields(
         declaringType: ObjectType,
-        fields:        IndexedSeq[Field]
+        fields:        IndexedSeq[FieldTemplate]
     ): Array[Instruction] = {
 
         val requiredInstructions =
@@ -457,7 +460,7 @@ object ClassFileFactory {
         typeToCreate:      ObjectType,
         fieldTypes:        IndexedSeq[FieldType],
         factoryMethodName: String
-    ): Method = {
+    ): MethodTemplate = {
         val numberOfInstructionsForParameterLoading: Int =
             computeNumberOfInstructionsForParameterLoading(fieldTypes, 0)
         val numberOfInstructions =
@@ -505,13 +508,13 @@ object ClassFileFactory {
         definingType:             ObjectType,
         methodName:               String,
         methodDescriptor:         MethodDescriptor,
-        staticParameters:         Seq[Field],
+        staticParameters:         Seq[FieldTemplate],
         receiverType:             ObjectType,
         receiverIsInterface:      Boolean,
         receiverMethodName:       String,
         receiverMethodDescriptor: MethodDescriptor,
         invocationInstruction:    Opcode
-    ): Method = {
+    ): MethodTemplate = {
 
         val code =
             createProxyMethodBytecode(
@@ -536,7 +539,7 @@ object ClassFileFactory {
         definingType:             ObjectType,
         methodName:               String,
         methodDescriptor:         MethodDescriptor,
-        staticParameters:         Seq[Field],
+        staticParameters:         Seq[FieldTemplate],
         receiverType:             ObjectType,
         receiverIsInterface:      Boolean,
         receiverMethodName:       String,
@@ -544,7 +547,9 @@ object ClassFileFactory {
         invocationInstruction:    Opcode
     ): Code = {
 
-        val isVirutalMethodReference = this.isVirtualMethodReference(
+        assert(!receiverIsInterface || invocationInstruction != INVOKEVIRTUAL.opcode)
+
+        val isVirtualMethodReference = this.isVirtualMethodReference(
             invocationInstruction,
             receiverType,
             receiverMethodDescriptor,
@@ -555,7 +560,7 @@ object ClassFileFactory {
         // unless we have a method reference where the receiver will be explicitly
         // provided
         val loadReceiverObject: Array[Instruction] =
-            if (invocationInstruction == INVOKESTATIC.opcode || isVirutalMethodReference) {
+            if (invocationInstruction == INVOKESTATIC.opcode || isVirtualMethodReference) {
                 Array()
             } else if (receiverMethodName == "<init>") {
                 Array(
@@ -579,7 +584,7 @@ object ClassFileFactory {
             )
 
         val forwardingCallInstruction: Array[Instruction] =
-            (invocationInstruction: @scala.annotation.switch) match {
+            (invocationInstruction: @switch) match {
                 case INVOKESTATIC.opcode ⇒
                     Array(
                         INVOKESTATIC(
@@ -660,7 +665,7 @@ object ClassFileFactory {
         forwarderMethodDescriptor: MethodDescriptor,
         receiverMethodDescriptor:  MethodDescriptor,
         variableOffset:            Int,
-        staticParameters:          Seq[Field],
+        staticParameters:          Seq[FieldTemplate],
         definingType:              ObjectType
     ): Array[Instruction] = try {
         val receiverParameters = receiverMethodDescriptor.parameterTypes
@@ -842,9 +847,9 @@ object ClassFileFactory {
             OPALLogger.error(
                 "internal error",
                 s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t"+
-                    s"fowarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t"+
-                    s"receiver descriptor = ${receiverMethodDescriptor} +\n\t "+
-                    s"static parameters   = $staticParameters (variableOffset=$variableOffset)",
+                    s"forwarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t"+
+                    s"receiver descriptor  = ${receiverMethodDescriptor} +\n\t "+
+                    s"static parameters    = $staticParameters (variableOffset=$variableOffset)",
                 t
             )(GlobalLogContext)
             throw t;
@@ -884,8 +889,7 @@ object ClassFileFactory {
                 typeOnStack.asObjectType.unboxValue
             } else {
                 throw new IllegalArgumentException(
-                    "types are incompatible: "+
-                        s"${toBeReturnedType.toJava} and ${typeOnStack.toJava}"
+                    s"incompatible types: ${toBeReturnedType.toJava} and ${typeOnStack.toJava}"
                 )
             }
         conversionInstructions :+ ReturnInstruction(toBeReturnedType)
@@ -905,7 +909,7 @@ object ClassFileFactory {
         bridgeMethodDescriptor:    MethodDescriptor,
         targetMethodDescriptor:    MethodDescriptor,
         targetMethodDeclaringType: ObjectType
-    ): Method = {
+    ): MethodTemplate = {
 
         val bridgeMethodParameters = bridgeMethodDescriptor.parameterTypes
         val targetMethodParameters = targetMethodDescriptor.parameterTypes
@@ -924,7 +928,7 @@ object ClassFileFactory {
             numberOfInstructions += loadInstructions + conversionInstructions
 
             parameterIndex += 1
-            lvIndex = parameter.computationalType.operandSize.toInt
+            lvIndex += parameter.computationalType.operandSize.toInt
         }
         numberOfInstructions += 3 // invoke target method
         numberOfInstructions += 1 // return

@@ -48,28 +48,28 @@ import org.opalj.br.MethodSignature
  * @author Michael Eichberg
  */
 class BaseMethodReturnValuesAnalysisDomain(
-    override val project:      SomeProject,
-    val fieldValueInformation: FieldValueInformation,
-    val ai:                    InterruptableAI[_],
-    val method:                Method
+        override val project:      SomeProject,
+        val fieldValueInformation: FieldValueInformation,
+        val ai:                    InterruptableAI[_],
+        val method:                Method
 ) extends CorrelationalDomain
-        with TheProject
-        with TheMethod
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultTypeLevelLongValues
-        with l0.TypeLevelLongValuesShiftOperators
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        //with l0.DefaultReferenceValuesBinding
-        with l1.DefaultReferenceValuesBinding
-        with la.RefinedTypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with RecordReturnedValueInfrastructure {
+    with TheProject
+    with TheMethod
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with l0.DefaultTypeLevelIntegerValues
+    with l0.DefaultTypeLevelLongValues
+    with l0.TypeLevelLongValuesShiftOperators
+    with l0.TypeLevelPrimitiveValuesConversions
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    //with l0.DefaultReferenceValuesBinding
+    with l1.DefaultReferenceValuesBinding
+    with la.RefinedTypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with RecordReturnedValueInfrastructure {
 
     type ReturnedValue = DomainValue
 
@@ -108,11 +108,11 @@ class BaseMethodReturnValuesAnalysisDomain(
 }
 
 class FPMethodReturnValuesAnalysisDomain(
-    project:                          SomeProject,
-    fieldValueInformation:            FieldValueInformation,
-    val methodReturnValueInformation: MethodReturnValueInformation,
-    override val cache:               CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    ai:                               InterruptableAI[_],
-    method:                           Method
+        project:                          SomeProject,
+        fieldValueInformation:            FieldValueInformation,
+        val methodReturnValueInformation: MethodReturnValueInformation,
+        override val cache:               CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+        ai:                               InterruptableAI[_],
+        method:                           Method
 ) extends BaseMethodReturnValuesAnalysisDomain(project, fieldValueInformation, ai, method)
-        with la.RefinedTypeLevelInvokeInstructions
+    with la.RefinedTypeLevelInvokeInstructions

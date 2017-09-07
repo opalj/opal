@@ -30,30 +30,30 @@ package org.opalj
 package graphs
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * @author Michael Eichberg
  */
-final class DominanceFrontiers private (private final val dfs: Array[IntSet]) {
+final class DominanceFrontiers private (private final val dfs: Array[IntArraySet]) {
 
-    final def apply(n: Int): IntSet = df(n)
+    final def apply(n: Int): IntArraySet = df(n)
 
     final def maxNode: Int = dfs.length - 1
 
     /**
      * Returns the nodes in the dominance frontier of the given node.
      */
-    final def df(n: Int): IntSet = {
+    final def df(n: Int): IntArraySet = {
         val df = dfs(n)
         if (df eq null)
-            IntSet.empty
+            IntArraySet.empty
         else
             df
     }
 
-    def dominanceFrontiers: IndexedSeq[IntSet] = dfs
+    def dominanceFrontiers: IndexedSeq[IntArraySet] = dfs
 
     //
     //
@@ -163,7 +163,7 @@ object DominanceFrontiers {
         //        val nodesWithChildren = children.filter(_ ne null).map(_.size)
         //      println((nodesWithChildren.sum.toDouble / nodesWithChildren.size)+"(max="+nodesWithChildren.max+";elems="+nodesWithChildren.size+")")
 
-        val dfs /* dominanceFrontiers */ = new Array[IntSet](max)
+        val dfs /* dominanceFrontiers */ = new Array[IntArraySet](max)
 
         // Textbook/Paper based implementation (using recursion):
         //
@@ -183,8 +183,8 @@ object DominanceFrontiers {
         //
         //        computeDF(startNode)
 
-        @inline def dfLocal(n: Int): IntSet = {
-            var s = IntSet.empty
+        @inline def dfLocal(n: Int): IntArraySet = {
+            var s = IntArraySet.empty
             foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
             s
         }

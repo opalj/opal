@@ -251,7 +251,7 @@ object ACC_MANDATED extends AccessFlag {
  * dependence on the module indicated by this entry.
  */
 object ACC_TRANSITIVE extends AccessFlag {
-    final override val javaName = Some("public") // IMPROVE [JDK9] Check if the name "public <-> transitive" is chosen 
+    final override val javaName = Some("public") // IMPROVE [JDK9] Check if the name "public <-> transitive" is chosen
     final override val mask = 0x0010
     override def toString: String = "TRANSITIVE"
 }

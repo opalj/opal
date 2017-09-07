@@ -37,7 +37,7 @@ import org.scalatest.FunSpec
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 
 import org.opalj.br.analyses.{Project, SomeProject}
@@ -72,8 +72,8 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
                     s"the method which is expected to be invoked $annotations is not found"
                 )
 
-            val methodIdentifier = invokedMethod.get.toJava(false)
-            it("«"+methodIdentifier+"» should resolve to Object's method") {
+            val methodIdentifier = invokedMethod.get.signatureToJava(false)
+            it(s"«$methodIdentifier» should resolve to Object's method") {
                 val declaringClass = invokevirtual.declaringClass
                 declaringClass should be('ObjectType)
                 val declaringClassFile = project.classFile(declaringClass.asObjectType)

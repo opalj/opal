@@ -38,7 +38,7 @@ case class LocalVariableTable(localVariables: LocalVariables) extends Attribute 
 
     override def kindId: Int = LocalVariableTable.KindId
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: LocalVariableTable ⇒ this.similar(that)
             case _                        ⇒ false

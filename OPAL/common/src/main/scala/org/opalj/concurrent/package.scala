@@ -41,7 +41,9 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.warn
+import org.opalj.log.OPALLogger.info
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -56,11 +58,11 @@ package object concurrent {
     final val defaultIsInterrupted = () ⇒ Thread.currentThread.isInterrupted()
 
     final def handleUncaughtException(t: Throwable): Unit = {
-        OPALLogger.error("internal", "uncaught exception", t)
+        error("internal", "uncaught exception", t)
     }
 
     final def handleUncaughtException(t: Thread, e: Throwable): Unit = {
-        OPALLogger.error("internal", s"uncaught exception (Thread=${t.getName})", e)
+        error("internal", s"uncaught exception (Thread=${t.getName})", e)
     }
 
     //
@@ -77,20 +79,17 @@ package object concurrent {
         val maxCPUBoundTasks = System.getProperty("org.opalj.threads.CPUBoundTasks")
         if (maxCPUBoundTasks ne null) {
             val t = Integer.parseInt(maxCPUBoundTasks)
-            if (t <= 0)
-                throw new IllegalArgumentException(
-                    s"org.opalj.threads.CPUBoundTasks must be larger than 0 (current: $t)"
-                )
+            if (t <= 0) {
+                val message = s"org.opalj.threads.CPUBoundTasks must be larger than 0 (current: $t)"
+                throw new IllegalArgumentException(message)
+            }
             t
         } else {
-            OPALLogger.warn(
-                "OPAL",
-                "the property org.opalj.threads.CPUBoundTasks is unspecified"
-            )
+            warn("OPAL", "the property org.opalj.threads.CPUBoundTasks is unspecified")
             Runtime.getRuntime.availableProcessors()
         }
     }
-    OPALLogger.info(
+    info(
         "OPAL",
         s"using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks "+
             "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; "+
@@ -117,14 +116,11 @@ package object concurrent {
                 )
             s
         } else {
-            OPALLogger.warn(
-                "OPAL",
-                "the property org.opalj.threads.IOBoundTasks is unspecified"
-            )
+            warn("OPAL", "the property org.opalj.threads.IOBoundTasks is unspecified")
             Runtime.getRuntime.availableProcessors() * 2
         }
     }
-    OPALLogger.info(
+    info(
         "OPAL",
         s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
             "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; "+
@@ -219,13 +215,10 @@ package object concurrent {
                     }
                 } catch {
                     case ct: ControlThrowable ⇒
-                        OPALLogger.error(
-                            "internal - severe - non-recoverable",
-                            "unsupported non-local return is used"
-                        )(GlobalLogContext)
+                        error("internal - fatal", "unsupported non-local return is used")
                         exceptions.add(ct)
-                    case t: Throwable ⇒
-                        exceptions.add(new RuntimeException("evaluation failed for "+e, t))
+
+                    case t: Throwable ⇒ exceptions.add(t)
                 }
             }
             return exceptions.asScala
@@ -247,13 +240,10 @@ package object concurrent {
                             f(e)
                         } catch {
                             case ct: ControlThrowable ⇒
-                                OPALLogger.error(
-                                    "internal - severe - non-recoverable",
-                                    "unsupported non-local return is used"
-                                )(GlobalLogContext)
+                                error("internal - fatal", "unsupported non-local return is used")
                                 exceptions.add(ct)
-                            case t: Throwable ⇒
-                                exceptions.add(new RuntimeException("evaluation failed for "+e, t))
+
+                            case t: Throwable ⇒ exceptions.add(t)
                         }
                     }
                 }
@@ -267,10 +257,7 @@ package object concurrent {
                 val future = futures(t)
                 if (Await.ready(future, Duration.Inf).value.get.isFailure) {
                     // this should not happen!
-                    OPALLogger.error(
-                        "internal - severe - non-recoverable",
-                        "concurrent execution failed unexpectedly: "+future.value.get
-                    )
+                    error("internal - fatal", "concurrent execution failed: "+future.value.get)
                 }
                 t += 1
             }

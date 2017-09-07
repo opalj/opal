@@ -1605,12 +1605,28 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
                 }
             }
 
+            it("(the dividend is a value 2^x and the divisor is a multiplikativ of 2^x) [32,32] % [16,16] => [0,15]") {
+                val v1 = IntegerRange(0, Int.MaxValue)
+                val v2 = IntegerRange(16, 16)
+
+                val result = irem(SomePC, v1, v2)
+                result.result should be(IntegerRange(0, 15))
+            }
+
             it("(the dividend and the divisor are positive) [0,Int.MaxValue] % [16,16] => [0,15]") {
                 val v1 = IntegerRange(0, Int.MaxValue)
                 val v2 = IntegerRange(16, 16)
 
                 val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(0, 15))
+            }
+
+            it("(the dividend (range) is smaller than the divisor) [1,8] % [1,16] => [1,8]") {
+                val v1 = IntegerRange(1, 8)
+                val v2 = IntegerRange(1, 16)
+
+                val result = irem(SomePC, v1, v2)
+                result.result should be(IntegerRange(0, 8))
             }
 
             it("(the dividend and the divisor are point values) [2,2] % [16,16] => [2,2]") {
@@ -3315,7 +3331,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
                 val domain = new DefaultIntegerRangesTestDomain(16)
                 val method = IntegerValues.findMethod("lowerBoundUpperBound").head
 
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 // we should not get an assertion error
                 assert(result.code.programCounters.forall(result.operandsArray(_) != null))
             }
@@ -3327,7 +3343,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("the analysis should be correct in the presence of type casts (\"randomModulo\")") {
                 val domain = new DefaultIntegerRangesTestDomain(128)
                 val method = IntegerValues.findMethod("randomModulo").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
             }
 
@@ -3338,14 +3354,14 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing and calculate the correct summary value") {
                 val domain = new JoinResultsIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").head
-                /*val result =*/ BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(method, domain)
                 domain.returnedValue should be(Some(domain.IntegerRange(Int.MinValue, 5)))
             }
 
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").head
-                /*val result =*/ BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -3356,7 +3372,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should be able to adapt (<=) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax6").head
-                /*val result =*/ BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -3367,7 +3383,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should be able to adapt (>=) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMinM1").head
-                /*val result =*/ BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -3378,7 +3394,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should be able to adapt (>) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMin0").head
-                /*val result =*/ BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -3389,7 +3405,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("someSwitch").head
-                /*val result =*/ BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 1)
                     fail("expected one result; found: "+domain.allReturnedValues)
 
@@ -3399,7 +3415,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should be able to detect contradicting conditions") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("someComparisonThatReturns5").head
-                /*val result =*/ BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected one result; found: "+domain.allReturnedValues)
 
@@ -3410,7 +3426,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should be able to track integer values such that it is possible to potentially identify an array index out of bounds exception") {
                 val domain = new DefaultIntegerRangesTestDomain(20) // the array has a maximum size of 10
                 val method = IntegerValues.findMethod("array10").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 if (domain.allReturnedValues.size != 1)
                     fail("expected one result; found: "+domain.allReturnedValues)
 
@@ -3427,7 +3443,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should be possible to identify dead code - even for complex conditions") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("deadCode").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 result.operandsArray(47) should be(null)
                 result.operandsArray(48) should be(null)
                 result.operandsArray(50) should be(null)
@@ -3444,7 +3460,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("an idempotent operation (+0) should not affect constraint propagation (cfDependentValuesAdd)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValuesAdd").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 result.operandsArray(21).head should be(domain.IntegerRange(100, 100))
                 result.operandsArray(29).head should be(domain.IntegerRange(Int.MinValue, 98))
@@ -3454,7 +3470,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("an idempotent operation (-0) should not affect constraint propagation (cfDependentValuesSub)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValuesSub").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 result.operandsArray(21).head should be(domain.IntegerRange(100, 100))
                 result.operandsArray(29).head should be(domain.IntegerRange(Int.MinValue, 98))
@@ -3464,7 +3480,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("an idempotent operation (*1) should not affect constraint propagation (cfDependentValuesMult) ") {
                 val domain = new DefaultIntegerRangesTestDomain(AbsoluteMaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesMult").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 result.operandsArray(15).head should be(domain.IntegerRange(Int.MinValue, 0))
 
@@ -3481,7 +3497,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("an idempotent operation (/1) should not affect constraint propagation (cfDependentValuesDiv) ") {
                 val domain = new DefaultIntegerRangesTestDomain(AbsoluteMaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesDiv").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 result.operandsArray(31).head should be(domain.IntegerRange(100, 100))
                 result.operandsArray(39).head should be(domain.IntegerRange(Int.MinValue, 98))
@@ -3491,7 +3507,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("an idempotent operation (& -1) should not affect constraint propagation (cfDependentValuesBitwiseAnd) ") {
                 val domain = new DefaultIntegerRangesTestDomain(AbsoluteMaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesBitwiseAnd").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 result.operandsArray(30).head should be(domain.IntegerRange(100, 100))
                 result.operandsArray(38).head should be(domain.IntegerRange(Int.MinValue, 98))
@@ -3501,7 +3517,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("an idempotent operation (| 0) should not affect constraint propagation (cfDependentValuesBitwiseOr) ") {
                 val domain = new DefaultIntegerRangesTestDomain(AbsoluteMaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesBitwiseOr").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 result.operandsArray(27).head should be(domain.IntegerRange(100, 100))
                 result.operandsArray(35).head should be(domain.IntegerRange(Int.MinValue, 98))
@@ -3513,7 +3529,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v1)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues1_v1").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 if (result.operandsArray(37) != null) {
                     result.operandsArray(37).head should be(domain.AnIntegerValue)
@@ -3527,7 +3543,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v2)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues1_v2").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 if (result.operandsArray(37) != null) {
                     result.operandsArray(37).head should be(domain.AnIntegerValue)
@@ -3541,7 +3557,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v3)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues1_v3").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 if (result.operandsArray(38) != null) {
                     result.operandsArray(38).head should be(domain.AnIntegerValue)
@@ -3555,7 +3571,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues2)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues2").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 result.operandsArray(38).head should be(domain.AnIntegerValue)
                 result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
             }
@@ -3563,7 +3579,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues3)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues3").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 result.operandsArray(45).head should be(domain.AnIntegerValue)
                 result.operandsArray(49).head should be(domain.IntegerRange(0, 0))
             }
@@ -3571,7 +3587,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues4)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues4").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 result.operandsArray(46).head should be(domain.IntegerRange(2, 2))
                 result.operandsArray(50).head should be(domain.AnIntegerValue)
                 result.operandsArray(54).head should be(domain.AnIntegerValue)
@@ -3582,7 +3598,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues5)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues5").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
                 result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
                 result.operandsArray(55).head should be(domain.AnIntegerValue)
@@ -3591,7 +3607,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues6)") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues6").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 result.operandsArray(77).head should be(domain.IntegerRange(0, 0))
                 result.operandsArray(81).head should be(domain.AnIntegerValue)
@@ -3612,20 +3628,18 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should not perform useless evaluations") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("complexLoop").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 result.operandsArray(35).head should be(domain.IntegerRange(0, 2))
                 // when we perform a depth-first evaluation we do not want to
                 // evaluate the same instruction with the same abstract state
                 // multiple times
-                result.evaluated.head should be(24)
-                result.evaluated.tail.head should be(23)
-                result.evaluated.tail.tail.head should be(20)
+                result.evaluated.size should be(43)
             }
 
             it("it should handle casts correctly") {
                 val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("casts").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
                 // we primarily test that the top-level domain value is updated
                 result.operandsArray(26).head should be(domain.IntegerRange(-128, 126))
             }
@@ -3633,7 +3647,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
             it("it should handle cases where we have more complex aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(4)
                 val method = IntegerValues.findMethod("moreComplexAliasing").head
-                val result = BaseAI(IntegerValues, method, domain)
+                val result = BaseAI(method, domain)
 
                 result.operandsArray(20).head should be(domain.AnIntegerValue)
             }
@@ -3643,41 +3657,41 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
 }
 
 class DefaultIntegerRangesTestDomain(
-    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 )
-        extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultReferenceValuesBinding
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.SimpleTypeLevelInvokeInstructions
-        with l1.DefaultIntegerRangeValues // <----- The one we are going to test
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with PredefinedClassHierarchy
-        with RecordLastReturnedValues
+    extends CorrelationalDomain
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with l0.DefaultTypeLevelLongValues
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.DefaultReferenceValuesBinding
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.SimpleTypeLevelInvokeInstructions
+    with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+    with l0.TypeLevelPrimitiveValuesConversions
+    with l0.TypeLevelLongValuesShiftOperators
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with PredefinedClassHierarchy
+    with RecordLastReturnedValues
 
 class JoinResultsIntegerRangesTestDomain(
-    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 )
-        extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultReferenceValuesBinding
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.SimpleTypeLevelInvokeInstructions
-        with l1.DefaultIntegerRangeValues // <----- The one we are going to test
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with PredefinedClassHierarchy
-        with RecordReturnedValue
+    extends CorrelationalDomain
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with l0.DefaultTypeLevelLongValues
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.DefaultReferenceValuesBinding
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.SimpleTypeLevelInvokeInstructions
+    with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+    with l0.TypeLevelPrimitiveValuesConversions
+    with l0.TypeLevelLongValuesShiftOperators
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with PredefinedClassHierarchy
+    with RecordReturnedValue

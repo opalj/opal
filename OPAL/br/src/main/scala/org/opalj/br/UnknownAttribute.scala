@@ -38,7 +38,7 @@ case class UnknownAttribute(attributeName: String, info: Array[Byte]) extends At
 
     override def kindId: Int = UnknownAttribute.KindId
 
-    def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: UnknownAttribute ⇒ this.similar(that)
             case _                      ⇒ false

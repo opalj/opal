@@ -73,8 +73,8 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
      * Abstracts over all values with computational type `long`.
      */
     sealed trait LongValue
-            extends TypedValue[LongType]
-            with IsLongValue[LongValue] { this: DomainTypedValue[LongType] ⇒
+        extends TypedValue[LongType]
+        with IsLongValue[LongValue] { this: DomainTypedValue[LongType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeLong
 
@@ -99,8 +99,7 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
     }
 
     object DefiniteLongValue {
-        def unapply(v: DefiniteLongValue): Option[Long] =
-            Some(v.value)
+        def unapply(v: DefiniteLongValue): Option[Long] = Some(v.value)
     }
 
     //
@@ -361,4 +360,3 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 }
-

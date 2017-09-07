@@ -40,21 +40,17 @@ import scala.xml.Node
 case class Annotation(
         type_index:          Constant_Pool_Index,
         element_value_pairs: IndexedSeq[ElementValuePair] = IndexedSeq.empty
-) {
+) extends AbstractAnnotation {
 
     final def attribute_length: Int = {
         2 + element_value_pairs.foldLeft(2 /*num_...*/ )((c, n) ⇒ c + n.attribute_length)
     }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val element_value_pairsAsXHTML = this.element_value_pairs.map(_.toXHTML(cp))
-        val annotationType = parseFieldType(cp(type_index).toString).asJavaType
-
+        val annotationType = parseFieldType(cp(type_index).toString)
         <div class="annotation">
-            <span class="type">{ annotationType }</span>
-            (
-            <span class="element_value_pairs">{ element_value_pairsAsXHTML }</span>
-            )
+            { annotationType.asSpan("annotation_type") }
+            { evps }
         </div>
     }
 }

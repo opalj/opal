@@ -32,13 +32,10 @@ package domain
 package l0
 
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
-import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.Project
 
 /**
- * A complete domain that performs all computations at the type level and which has
- * a configurable identifier.
+ * A complete domain that performs all computations at the type level.
  *
  * @note    This domain is intended to be used for '''demo purposes only'''.
  *          '''Tests should create their own domains to make sure that
@@ -48,49 +45,24 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-class BaseConfigurableDomain[I, Source](
-    val id:        I,
-    val project:   Project[Source],
-    val classFile: ClassFile,
-    val method:    Method
-) extends TypeLevelDomain
-        with ThrowAllPotentialExceptionsConfiguration
-        with IgnoreSynchronization
-        with DefaultTypeLevelHandlingOfMethodResults
-        with TheProject
-        with TheMethod
-        with DomainId {
-
-    type Id = I
-}
-
-/**
- * This is a ready to use domain which sets the domain identifier
- * to a string that identifies the method that is analyzed.
- *
- * This domain is primarily useful for demonstration purposes.
- *
- * @author Michael Eichberg
- */
 class BaseDomain[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
-) extends BaseConfigurableDomain[String, Source](
-    method.toJava(classFile),
-    project,
-    classFile,
-    method
-)
+        val project: Project[Source],
+        val method:  Method
+) extends TypeLevelDomain
+    with ThrowAllPotentialExceptionsConfiguration
+    with IgnoreSynchronization
+    with DefaultTypeLevelHandlingOfMethodResults
+    with TheProject
+    with TheMethod
 
 object BaseDomain {
 
     /**
-     * @tparam S The type of the underlying source files (e.g., java.net.URL)
+     * @tparam Source The type of the underlying source files (e.g., java.net.URL)
      * @return A new instance of a `BaseDomain`.
      */
-    def apply[S](project: Project[S], classFile: ClassFile, method: Method): BaseDomain[S] = {
-        new BaseDomain(project, classFile, method)
+    def apply[Source](project: Project[Source], method: Method): BaseDomain[Source] = {
+        new BaseDomain(project, method)
     }
 
 }
@@ -101,24 +73,7 @@ object BaseDomain {
  * information.
  * @tparam S The source file's type.
  */
-class BaseDomainWithDefUse[S](
-    project:   Project[S],
-    classFile: ClassFile,
-    method:    Method
-) extends BaseDomain[S](project, classFile, method) with RecordDefUse
-
-/**
- * This is the most primitive domain that can be used to transform the bytecode to the
- * three address representation which is build upon the result of an abstract interpretation.
- */
-class PrimitiveTACAIDomain(
-    val classHierarchy: ClassHierarchy,
-    val classFile:      ClassFile,
-    val method:         Method
-) extends TypeLevelDomain
-        with ThrowAllPotentialExceptionsConfiguration
-        with IgnoreSynchronization
-        with DefaultTypeLevelHandlingOfMethodResults
-        with TheClassHierarchy
-        with TheMethod
-        with RecordDefUse
+class BaseDomainWithDefUse[Source](
+        project: Project[Source],
+        method:  Method
+) extends BaseDomain[Source](project, method) with RecordDefUse

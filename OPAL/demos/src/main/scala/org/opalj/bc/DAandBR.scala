@@ -193,15 +193,15 @@ object DAandBR extends App {
                         max_stack = 1,
                         max_locals = 1,
                         code =
-                        new Code(
-                            Array[Byte](
-                                42, // aload_0
-                                (0xff & 183).toByte, // invokespecial
-                                0, //                    -> Methodref
-                                8, //                       #8
-                                (0xff & 177).toByte
+                            new Code(
+                                Array[Byte](
+                                    42, // aload_0
+                                    (0xff & 183).toByte, // invokespecial
+                                    0, //                    -> Methodref
+                                    8, //                       #8
+                                    (0xff & 177).toByte
+                                )
                             )
-                        )
                     )
                 )
             ),
@@ -215,19 +215,19 @@ object DAandBR extends App {
                         max_stack = 2,
                         max_locals = 1,
                         code =
-                        new Code(
-                            Array[Byte](
-                                (0xff & 178).toByte, // getstatic
-                                0,
-                                16,
-                                18, // ldc
-                                22,
-                                (0xff & 182).toByte, // invokevirtual
-                                0,
-                                24,
-                                (0xff & 177).toByte // return
+                            new Code(
+                                Array[Byte](
+                                    (0xff & 178).toByte, // getstatic
+                                    0,
+                                    16,
+                                    18, // ldc
+                                    22,
+                                    (0xff & 182).toByte, // invokevirtual
+                                    0,
+                                    24,
+                                    (0xff & 177).toByte // return
+                                )
                             )
-                        )
                     )
                 )
             )
@@ -238,7 +238,11 @@ object DAandBR extends App {
     val assembledCF = Assembler(cf)
 
     val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(assembledCF)).head
-    val newBRClassFile = brClassFile.copy(methods = brClassFile.methods.filter( /*some sophisticated analysis...*/ _.name == "<init>"))
+    val newBRMethods =
+        brClassFile.methods.
+            filter(m ⇒ /*due some sophisticated analysis...*/ m.name == "<init>").
+            map(m ⇒ m.copy())
+    val newBRClassFile = brClassFile.copy(methods = newBRMethods)
 
     val newDAClassFile = cf.copy(methods = cf.methods.filter { daM ⇒
         implicit val cp = cf.constant_pool

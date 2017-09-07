@@ -123,7 +123,7 @@ class DefaultPreciseIntegerValuesTest extends FlatSpec with Matchers {
     it should ("be able to analyze a method when we pass in concrete values") in {
         val domain = new DefaultPreciseIntegerValuesTest.TestDomain
         val method = ConditionalMath.findMethod("m1").head
-        /*val result =*/ BaseAI.perform(ConditionalMath, method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 100))))
+        /*val r =*/ BaseAI.perform(method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 100))))
         domain.allReturnedValues should not be (empty)
         domain.allReturnedValues.head should be((29, domain.IntegerValue(SomePC, 10)))
         // domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(175))
@@ -133,22 +133,22 @@ class DefaultPreciseIntegerValuesTest extends FlatSpec with Matchers {
 object DefaultPreciseIntegerValuesTest {
 
     class TestDomain
-            extends Domain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultReferenceValuesBinding
-            with DefaultPreciseIntegerValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with RecordLastReturnedValues
-            with IgnoreSynchronization {
+        extends Domain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultReferenceValuesBinding
+        with DefaultPreciseIntegerValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with RecordLastReturnedValues
+        with IgnoreSynchronization {
 
         override def maxUpdatesForIntegerValues: Long = 5
     }

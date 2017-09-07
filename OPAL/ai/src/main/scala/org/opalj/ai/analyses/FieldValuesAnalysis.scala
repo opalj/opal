@@ -105,7 +105,7 @@ object FieldValuesAnalysis {
                     classFile.methods.foreach { method ⇒
                         if (method.body.isDefined) {
                             domain.setMethodContext(method)
-                            BaseAI(classFile, method, domain)
+                            BaseAI(method, domain)
                         }
                     }
 

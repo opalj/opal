@@ -34,7 +34,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -55,23 +55,23 @@ class MethodsWithBranchesTest extends FlatSpec with Matchers {
     import domain.RecordConstraints
 
     class TestDomain(val name: String)
-            extends Domain
-            with DefaultDomainValueBinding
-            with DefaultReferenceValuesBinding
-            with DefaultTypeLevelIntegerValues
-            with DefaultTypeLevelLongValues
-            with DefaultTypeLevelFloatValues
-            with DefaultTypeLevelDoubleValues
-            with TypeLevelPrimitiveValuesConversions
-            with TypeLevelLongValuesShiftOperators
-            with TypeLevelFieldAccessInstructions
-            with SimpleTypeLevelInvokeInstructions
-            with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy
-            with IgnoreSynchronization
-            with DefaultHandlingOfMethodResults
-            with RecordLastReturnedValues
-            with RecordConstraints {
+        extends Domain
+        with DefaultDomainValueBinding
+        with DefaultReferenceValuesBinding
+        with DefaultTypeLevelIntegerValues
+        with DefaultTypeLevelLongValues
+        with DefaultTypeLevelFloatValues
+        with DefaultTypeLevelDoubleValues
+        with TypeLevelPrimitiveValuesConversions
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelFieldAccessInstructions
+        with SimpleTypeLevelInvokeInstructions
+        with ThrowAllPotentialExceptionsConfiguration
+        with PredefinedClassHierarchy
+        with IgnoreSynchronization
+        with DefaultHandlingOfMethodResults
+        with RecordLastReturnedValues
+        with RecordConstraints {
 
         type Id = String
         def id = "MethodsWithBranchesTestDomain: "+name
@@ -80,7 +80,7 @@ class MethodsWithBranchesTest extends FlatSpec with Matchers {
     private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit): Unit = {
         val domain = new TestDomain(name)
         val method = classFile.methods.find(_.name == name).get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(
             Some(classFile),

@@ -39,8 +39,8 @@ import org.opalj.collection.immutable.Naught
  * @author Michael Eichberg
  */
 trait SimpleConditionalBranchInstructionLike
-        extends ConditionalBranchInstructionLike
-        with ConstantLengthInstruction {
+    extends ConditionalBranchInstructionLike
+    with ConstantLengthInstruction {
 
     /**
      * The comparison operator (incl. the constant) underlying the if instruction.
@@ -56,11 +56,24 @@ trait SimpleConditionalBranchInstructionLike
     }
 }
 
-trait SimpleConditionalBranchInstruction
-        extends ConditionalBranchInstruction
-        with SimpleConditionalBranchInstructionLike {
+trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction[T]]
+    extends ConditionalBranchInstruction
+    with SimpleConditionalBranchInstructionLike {
 
     def branchoffset: Int
+
+    def copy(branchoffset: Int): SimpleConditionalBranchInstruction[T]
+
+    /**
+     * Returns the IF instruction that - when compared with this if instruction -
+     * performs a jump in case of a fall-through and vice-versa. I.e., given the
+     * following condition: `(a < b)`, the negation is performend: `!(a < b)` which
+     * is equivalent to `(a &geq; b)`. In other words,  if this IF instruction is an
+     * IFGT instruction and IFLE instruction is returned.
+     */
+    def negate(newBranchoffset: Int = branchoffset): SimpleConditionalBranchInstruction[_]
+
+    final override def asSimpleConditionalBranchInstruction: this.type = this
 
     /**
      * @inheritdoc
@@ -99,6 +112,6 @@ object SimpleConditionalBranchInstruction {
     /**
      * Extracts the instructions branchoffset.
      */
-    def unapply(i: SimpleConditionalBranchInstruction): Some[Int] = Some(i.branchoffset)
+    def unapply(i: SimpleConditionalBranchInstruction[_ <: SimpleConditionalBranchInstruction[_]]): Some[Int] = Some(i.branchoffset)
 
 }

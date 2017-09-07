@@ -30,6 +30,9 @@ package org.opalj
 package ai
 package domain
 
+import scala.annotation.tailrec
+import scala.annotation.switch
+
 import java.io.{ByteArrayOutputStream, PrintStream}
 
 import scala.xml.Node
@@ -38,8 +41,8 @@ import scala.collection.mutable
 
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
-import org.opalj.collection.immutable.IntSet
-import org.opalj.collection.immutable.IntSet1
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -58,10 +61,15 @@ import org.opalj.ai.util.XHTML
  * where the `Int` identifies the expression (by means of it's pc) which evaluated
  * to the respective value. In case of a parameter the `Int` value is equivalent to
  * the value `-parameterIndex`.
- * In case of exception values the `Int` value identifies the exception
- * handler that caught the respective exception. This information can then be used –
+ * '''In case of exception values the `Int` value identifies the exception
+ * handler that caught the respective exception.''' This information can then be used –
  * in combination with the AICFG - to identify the origin instruction that caused
- * the exception.
+ * the exception. A more precise propagation of def/use information related to exceptions is
+ * – as part of this very generic domain – not possible. If we would propagate def-use
+ * information beyond the handler, we would not be able to distinguish between the handlers
+ * anymore and therefore we would not be able to identify where a caught exception is eventually
+ * used.
+ *
  *
  * ==General Usage==
  * This trait finalizes the collection of the def/use information '''after the abstract
@@ -99,8 +107,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    type ValueOrigins = IntSet
-    def ValueOrigins(vo: Int): IntSet = IntSet1(vo)
+    type ValueOrigins = IntArraySet
+    @inline final def ValueOrigins(vo: Int): IntArraySet = new IntArraySet1(vo)
 
     private[this] var instructions: Array[Instruction] = _ // initialized by initProperties
 
@@ -114,17 +122,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
     // This array contains the information where each operand value found at a
     // specific instruction was defined.
-    private[this] var defOps: Array[Chain[ValueOrigins]] = _
+    private[this] var defOps: Array[Chain[ValueOrigins]] = _ // initialized by initProperties
     // This array contains the information where each local is defined;
     // negative values indicate that the values are parameters.
-    private[this] var defLocals: Array[Registers[ValueOrigins]] = _
+    private[this] var defLocals: Array[Registers[ValueOrigins]] = _ // initialized by initProperties
 
-    abstract override def initProperties(
-        code:    Code,
-        cfJoins: BitSet,
-        locals:  Locals
-    ): Unit = {
-
+    abstract override def initProperties(code: Code, cfJoins: BitSet, locals: Locals): Unit = {
         instructions = code.instructions
         val codeSize = instructions.length
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
@@ -140,7 +143,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // used by the AI for parameters
                 parameterIndex -= 1
                 if (v ne null) {
-                    IntSet1(parameterIndex)
+                    ValueOrigins(parameterIndex)
                 } else {
                     null
                 }
@@ -158,11 +161,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      *
      * @inheritdoc
      */
-    abstract override def properties(
-        pc:               Int,
-        propertyToString: AnyRef ⇒ String
-    ): Option[String] = {
-
+    abstract override def properties(pc: Int, propertyToString: AnyRef ⇒ String): Option[String] = {
         val thisProperty = Option(used(pc + parametersOffset)).map(_.mkString("UsedBy={", ",", "}"))
 
         super.properties(pc, propertyToString) match {
@@ -183,7 +182,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * compute a value that is not used in the following.
      */
     def unused(): ValueOrigins = {
-        var unused = IntSet.empty
+        var unused = IntArraySet.empty
 
         // 1. check if the parameters are used...
         val parametersOffset = this.parametersOffset
@@ -200,7 +199,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         }
 
         // 2. check instructions
-        code.iterate { (pc, instruction) ⇒
+        code iterate { (pc, instruction) ⇒
             if (instruction.opcode != CHECKCAST.opcode) {
                 // a checkcast instruction is already a use
                 instruction.expressionResult match {
@@ -214,21 +213,21 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
     /**
-     * Returns the instruction(s) which defined the value used by the instruction with the given `pc`
-     * and which is stored at the stack position with the given stackIndex. The first/top value on
-     * the stack has index 0 and the second value - if it exists - has index two; independent of
-     * the category of the values.
+     * Returns the instruction(s) which defined the value used by the instruction with the
+     * given `pc` and which is stored at the stack position with the given stackIndex.
+     * The first/top value on the stack has index 0 and the second value - if it exists -
+     * has index two; independent of the computational category of the values.
      */
     def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
 
     /**
-     * Returns the instruction(s) which define the value found in the register variable with
+     * Returns the instruction(s) which define(s) the value found in the register variable with
      * index `registerIndex` and the program counter `pc`.
      */
     def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     /**
-     * The method which computes the def/use information when the instruction with
+     * Updates/computes the def/use information when the instruction with
      * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
      */
     private[this] def handleFlow(
@@ -253,7 +252,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
                 val oldUsedInfo: ValueOrigins = used(usedIndex)
                 if (oldUsedInfo eq null) {
-                    used(usedIndex) = IntSet1(useSite)
+                    used(usedIndex) = ValueOrigins(useSite)
                 } else {
                     val newUsedInfo = oldUsedInfo + useSite
                     if (newUsedInfo ne oldUsedInfo)
@@ -266,10 +265,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
-            if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null)) {
+            if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null /*non-dead*/ )) {
 
                 // we now also have to perform a join...
-                @annotation.tailrec def joinDefOps(
+                @tailrec def joinDefOps(
                     oldDefOps:     Chain[ValueOrigins],
                     lDefOps:       Chain[ValueOrigins],
                     rDefOps:       Chain[ValueOrigins],
@@ -282,7 +281,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     }
                     // assert(
                     //     rDefOps.nonEmpty,
-                    //     s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps; original: $oldDefOps"
+                    //     s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps;"+
+                    //      s" original: $oldDefOps"
                     // )
 
                     val newHead = lDefOps.head
@@ -296,8 +296,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     else {
                         val joinedHead = newHead ++ oldHead
                         // assert(newHead.subsetOf(joinedHead))
-                        // assert(oldHead.subsetOf(joinedHead), s"$newHead ++ $oldHead is $joinedHead")
-                        // assert(joinedHead.size > oldHead.size, s"$newHead ++  $oldHead is $joinedHead")
+                        // assert(
+                        //      oldHead.subsetOf(joinedHead),
+                        //      s"$newHead ++ $oldHead is $joinedHead"
+                        // )
+                        // assert(
+                        //      joinedHead.size > oldHead.size,
+                        //      s"$newHead ++  $oldHead is $joinedHead"
+                        // )
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
@@ -312,7 +318,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     if (joinedDefOps ne oldDefOps) {
                         // assert(
                         //     joinedDefOps != oldDefOps,
-                        //     s"$joinedDefOps is (unexpectedly) equal to $newDefOps join $oldDefOps"
+                        //     s"$joinedDefOps is unexpectedly equal to $newDefOps join $oldDefOps"
                         // )
                         forceScheduling =
                             // There is nothing to propagate beyond the next
@@ -374,7 +380,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 } else {
                                     newUsage = true
                                     val joinedDefLocals = n ++ o
-                                    // assert(joinedDefLocals.size > o.size, s"$n ++  $o is $joinedDefLocals")
+                                    // assert(
+                                    //      joinedDefLocals.size > o.size,
+                                    //      s"$n ++  $o is $joinedDefLocals"
+                                    // )
                                     joinedDefLocals
                                 }
                             }
@@ -382,7 +391,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     if (joinedDefLocals ne oldDefLocals) {
                         // assert(
                         //      joinedDefLocals != oldDefLocals,
-                        //      s"$joinedDefLocals is (unexpectedly) equal to $newDefLocals join $oldDefLocals")
+                        //      s"$joinedDefLocals should not be equal to "+
+                        //          s"$newDefLocals join $oldDefLocals"
+                        // )
                         forceScheduling = forceScheduling || {
                             // There is nothing to do if all joins are related to unused vars...
                             newUsage &&
@@ -415,11 +426,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             val currentDefOps = defOps(currentPC)
             currentDefOps.forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currentPC) }
 
-            val newDefOps =
+            val newDefOps: Chain[ValueOrigins] =
                 if (isExceptionalControlFlow) {
-                    // The stack only contains the exception (that was created before
-                    // and explicitly used by a throw instruction) or that resulted from
-                    // a called method or that was created by the JVM
+                    // The stack only contains the exception (which was created before
+                    // and was explicitly thrown by a throw instruction or which resulted from
+                    // a called method or which was created by the JVM).
                     // (Whether we had a join or not is irrelevant.)
                     val successorDefOps = defOps(successorPC)
                     if (successorDefOps eq null)
@@ -454,11 +465,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         //
         // THE IMPLEMENTATION...
         //
-        val scheduleNextPC: Boolean = (instruction.opcode: @annotation.switch) match {
+        val scheduleNextPC: Boolean = (instruction.opcode: @switch) match {
             case GOTO.opcode | GOTO_W.opcode |
                 NOP.opcode |
-                WIDE.opcode |
-                RETURN.opcode ⇒
+                WIDE.opcode ⇒
                 propagate(defOps(currentPC), defLocals(currentPC))
 
             case JSR.opcode | JSR_W.opcode ⇒
@@ -483,7 +493,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 | LOOKUPSWITCH.opcode | TABLESWITCH.opcode ⇒
                 stackOp(1, pushesValue = false)
 
-            case ATHROW.opcode                      ⇒ stackOp(1, pushesValue = false)
+            case ATHROW.opcode ⇒
+                stackOp(1, true /* <= actually ignored; athrow has special handling downstream */ )
 
             //
             // ARRAYS
@@ -661,7 +672,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 operandsArray(currentPC) match {
                     case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: v4 :&: rest) = defOps(currentPC)
-                        propagate(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
+                        val currentLocals = defLocals(currentPC)
+                        propagate(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest, currentLocals)
                     case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
@@ -696,26 +708,45 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 stackOp(1, pushesValue = true)
 
             case CHECKCAST.opcode ⇒
-                // Recall that – even if the cast is successful (we don't have an exceptional
-                // control flow) - that does not mean that the cast was useless; therefore,
-                // we will always create a new variable.
+                // Recall that – even if the cast is successful NOW (i.e., we don't have an
+                // exceptional control flow) - that does not mean that the cast was useless.
                 // At this point in time we simply don't have the necessary information to
-                // decide whether the cast is truly useless (i.e., we could keep the
-                // operand stack as is) or not.
+                // decide whether the cast is truly useless.
                 // E.g,.
                 //      AbstractList abstractL = ...;
                 //      List l = (java.util.List) abstractL; // USELESS
                 //      ArrayList al = (java.util.ArrayList) l; // MAY OR MAY NO SUCCEED
-                stackOp(1, pushesValue = true)
+                val currentDefOps = defOps(currentPC)
+                val op = currentDefOps.head
+                updateUsageInformation(op, currentPC)
+                val newDefOps =
+                    if (isExceptionalControlFlow) {
+                        val successorDefOps = defOps(successorPC)
+                        if (successorDefOps eq null)
+                            Chain.singleton(ValueOrigins(successorPC))
+                        else
+                            successorDefOps
+                    } else {
+                        currentDefOps
+                    }
+                propagate(newDefOps, defLocals(currentPC))
 
             //
             // "ERROR" HANDLING
             //
+            case RETURN.opcode ⇒
+                if (isExceptionalControlFlow) {
+                    stackOp(0, pushesValue = true /*value doesn't matter - has special handling*/ )
+                } else {
+                    val message = s"a return instruction does not have regular successors"
+                    throw BytecodeProcessingFailedException(message)
+                }
+
             case 176 /*areturn*/ |
                 175 /*dreturn*/ | 174 /*freturn*/ |
                 172 /*ireturn*/ | 173 /*lreturn*/ ⇒
                 if (isExceptionalControlFlow) {
-                    stackOp(1, pushesValue = false)
+                    stackOp(1, pushesValue = true /*value doesn't matter - has special handling*/ )
                 } else {
                     val message = s"a(n) $instruction instruction does not have regular successors"
                     throw BytecodeProcessingFailedException(message)
@@ -756,28 +787,50 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0)
 
         def checkAndScheduleNextSubroutine(): Boolean = {
-            /* We want to evaluate the subroutines only when strictly necessary;
-             * When we reach this point "nextPCs" is already empty!
-             *
-             * However, we have to ensure that all subroutines and all
-             * paths to a specific subroutine are actually evaluated before
+            // When we reach this point "nextPCs" is already empty!
+
+            /* We want to evaluate the subroutines only after evaluating all other regular
+             * paths to ensure the def-use information is "complete".
+             * Additionally, we have to ensure that all
+             * paths of a specific subroutine are actually evaluated before
              * we return.
+             *
+             * However, in case of deeply nested jsr-rets, we have to make sure that
+             * we "ret" as soon as all jumps to the subrouting have been evaluated, otherwise, we
+             * may circumvent a relevant control-flow.
+             *
+             * A concrete example (belonging to the qualitas corpus) is:
+             *  com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager{
+             *      public com.aelitis.azureus.core.dht.DHTStorageBlock keyBlockRequest(
+             *          com.aelitis.azureus.core.dht.transport.DHTTransportContact,byte[],byte[]
+             *      )
+             *  }
              */
 
-            // We have to make sure that – before we schedule the evaluation of an
-            // instruction that is the return target of a subroutine - the call
-            // of the subroutine from the respective location was already analyzed.
-            // Otherwise, the context information may be missing.
-
-            if (subroutinePCs.nonEmpty) {
-                nextPCs ++= subroutinePCs
-                subroutinePCs = Set.empty
-                //nextPCs += subroutinePCs.head;
-                //subroutinePCs = subroutinePCs.tail;
-                true
-            } else if (retPCs.nonEmpty) {
+            if (retPCs.nonEmpty) {
                 nextPCs += retPCs.head
                 retPCs = retPCs.tail
+                true
+            } else if (subroutinePCs.nonEmpty) {
+                if (subroutinePCs.size == 1) {
+                    nextPCs += subroutinePCs.head;
+                    subroutinePCs = Set.empty
+                } else {
+                    // We have to make sure that – before we schedule the evaluation of an
+                    // instruction that is the return target of a subroutine - the
+                    // subroutine was completely analyzed. Otherwise, the context information
+                    // may be missing.
+                    // Additionally, we have to ensure that a subroutine which may be called
+                    // directly by the main code, but which may also be called after
+                    // some other subroutines were evaluated, is only evaluated after the
+                    // other subroutines have been completely evaluated.
+                    // We check the latter condition using the post dominator tree.
+                    val nextSubroutinePC = subroutinePCs.tail.foldLeft(subroutinePCs.head) { (c, n) ⇒
+                        if (aiResult.domain.postDominatorTree.strictlyDominates(c, n)) n else c
+                    }
+                    nextPCs += nextSubroutinePC
+                    subroutinePCs -= nextSubroutinePC
+                }
                 true
             } else {
                 false
@@ -787,10 +840,16 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         while (nextPCs.nonEmpty || checkAndScheduleNextSubroutine()) {
             val currPC = nextPCs.head
             nextPCs.remove(currPC)
-            // println(s"ANALYZING: $currPC; remaining: ${nextPCs.mkString(",")};"+
-            //            s"subroutines: ${subroutinePCs.mkString(",")}")
-            // println(defLocals(currPC).zipWithIndex.map(_.swap).
-            //            mkString("LOCALS:\n\t", "\n\t", "\n"))
+            /*
+            println(
+                s"ANALYZING: $currPC; remaining: ${nextPCs.mkString(",")}; "+
+                    s"subroutines: ${subroutinePCs.mkString(",")}; "+
+                    s"ret pcs: ${retPCs.mkString(",")}"
+            )
+            */
+            // println(
+            //      defLocals(currPC).zipWithIndex.map(_.swap).mkString("LOCALS:\n\t", "\n\t", "\n")
+            // )
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
@@ -802,44 +861,37 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     )
                 } catch {
                     case e: Throwable ⇒
-                        var message = "failed calculating def-use information for: "
-                        if (defUseDomain.isInstanceOf[TheMethod]) {
-                            val method = defUseDomain.asInstanceOf[TheMethod].method
-                            if (defUseDomain.isInstanceOf[TheProject]) {
-                                val project = defUseDomain.asInstanceOf[TheProject].project
-                                message += method.toJava(project.classFile(method))+"\n"
-                            } else {
-                                message += method.toJava()+"\n"
-                            }
-                        } else {
-                            message += "<Unknown (the domain does not reference the method)>\n"
+                        val method = analyzedEntity(aiResult.domain)
+                        var message = s"def-use computation failed for: $method\n"
+                        try {
+                            message += s"\tCurrent PC: $currPC; SuccessorPC: $succPC\n"
+                            message += s"\tStack: ${defOps(currPC)}\n"
+                            val localsDump =
+                                defLocals(currPC).zipWithIndex.map { e ⇒
+                                    val (local, index) = e; s"$index: $local"
+                                }
+                            message += localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n")
+                            val bout = new ByteArrayOutputStream()
+                            val pout = new PrintStream(bout)
+                            e.printStackTrace(pout)
+                            pout.flush()
+                            val stacktrace = bout.toString("UTF-8")
+                            message += "\tStacktrace: \n\t"+stacktrace+"\n"
+                        } catch {
+                            case t: Throwable ⇒
+                                message += s"<fatal error while collecting : ${t.getMessage}>"
                         }
-                        message += ("\tCurrent PC: "+currPC+"; SuccessorPC: "+succPC)+"\n"
-                        message += ("\tStack: "+defOps(currPC))+"\n"
-                        val localsDump =
-                            defLocals(currPC).
-                                zipWithIndex.
-                                map { e ⇒ val (local, index) = e; s"$index: $local" }
-                        message += localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n")
-                        val bout = new ByteArrayOutputStream()
-                        val pout = new PrintStream(bout)
-                        e.printStackTrace(pout)
-                        pout.flush()
-                        val stacktrace = bout.toString("UTF-8")
-                        message += "\tStacktrace: \n\t"+stacktrace+"\n"
-
                         // val htmlMessage =
                         // message.
                         //     replace("\n", "<br>").
                         //     replace("\t", "&nbsp;&nbsp;") +
                         //     dumpDefUseInfo().toString
                         // org.opalj.io.writeAndOpen(htmlMessage, "defuse", ".html")
-
                         throw AnalysisException(message, e);
                 }
 
-                // assert(defLocals(succPC) ne null)
-                // assert(defOps(succPC) ne null)
+                assert(defLocals(succPC) ne null)
+                assert(defOps(succPC) ne null)
 
                 if (scheduleNextPC) {
                     instructions(currPC).opcode match {
@@ -847,9 +899,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             // first let's collect all subroutinePCs to make sure that we evaluate
                             // the subroutines only once
                             subroutinePCs += succPC
-                        case RET.opcode ⇒
-                            retPCs += succPC
-                        case _ ⇒ nextPCs += succPC
+                        case RET.opcode ⇒ retPCs += succPC
+                        case _          ⇒ nextPCs += succPC
                     }
                 }
             }
@@ -999,7 +1050,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 }
 
 private object UnsupportedOperationComputationalTypeCategory
-        extends (Int ⇒ ComputationalTypeCategory) {
+    extends (Int ⇒ ComputationalTypeCategory) {
 
     def apply(i: Int): Nothing = throw new UnsupportedOperationException
 

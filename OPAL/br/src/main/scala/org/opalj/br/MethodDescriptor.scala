@@ -43,10 +43,15 @@ import scala.math.Ordered
  * @author Michael Eichberg
  */
 sealed abstract class MethodDescriptor
-        extends ConstantValue[MethodDescriptor]
-        with Ordered[MethodDescriptor] {
+    extends ConstantValue[MethodDescriptor]
+    with (Int ⇒ FieldType)
+    with Ordered[MethodDescriptor] {
 
     def parameterTypes: IndexedSeq[FieldType]
+
+    def apply(parameterIndex: Int): FieldType = {
+        parameterTypes(parameterIndex)
+    }
 
     def parameterType(index: Int): FieldType
 
@@ -107,6 +112,14 @@ sealed abstract class MethodDescriptor
         }
         indexes
     }
+
+    /**
+     * @return `true` iff a parameter – except of the last one – is a computational type category
+     *        2 value; i.e., is a long or double value. If all values are category 1 values, then
+     *        the parameters are store in the first n registers/local variables.
+     *
+     */
+    def hasComputationalTypeCategory2ValueInInit: Boolean
 
     //
     //
@@ -193,6 +206,8 @@ private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescript
 
     override def parametersCount: Int = 0
 
+    override def hasComputationalTypeCategory2ValueInInit: Boolean = false
+
     override def equalParameters(other: MethodDescriptor): Boolean = {
         other.parametersCount == 0
     }
@@ -207,6 +222,8 @@ private final class NoArgumentMethodDescriptor(val returnType: Type) extends Met
     override def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
 
     override def parametersCount: Int = 0
+
+    override def hasComputationalTypeCategory2ValueInInit: Boolean = false
 
     override def equalParameters(other: MethodDescriptor): Boolean =
         other.parametersCount == 0
@@ -236,6 +253,8 @@ private final class SingleArgumentMethodDescriptor(
     }
 
     override def parametersCount: Int = 1
+
+    override def hasComputationalTypeCategory2ValueInInit: Boolean = false
 
     override def equalParameters(other: MethodDescriptor): Boolean = {
         (other.parametersCount == 1) && (other.parameterType(0) == parameterType)
@@ -271,6 +290,10 @@ private final class TwoArgumentsMethodDescriptor(
 
     override def parametersCount: Int = 2
 
+    override def hasComputationalTypeCategory2ValueInInit: Boolean = {
+        firstParameterType.computationalType.categoryId == 2
+    }
+
     override def equalParameters(other: MethodDescriptor): Boolean = {
         (other.parametersCount == 2) &&
             (other.parameterType(0) == firstParameterType) &&
@@ -302,6 +325,18 @@ private final class MultiArgumentsMethodDescriptor(
     override def parameterType(index: Int): FieldType = parameterTypes(index)
 
     override def parametersCount: Int = parameterTypes.size
+
+    override def hasComputationalTypeCategory2ValueInInit: Boolean = {
+        var i = 0
+        val max = parameterTypes.size - 1
+        while (i < max) {
+            if (parameterTypes(i).computationalType.categoryId == 2)
+                return true;
+            i += 1
+        }
+        false
+
+    }
 
     override def equalParameters(other: MethodDescriptor): Boolean = {
         other.parameterTypes == this.parameterTypes
@@ -428,7 +463,7 @@ object MethodDescriptor {
      * }}}
      */
     final val SignaturePolymorphicMethod: MethodDescriptor = {
-        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
+        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
     }
 
     final val JustReturnsBoolean: MethodDescriptor = new NoArgumentMethodDescriptor(BooleanType)
@@ -507,7 +542,34 @@ object MethodDescriptor {
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
-                ArrayType.ArrayOfObjects
+                ArrayType.ArrayOfObject
+            ),
+            ObjectType.CallSite
+        )
+    }
+
+    /**
+     * Descriptor of the method `scala.runtime.LambdaDeserializer`.
+     */
+    final val ScalaLambdaDeserializeDescriptor = {
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ArrayType.ArrayOfMethodHandle
+            ),
+            ObjectType.CallSite
+        )
+    }
+
+    final val ScalaSymbolLiteralDescriptor = {
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ObjectType.String
             ),
             ObjectType.CallSite
         )

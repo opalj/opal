@@ -33,7 +33,7 @@ package instructions
 import org.opalj.collection.immutable.Chain
 
 trait AlwaysSucceedingStackBasedBinaryArithmeticInstruction
-        extends StackBasedBinaryArithmeticInstruction {
+    extends StackBasedBinaryArithmeticInstruction {
 
     final def nextInstructions(
         currentPC:             PC,

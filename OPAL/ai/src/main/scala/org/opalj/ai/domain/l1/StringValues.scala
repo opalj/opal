@@ -43,10 +43,10 @@ import org.opalj.br.MethodDescriptor
  * @author Michael Eichberg
  */
 trait StringValues
-        extends ReferenceValues
-        with DefaultJavaObjectToDomainValueConversion
-        with MethodCallsDomain
-        with PostEvaluationMemoryManagement {
+    extends ReferenceValues
+    with DefaultJavaObjectToDomainValueConversion
+    with MethodCallsDomain
+    with PostEvaluationMemoryManagement {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
@@ -175,6 +175,7 @@ trait StringValues
     abstract override def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -220,7 +221,7 @@ trait StringValues
                 updateAfterEvaluation(newStringValue, newStringValue.update())
             }
         }
-        super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
+        super.invokespecial(pc, declaringClass, isInterface, name, methodDescriptor, operands)
     }
 
     final override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue = {

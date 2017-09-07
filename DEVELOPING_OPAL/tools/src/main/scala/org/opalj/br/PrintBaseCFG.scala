@@ -96,16 +96,17 @@ object PrintBaseCFG {
                     return ;
                 }
             case None ⇒
-                val allMethods = classFile.methods.map(_.toJava(false)).toSet
+                val allMethods = classFile.methods.map(_.signatureToJava(false)).toSet
                 val altMethods = allMethods.toSeq.sorted.mkString(" Candidates: ", ", ", ".")
                 println(s"$RED[error] Cannot find the method: $methodName.$RESET $altMethods")
                 return ;
         }
 
-        analyzeMethod(project, classFile, method)
+        analyzeMethod(project, method)
     }
 
-    def analyzeMethod(project: Project[URL], classFile: ClassFile, method: Method): Unit = {
+    def analyzeMethod(project: Project[URL], method: Method): Unit = {
+        val classFile = method.classFile
         val code = method.body.get
         val theCFG = cfg.CFGFactory(code)
 

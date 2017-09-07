@@ -47,15 +47,15 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
         new mutable.ArrayBuffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry {
             override def Constant_Type_Value = throw new UnsupportedOperationException()
 
-            override def asCPNode(implicit cp: Constant_Pool) = {
+            override def asCPNode(implicit cp: Constant_Pool): Nothing = {
                 throw new UnsupportedOperationException()
             }
 
-            override def asInlineNode(implicit cp: Constant_Pool) = {
+            override def asInstructionParameter(implicit cp: Constant_Pool): Nothing = {
                 throw new UnsupportedOperationException()
             }
 
-            override def toString(implicit cp: Constant_Pool) = {
+            override def toString(implicit cp: Constant_Pool): Nothing = {
                 throw new UnsupportedOperationException(
                     this.getClass.toString+" does not support toString(cp)"
                 )

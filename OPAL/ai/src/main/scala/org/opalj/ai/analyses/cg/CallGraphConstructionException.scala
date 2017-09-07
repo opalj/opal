@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package analyses.cg
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.Method
 import org.opalj.ai.InterpretationFailedException
 
 /**
@@ -41,16 +41,12 @@ import org.opalj.ai.InterpretationFailedException
  *
  * @author Michael Eichberg
  */
-case class CallGraphConstructionException(
-        classFile: ClassFile,
-        method:    Method,
-        cause:     Throwable
-) {
+case class CallGraphConstructionException(method: Method, cause: Throwable) {
 
     import Console._
 
     def toFullString: String = {
-        var message = s"While analyzing: ${method.toJava(classFile)}\n\t"
+        var message = s"While analyzing: ${method.toJava}\n\t"
         val realCause =
             cause match {
                 case ife: InterpretationFailedException ⇒
@@ -85,7 +81,6 @@ case class CallGraphConstructionException(
                 None
 
         method.toJava(
-            classFile,
             " ⚡ "+RED +
                 realCause.getClass.getSimpleName+": "+
                 realCause.getMessage +
@@ -94,4 +89,3 @@ case class CallGraphConstructionException(
         )
     }
 }
-

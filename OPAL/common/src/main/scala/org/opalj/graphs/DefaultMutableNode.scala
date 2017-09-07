@@ -40,10 +40,10 @@ import scala.collection.Map
  * @author Michael Eichberg
  */
 class DefaultMutableNode[I](
-    theIdentifier:       I,
-    identifierToString:  I ⇒ String                  = (_: Any).toString,
-    theVisualProperties: Map[String, String]         = Map("shape" → "box"),
-    theChildren:         List[DefaultMutableNode[I]] = List.empty
+        theIdentifier:       I,
+        identifierToString:  I ⇒ String                  = (_: Any).toString,
+        theVisualProperties: Map[String, String]         = Map("shape" → "box"),
+        theChildren:         List[DefaultMutableNode[I]] = List.empty
 ) extends MutableNodeLike[I, DefaultMutableNode[I]](
     theIdentifier,
     identifierToString,

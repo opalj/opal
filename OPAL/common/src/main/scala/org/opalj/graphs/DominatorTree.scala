@@ -29,6 +29,8 @@
 package org.opalj
 package graphs
 
+import scala.annotation.tailrec
+
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -75,7 +77,7 @@ final class DominatorTree private (
      * @param w a valid node of the graph.
      * @return `true` if `n` strictly dominates `w`.
      */
-    @scala.annotation.tailrec final def strictlyDominates(n: Int, w: Int): Boolean = {
+    @tailrec final def strictlyDominates(n: Int, w: Int): Boolean = {
         if (n == w)
             // a node never strictly dominates itself
             return false;

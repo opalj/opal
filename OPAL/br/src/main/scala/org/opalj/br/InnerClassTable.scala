@@ -41,7 +41,7 @@ case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
 
     override def kindId: Int = InnerClassTable.KindId
 
-    override def similar(other: Attribute): Boolean = {
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: InnerClassTable ⇒ this.similar(that)
             case _                     ⇒ false

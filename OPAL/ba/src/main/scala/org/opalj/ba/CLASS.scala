@@ -29,6 +29,7 @@
 package org.opalj
 package ba
 
+import org.opalj.br.MethodSignature
 import org.opalj.collection.immutable.UShortPair
 
 /**
@@ -38,14 +39,14 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 class CLASS[T](
-        version:                   UShortPair,
-        accessModifiers:           AccessModifier,
-        thisType:                  String,
-        superclassType:            Option[String],
-        interfaceTypes:            Seq[String],
-        fields:                    FIELDS,
-        private[this] var methods: METHODS[T],
-        attributes:                Seq[br.ClassFileAttributeBuilder]
+        version:         UShortPair,
+        accessModifiers: AccessModifier,
+        thisType:        String,
+        superclassType:  Option[String],
+        interfaceTypes:  Seq[String],
+        fields:          FIELDS,
+        methods:         METHODS[T],
+        attributes:      Seq[br.ClassFileAttributeBuilder]
 ) {
 
     /**
@@ -55,7 +56,7 @@ class CLASS[T](
      *  - For regular classes (not interface types) a default constructor will be generated
      * if no constructor was defined and the superclass type information is available.
      */
-    def toBR(): (br.ClassFile, Map[br.Method, Option[T]]) = {
+    def toBR(): (br.ClassFile, Map[br.Method, T]) = {
 
         val accessFlags = accessModifiers.accessFlags
         val thisType = br.ObjectType(this.thisType)
@@ -63,7 +64,12 @@ class CLASS[T](
         val interfaceTypes = this.interfaceTypes.map(br.ObjectType.apply)
         val brFields = fields.result()
 
-        val brAnnotatedMethods: IndexedSeq[(br.Method, Option[T])] = methods.result()
+        val brAnnotatedMethods: IndexedSeq[(br.MethodTemplate, Option[T])] = methods.result()
+        val annotationsMap: Map[MethodSignature, Option[T]] =
+            brAnnotatedMethods.map { mt ⇒ val (m, t) = mt; (m.signature, t) }.toMap
+
+        assert(annotationsMap.size == brAnnotatedMethods.size, "duplicate method signatures found")
+
         var brMethods = brAnnotatedMethods.map(m ⇒ m._1)
         if (!(
             bi.ACC_INTERFACE.isSet(accessFlags) ||
@@ -97,7 +103,21 @@ class CLASS[T](
             brMethods,
             attributes
         )
-        (classFile, brAnnotatedMethods.toMap)
+
+        val brAnnotations: Seq[(br.Method, T)] =
+            for {
+                m ← classFile.methods
+                ms = m.signature
+                Some(a: T @unchecked) ← annotationsMap.get(ms)
+            } yield {
+                (m, a)
+            }
+        val brAnnotationsMap = brAnnotations.toMap
+
+        if (annotationsMap.nonEmpty)
+            println(annotationsMap.mkString("\n")+" ===>\n"+brAnnotations+"\n"+classFile.methods)
+
+        (classFile, brAnnotationsMap)
     }
 
     /**
@@ -105,7 +125,7 @@ class CLASS[T](
      *
      * @see [[toBR]]
      */
-    def toDA(): (da.ClassFile, Map[br.Method, Option[T]]) = {
+    def toDA(): (da.ClassFile, Map[br.Method, T]) = {
         val (brClassFile, annotations) = toBR()
         (ba.toDA(brClassFile), annotations)
     }
@@ -130,7 +150,12 @@ object CLASS {
         methods:         METHODS[T]                        = METHODS[T](),
         attributes:      Seq[br.ClassFileAttributeBuilder] = Seq.empty
     ): CLASS[T] = {
-        new CLASS(version, accessModifiers, thisType, superclassType, interfaceTypes, fields, methods, attributes)
+        new CLASS(
+            version, accessModifiers,
+            thisType, superclassType, interfaceTypes,
+            fields, methods,
+            attributes
+        )
     }
 
 }

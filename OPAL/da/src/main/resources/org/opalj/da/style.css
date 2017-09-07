@@ -36,8 +36,8 @@ body{
 }
 
 div{
-	margin-bottom:0.25em;
-	margin-top:0.25em;
+	margin-bottom:0em;
+	margin-top:0em;
 }
 
 ul {
@@ -94,6 +94,23 @@ table.fields td {
 
 div.methods,div.fields,div.attributes,div.constant_pool {
 	border-top: 1px solid #cccccc;
+}
+
+div.field {
+    padding: 0.5em 0.5em 0.5em 0.5em;
+}
+
+span.throws {
+    color : red;
+}
+
+div#source {
+    margin: 0 0;
+    background: rgb(20,20,20);
+    color: #DDD;
+    padding: 0.4em 1em 0.4em 1em;
+    font-size : smaller;
+    text-align: center ;
 }
 
 td.exception {
@@ -156,21 +173,11 @@ td.exception span{
 	padding-bottom: 0em;
 }
 
-details {
-	padding-left: 1em;
-	padding-right: 1em;
-	padding-top: 1em;
-	padding-bottom: 1em;
-}
-
-summary {
-	background-color: #eeeeee;
-	padding: 0.5em 0.5em 0.5em 0.5em;
-}
 
 div#class_file_header {
 	background-color:#fcfcec;
-	padding: 1em 1em 1em 1em;
+	padding: 0.5em 1em 0.5em 1em;
+	line-height: 1.5em;
 }
 
 .selfref {
@@ -194,10 +201,40 @@ div#class_file_header {
 	background-color: #f4e8e8;
 }
 
+details {
+	padding: 5px 5px 5px 5px;
+}
+
+summary {
+	background-color: #eeeeee;
+	padding: 5px 5px 5px 5px;
+}
+
+div.method, details.method {
+    background-color: #F6F6F6;
+    border-top-color: BBB;
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+div.method {
+ 	padding: 10px 10px 10px 10px;
+}
+
+
 .method_body {
 	background-color:#F7F7F7;
 	margin:0 0 0 0;
 	padding:0 0 0 0;
+}
+
+span.signature {
+    line-height: 2em;
+    vertical-align: baseline;
+    font-family: monospace;
+    font-size: smaller;
 }
 
 .method_signature {

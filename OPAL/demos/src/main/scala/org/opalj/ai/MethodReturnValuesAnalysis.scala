@@ -34,8 +34,8 @@ import scala.language.existentials
 import java.net.URL
 
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -121,11 +121,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         val results =
             methodReturnValueInformation.map { result ⇒
                 val (method, value) = result
-                RefinedReturnType[Domain](
-                    theProject,
-                    theProject.classFile(method),
-                    method, value
-                )
+                RefinedReturnType[Domain](theProject, method, value)
             }
 
         BasicReport(
@@ -138,7 +134,6 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
 case class RefinedReturnType[D <: Domain](
         project:     SomeProject,
-        classFile:   ClassFile,
         method:      Method,
         refinedType: Option[D#DomainValue]
 ) {
@@ -159,11 +154,10 @@ case class RefinedReturnType[D <: Domain](
         import Console._
 
         "Refined the return type of "+BOLD + BLUE +
-            method.toJava(classFile)+
+            method.toJava+
             " => "+GREEN +
             refinedType.getOrElse("\"NONE\" (the method never returns normally)") +
             RESET + RED + additionalInfo + RESET
     }
 
 }
-

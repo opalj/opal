@@ -31,70 +31,49 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 /**
- * Configuration of a domain with an arbitrary id that uses the most capable `l1` domains.
+ * Default configuration of a domain that uses the ''most capable'' `l1` domains
  *
  * @author Michael Eichberg
  */
-class DefaultConfigurableDomain[I, Source](
-    val id:        I,
-    val project:   Project[Source],
-    val classFile: ClassFile,
-    val method:    Method
-) extends CorrelationalDomain
-        with DomainId
-        with TheProject
-        with TheMethod
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelHandlingOfMethodResults
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with SpecialMethodsHandling
-        // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
-        // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding
-        with l1.DefaultClassValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with l1.MaxArrayLengthRefinement // OPTIONAL
-        with l1.NullPropertyRefinement // OPTIONAL
-        with l1.DefaultIntegerRangeValues
-        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
-        with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions {
-
-    type Id = I
-
-}
-
-/**
- * Default configuration of a domain that uses the most capable `l1` domains and
- * which uses the method as the id.
- */
 class DefaultDomain[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
-) extends DefaultConfigurableDomain[String, Source](
-    method.toJava(classFile),
-    project, classFile, method
-)
+        val project: Project[Source],
+        val method:  Method
+) extends CorrelationalDomain
+    with TheProject
+    with TheMethod
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with IgnoreSynchronization
+    with l0.DefaultTypeLevelHandlingOfMethodResults
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    with SpecialMethodsHandling
+    // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
+    // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding
+    with l1.DefaultClassValuesBinding
+    // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
+    with l1.MaxArrayLengthRefinement // OPTIONAL
+    with l1.NullPropertyRefinement // OPTIONAL
+    with l1.DefaultIntegerRangeValues
+    // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
+    with l1.DefaultLongValues
+    with l1.LongValuesShiftOperators
+    with l1.ConcretePrimitiveValuesConversions
 
 /**
  * Configuration of a domain that uses the most capable `l1` domains and
  * which also records the abstract-interpretation time control flow graph.
  */
 class DefaultDomainWithCFG[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
-) extends DefaultDomain[Source](project, classFile, method) with RecordCFG
+        project: Project[Source],
+        method:  Method
+) extends DefaultDomain[Source](project, method) with RecordCFG
 
 /**
  * Configuration of a domain that uses the most capable `l1` domains and
@@ -102,13 +81,6 @@ class DefaultDomainWithCFG[Source](
  * information.
  */
 class DefaultDomainWithCFGAndDefUse[Source](
-        project:   Project[Source],
-        classFile: ClassFile,
-        method:    Method
-) extends DefaultDomain[Source](project, classFile, method) with RecordDefUse {
-
-    def this(project: Project[Source], method: Method) {
-        this(project, project.classFile(method), method)
-    }
-
-}
+        project: Project[Source],
+        method:  Method
+) extends DefaultDomainWithCFG[Source](project, method) with RecordDefUse

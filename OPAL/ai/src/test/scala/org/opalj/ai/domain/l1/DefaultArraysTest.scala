@@ -38,7 +38,7 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.{ObjectType, ArrayType}
 import org.opalj.br.{IntegerType, ByteType, ShortType}
 import org.opalj.br.{LongType, FloatType, DoubleType}
@@ -62,7 +62,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
         val method = classFile.methods.find(_.name == name).get
         val code = method.body.get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }
@@ -306,50 +306,50 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
                 isValueSubtypeOf(
                     arrayload(
-                    returnIndex,
-                    IntegerValue(10, 0),
-                    varray
-                ).result, ObjectType.Integer
+                        returnIndex,
+                        IntegerValue(10, 0),
+                        varray
+                    ).result, ObjectType.Integer
                 ) should be(Yes)
 
                 isValueSubtypeOf(
                     arrayload(
-                    returnIndex,
-                    IntegerValue(17, 1),
-                    varray
-                ).result, ObjectType.Float
+                        returnIndex,
+                        IntegerValue(17, 1),
+                        varray
+                    ).result, ObjectType.Float
                 ) should be(Yes)
 
                 isValueSubtypeOf(
                     arrayload(
-                    returnIndex,
-                    IntegerValue(26, 2),
-                    varray
-                ).result, ObjectType.Double
+                        returnIndex,
+                        IntegerValue(26, 2),
+                        varray
+                    ).result, ObjectType.Double
                 ) should be(Yes)
 
                 isValueSubtypeOf(
                     arrayload(
-                    returnIndex,
-                    IntegerValue(33, 3),
-                    varray
-                ).result, ObjectType.Boolean
+                        returnIndex,
+                        IntegerValue(33, 3),
+                        varray
+                    ).result, ObjectType.Boolean
                 ) should be(Yes)
 
                 isValueSubtypeOf(
                     arrayload(
-                    returnIndex,
-                    IntegerValue(41, 4),
-                    varray
-                ).result, ObjectType.Character
+                        returnIndex,
+                        IntegerValue(41, 4),
+                        varray
+                    ).result, ObjectType.Character
                 ) should be(Yes)
 
                 isValueSubtypeOf(
                     arrayload(
-                    returnIndex,
-                    IntegerValue(41, 4),
-                    varray
-                ).result, ObjectType.Character
+                        returnIndex,
+                        IntegerValue(41, 4),
+                        varray
+                    ).result, ObjectType.Character
                 ) should be(Yes)
 
                 arrayload(
@@ -610,27 +610,27 @@ class DefaultArraysTest extends FunSpec with Matchers {
 }
 
 class DefaultArraysTestDomain(
-    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 ) extends CorrelationalDomain
-        with GlobalLogContextProvider
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with l0.SimpleTypeLevelInvokeInstructions
-        with l0.TypeLevelFieldAccessInstructions
-        with l1.DefaultLongValues
-        with l1.DefaultStringValuesBinding
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l1.DefaultIntegerRangeValues
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with PredefinedClassHierarchy
-        with RecordLastReturnedValues
-        // THIS DOMAIN MUST NOT MIX IN ANY DOMAIN THAT "PRECISELY" MODELS MUTABLE OBJECTS
-        with DefaultArrayValuesBinding
-        with TheMemoryLayout {
+    with GlobalLogContextProvider
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with l0.SimpleTypeLevelInvokeInstructions
+    with l0.TypeLevelFieldAccessInstructions
+    with l1.DefaultLongValues
+    with l1.DefaultStringValuesBinding
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l1.DefaultIntegerRangeValues
+    with l0.TypeLevelPrimitiveValuesConversions
+    with l0.TypeLevelLongValuesShiftOperators
+    with DefaultHandlingOfMethodResults
+    with IgnoreSynchronization
+    with PredefinedClassHierarchy
+    with RecordLastReturnedValues
+    // THIS DOMAIN MUST NOT MIX IN ANY DOMAIN THAT "PRECISELY" MODELS MUTABLE OBJECTS
+    with DefaultArrayValuesBinding
+    with TheMemoryLayout {
 
     // we don't collect "precise" information w.r.t. the heap about the content of an
     // array, hence we can track the contents

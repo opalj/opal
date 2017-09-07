@@ -30,12 +30,13 @@ package org.opalj
 package br
 package cfg
 
+import scala.annotation.switch
+
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.HashMap
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.UnconditionalBranchInstruction
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.instructions.TABLESWITCH
 import org.opalj.br.instructions.LOOKUPSWITCH
@@ -80,7 +81,7 @@ object CFGFactory {
      *        Hence, it is possible that the graph contains nodes that cannot be reached from
      *        the start node.
      *
-     * @param method A method with a body (i.e., with some code.)
+     * @param code A method's body (i.e., the code.)
      * @param classHierarchy The class hierarchy that will be used to determine
      *      if a certain exception is potentially handled by an exception handler.
      */
@@ -128,7 +129,7 @@ object CFGFactory {
         // 2. iterate over the code to determine basic block boundaries
         var runningBB: BasicBlock = null
         var previousPC: PC = 0
-        var subroutineReturnPCs = IntMap.empty[IntSet] // PC => IntSet
+        var subroutineReturnPCs = IntMap.empty[IntArraySet] // PC => IntArraySet
         code.iterate { (pc, instruction) ⇒
             if (runningBB eq null) {
                 runningBB = bbs(pc)
@@ -251,7 +252,7 @@ object CFGFactory {
                 }
             }
 
-            (instruction.opcode: @scala.annotation.switch) match {
+            (instruction.opcode: @switch) match {
 
                 case RET.opcode ⇒
                     // We cannot determine the target instructions at the moment;
@@ -264,7 +265,7 @@ object CFGFactory {
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
                     val subroutinePC = pc + jsrInstr.branchoffset
                     val thisSubroutineReturnPCs =
-                        subroutineReturnPCs.getOrElse(subroutinePC, IntSet.empty)
+                        subroutineReturnPCs.getOrElse(subroutinePC, IntArraySet.empty)
                     subroutineReturnPCs += (
                         subroutinePC →
                         (thisSubroutineReturnPCs + jsrInstr.indexOfNextInstruction(pc))
@@ -315,7 +316,7 @@ object CFGFactory {
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 ⇒
-                    val IF = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
+                    val IF = instruction.asSimpleConditionalBranchInstruction
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     // jump
@@ -399,7 +400,7 @@ object CFGFactory {
                 val subroutineBBs: List[BasicBlock] = subroutineBB.subroutineFrontier(code, bbs)
                 val retBBs = subroutineBBs.toSet[CFGNode]
                 retBBs.foreach(_.setSuccessors(returnBBs))
-                returnBBs.foreach(_.setPredecessors(retBBs))
+                returnBBs.foreach(_.addPredecessors(retBBs))
             }
         }
 

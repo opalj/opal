@@ -38,7 +38,7 @@ import org.scalatest.Matchers
 import org.opalj.log.GlobalLogContext
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
-import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
@@ -82,7 +82,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val AnUnknownType = ObjectType("myTest/AnUnknownType")
     val AnUnknownTypeArray = ArrayType(AnUnknownType)
     val CloneableArray = ArrayType(Cloneable)
-    val ObjectArray = ArrayType.ArrayOfObjects
+    val ObjectArray = ArrayType.ArrayOfObject
     val intArray = ArrayType(IntegerType)
     val arrayOfIntArray = ArrayType(ArrayType(IntegerType))
     val longArray = ArrayType(LongType)
@@ -739,7 +739,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         apacheANTCH.allSupertypes(mi) should be(UIDSet(
             ObjectType("org/apache/tools/ant/Task"),
             ObjectType("org/apache/tools/ant/TaskContainer"),
-            ObjectType("org/apache/tools/ant/DynamicAttribute")
+            ObjectType("org/apache/tools/ant/DynamicAttribute"),
+            ObjectType.Object
         ))
     }
 

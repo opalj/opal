@@ -47,7 +47,7 @@ import scala.collection.JavaConverters._
 
 import org.opalj.io.FailAfterByteArrayOutputStream
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bi.TestSupport.allBITestJARs
+import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
 
 /**

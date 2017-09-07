@@ -30,7 +30,7 @@ package org.opalj
 package tac
 
 import org.opalj.ai.ValueOrigin
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 
 /**
  * Captures essential information about a method's parameter.
@@ -38,9 +38,11 @@ import org.opalj.collection.immutable.IntSet
  * @author Michael Eichberg
  */
 case class TACMethodParameter(
-        val origin:   ValueOrigin,
-        val useSites: IntSet
+        origin:   ValueOrigin,
+        useSites: IntArraySet
 ) {
-    override def toString: String = useSites.mkString("useSites={", ",", s"} (internal origin=$origin)")
+
+    override def toString: String = useSites.mkString("useSites={", ",", s"} (origin=$origin)")
+
 }
 

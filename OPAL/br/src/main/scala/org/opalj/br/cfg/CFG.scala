@@ -34,8 +34,10 @@ import java.util.Arrays
 import java.util.IdentityHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
-import org.opalj.collection.immutable.IntSet
-import org.opalj.collection.immutable.IntSet1
+import scala.collection.AbstractIterator
+
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.Node
 
@@ -184,7 +186,7 @@ case class CFG(
      * not returned.) Always returns the basic block containing the first instruction first.
      */
     def allBBs: Iterator[BasicBlock] = {
-        new Iterator[BasicBlock] {
+        new AbstractIterator[BasicBlock] {
 
             var currentBBPC = 0
 
@@ -219,14 +221,14 @@ case class CFG(
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
-    def successors(pc: PC): IntSet = {
+    def successors(pc: PC): IntArraySet = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            IntSet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            IntArraySet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
-            var successorPCs = IntSet.empty
+            var successorPCs = IntArraySet.empty
             bb.successors foreach {
                 case bb: BasicBlock ⇒ successorPCs += bb.startPC
                 case cb: CatchNode  ⇒ successorPCs += cb.handlerPC
@@ -249,7 +251,7 @@ case class CFG(
             f(code.instructions(pc).indexOfNextInstruction(pc)(code))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
-            var visited = IntSet.empty
+            var visited = IntArraySet.empty
             bb.successors foreach { bb ⇒
                 val nextPC =
                     if (bb.isBasicBlock) bb.asBasicBlock.startPC
@@ -264,13 +266,13 @@ case class CFG(
         }
     }
 
-    def predecessors(pc: PC): IntSet = {
+    def predecessors(pc: PC): IntArraySet = {
         if (pc == 0)
-            return IntSet.empty;
+            return IntArraySet.empty;
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
-            var predecessorPCs = IntSet.empty
+            var predecessorPCs = IntArraySet.empty
             bb.predecessors foreach {
                 case bb: BasicBlock ⇒
                     predecessorPCs += bb.endPC
@@ -281,7 +283,7 @@ case class CFG(
             }
             predecessorPCs
         } else {
-            IntSet(code.pcOfPreviousInstruction(pc))
+            IntArraySet(code.pcOfPreviousInstruction(pc))
         }
     }
 
@@ -291,7 +293,7 @@ case class CFG(
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
-            var visited = IntSet.empty
+            var visited = IntArraySet.empty
             bb.predecessors foreach { bb ⇒
                 if (bb.isBasicBlock) {
                     f(bb.asBasicBlock.endPC)
@@ -319,8 +321,23 @@ case class CFG(
      * @param  lastIndex The index of the last instruction of the underlying (non-empty) code array.
      *         I.e., if the instruction array contains one instruction then the `lastIndex` has
      *         to be `0`.
+     * @param  singletonBBsExpander Function called for each basic block which encompasses a single
+     *         instruction to expand the BB to encompass more instructions. This supports the
+     *         case where an instruction was transformed in a way that resulted in multiple
+     *         instructions/statements, but which all belong to the same basic block.
+     *         ''This situation cannot be handled using pcToIndex.''
+     *         This information is used to ensure that - if a basic block which currently just
+     *         encompasses a single instruction will encompass the new and the old instruction afterwards.
+     *         The returned value will be used as the `endIndex.`
+     *         `endIndex = singletonBBsExpander(pcToIndex(pc of singleton bb))`
+     *         Hence, the function is given the mapped index has to return that value if the index
+     *         does not belong to the expanded instruction.
      */
-    def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
+    def mapPCsToIndexes(
+        pcToIndex:            Array[PC],
+        singletonBBsExpander: PC ⇒ Int,
+        lastIndex:            Int
+    ): CFG = {
 
         /*
         // [USED FOR DEBUGGING PURPOSES] *********************************************************
@@ -362,7 +379,14 @@ case class CFG(
         do {
             val oldBB = basicBlocks(startPC)
             val startIndex = pcToIndex(startPC)
-            val endIndex = pcToIndex(oldBB.endPC)
+            val endIndex = {
+                val endIndexCandidate = pcToIndex(oldBB.endPC)
+                if (startIndex == endIndexCandidate) {
+                    singletonBBsExpander(startIndex)
+                } else {
+                    endIndexCandidate
+                }
+            }
             lastNewBB = new BasicBlock(startIndex, endIndex)
             bbMapping.put(oldBB, lastNewBB)
             Arrays.fill(newBasicBlocksArray, startIndex, endIndex + 1, lastNewBB)
@@ -454,15 +478,24 @@ case class CFG(
         //        catchNodes:              Seq[CatchNode],
         //        private val basicBlocks: Array[BasicBlock]
 
-        val cfgNodes: Seq[CFGNode] =
-            basicBlocks.filter(_ ne null) ++ catchNodes :+ normalReturnNode :+ abnormalReturnNode
+        val cfgNodes: Set[CFGNode] =
+            basicBlocks.filter(_ ne null).toSet[CFGNode] ++
+                catchNodes +
+                normalReturnNode +
+                abnormalReturnNode
 
         val bbIds: Map[CFGNode, Int] = cfgNodes.zipWithIndex.toMap
 
         bbIds.map { bbId ⇒
             val (bb, id) = bbId
-            bb.successors.map(bbIds).mkString(s"$id: $bb → {", ",", "}")
-        }.mkString("CFG(\n\t", "\n\t", "\n)")
+            if (bb.isExitNode) {
+                s"BB_${id.toHexString}: $bb"
+            } else {
+                bb.successors.map { succBB ⇒
+                    "BB_"+bbIds(succBB).toHexString
+                }.mkString(s"BB_${id.toHexString}: $bb → {", ",", "}")
+            }
+        }.toList.sorted.mkString("CFG(\n\t", "\n\t", "\n)")
     }
 
     def toDot: String = {

@@ -38,7 +38,7 @@ case class StackMapTable(stackMapFrames: StackMapFrames) extends Attribute {
 
     override def kindId: Int = StackMapTable.KindId
 
-    override def similar(other: Attribute): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
 object StackMapTable {

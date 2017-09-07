@@ -65,7 +65,7 @@ object CountClassForNameCalls extends DefaultOneStepAnalysis {
                 // Class.forName(String) : Class<?>
                 (pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) ← code
             } yield {
-                method.toJava(classFile, s"pc=$pc")
+                method.toJava(s"pc=$pc")
             }
         val header = s"found ${invokes.size} calls of Class.forName(String)\n\t"
         BasicReport(invokes.seq.toList.sorted.mkString(header, "\n\t", "\n"))

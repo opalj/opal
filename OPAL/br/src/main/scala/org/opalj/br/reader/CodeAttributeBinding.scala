@@ -40,10 +40,10 @@ import org.opalj.bi.reader.Code_attributeReader
  * @author Michael Eichberg
  */
 trait CodeAttributeBinding
-        extends Code_attributeReader
-        with ConstantPoolBinding
-        with CodeBinding
-        with AttributeBinding {
+    extends Code_attributeReader
+    with ConstantPoolBinding
+    with CodeBinding
+    with AttributeBinding {
 
     type ExceptionTableEntry = br.ExceptionHandler
     val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry] = implicitly

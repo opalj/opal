@@ -60,6 +60,7 @@ import org.opalj.concurrent.parForeachArrayElement
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.error
 import org.opalj.log.DefaultLogContext
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
@@ -129,12 +130,10 @@ class Project[Source] private (
         private[this] val projectClassFiles:          Array[ClassFile],
         private[this] val libraryClassFiles:          Array[ClassFile],
         private[this] val methodsWithBody:            Array[Method], // methods with bodies sorted by size
+        private[this] val methodsWithBodyAndContext:  Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
         private[this] val projectTypes:               Set[ObjectType], // the types defined by the class files belonging to the project's code
-        private[this] val fieldToClassFile:           AnyRefMap[Field, ClassFile],
-        private[this] val methodToClassFile:          AnyRefMap[Method, ClassFile],
         private[this] val objectTypeToClassFile:      OpenHashMap[ObjectType, ClassFile],
         private[this] val sources:                    OpenHashMap[ObjectType, Source],
-        private[this] val methodsWithBodyAndContext:  Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
         final val projectClassFilesCount:             Int,
         final val projectMethodsCount:                Int,
         final val projectFieldsCount:                 Int,
@@ -181,18 +180,55 @@ class Project[Source] private (
     final val methodsCount: Int = projectMethodsCount + libraryMethodsCount
 
     /**
-     * The number of field defined in libraries and in the analyzed project.
+     * The number of fields defined in libraries and in the analyzed project.
      */
     final val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
-    final val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles.toIterable
+    final val allProjectClassFiles: ConstArray[ClassFile] = ConstArray.from(projectClassFiles)
 
-    final val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles.toIterable
+    final val allLibraryClassFiles: ConstArray[ClassFile] = ConstArray.from(libraryClassFiles)
 
-    final val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
+    final val allClassFiles: Iterable[ClassFile] = {
+        new Iterable[ClassFile] {
+            def iterator: Iterator[ClassFile] = {
+                projectClassFiles.toIterator ++ libraryClassFiles.toIterator
+            }
+        }
+    }
+
+    /**
+     * All methods defined by this project as well as the visible methods defined by the libraries.
+     */
+    val allMethods: Iterable[Method] = {
+        new Iterable[Method] {
+            def iterator: Iterator[Method] = {
+                projectClassFiles.toIterator.flatMap { cf ⇒ cf.methods } ++
+                    libraryClassFiles.toIterator.flatMap { cf ⇒ cf.methods }
+            }
+        }
+    }
+
+    /**
+     * All fields defined by this project as well as the visible fields defined by the libraries.
+     */
+    val allFields: Iterable[Field] = {
+        new Iterable[Field] {
+            def iterator: Iterator[Field] = {
+                projectClassFiles.toIterator.flatMap { cf ⇒ cf.fields } ++
+                    libraryClassFiles.toIterator.flatMap { cf ⇒ cf.fields }
+            }
+        }
+    }
+
+    /**
+     * Returns a new `Iterable` over all source elements of the project. The set
+     * of all source elements consists of (in this order): all methods + all fields +
+     * all class files.
+     */
+    val allSourceElements: Iterable[SourceElement] = allMethods ++ allFields ++ allClassFiles
 
     final val virtualMethodsCount: Int = {
-        methodToClassFile.keysIterator.count(m ⇒ m.isVirtualMethodDeclaration)
+        allMethods.count(m ⇒ m.isVirtualMethodDeclaration)
     }
 
     final val instanceMethods: Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
@@ -285,7 +321,7 @@ class Project[Source] private (
                     for {
                         declaredMethod ← classFile.methods
                         if declaredMethod.isVirtualMethodDeclaration
-                        declaredMethodContext = MethodDeclarationContext(declaredMethod, classFile)
+                        declaredMethodContext = MethodDeclarationContext(declaredMethod)
                     } {
                         // We have to filter multiple methods when we inherit (w.r.t. the
                         // visibility) multiple conflicting methods!
@@ -307,7 +343,7 @@ class Project[Source] private (
         classHierarchy.rootTypes foreach { t ⇒ tasks.submit(t) }
         val exceptions = tasks.join()
         exceptions foreach { e ⇒
-            OPALLogger.error("project configuration", "computing the defined methods failed", e)
+            OPALLogger.error("project setup", "computing the defined methods failed", e)
         }
 
         val result = new AnyRefMap[ObjectType, ConstArray[MethodDeclarationContext]](methods.size)
@@ -315,7 +351,7 @@ class Project[Source] private (
             val (objectType, methods) = e
             val sortedMethods = methods.toArray
             sortArray(sortedMethods, MethodDeclarationContextOrdering)
-            result.+=(objectType, ConstArray(sortedMethods))
+            result.+=(objectType, ConstArray.from(sortedMethods))
         }
         result.repack
         result
@@ -627,13 +663,6 @@ class Project[Source] private (
      */
     def sourceElementsCount = fieldsCount + methodsCount + classFilesCount
 
-    /**
-     * Returns a new `Iterable` over all source elements of the project. The set
-     * of all source elements consists of (in this order): all methods + all fields +
-     * all class files.
-     */
-    def allSourceElements: Iterable[SourceElement] = allMethods ++ allFields ++ allClassFiles
-
     private[this] def doParForeachClassFile[T](
         classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean
     )(
@@ -715,16 +744,11 @@ class Project[Source] private (
         libraryClassFiles.foldLeft(Set.empty[String])(_ + _.thisType.packageName)
     }
 
-    def allMethodsWithBody: Iterable[Method] = this.methodsWithBody.toIterable
+    final val allMethodsWithBody: ConstArray[Method] = ConstArray.from(this.methodsWithBody)
 
-    def allMethodsWithBodyWithContext: Iterable[MethodInfo[Source]] = {
-        this.methodsWithBodyAndContext.toIterable
+    final val allMethodsWithBodyWithContext: ConstArray[MethodInfo[Source]] = {
+        ConstArray.from(this.methodsWithBodyAndContext)
     }
-
-    /**
-     * Iterable of all methods along along with its defining class file.
-     */
-    def allMethodsWithContext: Iterable[(Method, ClassFile)] = this.methodToClassFile.toIterable
 
     /**
      * Iterates over all methods with a body in parallel starting with the largest methods first.
@@ -740,7 +764,7 @@ class Project[Source] private (
     )(
         f: MethodInfo[Source] ⇒ T
     ): Iterable[Throwable] = {
-        val methods = methodsWithBodyAndContext
+        val methods = this.methodsWithBodyAndContext
         if (methods.length == 0)
             return Nil;
 
@@ -823,16 +847,6 @@ class Project[Source] private (
         groups
     }
 
-    /**
-     * All methods defined by this project as well as the visible methods defined by the libraries.
-     */
-    def allMethods: Iterable[Method] = methodToClassFile.keys
-
-    /**
-     * All fields defined by this project as well as the visible fields defined by the libraries.
-     */
-    def allFields: Iterable[Field] = fieldToClassFile.keys
-
     def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         projectClassFiles.view.map { classFile ⇒ (classFile, sources(classFile.thisType)) }
     }
@@ -881,20 +895,6 @@ class Project[Source] private (
     override def classFile(objectType: ObjectType): Option[ClassFile] = {
         objectTypeToClassFile.get(objectType)
     }
-
-    /**
-     * Returns the given method's class file. This method is only defined if
-     * the method was previously added to this project. (I.e., the class file which
-     * defines the method was added.)
-     */
-    def classFile(method: Method): ClassFile = methodToClassFile(method)
-
-    /**
-     * Returns the given field's class file. This method is only defined if
-     * the field was previously added to this project. (I.e., the class file which
-     * defines the field was added.)
-     */
-    def classFile(field: Field): ClassFile = fieldToClassFile(field)
 
     /**
      * Converts this project abstraction into a standard Java `HashMap`.
@@ -1236,6 +1236,23 @@ object Project {
         )
     }
 
+    def apply(
+        projectFiles: Array[File],
+        libraryFiles: Array[File],
+        logContext:   LogContext,
+        config:       Config
+    ): Project[URL] = {
+        this(
+            JavaClassFileReader(logContext, config).AllClassFiles(projectFiles),
+            JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
+            libraryClassFilesAreInterfacesOnly = true,
+            virtualClassFiles = Traversable.empty,
+            handleInconsistentProject = defaultHandlerForInconsistentProjects,
+            config = config,
+            logContext
+        )
+    }
+
     def apply[Source](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)]
     ): Project[Source] = {
@@ -1254,9 +1271,7 @@ object Project {
             Traversable.empty,
             libraryClassFilesAreInterfacesOnly = false /*it actually doesn't matter*/ ,
             virtualClassFiles = Traversable.empty
-        )(
-            projectLogger = projectLogger
-        )
+        )(projectLogger = projectLogger)
     }
 
     def apply(
@@ -1314,10 +1329,7 @@ object Project {
             project.libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
-        )(
-                config = project.config,
-                projectLogger = OPALLogger.logger(project.logContext.successor)
-            )
+        )(config = project.config, projectLogger = OPALLogger.logger(project.logContext.successor))
     }
 
     /**
@@ -1335,10 +1347,7 @@ object Project {
             project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
-        )(
-                project.config,
-                OPALLogger.logger(project.logContext.successor)
-            )
+        )(project.config, OPALLogger.logger(project.logContext.successor))
     }
 
     def apply[Source](
@@ -1370,9 +1379,9 @@ object Project {
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
         )(
-            if (useOldConfigAsFallback) config.withFallback(project.config) else config,
-            projectLogger = OPALLogger.logger(project.logContext.successor)
-        )
+                if (useOldConfigAsFallback) config.withFallback(project.config) else config,
+                projectLogger = OPALLogger.logger(project.logContext.successor)
+            )
     }
 
     /**
@@ -1499,8 +1508,6 @@ object Project {
 
             var codeSize: Long = 0L
 
-            val methodToClassFile = AnyRefMap.empty[Method, ClassFile]
-            val fieldToClassFile = AnyRefMap.empty[Field, ClassFile]
             val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
             val sources = OpenHashMap.empty[ObjectType, Source]
 
@@ -1525,13 +1532,9 @@ object Project {
                     projectClassFilesCount += 1
                     for (method ← classFile.methods) {
                         projectMethodsCount += 1
-                        methodToClassFile.put(method, classFile)
                         method.body.foreach(codeSize += _.instructions.size)
                     }
-                    for (field ← classFile.fields) {
-                        projectFieldsCount += 1
-                        fieldToClassFile.put(field, classFile)
-                    }
+                    projectFieldsCount += classFile.fields.size
                     objectTypeToClassFile.put(projectType, classFile)
                     source.foreach(sources.put(classFile.thisType, _))
                 }
@@ -1583,7 +1586,7 @@ object Project {
                         logContext,
                         InconsistentProjectException(
                             s"${libraryType.toJava} is defined multiple times in the project's lbraries: "+
-                                sources.get(libraryType).getOrElse("<VIRTUAL>")+" and "+
+                                sources.getOrElse(libraryType, "<VIRTUAL>")+" and "+
                                 source.toString+"; keeping the first one."
                         )
                     )
@@ -1593,26 +1596,22 @@ object Project {
                     libraryClassFilesCount += 1
                     for (method ← libClassFile.methods) {
                         libraryMethodsCount += 1
-                        methodToClassFile.put(method, libClassFile)
                         method.body.foreach(codeSize += _.instructions.length)
                     }
-                    for (field ← libClassFile.fields) {
-                        libraryFieldsCount += 1
-                        fieldToClassFile.put(field, libClassFile)
-                    }
+                    libraryFieldsCount += libClassFile.fields.size
                     objectTypeToClassFile.put(libraryType, libClassFile)
                     sources.put(libraryType, source)
                 }
             }
 
-            fieldToClassFile.repack()
-            methodToClassFile.repack()
-
             val methodsWithBodySortedBySizeWithContext =
-                methodToClassFile.view.
-                    filter(_._1.body.isDefined).toArray.
-                    sortWith { (v1, v2) ⇒ v1._1.body.get.codeSize > v2._1.body.get.codeSize }.
-                    map { e ⇒ val (m, c) = e; MethodInfo(sources(c.thisType), c, m) }
+                // IMPROVE compute methodsWithBodyCount and then directly initialize the "final" array
+                (projectClassFiles.iterator.flatMap(_.methods) ++
+                    libraryClassFiles.iterator.flatMap(_.methods)).
+                    filter(m ⇒ m.body.isDefined).
+                    map(m ⇒ MethodInfo(sources(m.classFile.thisType), m)).
+                    toArray.
+                    sortWith { (v1, v2) ⇒ v1.method.body.get.codeSize > v2.method.body.get.codeSize }
 
             val methodsWithBodySortedBySize: Array[Method] =
                 methodsWithBodySortedBySizeWithContext.map(mi ⇒ mi.method)
@@ -1621,12 +1620,10 @@ object Project {
                 projectClassFiles.toArray,
                 libraryClassFiles.toArray,
                 methodsWithBodySortedBySize,
+                methodsWithBodySortedBySizeWithContext,
                 projectTypes,
-                fieldToClassFile,
-                methodToClassFile,
                 objectTypeToClassFile,
                 sources,
-                methodsWithBodySortedBySizeWithContext,
                 projectClassFilesCount,
                 projectMethodsCount,
                 projectFieldsCount,
@@ -1670,6 +1667,8 @@ object Project {
      */
     private[this] def validate(project: SomeProject): Seq[InconsistentProjectException] = {
 
+        implicit val logContext = project.logContext
+
         val disclaimer = "(this inconsistency may lead to useless/wrong results)"
 
         import project.classHierarchy
@@ -1681,14 +1680,15 @@ object Project {
             exsMutex.synchronized { exs = ex :: exs }
         }
 
-        val exceptions = project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
-            val BasicMethodInfo(c: ClassFile, m: Method) = e
+        val exceptions = project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { mi ⇒
+            val m: Method = mi.method
+            val cf = m.classFile
 
             def completeSupertypeInformation =
-                classHierarchy.isSupertypeInformationComplete(c.thisType)
+                classHierarchy.isSupertypeInformationComplete(cf.thisType)
 
             def missingSupertypeClassFile =
-                classHierarchy.allSupertypes(c.thisType, false).find { t ⇒
+                classHierarchy.allSupertypes(cf.thisType, false).find { t ⇒
                     project.classFile(t).isEmpty
                 }.map { ot ⇒
                     (classHierarchy.isInterface(ot) match {
@@ -1706,7 +1706,7 @@ object Project {
                         if (isInterface(objectType).isYes) {
                             val ex = InconsistentProjectException(
                                 s"cannot create an instance of interface ${objectType.toJava} in "+
-                                    m.toJava(c) + s"pc=$pc $disclaimer",
+                                    m.toJava(s"pc=$pc $disclaimer"),
                                 Error
                             )
                             addException(ex)
@@ -1716,11 +1716,11 @@ object Project {
                         val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
                         project.staticCall(invokestatic) match {
                             case _: Success[_] ⇒ /*OK*/
-                            case Failure       ⇒ /*OK - partial project*/
-                            case Empty ⇒
+                            case Empty         ⇒ /*OK - partial project*/
+                            case Failure ⇒
                                 val ex = InconsistentProjectException(
                                     s"target method of invokestatic call in "+
-                                        m.toJava(c, s"pc=$pc; $invokestatic - $disclaimer")+
+                                        m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
                                         "cannot be resolved; supertype information is complete="+
                                         completeSupertypeInformation+
                                         "; missing supertype class file: "+missingSupertypeClassFile,
@@ -1733,11 +1733,11 @@ object Project {
                         val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
                         project.specialCall(invokespecial) match {
                             case _: Success[_] ⇒ /*OK*/
-                            case Failure       ⇒ /*OK - partial project*/
-                            case Empty ⇒
+                            case Empty         ⇒ /*OK - partial project*/
+                            case Failure ⇒
                                 val ex = InconsistentProjectException(
                                     s"target method of invokespecial call in "+
-                                        m.toJava(c, s"pc=$pc; $invokespecial - $disclaimer")+
+                                        m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
                                         "cannot be resolved; supertype information is complete="+
                                         completeSupertypeInformation+
                                         "; missing supertype class file: "+missingSupertypeClassFile,
@@ -1751,10 +1751,7 @@ object Project {
             }
         }
         if (exceptions.nonEmpty) {
-            OPALLogger.error(
-                "internal - ignored",
-                "project validation failed (please, report):\n"+exceptions.mkString("\n")
-            )(project.logContext)
+            exceptions.foreach(ex ⇒ error("internal - ignored", "project validation failed", ex))
         }
 
         exs

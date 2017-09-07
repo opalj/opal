@@ -12,8 +12,6 @@ javaOptions in ThisBuild ++= Seq(
 	"-Dorg.opalj.threads.IOBoundTasks=12" // Number of (hyperthreaded) cores * 1,5
 )
 
-// If you want to disable assertions, uncomment the following line.
-// Assertions are heavily used throughout OPAL and have a 
-// signifcant performance impact. However, at development time it is
+// Reenable assertions!
 // HIGHLY recommend to turn on assertions!
-//scalacOptions in ThisBuild += "-Xdisable-assertions"
+scalacOptions in ThisBuild -= "-Xdisable-assertions"

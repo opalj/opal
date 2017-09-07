@@ -33,25 +33,9 @@ package analyses
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
+
 import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.log.OPALLogger
-
-/**
- * A set of all allocation sites.
- *
- * To initialize the set of allocation sites for an entire project use the respective
- * project information key: [[AllocationSitesKey]]. The key also provides further
- * information regarding the concrete allocation site objects and their relation
- * to the underlying method.
- *
- * @author Michael Eichberg
- */
-class AllocationSites private[analyses] (val data: Map[Method, Map[PC, AllocationSite]]) {
-
-    def apply(m: Method): Map[PC, AllocationSite] = data.getOrElse(m, Map.empty)
-
-    def allocationSites: Iterable[AllocationSite] = data.values.flatMap(_.values)
-}
+import org.opalj.log.OPALLogger.error
 
 /**
  * The ''key'' object to collect all allocation sites in a project. If the library methods
@@ -60,7 +44,7 @@ class AllocationSites private[analyses] (val data: Map[Method, Map[PC, Allocatio
  * @note    An allocation site object is created for each `NEW` instruction found in a
  *          method's body. However, this does not guarantee that the allocation site
  *          will ever be reached or is found in code derived from the method's bytecode.
- *          In particular the JDK is known for containing a lot of dead code
+ *          In particular, the JDK is known for containing a lot of dead code
  *          [[http://dl.acm.org/citation.cfm?id=2786865 Hidden Truths in Dead Software Paths]]
  *          and this code is automatically filtered when OPAL creates the 3-address code
  *          representation. The default analysis done when creating the 3-address code is
@@ -95,14 +79,23 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
             val m = methodInfo.method
             val code = m.body.get
             val as = code.collectWithIndex {
-                case (pc, instructions.NEW(_)) ⇒ (pc, new AllocationSite(m, pc))
+                case (pc, i) if i.opcode == instructions.NEW.opcode ⇒
+                    (pc, new ObjectAllocationSite(m, pc))
+
+                case (pc, i) if (
+                    i.opcode match {
+                        case instructions.NEWARRAY.opcode |
+                            instructions.ANEWARRAY.opcode |
+                            instructions.MULTIANEWARRAY.opcode ⇒ true
+                        case _ ⇒ false
+                    }
+                ) ⇒
+                    (pc, new ArrayAllocationSite(m, pc))
             }.toMap
             if (as.nonEmpty) sites.add((m, as))
         }
 
-        errors foreach { e ⇒
-            OPALLogger.error("allocation sites", "collecting all allocation sites failed", e)
-        }
+        errors foreach { e ⇒ error("identifying allocation sites", "unexpected error", e) }
 
         new AllocationSites(Map.empty ++ sites.asScala)
     }

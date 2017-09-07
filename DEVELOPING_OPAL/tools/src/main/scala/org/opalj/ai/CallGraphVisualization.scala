@@ -203,15 +203,12 @@ object CallGraphVisualization {
                 )
                 println(
                     "Maximum number of targets for one call: "+maxCallTargets+"; method: "+
-                        methodWithMethodCallWithMaxTargets.fullyQualifiedSignature(
-                            project.classFile(methodWithMethodCallWithMaxTargets).thisType
-                        )+"; pc: "+methodCallWithMaxTargetsPC
+                        methodWithMethodCallWithMaxTargets.fullyQualifiedSignature+
+                        "; pc: "+methodCallWithMaxTargetsPC
                 )
                 println(
                     "Method with the maximum number of call sites: "+maxCallSitesPerMethod+"; method: "+
-                        methodWithMaxCallSites.fullyQualifiedSignature(
-                            project.classFile(methodWithMaxCallSites).thisType
-                        )
+                        methodWithMaxCallSites.fullyQualifiedSignature
                 )
 
                 computedCallGraph
@@ -229,34 +226,30 @@ object CallGraphVisualization {
                 if (nodesForMethods.contains(caller))
                     return nodesForMethods(caller)
 
-                val node = new DefaultMutableNode(
-                    caller,
-                    (m: Method) ⇒ m.toJava(project.classFile(m)),
-                    {
-                        if (caller.name == "<init>")
-                            Some("darkseagreen1")
-                        else if (caller.name == "<clinit>")
-                            Some("darkseagreen")
-                        else if (caller.isStatic)
-                            Some("gold")
-                        else
-                            None
-                    }
-                )
+                val node = new DefaultMutableNode(caller, (m: Method) ⇒ m.toJava, {
+                    if (caller.name == "<init>")
+                        Some("darkseagreen1")
+                    else if (caller.name == "<clinit>")
+                        Some("darkseagreen")
+                    else if (caller.isStatic)
+                        Some("gold")
+                    else
+                        None
+                })
                 nodesForMethods += ((caller, node)) // break cycles!
 
                 for {
                     perCallsiteCallees ← callGraph.calls(caller).values
                     callee ← perCallsiteCallees
-                    if project.classFile(callee).fqn.startsWith(fqnFilter)
+                    if callee.classFile.fqn.startsWith(fqnFilter)
                 } {
                     node.addChild(createNode(callee))
                 }
                 node
             }
 
-            callGraph.foreachCallingMethod { (method, callees) ⇒
-                if (project.classFile(method).thisType.fqn.startsWith(fqnFilter))
+            callGraph foreachCallingMethod { (method, callees) ⇒
+                if (method.classFile.thisType.fqn.startsWith(fqnFilter))
                     createNode(method)
             }
             nodesForMethods.values.toSet[DefaultMutableNode[Method]] // it is a set already...

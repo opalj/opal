@@ -40,8 +40,9 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.bi.TestSupport.allBITestJARs
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.bi.TestResources.allBITestProjectFolders
+import org.opalj.bi.TestResources.allBITestJARs
 
 /**
  * Common helper and factory methods required by tests.
@@ -49,6 +50,10 @@ import org.opalj.bi.TestSupport.allBITestJARs
  * @author Michael Eichberg
  */
 object TestSupport {
+
+    final val DefaultJava9Reader: Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
+        new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache)
+    }
 
     def createJREProject(): Project[URL] = Project(readJREClassFiles(), Traversable.empty, true)
 
@@ -67,10 +72,6 @@ object TestSupport {
 
     def brProject(projectJARName: String): Project[URL] = {
         Project(locateTestResources(projectJARName, "br"))
-    }
-
-    final val DefaultJava9Reader: Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
-        new Java9FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache)
     }
 
     /**
@@ -98,13 +99,13 @@ object TestSupport {
             case Some(jreReader) ⇒
                 val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
                 val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
-                allBITestJARs().toIterator map { biProjectJAR ⇒
-                    val projectClassFiles = projectReader.ClassFiles(biProjectJAR)
+                (allBITestJARs().toIterator ++ allBITestProjectFolders().toIterator) map { biProject ⇒
+                    val projectClassFiles = projectReader.ClassFiles(biProject)
                     val readerFactory = () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly)
-                    (biProjectJAR.getName, readerFactory)
+                    (biProject.getName, readerFactory)
                 }
             case None ⇒
-                allBITestJARs().toIterator map { biProjectJAR ⇒
+                (allBITestJARs().toIterator ++ allBITestProjectFolders().toIterator) map { biProjectJAR ⇒
                     val readerFactory = () ⇒ Project(biProjectJAR)
                     (biProjectJAR.getName, readerFactory)
                 }

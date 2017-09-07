@@ -665,7 +665,7 @@ public class IntegerValuesFrenzy {
             doIt(-1);
         else if (a == b)
             doIt(0);
-        else if (b > a) // <== "BUG"
+        else if (b > a) // <== "BUG" - no longer possible
             doIt(1);
     }
 
@@ -677,7 +677,7 @@ public class IntegerValuesFrenzy {
 
         doIt(Integer.MAX_VALUE);
 
-        if (b > a) // <== "BUG"
+        if (b > a) // <== "BUG" - already tested above...
             return (1);
         else
             throw new Error();
@@ -685,7 +685,6 @@ public class IntegerValuesFrenzy {
 
     // Inspired by: java.awt.font.StyledParagraph.findRunContaining
     static int findRunContaining(int index, int[] starts) {
-
         for (int i = 1; true; i++) {
             if (starts[i] > index) {
                 return i - 1;
@@ -702,5 +701,34 @@ public class IntegerValuesFrenzy {
         for (int i = 0; i < size; i++) {
             ;
         }
+    }
+
+    public static String simpleConstantComputations(int i) throws Exception {
+        int j = i << 2;
+        int k = j % 2; // ==> k == 0 ALWAYS!
+        if (k == 3)
+            return "dead code...";
+
+        return "as expected";
+    }
+
+    public static String semiComplexConstantComputations(int i) throws Exception {
+        if (i < 0 || i > 65535) return "forget about it...";
+
+        int j = i << 2;// the value is > 3 and is additionally a multiplicativ of 4
+        int k = j % 2; // ==> k == 0 ALWAYS!
+        if (k == 1)
+            return "dead code...";
+
+        return "as expected";
+    }
+
+    public static String complexConstantComputations(int i) throws Exception {
+        int j = i << 2; // the value is NOT in [-3..+3] and is additionally a multiplicativ of 4
+        int k = j % 2; // ==> k == 0 ALWAYS!
+        if (k == 1)
+           return "dead code...";
+
+        return "as expected";
     }
 }

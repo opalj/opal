@@ -36,7 +36,7 @@ import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PRIVATE
 
 /**
- * Encapsulates the information about a  '''non-abstract''', '''non-private''', '''non-static'''
+ * Encapsulates the information about a '''non-abstract''', '''non-private''', '''non-static'''
  * method which is '''not an initializer''' (`<(cl)init>`) and which is required when determining
  * potential call targets.
  *
@@ -50,16 +50,14 @@ import org.opalj.bi.ACC_PRIVATE
  *
  * @author Michael Eichberg
  */
-final class MethodDeclarationContext(
-        val method:         Method,
-        val declaringClass: ObjectType
-) extends Ordered[MethodDeclarationContext] {
+final class MethodDeclarationContext(val method: Method) extends Ordered[MethodDeclarationContext] {
 
     assert(!method.isPrivate)
     assert(!method.isStatic)
     assert(!method.isInitializer)
 
-    def packageName: String = declaringClass.packageName
+    def declaringClassType: ObjectType = method.declaringClassFile.thisType
+    def packageName: String = declaringClassType.packageName
     def isPublic: Boolean = method.isPublic
     def name: String = method.name
     def descriptor: MethodDescriptor = method.descriptor
@@ -84,12 +82,14 @@ final class MethodDeclarationContext(
      */
     override def hashCode: Int = method.descriptor.hashCode * 113 + packageName.hashCode()
 
-    override def toString: String = s"MethodDeclarationContext($packageName, ${method.toJava()})"
+    override def toString: String = {
+        s"MethodDeclarationContext($packageName, ${method.signatureToJava()})"
+    }
 
     /**
      * Compares this `MethodDeclarationContext` with the given one. Defines a total order w.r.t.
      * the name, descriptor and declaring package of a method. (The declaring class is not
-     * considered and, therefore, two `MethodDeclarationContext` may be considered equal
+     * considered and, therefore, two `MethodDeclarationContext`s may be considered equal
      * even though the underlying method is not the same one.)
      */
     def compare(that: MethodDeclarationContext): Int = {
@@ -98,6 +98,11 @@ final class MethodDeclarationContext(
             this.packageName compareTo that.packageName
         else
             result
+    }
+
+    def compareWithPublicMethod(thatMethod: Method): Int = {
+        assert(thatMethod.isPublic, s"${thatMethod.toJava} is not public")
+        this.method compare thatMethod
     }
 
     /**
@@ -110,9 +115,9 @@ final class MethodDeclarationContext(
      * contexts.
      */
     def compareAccessibilityAware(
+        packageName: String, // only considered if name and descriptor already match...
         name:        String,
-        descriptor:  MethodDescriptor,
-        packageName: String // only considered if name and descriptor already match...
+        descriptor:  MethodDescriptor
     ): Int = {
         val method = this.method
         val result = method.compare(name, descriptor)
@@ -121,6 +126,13 @@ final class MethodDeclarationContext(
         } else {
             result
         }
+    }
+
+    def compareAccessibilityAware(
+        declaringClass: ObjectType,
+        m:              Method
+    ): Int = {
+        compareAccessibilityAware(declaringClass.packageName, m.name, m.descriptor)
     }
 
     /**
@@ -185,15 +197,10 @@ final class MethodDeclarationContext(
  */
 object MethodDeclarationContext {
 
-    def apply(method: Method, declaringClassFile: ClassFile): MethodDeclarationContext = {
-        new MethodDeclarationContext(method, declaringClassFile.thisType)
+    def apply(method: Method): MethodDeclarationContext = {
+        new MethodDeclarationContext(method)
     }
 
-    def apply(method: Method, declaringClass: ObjectType): MethodDeclarationContext = {
-        new MethodDeclarationContext(method, declaringClass)
-    }
+    def unapply(mdc: MethodDeclarationContext): Some[Method] = Some(mdc.method)
 
-    def unapply(mi: MethodDeclarationContext): Some[(Method, ObjectType)] = {
-        Some((mi.method, mi.declaringClass))
-    }
 }
