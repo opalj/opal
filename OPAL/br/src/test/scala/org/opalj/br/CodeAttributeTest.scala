@@ -91,7 +91,7 @@ class CodeAttributeTest extends FlatSpec with Matchers {
 
     it should "be able to collect all jump targets" in {
         codeOfPut.collectWithIndex({
-            case (pc, cbi: SimpleConditionalBranchInstruction) ⇒
+            case (pc, cbi: SimpleConditionalBranchInstruction[_]) ⇒
                 Seq(cbi.indexOfNextInstruction(pc)(codeOfPut), pc + cbi.branchoffset)
         }).flatten should equal(Seq(11, 15))
     }

@@ -449,7 +449,7 @@ final class ClassFile private (
                                     nestedTypes ++= classFile.nestedClasses(classFileRepository)
                                 case None ⇒
                                     OPALLogger.warn(
-                                        "project configuration",
+                                        "class file reader",
                                         "cannot get informaton about "+objectType.toJava+
                                             "; the inner classes information may be incomplete"
                                     )
