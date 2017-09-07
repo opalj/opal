@@ -232,14 +232,14 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
 }
 
 class SimpleEntityEscapeAnalysis(
-        val e:             Entity,
-        val defSite:       ValueOrigin,
-        val uses:          IntArraySet,
-        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:        Parameters[TACMethodParameter],
-        val m:             Method,
-        val propertyStore: PropertyStore,
-        val project:       SomeProject
+    val e:             Entity,
+    val defSite:       ValueOrigin,
+    val uses:          IntArraySet,
+    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:        Parameters[TACMethodParameter],
+    val m:             Method,
+    val propertyStore: PropertyStore,
+    val project:       SomeProject
 ) extends ConstructorSensitiveEntityEscapeAnalysis with FieldSensitiveEntityEscapeAnalysis
 
 /*def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
