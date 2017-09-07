@@ -1,6 +1,8 @@
 # Major Changes
 
-## Upcomming (0.8.15 - already implemented)
+## Upcomming
+
+## 0.8.15
 **General**
  - the call graph construction algorithms finally completely support Java 8 (e.g., default methods, static methods in interfaces, lambda expressions)
  - ***Assertions are turned-off by default when you checkout the latest stable release of OPAL***; to turn them on rename `local.sbt.template` to `local.sbt`; assertions are still turned on, when you depend on a development snapshot from Maven Central
