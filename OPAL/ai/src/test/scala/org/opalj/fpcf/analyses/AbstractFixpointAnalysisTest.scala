@@ -60,7 +60,7 @@ import org.scalatest.junit.JUnitRunner
 abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     type AnnotationLike = {
-        val annotationType: FieldType;
+        val annotationType: FieldType
         val elementValuePairs: ElementValuePairs
     }
 
@@ -327,7 +327,10 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.p.toString
+        val computedProperty = computedOProperty.p match {
+            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
+            case _                                     ⇒ computedOProperty.p.toString
+        }
 
         if (computedProperty != expected) {
             val className = classFile.fqn
@@ -361,7 +364,10 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.p.toString
+        val computedProperty = computedOProperty.p match {
+            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
+            case _                                     ⇒ computedOProperty.p.toString
+        }
 
         if (computedProperty != expected) {
             val classFile = method.classFile
@@ -391,7 +397,10 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.p.toString
+        val computedProperty = computedOProperty.p match {
+            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
+            case _                                     ⇒ computedOProperty.p.toString
+        }
 
         if (computedProperty != expected) {
             val classFile = method.classFile
@@ -422,7 +431,10 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.p.toString
+        val computedProperty = computedOProperty.p match {
+            case ExplicitlyNamedProperty(propertyName) ⇒ propertyName
+            case _                                     ⇒ computedOProperty.p.toString
+        }
 
         if (computedProperty != expected) {
             val classFile = method.classFile
