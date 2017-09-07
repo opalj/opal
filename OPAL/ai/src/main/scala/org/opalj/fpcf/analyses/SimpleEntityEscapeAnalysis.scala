@@ -35,14 +35,11 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.ObjectAllocationSite
-import org.opalj.br.ArrayAllocationSite
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.FormalParameter
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.EmptyIntArraySet
 import org.opalj.fpcf.properties.MethodEscapeViaParameterAssignment
@@ -243,9 +240,9 @@ class SimpleEntityEscapeAnalysis(
         val m:             Method,
         val propertyStore: PropertyStore,
         val project:       SomeProject
-) extends ConstructorSensitiveEntityEscapeAnalysis with FieldSensitiveEntityEscapeAnalysis {
+) extends ConstructorSensitiveEntityEscapeAnalysis with FieldSensitiveEntityEscapeAnalysis
 
-    def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
+/*def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
         other match {
             case FormalParameter(_, _) ⇒ p match {
                 case state: GlobalEscape ⇒ Result(e, state)
@@ -274,5 +271,5 @@ class SimpleEntityEscapeAnalysis(
                 }
             }
         }
-    }
-}
+    }*/
+

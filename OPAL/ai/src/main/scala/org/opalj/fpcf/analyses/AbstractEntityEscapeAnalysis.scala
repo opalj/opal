@@ -34,7 +34,10 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
+import org.opalj.br.ObjectAllocationSite
+import org.opalj.br.ArrayAllocationSite
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.FormalParameter
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
@@ -42,6 +45,11 @@ import org.opalj.fpcf.properties.GlobalEscapeViaStaticFieldAssignment
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties.MethodEscapeViaReturn
 import org.opalj.fpcf.properties.MaybeArgEscape
+import org.opalj.fpcf.properties.MethodEscapeViaReturnAssignment
+import org.opalj.fpcf.properties.ArgEscape
+import org.opalj.fpcf.properties.MaybeMethodEscape
+import org.opalj.fpcf.properties.GlobalEscape
+import org.opalj.fpcf.properties.MethodEscape
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.UVar
@@ -160,6 +168,58 @@ trait AbstractEntityEscapeAnalysis {
             IntermediateResult(e, MaybeNoEscape, dependees, c)
     }
 
+    def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = other match {
+
+        // this entity is written into a field of the other entity
+        case ObjectAllocationSite(_, _) | ArrayAllocationSite(_, _) ⇒ p match {
+            case MethodEscapeViaReturn                  ⇒ meetAndFilter(other, MethodEscapeViaReturnAssignment)
+            case state: EscapeProperty if state.isFinal ⇒ meetAndFilter(other, state)
+            case state: EscapeProperty ⇒ u match {
+                case IntermediateUpdate ⇒
+                    val newEP = EP(other, state)
+                    dependees = dependees.filter(_.e ne other) + newEP
+                    IntermediateResult(e, state meet leastRestrictiveProperty, dependees, c)
+                case _ ⇒ meetAndFilter(other, state)
+            }
+        }
+        // this local of constructor constructor
+        case FormalParameter(method, -1) if method.name == "<init>" ⇒ p match {
+            case state: GlobalEscape ⇒ Result(e, state)
+            case NoEscape            ⇒ meetAndFilter(other, NoEscape)
+            case ArgEscape           ⇒ meetAndFilter(other, ArgEscape)
+            case _: MethodEscape     ⇒ meetAndFilter(other, NoEscape)
+            case MaybeNoEscape | MaybeArgEscape ⇒
+                u match {
+                    case IntermediateUpdate ⇒
+                        val newEP = EP(other, MaybeNoEscape)
+                        dependees = dependees.filter(_.e ne other) + newEP
+                        IntermediateResult(e, p.asInstanceOf[EscapeProperty] meet leastRestrictiveProperty, dependees, c)
+                    case _ ⇒ meetAndFilter(other, p.asInstanceOf[EscapeProperty])
+                }
+            case MaybeMethodEscape ⇒ u match {
+                case IntermediateUpdate ⇒
+                    val newEP = EP(other, MaybeMethodEscape)
+                    dependees = dependees.filter(_.e ne other) + newEP
+                    IntermediateResult(e, MaybeNoEscape meet leastRestrictiveProperty, dependees, c)
+                case _ ⇒ meetAndFilter(other, MaybeNoEscape)
+            }
+        }
+
+        // this entity is passed as parameter (or this local) to a method
+        case FormalParameter(_, _) ⇒ p match {
+            case state: GlobalEscape  ⇒ Result(e, state)
+            case NoEscape | ArgEscape ⇒ meetAndFilter(other, ArgEscape)
+            case MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape ⇒ u match {
+                case IntermediateUpdate ⇒
+                    val newEP = EP(other, p.asInstanceOf[EscapeProperty])
+                    dependees = dependees.filter(_.e ne other) + newEP
+                    IntermediateResult(e, MaybeArgEscape meet leastRestrictiveProperty, dependees, c)
+                case _ ⇒ meetAndFilter(other, MaybeArgEscape)
+            }
+        }
+
+    }
+
     def visitPutField(putField: PutField[V]): Unit = if (usesDefSite(putField.value))
         calcLeastRestrictive(MaybeNoEscape)
     def visitArrayStore(arrayStore: ArrayStore[V]): Unit = if (usesDefSite(arrayStore.value))
@@ -178,5 +238,4 @@ trait AbstractEntityEscapeAnalysis {
             anyParameterUsesDefSite(call.params)) calcLeastRestrictive(MaybeArgEscape)
     def visitExprStmt(asExprStmt: ExprStmt[V]): Unit
     def visitAssignment(asAssignment: Assignment[V]): Unit
-    def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult
 }
