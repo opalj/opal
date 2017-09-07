@@ -29,8 +29,8 @@
 package org.opalj.fpcf
 package analyses
 
-import org.opalj.br.ObjectType
 import org.opalj.AnalysisModes
+import org.opalj.br.ObjectType
 import org.opalj.fpcf.test.annotations.EntryPointKeys
 import org.opalj.fpcf.properties.EntryPoint
 

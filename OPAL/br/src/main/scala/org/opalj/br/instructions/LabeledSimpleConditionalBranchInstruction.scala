@@ -40,7 +40,7 @@ trait LabeledSimpleConditionalBranchInstruction
     extends LabeledSingleJumpTargetInstruction
     with SimpleConditionalBranchInstructionLike {
 
-    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): SimpleConditionalBranchInstruction
+    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): SimpleConditionalBranchInstruction[_]
 
     def branchTarget: Symbol
 

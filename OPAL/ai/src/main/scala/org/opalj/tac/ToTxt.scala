@@ -261,7 +261,7 @@ object ToTxt {
                 params.parameters.zipWithIndex foreach { paramWithIndex ⇒
                     val (param, index) = paramWithIndex
                     if (param ne null) {
-                        val paramTxt = indention+"   param"+index+": "+param.toString()
+                        val paramTxt = indention+"   param"+index.toHexString+": "+param.toString()
                         javaLikeCode += (param match {
                             case v: DVar[_] ⇒ v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
                             case _          ⇒ paramTxt

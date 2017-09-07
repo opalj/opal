@@ -63,7 +63,6 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
-        val mutex = new Object
         val ch = project.classHierarchy
         for {
             cf ← project.allProjectClassFiles.par
@@ -73,41 +72,47 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
             aiResult = BaseAI(m, domainFactory(project, m))
         } {
             try {
+
                 val TACode(params, tacAICode, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
                 ToTxt(params, tacAICode, cfg, false, true, true)
+
+                // Some additional consistency tests...
+
+                tacAICode.iterator.zipWithIndex foreach { stmtIndex ⇒
+                    val (stmt, index) = stmtIndex
+                    val bb = cfg.bb(index)
+                    if (bb.endPC == index && bb.mayThrowException && stmt.isSideEffectFree) {
+                        fail(s"the statement: $stmt is side effect free but the basic block has a catch node/abnormal exit node as a successor")
+                    }
+                }
+
+                successfullyCompleted.incrementAndGet()
             } catch {
                 case e: Throwable ⇒ this.synchronized {
                     val methodSignature = m.toJava
-                    mutex.synchronized {
-                        println(methodSignature+" - size: "+body.instructions.length)
-                        e.printStackTrace(Console.out)
-                        if (e.getCause != null) {
-                            println("\tcause:")
-                            e.getCause.printStackTrace(Console.out)
-                        }
-                        val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
-                        println(
-                            instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
-                        )
-                        println(
-                            body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
-                        )
-                        errors ::= ((project.source(cf)+":"+methodSignature, e))
+
+                    println(methodSignature+" - size: "+body.instructions.length)
+                    e.printStackTrace(Console.out)
+                    if (e.getCause != null) {
+                        println("\tcause:")
+                        e.getCause.printStackTrace(Console.out)
                     }
+                    val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
+                    println(
+                        instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
+                    )
+                    println(
+                        body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
+                    )
+                    errors ::= ((project.source(cf)+":"+methodSignature, e))
                 }
             }
-            successfullyCompleted.incrementAndGet()
         }
         if (errors.nonEmpty) {
-            val message =
-                errors.
-                    map(_.toString()+"\n").
-                    mkString(
-                        "Errors thrown:\n",
-                        "\n",
-                        s"successfully transformed ${successfullyCompleted.get} methods: "+
-                            "; failed methods: "+errors.size+"\n"
-                    )
+            val summary =
+                s"successfully transformed ${successfullyCompleted.get} methods: "+
+                    "; failed methods: "+errors.size+"\n"
+            val message = errors.map(_.toString()).mkString("Errors thrown:\n", "\n\n", summary)
             fail(message)
         }
     }
@@ -125,9 +130,14 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         )
     }
 
+    // TESTS
+
     domainFactories foreach { domainInformation ⇒
+
         val (domainName, domainFactory) = domainInformation
+
         describe(s"creating the 3-address code using $domainName") {
+
             allBIProjects() foreach { biProject ⇒
                 val (name, projectFactory) = biProject
                 it(s"it should be able to create the TAC for $name using $domainName") {

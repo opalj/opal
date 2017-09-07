@@ -35,6 +35,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
+import java.lang.{Boolean ⇒ JBoolean}
 import java.io.File
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
@@ -44,9 +45,16 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 
+//import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
+
+//import org.opalj.log.GlobalLogContext
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
-import org.opalj.br.reader.Java8Framework
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java8FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.reader.BytecodeOptimizer.SimplifyControlFlowKey
 
 /**
  * Tests if we can convert every class file using the "Bytecode Representation" back to a
@@ -58,6 +66,17 @@ import org.opalj.br.reader.Java8Framework
 class BRtoBATest extends FlatSpec with Matchers {
 
     behavior of "toDA(...br.ClassFile)"
+
+    val ClassFileReader = {
+        //implicit val logContext: LogContext = GlobalLogContext
+        val testConfig = ConfigFactory.load().
+            withValue(SimplifyControlFlowKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
+
+        object Framework extends {
+            override val config = testConfig
+        } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache)
+        Framework
+    }
 
     def process(file: File): Unit = {
         val zipFile = new ZipFile(file)
@@ -75,7 +94,7 @@ class BRtoBATest extends FlatSpec with Matchers {
                 val bin = new BufferedInputStream(file, classFileSize)
                 val bytesRead = bin.read(raw, 0, classFileSize)
                 assert(bytesRead == classFileSize, "reading the zip file failed")
-                Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(raw))).head
+                ClassFileReader.ClassFile(new DataInputStream(new ByteArrayInputStream(raw))).head
             }
 
             try {
@@ -89,7 +108,7 @@ class BRtoBATest extends FlatSpec with Matchers {
 
                 // PART 2... recreate the class file from the serialized file
                 val rawClassFileIn = new DataInputStream(new ByteArrayInputStream(rawClassFile1))
-                val brClassFile2 = Java8Framework.ClassFile(rawClassFileIn).head
+                val brClassFile2 = ClassFileReader.ClassFile(rawClassFileIn).head
 
                 // PART 3... compare the class files...
                 brClassFile1.findDissimilarity(brClassFile2) should be(None)

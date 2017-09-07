@@ -46,7 +46,7 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
+trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
 
     def cache: BytecodeInstructionsCache
 

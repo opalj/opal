@@ -26,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.opalj
 package collection
 package immutable
@@ -38,11 +37,11 @@ import scala.collection.mutable.Builder
 
 /**
  * A sorted set of integer values backed by an ordered array to store the values; this
- * guarantees log(n) lookup.
+ * guarantees log2(n) lookup.
  *
  * @author Michael Eichberg
  */
-abstract class IntSet extends ((Int) ⇒ Int) {
+abstract class IntArraySet extends ((Int) ⇒ Int) {
 
     def isSingletonSet: Boolean
 
@@ -71,22 +70,22 @@ abstract class IntSet extends ((Int) ⇒ Int) {
      * Returns a lazily filtered set. However, all operations other operations except of
      * `withFilter` and `iterator` will force the evaluation.
      */
-    def withFilter(p: (Int) ⇒ Boolean): IntSet
+    def withFilter(p: (Int) ⇒ Boolean): IntArraySet
 
-    def map(f: Int ⇒ Int): IntSet
+    def map(f: Int ⇒ Int): IntArraySet
 
     def transform[T, To](f: Int ⇒ T, b: Builder[T, To]): To = {
         foreach(i ⇒ b += f(i))
         b.result()
     }
 
-    def -(i: Int): IntSet
+    def -(i: Int): IntArraySet
 
-    def --(is: Traversable[Int]): IntSet = this.foldLeft(this)(_ - _)
+    def --(is: Traversable[Int]): IntArraySet = this.foldLeft(this)(_ - _)
 
-    def +(i: Int): IntSet
+    def +(i: Int): IntArraySet
 
-    def subsetOf(other: IntSet): Boolean = {
+    def subsetOf(other: IntArraySet): Boolean = {
         val thisIt = this.iterator
         val otherIt = other.iterator
         while (thisIt.hasNext && otherIt.hasNext) {
@@ -109,7 +108,7 @@ abstract class IntSet extends ((Int) ⇒ Int) {
 
     def forall(f: Int ⇒ Boolean): Boolean
 
-    def ++(that: IntSet): IntSet = {
+    def ++(that: IntArraySet): IntArraySet = {
         if (this.size > that.size)
             that.foldLeft(this)(_ + _) // we expand `this` since `this` is larger
         else
@@ -133,10 +132,10 @@ abstract class IntSet extends ((Int) ⇒ Int) {
 
     def toChain: Chain[Int]
 
-    final override def toString: String = mkString("IntSet(", ",", ")")
+    final override def toString: String = mkString("IntArraySet(", ",", ")")
 }
 
-case object EmptyIntSet extends IntSet {
+case object EmptyIntArraySet extends IntArraySet {
     def apply(index: Int): Int = throw new UnsupportedOperationException("empty set")
     def isSingletonSet: Boolean = false
     def hasMultipleElements: Boolean = false
@@ -145,11 +144,11 @@ case object EmptyIntSet extends IntSet {
     def max: Int = throw new UnsupportedOperationException("empty set")
     def min: Int = throw new UnsupportedOperationException("empty set")
     def foreach[U](f: Int ⇒ U): Unit = {}
-    def withFilter(p: (Int) ⇒ Boolean): IntSet = this
-    def map(f: Int ⇒ Int): IntSet = this
+    def withFilter(p: (Int) ⇒ Boolean): IntArraySet = this
+    def map(f: Int ⇒ Int): IntArraySet = this
     def -(i: Int): this.type = this
-    override def subsetOf(other: IntSet): Boolean = true
-    def +(i: Int): IntSet1 = new IntSet1(i)
+    override def subsetOf(other: IntArraySet): Boolean = true
+    def +(i: Int): IntArraySet1 = new IntArraySet1(i)
     def iterator: Iterator[Int] = Iterator.empty
     def contains(value: Int): Boolean = false
     def exists(p: Int ⇒ Boolean): Boolean = false
@@ -160,15 +159,15 @@ case object EmptyIntSet extends IntSet {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case is: IntSet ⇒ is.isEmpty
-            case _          ⇒ false
+            case is: IntArraySet ⇒ is.isEmpty
+            case _               ⇒ false
         }
     }
 
     override def hashCode: Int = 0 // compatible to Arrays.hashCode
 }
 
-case class IntSet1(i: Int) extends IntSet {
+case class IntArraySet1(i: Int) extends IntArraySet {
     def apply(index: Int): Int = if (index == 0) i else throw new IndexOutOfBoundsException()
     def isEmpty: Boolean = false
     def isSingletonSet: Boolean = true
@@ -176,20 +175,20 @@ case class IntSet1(i: Int) extends IntSet {
     def foreach[U](f: Int ⇒ U): Unit = { f(i) }
     def max: Int = this.i
     def min: Int = this.i
-    def withFilter(p: (Int) ⇒ Boolean): IntSet = if (p(i)) this else EmptyIntSet
-    def map(f: Int ⇒ Int): IntSet = {
+    def withFilter(p: (Int) ⇒ Boolean): IntArraySet = if (p(i)) this else EmptyIntArraySet
+    def map(f: Int ⇒ Int): IntArraySet = {
         val i = this.i
         val newI = f(i)
         if (newI != i)
-            new IntSet1(newI)
+            new IntArraySet1(newI)
         else
             this
     }
-    def -(i: Int): IntSet = {
-        if (this.i != i) this else EmptyIntSet
+    def -(i: Int): IntArraySet = {
+        if (this.i != i) this else EmptyIntArraySet
     }
-    def +(i: Int): IntSet = {
-        if (this.i == i) this else if (this.i < i) new IntSet2(this.i, i) else new IntSet2(i, this.i)
+    def +(i: Int): IntArraySet = {
+        if (this.i == i) this else if (this.i < i) new IntArraySet2(this.i, i) else new IntArraySet2(i, this.i)
     }
     def iterator: Iterator[Int] = Iterator.single(i)
     def size: Int = 1
@@ -203,15 +202,18 @@ case class IntSet1(i: Int) extends IntSet {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case is: IntSet if is.isSingletonSet ⇒ is.min == i
-            case _                               ⇒ false
+            case is: IntArraySet if is.isSingletonSet ⇒ is.min == i
+            case _                                    ⇒ false
         }
     }
 
     override def hashCode: Int = 31 + i // compatible to Arrays.hashCode
 }
 
-case class IntSet2(i1: Int, i2: Int) extends IntSet {
+/**
+ * Represents an orderd set of two values where i1 has to be smaller than i2.
+ */
+case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
 
     assert(i1 < i2)
     def apply(index: Int): Int = {
@@ -243,40 +245,40 @@ case class IntSet2(i1: Int, i2: Int) extends IntSet {
     }
     def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
 
-    def withFilter(p: (Int) ⇒ Boolean): IntSet = {
+    def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
         if (p(i1)) {
             if (p(i2)) this
-            else new IntSet1(i1)
+            else new IntArraySet1(i1)
         } else {
-            if (p(i2)) new IntSet1(i2)
+            if (p(i2)) new IntArraySet1(i2)
             else
-                EmptyIntSet
+                EmptyIntArraySet
         }
     }
-    def map(f: Int ⇒ Int): IntSet = {
+    def map(f: Int ⇒ Int): IntArraySet = {
         val i1 = this.i1
         val newI1 = f(i1)
         val i2 = this.i2
         val newI2 = f(i2)
         if (newI1 != i1 || newI2 != i2)
-            IntSet(newI1, newI2) // ensures invariant
+            IntArraySet(newI1, newI2) // ensures invariant
         else
             this
     }
-    def -(i: Int): IntSet = {
-        if (i == i1) new IntSet1(i2)
-        else if (i == i2) new IntSet1(i1)
+    def -(i: Int): IntArraySet = {
+        if (i == i1) new IntArraySet1(i2)
+        else if (i == i2) new IntArraySet1(i1)
         else this
     }
-    def +(i: Int): IntSet = {
+    def +(i: Int): IntArraySet = {
         if (i <= i1) {
             if (i == i1) this
-            else new IntSet3(i, i1, i2)
+            else new IntArraySet3(i, i1, i2)
         } else if (i <= i2) {
             if (i == i2) this
-            else new IntSet3(i1, i, i2)
+            else new IntArraySet3(i1, i, i2)
         } else {
-            new IntSet3(i1, i2, i)
+            new IntArraySet3(i1, i2, i)
         }
     }
     def contains(value: Int): Boolean = value == i1 || value == i2
@@ -288,15 +290,18 @@ case class IntSet2(i1: Int, i2: Int) extends IntSet {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case is: IntSet if is.size == 2 ⇒ is.min == this.i1 && is.max == this.i2
-            case _                          ⇒ false
+            case is: IntArraySet if is.size == 2 ⇒ is.min == this.i1 && is.max == this.i2
+            case _                               ⇒ false
         }
     }
 
     override def hashCode: Int = 31 * (31 + i1) + i2 // compatible to Arrays.hashCode
 }
 
-case class IntSet3(i1: Int, i2: Int, i3: Int) extends IntSet {
+/**
+ * Represents an orderd set of three int values: i1 < i2 < i3.
+ */
+case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
 
     assert(i1 < i2, s"i1 < i2: $i1 >= $i2")
     assert(i2 < i3, s"i2 < i3: $i2 >= $i3")
@@ -332,34 +337,34 @@ case class IntSet3(i1: Int, i2: Int, i3: Int) extends IntSet {
     }
     def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
 
-    def withFilter(p: (Int) ⇒ Boolean): IntSet = {
+    def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
         if (p(i1)) {
             if (p(i2)) {
                 if (p(i3))
                     this
                 else
-                    new IntSet2(i1, i2)
+                    new IntArraySet2(i1, i2)
             } else {
                 if (p(i3))
-                    new IntSet2(i1, i3)
+                    new IntArraySet2(i1, i3)
                 else
-                    new IntSet1(i1)
+                    new IntArraySet1(i1)
             }
         } else {
             if (p(i2)) {
                 if (p(i3))
-                    new IntSet2(i2, i3)
+                    new IntArraySet2(i2, i3)
                 else
-                    new IntSet1(i2)
+                    new IntArraySet1(i2)
             } else {
                 if (p(i3))
-                    new IntSet1(i3)
+                    new IntArraySet1(i3)
                 else
-                    IntSet.empty
+                    IntArraySet.empty
             }
         }
     }
-    def map(f: Int ⇒ Int): IntSet = {
+    def map(f: Int ⇒ Int): IntArraySet = {
         val i1 = this.i1
         val newI1 = f(i1)
         val i2 = this.i2
@@ -367,33 +372,33 @@ case class IntSet3(i1: Int, i2: Int, i3: Int) extends IntSet {
         val i3 = this.i3
         val newI3 = f(i3)
         if (newI1 != i1 || newI2 != i2 || newI3 != i3)
-            IntSet(newI1, newI2, newI3) // ensures invariant
+            IntArraySet(newI1, newI2, newI3) // ensures invariant
         else
             this
     }
-    def -(i: Int): IntSet = {
-        if (i1 == i) new IntSet2(i2, i3)
-        else if (i2 == i) new IntSet2(i1, i3)
-        else if (i3 == i) new IntSet2(i1, i2)
+    def -(i: Int): IntArraySet = {
+        if (i1 == i) new IntArraySet2(i2, i3)
+        else if (i2 == i) new IntArraySet2(i1, i3)
+        else if (i3 == i) new IntArraySet2(i1, i2)
         else this
     }
-    def +(i: Int): IntSet = {
+    def +(i: Int): IntArraySet = {
         if (i < i2) {
             if (i < i1)
-                new IntArraySet(Array[Int](i, i1, i2, i3))
+                new IntArraySetN(Array[Int](i, i1, i2, i3))
             else if (i == i1)
                 this
             else
-                new IntArraySet(Array[Int](i1, i, i2, i3))
+                new IntArraySetN(Array[Int](i1, i, i2, i3))
         } else if (i < i3) {
             if (i == i2)
                 this
             else
-                new IntArraySet(Array[Int](i1, i2, i, i3))
+                new IntArraySetN(Array[Int](i1, i2, i, i3))
         } else if (i == i3)
             this
         else
-            new IntArraySet(Array[Int](i1, i2, i3, i))
+            new IntArraySetN(Array[Int](i1, i2, i3, i))
     }
     def contains(value: Int): Boolean = value == i1 || value == i2 || value == i3
     def exists(p: Int ⇒ Boolean): Boolean = p(i1) || p(i2) || p(i3)
@@ -404,7 +409,7 @@ case class IntSet3(i1: Int, i2: Int, i3: Int) extends IntSet {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntSet if that.size == 3 ⇒
+            case that: IntArraySet if that.size == 3 ⇒
                 this(0) == that(0) && this(1) == that(1) && this(2) == that(2)
             case _ ⇒ false
         }
@@ -413,11 +418,12 @@ case class IntSet3(i1: Int, i2: Int, i3: Int) extends IntSet {
     override def hashCode: Int = 31 * (31 * (31 + i1) + i2) + i3 // compatible to Arrays.hashCode
 }
 
-case class IntArraySet private[immutable] (
+case class IntArraySetN private[immutable] (
         private[immutable] val is: Array[Int]
-) extends IntSet {
+) extends IntArraySet {
 
-    require(is.length > 2)
+    assert(is.length > 2)
+
     def apply(index: Int): Int = is(index)
     def size: Int = is.length
     def isSingletonSet: Boolean = false
@@ -433,9 +439,9 @@ case class IntArraySet private[immutable] (
             i += 1
         }
     }
-    def withFilter(p: (Int) ⇒ Boolean): IntSet = new FilteredIntArraySet(p, this)
+    def withFilter(p: (Int) ⇒ Boolean): IntArraySet = new FilteredIntArraySet(p, this)
 
-    def map(f: Int ⇒ Int): IntSet = {
+    def map(f: Int ⇒ Int): IntArraySet = {
         // let's check if all values are mapped to their original values; if so return "this"
         val max = is.length
         var i = 0
@@ -448,7 +454,7 @@ case class IntArraySet private[immutable] (
         if (i == max)
             return this;
 
-        val isb = new IntSetBuilder
+        val isb = new IntArraySetBuilder
         var l = 0
         while (l < i) { isb += is(l) /*the values were unchanged*/ ; l += 1 }
         while (i < max) {
@@ -458,28 +464,28 @@ case class IntArraySet private[immutable] (
         isb.result()
     }
 
-    def -(i: Int): IntSet = {
+    def -(i: Int): IntArraySet = {
         val index = Arrays.binarySearch(is, 0, size, i)
         if (index >= 0) {
             if (is.length == 4) {
                 index match {
-                    case 0 ⇒ new IntSet3(is(1), is(2), is(3))
-                    case 1 ⇒ new IntSet3(is(0), is(2), is(3))
-                    case 2 ⇒ new IntSet3(is(0), is(1), is(3))
-                    case 3 ⇒ new IntSet3(is(0), is(1), is(2))
+                    case 0 ⇒ new IntArraySet3(is(1), is(2), is(3))
+                    case 1 ⇒ new IntArraySet3(is(0), is(2), is(3))
+                    case 2 ⇒ new IntArraySet3(is(0), is(1), is(3))
+                    case 3 ⇒ new IntArraySet3(is(0), is(1), is(2))
                 }
             } else {
                 // the element is found
                 val targetIs = new Array[Int](is.length - 1)
                 System.arraycopy(is, 0, targetIs, 0, index)
                 System.arraycopy(is, index + 1, targetIs, index, is.length - 1 - index)
-                new IntArraySet(targetIs)
+                new IntArraySetN(targetIs)
             }
         } else
             this
     }
 
-    def +(i: Int): IntSet = {
+    def +(i: Int): IntArraySet = {
         val index = Arrays.binarySearch(is, 0, size, i)
         if (index < 0) {
             val insertionPoint = -index - 1
@@ -488,7 +494,7 @@ case class IntArraySet private[immutable] (
             System.arraycopy(is, 0, targetIs, 0, insertionPoint)
             targetIs(insertionPoint) = i
             System.arraycopy(is, insertionPoint, targetIs, insertionPoint + 1, is.length - insertionPoint)
-            new IntArraySet(targetIs)
+            new IntArraySetN(targetIs)
         } else {
             this
         }
@@ -531,19 +537,19 @@ case class IntArraySet private[immutable] (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntSet if that.size == this.size ⇒ this.subsetOf(that)
-            case _                                      ⇒ false
+            case that: IntArraySet if that.size == this.size ⇒ this.subsetOf(that)
+            case _                                           ⇒ false
         }
     }
 
     override def hashCode: Int = Arrays.hashCode(is)
 }
 
-private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArraySet) extends IntSet {
+private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArraySetN) extends IntArraySet {
 
-    @volatile private[this] var filteredS: IntSet = _
+    @volatile private[this] var filteredS: IntArraySet = _
 
-    private def getFiltered: IntSet = {
+    private def getFiltered: IntArraySet = {
         if (filteredS eq null) {
             this.synchronized {
                 if (filteredS eq null) {
@@ -561,14 +567,14 @@ private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArray
                             index += 1
                         }
                         targetIsIndex match {
-                            case 0 ⇒ EmptyIntSet
-                            case 1 ⇒ new IntSet1(targetIs(0))
-                            case 2 ⇒ new IntSet2(targetIs(0), targetIs(1))
+                            case 0 ⇒ EmptyIntArraySet
+                            case 1 ⇒ new IntArraySet1(targetIs(0))
+                            case 2 ⇒ new IntArraySet2(targetIs(0), targetIs(1))
                             case _ ⇒
                                 if (targetIsIndex == max) // no value was filtered...
                                     origS
                                 else {
-                                    new IntArraySet(Arrays.copyOf(targetIs, targetIsIndex))
+                                    new IntArraySetN(Arrays.copyOf(targetIs, targetIsIndex))
                                 }
 
                         }
@@ -581,7 +587,7 @@ private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArray
 
     def apply(index: Int): Int = getFiltered.apply(index)
 
-    def withFilter(p: (Int) ⇒ Boolean): IntSet = {
+    def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
         if (filteredS ne null) {
             filteredS.withFilter(p)
         } else {
@@ -623,18 +629,18 @@ private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArray
     def isEmpty: Boolean = getFiltered.isEmpty
     def min: Int = getFiltered.min
     def max: Int = getFiltered.max
-    def map(f: Int ⇒ Int): IntSet = getFiltered.map(f)
-    def -(i: Int): IntSet = getFiltered - i
-    def +(i: Int): IntSet = getFiltered + 1
+    def map(f: Int ⇒ Int): IntArraySet = getFiltered.map(f)
+    def -(i: Int): IntArraySet = getFiltered - i
+    def +(i: Int): IntArraySet = getFiltered + 1
     def toChain: Chain[Int] = getFiltered.toChain
     override def equals(other: Any): Boolean = getFiltered.equals(other)
     override def hashCode: Int = getFiltered.hashCode
 }
 
-class IntSetBuilder private[immutable] (
+class IntArraySetBuilder private[immutable] (
         private[this] var is:   Array[Int],
         private[this] var size: Int
-) extends Builder[Int, IntSet] {
+) extends Builder[Int, IntArraySet] {
 
     require(size <= is.length)
 
@@ -665,65 +671,65 @@ class IntSetBuilder private[immutable] (
 
     def clear(): Unit = { is = new Array[Int](4); size = 0 }
 
-    def result(): IntSet = {
+    def result(): IntArraySet = {
         size match {
-            case 0 ⇒ EmptyIntSet
-            case 1 ⇒ new IntSet1(is(0))
-            case 2 ⇒ new IntSet2(is(0), is(1))
-            case 3 ⇒ new IntSet3(is(0), is(1), is(2))
+            case 0 ⇒ EmptyIntArraySet
+            case 1 ⇒ new IntArraySet1(is(0))
+            case 2 ⇒ new IntArraySet2(is(0), is(1))
+            case 3 ⇒ new IntArraySet3(is(0), is(1), is(2))
             case _ ⇒
                 if (size == is.length)
-                    new IntArraySet(is)
+                    new IntArraySetN(is)
                 else {
                     val targetIs = new Array[Int](size)
                     System.arraycopy(is, 0, targetIs, 0, size)
-                    new IntArraySet(targetIs)
+                    new IntArraySetN(targetIs)
                 }
 
         }
     }
 
-    override def toString: String = is.mkString(s"IntSetBuilder(size=$size;values={", ",", "})")
+    override def toString: String = is.mkString(s"IntArraySetBuilder(size=$size;values={", ",", "})")
 }
 
-object IntSetBuilder {
+object IntArraySetBuilder {
 
-    def apply(vs: Int*): IntSetBuilder = {
-        val isb = new IntSetBuilder(new Array[Int](vs.size), 0)
+    def apply(vs: Int*): IntArraySetBuilder = {
+        val isb = new IntArraySetBuilder(new Array[Int](vs.size), 0)
         vs.foreach(isb.+=)
         isb
     }
 
-    def apply(vs: Set[Int]): IntSetBuilder = {
-        val isb = new IntSetBuilder(new Array[Int](Math.max(4, vs.size)), 0)
+    def apply(vs: Set[Int]): IntArraySetBuilder = {
+        val isb = new IntArraySetBuilder(new Array[Int](Math.max(4, vs.size)), 0)
         vs.foreach(isb.+=)
         isb
     }
 
-    def apply(c: Chain[Int]): IntSetBuilder = {
-        val isb = new IntSetBuilder(new Array[Int](4), 0)
+    def apply(c: Chain[Int]): IntArraySetBuilder = {
+        val isb = new IntArraySetBuilder(new Array[Int](4), 0)
         c.foreach(isb.+=)
         isb
     }
 }
 
-object IntSet {
+object IntArraySet {
 
-    def empty: IntSet = EmptyIntSet
+    def empty: IntArraySet = EmptyIntArraySet
 
-    def apply(i: Int): IntSet = new IntSet1(i)
+    def apply(i: Int): IntArraySet = new IntArraySet1(i)
 
-    def apply(i1: Int, i2: Int): IntSet = {
-        if (i1 < i2) new IntSet2(i1, i2)
-        else if (i1 == i2) new IntSet1(i1)
-        else IntSet2(i2, i1)
+    def apply(i1: Int, i2: Int): IntArraySet = {
+        if (i1 < i2) new IntArraySet2(i1, i2)
+        else if (i1 == i2) new IntArraySet1(i1)
+        else IntArraySet2(i2, i1)
     }
 
-    def apply(i1: Int, i2: Int, i3: Int): IntSet = {
+    def apply(i1: Int, i2: Int, i3: Int): IntArraySet = {
         if (i1 == i2)
             return apply(i2, i3);
         if (i1 == i3 || i2 == i3)
-            return if (i1 < i2) new IntSet2(i1, i2) else new IntSet2(i2, i1);
+            return if (i1 < i2) new IntArraySet2(i1, i2) else new IntArraySet2(i2, i1);
 
         //... all three values are different
         var v0 = 0
@@ -736,10 +742,10 @@ object IntSet {
             v1 = i1
         }
         if (i3 < v1) {
-            if (i3 < v0) new IntSet3(i3, v0, v1)
-            else new IntSet3(v0, i3, v1)
+            if (i3 < v0) new IntArraySet3(i3, v0, v1)
+            else new IntArraySet3(v0, i3, v1)
         } else {
-            new IntSet3(v0, v1, i3)
+            new IntArraySet3(v0, v1, i3)
         }
     }
 

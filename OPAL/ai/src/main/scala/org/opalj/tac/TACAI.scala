@@ -31,8 +31,8 @@ package tac
 
 import scala.annotation.switch
 import scala.collection.mutable.Queue
-import org.opalj.collection.immutable.IntSetBuilder
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySetBuilder
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br
 import org.opalj.br._
@@ -92,7 +92,7 @@ object TACAI {
         while (i < parametersCount) {
             aiVOToTACVo(-aiVO - 1) = tacVO
             tacVO -= 1
-            aiVO -= parameterTypes(0).computationalType.operandSize
+            aiVO -= parameterTypes(i).computationalType.operandSize
             i += 1
         }
 
@@ -183,13 +183,13 @@ object TACAI {
         // To get the target value the ai based vo has to be negated and we have to add -1.
         // E.g., if the ai-based vo is -1 then the index which needs to be used is -(-1)-1 ==> 0
         // which will contain (for -1 only) the value -1.
-        val normalizeParameterOrigins: IntSet ⇒ IntSet = {
+        val normalizeParameterOrigins: IntArraySet ⇒ IntArraySet = {
             if (!isStatic && simpleRemapping) {
                 // => no remapping is necessary
-                (aiVOs: IntSet) ⇒ aiVOs
+                (aiVOs: IntArraySet) ⇒ aiVOs
             } else if (isStatic && simpleRemapping) {
                 // => we have to subtract -1 from origins related to parameters
-                (aiVOs: IntSet) ⇒
+                (aiVOs: IntArraySet) ⇒
                     {
                         aiVOs.map { aiVO ⇒
                             assert(!ai.isVMLevelValue(aiVO))
@@ -199,11 +199,13 @@ object TACAI {
             } else {
                 // => we create an array which contains the mapping information
                 val aiVOToTACVo: Array[Int] = normalizeParameterOriginsMap(descriptor, isStatic)
-                (aiVOs: IntSet) ⇒ {
+                (aiVOs: IntArraySet) ⇒ {
                     if (aiVOs eq null) {
-                        IntSet.empty
+                        IntArraySet.empty
                     } else {
-                        aiVOs.map { aiVO ⇒ if (aiVO < 0) aiVOToTACVo(-aiVO - 1) else aiVO }
+                        aiVOs map { aiVO ⇒
+                            if (aiVO < 0) aiVOToTACVo(-aiVO - 1) else aiVO
+                        }
                     }
                 }
             }
@@ -211,7 +213,7 @@ object TACAI {
 
         // The list of bytecode instructions which were killed (=>NOP), and for which we now have to
         // clear the usages.
-        val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntSet /*DefSites*/ )] = Queue.empty
+        val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntArraySet /*DefSites*/ )] = Queue.empty
 
         def killOperandBasedUsages(useSite: br.PC, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
@@ -240,8 +242,8 @@ object TACAI {
 
         // The catch handler statements which were added to the code that do not take up
         // the slot of an empty load/store statement.
-        var addedHandlerStmts: IntSet = IntSet.empty
-        val handlerPCs = (new IntSetBuilder() ++= code.exceptionHandlers.map(_.handlerPC)).result
+        var addedHandlerStmts: IntArraySet = IntArraySet.empty
+        val handlerPCs = (new IntArraySetBuilder() ++= code.exceptionHandlers.map(_.handlerPC)).result
 
         var pc: PC = 0
         var index: Int = 0
@@ -279,7 +281,7 @@ object TACAI {
                 }
             }
 
-            def addNOP(): Unit = {
+            def addNOP(pcHint: Int): Unit = {
                 if (addExceptionHandlerInitializer)
                     // We do not have to add the NOP, because the code to initialize the
                     // variable which references the exception is already added.
@@ -289,7 +291,7 @@ object TACAI {
                 // we want to ensure that we don't have to rewrite the CFG during the initial
                 // transformation
                 if (cfg.bb(pc).startPC == pc) {
-                    statements(index) = Nop(pc)
+                    statements(index) = Nop(pcHint)
                     pcToIndex(pc) = index
                     index += 1
                 } else {
@@ -305,7 +307,7 @@ object TACAI {
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
                 val predecessorsOfPC = predecessorsOf(pc)
                 val defSites =
-                    predecessorsOfPC.foldLeft(IntSet.empty) { (adaptedDefSites, exceptionSite) ⇒
+                    predecessorsOfPC.foldLeft(IntArraySet.empty) { (adaptedDefSites, exceptionSite) ⇒
                         if (instructions(exceptionSite).opcode == ATHROW.opcode) {
                             // We have to determine if the caught exception is actually the
                             // thrown exception....
@@ -352,7 +354,7 @@ object TACAI {
 
             def addNOPAndKillOperandBasedUsages(valuesCount: Int): Unit = {
                 killOperandBasedUsages(pc, valuesCount)
-                addNOP()
+                addNOP(-pc - 1)
             }
 
             /**
@@ -373,7 +375,7 @@ object TACAI {
                     if (instruction.opcode == IINC.opcode) {
                         val IINC(index, _) = instruction
                         killRegisterBasedUsages(pc, index)
-                        addNOP()
+                        addNOP(-pc - 1)
                     } else {
                         addNOPAndKillOperandBasedUsages(expr.subExprCount)
                     }
@@ -570,7 +572,7 @@ object TACAI {
                     LLOAD.opcode |
                     LSTORE_0.opcode | LSTORE_1.opcode | LSTORE_2.opcode | LSTORE_3.opcode |
                     LSTORE.opcode ⇒
-                    addNOP()
+                    addNOP(pc)
 
                 case IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
                     ARETURN.opcode ⇒
@@ -629,7 +631,7 @@ object TACAI {
                 case DCMPL.opcode | FCMPL.opcode ⇒ compareValues(CMPL)
                 case LCMP.opcode                 ⇒ compareValues(CMP)
 
-                case SWAP.opcode                 ⇒ addNOP()
+                case SWAP.opcode                 ⇒ addNOP(pc)
 
                 case DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode ⇒
                     binaryArithmeticOperation(Add)
@@ -822,7 +824,7 @@ object TACAI {
                     val GotoInstruction(branchoffset) = instruction
                     if (cfg.bb(pc).endPC != pc) {
                         // this goto "jumps" to the immediately succeeding instruction
-                        addNOP()
+                        addNOP(pc)
                     } else {
                         addStmt(Goto(pc, pc + branchoffset))
                     }
@@ -833,7 +835,7 @@ object TACAI {
                 case RET.opcode ⇒
                     addStmt(Ret(pc, cfg.successors(pc)))
 
-                case NOP.opcode | POP.opcode | POP2.opcode ⇒ addNOP()
+                case NOP.opcode | POP.opcode | POP2.opcode ⇒ addNOP(pc)
 
                 case INSTANCEOF.opcode ⇒
                     val value1 = operandUse(0)
@@ -874,7 +876,7 @@ object TACAI {
                     addStmt(Switch(pc, defaultTarget, index, npairs))
 
                 case DUP.opcode | DUP_X1.opcode | DUP_X2.opcode
-                    | DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode ⇒ addNOP()
+                    | DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode ⇒ addNOP(pc)
 
                 case D2F.opcode | I2F.opcode | L2F.opcode ⇒ primitiveCastOperation(FloatType)
                 case D2I.opcode | F2I.opcode | L2I.opcode ⇒ primitiveCastOperation(IntegerType)
@@ -886,7 +888,7 @@ object TACAI {
 
                 case ATHROW.opcode                        ⇒ addStmt(Throw(pc, operandUse(0)))
 
-                case WIDE.opcode                          ⇒ addNOP()
+                case WIDE.opcode                          ⇒ addNOP(pc)
 
                 case opcode ⇒
                     throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
@@ -913,7 +915,7 @@ object TACAI {
                 if (!method.isStatic) {
                     var usedBy = domain.usedBy(-1)
                     if (usedBy eq null) {
-                        usedBy = IntSet.empty
+                        usedBy = IntArraySet.empty
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
@@ -925,7 +927,7 @@ object TACAI {
                     var usedBy = domain.usedBy(defOrigin)
                     // the usedBy for parameters never refer to parameters => have negative values!
                     if (usedBy eq null) {
-                        usedBy = IntSet.empty
+                        usedBy = IntArraySet.empty
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }

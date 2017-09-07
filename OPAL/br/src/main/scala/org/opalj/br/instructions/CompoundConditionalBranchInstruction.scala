@@ -48,11 +48,14 @@ trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstruct
      * Returns all case values that are '''not related to the default branch'''.
      */
     def caseValues: Iterable[Int]
+
 }
 
 trait CompoundConditionalBranchInstruction
     extends ConditionalBranchInstruction
     with CompoundConditionalBranchInstructionLike {
+
+    final override def asCompoundConditionalBranchInstruction: this.type = this
 
     def defaultOffset: Int
 

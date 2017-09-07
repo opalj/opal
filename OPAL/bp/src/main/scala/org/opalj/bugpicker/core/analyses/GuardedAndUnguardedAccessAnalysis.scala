@@ -100,7 +100,7 @@ object GuardedAndUnguardedAccessAnalysis {
         // TODO We should also log those that are assertions related!
 
         for {
-            (pc, instr: IFXNullInstruction) ← code
+            (pc, instr: IFXNullInstruction[_]) ← code
             if operandsArray(pc) ne null
         } {
 

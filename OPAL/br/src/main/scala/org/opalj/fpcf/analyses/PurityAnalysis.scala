@@ -87,7 +87,8 @@ import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.TypeImmutability
 
 /**
- * Analyzes the purity of a method as defined by the Purity property.
+ * Very simple and fast analysis of the purity of methods as defined by the
+ * [[org.opalj.fpcf.properties.Purity]] property.
  *
  * @author Michael Eichberg
  */

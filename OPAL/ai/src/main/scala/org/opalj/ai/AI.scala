@@ -34,7 +34,7 @@ import scala.language.existentials
 import scala.util.control.ControlThrowable
 import scala.collection.BitSet
 
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -1183,7 +1183,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     noConstraint:  SingleValueConstraint
                 ): Unit = {
 
-                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
+                    val branchInstruction = instruction.asSimpleConditionalBranchInstruction
                     val operand = operands.head
                     val rest = operands.tail
                     val nextPC = pcOfNextInstruction
@@ -1226,7 +1226,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                             // We have empirically evaluated which strategy leads to the minimal
                             // number of instruction evaluations and the following test does:
-                            if (branchTargetPC > pc) {
+                            // (The following relies on a control-flow where
+                            // if instructions related to loops "jump back"!)
+                            // This property is widely ensured by the current bytecode
+                            // optimizer.
+                            if (branchTargetPC < pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,
@@ -1262,7 +1266,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     noConstraint:  TwoValuesConstraint
                 ): Unit = {
 
-                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
+                    val branchInstruction = instruction.asSimpleConditionalBranchInstruction
                     val right = operands.head
                     val remainingOperands = operands.tail
                     val left = remainingOperands.head
@@ -1352,7 +1356,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     establishNonNull: Boolean
                 ): PCs = {
 
-                    var targetPCs = IntSet.empty
+                    var targetPCs = IntArraySet.empty
                     def gotoExceptionHandler(
                         pc:             PC,
                         branchTargetPC: PC,
@@ -1428,7 +1432,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                         val npe = theDomain.VMNullPointerException(pc)
                                         doHandleTheException(npe, false)
                                     } else
-                                        IntSet.empty
+                                        IntArraySet.empty
                                 npeHandlerPC ++ doHandleTheException(exceptionValue, true)
                             case Yes ⇒
                                 val npe = theDomain.VMNullPointerException(pc)
@@ -1440,7 +1444,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 def handleExceptions(exceptions: Traversable[ExceptionValue]): PCs = {
-                    exceptions.foldLeft(IntSet.empty)(_ ++ handleException(_))
+                    exceptions.foldLeft(IntArraySet.empty)(_ ++ handleException(_))
                 }
 
                 def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
@@ -1474,7 +1478,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     //TODO val regPC =
                     if (computation.returnsNormally) fallThrough(rest) // else -1
                     //TODO val exPCs =
-                    if (computation.throwsException) handleException(computation.exceptions) // else IntSet.empty
+                    if (computation.throwsException) handleException(computation.exceptions) // else IntArraySet.empty
 
                     //TODO if (computation.returnsNormally != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
@@ -1496,7 +1500,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     //TODOval regPC =
                     if (computation.hasResult) fallThrough(computation.result :&: rest) // else -1
                     //TODO val exPCs =
-                    if (computation.throwsException) handleException(computation.exceptions) // else IntSet.empty
+                    if (computation.throwsException) handleException(computation.exceptions) // else IntArraySet.empty
 
                     //TODO if (computation.returnsNormally != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")

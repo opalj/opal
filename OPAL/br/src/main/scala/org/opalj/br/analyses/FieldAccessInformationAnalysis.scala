@@ -35,8 +35,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.mutable.AnyRefMap
 import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.IntSetBuilder
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySetBuilder
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.br.instructions.GETFIELD
@@ -77,9 +77,9 @@ object FieldAccessInformationAnalysis {
         val errors = project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
             val method = methodInfo.method
 
-            val readAccesses = AnyRefMap.empty[Field, IntSetBuilder]
-            val writeAccesses = AnyRefMap.empty[Field, IntSetBuilder]
-            var unresolved = IntSet.empty
+            val readAccesses = AnyRefMap.empty[Field, IntArraySetBuilder]
+            val writeAccesses = AnyRefMap.empty[Field, IntArraySetBuilder]
+            var unresolved = IntArraySet.empty
             method.body.get iterate { (pc, instruction) ⇒
                 instruction.opcode match {
 
@@ -87,7 +87,7 @@ object FieldAccessInformationAnalysis {
                         val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
                         resolveFieldReference(fieldReadAccess) match {
                             case Some(field) ⇒
-                                readAccesses.getOrElseUpdate(field, new IntSetBuilder()) += pc
+                                readAccesses.getOrElseUpdate(field, new IntArraySetBuilder()) += pc
                             case None ⇒
                                 if (reportedFieldAccesses.add(instruction)) {
                                     val message = s"cannot resolve field read access: $instruction"
@@ -100,7 +100,7 @@ object FieldAccessInformationAnalysis {
                         val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
                         resolveFieldReference(fieldWriteAccess) match {
                             case Some(field) ⇒
-                                writeAccesses.getOrElseUpdate(field, new IntSetBuilder()) += pc
+                                writeAccesses.getOrElseUpdate(field, new IntArraySetBuilder()) += pc
                             case None ⇒
                                 if (reportedFieldAccesses.add(instruction)) {
                                     val message = s"cannot resolve field write access: $instruction"
