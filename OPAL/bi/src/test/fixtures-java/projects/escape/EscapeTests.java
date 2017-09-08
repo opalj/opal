@@ -35,7 +35,7 @@ import static annotations.escape.EscapeKeys.*;
 /**
  * @author Florian Kuebler
  */
-public class Test {
+public class EscapeTests {
 
     public static Object returnEscape() {
         return new @Escapes(ViaReturn) @Escapes(value = MaybeMethod, algorithms = {
