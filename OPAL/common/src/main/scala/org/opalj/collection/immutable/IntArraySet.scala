@@ -37,7 +37,7 @@ import scala.collection.mutable.Builder
 
 /**
  * A sorted set of integer values backed by an ordered array to store the values; this
- * guarantees log(n) lookup.
+ * guarantees log2(n) lookup.
  *
  * @author Michael Eichberg
  */

@@ -46,11 +46,17 @@ trait IFACMPInstructionLike extends SimpleConditionalBranchInstructionLike {
 
 }
 
-trait IFACMPInstruction extends SimpleConditionalBranchInstruction with IFACMPInstructionLike
+trait IFACMPInstruction[T <: IFACMPInstruction[T]]
+    extends SimpleConditionalBranchInstruction[T]
+    with IFACMPInstructionLike {
+
+    final override def asIFACMPInstruction: this.type = this
+
+}
 
 object IFACMPInstruction {
 
-    def unapply(i: IFACMPInstruction): Some[(RelationalOperator, Int)] = {
+    def unapply(i: IFACMPInstruction[_]): Some[(RelationalOperator, Int)] = {
         Some((i.condition, i.branchoffset))
     }
 

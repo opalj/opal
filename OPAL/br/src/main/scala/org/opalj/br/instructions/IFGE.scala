@@ -47,7 +47,14 @@ trait IFGELike extends IF0InstructionLike {
 
 }
 
-case class IFGE(branchoffset: Int) extends IF0Instruction with IFGELike
+case class IFGE(branchoffset: Int) extends IF0Instruction[IFGE] with IFGELike {
+
+    def copy(branchoffset: Int): IFGE = new IFGE(branchoffset)
+
+    def negate(newBranchoffset: Int = branchoffset): IFLT = {
+        IFLT(newBranchoffset)
+    }
+}
 
 /**
  * Defines constants and factory methods.

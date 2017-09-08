@@ -1183,7 +1183,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     noConstraint:  SingleValueConstraint
                 ): Unit = {
 
-                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
+                    val branchInstruction = instruction.asSimpleConditionalBranchInstruction
                     val operand = operands.head
                     val rest = operands.tail
                     val nextPC = pcOfNextInstruction
@@ -1226,7 +1226,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                             // We have empirically evaluated which strategy leads to the minimal
                             // number of instruction evaluations and the following test does:
-                            if (branchTargetPC > pc) {
+                            // (The following relies on a control-flow where
+                            // if instructions related to loops "jump back"!)
+                            // This property is widely ensured by the current bytecode
+                            // optimizer.
+                            if (branchTargetPC < pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
                                     nextPC, isExceptionalControlFlow = false,
@@ -1262,7 +1266,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     noConstraint:  TwoValuesConstraint
                 ): Unit = {
 
-                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
+                    val branchInstruction = instruction.asSimpleConditionalBranchInstruction
                     val right = operands.head
                     val remainingOperands = operands.tail
                     val left = remainingOperands.head

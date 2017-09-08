@@ -28,55 +28,12 @@
  */
 package org.opalj
 package br
-package instructions
+package reader
 
 /**
- * Branch if int comparison with zero succeeds; succeeds if and only if value ≤ 0.
- *
  * @author Michael Eichberg
  */
-trait IFLELike extends IF0InstructionLike {
+trait InstructionsDeserializer extends DeferredInvokedynamicResolution {
 
-    final def opcode: Opcode = IFLE.opcode
-
-    final def mnemonic: String = "ifle"
-
-    final def operator: String = "<= 0"
-
-    final def condition: RelationalOperator = RelationalOperators.LE
-
-}
-
-case class IFLE(branchoffset: Int) extends IF0Instruction[IFLE] with IFLELike {
-
-    def copy(branchoffset: Int): IFLE = new IFLE(branchoffset)
-
-    def negate(newBranchoffset: Int = branchoffset): IFGT = {
-        IFGT(newBranchoffset)
-    }
-}
-
-/**
- * Defines constants and factory methods.
- *
- * @author Malte Limmeroth
- */
-object IFLE {
-
-    final val opcode = 158
-
-    /**
-     * Creates [[LabeledIFLE]] instructions with a `Symbol` as the branch target.
-     */
-    def apply(branchTarget: Symbol): LabeledIFLE = LabeledIFLE(branchTarget)
-
-}
-
-case class LabeledIFLE(
-        branchTarget: Symbol
-) extends LabeledSimpleConditionalBranchInstruction with IFLELike {
-
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFLE = {
-        IFLE(pcs(branchTarget) - pc)
-    }
+    def Instructions(cp: Constant_Pool, source: Array[Byte]): Instructions
 }

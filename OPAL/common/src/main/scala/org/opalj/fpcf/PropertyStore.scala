@@ -1114,9 +1114,7 @@ class PropertyStore private (
      * of the store if the property of the respective kind is requested.
      * Hence, a first request of such a property will always first return the result "None".
      *
-     * The computation is triggered by a(n in)direct call of this store's `apply` method. I.e.,
-     * the `allHaveProperty` and the `apply` method will trigger the computation if necessary.
-     * The methods
+     * The computation is triggered by a(n in)direct call of this store's `apply` method.
      *
      * This store ensures that the property computation function `pc` is never invoked more
      * than once for the same element at the same time. If `pc` is invoked again for a specific
@@ -1192,25 +1190,30 @@ class PropertyStore private (
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
 
+    /**
+     * Schedules the execution of the given PropertyComputation function for the given entity.
+     * This is of particular interest to start an incremental computation
+     * (cf. [[IncrementalResult]]) which, e.g., processes the class hierachy in a top-down manner.
+     */
     def scheduleSinglePropertyComputation[E <: Entity](e: E)(pc: SomePropertyComputation): Unit = {
         if (!isInterrupted()) scheduleComputation(e, pc)
     }
 
     /**
-     * Awaits the completion of the computation of all
-     * properties of all previously registered property computation functions. I.e.,
-     * if a second thread is used to register [[PropertyComputation]] functions then
-     * no guarantees are given. In general it is recommended to schedule all
-     * property computation functions using one thread.
+     * Awaits the completion of all property computation functions which were previously registered.
+     * If a second thread is used to register [[PropertyComputation]] functions
+     * no guarantees are given and it is recommended to schedule all property computation functions
+     * using one thread and using that thread to call this method.
      *
      * This function is only '''guaranteed''' to wait on the completion of the computation
      * of those properties for which a property computation function was registered by
      * the calling thread.
      */
     def waitOnPropertyComputationCompletion(
-        useDefaultForIncomputableProperties: Boolean = true
+        resolveCycles:                         Boolean = true,
+        useFallbacksForIncomputableProperties: Boolean = true
     ): Unit = {
-        Tasks.waitOnCompletion(useDefaultForIncomputableProperties)
+        Tasks.waitOnCompletion(resolveCycles, useFallbacksForIncomputableProperties)
     }
 
     /**
@@ -1278,8 +1281,6 @@ class PropertyStore private (
      */
     private[this] object Tasks {
 
-        @volatile var useFallbackForIncomputableProperties: Boolean = false
-
         @volatile private[PropertyStore] var isInterrupted: Boolean = false
 
         // ALL ACCESSES TO "executed" and "scheduled" ARE SYNCHRONIZED
@@ -1305,7 +1306,6 @@ class PropertyStore private (
                 if (scheduled > 0)
                     throw new IllegalStateException("computations are still running");
 
-                useFallbackForIncomputableProperties = false
                 executed = 0
                 cleanUpRequired = false
             }
@@ -1399,41 +1399,9 @@ class PropertyStore private (
                             val message = s"all $executed scheduled tasks have finished"
                             logDebug("analysis progress", message)
                         }
-                        try {
-                            if (!isInterrupted) {
-                                if (debug) {
-                                    val message = "handling unsatisfied dependencies"
-                                    logDebug("analysis progress", message)
-                                }
-                                // Let's check if we have some potentially refineable
-                                // intermediate results.
-                                handleUnsatisfiedDependencies()
-                            }
-                        } catch {
-                            case t: Throwable ⇒
-                                val isValid =
-                                    try {
-                                        validate(None)
-                                    } catch {
-                                        case ae: AssertionError ⇒
-                                            logError(
-                                                "analysis progress",
-                                                "the property store is inconsistent",
-                                                ae
-                                            )
-                                            false
-                                    }
-                                logError(
-                                    "analysis progress",
-                                    "handling unsatisfied dependencies failed "+
-                                        s"${if (isValid) "(store is valid)" else ""}; "+
-                                        "aborting analyses",
-                                    t
-                                )
-                                interrupt()
-                                notifyAll()
-                        }
-
+                        // Do not call handleUnsatisfiedDependencies in the following!
+                        // We want to give clients the full control over resolving
+                        // cycles and using default values.
                         if (scheduled == 0 /*scheduled is still === 0*/ ) {
                             if (debug) {
                                 def registeredObservers: Int = {
@@ -1470,7 +1438,10 @@ class PropertyStore private (
         //     property that was not computed (final lack of knowledge) and for
         //     which no computation exits.
         //Locks: handleResult: Store (access), Entity and scheduleContinuation: Tasks
-        private[this] def handleUnsatisfiedDependencies(): Unit = {
+        private[this] def handleUnsatisfiedDependencies(
+            resolveCycles:                         Boolean,
+            useFallbacksForIncomputableProperties: Boolean
+        ): Unit = {
             val observers = store.observers
 
             val directlyIncomputableEPKs = HSet.empty[SomeEPK]
@@ -1552,39 +1523,41 @@ class PropertyStore private (
                 )
                 observers.view.map(_._1)
             }
-            val cSCCs: List[Iterable[SomeEPK]] =
-                closedSCCs(cyclicComputableEPKCandidates, epkSuccessors)
-            if (debug && cSCCs.nonEmpty) logDebug(
-                "analysis progress",
-                cSCCs.
-                    map(_.mkString("", " → ", " ↺")).
-                    mkString("found the following cyclic computations:\n\t", "\n\t", "\n")
-            )
-            for (cSCC ← cSCCs) {
-                val results = PropertyKey.resolveCycle(store, cSCC)
-                if (results.nonEmpty) {
-                    if (debug) {
-                        val cycle = cSCC.mkString("", " → ", " ↺")
-                        logInfo("analysis progress", s"resolving the cycle $cycle resulted in $results")
+            if (resolveCycles) {
+                val cSCCs: List[Iterable[SomeEPK]] =
+                    closedSCCs(cyclicComputableEPKCandidates, epkSuccessors)
+                if (debug && cSCCs.nonEmpty) logDebug(
+                    "analysis progress",
+                    cSCCs.
+                        map(_.mkString("", " → ", " ↺")).
+                        mkString("found the following cyclic computations:\n\t", "\n\t", "\n")
+                )
+                for (cSCC ← cSCCs) {
+                    val results = PropertyKey.resolveCycle(store, cSCC)
+                    if (results.nonEmpty) {
+                        if (debug) {
+                            val cycle = cSCC.mkString("", " → ", " ↺")
+                            logInfo("analysis progress", s"resolving the cycle $cycle resulted in $results")
+                        }
+                        for (result ← results) {
+                            handleResult(result)
+                        }
+                    } else {
+                        // The following handles the case of a cycle where...
+                        if (debug) {
+                            val cycle = cSCC.mkString("", " → ", " ↺")
+                            val infoMessage = s"resolution of $cycle produced no results; removing observers"
+                            logInfo("analysis progress", infoMessage)
+                        }
+                        for (epk ← cSCC) { clearAllDependeeObservers(epk) }
                     }
-                    for (result ← results) {
-                        handleResult(result)
-                    }
-                } else {
-                    // The following handles the case of a cycle where...
-                    if (debug) {
-                        val cycle = cSCC.mkString("", " → ", " ↺")
-                        val infoMessage = s"resolution of $cycle produced no results; removing observers"
-                        logInfo("analysis progress", infoMessage)
-                    }
-                    for (epk ← cSCC) { clearAllDependeeObservers(epk) }
                 }
             }
 
             // Let's get the set of observers that will never be notified, because
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
-            if (directlyIncomputableEPKs.nonEmpty && useFallbackForIncomputableProperties) {
+            if (directlyIncomputableEPKs.nonEmpty && useFallbacksForIncomputableProperties) {
 
                 for (EPK(e, pk) ← directlyIncomputableEPKs) {
                     /*internal*/ /* assert(
@@ -1619,13 +1592,18 @@ class PropertyStore private (
         }
 
         // Locks: Tasks
-        def waitOnCompletion(useFallbackForIncomputableProperties: Boolean): Unit = this.synchronized {
-            this.useFallbackForIncomputableProperties = useFallbackForIncomputableProperties
+        def waitOnCompletion(
+            resolveCycles:                        Boolean,
+            useFallbackForIncomputableProperties: Boolean
+        ): Unit = this.synchronized {
             doWaitOnCompletion()
             // If all computations were finished already `scheduled` would have been "0" already
             // and no fallback computations would have been triggered
-            if (useFallbackForIncomputableProperties) {
-                handleUnsatisfiedDependencies()
+            if (useFallbackForIncomputableProperties || resolveCycles) {
+                handleUnsatisfiedDependencies(
+                    resolveCycles,
+                    useFallbackForIncomputableProperties
+                )
                 doWaitOnCompletion()
             }
         }

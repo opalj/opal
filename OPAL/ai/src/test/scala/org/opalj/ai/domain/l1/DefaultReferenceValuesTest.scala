@@ -391,13 +391,13 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                     MultipleReferenceValues(
                         UIDSet[DomainSingleOriginReferenceValue](v0, v1, v2),
                         Yes, true, UIDSet.empty,
-                        nextT()
+                        nextRefId()
                     )
                 val mv2 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         No, false, UIDSet(ObjectType.Object),
-                        nextT()
+                        nextRefId()
                     )
 
                 val joinResult = mv1.join(-1, mv2)
@@ -436,7 +436,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
-                        isNull = Yes, true, UIDSet.empty, t = 3
+                        isNull = Yes, true, UIDSet.empty, refId = 3
                     )
 
                 val mv_expected =
@@ -540,15 +540,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
             it("should handle a join of a refined ObjectValue with a MultipleReferenceValue that references the unrefined ObjectValue") {
 
                 val SecurityException = ObjectType("java/lang/SecurityException")
-                val v0 = ObjectValue(111, No, false, SecurityException, t = 106)
-                val v1 = ObjectValue(111, No, false, ObjectType.Exception, t = 103)
-                val v2 = ObjectValue(555, Unknown, false, ObjectType.Throwable, t = 107)
+                val v0 = ObjectValue(111, No, false, SecurityException, refId = 106)
+                val v1 = ObjectValue(111, No, false, ObjectType.Exception, refId = 103)
+                val v2 = ObjectValue(555, Unknown, false, ObjectType.Throwable, refId = 107)
 
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         No, true, UIDSet(SecurityException),
-                        t = 3
+                        refId = 3
                     )
 
                 val mv_expected =
@@ -570,15 +570,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
             it("should handle a join of an ObjectValue with a MultipleReferenceValue that references the refined ObjectValue") {
 
-                val v0 = ObjectValue(111, Unknown, false, ObjectType.Object, t = 103)
-                val v1 = ObjectValue(111, No, false, ObjectType.Object, t = 103)
-                val v2 = ObjectValue(555, No, true, ObjectType.Object, t = 107)
+                val v0 = ObjectValue(111, Unknown, false, ObjectType.Object, refId = 103)
+                val v1 = ObjectValue(111, No, false, ObjectType.Object, refId = 103)
+                val v2 = ObjectValue(555, No, true, ObjectType.Object, refId = 107)
 
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
                         No, true, UIDSet(ObjectType.Object),
-                        t = 3
+                        refId = 3
                     )
 
                 val mv_expected =

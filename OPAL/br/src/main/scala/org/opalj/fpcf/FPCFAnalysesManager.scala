@@ -68,10 +68,12 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         waitOnCompletion: Boolean                         = true
     ): Unit = {
         analyses.foreach { run(_, false) }
-        if (waitOnCompletion)
+        if (waitOnCompletion) {
             propertyStore.waitOnPropertyComputationCompletion(
-                useDefaultForIncomputableProperties = true
+                resolveCycles = true,
+                useFallbacksForIncomputableProperties = true
             )
+        }
     }
 
     def run(
@@ -89,7 +91,8 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
             analysisRunner.start(project, propertyStore)
             if (waitOnCompletion) {
                 propertyStore.waitOnPropertyComputationCompletion(
-                    useDefaultForIncomputableProperties = true
+                    resolveCycles = true,
+                    useFallbacksForIncomputableProperties = true
                 )
             }
         } else {

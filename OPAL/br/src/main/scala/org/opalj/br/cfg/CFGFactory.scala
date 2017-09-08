@@ -37,7 +37,6 @@ import scala.collection.immutable.HashMap
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.UnconditionalBranchInstruction
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.instructions.TABLESWITCH
 import org.opalj.br.instructions.LOOKUPSWITCH
@@ -317,7 +316,7 @@ object CFGFactory {
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 ⇒
-                    val IF = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
+                    val IF = instruction.asSimpleConditionalBranchInstruction
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     // jump

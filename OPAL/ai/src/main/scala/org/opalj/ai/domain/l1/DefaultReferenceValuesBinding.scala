@@ -78,13 +78,13 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: ObjectType,
-        t:                 Timestamp
+        refId:             RefId
     ): SObjectValue = {
         new SObjectValue(
             origin,
             isNull,
             isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
-            theUpperTypeBound, t
+            theUpperTypeBound, refId
         )
     }
 
@@ -92,12 +92,12 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         origin:         ValueOrigin,
         isNull:         Answer,
         upperTypeBound: UIDSet[ObjectType],
-        t:              Timestamp
+        refId:          RefId
     ): DomainObjectValue = {
         if (upperTypeBound.isSingletonSet) {
-            ObjectValue(origin, isNull, false, upperTypeBound.head, t)
+            ObjectValue(origin, isNull, false, upperTypeBound.head, refId)
         } else
-            new MObjectValue(origin, isNull, upperTypeBound, t)
+            new MObjectValue(origin, isNull, upperTypeBound, refId)
     }
 
     override protected[domain] def ArrayValue(
@@ -105,7 +105,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: ArrayType,
-        t:                 Timestamp
+        t:                 RefId
     ): DomainArrayValue = {
         new ArrayValue(
             origin,
@@ -127,8 +127,8 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: UIDSet[_ <: ReferenceType],
-        t:                 Timestamp
+        refId:             RefId
     ): DomainMultipleReferenceValues = {
-        new MultipleReferenceValues(values, isNull, isPrecise, theUpperTypeBound, t)
+        new MultipleReferenceValues(values, isNull, isPrecise, theUpperTypeBound, refId)
     }
 }
