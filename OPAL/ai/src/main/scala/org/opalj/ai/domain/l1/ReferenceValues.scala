@@ -128,7 +128,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     /**
      * Extractor for reference ids.
      */
-    object RefId { def unapply(value: ReferenceValue): Some[RefId] = Some(value.refId)  }
+    object RefId { def unapply(value: ReferenceValue): Some[RefId] = Some(value.refId) }
 
     /**
      * Creates an update object that characterizes a reference id update.
@@ -370,7 +370,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         /* TODO XXXX FIXME Implement! */
-        def abstractOverMutableState() : AReferenceValue  = ???
+        def abstractOverMutableState(): AReferenceValue = ???
     }
 
     /**
