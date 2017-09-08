@@ -128,9 +128,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     /**
      * Extractor for reference ids.
      */
-    object RefId {
-        def unapply(value: ReferenceValue): Some[RefId] = Some(value.refId)
-    }
+    object RefId { def unapply(value: ReferenceValue): Some[RefId] = Some(value.refId)  }
 
     /**
      * Creates an update object that characterizes a reference id update.
@@ -186,9 +184,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     protected def isNull(values: Iterable[AReferenceValue]): Answer = {
         val vIt = values.iterator
         var isNull: Answer = vIt.next().isNull
-        while (isNull.isYesOrNo && vIt.hasNext) {
-            isNull = isNull join vIt.next().isNull
-        }
+        while (isNull.isYesOrNo && vIt.hasNext) { isNull = isNull join vIt.next().isNull }
         isNull
     }
 
@@ -372,6 +368,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             refinements.put(oldValue, newValue)
             doPropagateRefinement(refinements, operands, locals)
         }
+
+        /* TODO XXXX FIXME Implement! */
+        def abstractOverMutableState() : AReferenceValue  = ???
     }
 
     /**
