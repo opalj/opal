@@ -44,9 +44,10 @@ public class Test {
     public static Object multipleEscapes(ClassWithFields param) {
         ClassWithFields.global = new @Escapes(ViaStaticField) Object();
         if (param == null) {
-            throw new @Escapes(ViaReturn) RuntimeException();
+            throw new @Escapes(ViaReturn) @Escapes(value = MaybeNo, algorithms = {
+                    "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" }) RuntimeException();
         }
-        param.f = new @Escapes(ViaParameter) Object();
+        param.f = new @Escapes(ViaParameter) @Escapes(value = MaybeMethod, algorithms = "SimpleEscapeAnalysis") Object();
         Object local = new @Escapes(No) Object();
         Object noLocal = new @Escapes(ViaStaticField) @Escapes(value = MaybeArg, algorithms = "SimpleEscapeAnalysis") Object();
         if (local != null) {
@@ -59,7 +60,45 @@ public class Test {
         ClassWithFields.global = new @Escapes(ViaStaticField) Object();
     }
 
-    public static void instanceFieldEscape(ClassWithFields param) {
+    public static void parameterFieldGlobalEscape(ClassWithFields param) {
+        param.f = new @Escapes(ViaHeapObject) @Escapes(value = MaybeMethod, algorithms = "SimpleEscapeAnalysis") Object();
+        ClassWithFields.global = param;
+    }
+
+    public static void instanceFieldLoop() {
+        ClassWithFields x = new @Escapes(ViaStaticField) ClassWithFields();
+        x.g = x;
+        while (true) {
+            if (System.currentTimeMillis() == 12345678)
+                break;
+            x = x.g;
+        }
+        ClassWithFields.global = x;
+    }
+
+    public static void instanceFieldLoop2() {
+        ClassWithFields x = new @Escapes(No) ClassWithFields();
+        ClassWithFields y = x;
+        while (true) {
+            if (System.currentTimeMillis() == 123456789)
+                break;
+            y.g = new @Escapes(ViaStaticField) ClassWithFields();
+            y = y.g;
+        }
+        ClassWithFields.global = x.g;
+    }
+
+    public static void instanceFieldFlowNoEscape() {
+        ClassWithFields x = new @Escapes(Arg) ClassWithFields();
+        formalParamNoEscape(x);
+        x.f = new @Escapes(No) Object();
+    }
+
+    public static void instanceFieldAlias() {
+        ClassWithFields x = new @Escapes(No) ClassWithFields();
+        ClassWithFields y = x;
+        y.f = new @Escapes(ViaStaticField) Object();
+        ClassWithFields.global = x.f;
     }
 
     public static void instanceFieldNoEscape() {
@@ -69,11 +108,11 @@ public class Test {
 
     public static void arrayEscape(Object[] param) {
         if (param.length > 0)
-            param[0] = new @Escapes(ViaParameter) Object();
+            param[0] = new @Escapes(ViaParameter) @Escapes(value = MaybeMethod, algorithms = "SimpleEscapeAnalysis") Object();
     }
 
     public static void parameterEscape(ClassWithFields param) {
-        param.f = new @Escapes(ViaParameter) Object();
+        param.f = new @Escapes(ViaParameter) @Escapes(value = MaybeMethod, algorithms = "SimpleEscapeAnalysis") Object();
     }
 
     public static void exceptionEscape() {
