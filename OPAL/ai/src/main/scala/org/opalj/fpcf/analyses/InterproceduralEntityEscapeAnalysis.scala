@@ -214,13 +214,13 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
 }
 
 class InterproceduralEntityEscapeAnalysis(
-    val e:             Entity,
-    val defSite:       ValueOrigin,
-    val uses:          IntArraySet,
-    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val params:        Parameters[TACMethodParameter],
-    val m:             Method,
-    val propertyStore: PropertyStore,
-    val project:       SomeProject
+        val e:             Entity,
+        val defSite:       ValueOrigin,
+        val uses:          IntArraySet,
+        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val params:        Parameters[TACMethodParameter],
+        val m:             Method,
+        val propertyStore: PropertyStore,
+        val project:       SomeProject
 ) extends InterproceduralEntityEscapeAnalysis1 with FieldSensitiveEntityEscapeAnalysis
 
