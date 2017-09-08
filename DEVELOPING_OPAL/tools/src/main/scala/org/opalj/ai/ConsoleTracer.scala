@@ -87,7 +87,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                     val values = rv.allValues
                     val t =
                         if (rv.isInstanceOf[domain.l1.ReferenceValues#ReferenceValue])
-                            s";t=${rv.asInstanceOf[domain.l1.ReferenceValues#ReferenceValue].t}"
+                            s";refId=${rv.asInstanceOf[domain.l1.ReferenceValues#ReferenceValue].refId}"
                         else
                             ""
                     values.map(toStringWithOID(_)).mkString("OneOf["+values.size+"](", ",", ")") +
