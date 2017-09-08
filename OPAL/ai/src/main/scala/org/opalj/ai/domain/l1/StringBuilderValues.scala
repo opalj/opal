@@ -72,8 +72,8 @@ trait StringBuilderValues extends StringValues {
             origin:          ValueOrigin,
             val builderType: ObjectType /*either StringBuilder oder StringBuffer*/ ,
             val builder:     JStringBuilder,
-            t:               Timestamp
-    ) extends SObjectValue(origin, No, true, builderType, t) {
+            refId:           RefId
+    ) extends SObjectValue(origin, No, true, builderType, refId) {
         this: DomainStringValue ⇒
 
         assert(builder != null)
@@ -86,7 +86,7 @@ trait StringBuilderValues extends StringValues {
 
             other match {
                 case that: StringBuilderValue ⇒
-                    if (this.builder == that.builder && this.t == that.t) {
+                    if (this.builder == that.builder && this.refId == that.refId) {
                         NoUpdate
                     } else {
                         // we have to drop the concrete information...
@@ -146,7 +146,7 @@ trait StringBuilderValues extends StringValues {
         override def hashCode: Int = super.hashCode * 71 + value.hashCode()
 
         override def toString(): String = {
-            s"""${this.builderType.toJava}(origin=$origin;builder="$builder";t=$t)"""
+            s"""${this.builderType.toJava}(origin=$origin;builder="$builder";refId=$refId)"""
         }
 
     }
