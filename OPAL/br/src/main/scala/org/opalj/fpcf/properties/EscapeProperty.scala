@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import scala.annotation.switch
+
 sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = EscapeProperty
@@ -145,6 +147,11 @@ sealed abstract class EscapeProperty(
     }
 
     /**
+     * TODO
+     */
+    def propertyValueID: Int
+
+    /**
      * Tests if this property describes equal or less restricted escapes than the given property.
      * E.g., returns `true` if this property identifies values which [[GlobalEscape]] and the given
      * property (`that`) refers to values that [[NoEscape]].
@@ -162,6 +169,10 @@ sealed abstract class EscapeProperty(
      * @see [[EscapeProperty.lessOrEqualRestrictive]]
      */
     def meet(that: EscapeProperty): EscapeProperty
+
+    def isBottom: Boolean
+
+    def isTop: Boolean
 
 }
 
@@ -193,11 +204,20 @@ case object NoEscape extends EscapeProperty(3) {
 
     final val isRefineable = false
 
+    final val PID = 0
+
+    override def propertyValueID: PropertyKeyID = PID
+
     override def propertyName: String = "No"
 
     override def meet(that: EscapeProperty): EscapeProperty = that
 
-    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean = if (this eq that) true else false
+    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        this.propertyValueID == that.propertyValueID
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = true
 }
 
 /**
@@ -229,19 +249,29 @@ case object NoEscape extends EscapeProperty(3) {
 case object ArgEscape extends EscapeProperty(2) {
     final val isRefineable = false
 
+    final val PID = 1
+
+    override def propertyValueID: PropertyKeyID = PID
+
     override def propertyName: String = "Arg"
 
-    override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case NoEscape      ⇒ this
-        case MaybeNoEscape ⇒ MaybeArgEscape
-        case _             ⇒ that
-    }
+    override def meet(that: EscapeProperty): EscapeProperty =
+        (that.propertyValueID: @switch) match {
+            case NoEscape.PID      ⇒ ArgEscape
+            case MaybeNoEscape.PID ⇒ MaybeArgEscape
+            case _                 ⇒ that
+        }
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
-        case NoEscape  ⇒ true
-        case ArgEscape ⇒ true
-        case _         ⇒ false
-    }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        (that.propertyValueID: @switch) match {
+            case NoEscape.PID  ⇒ true
+            case ArgEscape.PID ⇒ true
+            case _             ⇒ false
+        }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -256,20 +286,25 @@ case object ArgEscape extends EscapeProperty(2) {
 sealed abstract class MethodEscape extends EscapeProperty(1) {
     final val isRefineable = false
 
-    override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case NoEscape       ⇒ this
-        case ArgEscape      ⇒ this
-        case MaybeNoEscape  ⇒ MaybeMethodEscape
-        case MaybeArgEscape ⇒ MaybeMethodEscape
-        case _              ⇒ that
-    }
+    override def meet(that: EscapeProperty): EscapeProperty =
+        (that.propertyValueID: @switch) match {
+            case NoEscape.PID | ArgEscape.PID           ⇒ this
+            case MaybeNoEscape.PID | MaybeArgEscape.PID ⇒ MaybeMethodEscape
+            case _                                      ⇒ that
+        }
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
-        case NoEscape        ⇒ true
-        case ArgEscape       ⇒ true
-        case _: MethodEscape ⇒ true
-        case _               ⇒ false
-    }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        (that.propertyValueID: @switch) match {
+            case NoEscape.PID | ArgEscape.PID           ⇒ true
+            case MethodEscapeViaReturn.PID              ⇒ true
+            case MethodEscapeViaReturnAssignment.PID    ⇒ true
+            case MethodEscapeViaParameterAssignment.PID ⇒ true
+            case _                                      ⇒ false
+        }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -297,6 +332,8 @@ sealed abstract class MethodEscape extends EscapeProperty(1) {
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
 case object MethodEscapeViaReturn extends MethodEscape {
+    final val PID = 2
+    override def propertyValueID: PropertyKeyID = PID
     override def propertyName: String = "ViaReturn"
 }
 
@@ -324,6 +361,8 @@ case object MethodEscapeViaReturn extends MethodEscape {
  */
 case object MethodEscapeViaParameterAssignment extends MethodEscape {
     override def propertyName: String = "ViaParameter"
+    final val PID = 3
+    override def propertyValueID: PropertyKeyID = PID
 }
 
 /**
@@ -352,6 +391,8 @@ case object MethodEscapeViaParameterAssignment extends MethodEscape {
  * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
 case object MethodEscapeViaReturnAssignment extends MethodEscape {
+    final val PID = 4
+    override def propertyValueID: PropertyKeyID = PID
     override def propertyName: String = "ViaReturnAssignment"
 }
 
@@ -361,23 +402,35 @@ case object MethodEscapeViaReturnAssignment extends MethodEscape {
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
  */
-case object MaybeNoEscape extends EscapeProperty(3) { // TODO shouldn't "level" be "0" ... a refinement to MaybeArgEscape should be possible... right?
+case object MaybeNoEscape extends EscapeProperty(3) {
+    // TODO shouldn't "level" be "0" ... a refinement to MaybeArgEscape should be possible... right?
     final val isRefineable = true
+
+    final val PID = 5
+
+    override def propertyValueID: PropertyKeyID = PID
 
     override def propertyName: String = "MaybeNo"
 
-    override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case NoEscape        ⇒ this
-        case ArgEscape       ⇒ MaybeArgEscape
-        case _: MethodEscape ⇒ MaybeMethodEscape
-        case _               ⇒ that
-    }
+    override def meet(that: EscapeProperty): EscapeProperty =
+        (that.propertyValueID: @switch) match {
+            case NoEscape.PID                           ⇒ MaybeNoEscape
+            case ArgEscape.PID                          ⇒ MaybeArgEscape
+            case MethodEscapeViaReturn.PID              ⇒ MaybeMethodEscape
+            case MethodEscapeViaReturnAssignment.PID    ⇒ MaybeMethodEscape
+            case MethodEscapeViaParameterAssignment.PID ⇒ MaybeMethodEscape
+            case _                                      ⇒ that
+        }
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
-        case NoEscape      ⇒ true
-        case MaybeNoEscape ⇒ true
-        case _             ⇒ false
-    }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        (that.propertyValueID: @switch) match {
+            case NoEscape.PID | MaybeNoEscape.PID ⇒ true
+            case _                                ⇒ false
+        }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -391,23 +444,30 @@ case object MaybeArgEscape extends EscapeProperty(2) {
 
     final val isRefineable = true
 
+    final val PID = 6
+
+    override def propertyValueID: PropertyKeyID = PID
+
     override def propertyName: String = "MaybeArg"
 
-    override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case NoEscape        ⇒ this
-        case ArgEscape       ⇒ this
-        case MaybeNoEscape   ⇒ this
-        case _: MethodEscape ⇒ MaybeMethodEscape
-        case _               ⇒ that
-    }
+    override def meet(that: EscapeProperty): EscapeProperty =
+        (that.propertyValueID: @switch) match {
+            case NoEscape.PID | ArgEscape.PID | MaybeNoEscape.PID ⇒ MaybeArgEscape
+            case MethodEscapeViaReturn.PID                        ⇒ MaybeMethodEscape
+            case MethodEscapeViaReturnAssignment.PID              ⇒ MaybeMethodEscape
+            case MethodEscapeViaParameterAssignment.PID           ⇒ MaybeMethodEscape
+            case _                                                ⇒ that
+        }
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
-        case NoEscape       ⇒ true
-        case ArgEscape      ⇒ true
-        case MaybeNoEscape  ⇒ true
-        case MaybeArgEscape ⇒ true
-        case _              ⇒ false
-    }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        (that.propertyValueID: @switch) match {
+            case NoEscape.PID | ArgEscape.PID | MaybeNoEscape.PID | MaybeArgEscape.PID ⇒ true
+            case _ ⇒ false
+        }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -422,17 +482,29 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
 
     final val isRefineable = true
 
+    final val PID = 7
+
+    override def propertyValueID: PropertyKeyID = PID
+
     override def propertyName: String = "MaybeMethod"
 
-    override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case _: GlobalEscape ⇒ that
-        case _               ⇒ this
-    }
+    override def meet(that: EscapeProperty): EscapeProperty =
+        (that.propertyValueID: @switch) match {
+            case GlobalEscapeViaStaticFieldAssignment.PID ⇒ that
+            case GlobalEscapeViaHeapObjectAssignment.PID  ⇒ that
+            case _                                        ⇒ this
+        }
 
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
-        case _: GlobalEscape ⇒ false
-        case _               ⇒ true
-    }
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        (that.propertyValueID: @switch) match {
+            case GlobalEscapeViaStaticFieldAssignment.PID ⇒ false
+            case GlobalEscapeViaHeapObjectAssignment.PID  ⇒ false
+            case _                                        ⇒ true
+        }
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
 }
 
 /**
@@ -474,6 +546,8 @@ sealed abstract class GlobalEscape extends EscapeProperty(0) {
     final val isRefineable = false
     override def meet(that: EscapeProperty): EscapeProperty = this
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
+    override def isBottom: Boolean = true
+    override def isTop: Boolean = false
 }
 
 /**
@@ -497,6 +571,8 @@ sealed abstract class GlobalEscape extends EscapeProperty(0) {
  * @author Florian Kuebler
  */
 case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape {
+    final val PID = 8
+    override def propertyValueID: PropertyKeyID = PID
     override def propertyName: String = "ViaStaticField"
 }
 
@@ -523,5 +599,7 @@ case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape {
  * @author Florian Kuebler
  */
 case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape {
+    final val PID = 9
+    override def propertyValueID: PropertyKeyID = PID
     override def propertyName: String = "ViaHeapObject"
 }

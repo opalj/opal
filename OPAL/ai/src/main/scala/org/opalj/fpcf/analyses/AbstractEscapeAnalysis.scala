@@ -26,25 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package escape;
+package org.opalj
+package fpcf
+package analyses
 
-/**
- * @author Florian Kuebler
- */
-public class ClassWithFields {
-    public static Object global;
-    public Object f;
-    public ClassWithFields g;
+import org.opalj.ai.Domain
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.Method
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.tac.DUVar
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.Parameters
+import org.opalj.tac.Stmt
 
-    public ClassWithFields() {
+abstract class AbstractEscapeAnalysis extends FPCFAnalysis {
+    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+
+    def entityEscapeAnalysis(
+        e:       Entity,
+        defSite: ValueOrigin,
+        uses:    IntArraySet,
+        code:    Array[Stmt[V]],
+        params:  Parameters[TACMethodParameter],
+        m:       Method
+    ): AbstractEntityEscapeAnalysis
+
+    def doDetermineEscape(
+        e:       Entity,
+        defSite: ValueOrigin,
+        uses:    IntArraySet,
+        code:    Array[Stmt[V]],
+        params:  Parameters[TACMethodParameter],
+        m:       Method
+    ): PropertyComputationResult = {
+        entityEscapeAnalysis(e, defSite, uses, code, params, m).doDetermineEscape()
     }
 
-    public ClassWithFields(Object param) {
-        this.f = param;
-    }
-
-    public ClassWithFields(int i) {
-        global = this;
-        System.out.println(i);
-    }
+    def determineEscape(e: Entity): PropertyComputationResult
 }
