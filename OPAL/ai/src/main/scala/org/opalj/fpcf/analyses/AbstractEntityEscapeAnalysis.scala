@@ -90,7 +90,7 @@ trait AbstractEntityEscapeAnalysis {
         if (dependees.isEmpty || leastRestrictiveProperty.isBottom)
             return Result(e, leastRestrictiveProperty)
 
-        IntermediateResult(e, MaybeNoEscape, dependees, c)
+        IntermediateResult(e, MaybeNoEscape meet leastRestrictiveProperty, dependees, c)
     }
 
     /**
@@ -159,62 +159,62 @@ trait AbstractEntityEscapeAnalysis {
      * other from dependees. If this entity does not depend on any more results it has
      * associated property of leastRestrictiveProperty, otherwise build a continuation.
      */
-    def meetAndFilter(other: Entity, p: EscapeProperty): PropertyComputationResult = {
+    def removeFromDependeesAndComputeResult(other: Entity, p: EscapeProperty): PropertyComputationResult = {
         calcLeastRestrictive(p)
         dependees = dependees filter (_.e ne other)
-        if (dependees.isEmpty)
+        if (dependees.isEmpty || leastRestrictiveProperty.isBottom)
             Result(e, leastRestrictiveProperty)
         else
-            IntermediateResult(e, MaybeNoEscape, dependees, c)
+            IntermediateResult(e, MaybeNoEscape meet leastRestrictiveProperty, dependees, c)
     }
 
     def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = other match {
 
         // this entity is written into a field of the other entity
         case ObjectAllocationSite(_, _) | ArrayAllocationSite(_, _) ⇒ p match {
-            case MethodEscapeViaReturn                  ⇒ meetAndFilter(other, MethodEscapeViaReturnAssignment)
-            case state: EscapeProperty if state.isFinal ⇒ meetAndFilter(other, state)
+            case MethodEscapeViaReturn                  ⇒ removeFromDependeesAndComputeResult(other, MethodEscapeViaReturnAssignment)
+            case state: EscapeProperty if state.isFinal ⇒ removeFromDependeesAndComputeResult(other, state)
             case state: EscapeProperty ⇒ u match {
                 case IntermediateUpdate ⇒
                     val newEP = EP(other, state)
                     dependees = dependees.filter(_.e ne other) + newEP
                     IntermediateResult(e, state meet leastRestrictiveProperty, dependees, c)
-                case _ ⇒ meetAndFilter(other, state)
+                case _ ⇒ removeFromDependeesAndComputeResult(other, state)
             }
         }
         // this local of constructor constructor
         case FormalParameter(method, -1) if method.name == "<init>" ⇒ p match {
             case state: GlobalEscape ⇒ Result(e, state)
-            case NoEscape            ⇒ meetAndFilter(other, NoEscape)
-            case ArgEscape           ⇒ meetAndFilter(other, ArgEscape)
-            case _: MethodEscape     ⇒ meetAndFilter(other, NoEscape)
+            case NoEscape            ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
+            case ArgEscape           ⇒ removeFromDependeesAndComputeResult(other, ArgEscape)
+            case _: MethodEscape     ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
             case MaybeNoEscape | MaybeArgEscape ⇒
                 u match {
                     case IntermediateUpdate ⇒
                         val newEP = EP(other, MaybeNoEscape)
                         dependees = dependees.filter(_.e ne other) + newEP
                         IntermediateResult(e, p.asInstanceOf[EscapeProperty] meet leastRestrictiveProperty, dependees, c)
-                    case _ ⇒ meetAndFilter(other, p.asInstanceOf[EscapeProperty])
+                    case _ ⇒ removeFromDependeesAndComputeResult(other, p.asInstanceOf[EscapeProperty])
                 }
             case MaybeMethodEscape ⇒ u match {
                 case IntermediateUpdate ⇒
                     val newEP = EP(other, MaybeMethodEscape)
                     dependees = dependees.filter(_.e ne other) + newEP
                     IntermediateResult(e, MaybeNoEscape meet leastRestrictiveProperty, dependees, c)
-                case _ ⇒ meetAndFilter(other, MaybeNoEscape)
+                case _ ⇒ removeFromDependeesAndComputeResult(other, MaybeNoEscape)
             }
         }
 
         // this entity is passed as parameter (or this local) to a method
         case FormalParameter(_, _) ⇒ p match {
             case state: GlobalEscape  ⇒ Result(e, state)
-            case NoEscape | ArgEscape ⇒ meetAndFilter(other, ArgEscape)
+            case NoEscape | ArgEscape ⇒ removeFromDependeesAndComputeResult(other, ArgEscape)
             case MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape ⇒ u match {
                 case IntermediateUpdate ⇒
                     val newEP = EP(other, p.asInstanceOf[EscapeProperty])
                     dependees = dependees.filter(_.e ne other) + newEP
                     IntermediateResult(e, MaybeArgEscape meet leastRestrictiveProperty, dependees, c)
-                case _ ⇒ meetAndFilter(other, MaybeArgEscape)
+                case _ ⇒ removeFromDependeesAndComputeResult(other, MaybeArgEscape)
             }
         }
 
