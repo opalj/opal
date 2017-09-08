@@ -94,6 +94,7 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/ def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -104,6 +105,7 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/ def invokestatic(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands

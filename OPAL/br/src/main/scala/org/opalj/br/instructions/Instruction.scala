@@ -73,6 +73,30 @@ trait Instruction extends InstructionLike {
      */
     def similar(other: Instruction): Boolean = this == other
 
+    // ---------------------------------------------------------------------------------------------
+    //
+    // TYPE TEST AND TYPE CAST RELATED INSTRUCTIONS
+    //
+    // ---------------------------------------------------------------------------------------------
+
+    def isGotoInstruction: Boolean = false
+
+    def asGotoInstruction: GotoInstruction = throw new ClassCastException();
+
+    def asSimpleConditionalBranchInstruction: SimpleConditionalBranchInstruction[_] = {
+        throw new ClassCastException();
+    }
+    def asIFICMPInstruction: IFICMPInstruction[_] = throw new ClassCastException();
+    def asIF0Instruction: IF0Instruction[_] = throw new ClassCastException();
+    def asIFACMPInstruction: IFACMPInstruction[_] = throw new ClassCastException();
+    def asIFXNullInstruction: IFXNullInstruction[_] = throw new ClassCastException();
+
+    def asCompoundConditionalBranchInstruction: CompoundConditionalBranchInstruction = {
+        throw new ClassCastException();
+    }
+
+    def asTABLESWITCH: TABLESWITCH = throw new ClassCastException();
+    def asLOOKUPSWITCH: LOOKUPSWITCH = throw new ClassCastException();
 }
 
 /**

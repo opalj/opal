@@ -71,9 +71,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
         val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (rewrite) {
-            info("project configuration", "Java 8 invokedynamics are rewritten")
+            info("class file reader", "Java 8 invokedynamics are rewritten")
         } else {
-            info("project configuration", "Java 8 invokedynamics are not rewritten")
+            info("class file reader", "Java 8 invokedynamics are not rewritten")
         }
         rewrite
     }
@@ -82,9 +82,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
         val logRewrites: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logRewrites) {
-            info("project configuration", "Java 8 invokedynamic rewrites are logged")
+            info("class file reader", "Java 8 invokedynamic rewrites are logged")
         } else {
-            info("project configuration", "Java 8 invokedynamic rewrites are not logged")
+            info("class file reader", "Java 8 invokedynamic rewrites are not logged")
         }
         logRewrites
     }
@@ -93,9 +93,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
         val logUnknownInvokeDynamics: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logUnknownInvokeDynamics) {
-            info("project configuration", "unknown invokedynamics are logged")
+            info("class file reader", "unknown invokedynamics are logged")
         } else {
-            info("project configuration", "unknown invokedynamics are not logged")
+            info("class file reader", "unknown invokedynamics are not logged")
         }
         logUnknownInvokeDynamics
     }
@@ -344,19 +344,25 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
          */
         val receiverIsInterface =
             invokeTargetMethodHandle match {
+
+                case _: InvokeInterfaceMethodHandle    ⇒ true
+                case _: InvokeVirtualMethodHandle      ⇒ false
+                case _: NewInvokeSpecialMethodHandle   ⇒ false
+                case handle: InvokeSpecialMethodHandle ⇒ handle.isInterface
+
                 case handle: InvokeStaticMethodHandle ⇒
                     // The following test was added to handle a case where the Scala
                     // compiler generated invalid bytecode (the Scala compiler generated
                     // a MethodRef instead of an InterfaceMethodRef which led to the
                     // wrong kind of InvokeStaticMethodHandle).
-                    // See https://github.com/scala/bug/issues/10429 for further deatails-
+                    // See https://github.com/scala/bug/issues/10429 for further details.
                     if (invokeTargetMethodHandle.receiverType eq classFile.thisType) {
                         classFile.isInterfaceDeclaration
                     } else {
                         handle.isInterface
                     }
-                case _ ⇒
-                    classFile.isInterfaceDeclaration
+
+                case other ⇒ throw new UnknownError("unexpected handle: "+other)
             }
 
         val proxy: ClassFile = ClassFileFactory.Proxy(
@@ -480,4 +486,3 @@ object Java8LambdaExpressionsRewriting {
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
     }
 }
-

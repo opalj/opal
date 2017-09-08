@@ -42,7 +42,7 @@ import scala.xml.dtd.EntityDef
 import scala.xml.dtd.ParsedEntityDecl
 import scala.xml.dtd.NoExternalID
 import org.opalj.br.analyses.Project
-import org.opalj.bugpicker.core.analysis.AnalysisParameters
+import org.opalj.bugpicker.core.analyses.AnalysisParameters
 import org.opalj.bugpicker.ui.dialogs.AboutDialog
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.DiffView
@@ -95,7 +95,7 @@ import org.opalj.log.GlobalLogContext
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigFactory
 import org.opalj.bugpicker.ui.dialogs.AnalysisParametersDialog
-import org.opalj.bugpicker.core.analysis.AnalysisParameters
+import org.opalj.bugpicker.core.analyses.AnalysisParameters
 import com.typesafe.config.Config
 import scala.util.control.ControlThrowable
 import org.opalj.issues.Issue

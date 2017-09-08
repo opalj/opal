@@ -31,8 +31,8 @@ package br
 package instructions
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntSet
-import org.opalj.collection.immutable.IntSet1
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntArraySet1
 
 /**
  * Access jump table by index and jump.
@@ -68,6 +68,8 @@ case class TABLESWITCH(
         jumpOffsets:   IndexedSeq[Int]
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
 
+    final override def asTABLESWITCH: this.type = this
+
     def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
         var caseValues = Chain.empty[Int]
         var i = jumpOffsets.length - 1
@@ -93,7 +95,7 @@ case class TABLESWITCH(
     ): Chain[PC] = {
         val defaultTarget = currentPC + defaultOffset
         var pcs = Chain.singleton(defaultTarget)
-        var seen: IntSet = IntSet1(defaultTarget)
+        var seen: IntArraySet = IntArraySet1(defaultTarget)
         jumpOffsets foreach { offset ⇒
             val newPC = (currentPC + offset)
             if (!seen.contains(newPC)) {

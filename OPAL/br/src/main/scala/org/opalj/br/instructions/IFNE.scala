@@ -46,7 +46,14 @@ trait IFNELike extends IF0InstructionLike {
     final def condition: RelationalOperator = RelationalOperators.NE
 }
 
-case class IFNE(branchoffset: Int) extends IF0Instruction with IFNELike
+case class IFNE(branchoffset: Int) extends IF0Instruction[IFNE] with IFNELike {
+
+    def copy(branchoffset: Int): IFNE = new IFNE(branchoffset)
+
+    def negate(newBranchoffset: Int = branchoffset): IFEQ = {
+        IFEQ(newBranchoffset)
+    }
+}
 
 /**
  * Defines constants and factory methods.

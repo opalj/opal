@@ -157,8 +157,8 @@ object ToTxt {
                 val Goto(_, target) = stmt
                 s"$pc goto $target"
 
-            case JumpToSubroutine.ASTID ⇒
-                val JumpToSubroutine(_, target) = stmt
+            case JSR.ASTID ⇒
+                val JSR(_, target) = stmt
                 s"$pc jsr $target"
             case Ret.ASTID ⇒
                 val Ret(_, targets) = stmt
@@ -214,10 +214,6 @@ object ToTxt {
                 val ExprStmt(_, expr) = stmt
                 s"$pc /*expression value is ignored:*/${toTxtExpr(expr)}"
 
-            case FailingExpr.ASTID ⇒
-                val FailingExpr(_, fExpr) = stmt
-                s"$pc expression evaluation will throw exception: ${toTxtExpr(fExpr)}"
-
         }
     }
 
@@ -265,7 +261,7 @@ object ToTxt {
                 params.parameters.zipWithIndex foreach { paramWithIndex ⇒
                     val (param, index) = paramWithIndex
                     if (param ne null) {
-                        val paramTxt = indention+"   param"+index+": "+param.toString()
+                        val paramTxt = indention+"   param"+index.toHexString+": "+param.toString()
                         javaLikeCode += (param match {
                             case v: DVar[_] ⇒ v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
                             case _          ⇒ paramTxt

@@ -38,7 +38,7 @@ import org.opalj.log.OPALLogger
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
- * framework ('''fpcf''').
+ * framework ('''FPCF''').
  *
  * The registry primarily serves as a central container that can be queried
  * by subsequent tools.
@@ -79,9 +79,7 @@ object FPCFAnalysesRegistry {
             OPALLogger.error(
                 "setup",
                 s"Unknown fix-point analysis. Analysis runner could not be instantiated: $analysisFactory"
-            )(
-                    GlobalLogContext
-                )
+            )(GlobalLogContext)
         }
     }
 
@@ -104,7 +102,6 @@ object FPCFAnalysesRegistry {
     def registerFromConfig(): Unit = {
         val config = ConfigFactory.load().as[Config]("org.opalj.fpcf.registry.analyses")
         try {
-
             val entries = config.entrySet()
             val itr = entries.iterator()
             while (itr.hasNext) {

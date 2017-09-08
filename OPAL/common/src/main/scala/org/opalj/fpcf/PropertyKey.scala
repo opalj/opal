@@ -90,6 +90,9 @@ object PropertyKey {
      *              with those entities for which the property is not explicitly computed.
      * @param cycleResolutionStrategy The strategy that will be used to resolve unfinished cyclic
      *              computations. The strategy can be adapted by an analysis to its own needs.
+     *              In general, the cycle resolution strategy can query the (potential) properties
+     *              of the cycle's entities, but not the properties of other entities as this
+     *              could trigger direct/lazy computations which is not supported.
      */
     def create[P <: Property](
         name:                    String,

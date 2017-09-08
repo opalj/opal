@@ -49,44 +49,41 @@ class AnalysisAggregator[Source, AnalysisResult]
 
     protected[this] var analyzeInParallel = true
 
-    def register(analysis: Analysis[Source, AnalysisResult]): Unit = {
-        this.synchronized(analyses = analysis :: analyses)
+    def register(analysis: Analysis[Source, AnalysisResult]): Unit = this.synchronized {
+        analyses = analysis :: analyses
     }
 
-    def setAnalyzeInParallel(analyzeInParallel: Boolean): Unit = {
-        this.synchronized(this.analyzeInParallel= analyzeInParallel)
+    def setAnalyzeInParallel(analyzeInParallel: Boolean): Unit = this.synchronized {
+        this.analyzeInParallel = analyzeInParallel
     }
 
     def analyze(
         project:                Project[Source],
         parameters:             Seq[String],
         initProgressManagement: (Int) ⇒ ProgressManagement
-    ): Iterable[AnalysisResult] =
-        this.synchronized {
-            if (analyzeInParallel) {
-                {
-                    for (analysis ← analyses.par) yield {
-                        analysis.analyze(project, parameters, initProgressManagement)
-                    }
-                }.seq
-            } else {
-                for (analysis ← analyses) yield {
+    ): Iterable[AnalysisResult] = this.synchronized {
+        if (analyzeInParallel) {
+            {
+                for (analysis ← analyses.par) yield {
                     analysis.analyze(project, parameters, initProgressManagement)
                 }
+            }.seq
+        } else {
+            for (analysis ← analyses) yield {
+                analysis.analyze(project, parameters, initProgressManagement)
             }
         }
 
+    }
+
     override def title: String = "Analysis Collection"
 
-    override def copyright: String =
-        this.synchronized {
-            "Copyrights of the analyses;\n"+
-                analyses.map("\t"+_.copyright).mkString("\"")
-        }
+    override def copyright: String = this.synchronized {
+        "Copyrights of the analyses;\n"+analyses.map("\t"+_.copyright).mkString("\"")
+    }
 
-    override def description: String =
-        this.synchronized {
-            "Executes the following analyses:\n"+analyses.map("\t"+_.title).mkString("\n")
-        }
+    override def description: String = this.synchronized {
+        "Executes the following analyses:\n"+analyses.map("\t"+_.title).mkString("\n")
+    }
 
 }

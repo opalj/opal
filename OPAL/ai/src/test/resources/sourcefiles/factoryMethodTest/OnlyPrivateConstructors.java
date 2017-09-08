@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,18 +33,17 @@ import org.opalj.fpcf.test.annotations.InstantiabilityProperty;
 
 /**
  * This class is used for test purpose only.
- * 
+ *
  * @author Michael Reif
  */
-@InstantiabilityProperty(
-		InstantiabilityKeys.NotInstantiable)
+@InstantiabilityProperty(InstantiabilityKeys.NotInstantiable)
 public class OnlyPrivateConstructors {
 
 	private OnlyPrivateConstructors(){
-		
+
 	}
-	
+
 	private OnlyPrivateConstructors(Object object){
-		
+
 	}
 }

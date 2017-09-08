@@ -48,8 +48,8 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project}
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.util.XHTML
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
+import org.opalj.bugpicker.core.analyses.BugPickerAnalysis
+import org.opalj.bugpicker.core.analyses.BugPickerAnalysis.resultsAsXHTML
 import org.opalj.issues.IssueKind
 import org.opalj.log.LogContext
 
@@ -287,7 +287,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
         var outputFormatGiven = false
 
-        import org.opalj.bugpicker.core.analysis.BugPickerAnalysis._
+        import org.opalj.bugpicker.core.analyses.BugPickerAnalysis._
 
         val issues =
             parameters.filterNot(parameter ⇒ parameter match {

@@ -56,18 +56,19 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
     import SpecialMethodsHandling._
 
     abstract override def invokestatic(
-        pc:                 PC,
-        declaringClassType: ObjectType,
-        name:               String,
-        methodDescriptor:   MethodDescriptor,
-        operands:           Operands
+        pc:            PC,
+        declaringType: ObjectType,
+        isInterface:   Boolean,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands
     ): MethodCallResult = {
 
         if (!(
-            (declaringClassType eq ObjectType.System) &&
-            name == "arraycopy" && methodDescriptor == arraycopyDescriptor
+            (declaringType eq ObjectType.System) &&
+            name == "arraycopy" && descriptor == arraycopyDescriptor
         )) {
-            return super.invokestatic(pc, declaringClassType, name, methodDescriptor, operands);
+            return super.invokestatic(pc, declaringType, isInterface, name, descriptor, operands);
         }
 
         val length :&: destPos :&: dest :&: sourcePos :&: source :&: _ = operands

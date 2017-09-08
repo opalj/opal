@@ -35,8 +35,8 @@ import scala.collection.mutable
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
-import org.opalj.collection.immutable.IntSet
-import org.opalj.collection.immutable.IntSet1
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.instructions.ReturnInstruction
@@ -84,11 +84,11 @@ trait RecordCFG
     with ai.ReturnInstructionsDomain {
     cfgDomain: ValuesDomain with TheCode ⇒
 
-    private[this] var regularSuccessors: Array[IntSet] = _ // the IntSets are either null or non-empty
-    private[this] var exceptionHandlerSuccessors: Array[IntSet] = _ // the IntSets are either null or non-empty
-    private[this] var predecessors: Array[IntSet] = _
+    private[this] var regularSuccessors: Array[IntArraySet] = _ // the IntArraySets are either null or non-empty
+    private[this] var exceptionHandlerSuccessors: Array[IntArraySet] = _ // the IntArraySets are either null or non-empty
+    private[this] var predecessors: Array[IntArraySet] = _
     private[this] var exitPCs: mutable.BitSet = _
-    private[this] var subroutineStartPCs: IntSet = _
+    private[this] var subroutineStartPCs: IntArraySet = _
     private[this] var theDominatorTree: DominatorTree = _
     private[this] var thePostDominatorTree: DominatorTreeFactory = _
     private[this] var theControlDependencies: ControlDependencies = _
@@ -100,10 +100,10 @@ trait RecordCFG
         initialLocals: Locals
     ): Unit = {
         val codeSize = code.instructions.length
-        regularSuccessors = new Array[IntSet](codeSize)
-        exceptionHandlerSuccessors = new Array[IntSet](codeSize)
+        regularSuccessors = new Array[IntArraySet](codeSize)
+        exceptionHandlerSuccessors = new Array[IntArraySet](codeSize)
         exitPCs = new mutable.BitSet(codeSize)
-        subroutineStartPCs = IntSet.empty
+        subroutineStartPCs = IntArraySet.empty
 
         // The following values are initialized lazily (when required); after the abstract
         // interpretation was (successfully) performed!
@@ -147,7 +147,7 @@ trait RecordCFG
             predecessors = this.predecessors
             if (predecessors eq null) {
                 // => this.regularPredecessors == null
-                predecessors = new Array[IntSet](regularSuccessors.length)
+                predecessors = new Array[IntArraySet](regularSuccessors.length)
                 for {
                     pc ← code.programCounters
                     successorPC ← allSuccessorsOf(pc)
@@ -155,7 +155,7 @@ trait RecordCFG
                     val oldPredecessorsOfSuccessor = predecessors(successorPC)
                     predecessors(successorPC) =
                         if (oldPredecessorsOfSuccessor eq null) {
-                            new IntSet1(pc)
+                            new IntArraySet1(pc)
                         } else {
                             oldPredecessorsOfSuccessor + pc
                         }
@@ -272,7 +272,7 @@ trait RecordCFG
         regularSuccessorsOnly: Boolean,
         p:                     PC ⇒ Boolean
     ): Boolean = {
-        var visitedSuccessors: IntSet = new IntSet1(pc) // IMPROVE Use IntSetBuilder?
+        var visitedSuccessors: IntArraySet = new IntArraySet1(pc) // IMPROVE Use IntArraySetBuilder?
         var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
         while (successorsToVisit.nonEmpty) {
             if (successorsToVisit.exists { succPC ⇒ p(succPC) })
@@ -280,7 +280,7 @@ trait RecordCFG
 
             visitedSuccessors ++= successorsToVisit
             successorsToVisit =
-                successorsToVisit.foldLeft(IntSet.empty) { (l, r) ⇒
+                successorsToVisit.foldLeft(IntArraySet.empty) { (l, r) ⇒
                     l ++ (
                         successorsOf(r, regularSuccessorsOnly) withFilter { pc ⇒
                             !visitedSuccessors.contains(pc)
@@ -386,7 +386,7 @@ trait RecordCFG
     def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
         if (pc == successorPC)
             return true;
-        var visitedSuccessors = Set(pc) // IMPROVE new IntSet1(pc) ??
+        var visitedSuccessors = Set(pc) // IMPROVE new IntArraySet1(pc) ??
         // IMPROVE  use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
         val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator)
         while (successorsToVisit.nonEmpty) {
@@ -593,7 +593,7 @@ trait RecordCFG
 
         val successorsOfPC = successors(currentPC)
         if (successorsOfPC eq null)
-            successors(currentPC) = new IntSet1(successorPC)
+            successors(currentPC) = new IntArraySet1(successorPC)
         else {
             val newSuccessorsOfPC = successorsOfPC + successorPC
             if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
