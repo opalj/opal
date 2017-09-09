@@ -256,7 +256,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         var forceScheduling = false
         val instruction = instructions(currentPC)
-        val successorInstruction = instructions(successorPC)
 
         //
         // HELPER METHODS
@@ -321,10 +320,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         //     joinedDefOps != oldDefOps,
                         //     s"$joinedDefOps is unexpectedly equal to $newDefOps join $oldDefOps"
                         // )
-                        forceScheduling =
-                            // There is nothing to propagate beyond the next
-                            // instruction if the next one is a "return" instruction.
-                            !successorInstruction.isInstanceOf[ReturnInstruction]
+                        forceScheduling = true
                         defOps(successorPC) = joinedDefOps
                     }
                 }
@@ -395,14 +391,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         //      s"$joinedDefLocals should not be equal to "+
                         //          s"$newDefLocals join $oldDefLocals"
                         // )
-                        forceScheduling = forceScheduling || {
-                            // There is nothing to do if all joins are related to unused vars...
-                            newUsage &&
-                                // There is nothing to propagate if the next
-                                // instruction is a "return" instruction.
-                                !successorInstruction.isInstanceOf[ReturnInstruction]
-
-                        }
+                        // There is nothing to do if all joins are related to unused vars...
+                        forceScheduling ||= newUsage
                         defLocals(successorPC) = joinedDefLocals
                     }
                 }
@@ -906,7 +896,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // just operates on the stack and which is not a stack management instruction (dup,
                 // ...))
                 val usedValues = instructions(currPC).numberOfPoppedOperands(NotRequired)
-                defOps(currPC).forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currPC) }
+                defOps(currPC).forFirstN(usedValues) { op ⇒
+                    updateUsageInformation(op, currPC)
+                }
             }
         }
     }
