@@ -414,11 +414,7 @@ object TACAI {
                 // to get the precise type we take a look at the next instruction's
                 // top operand value
                 val source = ArrayLoad(pc, index, arrayRef)
-                if (wasExecuted(nextPC)) {
-                    addInitLocalValStmt(pc, operandsArray(nextPC).head, source)
-                } else {
-                    addStmt(ExprStmt(pc, source))
-                }
+                addInitLocalValStmt(pc, operandsArray(nextPC).head, source)
             }
 
             def binaryArithmeticOperation(operator: BinaryArithmeticOperator): Unit = {
@@ -426,12 +422,7 @@ object TACAI {
                 val value1 = operandUse(1)
                 val cTpe = operandsArray(nextPC).head.computationalType
                 val binExpr = BinaryExpr(pc, cTpe, operator, value1, value2)
-                // may fail in case of a div by zero...
-                if (wasExecuted(nextPC)) {
-                    addInitLocalValStmt(pc, operandsArray(nextPC).head, binExpr)
-                } else {
-                    addStmt(ExprStmt(pc, binExpr))
-                }
+                addInitLocalValStmt(pc, operandsArray(nextPC).head, binExpr)
             }
 
             @inline def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {
@@ -597,11 +588,7 @@ object TACAI {
                 case ARRAYLENGTH.opcode ⇒
                     val arrayRef = operandUse(0)
                     val lengthExpr = ArrayLength(pc, arrayRef)
-                    if (wasExecuted(nextPC)) { // the next instruction cannot be a handler instruction
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
-                    } else {
-                        addStmt(ExprStmt(pc, lengthExpr))
-                    }
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, lengthExpr)
 
                 case BIPUSH.opcode | SIPUSH.opcode ⇒
                     val value = as[LoadConstantInstruction[Int]](instruction).value
@@ -725,11 +712,7 @@ object TACAI {
                                     receiver,
                                     params
                                 )
-                        if (wasExecuted(nextPC)) {
-                            addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
-                        } else {
-                            addStmt(ExprStmt(pc, expr))
-                        }
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                     }
 
                 case INVOKESTATIC.opcode ⇒
@@ -752,11 +735,7 @@ object TACAI {
                                 declaringClass, isInterface, name, descriptor,
                                 params
                             )
-                        if (wasExecuted(nextPC)) {
-                            addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
-                        } else {
-                            addStmt(ExprStmt(pc, expr))
-                        }
+                        addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
@@ -764,11 +743,7 @@ object TACAI {
                     val parametersCount = methodDescriptor.parametersCount
                     val params = useOperands(parametersCount).reverse
                     val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
-                    if (wasExecuted(nextPC)) {
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
-                    } else {
-                        addStmt(ExprStmt(pc, expr))
-                    }
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
 
                 case PUTSTATIC.opcode ⇒
                     val PUTSTATIC(declaringClass, name, fieldType) = instruction
@@ -793,11 +768,7 @@ object TACAI {
                 case GETFIELD.opcode ⇒
                     val GETFIELD(declaringClass, name, fieldType) = instruction
                     val getField = GetField(pc, declaringClass, name, fieldType, operandUse(0))
-                    if (wasExecuted(nextPC)) {
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
-                    } else { // ... here: NullPointerException
-                        addStmt(ExprStmt(pc, getField))
-                    }
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, getField)
 
                 case NEW.opcode ⇒
                     val NEW(objectType) = instruction
@@ -814,11 +785,7 @@ object TACAI {
                     val MULTIANEWARRAY(arrayType, dimensions) = instruction
                     val counts = (0 until dimensions).map(d ⇒ operandUse(d))(Seq.canBuildFrom)
                     val newArray = NewArray(pc, counts, arrayType)
-                    if (wasExecuted(nextPC)) {
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
-                    } else { // ... here: NegativeDimensionSize...
-                        addStmt(ExprStmt(pc, newArray))
-                    }
+                    addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
                     val GotoInstruction(branchoffset) = instruction
