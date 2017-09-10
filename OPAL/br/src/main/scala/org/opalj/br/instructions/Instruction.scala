@@ -80,6 +80,10 @@ trait Instruction extends InstructionLike {
     // ---------------------------------------------------------------------------------------------
 
     def isGotoInstruction: Boolean = false
+    def isStackManagementInstruction: Boolean = false
+    def isLoadLocalVariableInstruction: Boolean = false
+    def isStoreLocalVariableInstruction: Boolean = false
+    def isCheckcast: Boolean = false
 
     def asGotoInstruction: GotoInstruction = throw new ClassCastException();
 
