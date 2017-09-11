@@ -432,6 +432,7 @@ object TACAI {
                 } else {
                     addStmt(ExprStmt(pc, binExpr))
                 }
+
             }
 
             @inline def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {

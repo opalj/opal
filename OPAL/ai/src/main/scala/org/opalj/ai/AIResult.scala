@@ -80,7 +80,8 @@ sealed abstract class AIResult {
     val worklist: List[PC]
 
     /**
-     * The list of evaluated instructions ordered by the evaluation time.
+     * The list of evaluated instructions ordered by the evaluation time; subroutines
+     * are identified using the SUBROUTINE marker ids.
      */
     val evaluated: List[PC]
 
@@ -89,7 +90,7 @@ sealed abstract class AIResult {
      * at least once.
      */
     lazy val evaluatedInstructions: BitSet = {
-        val evaluatedInstructions = new mutable.BitSet(code.instructions.size)
+        val evaluatedInstructions = new mutable.BitSet(code.instructions.length)
         evaluated.foreach(pc ⇒ if (pc >= 0) evaluatedInstructions += pc)
         evaluatedInstructions
     }

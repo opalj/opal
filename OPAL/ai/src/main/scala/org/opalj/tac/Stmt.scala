@@ -624,7 +624,10 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
 
     final override def isSideEffectFree: Boolean = {
-        // IMPROVE a safe checkcast (i.e., one where we statically know that it will never fail) is side-effect free
+        // TODO identify useless checkcasts
+        // A useless checkcast is one where the static intra-procedural type information which
+        // is available in the bytecode is sufficient to determine that the type is a subtype
+        // of the tested type.
         false
     }
 

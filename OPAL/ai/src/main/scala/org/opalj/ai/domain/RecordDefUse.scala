@@ -65,11 +65,13 @@ import org.opalj.ai.util.XHTML
  * handler that caught the respective exception.''' This information can then be used –
  * in combination with the AICFG - to identify the origin instruction that caused
  * the exception. A more precise propagation of def/use information related to exceptions is
- * – as part of this very generic domain – not possible. If we would propagate def-use
+ * – as part of this very generic domain – not available. If we would propagate def-use
  * information beyond the handler, we would not be able to distinguish between the handlers
  * anymore and therefore we would not be able to identify where a caught exception is eventually
  * used.
  *
+ * Note that a checkcast is considered a use-site, but not a def-site, even if the shape changes/
+ * the assumed type is narrowed.
  *
  * ==General Usage==
  * This trait finalizes the collection of the def/use information '''after the abstract
@@ -79,7 +81,7 @@ import org.opalj.ai.util.XHTML
  * ==Special Values==
  *
  * ===Parameters===
- * The parameters given to a method have negative `int` values (the first
+ * The ex-/implicit parameters given to a method have negative `int` values (the first
  * parameter has the value -1, the second -2 if the first one is a value of computational
  * type category one and -3 if the first value is of computational type category two and so forth).
  * I.e., in case of a method `def (d : Double, i : Int)`, the second parameter will have the index
@@ -256,7 +258,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         var forceScheduling = false
         val instruction = instructions(currentPC)
-        val successorInstruction = instructions(successorPC)
 
         //
         // HELPER METHODS
@@ -321,10 +322,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         //     joinedDefOps != oldDefOps,
                         //     s"$joinedDefOps is unexpectedly equal to $newDefOps join $oldDefOps"
                         // )
-                        forceScheduling =
-                            // There is nothing to propagate beyond the next
-                            // instruction if the next one is a "return" instruction.
-                            !successorInstruction.isInstanceOf[ReturnInstruction]
+                        forceScheduling = true
                         defOps(successorPC) = joinedDefOps
                     }
                 }
@@ -395,14 +393,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         //      s"$joinedDefLocals should not be equal to "+
                         //          s"$newDefLocals join $oldDefLocals"
                         // )
-                        forceScheduling = forceScheduling || {
-                            // There is nothing to do if all joins are related to unused vars...
-                            newUsage &&
-                                // There is nothing to propagate if the next
-                                // instruction is a "return" instruction.
-                                !successorInstruction.isInstanceOf[ReturnInstruction]
-
-                        }
+                        // There is nothing to do if all joins are related to unused vars...
+                        forceScheduling ||= newUsage
                         defLocals(successorPC) = joinedDefLocals
                     }
                 }
@@ -743,9 +735,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     throw BytecodeProcessingFailedException(message)
                 }
 
-            case 176 /*areturn*/ |
-                175 /*dreturn*/ | 174 /*freturn*/ |
-                172 /*ireturn*/ | 173 /*lreturn*/ ⇒
+            case 176 /*a...*/ | 175 /*d...*/ | 174 /*f...*/ | 172 /*i...*/ | 173 /*l...return*/ ⇒
                 if (isExceptionalControlFlow) {
                     stackOp(1, pushesValue = true /*value doesn't matter - has special handling*/ )
                 } else {
@@ -906,7 +896,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // just operates on the stack and which is not a stack management instruction (dup,
                 // ...))
                 val usedValues = instructions(currPC).numberOfPoppedOperands(NotRequired)
-                defOps(currPC).forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currPC) }
+                defOps(currPC).forFirstN(usedValues) { op ⇒
+                    updateUsageInformation(op, currPC)
+                }
             }
         }
     }
