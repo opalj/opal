@@ -30,10 +30,10 @@ package bugs;
 
 /**
  * This class performs a large number of array operations.
- * 
+ *
  * NOTE<br />
  * This class is only meant to be (automatically) compiled by OPAL's build script.
- * 
+ *
  * @author Michael Eichberg
  */
 public class ArrayAccess {
@@ -91,7 +91,7 @@ public class ArrayAccess {
   static String[] getStringArray() {
     return new String[]{"A","B","C","D","E","F","G","H"};
   }
-  
+
 
   /** An array where the second element is updated multiple times. */
   static String[] getUpdatedStringArray() {
@@ -100,18 +100,18 @@ public class ArrayAccess {
     as[1] = as[1]+as[1];
     return as;
   }
-  
+
   /** A two dimensional array where not all array have the same size. */
   static int[][] get2DIntArray() {
     int[][] as = new int[3][3];
     as[1] = new int[1]; // now the array as is no longer a 3x3 dimensional array...
     return as;
   }
-  
+
   /** Returns a simple array where an unknown element is updated. */
   static int[] updateArrayValid(int index) {
     if(index < 0 || index > 2) return null;
-    
+
     int[] as = new int[3];
     as[index] = index;
     return as;
@@ -132,6 +132,12 @@ public class ArrayAccess {
     }
     as[index] = index;
     return as;
+  }
+
+  static Object selfReferencingArrays() {
+      Object o[] = new Object[1];
+      o[0] = o;
+      return o;
   }
 
 }
