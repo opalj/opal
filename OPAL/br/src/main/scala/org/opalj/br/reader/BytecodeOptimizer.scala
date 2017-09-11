@@ -36,6 +36,8 @@ import scala.annotation.tailrec
 import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.OPALLogger.info
+
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.GotoInstruction
 import org.opalj.br.instructions.GOTO
@@ -126,10 +128,8 @@ trait BytecodeOptimizer extends MethodsBinding {
         attributes collectFirst { case c: Code ⇒ c } foreach { code ⇒
             val isSimplified = optimizeInstructions(code.exceptionHandlers, code.instructions)
             if (isSimplified && LogControlFlowSimplifications) {
-                info(
-                    "class file reader",
-                    s"simplified control flow of ${cp(name_index).asString}${cp(descriptor_index).asString}"
-                )
+                val methodSignature = cp(name_index).asString + cp(descriptor_index).asString
+                info("class file reader", s"simplified control flow of $methodSignature")
             }
         }
         super.Method_Info(cp, accessFlags, name_index, descriptor_index, attributes)
@@ -160,17 +160,19 @@ trait BytecodeOptimizer extends MethodsBinding {
          * is returned.
          */
         @tailrec def finalJumpTarget(
-            startPC:               PC, // required to detect "while(true){}" loops...
+            visitedPCs:            IntArraySet, // required to detect jump cycles... yes they exist!
             currentPC:             PC,
             effectiveBranchoffset: Int
         ): Int = {
             instructions(currentPC) match {
                 case GotoInstruction(branchoffset) ⇒
                     val nextPC = currentPC + branchoffset
-                    if (nextPC != startPC)
-                        finalJumpTarget(startPC, nextPC, effectiveBranchoffset + branchoffset)
-                    else
+                    if (!visitedPCs.contains(nextPC)) {
+                        val nextBranchoffset = effectiveBranchoffset + branchoffset
+                        finalJumpTarget(visitedPCs + nextPC, nextPC, nextBranchoffset)
+                    } else {
                         effectiveBranchoffset
+                    }
 
                 case _ ⇒
                     effectiveBranchoffset
@@ -278,7 +280,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         instructions(pc + 2) = NOP
                         simplified = true
                     } else {
-                        val newBranchoffset = finalJumpTarget(pc, jumpTargetPC, branchoffset)
+                        val newBranchoffset = finalJumpTarget(IntArraySet(pc), jumpTargetPC, branchoffset)
                         if (newBranchoffset != branchoffset &&
                             newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
                             // let's replace the original jump
@@ -302,7 +304,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         instructions(pc + 4) = NOP
                         simplified = true
                     } else {
-                        val newBranchoffset = finalJumpTarget(pc, jumpTargetPC, branchoffset)
+                        val newBranchoffset = finalJumpTarget(IntArraySet(pc), jumpTargetPC, branchoffset)
                         if (newBranchoffset != branchoffset) {
                             jumpTargetInstructions += pc + newBranchoffset
                             if (newBranchoffset >= Short.MinValue &&
