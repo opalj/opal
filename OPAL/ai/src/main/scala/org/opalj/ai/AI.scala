@@ -809,6 +809,16 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (abruptSubroutineTerminationCount > 0) {
                         handleAbruptSubroutineTermination(forceSchedule = true)
                     } else if (worklist.nonEmpty && cfJoins.contains(targetPC)) {
+                        // We Try to first finish the evaluation of the body of, e.g., a loop;
+                        // Recall that a typical loop has the following bytecode:
+                        //      ...
+                        //      goto looptest
+                        // loopbody:
+                        //      ...
+                        //      ...
+                        // looptest:
+                        //      <PREPARATION>           // *<= JOIN INSTRUCTION*
+                        //      if (...) goto loopbody
                         worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
                     } else {
                         worklist = targetPC :&: worklist
@@ -1425,7 +1435,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (baseValues.isEmpty) {
                         exceptionValue.isNull match {
                             case No ⇒ // just forward
-                                doHandleTheException(exceptionValue, false)
+                                doHandleTheException(exceptionValue, establishNonNull = false)
                             case Unknown ⇒
                                 val npeHandlerPC =
                                     if (theDomain.throwNullPointerExceptionOnThrow) {

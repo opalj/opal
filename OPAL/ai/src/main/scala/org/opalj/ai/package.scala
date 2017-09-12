@@ -153,8 +153,8 @@ package object ai {
     type ValueOrigin = Int
 
     /**
-     * Identifies the upper bound for those origin values that encode origin
-     * information about VM level values.
+     * Identifies the ''upper bound for those origin values that encode origin
+     * information about VM level values''.
      */
     final val VMLevelValuesOriginOffset /*: ValueOrigin*/ = -100000
 

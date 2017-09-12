@@ -177,7 +177,7 @@ case class CaughtException[+V <: Var[V]](
      *    origin is smaller or equal to [[VMLevelValuesOriginOffset]] and can be tranformed to
      *    the index of the responsible instruction using [[org.opalj.ai#pcOfVMLevelValue]].
      */
-    def origins : IntArraySet = throwingStmts
+    def origins: IntArraySet = throwingStmts
 
     /**
      * Textual description of the sources of the caught exceptions. If the exception was
