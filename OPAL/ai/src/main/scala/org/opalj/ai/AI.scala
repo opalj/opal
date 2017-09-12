@@ -840,7 +840,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (!containsInPrefix(worklist, targetPC, SUBROUTINE_START)) {
                         worklist = targetPC :&: worklist
                     }
-                    if (tracer.isDefined) {
+                    if (tracer.isDefined) { // IMPROVE Replace tracer.isDefined by "tracer ne None" if it is simpler!
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
                     }
 
