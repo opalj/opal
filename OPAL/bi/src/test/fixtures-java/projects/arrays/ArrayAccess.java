@@ -136,7 +136,7 @@ public class ArrayAccess {
 
   static Object selfReferencingArrays() {
       Object o[] = new Object[1];
-      o[0] = o;
+      o[0] = o; // the first field of the array has a (cyclic) reference to itself.
       return o;
   }
 
