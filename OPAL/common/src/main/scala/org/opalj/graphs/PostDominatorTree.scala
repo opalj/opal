@@ -30,16 +30,17 @@ package org.opalj
 package graphs
 
 /**
- * Factory to compute post [[DominatorTree]]s.
+ * Factory to compute `Post[[DominatorTree]]`s.
  *
  * @author Stephan Neumann
+ * @author Michael Eichberg
  */
 object PostDominatorTree {
 
     /**
      * Computes the post dominator tree for the given graph. The artificial start node that
      * will be created by this algorithm to ensure that we have a unique start node for
-     * the post dominator tree will have the id = (maxNodeId+1).
+     * the post dominator tree will have the `id = (maxNodeId+1)`.
      *
      * @example
      * {{{
@@ -72,6 +73,9 @@ object PostDominatorTree {
      * pdt: org.opalj.graphs.DominatorTree = org.opalj.graphs.DominatorTree@3a82ac80
      * scala>pdt.toDot()
      * }}}
+     *
+     * @note    The underlying graph '''MUST NOT''' contain any node which is not connected
+     *          to an exit node!
      *
      * @param   isExitNode A function that returns `true` if the given node – in the underlying
      *          (control-flow) graph – is an exit node; that is the node has no successors.
