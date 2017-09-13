@@ -243,6 +243,8 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
      * Determines the purity of the given method.
      */
     def determinePurity(method: Method): PropertyComputationResult = {
+        if (method.isSynchronized)
+            return ImmediateResult(method, Impure);
 
         // Due to a lack of knowledge, we classify all native methods or methods that
         // have no body - because they are loaded using a library class file loader - as Impure.
