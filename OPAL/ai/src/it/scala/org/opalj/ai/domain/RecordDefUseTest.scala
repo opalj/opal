@@ -185,7 +185,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                                     if (!useSites.contains(pc)) {
                                         fail(
                                             s"a def site $duo(${instructions(duo)}) does not "+
-                                            s"contain use site: $pc(${instructions(pc)})"
+                                                s"contain use site: $pc(${instructions(pc)})"
                                         )
                                     }
                                 }
