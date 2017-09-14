@@ -64,6 +64,9 @@ abstract class IntArraySet extends ((Int) ⇒ Int) {
 
     final def last: Int = max
 
+    /** Returns some value and removes it from this set. */
+    def getAndRemove: (Int, IntArraySet)
+
     def foreach[U](f: Int ⇒ U): Unit
 
     /**
@@ -143,6 +146,7 @@ case object EmptyIntArraySet extends IntArraySet {
     def size: Int = 0
     def max: Int = throw new UnsupportedOperationException("empty set")
     def min: Int = throw new UnsupportedOperationException("empty set")
+    def getAndRemove: (Int, IntArraySet) = throw new UnsupportedOperationException("empty set")
     def foreach[U](f: Int ⇒ U): Unit = {}
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = this
     def map(f: Int ⇒ Int): IntArraySet = this
@@ -175,6 +179,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     def foreach[U](f: Int ⇒ U): Unit = { f(i) }
     def max: Int = this.i
     def min: Int = this.i
+    def getAndRemove: (Int, IntArraySet) = (i, EmptyIntArraySet)
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = if (p(i)) this else EmptyIntArraySet
     def map(f: Int ⇒ Int): IntArraySet = {
         val i = this.i
@@ -229,6 +234,7 @@ case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
     def size: Int = 2
     def min: Int = this.i1
     def max: Int = this.i2
+    def getAndRemove: (Int, IntArraySet) = (i2, new IntArraySet1(i1))
 
     def iterator: Iterator[Int] = new AbstractIterator[Int] {
         var i = 0
@@ -320,6 +326,7 @@ case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
     def size: Int = 3
     def min: Int = this.i1
     def max: Int = this.i3
+    def getAndRemove: (Int, IntArraySet) = (i3, new IntArraySet2(i1, i2))
 
     def iterator: Iterator[Int] = new AbstractIterator[Int] {
         var i = 0
@@ -422,7 +429,7 @@ case class IntArraySetN private[immutable] (
         private[immutable] val is: Array[Int]
 ) extends IntArraySet {
 
-    assert(is.length > 2)
+    assert(is.length > 3)
 
     def apply(index: Int): Int = is(index)
     def size: Int = is.length
@@ -431,6 +438,12 @@ case class IntArraySetN private[immutable] (
     def isEmpty: Boolean = false
     def max: Int = is(is.length - 1)
     def min: Int = is(0)
+    def getAndRemove: (Int, IntArraySet) = {
+        if (is.length > 4)
+            (max, new IntArraySetN(is.init))
+        else
+            (max, new IntArraySet3(is(0), is(1), is(2)))
+    }
     def foreach[U](f: Int ⇒ U): Unit = {
         val max = is.length
         var i = 0
@@ -630,6 +643,7 @@ private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArray
     def min: Int = getFiltered.min
     def max: Int = getFiltered.max
     def map(f: Int ⇒ Int): IntArraySet = getFiltered.map(f)
+    def getAndRemove: (Int, IntArraySet) = getFiltered.getAndRemove
     def -(i: Int): IntArraySet = getFiltered - i
     def +(i: Int): IntArraySet = getFiltered + 1
     def toChain: Chain[Int] = getFiltered.toChain
