@@ -247,6 +247,26 @@ trait RecordCFG
         theControlDependencies
     }
 
+    def allReachable(pcs: IntArraySet): IntArraySet = {
+        pcs.foldLeft(IntArraySet.empty) { (c, pc) ⇒
+            c ++ allReachable(pc)
+        }
+    }
+
+    def allReachable(pc: PC): IntArraySet = {
+        var allReachable: IntArraySet = new IntArraySet1(pc)
+        var successorsToVisit = allSuccessorsOf(pc)
+        while (successorsToVisit.nonEmpty) {
+            val (succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
+            successorsToVisit = newSuccessorsToVisit
+            if (!allReachable.contains(succPC)) {
+                allReachable += succPC
+                successorsToVisit ++= allSuccessorsOf(succPC)
+            }
+        }
+        allReachable
+    }
+
     /**
      * Returns the program counter(s) of the instruction(s) that is(are) executed next if
      * the evaluation of this instruction may succeed without raising an exception.
