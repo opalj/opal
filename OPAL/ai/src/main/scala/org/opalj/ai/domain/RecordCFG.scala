@@ -374,6 +374,14 @@ trait RecordCFG
 
     final def wasExecuted(pc: PC): Boolean = pc < code.instructions.length && unsafeWasExecuted(pc)
 
+    final def allExecuted: BitSet = {
+        val wasExecuted = new mutable.BitSet(code.instructions.length)
+        code.programCounters foreach { pc ⇒
+            wasExecuted += pc
+        }
+        wasExecuted
+    }
+
     /**
      * Returns true if the exception handler may handle at least one exception thrown
      * by an instruction in the try block.
