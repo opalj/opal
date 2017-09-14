@@ -31,6 +31,7 @@ package graphs
 
 import scala.annotation.tailrec
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -58,7 +59,8 @@ final class DominatorTree private (
     /**
      * Returns the immediate dominator of the node with the given id.
      *
-     * @note The root node does not have an immediate dominator!
+     * @note   The root node does not have a(n immediate) dominator; in case `n`
+     *         is the root node an `IllegalArgumentException` is thrown.
      *
      * @param n The id of a valid node which is not the `startNode`.
      * @return The id of the node which immediately dominates the given node.
@@ -111,8 +113,41 @@ final class DominatorTree private (
     def immediateDominators: IndexedSeq[Int] = idom
 
     /**
+     * (Re-)computes the dominator tree's leaf nodes. Due to the way the graph is stored,
+     * this method has a complexity of O(2n). Hence, if the leaves are required more than
+     * once, storing/caching them should be considered.
+     */
+    def leaves(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): Chain[Int] = {
+        // A leaf is a node which does not dominate another node.
+        var i = 0
+        val max = idom.length
+
+        // first loop - identify nodes which dominate other nodes
+        val dominates = new Array[Boolean](max)
+        while (i < max) {
+            if (i != startNode && isIndexValid(i)) {
+                dominates(idom(i)) = true // negative values are not used to idenfiy "normal" nodes
+            }
+            i += 1
+        }
+        // second loop - collect leaves
+        var theLeaves = Chain.empty[Int]
+        i = 0
+        while (i < max) {
+            if (isIndexValid(i) && !dominates(i)) {
+                theLeaves :&:= i
+            }
+            i += 1
+        }
+        theLeaves
+
+    }
+
+    /**
+     * Returns a Graphviz based visualization of this dominator tree.
+     *
      * @param   isIndexValid A function that returns `true` if an element in the iDom array with a
-     *          specific index is actually containing some valid data. This is particularly useful/
+     *          specific index is actually identifying a node. This is particularly useful/
      *          required if the `idom` array given at initialization time is a sparse array.
      */
     def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
@@ -182,8 +217,8 @@ object DominatorTree {
      *          will be created and added to the graph.
      * @param   foreachSuccessorOf A function that given a node subsequently executes the given
      *          function for each direct successor of the given node.
-     * @param   foreachPredecessorOf A function that given a node executes the given function for
-     *          each direct predecessor. The signature of a function that can directly be passed
+     * @param   foreachPredecessorOf A function that - given a node - executes the given function
+     *          for each direct predecessor. The signature of a function that can directly be passed
      *          as a parameter is:
      *          {{{
      *          def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
@@ -200,7 +235,7 @@ object DominatorTree {
      *
      *          '''This implementation does not use non-tailrecursive methods anymore and hence
      *          also handles very large degenerated graphs (e.g., a graph which consists of a
-     *          a very long single path.).'''
+     *          a very, very long single path.).'''
      */
     def apply(
         startNode:                Int,

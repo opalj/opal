@@ -806,6 +806,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         targetLocalsArray(targetPC) = locals
                     }
 
+                    // IMPROVE Reconsider the scheduling of the next instruction; try to schedule such that inner loops are first completely evaluated before we continue scheduling the outer loop
+
                     if (abruptSubroutineTerminationCount > 0) {
                         handleAbruptSubroutineTermination(forceSchedule = true)
                     } else if (worklist.nonEmpty && cfJoins.contains(targetPC)) {

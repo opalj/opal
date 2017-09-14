@@ -56,17 +56,18 @@ import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
- * This CFG is always (still) a sound approximation of the generally incomputable real CFG.
+ * This CFG is always (still) a sound approximation of the generally incomputable
+ * real(runtime) CFG.
  *
  * ==Usage (Mixin-Composition Order)==
  * This domain overrides the `flow` method and requires that it is mixed in before every
  * other domain that overrides the `flow` method and which may manipulate the `worklist`.
  * E.g., the mixin order should be:
  * {{{ class MyDomain extends Domain with RecordCFG with FlowManipulatingDomain }}}
- * If the mixin order is not correct, the CFG may not be complete/concrete.
+ * If the mixin order is not correct, the computed CFG may not be complete/concrete.
  *
  * ==Core Properties==
- *  - Thread-safe: '''No'''; i.e., the domain can only be used by one
+ *  - Thread-safe: '''No'''; i.e., the composed domain can only be used by one
  *              abstract interpreter at a time.
  *              However, using the collected results is thread-safe!
  *  - Reusable: '''Yes'''; all state directly associated with the analyzed code block is
@@ -84,8 +85,8 @@ trait RecordCFG
     with ai.ReturnInstructionsDomain {
     cfgDomain: ValuesDomain with TheCode ⇒
 
-    private[this] var regularSuccessors: Array[IntArraySet] = _ // the IntArraySets are either null or non-empty
-    private[this] var exceptionHandlerSuccessors: Array[IntArraySet] = _ // the IntArraySets are either null or non-empty
+    private[this] var regularSuccessors: Array[IntArraySet] = _ // ... either null or non-empty
+    private[this] var exceptionHandlerSuccessors: Array[IntArraySet] = _ // ... null or non-empty
     private[this] var predecessors: Array[IntArraySet] = _
     private[this] var exitPCs: mutable.BitSet = _
     private[this] var subroutineStartPCs: IntArraySet = _
@@ -121,13 +122,11 @@ trait RecordCFG
      * those instructions (in particular method call instructions) that may throw
      * some unhandled exceptions will also be returned; even if the instruction may
      * also have regular and also exception handlers!
-     *
-     * @note This information is lazily computed.
      */
     def allExitPCs: BitSet = exitPCs
 
     /**
-     * Returns the PCs of the first instruction of all subroutines.
+     * Returns the PCs of the first instructions of all subroutines.
      */
     def allSubroutineStartPCs: PCs = subroutineStartPCs
 
@@ -171,12 +170,11 @@ trait RecordCFG
     /**
      * Returns the dominator tree.
      *
-     * @note
-     * To get the list of all evaluated instructions and their dominators.
-     * {{{
-     *  val result = AI(...,...,...)
-     *  val evaluated = result.evaluatedInstructions
-     * }}}
+     * @note   To get the list of all evaluated instructions and their dominators.
+     *         {{{
+     *         val result = AI(...,...,...)
+     *         val evaluated = result.evaluatedInstructions
+     *         }}}
      */
     def dominatorTree: DominatorTree = {
         var theDominatorTree = this.theDominatorTree
@@ -197,6 +195,13 @@ trait RecordCFG
         theDominatorTree
     }
 
+    /**
+     * Returns a factory to compute the [[PostDominatorTree]] (PDT).
+     *
+     * In case of code which contains infinite loops, the dominator tree is used to compute
+     * those nodes which will be connected to the virtual exit node. This ensures that
+     * control-dependencies computed using the PDT is valid.
+     */
     def postDominatorTreeFactory: DominatorTreeFactory = {
         var thePostDominatorTree = this.thePostDominatorTree
         if (thePostDominatorTree eq null) synchronized {
@@ -216,8 +221,19 @@ trait RecordCFG
         thePostDominatorTree
     }
 
+    /**
+     * Returns the post dominator tree (PDT).The PDT is a [[DominatorTree]] computed using the
+     * reverse control-flow graph using a single explicit, virtual exit node which is
+     * – in case of true infinite loops – also connected with selected instructions
+     * in the infinite loop such that the computation of control-dependencies using the PDT is
+     * facilitated.
+     */
     def postDominatorTree: DominatorTree = postDominatorTreeFactory.dt
 
+    /**
+     * Returns the control dependencies graph. See [[postDominatorTreeFactory]] for details
+     * regarding the handling of infinite loops.
+     */
     def controlDependencies: ControlDependencies = {
         var theControlDependencies = this.theControlDependencies
         if (theControlDependencies eq null) synchronized {

@@ -359,7 +359,8 @@ object TACAI {
 
             /**
              * Creates a local variable using the current pc and the type
-             * information from the domain value.
+             * information from the domain value if the local variable is used; otherwise
+             * an expression statement or a nop statement is added.
              */
             def addInitLocalValStmt(
                 pc:   PC,
