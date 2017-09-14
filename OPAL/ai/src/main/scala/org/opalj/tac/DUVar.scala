@@ -77,7 +77,7 @@ object DUVar {
 }
 
 /**
- * Defines an extractor to get the definition site of an expression's/statement's value.
+ * Extractor to get the definition site of an expression's/statement's value.
  *
  * This extractor may fail (i.e., throw an exception), when the expr is not a [[DVar]] or
  * a [[Const]]; this decision was made to capture programming failures as early as possible

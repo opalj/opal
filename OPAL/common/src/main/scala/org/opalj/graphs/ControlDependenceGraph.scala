@@ -158,9 +158,7 @@ object ControlDependenceGraph {
     }
 
     /**
-     * @param   pdtf A DominatorTreeFactory that creates the post dominator tree.
-     * @param   rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
-     *          the post dominator tree computed by the `pdtf`.
+     * @param   pdtf A (Post)DominatorTreeFactory that creates the post dominator tree.
      * @see     [[PostDominatorTree$]] and [[DominanceFrontiers]]
      */
     def apply(
@@ -171,7 +169,7 @@ object ControlDependenceGraph {
     }
 
     /**
-     * @param   pdtf A DominatorTreeFactory that creates the post dominator tree.
+     * @param   pdtf A (Post)DominatorTreeFactory that creates the post dominator tree.
      * @param   rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
      *          the post dominator tree computed by the `pdtf`.
      * @see     [[PostDominatorTree$]] and [[DominanceFrontiers]]

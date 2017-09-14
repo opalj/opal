@@ -226,9 +226,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 104 ⇒ IMUL
                 case 116 ⇒ INEG
                 case 193 ⇒
-                    cache.INSTANCEOF(
-                        cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType
-                    )
+                    cache.INSTANCEOF(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
                 case 186 ⇒ // INVOKEDYNAMIC
                     val cpEntry = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value

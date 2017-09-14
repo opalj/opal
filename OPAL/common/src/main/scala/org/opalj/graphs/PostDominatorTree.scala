@@ -76,7 +76,7 @@ object PostDominatorTree {
      * @param   isExitNode A function that returns `true` if the given node – in the underlying
      *          (control-flow) graph – is an exit node; that is the node has no successors.
      * @param   foreachExitNode A function f that takes a function g with an int parameter
-     * and which executes g for each exit node.
+     *          and which executes g for each exit node.
      * @param   maxNode The largest id used by the underlying (control-flow) graph.
      *
      */
@@ -120,4 +120,3 @@ object PostDominatorTree {
         )
     }
 }
-

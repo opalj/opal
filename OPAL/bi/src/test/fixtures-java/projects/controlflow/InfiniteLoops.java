@@ -26,52 +26,77 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bi
-package reader
-
-import java.io.DataInputStream
-
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
+package controlflow;
 
 /**
- * Template method to skip an unknown attribute. I.e., the information will
- * not be represented at runtime.
+ * Methods which contain definitive infinite loops (with complex internal contro-flow).
+ * <p>
+ * Primarily useful to test the computation of (post-)dominator trees/control-dependence graphs.
  *
  * @author Michael Eichberg
  */
-trait SkipUnknown_attributeReader
-    extends Constant_PoolAbstractions
-    with Unknown_attributeAbstractions {
-    this: Constant_PoolReader ⇒
+public class InfiniteLoops {
 
-    type Unknown_attribute = Null
-
-    //
-    // IMPLEMENTATION
-    //
-
-    def Unknown_attribute(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): Null = {
-        val size: Int = in.readInt
-        var skipped: Int = 0
-        while (skipped < size) {
-            val actuallySkipped = in skipBytes (size - skipped) // skip returns a long value...
-            if (actuallySkipped > 0)
-                skipped += actuallySkipped
-            else {
-                OPALLogger.error(
-                    "class file reader",
-                    s"skipping over unknown attribute ${cp(attribute_name_index).asString} failed"
-                )(GlobalLogContext)
-                return null;
+    static void trivialInfiniteLoop(int i) {
+        if (i < 0)
+            return;
+        else {
+            while (true) {
+                ;
             }
         }
-        null
+    }
+
+    static void complexPathToInfiniteLoop(int i) {
+        if (i < 0)
+            return;
+        else {
+            if (i > 0) {
+                i = i + 1;
+            } else {
+                i = -i;
+            }
+            i = i * i;
+            while (true) {
+                ;
+            }
+        }
+    }
+
+    static void infiniteLoopWithComplexPath(int i) {
+        if (i < 0)
+            return;
+        else {
+            for (; true; ) {
+                if (i > 0) {
+                    i = i + 1;
+                } else {
+                    i = -i;
+                }
+                i = i * i;
+            }
+        }
+    }
+
+    static void complexPathToInfiniteLoopWithComplexPath(int i) {
+        if (i < 0)
+            return;
+        else {
+            if (i > 0) {
+                i = i + 1;
+            } else {
+                i = -i;
+            }
+            i = i * i;
+            for (; true; ) {
+                int j = i;
+                if (j == 0) {
+                    j = 1;
+                } else {
+                    j = -j + 2;
+                }
+                i = j * i;
+            }
+        }
     }
 }

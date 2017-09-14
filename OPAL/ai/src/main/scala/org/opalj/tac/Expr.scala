@@ -133,6 +133,8 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
 /**
  * A caught exception is essential to ensure that the local variable that stores the exception
  * is reified in the ai-based 3-address code.
+ *
+ * @note `CaughtException` expression are only created by [[TACAI]]!
  */
 case class CaughtException[+V <: Var[V]](
         pc:                        PC,
@@ -165,6 +167,25 @@ case class CaughtException[+V <: Var[V]](
         }
     }
 
+    /**
+     * The origin(s) of the caught exception(s). An origin identifies the instruction
+     * that ex- or implicitly created the exception:
+     *  - If the exception is created locally (`new XXXException`) and also caught within the
+     *    same method, then the origin identifies a normal variable definition site.
+     *  - If the exception is a parameter the parameter's origin (-1,... -n) is returned.
+     *  - If the exception was raised due to a sideeffect of evaluating an expression, then the
+     *    origin is smaller or equal to [[VMLevelValuesOriginOffset]] and can be tranformed to
+     *    the index of the responsible instruction using [[org.opalj.ai#pcOfVMLevelValue]].
+     */
+    def origins: IntArraySet = throwingStmts
+
+    /**
+     * Textual description of the sources of the caught exceptions. If the exception was
+     * thrown by the JVM due to the evaluation of an expression (e.g., NullPointerException,
+     * DivisionByZero,..) then the string will be `exception@<INDEX>` where index identifies
+     * the failing expression. In case an exception is caught that was thrown using `ATHROW`
+     * the local variable/parameter which stores the local variable is returned.
+     */
     final def exceptionLocations: Iterator[String] = {
         throwingStmts.iterator.map { defSite ⇒
             if (defSite < 0) {
@@ -172,8 +193,9 @@ case class CaughtException[+V <: Var[V]](
                     "exception@"+ai.pcOfVMLevelValue(defSite)
                 else
                     "param"+(-defSite - 1).toHexString
-            } else
+            } else {
                 "lv"+defSite.toHexString
+            }
         }
     }
 
@@ -250,9 +272,10 @@ trait ValueExpr[+V <: Var[V]] extends Expr[V] {
 }
 
 /**
- * Explicit reference to a parameter. Parameter statements '''are only used by the naive
+ * Explicit initialization of a parameter. Parameter statements '''are only used by the naive
  * representation ([[TACNaive]])''' where it is necessary to perform an initial initialization
- * of the register values.
+ * of the register values. In case of [[TACAI]], usage of parameters are implicitly encoded using
+ * parameter origins (see [[DUVar]]).
  */
 case class Param(cTpe: ComputationalType, name: String) extends ValueExpr[Nothing] {
     final override def asParam: this.type = this
