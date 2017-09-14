@@ -599,7 +599,7 @@ trait RecordCFG
         currentOperands:                  Operands,
         currentLocals:                    Locals,
         successorPC:                      PC,
-        isSuccessorSchedulued:            Answer,
+        isSuccessorScheduled:             Answer,
         isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed:                 Boolean,
@@ -608,6 +608,10 @@ trait RecordCFG
         localsArray:                      LocalsArray,
         tracer:                           Option[AITracer]
     ): List[PC] = {
+
+        if (successorPC <= currentPC) { // "<=" to handle "x: goto x"
+            thePotentialLoopHeaders += successorPC
+        }
 
         val successors =
             if (isExceptionalControlFlow)
@@ -625,7 +629,7 @@ trait RecordCFG
 
         super.flow(
             currentPC, currentOperands, currentLocals,
-            successorPC, isSuccessorSchedulued,
+            successorPC, isSuccessorScheduled,
             isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
