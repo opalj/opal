@@ -88,12 +88,14 @@ trait RecordCFG
     private[this] var regularSuccessors: Array[IntArraySet] = _ // ... either null or non-empty
     private[this] var exceptionHandlerSuccessors: Array[IntArraySet] = _ // ... null or non-empty
     private[this] var predecessors: Array[IntArraySet] = _
-    private[this] var exitPCs: mutable.BitSet = _
+    private[this] var exitPCs: mutable.BitSet = _ // IMPROVE use an Int(Trie)Set
     private[this] var subroutineStartPCs: IntArraySet = _
     private[this] var theDominatorTree: DominatorTree = _
     private[this] var thePostDominatorTree: DominatorTreeFactory = _
     private[this] var theControlDependencies: ControlDependencies = _
     private[this] var theBBCFG: CFG = _
+    /** The set of nodes to which a jump back is executed. */
+    private[this] var thePotentialLoopHeaders: IntArraySet = _
 
     abstract override def initProperties(
         code:          Code,
@@ -113,12 +115,13 @@ trait RecordCFG
         thePostDominatorTree = null
         theControlDependencies = null
         theBBCFG = null
+        thePotentialLoopHeaders = IntArraySet.empty
 
         super.initProperties(code, cfJoins, initialLocals)
     }
 
     /**
-     * Returns all PCs that may lead to the ab(normal) termination of the method. I.e.,
+     * Returns all PCs that may lead to the (ab)normal termination of the method. I.e.,
      * those instructions (in particular method call instructions) that may throw
      * some unhandled exceptions will also be returned; even if the instruction may
      * also have regular and also exception handlers!
@@ -193,6 +196,75 @@ trait RecordCFG
             }
         }
         theDominatorTree
+    }
+
+    /**
+     * The set of instructions to which a jump back is performed.
+     */
+    def potentialLoopHeaders: IntArraySet = thePotentialLoopHeaders
+
+    /**
+     * Returns `true` if this method contains an effective infinite loop. An infinite loop
+     * is a sequence of instructions that does not have a connection to an exit node.
+     */
+    def infiniteLoopHeaders: IntArraySet = {
+        if (thePotentialLoopHeaders.isEmpty)
+            return IntArraySet.empty;
+        // Let's test if the set of nodes reachable from a potential loop header is
+        // closed; i.e., does not include an exit node and does not refer to a node
+        // which is outside of the loop.
+
+        /*
+        // The nodes which are connected to an exit node... if not the loop eargerly
+        // aborts the computation and it doesn't matter that it contains "wrong data"
+        // w.r.t. the last analyzed loop.
+        val allLoopsTerminate =
+            thePotentialLoopHeaders forall { loopHeaderPC ⇒
+                val visitedNodes = new mutable.BitSet(code.instructions.length)
+                var nodesToVisit = List(loopHeaderPC)
+                var isInfiniteLoop = true
+                while (nodesToVisit.nonEmpty) {
+                    val nextPC = nodesToVisit.head
+                    if (allExitPCs.contains(nextPC)) {
+                        isInfiniteLoop = false
+                        nodesToVisit = Nil // terminate while loop
+                    } else {
+                        nodesToVisit = nodesToVisit.tail
+                        if (!visitedNodes.contains(nextPC)) {
+                            visitedNodes += nextPC
+                            nodesToVisit =
+                                regularSuccessorsOf(nextPC).foldLeft(nodesToVisit){
+                                    (c, n) ⇒ n :&: c
+                                }
+                            nodesToVisit =
+                                exceptionHandlerSuccessorsOf(nextPC).foldLeft(nodesToVisit){
+                                    (c, n) ⇒ n :&: c
+                                }
+                        }
+                    }
+                }
+                !isInfiniteLoop
+            }
+        !allLoopsTerminate
+        */
+
+        // IDEA traverse the cfg from the exit nodes to the start node and try to determine if
+        // every loop header can be reached.
+        var remainingPotentialLoopHeaders = thePotentialLoopHeaders
+        var nodesToVisit = allExitPCs.foldLeft(Nil: List[Int])((c, n) ⇒ n :&: c)
+        val visitedNodes = new mutable.BitSet(code.instructions.length)
+        while (remainingPotentialLoopHeaders.nonEmpty && nodesToVisit.nonEmpty) {
+            val nextPC = nodesToVisit.head
+            nodesToVisit = nodesToVisit.tail
+            visitedNodes += nextPC
+            predecessorsOf(nextPC) foreach { predPC ⇒
+                remainingPotentialLoopHeaders -= predPC
+                if (!visitedNodes.contains(predPC)) {
+                    nodesToVisit :&:= predPC
+                }
+            }
+        }
+        remainingPotentialLoopHeaders
     }
 
     /**
