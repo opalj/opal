@@ -30,7 +30,7 @@ package org.opalj
 package graphs
 
 /**
- * Factory to compute post [[DominatorTree]]s.
+ * Factory to compute classical post [[DominatorTree]]s.
  *
  * @author Stephan Neumann
  */
