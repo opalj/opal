@@ -772,9 +772,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
             /* We want to evaluate the subroutines only after evaluating all other regular
              * paths to ensure the def-use information is "complete".
-             * Additionally, we have to ensure that all
-             * paths of a specific subroutine are actually evaluated before
-             * we return.
+             * Additionally, we have to ensure that all paths of a specific subroutine are
+             * actually evaluated before we return.
              *
              * However, in case of deeply nested jsr-rets, we have to make sure that
              * we "ret" as soon as all jumps to the subrouting have been evaluated, otherwise, we
@@ -801,13 +800,19 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     // instruction that is the return target of a subroutine - the
                     // subroutine was completely analyzed. Otherwise, the context information
                     // may be missing.
-                    // Additionally, we have to ensure that a subroutine which may be called
+                    // Additionally, we have to ensure that a subroutine that is called
                     // directly by the main code, but which may also be called after
                     // some other subroutines were evaluated, is only evaluated after the
                     // other subroutines have been completely evaluated.
-                    // We check the latter condition using the post dominator tree.
+                    // We check the latter condition using dominace information.
                     val nextSubroutinePC = subroutinePCs.tail.foldLeft(subroutinePCs.head) { (c, n) ⇒
-                        if (aiResult.domain.postDominatorTree.strictlyDominates(c, n)) n else c
+                        // We orignially fixed the above issued using a post-dominance related test
+                        // however, due to the complexity related to post-dominator trees for
+                        // methods with infinite loops, we are now using the (forwards) dominator
+                        // tree. I.e., we (hopefully) changed the implementation to avoid having to deal
+                        // with some very weird corner cases.
+                        //if (aiResult.domain.postDominatorTree.strictlyDominates(c, n)) n else c
+                        if (aiResult.domain.dominatorTree.strictlyDominates(c, n)) c else n
                     }
                     nextPCs += nextSubroutinePC
                     subroutinePCs -= nextSubroutinePC
