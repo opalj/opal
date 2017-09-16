@@ -47,6 +47,46 @@ public class InfiniteLoops {
         }
     }
 
+    static void regularLoopInInfiniteLoop(int i) {
+        if (i < 0)
+            return;
+        else {
+            while (true) {
+                for (int j = 0; j < i; j++) {
+                    j *= i;
+                }
+            }
+        }
+    }
+
+    static void trivialNestedInfiniteLoops(int i) {
+        if (i < 0)
+            return;
+        else {
+            while (true) {
+                if(i * 1 == i) {
+                    while(true) {
+                        ;
+                    }
+                }
+            }
+        }
+    }
+
+    static void nestedInfiniteLoops(int i) {
+        if (i < 0)
+            return;
+        else {
+            while (true) {
+                if(i < 10){
+                    while(true) {
+                        i++;
+                    }
+                }
+            }
+        }
+    }
+
     static void complexPathToInfiniteLoop(int i) {
         if (i < 0)
             return;
