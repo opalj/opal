@@ -291,4 +291,17 @@ final public class Demo extends Object {
         }
         return z.hashCode() + o.hashCode();
     }
+
+    public static int tryCatchFinallyInInfiniteLoop(Object g) throws Throwable {
+        int i = 0;
+        while(true) {
+            try {
+                System.out.println(i);
+            } catch (Throwable t) {
+                i -= 1;
+            } finally {
+                i += 1;
+            }
+        }
+    }
 }
