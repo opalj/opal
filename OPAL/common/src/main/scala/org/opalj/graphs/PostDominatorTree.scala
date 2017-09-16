@@ -74,13 +74,19 @@ object PostDominatorTree {
      * scala>pdt.toDot()
      * }}}
      *
-     * @note    The underlying graph '''MUST NOT''' contain any node which is not connected
-     *          to an exit node!
+     * @note    The underlying graph '''MUST NOT''' contain any node which is not (indirectly)
+     *          connected to an exit node! If the underlying CFG contains infinite loops then
+     *          the caller has to handle this case by augmenting the CFG and later on
+     *          post-processing the PDT.
      *
      * @param   isExitNode A function that returns `true` if the given node – in the underlying
      *          (control-flow) graph – is an exit node; that is the node has no successors.
      * @param   foreachExitNode A function f that takes a function g with an int parameter
      *          and which executes g for each exit node.
+     *          '''Note that ALL NODES have to be reachable from the exit nodes; otherwise the
+     *          PostDominatorTree will be useless.'''
+     * @param   infiniteLoopHeaders The first instructions of infinite loops.
+     *
      * @param   maxNode The largest id used by the underlying (control-flow) graph.
      *
      */

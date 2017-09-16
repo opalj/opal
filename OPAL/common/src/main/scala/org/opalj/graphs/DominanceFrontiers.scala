@@ -123,7 +123,7 @@ object DominanceFrontiers {
      *          node then this node may or may not be reported as a valid node; this is not relevant
      *          for this algorithm.
      */
-    def apply(dtf: DominatorTreeFactory,isValidNode: (Int) ⇒ Boolean  ): DominanceFrontiers = {
+    def apply(dtf: DominatorTreeFactory, isValidNode: (Int) ⇒ Boolean): DominanceFrontiers = {
 
         import dtf.{startNode, maxNode, foreachSuccessorOf, dt}
         val max = maxNode + 1
