@@ -208,7 +208,7 @@ final public class Demo extends Object {
         return y;
     }
 
-    static long complexCodeWithNewLocalVarsAfterfinally(int i, int j, long z) throws Exception {
+    static long complexCodeWithNewLocalVarsAfterFinally(int i, int j, long z) throws Exception {
         if (i < j + z)
             return -1;
         try {
@@ -248,5 +248,47 @@ final public class Demo extends Object {
         long l3 = m4((int) l1);
         long l4 = l1 * l3;
         return l1 * l3 * l4;
+    }
+
+    public int finallyGame(Object g) throws Throwable {
+        Object o;
+        Object z;
+        try {
+            Object io = null;
+            try {
+                this.equals(g.toString());
+            } finally {
+                try {
+                    System.out.println("Did it - 1!");
+                } finally {
+                    o = new Object();
+                    System.err.println("Everything is falling apart!");
+                }
+                io = new Object();
+            }
+            System.out.println(io.toString());
+        } finally {
+            z = "z";
+            System.out.println("Did it -2!");
+        }
+        return z.hashCode() + o.hashCode();
+    }
+
+    public static int finallyAndCatchGame(Object g) throws Throwable {
+        Object o;
+        Object z;
+        try {
+            System.out.println("before o assinemnt...");
+            o = new Object();
+        } catch (java.lang.RuntimeException re){
+            o = "re";
+        } catch (java.lang.Exception e){
+            o = "e";
+        } finally {
+            o = "finally";
+            z = "z";
+            System.out.println("Did it -2!");
+        }
+        return z.hashCode() + o.hashCode();
     }
 }
