@@ -143,7 +143,6 @@ trait RecordCFG
      * @param pc A valid program counter.
      */
     def predecessorsOf(pc: PC): PCs = {
-
         var predecessors = this.predecessors
         if (predecessors eq null) synchronized {
             predecessors = this.predecessors
@@ -204,8 +203,9 @@ trait RecordCFG
     def potentialLoopHeaders: IntArraySet = thePotentialLoopHeaders
 
     /**
-     * Returns `true` if this method contains an effective infinite loop. An infinite loop
-     * is a sequence of instructions that does not have a connection to an exit node.
+     * Returns the first instructions of the infinite loops of the current method. An infinite loop
+     * is a sequence of instructions that does not have a connection to any exit node. The very
+     * vast majority of methods does not have infinite loops.
      */
     def infiniteLoopHeaders: IntArraySet = {
         if (thePotentialLoopHeaders.isEmpty)
@@ -267,8 +267,14 @@ trait RecordCFG
         remainingPotentialLoopHeaders
     }
 
-    /**
+    /*
      * Returns a factory to compute the [[PostDominatorTree]] (PDT).
+     *
+     * The PDT is a [[DominatorTree]] computed using the
+     * reverse control-flow graph using a single explicit, virtual exit node which is
+     * – in case of true infinite loops – also connected with selected instructions
+     * in the infinite loop such that the computation of control-dependencies using the PDT is
+     * facilitated.
      *
      * In case of code which contains infinite loops, the dominator tree is used to compute
      * those nodes which will be connected to the virtual exit node. This ensures that
@@ -279,32 +285,49 @@ trait RecordCFG
         if (thePostDominatorTree eq null) synchronized {
             thePostDominatorTree = this.thePostDominatorTree
             if (thePostDominatorTree eq null) {
-                thePostDominatorTree =
-                    PostDominatorTree(
-                        allExitPCs.contains,
-                        allExitPCs.foreach,
-                        foreachSuccessorOf,
-                        foreachPredecessorOf,
-                        maxNode = code.instructions.length - 1
-                    )
+                thePostDominatorTree = {
+                    // The headers of infinite loops are used as additional exit nodes;
+                    // this enables use to compute meaninful dependency information for
+                    // the loops body; however, we need to clean up the control dependency
+                    // information w.r.t. the loop headers afterwards...
+                    // In general, the first instruction of an infinite loop can be any
+                    // kind of instruction (e.g., also an if instruction on which
+                    // instructions from the loop body are control-dependent on.)
+                    val infiniteLoopHeaders = this.infiniteLoopHeaders
+                    if (infiniteLoopHeaders.nonEmpty) {
+                        val nodes = allExitPCs.foldLeft(infiniteLoopHeaders)(_ + _)
+                        PostDominatorTree(
+                            nodes.contains,
+                            nodes.foreach,
+                            foreachSuccessorOf,
+                            foreachPredecessorOf,
+                            maxNode = code.instructions.length - 1
+                        )
+                    } else {
+                        PostDominatorTree(
+                            allExitPCs.contains,
+                            allExitPCs.foreach,
+                            foreachSuccessorOf,
+                            foreachPredecessorOf,
+                            maxNode = code.instructions.length - 1
+                        )
+                    }
+                }
                 this.thePostDominatorTree = thePostDominatorTree
             }
         }
         thePostDominatorTree
     }
 
-    /**
-     * Returns the post dominator tree (PDT).The PDT is a [[DominatorTree]] computed using the
-     * reverse control-flow graph using a single explicit, virtual exit node which is
-     * – in case of true infinite loops – also connected with selected instructions
-     * in the infinite loop such that the computation of control-dependencies using the PDT is
-     * facilitated.
-     */
-    def postDominatorTree: DominatorTree = postDominatorTreeFactory.dt
+    lazy val postDominator: DominatorTree = postDominatorTreeFactory.dt
 
     /**
-     * Returns the control dependencies graph. See [[postDominatorTreeFactory]] for details
-     * regarding the handling of infinite loops.
+     * Returns the control dependencies graph.
+     *
+     * Internally, a post dominator tree is used to compute the dominance frontiers, but that
+     * post dominator tree (PDT) is (in general) an augmented PDT because it may contain additional
+     * edges if the underlying method has inifinite loops. (Here, an infinite loop must never lead
+     * to a(n ab)normal return from the method.)
      */
     def controlDependencies: ControlDependencies = {
         var theControlDependencies = this.theControlDependencies
@@ -320,9 +343,7 @@ trait RecordCFG
     }
 
     def allReachable(pcs: IntArraySet): IntArraySet = {
-        pcs.foldLeft(IntArraySet.empty) { (c, pc) ⇒
-            c ++ allReachable(pc)
-        }
+        pcs.foldLeft(IntArraySet.empty) { (c, pc) ⇒ c ++ allReachable(pc) }
     }
 
     def allReachable(pc: PC): IntArraySet = {
