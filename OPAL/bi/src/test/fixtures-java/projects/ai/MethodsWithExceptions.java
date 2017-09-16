@@ -242,4 +242,46 @@ public class MethodsWithExceptions {
             return -10;
         }
     }
+
+    public static int finallyGame(Object g) throws Throwable {
+        Object o;
+        Object z;
+        try {
+            Object io = null;
+            try {
+                throwsThisOrThatException(g.toString());
+            } finally {
+                try {
+                    System.out.println("Did it - 1!");
+                } finally {
+                    o = new Object();
+                    System.err.println("Everything is falling apart!");
+                }
+                io = new Object();
+            }
+            System.out.println(io.toString());
+        } finally {
+            z = "z";
+            System.out.println("Did it -2!");
+        }
+        return z.hashCode() + o.hashCode();
+    }
+
+    public static int finallyAndCatchGame(Object g) throws Throwable {
+        Object o;
+        Object z;
+        try {
+            System.out.println("before o assinemnt...");
+            o = new Object();
+        } catch (java.lang.RuntimeException re){
+            o = "re";
+        } catch (java.lang.Exception e){
+            o = "e";
+        } finally {
+            o = "finally";
+            z = "z";
+            System.out.println("Did it -2!");
+        }
+        return z.hashCode() + o.hashCode();
+    }
 }
