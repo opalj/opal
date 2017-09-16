@@ -319,7 +319,7 @@ trait RecordCFG
         thePostDominatorTree
     }
 
-    lazy val postDominator: DominatorTree = postDominatorTreeFactory.dt
+    lazy val postDominatorTree: DominatorTree = postDominatorTreeFactory.dt
 
     /**
      * Returns the control dependencies graph.
