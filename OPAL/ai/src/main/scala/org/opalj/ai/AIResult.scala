@@ -338,7 +338,7 @@ object AIResultBuilder {
                 var subroutinesLocalsArray: domain.LocalsArray = null
 
                 if (subroutinePCs.nonEmpty) {
-                    val codeSize = code.instructions.size
+                    val codeSize = code.instructions.length
                     subroutinesOperandsArray = new Array(codeSize)
                     subroutinesLocalsArray = new Array(codeSize)
                     subroutinePCs.foreach { pc ⇒
