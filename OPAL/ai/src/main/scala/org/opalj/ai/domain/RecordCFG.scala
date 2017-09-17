@@ -30,9 +30,10 @@ package org.opalj
 package ai
 package domain
 
+import java.lang.ref.{SoftReference ⇒ SRef}
+
 import scala.collection.BitSet
 import scala.collection.mutable
-
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntArraySet
@@ -44,15 +45,14 @@ import org.opalj.br.instructions.ATHROW
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
-import org.opalj.graphs.DominatorTreeFactory
 import org.opalj.graphs.ControlDependencies
-import org.opalj.graphs.ControlDependenceGraph
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.ExceptionHandler
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.graphs.DominanceFrontiers
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -60,7 +60,7 @@ import org.opalj.collection.mutable.IntArrayStack
  * real(runtime) CFG.
  *
  * ==Usage (Mixin-Composition Order)==
- * This domain overrides the `flow` method and requires that it is mixed in before every
+ * This domain primarily overrides the `flow` method and requires that it is mixed in before every
  * other domain that overrides the `flow` method and which may manipulate the `worklist`.
  * E.g., the mixin order should be:
  * {{{ class MyDomain extends Domain with RecordCFG with FlowManipulatingDomain }}}
@@ -85,18 +85,67 @@ trait RecordCFG
     with ai.ReturnInstructionsDomain {
     cfgDomain: ValuesDomain with TheCode ⇒
 
-    private[this] var regularSuccessors: Array[IntArraySet] = _ // ... either null or non-empty
-    private[this] var exceptionHandlerSuccessors: Array[IntArraySet] = _ // ... null or non-empty
-    private[this] var predecessors: Array[IntArraySet] = _
-    private[this] var exitPCs: mutable.BitSet = _ // IMPROVE use an Int(Trie)Set
-    private[this] var subroutineStartPCs: IntArraySet = _
-    private[this] var theDominatorTree: DominatorTree = _
-    private[this] var thePostDominatorTree: DominatorTreeFactory = _
-    private[this] var theControlDependencies: ControlDependencies = _
-    private[this] var theBBCFG: CFG = _
-    /** The set of nodes to which a jump back is executed. */
-    private[this] var thePotentialLoopHeaders: IntArraySet = _
+    //
+    // DIRECTLY RECORDED INFORMATION
+    //
 
+    // ... elements are either null or non-empty
+    private[this] var regularSuccessors: Array[IntArraySet] = _
+
+    // ... elements are either null or non-empty
+    private[this] var exceptionHandlerSuccessors: Array[IntArraySet] = _
+
+    private[this] var theExitPCs: mutable.BitSet = _ // IMPROVE use an Int(Trie)Set
+
+    private[this] var theSubroutineStartPCs: IntArraySet = _
+
+    /**
+     * The set of nodes to which a(n un)conditional jump back is executed.
+     */
+    private[this] var theJumpBackTargetPCs: IntArraySet = _
+
+    //
+    // DERIVED INFORMATION
+    //
+
+    /**
+     * @note    We use the monitor associated with "this" when computing predecessors;
+     *          the monitor associated with "this" is not (to be) used otherwise!
+     */
+    private[this] var thePredecessors: SRef[Array[IntArraySet]] = _ // uses regularSuccessors as lock
+
+    /**
+     * @note    We use the monitor associated with regularSuccessors when computing the dominator
+     *          tree; the monitor associated with regularSuccessors is not (to be) used otherwise!
+     */
+    private[this] var theDominatorTree: SRef[DominatorTree] = _
+
+    /**
+     * @note    We use the monitor associated with theJumpBackTargetPCs when computing the post
+     *          dominator tree; the monitor associated with theJumpBackTargetPCs is not (to be)
+     *          used otherwise!
+     */
+    private[this] var thePostDominatorTree: SRef[PostDominatorTree] = _
+
+    private[this] var theControlDependencies: SRef[ControlDependencies] = _
+
+    /**
+     * @note    We use the monitor associated with exceptionHandlerSuccessors when computing the
+     *          bb based cfg; the monitor associated with exceptionHandlerSuccessors is not (to be)
+     *          used otherwise!
+     */
+    private[this] var theBBCFG: SRef[CFG] = _
+
+    //
+    // METHODS WHICH RECORD THE AI TIME CFG AND WHICH ARE CALLED BY THE FRAMEWORK
+    //
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
     abstract override def initProperties(
         code:          Code,
         cfJoins:       BitSet,
@@ -105,259 +154,241 @@ trait RecordCFG
         val codeSize = code.instructions.length
         regularSuccessors = new Array[IntArraySet](codeSize)
         exceptionHandlerSuccessors = new Array[IntArraySet](codeSize)
-        exitPCs = new mutable.BitSet(codeSize)
-        subroutineStartPCs = IntArraySet.empty
+        theExitPCs = new mutable.BitSet(codeSize)
+        theSubroutineStartPCs = IntArraySet.empty
+        theJumpBackTargetPCs = IntArraySet.empty
 
         // The following values are initialized lazily (when required); after the abstract
         // interpretation was (successfully) performed!
-        predecessors = null
+        thePredecessors = null
+        theBBCFG = null
         theDominatorTree = null
         thePostDominatorTree = null
         theControlDependencies = null
-        theBBCFG = null
-        thePotentialLoopHeaders = IntArraySet.empty
 
         super.initProperties(code, cfJoins, initialLocals)
     }
 
     /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def flow(
+        currentPC:                        PC,
+        currentOperands:                  Operands,
+        currentLocals:                    Locals,
+        successorPC:                      PC,
+        isSuccessorScheduled:             Answer,
+        isExceptionalControlFlow:         Boolean,
+        abruptSubroutineTerminationCount: Int,
+        wasJoinPerformed:                 Boolean,
+        worklist:                         List[PC],
+        operandsArray:                    OperandsArray,
+        localsArray:                      LocalsArray,
+        tracer:                           Option[AITracer]
+    ): List[PC] = {
+
+        if (successorPC <= currentPC) { // "<=" to handle "x: goto x"
+            theJumpBackTargetPCs += successorPC
+        }
+
+        val successors =
+            if (isExceptionalControlFlow)
+                cfgDomain.exceptionHandlerSuccessors
+            else
+                cfgDomain.regularSuccessors
+
+        val successorsOfPC = successors(currentPC)
+        if (successorsOfPC eq null)
+            successors(currentPC) = new IntArraySet1(successorPC)
+        else {
+            val newSuccessorsOfPC = successorsOfPC + successorPC
+            if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
+        }
+
+        super.flow(
+            currentPC, currentOperands, currentLocals,
+            successorPC, isSuccessorScheduled,
+            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            wasJoinPerformed,
+            worklist,
+            operandsArray, localsArray,
+            tracer
+        )
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def jumpToSubroutine(pc: PC, branchTarget: PC, returnTarget: PC): Unit = {
+        theSubroutineStartPCs += branchTarget
+        super.jumpToSubroutine(pc, branchTarget, returnTarget)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
+        theExitPCs += pc
+        super.returnVoid(pc)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def ireturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
+        theExitPCs += pc
+        super.ireturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def lreturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
+        theExitPCs += pc
+        super.lreturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def freturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
+        theExitPCs += pc
+        super.freturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def dreturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
+        theExitPCs += pc
+        super.dreturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def areturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
+        theExitPCs += pc
+        super.areturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def abruptMethodExecution(
+        pc:             PC,
+        exceptionValue: ExceptionValue
+    ): Unit = {
+        theExitPCs += pc
+        super.abruptMethodExecution(pc, exceptionValue)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note If another domain always overrides this method the invocation of this one has to be
+     *       ensured; otherwise the recorded CFG will be incomplete.
+     */
+    abstract override def abstractInterpretationEnded(
+        aiResult: AIResult { val domain: cfgDomain.type }
+    ): Unit = {
+        super.abstractInterpretationEnded(aiResult)
+
+        assert(exceptionHandlerSuccessors.forall(s ⇒ (s eq null) || s.nonEmpty))
+        assert(regularSuccessors.forall(s ⇒ (s eq null) || s.nonEmpty))
+    }
+
+    // ==================================== BASIC QUERIES ==========================================
+    //
+    //
+
+    /**
      * Returns all PCs that may lead to the (ab)normal termination of the method. I.e.,
-     * those instructions (in particular method call instructions) that may throw
+     * those instructions (in particular method call instructions, but potentially also
+     * array access instructions and (I]L)DIV|MOD instructions etc.) that may throw
      * some unhandled exceptions will also be returned; even if the instruction may
      * also have regular and also exception handlers!
      */
-    def allExitPCs: BitSet = exitPCs
+    def exitPCs: BitSet = theExitPCs
 
     /**
-     * Returns the PCs of the first instructions of all subroutines.
+     * Returns the PCs of the first instructions of all subroutines; that is, the instructions
+     * a `JSR` instruction jumps to.
      */
-    def allSubroutineStartPCs: PCs = subroutineStartPCs
-
-    /**
-     * Returns the program counter(s) of the instruction(s) that is(are) executed
-     * before the instruction with the given pc.
-     *
-     * If the instruction with the given `pc` was never executed an empty set is
-     * returned.
-     *
-     * @param pc A valid program counter.
-     */
-    def predecessorsOf(pc: PC): PCs = {
-        var predecessors = this.predecessors
-        if (predecessors eq null) synchronized {
-            predecessors = this.predecessors
-            if (predecessors eq null) {
-                // => this.regularPredecessors == null
-                predecessors = new Array[IntArraySet](regularSuccessors.length)
-                for {
-                    pc ← code.programCounters
-                    successorPC ← allSuccessorsOf(pc)
-                } {
-                    val oldPredecessorsOfSuccessor = predecessors(successorPC)
-                    predecessors(successorPC) =
-                        if (oldPredecessorsOfSuccessor eq null) {
-                            new IntArraySet1(pc)
-                        } else {
-                            oldPredecessorsOfSuccessor + pc
-                        }
-
-                }
-                this.predecessors = predecessors
-            }
-        }
-        val s = predecessors(pc)
-        if (s ne null) s else NoPCs
-    }
-
-    /**
-     * Returns the dominator tree.
-     *
-     * @note   To get the list of all evaluated instructions and their dominators.
-     *         {{{
-     *         val result = AI(...,...,...)
-     *         val evaluated = result.evaluatedInstructions
-     *         }}}
-     */
-    def dominatorTree: DominatorTree = {
-        var theDominatorTree = this.theDominatorTree
-        if (theDominatorTree eq null) synchronized {
-            theDominatorTree = this.theDominatorTree
-            if (theDominatorTree eq null) {
-                theDominatorTree =
-                    DominatorTree(
-                        startNode = 0,
-                        startNodeHasPredecessors = predecessorsOf(0).nonEmpty,
-                        foreachSuccessorOf,
-                        foreachPredecessorOf,
-                        maxNode = code.instructions.length - 1
-                    )
-                this.theDominatorTree = theDominatorTree
-            }
-        }
-        theDominatorTree
-    }
+    def subroutineStartPCs: PCs = theSubroutineStartPCs
 
     /**
      * The set of instructions to which a jump back is performed.
      */
-    def potentialLoopHeaders: IntArraySet = thePotentialLoopHeaders
+    def jumpBackTargetPCs: IntArraySet = theJumpBackTargetPCs
+
+    // IMPROVE Move the functionality to record/decide which instructions were executed to another domain which uses the operandsArray as the source of the information (more efficient!)
+    /**
+     * Returns `true` if the instruction with the given `pc` was executed.
+     * The `pc` has to identify a valid instruction.
+     */
+    private[this] final def unsafeWasExecuted(pc: PC): Boolean = {
+        (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
+            theExitPCs.contains(pc)
+    }
 
     /**
-     * Returns the first instructions of the infinite loops of the current method. An infinite loop
-     * is a sequence of instructions that does not have a connection to any exit node. The very
-     * vast majority of methods does not have infinite loops.
+     * Returns `true` if the instruction with the given `pc` was executed.
      */
-    def infiniteLoopHeaders: IntArraySet = {
-        if (thePotentialLoopHeaders.isEmpty)
-            return IntArraySet.empty;
-        // Let's test if the set of nodes reachable from a potential loop header is
-        // closed; i.e., does not include an exit node and does not refer to a node
-        // which is outside of the loop.
-
-        /*
-        // The nodes which are connected to an exit node... if not the loop eargerly
-        // aborts the computation and it doesn't matter that it contains "wrong data"
-        // w.r.t. the last analyzed loop.
-        val allLoopsTerminate =
-            thePotentialLoopHeaders forall { loopHeaderPC ⇒
-                val visitedNodes = new mutable.BitSet(code.instructions.length)
-                var nodesToVisit = List(loopHeaderPC)
-                var isInfiniteLoop = true
-                while (nodesToVisit.nonEmpty) {
-                    val nextPC = nodesToVisit.head
-                    if (allExitPCs.contains(nextPC)) {
-                        isInfiniteLoop = false
-                        nodesToVisit = Nil // terminate while loop
-                    } else {
-                        nodesToVisit = nodesToVisit.tail
-                        if (!visitedNodes.contains(nextPC)) {
-                            visitedNodes += nextPC
-                            nodesToVisit =
-                                regularSuccessorsOf(nextPC).foldLeft(nodesToVisit){
-                                    (c, n) ⇒ n :&: c
-                                }
-                            nodesToVisit =
-                                exceptionHandlerSuccessorsOf(nextPC).foldLeft(nodesToVisit){
-                                    (c, n) ⇒ n :&: c
-                                }
-                        }
-                    }
-                }
-                !isInfiniteLoop
-            }
-        !allLoopsTerminate
-        */
-
-        // IDEA traverse the cfg from the exit nodes to the start node and try to determine if
-        // every loop header can be reached.
-        var remainingPotentialLoopHeaders = thePotentialLoopHeaders
-        var nodesToVisit = allExitPCs.foldLeft(Nil: List[Int])((c, n) ⇒ n :&: c)
-        val visitedNodes = new mutable.BitSet(code.instructions.length)
-        while (remainingPotentialLoopHeaders.nonEmpty && nodesToVisit.nonEmpty) {
-            val nextPC = nodesToVisit.head
-            nodesToVisit = nodesToVisit.tail
-            visitedNodes += nextPC
-            predecessorsOf(nextPC) foreach { predPC ⇒
-                remainingPotentialLoopHeaders -= predPC
-                if (!visitedNodes.contains(predPC)) {
-                    nodesToVisit :&:= predPC
-                }
-            }
-        }
-        remainingPotentialLoopHeaders
-    }
-
-    /*
-     * Returns a factory to compute the [[PostDominatorTree]] (PDT).
-     *
-     * The PDT is a [[DominatorTree]] computed using the
-     * reverse control-flow graph using a single explicit, virtual exit node which is
-     * – in case of true infinite loops – also connected with selected instructions
-     * in the infinite loop such that the computation of control-dependencies using the PDT is
-     * facilitated.
-     *
-     * In case of code which contains infinite loops, the dominator tree is used to compute
-     * those nodes which will be connected to the virtual exit node. This ensures that
-     * control-dependencies computed using the PDT is valid.
-     */
-    def postDominatorTreeFactory: DominatorTreeFactory = {
-        var thePostDominatorTree = this.thePostDominatorTree
-        if (thePostDominatorTree eq null) synchronized {
-            thePostDominatorTree = this.thePostDominatorTree
-            if (thePostDominatorTree eq null) {
-                thePostDominatorTree = {
-                    // The headers of infinite loops are used as additional exit nodes;
-                    // this enables use to compute meaninful dependency information for
-                    // the loops body; however, we need to clean up the control dependency
-                    // information w.r.t. the loop headers afterwards...
-                    // In general, the first instruction of an infinite loop can be any
-                    // kind of instruction (e.g., also an if instruction on which
-                    // instructions from the loop body are control-dependent on.)
-                    val infiniteLoopHeaders = this.infiniteLoopHeaders
-                    if (infiniteLoopHeaders.nonEmpty) {
-                        val nodes = allExitPCs.foldLeft(infiniteLoopHeaders)(_ + _)
-                        PostDominatorTree(
-                            nodes.contains,
-                            nodes.foreach,
-                            foreachSuccessorOf,
-                            foreachPredecessorOf,
-                            maxNode = code.instructions.length - 1
-                        )
-                    } else {
-                        PostDominatorTree(
-                            allExitPCs.contains,
-                            allExitPCs.foreach,
-                            foreachSuccessorOf,
-                            foreachPredecessorOf,
-                            maxNode = code.instructions.length - 1
-                        )
-                    }
-                }
-                this.thePostDominatorTree = thePostDominatorTree
-            }
-        }
-        thePostDominatorTree
-    }
-
-    lazy val postDominatorTree: DominatorTree = postDominatorTreeFactory.dt
+    final def wasExecuted(pc: PC): Boolean = pc < code.instructions.length && unsafeWasExecuted(pc)
 
     /**
-     * Returns the control dependencies graph.
-     *
-     * Internally, a post dominator tree is used to compute the dominance frontiers, but that
-     * post dominator tree (PDT) is (in general) an augmented PDT because it may contain additional
-     * edges if the underlying method has inifinite loops. (Here, an infinite loop must never lead
-     * to a(n ab)normal return from the method.)
+     * Computes the set of all executed instructions.
      */
-    def controlDependencies: ControlDependencies = {
-        var theControlDependencies = this.theControlDependencies
-        if (theControlDependencies eq null) synchronized {
-            theControlDependencies = this.theControlDependencies
-            if (theControlDependencies eq null) {
-                val pdtf = postDominatorTreeFactory
-                theControlDependencies = ControlDependenceGraph(pdtf, wasExecuted)
-                this.theControlDependencies = theControlDependencies
-            }
+    final def allExecuted: BitSet = {
+        val wasExecuted = new mutable.BitSet(code.instructions.length)
+        code.programCounters.foreach { pc ⇒
+            if (unsafeWasExecuted(pc))
+                wasExecuted += pc
         }
-        theControlDependencies
-    }
-
-    def allReachable(pcs: IntArraySet): IntArraySet = {
-        pcs.foldLeft(IntArraySet.empty) { (c, pc) ⇒ c ++ allReachable(pc) }
-    }
-
-    def allReachable(pc: PC): IntArraySet = {
-        var allReachable: IntArraySet = new IntArraySet1(pc)
-        var successorsToVisit = allSuccessorsOf(pc)
-        while (successorsToVisit.nonEmpty) {
-            val (succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
-            successorsToVisit = newSuccessorsToVisit
-            if (!allReachable.contains(succPC)) {
-                allReachable += succPC
-                successorsToVisit ++= allSuccessorsOf(succPC)
-            }
-        }
-        allReachable
+        wasExecuted
     }
 
     /**
@@ -376,20 +407,56 @@ trait RecordCFG
         if (s ne null) s else NoPCs
     }
 
+    final def hasMultipleSuccessors(pc: PC): Boolean = {
+        val regularSuccessorsCount = regularSuccessorsOf(pc).size
+        regularSuccessorsCount > 1 ||
+            (regularSuccessorsCount + exceptionHandlerSuccessorsOf(pc).size) > 1
+    }
+
+    def isDirectRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
+        regularSuccessorsOf(pc).contains(successorPC)
+    }
+
     /**
-     * Returns the program counter(s) of the instruction(s) that is(are) executed next if
-     * the evaluation of this instruction may raise an exception.
+     * Returns the set of all instructions executed after the instruction with the
+     * given `pc`. If this set is empty, either the instruction belongs to dead code,
+     * the instruction is a `return` instruction or the `instruction` throws an exception
+     * that is never handled internally.
      *
-     * The returned set is always empty for instructions that cannot raise exceptions,
-     * such as the `StackManagementInstruction`s.
-     *
-     * @note    The [[org.opalj.br.instructions.ATHROW]] has successors if and only if the
-     *          thrown exception is directly handled inside this code block.
-     * @note    The successor instructions are necessarily the handlers of catch blocks.
+     * @note The set is recalculated on demand.
      */
-    def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
-        val s = exceptionHandlerSuccessors(pc)
-        if (s ne null) s else NoPCs
+    def allSuccessorsOf(pc: PC): PCs = {
+        regularSuccessorsOf(pc) ++ exceptionHandlerSuccessorsOf(pc)
+    }
+
+    final def successorsOf(pc: PC, regularSuccessorOnly: Boolean): PCs = {
+        if (regularSuccessorOnly)
+            regularSuccessorsOf(pc)
+        else
+            allSuccessorsOf(pc)
+    }
+
+    def hasNoSuccessor(pc: PC): Boolean = {
+        (regularSuccessors(pc) eq null) && (exceptionHandlerSuccessors eq null)
+    }
+
+    /**
+     * Returns `true` if the execution of the given instruction – identified by its pc –
+     * ex-/implicitly throws an exception that is (potentially) handled by the method.
+     */
+    def throwsException(pc: PC): Boolean = exceptionHandlerSuccessors(pc) ne null
+
+    /**
+     * Returns `true` if the execution of the given instruction – identified by its pc –
+     * '''always just''' throws an exception that is (potentially) handled by the method.
+     */
+    def justThrowsException(pc: PC): Boolean = {
+        (exceptionHandlerSuccessors(pc) ne null) && (regularSuccessors(pc) eq null)
+    }
+
+    def foreachSuccessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
+        regularSuccessorsOf(pc).foreach { f }
+        exceptionHandlerSuccessorsOf(pc).foreach { f }
     }
 
     /**
@@ -420,89 +487,61 @@ trait RecordCFG
         false
     }
 
-    def hasNoSuccessor(pc: PC): Boolean = {
-        (regularSuccessors(pc) eq null) && (exceptionHandlerSuccessors eq null)
-    }
-
     /**
-     * Returns `true` if the execution of the given instruction – identified by its pc –
-     * ex-/implicitly throws an exception that is (potentially) handled by the method.
-     */
-    def throwsException(pc: PC): Boolean = {
-        exceptionHandlerSuccessors(pc) ne null
-    }
-
-    /**
-     * Returns `true` if the execution of the given instruction – identified by its pc –
-     * '''always just''' throws an exception that is (potentially) handled by the method.
-     */
-    def justThrowsException(pc: PC): Boolean = {
-        (exceptionHandlerSuccessors(pc) ne null) && (regularSuccessors(pc) eq null)
-    }
-
-    /**
-     * Returns the set of all instructions executed after the instruction with the
-     * given `pc`. If this set is empty, either the instruction belongs to dead code,
-     * the instruction is a `return` instruction or the `instruction` throws an exception
-     * that is never handled internally.
+     * Tests if the instruction with the given pc is a direct or
+     * indirect predecessor of the given successor instruction.
      *
-     * @note The set is recalculated on demand.
+     * If `pc` equals `successorPC` `true` is returned.
+     *
+     * @note This method will traverse the entire graph if `successorPC` is '''not''' a regular
+     *       predecessor of `pc`. Hence, consider using the `(Post)DominatorTree`.
      */
-    def allSuccessorsOf(pc: PC): PCs = {
-        regularSuccessorsOf(pc) ++ exceptionHandlerSuccessorsOf(pc)
-    }
+    def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
+        if (pc == successorPC)
+            return true;
 
-    final def successorsOf(pc: PC, regularSuccessorOnly: Boolean): PCs = {
-        if (regularSuccessorOnly)
-            regularSuccessorsOf(pc)
-        else
-            allSuccessorsOf(pc)
-    }
+        // IMPROVE  Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
+        var visitedSuccessors = Set(pc)
+        val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator)
+        while (successorsToVisit.nonEmpty) {
+            val nextPC = successorsToVisit.pop()
+            if (nextPC == successorPC)
+                return true;
 
-    final def hasMultipleSuccessors(pc: PC): Boolean = {
-        val regularSuccessorsCount = regularSuccessorsOf(pc).size
-        regularSuccessorsCount > 1 ||
-            (regularSuccessorsCount + exceptionHandlerSuccessorsOf(pc).size) > 1
-    }
-
-    final def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
-        predecessorsOf(pc).foreach { f }
-    }
-
-    final def foreachSuccessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
-        regularSuccessorsOf(pc).foreach { f }
-        exceptionHandlerSuccessorsOf(pc).foreach { f }
-    }
-
-    /**
-     * Returns `true` if the instruction with the given pc has multiple direct
-     * predecessors (more than one).
-     */
-    final def hasMultiplePredecessors(pc: PC): Boolean = predecessorsOf(pc).size > 1
-
-    private[this] final def unsafeWasExecuted(pc: PC): Boolean = {
-        (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
-            exitPCs.contains(pc)
-    }
-
-    final def wasExecuted(pc: PC): Boolean = pc < code.instructions.length && unsafeWasExecuted(pc)
-
-    final def allExecuted: BitSet = {
-        val wasExecuted = new mutable.BitSet(code.instructions.length)
-        code.programCounters foreach { pc ⇒
-            wasExecuted += pc
+            visitedSuccessors += nextPC
+            regularSuccessorsOf(nextPC).foreach { nextSuccessor ⇒
+                if (!visitedSuccessors.contains(nextSuccessor))
+                    successorsToVisit.push(nextSuccessor)
+            }
         }
-        wasExecuted
+        false
     }
 
     /**
-     * Returns true if the exception handler may handle at least one exception thrown
-     * by an instruction in the try block.
+     * Returns the program counter(s) of the instruction(s) that is(are) executed next if
+     * the evaluation of this instruction may raise an exception.
+     *
+     * The returned set is always empty for instructions that cannot raise exceptions,
+     * such as the `StackManagementInstruction`s.
+     *
+     * @note    The [[org.opalj.br.instructions.ATHROW]] has successors if and only if the
+     *          thrown exception is directly handled inside this code block.
+     * @note    The successor instructions are necessarily the handlers of catch blocks.
+     */
+    def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
+        val s = exceptionHandlerSuccessors(pc)
+        if (s ne null) s else NoPCs
+    }
+
+    /**
+     * Returns `true` if the exception handler may handle at least one exception thrown
+     * by an instruction in its try block.
      */
     final def handlesException(exceptionHandler: ExceptionHandler): Boolean = {
         val endPC = exceptionHandler.endPC
         val handlerPC = exceptionHandler.handlerPC
         var currentPC = exceptionHandler.startPC
+        val code = this.code
         while (currentPC <= endPC) {
             if (exceptionHandlerSuccessorsOf(currentPC).exists(_ == handlerPC))
                 return true;
@@ -512,48 +551,297 @@ trait RecordCFG
     }
 
     /**
-     * Tests if the instruction with the given pc is a direct or
-     * indirect predecessor of the given successor instruction.
-     *
-     * If pc equals successorPC `true` is returned.
-     *
-     * Please note, that this method can be expensive basically traverses the entire graph
-     * if successorPC is NOT a regular predecessor of successorPC.
+     * Computes the transitive hull of all instructions reachable from the given set of
+     * instructions.
      */
-    def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
-        if (pc == successorPC)
-            return true;
-        var visitedSuccessors = Set(pc) // IMPROVE new IntArraySet1(pc) ??
-        // IMPROVE  use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
-        val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator)
-        while (successorsToVisit.nonEmpty) {
-            val successor = successorsToVisit.pop()
-            if (successor == successorPC)
-                return true;
-
-            visitedSuccessors += successor
-            regularSuccessorsOf(successor) foreach { nextSuccessor ⇒
-                if (!visitedSuccessors.contains(nextSuccessor))
-                    successorsToVisit.push(nextSuccessor)
-            }
-        }
-        false
+    def allReachable(pcs: IntArraySet): IntArraySet = {
+        pcs.foldLeft(IntArraySet.empty) { (c, pc) ⇒ c ++ allReachable(pc) }
     }
 
-    def isDirectRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
-        regularSuccessorsOf(pc).contains(successorPC)
+    /**
+     * Computes the transitive hull of all instructions reachable from the given instruction.
+     */
+    def allReachable(pc: PC): IntArraySet = {
+        var allReachable: IntArraySet = new IntArraySet1(pc)
+        var successorsToVisit = allSuccessorsOf(pc)
+        while (successorsToVisit.nonEmpty) {
+            val (succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
+            successorsToVisit = newSuccessorsToVisit
+            if (!allReachable.contains(succPC)) {
+                allReachable += succPC
+                successorsToVisit ++= allSuccessorsOf(succPC)
+            }
+        }
+        allReachable
+    }
+
+    // ==================== METHODS WHICH COMPUTE DERIVED DATA-STRUCTURES ==========================
+    // ===================== OR WHICH OPERATE ON DERIVED DATA-STRUCTURES ===========================
+    //
+    //
+
+    private[this] def getOrInitField[T >: Null <: AnyRef](
+        getFieldValue: () ⇒ SRef[T], // executed concurrently
+        setFieldValue: SRef[T] ⇒ Unit, // never executed concurrently
+        lock:          AnyRef
+    )(
+        computeFieldValue: ⇒ T // never executed concurrently
+    ): T = {
+        val ref = getFieldValue()
+        if (ref eq null) {
+            lock.synchronized {
+                val ref = getFieldValue()
+                var f: T = null
+                if ((ref eq null) || { f = ref.get(); f eq null }) {
+                    val newValue = computeFieldValue
+                    setFieldValue(new SRef(newValue))
+                    newValue
+                } else {
+                    f // initialized by a side-effect of evaluating the if condition
+                }
+            }
+        } else {
+            val f = ref.get()
+            if (f eq null) {
+                lock.synchronized {
+                    val ref = getFieldValue()
+                    var f: T = null
+                    if ((ref eq null) || { f = ref.get(); f eq null }) {
+                        val newValue = computeFieldValue
+                        setFieldValue(new SRef(newValue))
+                        newValue
+                    } else {
+                        f // initialized by a side-effect of evaluating the if condition
+                    }
+                }
+            } else {
+                f // best case... already computed and still available
+            }
+        }
+    }
+
+    private[this] def predecessors: Array[IntArraySet] = {
+        getOrInitField[Array[IntArraySet]](
+            () ⇒ this.thePredecessors,
+            (predecessors) ⇒ this.thePredecessors = predecessors, // to cache the result
+            this
+        ) {
+                val predecessors = new Array[IntArraySet](regularSuccessors.length)
+                for {
+                    pc ← code.programCounters
+                    successorPC ← allSuccessorsOf(pc)
+                } {
+                    val oldPredecessorsOfSuccessor = predecessors(successorPC)
+                    predecessors(successorPC) =
+                        if (oldPredecessorsOfSuccessor eq null) {
+                            new IntArraySet1(pc)
+                        } else {
+                            oldPredecessorsOfSuccessor + pc
+                        }
+
+                }
+                predecessors
+            }
+    }
+
+    /**
+     * Returns the program counter(s) of the instruction(s) that is(are) executed
+     * before the instruction with the given pc.
+     *
+     * If the instruction with the given `pc` was never executed an empty set is returned.
+     *
+     * @param pc A valid program counter.
+     */
+    def predecessorsOf(pc: PC): PCs = {
+        val s = predecessors(pc)
+        if (s ne null) s else NoPCs
+    }
+
+    /**
+     * Returns `true` if the instruction with the given pc has multiple direct
+     * predecessors (more than one).
+     */
+    final def hasMultiplePredecessors(pc: PC): Boolean = predecessorsOf(pc).size > 1
+
+    final def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = predecessorsOf(pc).foreach(f)
+
+    /**
+     * Returns the dominator tree.
+     *
+     * @note   To get the list of all evaluated instructions and their dominators.
+     *         {{{
+     *         val result = AI(...,...,...)
+     *         val evaluated = result.evaluatedInstructions
+     *         }}}
+     */
+    def dominatorTree: DominatorTree = {
+        getOrInitField[DominatorTree](
+            () ⇒ this.theDominatorTree,
+            (dt) ⇒ this.theDominatorTree = dt,
+            regularSuccessors
+        ) {
+                // We want to keep a non-soft reference and avoid any further useless synchronization.
+                val predecessors = this.predecessors
+                def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
+                    val s = predecessors(pc)
+                    if (s ne null)
+                        s.foreach(f)
+                }
+
+                DominatorTree(
+                    startNode = 0,
+                    startNodeHasPredecessors = predecessorsOf(0).nonEmpty,
+                    foreachSuccessorOf,
+                    foreachPredecessorOf,
+                    maxNode = code.instructions.length - 1
+                )
+            }
+    }
+
+    /**
+     * Returns the first instructions of the infinite loops of the current method. An infinite loop
+     * is a sequence of instructions that does not have a connection to any exit node. The very
+     * vast majority of methods does not have infinite loops.
+     */
+    def infiniteLoopHeaders: IntArraySet = {
+        if (theJumpBackTargetPCs.isEmpty)
+            return IntArraySet.empty;
+        // Let's test if the set of nodes reachable from a potential loop header is
+        // closed; i.e., does not include an exit node and does not refer to a node
+        // which is outside of the loop.
+
+        /*
+        // The nodes which are connected to an exit node... if not, the loop eagerly
+        // aborts the computation and it doesn't matter that it contains "wrong data"
+        // w.r.t. the last analyzed loop.
+        val allLoopsTerminate =
+            thePotentialLoopHeaders forall { loopHeaderPC ⇒
+                val visitedNodes = new mutable.BitSet(code.instructions.length)
+                var nodesToVisit = List(loopHeaderPC)
+                var isInfiniteLoop = true
+                while (nodesToVisit.nonEmpty) {
+                    val nextPC = nodesToVisit.head
+                    if (theExitPCs.contains(nextPC)) {
+                        isInfiniteLoop = false
+                        nodesToVisit = Nil // terminate while loop
+                    } else {
+                        nodesToVisit = nodesToVisit.tail
+                        if (!visitedNodes.contains(nextPC)) {
+                            visitedNodes += nextPC
+                            nodesToVisit =
+                                regularSuccessorsOf(nextPC).foldLeft(nodesToVisit){
+                                    (c, n) ⇒ n :&: c
+                                }
+                            nodesToVisit =
+                                exceptionHandlerSuccessorsOf(nextPC).foldLeft(nodesToVisit){
+                                    (c, n) ⇒ n :&: c
+                                }
+                        }
+                    }
+                }
+                !isInfiniteLoop
+            }
+        !allLoopsTerminate
+        */
+
+        // IDEA traverse the cfg from the exit nodes to the start node and try to determine if
+        // every loop header can be reached.
+        val predecessors = this.predecessors
+        var remainingPotentialLoopHeaders = theJumpBackTargetPCs
+        var nodesToVisit = theExitPCs.foldLeft(Nil: List[Int])((c, n) ⇒ n :&: c)
+        val visitedNodes = new mutable.BitSet(code.codeSize)
+        while (remainingPotentialLoopHeaders.nonEmpty && nodesToVisit.nonEmpty) {
+            val nextPC = nodesToVisit.head
+            nodesToVisit = nodesToVisit.tail
+            visitedNodes += nextPC
+            val nextPredecessors = predecessors(nextPC)
+            if (nextPredecessors ne null) {
+                nextPredecessors.foreach { predPC ⇒
+                    remainingPotentialLoopHeaders -= predPC
+                    if (!visitedNodes.contains(predPC)) {
+                        nodesToVisit :&:= predPC
+                    }
+                }
+            }
+        }
+        remainingPotentialLoopHeaders
+    }
+
+    /**
+     * Returns the [[PostDominatorTree]] (PDT).
+     *
+     * The PDT is computed using the reverse control-flow graph using a single explicit, virtual
+     * exit node which is – in case of true infinite loops – also connected with the first
+     * instructions of the infinite loops such that the computation of control-dependencies using
+     * the PDT is facilitated.
+     */
+    def postDominatorTree: PostDominatorTree = {
+        getOrInitField[PostDominatorTree](
+            () ⇒ this.thePostDominatorTree,
+            (pdt) ⇒ this.thePostDominatorTree = pdt,
+            theJumpBackTargetPCs
+        ) {
+                val exitPCs = theExitPCs
+
+                // We want to keep a non-soft reference and avoid any further useless synchronization.
+                val predecessors = this.predecessors
+                def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
+                    val s = predecessors(pc)
+                    if (s ne null)
+                        s.foreach(f)
+                }
+
+                // The headers of infinite loops are used as additional exit nodes;
+                // this enables use to compute meaninful dependency information for
+                // the loops body; however, we need to clean up the control dependency
+                // information w.r.t. the loop headers afterwards...
+                // In general, the first instruction of an infinite loop can be any
+                // kind of instruction (e.g., also an if instruction on which
+                // instructions from the loop body are control-dependent on.)
+                val infiniteLoopHeaders = this.infiniteLoopHeaders
+                if (infiniteLoopHeaders.nonEmpty) {
+                    val exitNodes = exitPCs.foldLeft(infiniteLoopHeaders)(_ + _)
+                    PostDominatorTree(
+                        exitNodes.contains,
+                        infiniteLoopHeaders,
+                        exitNodes.foreach,
+                        foreachSuccessorOf,
+                        foreachPredecessorOf,
+                        maxNode = code.instructions.length - 1
+                    )
+                } else {
+                    PostDominatorTree(
+                        exitPCs.contains,
+                        IntArraySet.empty,
+                        exitPCs.foreach,
+                        foreachSuccessorOf,
+                        foreachPredecessorOf,
+                        maxNode = code.instructions.length - 1
+                    )
+                }
+            }
+    }
+
+    /**
+     * Returns the control dependencies graph.
+     *
+     * Internally, a post dominator tree is used to compute the dominance frontiers, but that
+     * post dominator tree (PDT) is (in general) an augmented PDT because it may contain additional
+     * edges if the underlying method has inifinite loops. (Here, an infinite loop must never lead
+     * to a(n ab)normal return from the method.)
+     */
+    def controlDependencies: ControlDependencies = {
+        getOrInitField[ControlDependencies](
+            () ⇒ this.theControlDependencies,
+            (cd) ⇒ this.theControlDependencies = cd,
+            theJumpBackTargetPCs
+        ) { new ControlDependencies(DominanceFrontiers(postDominatorTree, wasExecuted)) }
     }
 
     def bbCFG: CFG = {
-        var theBBCFG = this.theBBCFG
-        if (theBBCFG eq null) synchronized {
-            theBBCFG = this.theBBCFG
-            if (theBBCFG eq null) {
-                theBBCFG = computeBBCFG
-                this.theBBCFG = theBBCFG
-            }
+        getOrInitField[CFG](() ⇒ theBBCFG, (cfg) ⇒ theBBCFG = cfg, exceptionHandlerSuccessors) {
+            computeBBCFG
         }
-        theBBCFG
     }
 
     /**
@@ -624,7 +912,7 @@ trait RecordCFG
                 var endRunningBB: Boolean = false
                 var connectedWithNextBBs = false
 
-                if (exitPCs.contains(pc)) {
+                if (theExitPCs.contains(pc)) {
                     val successorNode = code.instructions(pc) match {
                         case r: ReturnInstruction ⇒ normalReturnNode
                         case _                    ⇒ abnormalReturnNode
@@ -689,171 +977,18 @@ trait RecordCFG
             }
         }
 
-        if (subroutineStartPCs.nonEmpty) {
-            subroutineStartPCs.foreach { pc ⇒ bbs(pc).setIsStartOfSubroutine() }
+        if (theSubroutineStartPCs.nonEmpty) {
+            theSubroutineStartPCs.foreach { pc ⇒ bbs(pc).setIsStartOfSubroutine() }
         }
 
         // 3. create CFG class
         CFG(code, normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList, bbs)
     }
 
+    // ================================== GENERAL HELPER METHODS ===================================
     //
-    // METHODS CALLED BY THE ABSTRACT INTERPRETATION FRAMEWORK WHICH RECORD THE AI TIME
-    // CFG
     //
-
-    /**
-     * @inheritdoc
-     *
-     * @note This method is called by the abstract interpretation framework.
-     */
-    abstract override def flow(
-        currentPC:                        PC,
-        currentOperands:                  Operands,
-        currentLocals:                    Locals,
-        successorPC:                      PC,
-        isSuccessorScheduled:             Answer,
-        isExceptionalControlFlow:         Boolean,
-        abruptSubroutineTerminationCount: Int,
-        wasJoinPerformed:                 Boolean,
-        worklist:                         List[PC],
-        operandsArray:                    OperandsArray,
-        localsArray:                      LocalsArray,
-        tracer:                           Option[AITracer]
-    ): List[PC] = {
-
-        if (successorPC <= currentPC) { // "<=" to handle "x: goto x"
-            thePotentialLoopHeaders += successorPC
-        }
-
-        val successors =
-            if (isExceptionalControlFlow)
-                cfgDomain.exceptionHandlerSuccessors
-            else
-                cfgDomain.regularSuccessors
-
-        val successorsOfPC = successors(currentPC)
-        if (successorsOfPC eq null)
-            successors(currentPC) = new IntArraySet1(successorPC)
-        else {
-            val newSuccessorsOfPC = successorsOfPC + successorPC
-            if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
-        }
-
-        super.flow(
-            currentPC, currentOperands, currentLocals,
-            successorPC, isSuccessorScheduled,
-            isExceptionalControlFlow, abruptSubroutineTerminationCount,
-            wasJoinPerformed,
-            worklist,
-            operandsArray, localsArray,
-            tracer
-        )
-    }
-
-    abstract override def jumpToSubroutine(pc: PC, branchTarget: PC, returnTarget: PC): Unit = {
-        subroutineStartPCs += branchTarget
-        super.jumpToSubroutine(pc, branchTarget, returnTarget)
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @note This method is only intended to be called by the AI framework.
-     */
-    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
-        exitPCs += pc
-        super.returnVoid(pc)
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @note This method is only intended to be called by the AI framework.
-     */
-    abstract override def ireturn(
-        pc:    PC,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
-        exitPCs += pc
-        super.ireturn(pc, value)
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @note This method is only intended to be called by the AI framework.
-     */
-    abstract override def lreturn(
-        pc:    PC,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
-        exitPCs += pc
-        super.lreturn(pc, value)
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @note This method is only intended to be called by the AI framework.
-     */
-    abstract override def freturn(
-        pc:    PC,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
-        exitPCs += pc
-        super.freturn(pc, value)
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @note This method is only intended to be called by the AI framework.
-     */
-    abstract override def dreturn(
-        pc:    PC,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
-        exitPCs += pc
-        super.dreturn(pc, value)
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @note This method is only intended to be called by the AI framework.
-     */
-    abstract override def areturn(
-        pc:    PC,
-        value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
-        exitPCs += pc
-        super.areturn(pc, value)
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @note This method is only intended to be called by the AI framework.
-     */
-    abstract override def abruptMethodExecution(
-        pc:             PC,
-        exceptionValue: ExceptionValue
-    ): Unit = {
-        exitPCs += pc
-        super.abruptMethodExecution(pc, exceptionValue)
-    }
-
-    abstract override def abstractInterpretationEnded(
-        aiResult: AIResult { val domain: cfgDomain.type }
-    ): Unit = {
-        super.abstractInterpretationEnded(aiResult)
-
-        assert(exceptionHandlerSuccessors.forall(s ⇒ (s eq null) || s.nonEmpty))
-        assert(regularSuccessors.forall(s ⇒ (s eq null) || s.nonEmpty))
-    }
-
-    // GENERAL HELPER METHODS
+    //
 
     /**
      * Creates a graph representation of the CFG.
@@ -887,14 +1022,14 @@ trait RecordCFG
                     visualProperties += "fillcolor" → "green"
                     visualProperties += "style" → "filled"
                 } else if (instructions(pc).isInstanceOf[ATHROW.type]) {
-                    if (allExitPCs.contains(pc)) {
+                    if (theExitPCs.contains(pc)) {
                         visualProperties += "fillcolor" → "red"
                         visualProperties += "style" → "filled"
                     } else {
                         visualProperties += "fillcolor" → "yellow"
                         visualProperties += "style" → "filled"
                     }
-                } else if (allSuccessorsOf(pc).isEmpty && !allExitPCs.contains(pc)) {
+                } else if (allSuccessorsOf(pc).isEmpty && !theExitPCs.contains(pc)) {
                     visualProperties += "fillcolor" → "red"
                     visualProperties += "style" → "filled"
                     visualProperties += "shape" → "octagon"
@@ -930,7 +1065,7 @@ trait RecordCFG
                 nodes(pc).addChild(nodes(succPC))
                 nodePredecessorsCount(succPC) += 1
             }
-            if (allExitPCs.contains(pc)) {
+            if (theExitPCs.contains(pc)) {
                 nodes(pc).addChild(exitNode)
             }
         }

@@ -30,8 +30,8 @@ package org.opalj
 package graphs
 
 import scala.annotation.tailrec
-
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -40,17 +40,38 @@ import org.opalj.collection.mutable.IntArrayStack
  * To compute a '''post dominator tree''' use the factory
  * method defined in [[org.opalj.graphs.PostDominatorTree]].
  *
- * @param   idom An array that contains for each node its immediate dominator.
- *          If not all unique ids are used, then the array is a sparse array and external
- *          knowledge is necessary to determine which elements of the array contain useful
- *          information.
  *
  * @author Michael Eichberg
  */
-final class DominatorTree private (
-        private[graphs] final val idom: Array[Int],
-        final val startNode:            Int
-) {
+sealed abstract class AbstractDominatorTree {
+
+    // PROPERTIES OF THE SOURCE GRAPHS
+    //
+
+    /**
+     * The unique start-node of the dominator tree.
+     */
+    val startNode: Int
+
+    def foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+
+    // PROPERTIES OF THE TREE
+    //
+
+    /**
+     * If `true` the dominator tree is augmented. To determine in which way the dominator tree
+     * is augmented, a pattern match should be used. E.g., the PostDominatorTree contains
+     * edges to the first instructions of every first instruction of every infinite loop.
+     */
+    def isAugmented: Boolean
+
+    /**
+     * The array contains for each node its immediate dominator.
+     *          If not all unique ids are used, then the array is a sparse array and external
+     *          knowledge is necessary to determine which elements of the array contain useful
+     *          information.
+     */
+    private[graphs] val idom: Array[Int]
 
     final def maxNode: Int = idom.length - 1
 
@@ -67,7 +88,7 @@ final class DominatorTree private (
      */
     final def dom(n: Int): Int = {
         if (n == startNode) {
-            val errorMessage = s"the root node ($startNode) does not have an immediate dominator"
+            val errorMessage = s"the root node $startNode(max=$maxNode) cannot be dominated"
             throw new IllegalArgumentException(errorMessage)
         }
 
@@ -195,6 +216,17 @@ final class DominatorTree private (
 
 }
 
+final class DominatorTree private (
+        final val startNode:            Int,
+        final val foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        private[graphs] final val idom: Array[Int]
+) extends AbstractDominatorTree {
+
+    def isAugmented: Boolean = false
+
+    def additionalExitNodes: IntArraySet = IntArraySet.empty
+}
+
 /**
  * Factory to compute [[DominatorTree]]s.
  *
@@ -204,6 +236,24 @@ final class DominatorTree private (
 object DominatorTree {
 
     def fornone(g: Int ⇒ Unit): Unit = { (f: (Int ⇒ Unit)) ⇒ { /*nothing to to*/ } }
+
+    def apply(
+        startNode:                Int,
+        startNodeHasPredecessors: Boolean,
+        foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        maxNode:                  Int
+    ): DominatorTree = {
+        this(
+            startNode,
+            startNodeHasPredecessors,
+            foreachSuccessorOf,
+            foreachPredecessorOf,
+            maxNode,
+            (startNode: Int, foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit), dom: Array[Int]) ⇒
+                new DominatorTree(startNode, foreachSuccessorOf, dom)
+        )
+    }
 
     /**
      * Computes the immediate dominators for each node of a given graph. Each node of the graph
@@ -224,7 +274,7 @@ object DominatorTree {
      *          def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
      *          }}}
      * @param   maxNode The largest unique int id that identifies a node. (E.g., in case of
-     *          the analysis of some code it is equivalent to the length of the code-1.)
+     *          the analysis of some code it is typically equivalent to the length of the code-1.)
      *
      * @return  The computed dominator tree.
      *
@@ -237,13 +287,14 @@ object DominatorTree {
      *          also handles very large degenerated graphs (e.g., a graph which consists of a
      *          a very, very long single path.).'''
      */
-    def apply(
+    def apply[D <: AbstractDominatorTree](
         startNode:                Int,
         startNodeHasPredecessors: Boolean,
         foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        maxNode:                  Int
-    ): DominatorTree = {
+        maxNode:                  Int,
+        dominatorTreeFactory:     ( /*startNode*/ Int, /*foreachSuccessorOf*/ Int ⇒ ((Int ⇒ Unit) ⇒ Unit), Array[Int]) ⇒ D
+    ): D = {
 
         if (startNodeHasPredecessors) {
             val newStartNode = maxNode + 1
@@ -264,7 +315,8 @@ object DominatorTree {
                     else
                         foreachPredecessorOf(n)
                 },
-                newStartNode
+                newStartNode,
+                dominatorTreeFactory
             );
         }
 
@@ -377,7 +429,7 @@ object DominatorTree {
             if (wParentBucket != null) {
                 for (v ← wParentBucket) {
                     val u = eval(v)
-                    dom(v) = if (semi(u) < semi(v)) u else wParent;
+                    dom(v) = if (semi(u) < semi(v)) u else wParent
                 }
                 bucket(wParent) = null
             }
@@ -395,7 +447,125 @@ object DominatorTree {
             j = j + 1
         }
 
-        new DominatorTree(dom, startNode)
+        dominatorTreeFactory(startNode, foreachSuccessorOf, dom)
     }
 
+}
+
+final class PostDominatorTree private[graphs] (
+        final val startNode:                 Int,
+        final val startNodesOfInfiniteLoops: IntArraySet,
+        final val foreachSuccessorOf:        Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        private[graphs] final val idom:      Array[Int]
+) extends AbstractDominatorTree {
+
+    def isAugmented: Boolean = startNodesOfInfiniteLoops.nonEmpty
+
+}
+
+object PostDominatorTree {
+
+    /**
+     * Computes the post dominator tree for the given graph. The artificial start node that
+     * will be created by this algorithm to ensure that we have a unique start node for
+     * the post dominator tree will have the `id = (maxNodeId+1)`.
+     *
+     * @example
+     * {{{
+     * scala>//Graph: 0 -> 1->E;  1 -> 2->E
+     * scala>def isExitNode(i: Int) = i == 1 || i == 2
+     * isExitNode: (i: Int)Boolean
+     *
+     * scala>def foreachExitNode(f: Int ⇒ Unit) = { f(1); f(2) }
+     * foreachExitNode: (f: Int => Unit)Unit
+     *
+     * scala>def foreachPredecessorOf(i: Int)(f: Int ⇒ Unit) = i match {
+     *      |    case 0 ⇒
+     *      |    case 1 ⇒ f(0)
+     *      |    case 2 ⇒ f(1)
+     *      |}
+     * foreachPredecessorOf: (i: Int)(f: Int => Unit)Unit
+     * scala>def foreachSuccessorOf(i: Int)(f: Int ⇒ Unit) = i match {
+     *      |    case 0 ⇒ f(1)
+     *      |    case 1 ⇒ f(2)
+     *      |    case 2 ⇒
+     *      |}
+     * foreachSuccessorOf: (i: Int)(f: Int => Unit)Unit
+     * scala>val pdt = org.opalj.graphs.PostDominatorTree.apply(
+     *      |    isExitNode,
+     *      |    foreachExitNode,
+     *      |    foreachSuccessorOf,
+     *      |    foreachPredecessorOf,
+     *      |    2
+     *      |)
+     * pdt: org.opalj.graphs.DominatorTree = org.opalj.graphs.DominatorTree@3a82ac80
+     * scala>pdt.toDot()
+     * }}}
+     *
+     * @note    The underlying graph '''MUST NOT''' contain any node which is not (indirectly)
+     *          connected to an exit node! If the underlying CFG contains infinite loops then
+     *          the caller has to handle this case by augmenting the CFG and later on
+     *          post-processing the PDT.
+     *
+     * @param   isExitNode A function that returns `true` if the given node – in the underlying
+     *          (control-flow) graph – is an exit node; that is the node has no successors.
+     * @param   foreachExitNode A function f that takes a function g with an int parameter which
+     *          identifies a node and which executes g for each exit node.
+     *          '''Note that _all nodes_ except those belonging to those transitively
+     *          reachable from a start node of an infinite loop  have to be reachable from the
+     *          exit nodes; otherwise the PostDominatorTree will be a forest and will be generally
+     *          useless.'''
+     * @param   startNodesOfInfiniteLoops The first instructions of infinite loops.
+     *
+     * @param   maxNode The largest id used by the underlying (control-flow) graph.
+     */
+    def apply(
+        isExitNode:                Int ⇒ Boolean,
+        startNodesOfInfiniteLoops: IntArraySet,
+        foreachExitNode:           (Int ⇒ Unit) ⇒ Unit,
+        foreachSuccessorOf:        Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachPredecessorOf:      Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        maxNode:                   Int
+    ): PostDominatorTree = {
+        // the artificial start node
+        val startNode = maxNode + 1
+
+        // reverse flowgraph
+        val revFGForeachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            if (n == startNode) {
+                (f: Int ⇒ Unit) ⇒
+                    {
+                        foreachExitNode(f)
+                        startNodesOfInfiniteLoops.foreach(f)
+                    }
+            } else {
+                foreachPredecessorOf(n)
+            }
+        }
+
+        val revFGForeachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            if (n == startNode) {
+                DominatorTree.fornone
+            } else if (isExitNode(n) || startNodesOfInfiniteLoops.contains(n)) {
+                // a function that expects a function that will be called for all successors
+                (f: Int ⇒ Unit) ⇒
+                    {
+                        f(startNode)
+                        foreachSuccessorOf(n)(f)
+                    }
+            } else
+                foreachSuccessorOf(n)
+        }
+
+        DominatorTree(
+            startNode,
+            startNodeHasPredecessors = false,
+            revFGForeachSuccessorOf, revFGForeachPredecessorOf,
+            maxNode = startNode /* we have an additional node */ ,
+            (startNode: Int, foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit), idom: Array[Int]) ⇒
+                new PostDominatorTree(
+                    startNode, startNodesOfInfiniteLoops, foreachSuccessorOf, idom
+                )
+        )
+    }
 }

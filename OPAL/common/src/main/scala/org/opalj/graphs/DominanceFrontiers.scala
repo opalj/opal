@@ -62,12 +62,12 @@ final class DominanceFrontiers private (private final val dfs: Array[IntArraySet
     //
 
     /**
-     * Creates a dot graph which depicts the underlying graphs dominance frontiers.
+     * Creates a dot graph which depicts the dominance frontiers.
      *
-     * @param   isNodeValid A function that returns true if the given int value
+     * @param   isNodeValid A function that returns `true` if the given int value
      *          identifies a valid node. If the underlying graph is not a sparse
      *          graph; i.e., if every index in the range [0...maxNode] identifies
-     *          a valid node then the default function, which always returns `true`
+     *          a valid node, then the default function, which always returns `true`,
      *          can be used.
      */
     def toDot(isNodeValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
@@ -116,17 +116,17 @@ object DominanceFrontiers {
      * val df = org.opalj.graphs.DominanceFrontiers(dtf,isValidNode)
      * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
      * }}}
-     * @param   dt The dominator tree of the specified (flow) graph. In case of the reverse flow
-     *          graph you have to give the [[DominatorTree]] computed using [[PostDominatorTree$]].
+     *
+     * @param   dt The dominator tree of the specified (flow) graph.
      * @param   isValidNode A function that returns `true` if the given id represents a node of the
      *          underlying graph. If the underlying graph contains a single, new artificial start
      *          node then this node may or may not be reported as a valid node; this is not relevant
      *          for this algorithm.
      */
-    def apply(dtf: DominatorTreeFactory, isValidNode: (Int) ⇒ Boolean): DominanceFrontiers = {
-
-        import dtf.{startNode, maxNode, foreachSuccessorOf, dt}
-        val max = maxNode + 1
+    def apply(dt: AbstractDominatorTree, isValidNode: Int ⇒ Boolean): DominanceFrontiers = {
+        val startNode = dt.startNode
+        val foreachSuccessorOf = dt.foreachSuccessorOf
+        val max = dt.maxNode + 1
 
         // pre-collect the child nodes (in the DT) for each node
         //val children = new Array[mutable.SmallValuesSet](max)
@@ -182,7 +182,12 @@ object DominanceFrontiers {
 
         @inline def dfLocal(n: Int): IntArraySet = {
             var s = IntArraySet.empty
-            foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
+            try {
+                foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
+            } catch {
+                case t: Throwable ⇒
+                    throw new Throwable(s"failed iterating over successors of node $n", t)
+            }
             s
         }
 
@@ -223,7 +228,6 @@ object DominanceFrontiers {
         }
 
         new DominanceFrontiers(dfs)
-
     }
 
 }
