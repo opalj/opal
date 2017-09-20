@@ -88,7 +88,11 @@ final class DominanceFrontiers private (private final val dfs: Array[IntArraySet
         dfs.zipWithIndex.foreach { e ⇒
             val (df, s /*index*/ ) = e
             if (isNodeValid(s)) {
-                df.foreach { t ⇒ g += (s, t) }
+                if (df == null) {
+                    g += s
+                } else {
+                    df.foreach { t ⇒ g += (s, t) }
+                }
             }
         }
         g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
