@@ -71,11 +71,11 @@ final class ControlDependencies(val dominanceFrontiers: DominanceFrontiers) {
         val maxNodeId = dominanceFrontiers.maxNode
 
         // IMPROVE Evaluate if a typed chain or an IntArraySet is more efficient...
-        val seen = new BitSet(dominanceFrontiers.maxNode)
+        val seen = new BitSet(maxNodeId)
         val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
         worklist.push(x)
 
-        while (worklist.nonEmpty) {
+        do {
             val x = worklist.pop()
 
             dominanceFrontiers(x).foreach { y ⇒
@@ -85,7 +85,6 @@ final class ControlDependencies(val dominanceFrontiers: DominanceFrontiers) {
                     f(y)
                 }
             }
-        }
+        } while (worklist.nonEmpty)
     }
 }
-
