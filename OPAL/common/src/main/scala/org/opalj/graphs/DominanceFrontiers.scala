@@ -53,6 +53,19 @@ final class DominanceFrontiers private (private final val dfs: Array[IntArraySet
             df
     }
 
+    final def transitiveDF(n: Int): IntArraySet = {
+        var transitiveDF = this.df(n)
+        var nodesToVisit = transitiveDF - n
+        while (nodesToVisit.nonEmpty) {
+            val (nextN, newNodesToVisit) = nodesToVisit.getAndRemove
+            nodesToVisit = newNodesToVisit
+            val nextDF = this.df(nextN)
+            transitiveDF ++= nextDF
+            nodesToVisit ++= (nextDF - nextN)
+        }
+        transitiveDF
+    }
+
     def dominanceFrontiers: IndexedSeq[IntArraySet] = dfs
 
     //
