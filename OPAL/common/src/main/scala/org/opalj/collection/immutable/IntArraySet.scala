@@ -70,6 +70,12 @@ abstract class IntArraySet extends ((Int) ⇒ Int) {
     def foreach[U](f: Int ⇒ U): Unit
 
     /**
+     * Iterates over all possible pairings of two values of this set; that is, if the set has
+     * three elements: {1,2,3}, the pairs (1,2), (1,3) and (2,3) will be iterated over.
+     */
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit
+
+    /**
      * Returns a lazily filtered set. However, all operations other operations except of
      * `withFilter` and `iterator` will force the evaluation.
      */
@@ -148,6 +154,7 @@ case object EmptyIntArraySet extends IntArraySet {
     def min: Int = throw new UnsupportedOperationException("empty set")
     def getAndRemove: (Int, IntArraySet) = throw new UnsupportedOperationException("empty set")
     def foreach[U](f: Int ⇒ U): Unit = {}
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = this
     def map(f: Int ⇒ Int): IntArraySet = this
     def -(i: Int): this.type = this
@@ -177,6 +184,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     def isSingletonSet: Boolean = true
     def hasMultipleElements: Boolean = false
     def foreach[U](f: Int ⇒ U): Unit = { f(i) }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     def max: Int = this.i
     def min: Int = this.i
     def getAndRemove: (Int, IntArraySet) = (i, EmptyIntArraySet)
@@ -250,6 +258,7 @@ case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
         }
     }
     def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = f(i1, i2)
 
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
         if (p(i1)) {
@@ -343,6 +352,7 @@ case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
         }
     }
     def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2); f(i1, i3); f(i2, i3) }
 
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
         if (p(i1)) {
@@ -452,6 +462,19 @@ case class IntArraySetN private[immutable] (
             i += 1
         }
     }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {
+        val max = is.length
+        var i = 0
+        while (i < max) {
+            var j = i + 1
+            while (j < max) {
+                f(is(i), is(j))
+                j += 1
+            }
+            i += 1
+        }
+    }
+
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = new FilteredIntArraySet(p, this)
 
     def map(f: Int ⇒ Int): IntArraySet = {
@@ -630,6 +653,7 @@ private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArray
             }
         }
     }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = getFiltered.foreachPair(f)
 
     def contains(value: Int): Boolean = p(value) && origS.contains(value)
     def exists(p: Int ⇒ Boolean): Boolean = iterator.exists(p)
