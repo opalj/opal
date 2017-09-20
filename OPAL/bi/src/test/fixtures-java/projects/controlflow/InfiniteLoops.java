@@ -31,7 +31,8 @@ package controlflow;
 /**
  * Methods which contain definitive infinite loops (with complex internal contro-flow).
  * <p>
- * Primarily useful to test the computation of (post-)dominator trees/control-dependence graphs.
+ * Primarily intended to test the computation of (post-)dominator trees/dominance frontiers and
+ * control-dependence graphs.
  *
  * @author Michael Eichberg
  */
@@ -53,18 +54,6 @@ public class InfiniteLoops {
         }
     }
 
-    static void regularLoopInInfiniteLoop(int i) {
-        if (i < 0)
-            return;
-        else {
-            while (true) {
-                for (int j = 0; j < i; j++) {
-                    j *= i;
-                }
-            }
-        }
-    }
-
     static void trivialNestedInfiniteLoops(int i) {
         if (i < 0)
             return;
@@ -74,6 +63,18 @@ public class InfiniteLoops {
                     while(true) {
                         ;
                     }
+                }
+            }
+        }
+    }
+
+    static void regularLoopInInfiniteLoop(int i) {
+        if (i < 0)
+            return;
+        else {
+            while (true) {
+                for (int j = 0; j < i; j++) {
+                    j *= i;
                 }
             }
         }
