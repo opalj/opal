@@ -83,6 +83,12 @@ abstract class IntArraySet extends ((Int) ⇒ Int) {
 
     def map(f: Int ⇒ Int): IntArraySet
 
+    def flatMap(f: Int ⇒ IntArraySet): IntArraySet = {
+        val builder = new IntArraySetBuilder
+        foreach { i ⇒ builder ++= f(i) }
+        builder.result
+    }
+
     def transform[T, To](f: Int ⇒ T, b: Builder[T, To]): To = {
         foreach(i ⇒ b += f(i))
         b.result()
