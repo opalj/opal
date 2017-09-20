@@ -37,6 +37,12 @@ package controlflow;
  */
 public class InfiniteLoops {
 
+    static void justInfiniteLoop(int i) {
+        while (true) {
+            ;
+        }
+    }
+
     static void trivialInfiniteLoop(int i) {
         if (i < 0)
             return;
