@@ -683,6 +683,8 @@ class IntArraySetBuilder private[immutable] (
         this
     }
 
+    def ++=(elems: IntArraySet): this.type = { elems.foreach(this.+=); this }
+
     def clear(): Unit = { is = new Array[Int](4); size = 0 }
 
     def result(): IntArraySet = {
