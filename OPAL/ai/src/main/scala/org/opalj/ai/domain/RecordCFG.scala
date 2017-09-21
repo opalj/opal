@@ -667,6 +667,8 @@ trait RecordCFG
 
     /**
      * Returns the dominator tree.
+     * See [[DominatorTree#apply(startNode:Int,startNodeHasPredecessors:Boolean*]] for futher
+     * details regarding the properties of the dominator tree.
      *
      * @note   To get the list of all evaluated instructions and their dominators.
      *         {{{
@@ -700,8 +702,11 @@ trait RecordCFG
 
     /**
      * Returns the first instructions of the infinite loops of the current method. An infinite loop
-     * is a sequence of instructions that does not have a connection to any exit node. The very
-     * vast majority of methods does not have infinite loops.
+     * is a set of instructions that does not have a connection to any instruction outside of
+     * the loop (closed strongly connected component).
+     * I.e., whatever path is taken, all remaining paths will eventualy include the loop header
+     * instruction.
+     * The very vast majority of methods does not have infinite loops.
      */
     def infiniteLoopHeaders: IntArraySet = {
         if (theJumpBackTargetPCs.isEmpty)
@@ -745,26 +750,71 @@ trait RecordCFG
         */
 
         // IDEA traverse the cfg from the exit nodes to the start node and try to determine if
-        // every loop header can be reached.
+        // every potential loop header can be reached.
         val predecessors = this.predecessors
-        var remainingPotentialLoopHeaders = theJumpBackTargetPCs
+        var remainingPotentialInfiniteLoopHeaders = theJumpBackTargetPCs
         var nodesToVisit = theExitPCs.foldLeft(Nil: List[Int])((c, n) ⇒ n :&: c)
         val visitedNodes = new mutable.BitSet(code.codeSize)
-        while (remainingPotentialLoopHeaders.nonEmpty && nodesToVisit.nonEmpty) {
+        while (nodesToVisit.nonEmpty) {
             val nextPC = nodesToVisit.head
             nodesToVisit = nodesToVisit.tail
             visitedNodes += nextPC
             val nextPredecessors = predecessors(nextPC)
             if (nextPredecessors ne null) {
                 nextPredecessors.foreach { predPC ⇒
-                    remainingPotentialLoopHeaders -= predPC
+                    remainingPotentialInfiniteLoopHeaders -= predPC
+                    if (remainingPotentialInfiniteLoopHeaders.isEmpty) {
+                        return IntArraySet.empty;
+                    }
                     if (!visitedNodes.contains(predPC)) {
                         nodesToVisit :&:= predPC
                     }
                 }
             }
         }
-        remainingPotentialLoopHeaders
+        if (remainingPotentialInfiniteLoopHeaders.size > 1) {
+            // We can use the dominance frontier and dominator tree to check if a loop header
+            // is actually an infinite loop (potentially inside another infinite loop).
+            val dt = dominatorTree
+            val df = DominanceFrontiers(dt, wasExecuted)
+
+            remainingPotentialInfiniteLoopHeaders.foreachPair { (pc1, pc2) ⇒
+
+                if (df.transitiveDF(pc1).contains(pc2)) {
+                    // 1.a) check if a loop with header pc1 belongs to the (forward)
+                    //      dominance frontier of the loop with header pc2 -
+                    //      in this case the loop pc1 is "just" a regular
+                    //      loop nested inside the infinite loop pc2.
+
+                    // pc1 is a regular loop inside an infinite loop
+                    // remainingPotentialInfiniteLoopHeaders -= pc1
+                    // if (remainingPotentialInfiniteLoopHeaders.size == 1)
+                    //    return remainingPotentialInfiniteLoopHeaders;
+                } else if (df.transitiveDF(pc2).contains(pc1)) {
+                    // 1.b) (same as 1.a, but vice versa)
+
+                    // remainingPotentialInfiniteLoopHeaders -= pc2
+                    // if (remainingPotentialInfiniteLoopHeaders.size == 1)
+                    //    return remainingPotentialInfiniteLoopHeaders;
+                } else if (dt.strictlyDominates(pc1, pc2)) {
+                    // 2. Given (due to the first checkt) that both pcs do not identify
+                    //    nested loops (in which case we keep the outer one!), we now have
+                    //    to check if one loops calls the other loop; in that case we just
+                    //    keep the final loop (the one where the loop header is dominated).
+
+                    remainingPotentialInfiniteLoopHeaders -= pc1
+                    if (remainingPotentialInfiniteLoopHeaders.size == 1)
+                        return remainingPotentialInfiniteLoopHeaders;
+                } else if (dt.strictlyDominates(pc2, pc1)) {
+                    remainingPotentialInfiniteLoopHeaders -= pc2
+                    if (remainingPotentialInfiniteLoopHeaders.size == 1)
+                        return remainingPotentialInfiniteLoopHeaders;
+                }
+
+            }
+        }
+
+        remainingPotentialInfiniteLoopHeaders
     }
 
     /**
@@ -791,20 +841,18 @@ trait RecordCFG
                         s.foreach(f)
                 }
 
-                // The headers of infinite loops are used as additional exit nodes;
-                // this enables use to compute meaninful dependency information for
-                // the loops body; however, we need to clean up the control dependency
-                // information w.r.t. the loop headers afterwards...
-                // In general, the first instruction of an infinite loop can be any
-                // kind of instruction (e.g., also an if instruction on which
-                // instructions from the loop body are control-dependent on.)
                 val infiniteLoopHeaders = this.infiniteLoopHeaders
                 if (infiniteLoopHeaders.nonEmpty) {
-                    val exitNodes = exitPCs.foldLeft(infiniteLoopHeaders)(_ + _)
+                    val dominatorTree = this.dominatorTree
+                    val additionalExitNodes = infiniteLoopHeaders.flatMap { loopHeaderPC ⇒
+                        predecessors(loopHeaderPC).withFilter { predPC ⇒
+                            !dominatorTree.strictlyDominates(predPC, loopHeaderPC)
+                        }
+                    }
                     PostDominatorTree(
-                        exitNodes.contains,
-                        infiniteLoopHeaders,
-                        exitNodes.foreach,
+                        exitPCs.contains,
+                        additionalExitNodes,
+                        exitPCs.foreach,
                         foreachSuccessorOf,
                         foreachPredecessorOf,
                         maxNode = code.instructions.length - 1
@@ -825,17 +873,17 @@ trait RecordCFG
     /**
      * Returns the control dependencies graph.
      *
-     * Internally, a post dominator tree is used to compute the dominance frontiers, but that
-     * post dominator tree (PDT) is (in general) an augmented PDT because it may contain additional
-     * edges if the underlying method has inifinite loops. (Here, an infinite loop must never lead
-     * to a(n ab)normal return from the method.)
+     * Internally, a post dominator tree is used for methods witout infinite loops; i.e.,
+     * we compute a non-termination ''in''sensitive control dependencies.
      */
     def controlDependencies: ControlDependencies = {
         getOrInitField[ControlDependencies](
             () ⇒ this.theControlDependencies,
             (cd) ⇒ this.theControlDependencies = cd,
             theJumpBackTargetPCs
-        ) { new ControlDependencies(DominanceFrontiers(postDominatorTree, wasExecuted)) }
+        ) {
+                new ControlDependencies(DominanceFrontiers(postDominatorTree, wasExecuted))
+            }
     }
 
     def bbCFG: CFG = {

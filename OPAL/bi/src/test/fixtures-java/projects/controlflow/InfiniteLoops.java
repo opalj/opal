@@ -150,8 +150,19 @@ public class InfiniteLoops {
     static void multipleInfiniteLoops(int i) {
         if (i == -2332) while (true) { ; }
 
-        if(i > 10000)
+        if(i < -10000) {
+            // The following loop is just included to "test" if the control-dependence graph
+            // is non-termination insensitive or sensitive!
+            for (int j = -100000; j < i; j++) { ; }
             return;
+        }
+
+        if(i > 10000) {
+            // The following loop is just included to "test" if the control-dependence graph
+            // is non-termination insensitive or sensitive!
+            for (int j = 0; j < i; j++) { if(i * j > 1000) return; }
+            return;
+        }
 
         if(i >= 0) {
             if(i > 100) {
