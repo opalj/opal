@@ -52,7 +52,7 @@ trait PerformInvocations extends MethodCallsHandling {
     callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     /**
-     * If `true` the exceptions thrown by the called method are will be used
+     * If `true` the exceptions thrown by the called method will be used
      * during the evaluation of the calling method.
      */
     def useExceptionsThrownByCalledMethod: Boolean = false
