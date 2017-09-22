@@ -96,7 +96,16 @@ abstract class IntArraySet extends ((Int) ⇒ Int) {
 
     def -(i: Int): IntArraySet
 
-    def --(is: Traversable[Int]): IntArraySet = this.foldLeft(this)(_ - _)
+    def --(is: Traversable[Int]): IntArraySet = {
+        var r = this
+        is.foreach { i ⇒ r -= i }
+        r
+    }
+    def --(is: IntArraySet): IntArraySet = {
+        var r = this
+        is.foreach { i ⇒ r -= i }
+        r
+    }
 
     def +(i: Int): IntArraySet
 

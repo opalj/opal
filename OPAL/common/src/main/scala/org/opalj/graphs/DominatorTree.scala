@@ -29,163 +29,16 @@
 package org.opalj
 package graphs
 
-import scala.annotation.tailrec
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.mutable.IntArrayStack
-
-/**
- * Representation of the (post) dominator tree of, for example, a control flow graph.
- * To construct a '''(post)dominator tree''' use the companion object's factory method (`apply`) or
- * use the factory method defined in [[org.opalj.graphs.PostDominatorTree]].
- *
- * @author Michael Eichberg
- */
-sealed abstract class AbstractDominatorTree {
-
-    // PROPERTIES OF THE SOURCE GRAPHS
-    //
-
-    /**
-     * The unique start-node of the dominator tree.
-     */
-    val startNode: Int
-
-    def foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
-
-    // PROPERTIES OF THE TREE
-    //
-
-    /**
-     * If `true` the underlying cfg was augmented. To determine in which way the dominator tree
-     * is augmented, a pattern match should be used. E.g., the [[DominatorTree]] may an additional
-     * node which replaces the underlying CFG's root node.
-     */
-    def isAugmented: Boolean
-
-    /**
-     * The array contains for each node its immediate dominator.
-     * If not all unique ids are used, then the array is a sparse array and external
-     * knowledge is necessary to determine which elements of the array contain useful
-     * information.
-     */
-    private[graphs] val idom: Array[Int]
-
-    final def maxNode: Int = idom.length - 1
-
-    assert(startNode <= maxNode, s"start node ($startNode) out of range ([0,$maxNode])")
-
-    /**
-     * Returns the immediate dominator of the node with the given id.
-     *
-     * @note   The root node does not have a(n immediate) dominator; in case `n`
-     *         is the root node an `IllegalArgumentException` is thrown.
-     *
-     * @param n The id of a valid node which is not the `startNode`.
-     * @return The id of the node which immediately dominates the given node.
-     */
-    final def dom(n: Int): Int = {
-        if (n == startNode) {
-            val errorMessage = s"the root node $startNode(max=$maxNode) cannot be dominated"
-            throw new IllegalArgumentException(errorMessage)
-        }
-
-        idom(n)
-    }
-
-    /**
-     * @param n a valid node of the graph.
-     * @param w a valid node of the graph.
-     * @return `true` if `n` strictly dominates `w`.
-     */
-    @tailrec final def strictlyDominates(n: Int, w: Int): Boolean = {
-        if (n == w)
-            // a node never strictly dominates itself
-            return false;
-
-        val wIDom = idom(w)
-        wIDom == n || (wIDom != startNode && strictlyDominates(n, wIDom))
-    }
-
-    /**
-     * Iterates over all dominator nodes of the given node and calls the given function f each
-     * dominator node.
-     * Iteration starts with the immediate dominator of the given node if reflexive is `false` and
-     * starts with the node itself if reflexive is `true`.
-     *
-     * @param n The id of a valid node.
-     */
-    final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int ⇒ U): Unit = {
-        if (n != startNode || reflexive) {
-            var c = if (reflexive) n else idom(n)
-            while (c != startNode) {
-                f(c)
-                c = idom(c)
-            }
-            f(startNode)
-        }
-    }
-
-    /**
-     * The array which stores the immediate dominator for each node.
-     */
-    def immediateDominators: IndexedSeq[Int] = idom
-
-    /**
-     * (Re-)computes the dominator tree's leaf nodes. Due to the way the graph is stored,
-     * this method has a complexity of O(2n). Hence, if the leaves are required more than
-     * once, storing/caching them should be considered.
-     */
-    def leaves(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): Chain[Int] = {
-        // A leaf is a node which does not dominate another node.
-        var i = 0
-        val max = idom.length
-
-        // first loop - identify nodes which dominate other nodes
-        val dominates = new Array[Boolean](max)
-        while (i < max) {
-            if (i != startNode && isIndexValid(i)) {
-                dominates(idom(i)) = true // negative values are not used to identify "normal" nodes
-            }
-            i += 1
-        }
-        // second loop - collect leaves
-        var theLeaves = Chain.empty[Int]
-        i = 0
-        while (i < max) {
-            if (isIndexValid(i) && !dominates(i)) {
-                theLeaves :&:= i
-            }
-            i += 1
-        }
-        theLeaves
-
-    }
-
-    /**
-     * Returns a Graphviz based visualization of this dominator tree.
-     *
-     * @param   isIndexValid A function that returns `true` if an element in the iDom array with a
-     *          specific index is actually identifying a node. This is particularly useful/
-     *          required if the `idom` array given at initialization time is a sparse array.
-     */
-    def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
-        val g = Graph.empty[Int]
-        idom.zipWithIndex.foreach { e ⇒
-            val (t, s /*index*/ ) = e
-            if (isIndexValid(s) && s != startNode)
-                g += (t, s)
-        }
-        g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
-    }
-}
 
 /**
  * A (standard) dominator tree.
  *
- * @param  startNode The unique start node of the dominator tree; if the underlying cfg's
- *         startNode has a predecessor a virtual start node was created; in this case
- *         the startNode will have an id larger than any id used by the graph.
+ * @param  startNode The unique start node of the (augmented) dominator tree.
+ * @param  hasVirtualStartNode `true` if the underlying cfg's startNode has a predecessor.
+ *         If the start nodes had predecessors, a virtual start node was created; in this case
+ *         the startNode will have an id larger than any id used by the graph and is identified by
+ *         `startNode`.
  */
 final class DominatorTree private (
         final val startNode:            Int,
@@ -206,8 +59,13 @@ final class DominatorTree private (
  */
 object DominatorTree {
 
-    def fornone(g: Int ⇒ Unit): Unit = { (f: (Int ⇒ Unit)) ⇒ { /*nothing to to*/ } }
+    def fornone(g: Int ⇒ Unit): Unit = { /*nothing to do*/ }
 
+    /**
+     * Convenience factory method for dominator trees; see
+     * [[[[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]]]
+     * for details.
+     */
     def apply(
         startNode:                Int,
         startNodeHasPredecessors: Boolean,
@@ -221,13 +79,14 @@ object DominatorTree {
             foreachSuccessorOf,
             foreachPredecessorOf,
             maxNode,
-            (startNode: Int, foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit), dom: Array[Int]) ⇒
-                new DominatorTree(
-                    startNode,
-                    startNodeHasPredecessors, // <= if true, we have a virtual node...
-                    foreachSuccessorOf,
-                    dom
-                )
+            (
+                startNode: Int,
+                hasVirtualStartNode: Boolean,
+                foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+                idom: Array[Int]
+            ) ⇒ {
+                new DominatorTree(startNode, hasVirtualStartNode, foreachSuccessorOf, idom)
+            }
         )
     }
 
@@ -236,9 +95,9 @@ object DominatorTree {
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
      * [0..maxNode], although not all ids need to be used.
      *
-     * @param   startNode The id of the root node of the graph. (E.g., (pc=)"0" for the CFG
-     *          computed for some method or the id of the artificial start node created when
-     *          computing a reverse CFG.
+     * @param   startNode The id of the root node of the graph. (Often pc="0" for the CFG
+     *          computed for some method; sometimes the id of an artificial start node
+     *          that was created when computing the dominator tree).
      * @param   startNodeHasPredecessors If `true` an artificial start node with the id `maxNode+1`
      *          will be created and added to the graph.
      * @param   foreachSuccessorOf A function that given a node subsequently executes the given
@@ -254,12 +113,14 @@ object DominatorTree {
      *
      * @return  The computed dominator tree.
      *
-     * @note    This is an implementation of the "fast dominators" algorithm
-     *          presented by T. Lengauaer and R. Tarjan in
+     * @note    This is an implementation of the "fast dominators" algorithm presented by
+     *          <pre>
+     *          T. Lengauaer and R. Tarjan in
      *          A Fast Algorithm for Finding Dominators in a Flowgraph
      *          ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
+     *          </pre>
      *
-     *          '''This implementation does not use non-tailrecursive methods anymore and hence
+     *          '''This implementation does not use non-tailrecursive methods and hence
      *          also handles very large degenerated graphs (e.g., a graph which consists of a
      *          a very, very long single path.).'''
      */
@@ -269,7 +130,7 @@ object DominatorTree {
         foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         maxNode:                  Int,
-        dominatorTreeFactory:     ( /*startNode*/ Int, /*foreachSuccessorOf*/ Int ⇒ ((Int ⇒ Unit) ⇒ Unit), Array[Int]) ⇒ D
+        dominatorTreeFactory:     ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int ⇒ ((Int ⇒ Unit) ⇒ Unit), Array[Int]) ⇒ D
     ): D = {
 
         if (startNodeHasPredecessors) {
@@ -312,7 +173,7 @@ object DominatorTree {
         foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         maxNode:              Int,
-        dominatorTreeFactory: ( /*startNode*/ Int, /*foreachSuccessorOf*/ Int ⇒ ((Int ⇒ Unit) ⇒ Unit), Array[Int]) ⇒ D
+        dominatorTreeFactory: ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int ⇒ ((Int ⇒ Unit) ⇒ Unit), Array[Int]) ⇒ D
     ): D = {
         val max = maxNode + 1
 
@@ -441,141 +302,7 @@ object DominatorTree {
             j = j + 1
         }
 
-        dominatorTreeFactory(startNode, foreachSuccessorOf, dom)
+        dominatorTreeFactory(startNode, hasVirtualStartNode, foreachSuccessorOf, dom)
     }
 
-}
-
-/**
- * We only support the construction of post dominator trees for graphs..
- *
- * For information regarding issues related to using post-dominator tree for computing
- * control dependenc information see "A New Foundation for Control Dependence and Slicing for Modern
- * Program Structures" (2007, Journal Version appeared in TOPLAS)
- *
- * @param  startNode The PDT's (artificial) start node.
- * @param  additionalExitNodes Nodes in the original, underyling CFG that are treated as additional
- *         exit nodes; e.g., to handle infinite loops.
- * @param  foreachSuccessorOf The original successor information.
- */
-final class PostDominatorTree private[graphs] (
-        final val startNode:            Int,
-        final val additionalExitNodes:  IntArraySet,
-        final val foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        private[graphs] final val idom: Array[Int] // the (post)dominator information
-) extends AbstractDominatorTree {
-
-    final def isAugmented: Boolean = true
-
-}
-
-object PostDominatorTree {
-
-    /**
-     * Computes the post dominator tree for the given (forward) graph. The artificial start node
-     * that will be created by this algorithm to ensure that we have a unique start node for
-     * the post dominator tree will have the `id = (maxNodeId+1)`; additionally, all edges are
-     * automatically reversed.
-     * If this post-dominator tree is used to compute control-dependence information, the
-     * control-dependence  information is generally non-termination ''in''sensitive; i.e.,
-     * conceptually every loop is expected to eventually terminate.
-     * Hence, an instruction following the loop will not depend on the `if` related
-     * to evaluating the loop condition.
-     *
-     * @example
-     * {{{
-     * scala>//Graph: 0 -> 1->E;  1 -> 2->E
-     * scala>def isExitNode(i: Int) = i == 1 || i == 2
-     * isExitNode: (i: Int)Boolean
-     *
-     * scala>def foreachExitNode(f: Int ⇒ Unit) = { f(1); f(2) }
-     * foreachExitNode: (f: Int => Unit)Unit
-     *
-     * scala>def foreachPredecessorOf(i: Int)(f: Int ⇒ Unit) = i match {
-     *      |    case 0 ⇒
-     *      |    case 1 ⇒ f(0)
-     *      |    case 2 ⇒ f(1)
-     *      |}
-     * foreachPredecessorOf: (i: Int)(f: Int => Unit)Unit
-     * scala>def foreachSuccessorOf(i: Int)(f: Int ⇒ Unit) = i match {
-     *      |    case 0 ⇒ f(1)
-     *      |    case 1 ⇒ f(2)
-     *      |    case 2 ⇒
-     *      |}
-     * foreachSuccessorOf: (i: Int)(f: Int => Unit)Unit
-     * scala>val pdt = org.opalj.graphs.PostDominatorTree.apply(
-     *      |    isExitNode,
-     *      |    foreachExitNode,
-     *      |    foreachSuccessorOf,
-     *      |    foreachPredecessorOf,
-     *      |    2
-     *      |)
-     * pdt: org.opalj.graphs.PostDominatorTree = org.opalj.graphs.PostDominatorTree@3a82ac80
-     * scala>pdt.toDot()
-     * }}}
-     *
-     * @note    The underlying graph '''MUST NOT''' contain any node which is not (indirectly)
-     *          connected to an exit node! If the underlying CFG contains infinite loops then
-     *          the caller has to handle this case by augmenting the CFG and later on
-     *          post-processing the PDT or the control-dependence graph.
-     *
-     * @param   isExitNode A function that returns `true` if the given node – in the underlying
-     *          (control-flow) graph – is an exit node; that is the node has no successors.
-     * @param   foreachExitNode A function f that takes a function g with an int parameter which
-     *          identifies a node and which executes g for each exit node.
-     *          '''Note that _all nodes_ except those belonging to those transitively
-     *          reachable from a start node of an infinite loop  have to be reachable from the
-     *          exit nodes; otherwise the PostDominatorTree will be a forest and will be generally
-     *          useless.'''
-     *
-     * @param   maxNode The largest id used by the underlying (control-flow) graph.
-     */
-    def apply(
-        isExitNode:           Int ⇒ Boolean,
-        additionalExitNodes:  IntArraySet,
-        foreachExitNode:      (Int ⇒ Unit) ⇒ Unit,
-        foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        maxNode:              Int
-    ): PostDominatorTree = {
-        // the artificial start node
-        val startNode = maxNode + 1
-
-        // reverse flowgraph
-        val revFGForeachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
-            if (n == startNode) {
-                (f: Int ⇒ Unit) ⇒
-                    {
-                        foreachExitNode(f)
-                        additionalExitNodes.foreach(f)
-                    }
-            } else {
-                foreachPredecessorOf(n)
-            }
-        }
-
-        val revFGForeachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
-            if (n == startNode) {
-                DominatorTree.fornone
-            } else if (isExitNode(n) || additionalExitNodes.contains(n)) {
-                // a function that expects a function that will be called for all successors
-                (f: Int ⇒ Unit) ⇒
-                    {
-                        f(startNode)
-                        foreachSuccessorOf(n)(f)
-                    }
-            } else {
-                foreachSuccessorOf(n)
-            }
-        }
-
-        DominatorTree.create(
-            startNode,
-            hasVirtualStartNode = true,
-            revFGForeachSuccessorOf, revFGForeachPredecessorOf,
-            maxNode = startNode /* we have an additional node */ ,
-            (startNode: Int, foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit), idom: Array[Int]) ⇒
-                new PostDominatorTree(startNode, additionalExitNodes, foreachSuccessorOf, idom)
-        )
-    }
 }

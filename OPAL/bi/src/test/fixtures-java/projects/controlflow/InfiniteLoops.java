@@ -44,6 +44,16 @@ public class InfiniteLoops {
         }
     }
 
+    static void infiniteLoopWithMultipleExitPoints(int i) {
+        while (true) {
+            if (i < 0) {
+                i += 1000;
+            } else {
+                i -= 100;
+            }
+        }
+    }
+
     static void trivialInfiniteLoop(int i) {
         if (i < 0)
             return;

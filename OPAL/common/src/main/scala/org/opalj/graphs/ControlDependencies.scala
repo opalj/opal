@@ -29,9 +29,7 @@
 package org.opalj
 package graphs
 
-import scala.collection.mutable.BitSet
 import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Represents the control-dependence information.
@@ -39,8 +37,14 @@ import org.opalj.collection.mutable.IntArrayStack
  * An instruction/statement is control dependent on a predicate (here: `if`, `switch` or any
  * instruction that may throw an exception) if the value of the predicate
  * controls the execution of the instruction.
- * Let G be a control flow graph; Let X and Y be nodes in G; Y is control dependent on X iff
- * there exists a directed path P from X to Y with any Z in P \ X is not post-dominated by Y.
+ *
+ * Note that the classical definition:
+ *
+ *     Let G be a control flow graph; Let X and Y be nodes in G; Y is control dependent on X iff
+ *     there exists a directed path P from X to Y with any Z in P \ X is not post-dominated by Y.
+ *
+ * Is not well suited for methods with potentially infinite loops, exceptions and multiple exit
+ * points. (See [[PostDominatorTree$.apply]] for further information.)
  *
  * @note    In the context of static analysis an instruction (e.g., invoke, idiv,...) that
  *          may throw an exception that results in a different control-flow, is also a `predicate`
@@ -51,7 +55,7 @@ import org.opalj.collection.mutable.IntArrayStack
  *
  * @author Michael Eichberg
  */
-final class ControlDependencies(val dominanceFrontiers: DominanceFrontiers) {
+trait ControlDependencies {
 
     /**
      * @return  The nodes/basic blocks on which the given node/basic block is '''directly'''
@@ -61,30 +65,12 @@ final class ControlDependencies(val dominanceFrontiers: DominanceFrontiers) {
      *          `Control(X)/*the returned set*/` and X, whose selection is controlled by Y and
      *          which contains no nodes that may prevent the execution of X.
      */
-    def xIsDirectlyControlDependentOn(x: Int): IntArraySet = dominanceFrontiers(x)
+    def xIsDirectlyControlDependentOn(x: Int): IntArraySet
 
     /**
      * Calls the function `f` with those nodes on which the given node `x` is control
      * dependent on.
      */
-    def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit = {
-        val maxNodeId = dominanceFrontiers.maxNode
+    def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit
 
-        // IMPROVE Evaluate if a typed chain or an IntArraySet is more efficient...
-        val seen = new BitSet(maxNodeId)
-        val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
-        worklist.push(x)
-
-        do {
-            val x = worklist.pop()
-
-            dominanceFrontiers(x).foreach { y ⇒
-                if (!seen.contains(y)) {
-                    seen += y
-                    worklist.push(y)
-                    f(y)
-                }
-            }
-        } while (worklist.nonEmpty)
-    }
 }
