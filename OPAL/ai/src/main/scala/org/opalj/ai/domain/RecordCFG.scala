@@ -34,25 +34,27 @@ import java.lang.ref.{SoftReference ⇒ SRef}
 
 import scala.collection.BitSet
 import scala.collection.mutable
+
+import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
-import org.opalj.br.PC
-import org.opalj.br.Code
-import org.opalj.br.instructions.ReturnInstruction
-import org.opalj.br.instructions.ATHROW
+
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
-import org.opalj.graphs.ControlDependencies
+import org.opalj.graphs.DominanceFrontiers
+
+import org.opalj.br.PC
+import org.opalj.br.Code
+import org.opalj.br.ExceptionHandler
+import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.br.instructions.ATHROW
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
-import org.opalj.br.ExceptionHandler
-import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.graphs.DominanceFrontiers
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -121,15 +123,6 @@ trait RecordCFG
     private[this] var theDominatorTree: SRef[DominatorTree] = _
 
     /**
-     * @note    We use the monitor associated with theJumpBackTargetPCs when computing the post
-     *          dominator tree; the monitor associated with theJumpBackTargetPCs is not (to be)
-     *          used otherwise!
-     */
-    private[this] var thePostDominatorTree: SRef[PostDominatorTree] = _
-
-    private[this] var theControlDependencies: SRef[ControlDependencies] = _
-
-    /**
      * @note    We use the monitor associated with exceptionHandlerSuccessors when computing the
      *          bb based cfg; the monitor associated with exceptionHandlerSuccessors is not (to be)
      *          used otherwise!
@@ -163,8 +156,6 @@ trait RecordCFG
         thePredecessors = null
         theBBCFG = null
         theDominatorTree = null
-        thePostDominatorTree = null
-        theControlDependencies = null
 
         super.initProperties(code, cfJoins, initialLocals)
     }
@@ -666,9 +657,9 @@ trait RecordCFG
     final def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = predecessorsOf(pc).foreach(f)
 
     /**
-     * Returns the dominator tree.
-     * See [[DominatorTree#apply(startNode:Int,startNodeHasPredecessors:Boolean*]] for futher
-     * details regarding the properties of the dominator tree.
+     * Returns the dominator tree; see
+     * [[[[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]]]
+     * for details regarding the properties of the dominator tree.
      *
      * @note   To get the list of all evaluated instructions and their dominators.
      *         {{{
@@ -715,40 +706,6 @@ trait RecordCFG
         // closed; i.e., does not include an exit node and does not refer to a node
         // which is outside of the loop.
 
-        /*
-        // The nodes which are connected to an exit node... if not, the loop eagerly
-        // aborts the computation and it doesn't matter that it contains "wrong data"
-        // w.r.t. the last analyzed loop.
-        val allLoopsTerminate =
-            thePotentialLoopHeaders forall { loopHeaderPC ⇒
-                val visitedNodes = new mutable.BitSet(code.instructions.length)
-                var nodesToVisit = List(loopHeaderPC)
-                var isInfiniteLoop = true
-                while (nodesToVisit.nonEmpty) {
-                    val nextPC = nodesToVisit.head
-                    if (theExitPCs.contains(nextPC)) {
-                        isInfiniteLoop = false
-                        nodesToVisit = Nil // terminate while loop
-                    } else {
-                        nodesToVisit = nodesToVisit.tail
-                        if (!visitedNodes.contains(nextPC)) {
-                            visitedNodes += nextPC
-                            nodesToVisit =
-                                regularSuccessorsOf(nextPC).foldLeft(nodesToVisit){
-                                    (c, n) ⇒ n :&: c
-                                }
-                            nodesToVisit =
-                                exceptionHandlerSuccessorsOf(nextPC).foldLeft(nodesToVisit){
-                                    (c, n) ⇒ n :&: c
-                                }
-                        }
-                    }
-                }
-                !isInfiniteLoop
-            }
-        !allLoopsTerminate
-        */
-
         // IDEA traverse the cfg from the exit nodes to the start node and try to determine if
         // every potential loop header can be reached.
         val predecessors = this.predecessors
@@ -787,15 +744,15 @@ trait RecordCFG
                     //      loop nested inside the infinite loop pc2.
 
                     // pc1 is a regular loop inside an infinite loop
-                    // remainingPotentialInfiniteLoopHeaders -= pc1
-                    // if (remainingPotentialInfiniteLoopHeaders.size == 1)
-                    //    return remainingPotentialInfiniteLoopHeaders;
+                    remainingPotentialInfiniteLoopHeaders -= pc1
+                    if (remainingPotentialInfiniteLoopHeaders.size == 1)
+                        return remainingPotentialInfiniteLoopHeaders;
                 } else if (df.transitiveDF(pc2).contains(pc1)) {
                     // 1.b) (same as 1.a, but vice versa)
 
-                    // remainingPotentialInfiniteLoopHeaders -= pc2
-                    // if (remainingPotentialInfiniteLoopHeaders.size == 1)
-                    //    return remainingPotentialInfiniteLoopHeaders;
+                    remainingPotentialInfiniteLoopHeaders -= pc2
+                    if (remainingPotentialInfiniteLoopHeaders.size == 1)
+                        return remainingPotentialInfiniteLoopHeaders;
                 } else if (dt.strictlyDominates(pc1, pc2)) {
                     // 2. Given (due to the first checkt) that both pcs do not identify
                     //    nested loops (in which case we keep the outer one!), we now have
@@ -815,75 +772,6 @@ trait RecordCFG
         }
 
         remainingPotentialInfiniteLoopHeaders
-    }
-
-    /**
-     * Returns the [[PostDominatorTree]] (PDT).
-     *
-     * The PDT is computed using the reverse control-flow graph using a single explicit, virtual
-     * exit node which is – in case of true infinite loops – also connected with the first
-     * instructions of the infinite loops such that the computation of control-dependencies using
-     * the PDT is facilitated.
-     */
-    def postDominatorTree: PostDominatorTree = {
-        getOrInitField[PostDominatorTree](
-            () ⇒ this.thePostDominatorTree,
-            (pdt) ⇒ this.thePostDominatorTree = pdt,
-            theJumpBackTargetPCs
-        ) {
-                val exitPCs = theExitPCs
-
-                // We want to keep a non-soft reference and avoid any further useless synchronization.
-                val predecessors = this.predecessors
-                def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
-                    val s = predecessors(pc)
-                    if (s ne null)
-                        s.foreach(f)
-                }
-
-                val infiniteLoopHeaders = this.infiniteLoopHeaders
-                if (infiniteLoopHeaders.nonEmpty) {
-                    val dominatorTree = this.dominatorTree
-                    val additionalExitNodes = infiniteLoopHeaders.flatMap { loopHeaderPC ⇒
-                        predecessors(loopHeaderPC).withFilter { predPC ⇒
-                            !dominatorTree.strictlyDominates(predPC, loopHeaderPC)
-                        }
-                    }
-                    PostDominatorTree(
-                        exitPCs.contains,
-                        additionalExitNodes,
-                        exitPCs.foreach,
-                        foreachSuccessorOf,
-                        foreachPredecessorOf,
-                        maxNode = code.instructions.length - 1
-                    )
-                } else {
-                    PostDominatorTree(
-                        exitPCs.contains,
-                        IntArraySet.empty,
-                        exitPCs.foreach,
-                        foreachSuccessorOf,
-                        foreachPredecessorOf,
-                        maxNode = code.instructions.length - 1
-                    )
-                }
-            }
-    }
-
-    /**
-     * Returns the control dependencies graph.
-     *
-     * Internally, a post dominator tree is used for methods witout infinite loops; i.e.,
-     * we compute a non-termination ''in''sensitive control dependencies.
-     */
-    def controlDependencies: ControlDependencies = {
-        getOrInitField[ControlDependencies](
-            () ⇒ this.theControlDependencies,
-            (cd) ⇒ this.theControlDependencies = cd,
-            theJumpBackTargetPCs
-        ) {
-                new ControlDependencies(DominanceFrontiers(postDominatorTree, wasExecuted))
-            }
     }
 
     def bbCFG: CFG = {
@@ -1031,6 +919,78 @@ trait RecordCFG
 
         // 3. create CFG class
         CFG(code, normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList, bbs)
+    }
+
+    /**
+     * Returns the [[org.opalj.graphs.PostDominatorTree]] (PDT).
+     *
+     * @note The construction of `PostDominatorTree`s for methods with multiple exit nodes and
+     *       also – potentially - infinite loops has several limitations; in particular, if the
+     *       results are used for computing control-dependence information.
+     *
+     * @note If the method/CFG contains infinite loops (see [[#infiniteLoopHeaders]]) then the
+     *       instructions which jump back to the infinite loop headers (from within the loop)
+     *       are also used as additional exit nodes.
+     */
+    def postDominatorTree: PostDominatorTree = {
+
+        val exitPCs = theExitPCs
+        val uniqueExitNode = if (exitPCs.size == 1) Some(exitPCs.head) else None
+        // We want to keep a non-soft reference and avoid any further useless synchronization.
+        val predecessors = this.predecessors
+        def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
+            val s = predecessors(pc)
+            if (s ne null)
+                s.foreach(f)
+        }
+
+        val infiniteLoopHeaders = this.infiniteLoopHeaders
+        if (infiniteLoopHeaders.nonEmpty) {
+            val dominatorTree = this.dominatorTree
+            var additionalExitNodes = infiniteLoopHeaders.flatMap { loopHeaderPC ⇒
+                predecessors(loopHeaderPC).withFilter { predPC ⇒
+                    // 1. let's ensure that the predecessor actually belong to the loop...
+                    dominatorTree.strictlyDominates(loopHeaderPC, predPC)
+                }
+            }
+            // Now we have to ensure to select the outer most exit pcs which are dominated by
+            // other additional exit nodes...
+            additionalExitNodes.foreachPair { (e1, e2) ⇒
+                if (dominatorTree.strictlyDominates(e1, e2))
+                    additionalExitNodes -= e1
+            }
+            PostDominatorTree(
+                uniqueExitNode,
+                exitPCs.contains,
+                additionalExitNodes,
+                exitPCs.foreach,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
+                maxNode = code.instructions.length - 1
+            )
+        } else {
+            PostDominatorTree(
+                uniqueExitNode,
+                exitPCs.contains,
+                IntArraySet.empty,
+                exitPCs.foreach,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
+                maxNode = code.instructions.length - 1
+            )
+        }
+
+    }
+
+    /**
+     * Computes the control dependencies graph based on the post dominator tree.
+     *
+     * Internally, a post dominator tree is used for methods without infinite loops; i.e.,
+     * we compute non-termination ''in''sensitive control dependencies. Note that – dues to
+     * exceptions which may lead to abnormal returns
+     */
+    def pdtBasedControlDependencies: DominanceFrontiers = {
+        DominanceFrontiers(postDominatorTree, wasExecuted)
     }
 
     // ================================== GENERAL HELPER METHODS ===================================
