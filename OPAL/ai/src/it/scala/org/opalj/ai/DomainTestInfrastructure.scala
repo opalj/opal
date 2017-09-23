@@ -53,7 +53,7 @@ import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 import org.opalj.ai.util.XHTML
 
 /**
- * Provides the basic infrastructure to just load a very large number of class files and to perform
+ * Provides the basic infrastructure to load a very large number of class files and to perform
  * an abstract interpretation of all methods.
  *
  * The primary mechanism to adapt this framework is to override the `analyzeAIResult` method

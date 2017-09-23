@@ -139,9 +139,9 @@ object TACAI {
             return true;
         }
 
+        import UnaryArithmeticOperators._
         import BinaryArithmeticOperators._
         import RelationalOperators._
-        import UnaryArithmeticOperators._
 
         val isStatic = method.isStatic
         val descriptor = method.descriptor
@@ -211,8 +211,8 @@ object TACAI {
             }
         }
 
-        // The list of bytecode instructions which were killed (=>NOP), and for which we now have to
-        // clear the usages.
+        // The list of bytecode instructions which were killed (=>NOP), and for which we now
+        // have to clear the usages.
         val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntArraySet /*DefSites*/ )] = Queue.empty
 
         def killOperandBasedUsages(useSite: br.PC, valuesCount: Int): Unit = {
@@ -310,8 +310,8 @@ object TACAI {
                     predecessorsOfPC.foldLeft(IntArraySet.empty) { (adaptedDefSites, exceptionSite) ⇒
                         if (instructions(exceptionSite).opcode == ATHROW.opcode) {
                             // We have to determine if the caught exception is actually the
-                            // thrown exception....
-                            // FIXME XXXX TODO
+                            // thrown exception.... e.g., if the exception value is null,
+                            // the caught exception is a NullPointerException that is vm generated.
                             val thrownValue = operandsArray(exceptionSite).head
                             val exceptionIsNull = refIsNull(exceptionSite, thrownValue)
                             var newDefSites = adaptedDefSites
@@ -359,7 +359,8 @@ object TACAI {
 
             /**
              * Creates a local variable using the current pc and the type
-             * information from the domain value.
+             * information from the domain value if the local variable is used; otherwise
+             * an expression statement or a nop statement is added.
              */
             def addInitLocalValStmt(
                 pc:   PC,
@@ -432,6 +433,7 @@ object TACAI {
                 } else {
                     addStmt(ExprStmt(pc, binExpr))
                 }
+
             }
 
             @inline def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {

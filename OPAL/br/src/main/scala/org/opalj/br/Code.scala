@@ -350,7 +350,7 @@ final class Code private (
      *     5: goto 10
      *     6: ...
      *     9: iload_1
-     *  10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
+     *    10: return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
      * }}}
      *
      * In case of exception handlers the sound overapproximation is made that
@@ -625,7 +625,7 @@ final class Code private (
      *  5: goto 10
      *  6: ...
      *  9: iload_1
-     * 10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
+     * 10: return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
      * }}}
      *
      * In case of exception handlers the sound overapproximation is made that

@@ -191,8 +191,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     final val PurityKey: PropertyKey[Purity] = {
         PropertyKey.create(
             "Purity",
-            (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ Iterable(Result(epks.head.e, Pure))
+            (ps: PropertyStore, e: Entity) ⇒
+                throw new UnknownError(s"no fallback available for $e"),
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒
+                Iterable(Result(epks.head.e, Pure))
         )
     }
     sealed trait Purity extends Property {
@@ -692,7 +694,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 val testSizes = Set(1, 5, 50000)
                 for (testSize ← testSizes) {
-                    // 1. we create a very long chain
+                    // 1. we create a ((very) long) chain
                     val firstNode = Node(0.toString)
                     val allNodes = mutable.Set(firstNode)
                     var prevNode = firstNode
@@ -708,11 +710,13 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     val store = PropertyStore(allNodes, () ⇒ false, debug = false)(GlobalLogContext)
 
                     // 3. lets add the analysis
-                    def onUpdate(node: Node)(e: Entity, p: Property, u: UserUpdateType): PropertyComputationResult = {
+                    def onUpdate(
+                        node: Node
+                    )(e: Entity, p: Property, u: UserUpdateType): PropertyComputationResult = {
                         purityAnalysis(node)
                     }
                     def purityAnalysis(node: Node): PropertyComputationResult = {
-                        val nextNode = node.targets.head // HER: we always only have ony successor
+                        val nextNode = node.targets.head // HERE: we always have only one successor
                         store(nextNode, PurityKey) match {
                             case epk: EPK[_, _] ⇒
                                 IntermediateResult(
@@ -730,12 +734,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                                     Iterable(ep),
                                     onUpdate(node)
                                 )
-
                         }
                     }
                     // 4. execute analysis
                     store.scheduleForCollected { case n: Node ⇒ n }(purityAnalysis)
-                    store.waitOnPropertyComputationCompletion(true)
+                    store.waitOnPropertyComputationCompletion(true, true)
 
                     // 5. let's evaluate the result
                     store.entities(PurityKey) foreach { ep ⇒

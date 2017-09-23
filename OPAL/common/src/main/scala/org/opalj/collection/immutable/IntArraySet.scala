@@ -64,7 +64,16 @@ abstract class IntArraySet extends ((Int) ⇒ Int) {
 
     final def last: Int = max
 
+    /** Returns some value and removes it from this set. */
+    def getAndRemove: (Int, IntArraySet)
+
     def foreach[U](f: Int ⇒ U): Unit
+
+    /**
+     * Iterates over all possible pairings of two values of this set; that is, if the set has
+     * three elements: {1,2,3}, the pairs (1,2), (1,3) and (2,3) will be iterated over.
+     */
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit
 
     /**
      * Returns a lazily filtered set. However, all operations other operations except of
@@ -74,6 +83,12 @@ abstract class IntArraySet extends ((Int) ⇒ Int) {
 
     def map(f: Int ⇒ Int): IntArraySet
 
+    def flatMap(f: Int ⇒ IntArraySet): IntArraySet = {
+        val builder = new IntArraySetBuilder
+        foreach { i ⇒ builder ++= f(i) }
+        builder.result
+    }
+
     def transform[T, To](f: Int ⇒ T, b: Builder[T, To]): To = {
         foreach(i ⇒ b += f(i))
         b.result()
@@ -81,7 +96,16 @@ abstract class IntArraySet extends ((Int) ⇒ Int) {
 
     def -(i: Int): IntArraySet
 
-    def --(is: Traversable[Int]): IntArraySet = this.foldLeft(this)(_ - _)
+    def --(is: Traversable[Int]): IntArraySet = {
+        var r = this
+        is.foreach { i ⇒ r -= i }
+        r
+    }
+    def --(is: IntArraySet): IntArraySet = {
+        var r = this
+        is.foreach { i ⇒ r -= i }
+        r
+    }
 
     def +(i: Int): IntArraySet
 
@@ -143,7 +167,9 @@ case object EmptyIntArraySet extends IntArraySet {
     def size: Int = 0
     def max: Int = throw new UnsupportedOperationException("empty set")
     def min: Int = throw new UnsupportedOperationException("empty set")
+    def getAndRemove: (Int, IntArraySet) = throw new UnsupportedOperationException("empty set")
     def foreach[U](f: Int ⇒ U): Unit = {}
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = this
     def map(f: Int ⇒ Int): IntArraySet = this
     def -(i: Int): this.type = this
@@ -173,8 +199,10 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     def isSingletonSet: Boolean = true
     def hasMultipleElements: Boolean = false
     def foreach[U](f: Int ⇒ U): Unit = { f(i) }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     def max: Int = this.i
     def min: Int = this.i
+    def getAndRemove: (Int, IntArraySet) = (i, EmptyIntArraySet)
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = if (p(i)) this else EmptyIntArraySet
     def map(f: Int ⇒ Int): IntArraySet = {
         val i = this.i
@@ -229,6 +257,7 @@ case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
     def size: Int = 2
     def min: Int = this.i1
     def max: Int = this.i2
+    def getAndRemove: (Int, IntArraySet) = (i2, new IntArraySet1(i1))
 
     def iterator: Iterator[Int] = new AbstractIterator[Int] {
         var i = 0
@@ -244,6 +273,7 @@ case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
         }
     }
     def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = f(i1, i2)
 
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
         if (p(i1)) {
@@ -320,6 +350,7 @@ case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
     def size: Int = 3
     def min: Int = this.i1
     def max: Int = this.i3
+    def getAndRemove: (Int, IntArraySet) = (i3, new IntArraySet2(i1, i2))
 
     def iterator: Iterator[Int] = new AbstractIterator[Int] {
         var i = 0
@@ -336,6 +367,7 @@ case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
         }
     }
     def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2); f(i1, i3); f(i2, i3) }
 
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
         if (p(i1)) {
@@ -422,7 +454,7 @@ case class IntArraySetN private[immutable] (
         private[immutable] val is: Array[Int]
 ) extends IntArraySet {
 
-    assert(is.length > 2)
+    assert(is.length > 3)
 
     def apply(index: Int): Int = is(index)
     def size: Int = is.length
@@ -431,6 +463,12 @@ case class IntArraySetN private[immutable] (
     def isEmpty: Boolean = false
     def max: Int = is(is.length - 1)
     def min: Int = is(0)
+    def getAndRemove: (Int, IntArraySet) = {
+        if (is.length > 4)
+            (max, new IntArraySetN(is.init))
+        else
+            (max, new IntArraySet3(is(0), is(1), is(2)))
+    }
     def foreach[U](f: Int ⇒ U): Unit = {
         val max = is.length
         var i = 0
@@ -439,6 +477,19 @@ case class IntArraySetN private[immutable] (
             i += 1
         }
     }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {
+        val max = is.length
+        var i = 0
+        while (i < max) {
+            var j = i + 1
+            while (j < max) {
+                f(is(i), is(j))
+                j += 1
+            }
+            i += 1
+        }
+    }
+
     def withFilter(p: (Int) ⇒ Boolean): IntArraySet = new FilteredIntArraySet(p, this)
 
     def map(f: Int ⇒ Int): IntArraySet = {
@@ -617,6 +668,7 @@ private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArray
             }
         }
     }
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit = getFiltered.foreachPair(f)
 
     def contains(value: Int): Boolean = p(value) && origS.contains(value)
     def exists(p: Int ⇒ Boolean): Boolean = iterator.exists(p)
@@ -630,6 +682,7 @@ private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArray
     def min: Int = getFiltered.min
     def max: Int = getFiltered.max
     def map(f: Int ⇒ Int): IntArraySet = getFiltered.map(f)
+    def getAndRemove: (Int, IntArraySet) = getFiltered.getAndRemove
     def -(i: Int): IntArraySet = getFiltered - i
     def +(i: Int): IntArraySet = getFiltered + 1
     def toChain: Chain[Int] = getFiltered.toChain
@@ -668,6 +721,8 @@ class IntArraySetBuilder private[immutable] (
 
         this
     }
+
+    def ++=(elems: IntArraySet): this.type = { elems.foreach(this.+=); this }
 
     def clear(): Unit = { is = new Array[Int](4); size = 0 }
 

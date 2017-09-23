@@ -1441,7 +1441,8 @@ class PropertyStore private (
         private[this] def handleUnsatisfiedDependencies(
             resolveCycles:                         Boolean,
             useFallbacksForIncomputableProperties: Boolean
-        ): Unit = {
+        ): Boolean = {
+            var storeUpdated: Boolean = false
             val observers = store.observers
 
             val directlyIncomputableEPKs = HSet.empty[SomeEPK]
@@ -1533,6 +1534,9 @@ class PropertyStore private (
                         mkString("found the following cyclic computations:\n\t", "\n\t", "\n")
                 )
                 for (cSCC ← cSCCs) {
+                    // in the following, either the observer relations are updated or one or more
+                    // property is updated
+                    storeUpdated = true
                     val results = PropertyKey.resolveCycle(store, cSCC)
                     if (results.nonEmpty) {
                         if (debug) {
@@ -1540,10 +1544,11 @@ class PropertyStore private (
                             logInfo("analysis progress", s"resolving the cycle $cycle resulted in $results")
                         }
                         for (result ← results) {
+                            // TODO validate that we have indeed changed a property!
                             handleResult(result)
                         }
                     } else {
-                        // The following handles the case of a cycle where...
+                        // The following handles the case of a cycle which could not be resolved.
                         if (debug) {
                             val cycle = cSCC.mkString("", " → ", " ↺")
                             val infoMessage = s"resolution of $cycle produced no results; removing observers"
@@ -1558,7 +1563,7 @@ class PropertyStore private (
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
             if (directlyIncomputableEPKs.nonEmpty && useFallbacksForIncomputableProperties) {
-
+                storeUpdated = true
                 for (EPK(e, pk) ← directlyIncomputableEPKs) {
                     /*internal*/ /* assert(
                         data.get(e).ps(pk.id).p eq null,
@@ -1581,6 +1586,7 @@ class PropertyStore private (
                 validate(None),
                 s"the property store is inconsistent after handling unsatisfied dependencies"
             ) */
+            storeUpdated
         }
 
         private[this] def doWaitOnCompletion(): Unit = {
@@ -1600,11 +1606,12 @@ class PropertyStore private (
             // If all computations were finished already `scheduled` would have been "0" already
             // and no fallback computations would have been triggered
             if (useFallbackForIncomputableProperties || resolveCycles) {
-                handleUnsatisfiedDependencies(
+                while (handleUnsatisfiedDependencies(
                     resolveCycles,
                     useFallbackForIncomputableProperties
-                )
-                doWaitOnCompletion()
+                )) {
+                    doWaitOnCompletion()
+                }
             }
         }
     }

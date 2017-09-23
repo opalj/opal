@@ -424,7 +424,7 @@ final class MethodTemplate private[br] (
  * A method belonging to a class file. [[Method]] objects are created by creating a class file
  * using [[MethodTemplate]]s.
  *
- * @param classFile The declaring class file.
+ * @param declaringClassFile The declaring class file.
  */
 final class Method private[br] (
         private[br] var declaringClassFile: ClassFile, // unfortunately, Scala forces us to use this ugly approach to initialize the data structure

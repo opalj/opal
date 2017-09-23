@@ -42,7 +42,7 @@ import scala.collection.Map
 class DefaultMutableNode[I](
         theIdentifier:       I,
         identifierToString:  I ⇒ String                  = (_: Any).toString,
-        theVisualProperties: Map[String, String]         = Map("shape" → "box"),
+        theVisualProperties: Map[String, String]         = Map.empty,
         theChildren:         List[DefaultMutableNode[I]] = List.empty
 ) extends MutableNodeLike[I, DefaultMutableNode[I]](
     theIdentifier,
@@ -68,9 +68,6 @@ class DefaultMutableNode[I](
 }
 object DefaultMutableMode {
 
-    val BaseVirtualPropertiers = Map(
-        "shape" → "box",
-        "style" → "filled", "fillcolor" → "white"
-    )
+    val BaseVirtualPropertiers = Map("style" → "filled", "fillcolor" → "white")
 
 }

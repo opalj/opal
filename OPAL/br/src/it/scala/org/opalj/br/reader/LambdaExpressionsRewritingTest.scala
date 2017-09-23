@@ -81,7 +81,7 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
             */
         }
         if (exceptions.nonEmpty) throw new UnknownError(exceptions.mkString("\n"))
-        info(s"found ${factoryCalls.size} lambda proxy factor ymethod calls")
+        info(s"found ${factoryCalls.size} lambda proxy factory method calls")
         factoryCalls.asScala
 
     }

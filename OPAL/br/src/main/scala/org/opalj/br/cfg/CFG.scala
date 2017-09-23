@@ -72,7 +72,7 @@ case class CFG(
         abnormalReturnNode:      ExitNode,
         catchNodes:              Seq[CatchNode],
         private val basicBlocks: Array[BasicBlock]
-) {
+) { cfg ⇒
 
     // 1. Check that each basic block has a lower start pc than the end pc
     //    i.e., startPC <= endPC.
@@ -188,16 +188,18 @@ case class CFG(
     def allBBs: Iterator[BasicBlock] = {
         new AbstractIterator[BasicBlock] {
 
-            var currentBBPC = 0
+            private[this] var currentBBPC = 0
 
             def hasNext: Boolean = currentBBPC < basicBlocks.length
 
             def next: BasicBlock = {
+                val basicBlocks = cfg.basicBlocks
                 val current = basicBlocks(currentBBPC)
                 currentBBPC = current.endPC + 1
-                // jump to the end and check if the instruction direct following this bb
-                // actually belongs to a
-                while (currentBBPC < basicBlocks.length && (basicBlocks(currentBBPC) eq null)) {
+                // jump to the end and check if the instruction directly following this bb
+                // actually belongs to a basic block
+                val maxPC = basicBlocks.length
+                while (currentBBPC < maxPC && (basicBlocks(currentBBPC) eq null)) {
                     currentBBPC += 1
                 }
                 current
@@ -402,7 +404,7 @@ case class CFG(
                 // a simple algorithm that actually resulted in a CFG with detached basic blocks;
                 // we now kill these basic blocks by jumping over them!
                 // NOTE: This is indicative of dead code in the bytecode in the first place!
-                if ((tempBB ne null)) {
+                if (tempBB ne null) {
                     startPC = tempBB.endPC
                 }
                 startPC += 1
@@ -491,9 +493,9 @@ case class CFG(
             if (bb.isExitNode) {
                 s"BB_${id.toHexString}: $bb"
             } else {
-                bb.successors.map { succBB ⇒
-                    "BB_"+bbIds(succBB).toHexString
-                }.mkString(s"BB_${id.toHexString}: $bb → {", ",", "}")
+                bb.successors.
+                    map(succBB ⇒ "BB_"+bbIds(succBB).toHexString).
+                    mkString(s"BB_${id.toHexString}: $bb → {", ",", "}")
             }
         }.toList.sorted.mkString("CFG(\n\t", "\n\t", "\n)")
     }
@@ -507,13 +509,11 @@ case class CFG(
         // 1. create a node foreach cfg node
         val bbsIterator = allBBs
         val startBB = bbsIterator.next()
+        val startNodeVisualProperties = Map("fillcolor" → "green", "style" → "filled", "shape" → "box")
         var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] =
             Map(
                 startBB →
-                    new DefaultMutableNode(
-                        f(startBB),
-                        theVisualProperties = Map("fillcolor" → "green", "style" → "filled", "shape" → "box")
-                    )
+                    new DefaultMutableNode(f(startBB), theVisualProperties = startNodeVisualProperties)
             )
         cfgNodeToGNodes ++= bbsIterator.map(bb ⇒ (bb, new DefaultMutableNode(f(bb))))
         cfgNodeToGNodes ++= catchNodes.map(cn ⇒ (cn, new DefaultMutableNode(cn.toString)))

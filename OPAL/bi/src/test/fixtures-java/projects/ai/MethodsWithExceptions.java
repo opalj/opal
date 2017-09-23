@@ -30,6 +30,7 @@ package ai;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 
 /**
  * Methods that throw and catch <code>Exception</code>s.
@@ -209,4 +210,78 @@ public class MethodsWithExceptions {
         return -1;
     }
 
+    public static int extensiveCatchGame(Object o, int i) throws Throwable {
+        Throwable t = null;
+        try {
+            if (i / o.hashCode() > 0 ) throw new UnknownError("hashCode was 0");
+            throw (Throwable) o; // here, o cannot be null
+        } catch (NullPointerException npe) {
+            t = npe;
+        } catch (ClassCastException cce) {
+            t = cce;
+        } catch (IllegalArgumentException iae) {
+            t = iae;
+        } catch (ArithmeticException dve) {
+            return 0;
+        }
+
+        System.out.println("it was one of the three expected ones: "+t);
+        return -1;
+    }
+
+    public static int catchGameWithSortedCatches(Object o) throws Throwable {
+        try {
+            throw new java.io.FileNotFoundException(o.toString());
+        } catch (NullPointerException npe) {
+            return 0;
+        } catch (FileNotFoundException cce) {
+            return -1;
+        } catch (Exception ioe) {
+            return -10;
+        } catch (Error e) {
+            return -10;
+        }
+    }
+
+    public static int finallyGame(Object g) throws Throwable {
+        Object o;
+        Object z;
+        try {
+            Object io = null;
+            try {
+                throwsThisOrThatException(g.toString());
+            } finally {
+                try {
+                    System.out.println("Did it - 1!");
+                } finally {
+                    o = new Object();
+                    System.err.println("Everything is falling apart!");
+                }
+                io = new Object();
+            }
+            System.out.println(io.toString());
+        } finally {
+            z = "z";
+            System.out.println("Did it -2!");
+        }
+        return z.hashCode() + o.hashCode();
+    }
+
+    public static int finallyAndCatchGame(Object g) throws Throwable {
+        Object o;
+        Object z;
+        try {
+            System.out.println("before o assinemnt...");
+            o = new Object();
+        } catch (java.lang.RuntimeException re){
+            o = "re";
+        } catch (java.lang.Exception e){
+            o = "e";
+        } finally {
+            o = "finally";
+            z = "z";
+            System.out.println("Did it -2!");
+        }
+        return z.hashCode() + o.hashCode();
+    }
 }
