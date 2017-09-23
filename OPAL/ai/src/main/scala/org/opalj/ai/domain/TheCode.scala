@@ -31,6 +31,7 @@ package ai
 package domain
 
 import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
  * Provides information about the code block that is currently analyzed.
@@ -46,5 +47,7 @@ trait TheCode {
      * Returns the code block that is currently analyzed.
      */
     def code: Code
+
+    final def instructions : Array[Instruction] = code.instructions
 
 }
