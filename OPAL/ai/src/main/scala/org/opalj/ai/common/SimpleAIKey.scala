@@ -27,40 +27,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package tac
+package ai
+package common
 
 import scala.collection.concurrent.TrieMap
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.ai.BaseAI
-import org.opalj.ai.Domain
 
 /**
- * ''Key'' to get the 3-address based code of a method computed using the configured
- * domain/data-flow analysis. This key performs the underlying data-flow analysis on demand using
- * the configured data-flow analyses; the results of the data-flow analyses are NOT shared. Hence,
- * this ''key'' should only be used if the result of the underlying analysis is no longer
- * required after generating the TAC.
+ * Key to get the result of the abstract interpretation of a method using a configured domain
+ * factory. The factory is configured using project specific configuration data.
  *
- * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
+ * @example To specify the domain that you want to use for performing the abstract interpretation:
+ * {{{
+ *  project.getOrCreateProjectInformationKeyInitializationData(
+ *      SimpleAIKey,
+ *      (m: Method) ⇒ {
+ *          // call the constructor of the domain of your liking
+ *          new org....Domain(p,m)
+ *      }
+ *  )
+ * }}}
+ *
+ * @note To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
  *          pass in `this` object.
+ *
  * @author Michael Eichberg
  */
-object SimpleTACAIKey extends TACAIKey {
+object SimpleAIKey extends AIKey {
 
     /**
-     * TACAI code has no special prerequisites.
+     * The SimpleAIKey has no special prerequisites.
      */
     override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
-     * Returns an object which computes and caches the 3-address code of a method when required.
+     * Returns an object which performs and caches the result of the abstract interpretation of a
+     * method when required.
      *
-     * All methods belonging to a project are converted using the same `domainFactory`. Hence,
+     * All methods belonging to a project are analyzed using the same `domainFactory`. Hence,
      * the `domainFactory` needs to be set before compute is called/this key is passed to a
      * specific project. If multiple projects are instead concurrently, external synchronization
      * is necessary (e.g., on the ProjectInformationKey) to ensure that each project is
@@ -68,37 +77,31 @@ object SimpleTACAIKey extends TACAIKey {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[TACMethodParameter, DUVar[_ <: (Domain with RecordDefUse)#DomainValue]] = {
+    ): Method ⇒ AIResult { val domain: Domain with RecordDefUse } = {
+
         val domainFactory = project.
             getProjectInformationKeyInitializationData(this).
             getOrElse((m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m))
 
-        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
+        val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
 
-        def computeAndCacheTAC(m: Method) = {
-            val domain = domainFactory(m)
-            val aiResult = BaseAI(m, domain)
-            val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
-            // well... the following cast safe is safe, because the underlying
-            // datastructure is actually, conceptually immutable
-            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
-            taCodes.put(m, taCode)
-            taCode
-        }
-
-        (m: Method) ⇒ taCodes.get(m) match {
-            case Some(taCode) ⇒ taCode
-            case None ⇒
-                val brCode = m.body.get
-                // Basically, we use double checked locking; we really don't want to
-                // transform the code more than once!
-                brCode.synchronized {
-                    taCodes.get(m) match {
-                        case Some(taCode) ⇒ taCode
-                        case None         ⇒ computeAndCacheTAC(m)
+        (m: Method) ⇒ {
+            aiResults.get(m) match {
+                case Some(taCode) ⇒ taCode
+                case None ⇒
+                    val brCode = m.body.get
+                    // Basically, we use double checked locking; we really don't want to
+                    // transform the code more than once!
+                    brCode.synchronized {
+                        aiResults.get(m) match {
+                            case Some(aiResult) ⇒ aiResult
+                            case None ⇒
+                                val aiResult = BaseAI(m, domainFactory(m))
+                                aiResults.put(m, aiResult)
+                                aiResult
+                        }
                     }
-                }
-
+            }
         }
     }
 }

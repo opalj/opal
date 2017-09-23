@@ -36,6 +36,7 @@ import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicIntegerArray
 import java.util.concurrent.atomic.AtomicReferenceArray
+import java.lang.ref.SoftReference
 
 import scala.annotation.switch
 import scala.collection.JavaConverters._
@@ -1021,6 +1022,10 @@ class Project[Source] private (
         new ConcurrentHashMap[ProjectInformationKey[AnyRef, AnyRef], AnyRef]()
     }
 
+    /**
+     * Returns the project specific initialization information for the given project information
+     * key.
+     */
     def getProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
         key: ProjectInformationKey[T, I]
     ): Option[I] = {
@@ -1195,7 +1200,22 @@ object Project {
 
     lazy val JavaLibraryClassFileReader: Java9LibraryFramework.type = Java9LibraryFramework
 
-    private[this] def cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
+    @volatile private[this] var theCache: SoftReference[BytecodeInstructionsCache] = {
+        new SoftReference(new BytecodeInstructionsCache)
+    }
+    private[this] def cache: BytecodeInstructionsCache = {
+        var cache = theCache.get
+        if (cache == null) {
+            this.synchronized {
+                cache = theCache.get
+                if (cache == null) {
+                    cache = new BytecodeInstructionsCache
+                    theCache = new SoftReference(cache)
+                }
+            }
+        }
+        cache
+    }
 
     def JavaClassFileReader(
         theLogContext: LogContext = GlobalLogContext,

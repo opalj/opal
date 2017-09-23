@@ -50,7 +50,8 @@ import org.opalj.ai.common.SimpleAIKey
 object DefaultTACAIKey extends TACAIKey {
 
     /**
-     * TACAI code has no special prerequisites.
+     * The TACAI code is created using the results of the abstract interpretation
+     * of the underlying methods using the SimpleAIKey.
      */
     override protected def requirements: Seq[ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
         Seq(SimpleAIKey)
@@ -71,27 +72,28 @@ object DefaultTACAIKey extends TACAIKey {
         val aiResults = project.get(SimpleAIKey)
         val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
 
-        (m: Method) ⇒ {
-            taCodes.get(m) match {
-                case Some(taCode) ⇒ taCode
-                case None ⇒
-                    val brCode = m.body.get
-                    // Basically, we use double checked locking; we really don't want to
-                    // transform the code more than once!
-                    brCode.synchronized {
-                        taCodes.get(m) match {
-                            case Some(taCode) ⇒ taCode
-                            case None ⇒
-                                val aiResult = aiResults(m)
-                                val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
-                                // well... the following cast safe is safe, because the underlying
-                                // datastructure is actually, conceptually immutable
-                                val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
-                                taCodes.put(m, taCode)
-                                taCode
-                        }
+        def computeAndCacheTAC(m: Method) = { // never executed concurrently
+            val aiResult = aiResults(m)
+            val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
+            // well... the following cast safe is safe, because the underlying
+            // datastructure is actually, conceptually immutable
+            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
+            taCodes.put(m, taCode)
+            taCode
+        }
+
+        (m: Method) ⇒ taCodes.get(m) match {
+            case Some(taCode) ⇒ taCode
+            case None ⇒
+                val brCode = m.body.get
+                // Basically, we use double checked locking; we really don't want to
+                // transform the code more than once!
+                brCode.synchronized {
+                    taCodes.get(m) match {
+                        case Some(taCode) ⇒ taCode
+                        case None         ⇒ computeAndCacheTAC(m)
                     }
-            }
+                }
         }
     }
 }

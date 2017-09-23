@@ -111,7 +111,7 @@ object TACAItoGraphs extends DefaultOneStepAnalysis {
 
             methodCount.incrementAndGet()
         }
-        if (errors.nonEmpty) errors.foreach(e ⇒ e.printStackTrace)
+        errors.foreach(e ⇒ e.printStackTrace)
 
         BasicReport(s"Created ${methodCount.get} def/use and control-flow graphs in: $folder.")
     }
