@@ -31,7 +31,11 @@ package ai
 package domain
 
 /**
- * Provides information about the origin of a value.
+ * Provides information about the origin of a value iff the used domains provides the respective
+ * information; that is, this trait only defines the public API it does not provide origin
+ * information on its own. However, a domain that provides origin information has to do so
+ * for ALL values of the respective computational type category and the information has to be
+ * complete.
  *
  * ==Usage==
  * To get origin information this trait needs be implemented by a domain.
@@ -55,7 +59,7 @@ trait Origin { domain: ValuesDomain ⇒
     }
 
     /**
-     * Should be mixed in by `Value`s that have a single origin.
+     * Should be mixed in by `DomainValue`s that have a single origin.
      */
     trait SingleOriginValue extends ValueWithOriginInformation {
         def origin: ValueOrigin
@@ -63,7 +67,7 @@ trait Origin { domain: ValuesDomain ⇒
     }
 
     /**
-     * Should be mixed in by `Value` classes that capture information about all origins
+     * Should be mixed in by `DomainValue` classes that capture information about all origins
      * of a value.
      */
     trait MultipleOriginsValue extends ValueWithOriginInformation
@@ -78,11 +82,12 @@ trait Origin { domain: ValuesDomain ⇒
      *      respective value.)
      *      By default this method returns an empty `Iterable`.
      */
-    def origin(value: DomainValue): Iterable[ValueOrigin] =
+    def origin(value: DomainValue): Iterable[ValueOrigin] = {
         value match {
             case vo: ValueWithOriginInformation ⇒ vo.origins
             case _                              ⇒ Iterable.empty
         }
+    }
 
     def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit): Unit = {
         value match {
