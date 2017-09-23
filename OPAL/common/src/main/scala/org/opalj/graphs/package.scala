@@ -114,7 +114,7 @@ package object graphs {
             s"\tdir=$dir;\n"+
             s"\tranksep=$ranksep;\n"+
             s"\trankdir=$rankdir;\n"+
-            s"\tnode [fontname=$fontname];\n"
+            s"\tnode [fontname=$fontname,shape=rectangle];\n"
 
         while (nodesToProcess.nonEmpty) {
             val nextNode = nodesToProcess.head

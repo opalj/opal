@@ -174,8 +174,9 @@ case class CaughtException[+V <: Var[V]](
      *    same method, then the origin identifies a normal variable definition site.
      *  - If the exception is a parameter the parameter's origin (-1,... -n) is returned.
      *  - If the exception was raised due to a sideeffect of evaluating an expression, then the
-     *    origin is smaller or equal to [[VMLevelValuesOriginOffset]] and can be tranformed to
-     *    the index of the responsible instruction using [[org.opalj.ai#pcOfVMLevelValue]].
+     *    origin is smaller or equal to [[org.opalj.ai.VMLevelValuesOriginOffset]] and can be
+     *    tranformed to the index of the responsible instruction using
+     *    [[org.opalj.ai#pcOfVMLevelValue]].
      */
     def origins: IntArraySet = throwingStmts
 

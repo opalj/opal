@@ -29,14 +29,20 @@
 package org.opalj
 package graphs
 
+import scala.collection.mutable.BitSet
+
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
+ * Representation of the dominance frontiers.
+ *
  * @author Michael Eichberg
  */
-final class DominanceFrontiers private (private final val dfs: Array[IntArraySet]) {
+final class DominanceFrontiers private (
+        private final val dfs: Array[IntArraySet]
+) extends ControlDependencies {
 
     final def apply(n: Int): IntArraySet = df(n)
 
@@ -53,7 +59,43 @@ final class DominanceFrontiers private (private final val dfs: Array[IntArraySet
             df
     }
 
+    final def transitiveDF(n: Int): IntArraySet = {
+        var transitiveDF = this.df(n)
+        var nodesToVisit = transitiveDF - n
+        while (nodesToVisit.nonEmpty) {
+            val (nextN, newNodesToVisit) = nodesToVisit.getAndRemove
+            nodesToVisit = newNodesToVisit
+            val nextDF = this.df(nextN)
+            transitiveDF ++= nextDF
+            nodesToVisit ++= (nextDF - nextN)
+        }
+        transitiveDF
+    }
+
     def dominanceFrontiers: IndexedSeq[IntArraySet] = dfs
+
+    def xIsDirectlyControlDependentOn(x: Int): IntArraySet = df(x)
+
+    def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit = {
+        val maxNodeId = maxNode
+
+        // IMPROVE Evaluate if a typed chain or an IntArraySet is more efficient...
+        val seen = new BitSet(maxNodeId)
+        val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
+        worklist.push(x)
+
+        do {
+            val x = worklist.pop()
+
+            df(x).foreach { y ⇒
+                if (!seen.contains(y)) {
+                    seen += y
+                    worklist.push(y)
+                    f(y)
+                }
+            }
+        } while (worklist.nonEmpty)
+    }
 
     //
     //
@@ -75,7 +117,11 @@ final class DominanceFrontiers private (private final val dfs: Array[IntArraySet
         dfs.zipWithIndex.foreach { e ⇒
             val (df, s /*index*/ ) = e
             if (isNodeValid(s)) {
-                df.foreach { t ⇒ g += (s, t) }
+                if (df == null) {
+                    g += s
+                } else {
+                    df.foreach { t ⇒ g += (s, t) }
+                }
             }
         }
         g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
@@ -90,7 +136,7 @@ final class DominanceFrontiers private (private final val dfs: Array[IntArraySet
 object DominanceFrontiers {
 
     /**
-     * Computes the dominance frontiers for each node of a given graph G.
+     * Computes the dominance frontiers for each node of a graph G using the (post) dominator tree.
      *
      * @example
      * {{{
@@ -99,14 +145,14 @@ object DominanceFrontiers {
      * val g = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) += (6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) += (11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
      * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
      * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
-     * val dtf = org.opalj.graphs.DominatorTreeFactory(0, false, foreachSuccessor, foreachPredecessor, 13)
+     * val dt = org.opalj.graphs.DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 13)
      * val isValidNode = (n : Int) => n>= 0 && n <= 13
-     * org.opalj.io.writeAndOpen(dtf.dt.toDot(),"g",".dt.gv")
-     * val df = org.opalj.graphs.DominanceFrontiers(dtf,isValidNode)
+     * org.opalj.io.writeAndOpen(dt.toDot(),"g",".dt.gv")
+     * val df = org.opalj.graphs.DominanceFrontiers(dt,isValidNode)
      * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
      *
      *
-     * // A degenerated graph which consists of a single node that has a self-references.
+     * // A degenerated graph which consists of a single node that has a self-reference.
      * val g = org.opalj.graphs.Graph.empty[Int] += (0 → 0)
      * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
      * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
@@ -117,7 +163,28 @@ object DominanceFrontiers {
      * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
      * }}}
      *
-     * @param   dt The dominator tree of the specified (flow) graph.
+     * @param   dt The dominator tree of the specified (flow) graph. We provide basic support
+     *          for augmented post dominator trees: [[PostDominatorTree]]; we in particular
+     *          handle common cases related to additional exit nodes as created by the implented(!)
+     *          post dominator tree computation algorithm.
+     *          However, the following case:
+     *          {{{
+     *          while (true) {
+     *               if (i < 0) {
+     *                   i += 1000;
+     *                   // Exit Piont 1
+     *               } else {
+     *                   i -= 100;
+     *                   // Exit Point 2
+     *               }
+     *          }
+     *          }}}
+     *          is not yet supported; it would require a significant transformation of the
+     *          computed PDT, which we currently do not perform.
+     *          Basically, in the PDT we would need to make both bodies dependent on the
+     *          artifical exit node of the loop to ensure that both bodies are control-dependent
+     *          on the "if" node.
+     *
      * @param   isValidNode A function that returns `true` if the given id represents a node of the
      *          underlying graph. If the underlying graph contains a single, new artificial start
      *          node then this node may or may not be reported as a valid node; this is not relevant
@@ -128,11 +195,6 @@ object DominanceFrontiers {
         val foreachSuccessorOf = dt.foreachSuccessorOf
         val max = dt.maxNode + 1
 
-        // pre-collect the child nodes (in the DT) for each node
-        //val children = new Array[mutable.SmallValuesSet](max)
-        //val children = new Array[List[Int]](max)
-        //val children = new Array[ArrayBuffer[Int]](max)
-        //val potentialChildrenCount = Math.min(max-2,5)
         val potentialChildrenCount = 3
         val children = new Array[IntArrayStack](max)
         var i = 0
@@ -141,44 +203,17 @@ object DominanceFrontiers {
                 val d = dt.idom(i)
                 val dChildren = children(d)
                 if (dChildren eq null) {
-                    //mutable.SmallValuesSet.create(max, i)
-                    // List(i)
-                    //ArrayBuffer(i)
                     val child = new IntArrayStack(potentialChildrenCount)
                     child.push(i)
                     children(d) = child
                 } else {
-                    //i +≈: dChildren
-                    // i :: dChildren
-                    // dChildren += i
                     dChildren.push(i)
                 }
             }
             i += 1
         }
 
-        //        val nodesWithChildren = children.filter(_ ne null).map(_.size)
-        //      println((nodesWithChildren.sum.toDouble / nodesWithChildren.size)+"(max="+nodesWithChildren.max+";elems="+nodesWithChildren.size+")")
-
-        val dfs /* dominanceFrontiers */ = new Array[IntArraySet](max)
-
-        // Textbook/Paper based implementation (using recursion):
-        //
-        //        def computeDF(n: Int): Unit = {
-        //            var s = mutable.SmallValuesSet.empty(max)
-        //            foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = y +≈: s }
-        //
-        //            val nChildren = children(n)
-        //            if (nChildren ne null) {
-        //                children(n).foreach { c ⇒
-        //                    computeDF(c)
-        //                    dfs(c).foreach { w ⇒ if (!dt.strictlyDominates(n, w)) s = w +≈: s}
-        //                }
-        //            }
-        //            dfs(n) = s
-        //        }
-        //
-        //        computeDF(startNode)
+        var dfs /* dominanceFrontiers */ = new Array[IntArraySet](max)
 
         @inline def dfLocal(n: Int): IntArraySet = {
             var s = IntArraySet.empty
@@ -191,30 +226,21 @@ object DominanceFrontiers {
             s
         }
 
-        // traverse in DFS order
-        //var inDFSOrder: List[Int] = Nil
         val inDFSOrder = new IntArrayStack(Math.max(max - 2, 2))
         var nodes: Chain[Int] = Chain.singleton(startNode)
-        //val nodes = new IntArrayStack(Math.max(1, max - 3))
-        //nodes.push(startNode)
         while (nodes.nonEmpty) {
             val n = nodes.head
             nodes = nodes.tail
-            //val n = nodes.pop()
             val nChildren = children(n)
             if (nChildren ne null) {
-                //inDFSOrder ::= n
                 inDFSOrder.push(n)
                 nChildren.foreach { nodes :&:= _ }
-                // nodes.push(nChildren)
             } else {
                 // we immediately compute the dfs_local information
                 dfs(n) = dfLocal(n)
             }
         }
 
-        //        while (inDFSOrder.nonEmpty) {
-        //            val n = inDFSOrder.pop()
         inDFSOrder.foreach { n ⇒
             val s = children(n).foldLeft(dfLocal(n)) { (s, c) ⇒
                 dfs(c).foldLeft(s) { (s, w) ⇒
@@ -227,6 +253,27 @@ object DominanceFrontiers {
             dfs(n) = s
         }
 
+        if (dt.isAugmented) {
+            dt match {
+                case pdt: PostDominatorTree ⇒
+                    // let's filter the extra exit points; recall that we are
+                    // non-termination _in_sensitive
+                    dfs = dfs.map { e ⇒
+                        if (e ne null)
+                            e -- pdt.additionalExitNodes
+                        else
+                            e
+                    }
+
+                case dt: DominatorTree ⇒
+                //nothing special to do
+                case dt ⇒
+                    org.opalj.log.OPALLogger.warn(
+                        "computing dominance frontier",
+                        s"the augmentation of $dt is not understood and ignored"
+                    )(org.opalj.log.GlobalLogContext)
+            }
+        }
         new DominanceFrontiers(dfs)
     }
 

@@ -54,6 +54,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
 
         val dt = time {
             PostDominatorTree(
+                Some(0),
                 (i: Int) ⇒ i == 0,
                 IntArraySet.empty,
                 Set(0).foreach,
@@ -65,22 +66,23 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
 
         ns = Nil
         dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
-        ns should be(List(1, 0))
+        ns should be(List(0))
 
         ns = Nil
         dt.foreachDom(0, reflexive = false) { n ⇒ ns = n :: ns }
-        ns should be(List(1))
+        ns should be(List())
 
         //io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
     }
 
-    "a simple tree" should "result in a corresponding postdominator tree" in {
+    "a simple tree with multiple exits" should "result in a corresponding postdominator tree" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4)
         val foreachSuccessorOf = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessorOf = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val existNodes = Set(3, 4)
         val dt = time {
             PostDominatorTree(
+                None,
                 existNodes.contains,
                 IntArraySet.empty,
                 existNodes.foreach,
@@ -114,6 +116,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
         val existNodes = Set(3, 4)
         val dt = time {
             PostDominatorTree(
+                None,
                 existNodes.contains,
                 IntArraySet.empty,
                 existNodes.foreach,
@@ -148,13 +151,14 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
         }
     }
 
-    "a path with multiple exit points" should "yield the correct postdominators" in {
+    "a path with multiple artificial exit points" should "yield the correct postdominators" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 2)
         val foreachSuccessorOf = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessorOf = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val existNodes = Set(1, 2)
         val dt = time {
             PostDominatorTree(
+                None,
                 existNodes.contains,
                 IntArraySet.empty,
                 existNodes.foreach,

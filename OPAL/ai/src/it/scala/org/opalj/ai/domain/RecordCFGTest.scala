@@ -168,7 +168,7 @@ class RecordCFGTest extends FunSpec with Matchers {
 
                 val cdg =
                     terminateAfter[ControlDependencies](1000l, { method.toJava }) {
-                        dTime('ControlDependencies) { domain.controlDependencies }
+                        dTime('ControlDependencies) { domain.pdtBasedControlDependencies }
                     }
 
                 evaluatedInstructions foreach { pc ⇒
