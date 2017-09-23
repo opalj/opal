@@ -614,6 +614,51 @@ object ExprStmt {
 }
 
 /**
+ * Matches a statement which – in flat form – directly calls a virtual function; basically
+ * abstracts over [[ExprStmt]]s and [[Assignment]]s.
+ */
+object VirtualFunctionCallStatement {
+
+    def unapply[V <: Var[V]](stmt: Stmt[V]): Option[VirtualFunctionCall[V]] = {
+        stmt match {
+            case ExprStmt(_, vfc: VirtualFunctionCall[V])      ⇒ Some(vfc)
+            case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒ Some(vfc)
+            case _                                             ⇒ None
+        }
+    }
+}
+
+/**
+ * Matches a statement which – in flat form – directly calls a non-virtual function; basically
+ * abstracts over [[ExprStmt]]s and [[Assignment]]s.
+ */
+object NonVirtualFunctionCallStatement {
+
+    def unapply[V <: Var[V]](stmt: Stmt[V]): Option[NonVirtualFunctionCall[V]] = {
+        stmt match {
+            case ExprStmt(_, vfc: NonVirtualFunctionCall[V])      ⇒ Some(vfc)
+            case Assignment(_, _, vfc: NonVirtualFunctionCall[V]) ⇒ Some(vfc)
+            case _                                                ⇒ None
+        }
+    }
+}
+
+/**
+ * Matches a statement which – in flat form – directly calls a static function; basically
+ * abstracts over [[ExprStmt]]s and [[Assignment]]s.
+ */
+object StaticFunctionCallStatement {
+
+    def unapply[V <: Var[V]](stmt: Stmt[V]): Option[StaticFunctionCall[V]] = {
+        stmt match {
+            case ExprStmt(_, vfc: StaticFunctionCall[V])      ⇒ Some(vfc)
+            case Assignment(_, _, vfc: StaticFunctionCall[V]) ⇒ Some(vfc)
+            case _                                            ⇒ None
+        }
+    }
+}
+
+/**
  * A `checkcast` as defined by the JVM specification.
  */
 case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Stmt[V] {
