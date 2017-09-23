@@ -112,8 +112,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     type ValueOrigins = IntArraySet
     @inline final def ValueOrigins(vo: Int): IntArraySet = new IntArraySet1(vo)
 
-    private[this] var instructions: Array[Instruction] = _ // initialized by initProperties
-
     // Stores the information where the value defined by an instruction is
     // used. The used array basically mirrors the instructions array, but has additional
     // space for storing the information about the usage of the parameters. The size
@@ -130,7 +128,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _ // initialized by initProperties
 
     abstract override def initProperties(code: Code, cfJoins: BitSet, locals: Locals): Unit = {
-        instructions = code.instructions
+        val instructions = code.instructions
         val codeSize = instructions.length
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
         defOps(0) = Naught // the operand stack is empty...
@@ -164,7 +162,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * @inheritdoc
      */
     abstract override def properties(pc: Int, propertyToString: AnyRef ⇒ String): Option[String] = {
-        val thisProperty = Option(used(pc + parametersOffset)).map(_.mkString("UsedBy={", ",", "}"))
+        val thisProperty = Option(usedBy(pc)).map(_.mkString("UsedBy={", ",", "}"))
 
         super.properties(pc, propertyToString) match {
             case superProperty @ Some(description) ⇒
@@ -173,6 +171,20 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 thisProperty
         }
     }
+
+    /**
+     * Returns the instruction(s) which defined the value used by the instruction with the
+     * given `pc` and which is stored at the stack position with the given stackIndex.
+     * The first/top value on the stack has index 0 and the second value - if it exists -
+     * has index two; independent of the computational category of the values.
+     */
+    def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
+
+    /**
+     * Returns the instruction(s) which define(s) the value found in the register variable with
+     * index `registerIndex` and the program counter `pc`.
+     */
+    def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     /**
      * Returns the instructions which use the value with the given value origin.
@@ -213,20 +225,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         unused
     }
-
-    /**
-     * Returns the instruction(s) which defined the value used by the instruction with the
-     * given `pc` and which is stored at the stack position with the given stackIndex.
-     * The first/top value on the stack has index 0 and the second value - if it exists -
-     * has index two; independent of the computational category of the values.
-     */
-    def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
-
-    /**
-     * Returns the instruction(s) which define(s) the value found in the register variable with
-     * index `registerIndex` and the program counter `pc`.
-     */
-    def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     private[this] def updateUsageInformation(usedValues: ValueOrigins, useSite: PC): Unit = {
         usedValues foreach { usedValue ⇒
