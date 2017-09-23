@@ -48,6 +48,6 @@ trait TheCode {
      */
     def code: Code
 
-    final def instructions : Array[Instruction] = code.instructions
+    final def instructions: Array[Instruction] = code.instructions
 
 }
