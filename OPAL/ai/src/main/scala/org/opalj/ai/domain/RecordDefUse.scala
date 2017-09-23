@@ -979,6 +979,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * Creates a multi-graph that represents the method's def-use information. I.e.,
      * in which way a certain value is used by other instructions and where the derived
      * values are then used by further instructions.
+     * (Basically, we compute the data-dependence graph.)
      */
     def createDefUseGraph(code: Code): Set[DefaultMutableNode[ValueOrigin]] = {
 
