@@ -965,7 +965,7 @@ object TACAI {
                                 killRegisterBasedUsages(defSite, lvIndex)
                                 statements(defSiteIndex) = Nop(pc)
                             case _ ⇒
-                                // we have to kill as many uses as the original - underlying -
+                                // we have to kill as many "uses" as the original - underlying -
                                 // bytecode instruction to handle constant propagation
                                 killOperandBasedUsages(defSite, expr.subExprCount)
                                 statements(defSiteIndex) = Nop(pc)
