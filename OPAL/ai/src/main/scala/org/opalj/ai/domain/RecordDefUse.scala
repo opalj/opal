@@ -54,7 +54,7 @@ import org.opalj.br.analyses.AnalysisException
 import org.opalj.ai.util.XHTML
 
 /**
- * Collects the abstract interpretation time definition/use information.
+ * Collects the definition/use information based on the abstract interpretation time cfg.
  * I.e., makes the information available which value is accessed where/where a used
  * value is defined.
  * In general, all local variables are identified using `Int`s
@@ -118,7 +118,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // of this additional space is `parametersOffset` large and is prepended to
     // the array that mirrors the instructions array.
     private[this] var used: Array[ValueOrigins] = _ // initialized by initProperties
-    private[this] var parametersOffset: Int = _ // initialized by initProperties
+    protected[this] var parametersOffset: Int = _ // initialized by initProperties
 
     // This array contains the information where each operand value found at a
     // specific instruction was defined.
@@ -128,8 +128,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _ // initialized by initProperties
 
     abstract override def initProperties(code: Code, cfJoins: BitSet, locals: Locals): Unit = {
-        val instructions = code.instructions
-        val codeSize = instructions.length
+        val codeSize = code.codeSize
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
         defOps(0) = Naught // the operand stack is empty...
         this.defOps = defOps
@@ -156,19 +155,21 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         super.initProperties(code, cfJoins, locals)
     }
 
+    protected[this] def thisProperty(pc: Int): Option[String] = {
+        Option(usedBy(pc)).map(_.mkString("UsedBy={", ",", "}"))
+    }
+
     /**
      * Prints out the information by which values the current values are used.
      *
      * @inheritdoc
      */
     abstract override def properties(pc: Int, propertyToString: AnyRef ⇒ String): Option[String] = {
-        val thisProperty = Option(usedBy(pc)).map(_.mkString("UsedBy={", ",", "}"))
-
         super.properties(pc, propertyToString) match {
             case superProperty @ Some(description) ⇒
-                thisProperty map (_+"; "+description) orElse superProperty
+                thisProperty(pc) map (_+"; "+description) orElse superProperty
             case None ⇒
-                thisProperty
+                thisProperty(pc)
         }
     }
 
@@ -203,7 +204,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val defLocals0 = defLocals(0)
         var parameterIndex = 0
         while (parameterIndex < parametersOffset) {
-
             if (defLocals0(parameterIndex) ne null) /*we may have parameters with comp. type 2*/ {
                 val unusedParameter = -parameterIndex - 1
                 val usedBy = this.usedBy(unusedParameter)
@@ -255,7 +255,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     ): Boolean = {
 
         var forceScheduling = false
-        val instruction = instructions(currentPC)
+        val instruction = code.instructions(currentPC)
 
         //
         // HELPER METHODS
@@ -533,7 +533,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 val invoke = instruction.asInstanceOf[InvocationInstruction]
                 val descriptor = invoke.methodDescriptor
                 stackOp(
-                    invoke.numberOfPoppedOperands(UnsupportedOperationComputationalTypeCategory),
+                    invoke.numberOfPoppedOperands(ComputationalTypeCategoryNotAvailable),
                     !descriptor.returnType.isVoidType
                 )
 
@@ -758,6 +758,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         if (aiResult.wasAborted)
             return /* nothing to do */ ;
 
+        val instructions = code.instructions
         val operandsArray = aiResult.operandsArray
         val cfJoins = aiResult.cfJoins
 
@@ -926,6 +927,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * Creates an XHTML table node which contains the def/use information.
      */
     def dumpDefUseTable(): Node = {
+        val instructions = code.instructions
         val perInstruction =
             defOps.zip(defLocals).zipWithIndex.
                 filter(e ⇒ e._1._1 != null || e._1._2 != null).
@@ -947,7 +949,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 <li>{ if (e eq null) "N/A" else e.mkString("{", ",", "}") }</li>
                             }
 
-                    val used = this.used(i + parametersOffset)
+                    val used = this.usedBy(i)
                     val usedBy = if (used eq null) "N/A" else used.mkString("{", ", ", "}")
                     <tr>
                         <td>{ i }<br/>{ instructions(i).toString(i) }</td>
@@ -1008,7 +1010,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         // 1. create nodes for all local vars (i.e., the corresponding instructions)
         var nodes: Map[ValueOrigin, DefaultMutableNode[ValueOrigin]] =
-            (defSites map { defSite ⇒
+            defSites.map { defSite ⇒
                 val color =
                     if (defSite < 0)
                         Some("green")
@@ -1020,12 +1022,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     defSite,
                     new DefaultMutableNode[ValueOrigin](defSite, instructionToString _, color)
                 )
-            }).toMap
+            }.toMap
 
         // 2. create edges
         defSites foreach { lvar ⇒
             val thisNode = nodes(lvar)
-            val usages = used(lvar + parametersOffset)
+            val usages = usedBy(lvar)
             if ((usages eq null) || usages.isEmpty)
                 unusedNode.addChild(thisNode)
             else
@@ -1046,8 +1048,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
 }
 
-private object UnsupportedOperationComputationalTypeCategory
-    extends (Int ⇒ ComputationalTypeCategory) {
+private object ComputationalTypeCategoryNotAvailable extends (Int ⇒ ComputationalTypeCategory) {
 
     def apply(i: Int): Nothing = throw new UnsupportedOperationException
 
