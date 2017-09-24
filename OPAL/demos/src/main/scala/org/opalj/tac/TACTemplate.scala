@@ -54,7 +54,7 @@ object TACTemplate {
         "Usage: java …TACTemplate \n"+
             "{-cp <JAR file/Folder containing class files>}*\n"+
             "[{-libCP <JAR file/Folder containing library class files>}*] (generally required to get precise/correct type information)\n"+
-            "[-libJDK ] (the JDK is added to the project as a library)\n"+
+            "[-libJDK] (the JDK is added to the project as a library)\n"+
             "[-class <class file name>] (filters the set of classes)\n"+
             "[-method <method name/signature using Java notation; e.g., \"int hashCode()\">] (filters the set of methods)\n"+
             "[-domain <class name of the domain>]\n"+
