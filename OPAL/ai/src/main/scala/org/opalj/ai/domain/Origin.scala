@@ -46,6 +46,10 @@ package domain
  * the origin of a value available (see [[org.opalj.ai.domain.l1.ReferenceValues]]
  * as an example).
  *
+ * @note A [[org.opalj.br.instructions.CHECKCAST]] must not modify `origin` information; i.e.,
+ *       the origin of the value on the stack before and after the checkast (unless we have
+ *       an exception) must be the same!
+ *
  * @author Michael Eichberg
  */
 trait Origin { domain: ValuesDomain ⇒
