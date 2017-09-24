@@ -85,6 +85,12 @@ trait Instruction extends InstructionLike {
     def isStoreLocalVariableInstruction: Boolean = false
     def isCheckcast: Boolean = false
 
+    def asLoadLocalVariableInstruction: LoadLocalVariableInstruction = {
+        throw new ClassCastException();
+    }
+    def asStoreLocalVariableInstruction: StoreLocalVariableInstruction = {
+        throw new ClassCastException();
+    }
     def asGotoInstruction: GotoInstruction = throw new ClassCastException();
 
     def asSimpleConditionalBranchInstruction: SimpleConditionalBranchInstruction[_] = {
@@ -98,6 +104,8 @@ trait Instruction extends InstructionLike {
     def asCompoundConditionalBranchInstruction: CompoundConditionalBranchInstruction = {
         throw new ClassCastException();
     }
+
+    def asInvocationInstruction: InvocationInstruction = throw new ClassCastException();
 
     def asTABLESWITCH: TABLESWITCH = throw new ClassCastException();
     def asLOOKUPSWITCH: LOOKUPSWITCH = throw new ClassCastException();
