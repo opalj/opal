@@ -80,13 +80,8 @@ trait PerformInvocations extends MethodCallsHandling {
         parameters: calledMethodDomain.Locals
     ): AIResult { val domain: calledMethodDomain.type } = {
         val noOperands: Chain[calledMethodDomain.DomainValue] = Naught
-        val isStrict = method.isStrict
         val code = method.body.get
-        calledMethodAI.performInterpretation(
-            isStrict, code, calledMethodDomain
-        )(
-            noOperands, parameters
-        )
+        calledMethodAI.performInterpretation(code, calledMethodDomain)(noOperands, parameters)
     }
 
     /**

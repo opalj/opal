@@ -325,9 +325,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         someLocals: Option[IndexedSeq[theDomain.DomainValue]] = None
     ): AIResult { val domain: theDomain.type } = {
         val body = method.body.get
-        performInterpretation(method.isStrict, body, theDomain)(
-            initialOperands(method, theDomain),
-            initialLocals(method, theDomain)(someLocals)
+        performInterpretation(
+            body, theDomain
+        )(
+            initialOperands(method, theDomain), initialLocals(method, theDomain)(someLocals)
         )
     }
 
@@ -336,7 +337,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      * the given domain and the initial operand stack and initial register assignment.
      */
     def performInterpretation(
-        strictfp:  Boolean,
         code:      Code,
         theDomain: D
     )(
