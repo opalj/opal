@@ -31,6 +31,8 @@ package tac
 
 import scala.annotation.switch
 import scala.collection.mutable.Queue
+
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.bytecode.BytecodeProcessingFailedException
@@ -41,12 +43,12 @@ import org.opalj.br.instructions._
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.cfg.CFG
+import org.opalj.ai.VMLevelValuesOriginOffset
 import org.opalj.ai.BaseAI
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.immutable.ConstArray
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -192,8 +194,7 @@ object TACAI {
                 (aiVOs: IntArraySet) ⇒
                     {
                         aiVOs.map { aiVO ⇒
-                            assert(!ai.isVMLevelValue(aiVO))
-                            if (aiVO < 0) aiVO - 1 else aiVO
+                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
                         }
                     }
             } else {
@@ -204,7 +205,10 @@ object TACAI {
                         IntArraySet.empty
                     } else {
                         aiVOs map { aiVO ⇒
-                            if (aiVO < 0) aiVOToTACVo(-aiVO - 1) else aiVO
+                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0)
+                                aiVO
+                            else
+                                aiVOToTACVo(-aiVO - 1)
                         }
                     }
                 }
@@ -301,9 +305,9 @@ object TACAI {
 
             // ADD AN EXPLICIT INSTRUCTION WHICH REPRESENTS THE CATCH HANDLER
             if (addExceptionHandlerInitializer) {
-                val defSites = domain.operandOrigin(pc, 0)
+                val normalizedDefSites = normalizeParameterOrigins(domain.operandOrigin(pc, 0))
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
-                statements(index) = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType, defSites)
+                statements(index) = CaughtException(pc, catchType, normalizedDefSites)
                 pcToIndex(pc) = index
                 index += 1
             }
