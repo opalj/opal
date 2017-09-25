@@ -51,7 +51,7 @@ class ProjectJDKTest extends FunSpec with Matchers {
         }
 
         it("\"methodsWithBody\" should return library methods if the library methods have bodies") {
-            val project = TestSupport.biProjectWithFullJDK("ai.jar")
+            val project = TestSupport.biProjectWithJDK("ai.jar", jdkAPIOnly = false)
             project.allMethodsWithBody.foreach { m ⇒ assert(m.body.isDefined) }
             val stringClassFile = project.classFile(ObjectType.String).get
             val toStringMethod = stringClassFile.findMethod("toString").head
