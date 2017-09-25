@@ -29,13 +29,12 @@
 package org.opalj
 package fpcf
 package analyses
+package escape
 
 import java.io.File
 
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.AllocationSite
 import org.opalj.br.Method
 import org.opalj.br.analyses.AnalysisModeConfigFactory
@@ -144,7 +143,7 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
         val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
         Project.recreate(project, testConfig)
 
-        SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
+        //SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
         time {
             val tacai = project.get(DefaultTACAIKey)
             for {
@@ -156,12 +155,12 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
 
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
+        val propertyStore = project.get(PropertyStoreKey)
+        propertyStore.debug = true
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         time {
             analysesManager.run(InterproceduralEscapeAnalysis)
         } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
-
-        val propertyStore = project.get(PropertyStoreKey)
         val staticEscapes =
             propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
         val maybeNoEscape =

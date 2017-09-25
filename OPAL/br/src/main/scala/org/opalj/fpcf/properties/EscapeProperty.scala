@@ -138,7 +138,7 @@ sealed abstract class EscapeProperty(
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
         other match {
             case p: EscapeProperty ⇒
-                if (this.level <= p.level)
+                if (this lessOrEqualRestrictive p)
                     None
                 else
                     Some(s"non-monotonic refinement from $this to $p")
@@ -147,7 +147,7 @@ sealed abstract class EscapeProperty(
     }
 
     /**
-     * TODO
+     * A unique id for every escape property. Used for table switches.
      */
     def propertyValueID: Int
 
@@ -187,12 +187,6 @@ object EscapeProperty extends EscapePropertyMetaInformation {
         MaybeNoEscape
     )
 }
-
-//
-//
-// IN THE FOLLOWING THE PROPERTIES ARE ORDERED FROM MOST RESTRICTED TO UNRESTRICTED
-//
-//
 
 /**
  * The object is accessible only from within the method of creation. Objects with this

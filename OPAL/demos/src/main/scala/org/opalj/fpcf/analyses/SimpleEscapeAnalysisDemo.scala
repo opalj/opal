@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.properties.MaybeArgEscape
 import java.net.URL
@@ -43,18 +42,22 @@ import org.opalj.br.analyses.FormalParameter
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.br.AllocationSite
 import org.opalj.fpcf.properties.MaybeNoEscape
-import org.opalj.ai.common.SimpleAIKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
+import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.properties.MaybeMethodEscape
 
-class SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
+/**
+ * A small demo that shows how to use the [[SimpleEscapeAnalysis]] and what are the results of it.
+ */
+object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
-    override def title: String = "determines those methods that are pure"
+    override def title: String = "Determine the escape information within the given project"
 
     override def description: String = {
-        "identifies methods which are pure; i.e. which just operate on the passed parameters"
+        "Determine the escape information within the given project, i.e. for every allocation site " +
+            "and every formal parameter"
     }
 
     override def doAnalyze(
@@ -62,7 +65,6 @@ class SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
         time {
             val tacai = project.get(DefaultTACAIKey)
             for {

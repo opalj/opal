@@ -31,30 +31,30 @@ package fpcf
 package analyses
 
 import org.junit.runner.RunWith
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 /**
- * Tests that all methods of the JDK can be converted to the ai-based three address representation.
+ * Let the [[SimpleEscapeAnalysis]] run against all BI projects and the JDK.
  *
  * @author Florian Kübler
  */
 @RunWith(classOf[JUnitRunner])
 class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
 
-    def checkProject(project: SomeProject): Unit = {
-        SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
-        PropertyStoreKey.makeAllocationSitesAvailable(project)
-        PropertyStoreKey.makeFormalParametersAvailable(project)
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
+    def checkProject(project: () => SomeProject): Unit = {
+        val p = project()
+        //SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
+        PropertyStoreKey.makeAllocationSitesAvailable(p)
+        PropertyStoreKey.makeFormalParametersAvailable(p)
+        val analysesManager = p.get(FPCFAnalysesManagerKey)
         analysesManager.run(SimpleEscapeAnalysis)
     }
 
@@ -62,14 +62,14 @@ class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
         val (name, projectFactory) = biProject
         it(s"it should be able to run the analysis with $name") {
             time {
-                checkProject(projectFactory())
+                checkProject(projectFactory)
             } { t ⇒ info(s"analysis took ${t.toSeconds}") }
         }
     }
 
     it(s"it should be able to run the analysis with the JDK") {
         time {
-            checkProject(createJREProject())
+            checkProject(createJREProject)
         } { t ⇒ info(s"analysis took ${t.toSeconds}") }
     }
 }

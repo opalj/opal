@@ -33,10 +33,10 @@ import java.net.URL
 import org.opalj.AnalysisModes
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.AnalysisModeConfigFactory
-import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 
@@ -55,13 +55,14 @@ class InterproceduralEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
     override def propertyAnnotation: ObjectType = ObjectType("annotations/escape/Escapes")
 
     override def containerAnnotation: ObjectType = ObjectType("annotations/escape/EscapeProperties")
+
     /**
      * Add all AllocationsSites found in the project to the entities in the property
      * stores created with the PropertyStoreKey.
      */
     override def init(): Unit = {
         PropertyStoreKey.makeAllocationSitesAvailable(project)
-        PropertyStoreKey.addEntityDerivationFunction(project)(FormalParametersKey.entityDerivationFunction)
+        PropertyStoreKey.makeFormalParametersAvailable(project)
     }
 
     override def loadProject: Project[URL] = {

@@ -36,6 +36,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
+import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 

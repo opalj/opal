@@ -29,6 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
+package escape
 
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
@@ -39,11 +40,26 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.Parameters
 import org.opalj.tac.Stmt
+import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.TACode
 
-abstract class AbstractEscapeAnalysis extends FPCFAnalysis {
+/**
+ * A trait for different implementations of escape analyses. Provides a factory method for the
+ * concrete analysis of a single entity and a method to determine the escape information.
+ *
+ * The control-flow is intended to be: Client calls determineEscape. This method extracts the
+ * information for the given entity and calls doDetermineEscape.
+ *
+ * @author Florian Kuebler
+ */
+trait AbstractEscapeAnalysis extends FPCFAnalysis {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
-    def entityEscapeAnalysis(
+    /**
+     * A factory method for the concrete [[AbstractEntityEscapeAnalysis]]. Every concrete escape
+     * analysis must define its corresponding entity analysis.
+     */
+    protected def entityEscapeAnalysis(
         e:       Entity,
         defSite: ValueOrigin,
         uses:    IntArraySet,
@@ -52,7 +68,11 @@ abstract class AbstractEscapeAnalysis extends FPCFAnalysis {
         m:       Method
     ): AbstractEntityEscapeAnalysis
 
-    def doDetermineEscape(
+    /**
+     * Creates a new entity escape analysis using [[entityEscapeAnalysis]] and calls
+     * [[AbstractEntityEscapeAnalysis.doDetermineEscape()]] to compute the escape state.
+     */
+    protected final def doDetermineEscape(
         e:       Entity,
         defSite: ValueOrigin,
         uses:    IntArraySet,
@@ -63,5 +83,11 @@ abstract class AbstractEscapeAnalysis extends FPCFAnalysis {
         entityEscapeAnalysis(e, defSite, uses, code, params, m).doDetermineEscape()
     }
 
+    /**
+     * Extracts information from the given entity and should call [[doDetermineEscape]] afterwards.
+     * For some entities a result might be returned immediately.
+     */
     def determineEscape(e: Entity): PropertyComputationResult
+
+    val tacai: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
 }
