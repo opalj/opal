@@ -265,8 +265,10 @@ object ToTxt {
                     if (param ne null) {
                         val paramTxt = indention+"   param"+index.toHexString+": "+param.toString()
                         javaLikeCode += (param match {
-                            case v: DVar[_] ⇒ v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
-                            case _          ⇒ paramTxt
+                            case v: DVar[_] ⇒
+                                v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
+                            case _ ⇒
+                                paramTxt
                         })
                     }
                 }
@@ -295,7 +297,7 @@ object ToTxt {
                         predecessors.map {
                             case bb: BasicBlock ⇒ bb.endPC.toString
                             case cn: CatchNode  ⇒ catchTypeToString(cn.catchType)
-                        }.mkString(
+                        }.toList.sorted.mkString(
                             indention+"// "+(if (index == 0) "<start>, " else ""),
                             ", ",
                             " →"
