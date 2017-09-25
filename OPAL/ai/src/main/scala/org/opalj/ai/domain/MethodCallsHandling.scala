@@ -35,13 +35,9 @@ import scala.collection.Set
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
-import org.opalj.ai.ComputationWithSideEffectOnly
-import org.opalj.ai.MethodCallsDomain
-import org.opalj.ai.ReferenceValuesDomain
-import org.opalj.ai.TypedValuesFactory
 
 /**
- * Support for handling method invocations.
+ * Provides support for handling method invocations, but does not handle any invocations directly.
  *
  * @author Michael Eichberg
  */
@@ -56,9 +52,9 @@ trait MethodCallsHandling extends MethodCallsDomain {
 
             if (!exceptionTypes.contains(exceptionType)) {
                 exceptionTypes += exceptionType
-                // We don't know the true type of the exception, we just
-                // know the upper bound!
-                exceptionValues ::= NonNullObjectValue(pc, exceptionType)
+                // We don't know the true type of the exception, we just know the upper bound!
+                exceptionValues ::=
+                    NonNullObjectValue(ValueOriginForVMLevelValue(pc), exceptionType)
             }
         }
 
@@ -84,6 +80,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
         exceptionValues
     }
 
+    /** Factory method called to create a [[MethodCallResult]]. */
     protected[this] def MethodCallResult(
         returnValue: DomainValue,
         exceptions:  Iterable[ExceptionValue]
@@ -94,6 +91,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
             ComputedValueOrException(returnValue, exceptions)
     }
 
+    /** Factory method called to create a [[MethodCallResult]]. */
     protected[this] def MethodCallResult(
         potentialExceptions: Iterable[ExceptionValue]
     ): MethodCallResult = {

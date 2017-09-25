@@ -154,12 +154,13 @@ package object ai {
 
     /**
      * Identifies the ''upper bound for those origin values that encode origin
-     * information about VM level values''.
+     * information about VM level values'' (that is, VM generated exceptions).
      */
     final val VMLevelValuesOriginOffset /*: ValueOrigin*/ = -100000
 
     /**
-     * Identifies the upper bound for those origin values that encode special information.
+     * Identifies the upper bound for those "origin values" that encode special information;
+     * that is, subroutine boundaries.
      */
     final val SpecialValuesOriginOffset /*: ValueOrigin*/ = -10000000
 

@@ -29,7 +29,6 @@
 package org.opalj
 package tac
 
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
@@ -94,7 +93,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def isValueExpression: Boolean
     def isVar: Boolean
     def asVar: V = throw new ClassCastException();
-    def asCaughtException: CaughtException[V] = throw new ClassCastException();
+
     def asInstanceOf: InstanceOf[V] = throw new ClassCastException();
     def asCompare: Compare[V] = throw new ClassCastException();
     def asParam: Param = throw new ClassCastException();
@@ -127,89 +126,6 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asNonVirtualFunctionCall: NonVirtualFunctionCall[V] = throw new ClassCastException();
     def asVirtualFunctionCall: VirtualFunctionCall[V] = throw new ClassCastException();
     def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
-
-}
-
-/**
- * A caught exception is essential to ensure that the local variable that stores the exception
- * is reified in the ai-based 3-address code.
- *
- * @note `CaughtException` expression are only created by [[TACAI]]!
- */
-case class CaughtException[+V <: Var[V]](
-        pc:                        PC,
-        exceptionType:             Option[ObjectType],
-        private var throwingStmts: IntArraySet
-) extends Expr[V] {
-
-    final override def asCaughtException: this.type = this
-    final override def astID: Int = CaughtException.ASTID
-    final override def cTpe: ComputationalType = ComputationalTypeReference
-    final override def isValueExpression: Boolean = false
-    final override def isVar: Boolean = false
-    final override def isSideEffectFree: Boolean = false
-
-    /**
-     * It does not take any explicit value.
-     */
-    final override def subExprCount: Int = 0
-    final override def subExpr(index: Int): Expr[V] = throw new IndexOutOfBoundsException();
-
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        throwingStmts = throwingStmts map { stmt ⇒
-            if (ai.isVMLevelValue(stmt))
-                ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(stmt)))
-            else if (stmt < 0)
-                stmt
-            else
-                pcToIndex(stmt)
-
-        }
-    }
-
-    /**
-     * The origin(s) of the caught exception(s). An origin identifies the instruction
-     * that ex- or implicitly created the exception:
-     *  - If the exception is created locally (`new XXXException`) and also caught within the
-     *    same method, then the origin identifies a normal variable definition site.
-     *  - If the exception is a parameter the parameter's origin (-1,... -n) is returned.
-     *  - If the exception was raised due to a sideeffect of evaluating an expression, then the
-     *    origin is smaller or equal to [[org.opalj.ai.VMLevelValuesOriginOffset]] and can be
-     *    tranformed to the index of the responsible instruction using
-     *    [[org.opalj.ai#pcOfVMLevelValue]].
-     */
-    def origins: IntArraySet = throwingStmts
-
-    /**
-     * Textual description of the sources of the caught exceptions. If the exception was
-     * thrown by the JVM due to the evaluation of an expression (e.g., NullPointerException,
-     * DivisionByZero,..) then the string will be `exception@<INDEX>` where index identifies
-     * the failing expression. In case an exception is caught that was thrown using `ATHROW`
-     * the local variable/parameter which stores the local variable is returned.
-     */
-    final def exceptionLocations: Iterator[String] = {
-        throwingStmts.iterator.map { defSite ⇒
-            if (defSite < 0) {
-                if (ai.isVMLevelValue(defSite))
-                    "exception@"+ai.pcOfVMLevelValue(defSite)
-                else
-                    "param"+(-defSite - 1).toHexString
-            } else {
-                "lv"+defSite.toHexString
-            }
-        }
-    }
-
-    override def toString: String = {
-        val exceptionType = this.exceptionType.map(_.toJava).getOrElse("<ANY>")
-        val exceptionLocations = this.exceptionLocations.mkString("{", ",", "}")
-        s"CaughtException(pc=$pc,$exceptionType,caused by=$exceptionLocations)"
-    }
-}
-
-object CaughtException {
-
-    final val ASTID = -1
 
 }
 
