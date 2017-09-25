@@ -80,7 +80,7 @@ trait Origin { domain: ValuesDomain ⇒
      * Implementers are expected to "abstract override" this method to make it possible to
      * stack several domain implementations which provide origin information.
      */
-    def providesOriginInformationFor(ctc : ComputationalType) : Boolean = false
+    def providesOriginInformationFor(ctc: ComputationalType): Boolean = false
 
     /**
      * Marker trait which should be mixed in by `DomainValue` classes that capture information

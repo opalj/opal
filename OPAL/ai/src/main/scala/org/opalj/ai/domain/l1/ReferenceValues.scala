@@ -77,7 +77,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     type DomainMultipleReferenceValues <: MultipleReferenceValues with AReferenceValue
     val DomainMultipleReferenceValues: ClassTag[DomainMultipleReferenceValues]
 
-    abstract override def providesOriginInformationFor(ct : ComputationalType) : Boolean = {
+    abstract override def providesOriginInformationFor(ct: ComputationalType): Boolean = {
         ct == ComputationalTypeReference || super.providesOriginInformationFor(ct)
     }
 

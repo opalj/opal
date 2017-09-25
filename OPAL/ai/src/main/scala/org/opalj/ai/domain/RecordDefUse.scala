@@ -241,6 +241,250 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         }
     }
 
+    protected[this] def propagate(
+        currentPC:    PC,
+        successorPC:  PC,
+        newDefOps:    Chain[ValueOrigins],
+        newDefLocals: Registers[ValueOrigins]
+    )(
+        implicit
+        cfJoins:                 BitSet,
+        isSubroutineInstruction: (PC) ⇒ Boolean
+    ): Boolean = {
+        if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null /*non-dead*/ )) {
+            var forceScheduling = false
+            // we now also have to perform a join...
+            @tailrec def joinDefOps(
+                oldDefOps:     Chain[ValueOrigins],
+                lDefOps:       Chain[ValueOrigins],
+                rDefOps:       Chain[ValueOrigins],
+                oldIsSuperset: Boolean             = true,
+                joinedDefOps:  Chain[ValueOrigins] = Naught
+            ): Chain[ValueOrigins] = {
+                if (lDefOps.isEmpty) {
+                    // assert(rDefOps.isEmpty)
+                    return if (oldIsSuperset) oldDefOps else joinedDefOps.reverse;
+                }
+                // assert(
+                //     rDefOps.nonEmpty,
+                //     s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps;"+
+                //      s" original: $oldDefOps"
+                // )
+
+                val newHead = lDefOps.head
+                val oldHead = rDefOps.head
+                if (newHead.subsetOf(oldHead))
+                    joinDefOps(
+                        oldDefOps,
+                        lDefOps.tail, rDefOps.tail,
+                        oldIsSuperset, oldHead :&: joinedDefOps
+                    )
+                else {
+                    val joinedHead = newHead ++ oldHead
+                    // assert(newHead.subsetOf(joinedHead))
+                    // assert(
+                    //      oldHead.subsetOf(joinedHead),
+                    //      s"$newHead ++ $oldHead is $joinedHead"
+                    // )
+                    // assert(
+                    //      joinedHead.size > oldHead.size,
+                    //      s"$newHead ++  $oldHead is $joinedHead"
+                    // )
+                    joinDefOps(
+                        oldDefOps,
+                        lDefOps.tail, rDefOps.tail,
+                        false, joinedHead :&: joinedDefOps
+                    )
+                }
+            }
+
+            val oldDefOps = defOps(successorPC)
+            if (newDefOps ne oldDefOps) {
+                val joinedDefOps = joinDefOps(oldDefOps, newDefOps, oldDefOps)
+                if (joinedDefOps ne oldDefOps) {
+                    // assert(
+                    //     joinedDefOps != oldDefOps,
+                    //     s"$joinedDefOps is unexpectedly equal to $newDefOps join $oldDefOps"
+                    // )
+                    forceScheduling = true
+                    defOps(successorPC) = joinedDefOps
+                }
+            }
+
+            val oldDefLocals = defLocals(successorPC)
+            if (newDefLocals ne oldDefLocals) {
+                // newUsage is `true` if a new value(variable) may be used somewhere
+                // (I)
+                // For example:
+                // 0: ALOAD_0
+                // 1: INVOKEVIRTUAL com.sun.media.sound.EventDispatcher dispatchEvents (): void
+                // 4: GOTO 0↑
+                // 7: ASTORE_1 // exception handler for the instruction with pc 1
+                // 8: GOTO 0↑
+                // The last goto leads to some new information regarding the values
+                // on the stack (e.g., Register 1 now contains an exception), but
+                // propagating this information is useless - the value is never used...
+                // (II)
+                // Furthermore, whenever we have a jump back to the first instruction
+                // (PC == 0) and the joined values are unrelated to the parameters
+                // - i.e., we do not assign a new value to a register used by a
+                // parameter - then we do not have to force a scheduling of the reevaluation of
+                // the next instruction since there has to be some assignment related to the
+                // respective variables (there is no load without a previous store).
+                var newUsage = false
+                val joinedDefLocals =
+                    oldDefLocals.fuse(
+                        newDefLocals,
+                        { (o, n) ⇒
+                            // In general, if n or o equals null, then
+                            // the register variable did not contain any
+                            // useful information when the current instruction was
+                            // reached for the first time, hence there will
+                            // always be an initialization before the next
+                            // use of the register value and we can drop all
+                            // information.... unless we have a JSR/RET and we are in
+                            // a subroutine!
+                            if (o eq null) {
+                                if ((n ne null) && isSubroutineInstruction(successorPC)) {
+                                    newUsage = true
+                                    n
+                                } else {
+                                    null
+                                }
+                            } else if (n eq null) {
+                                if ((o ne null) && isSubroutineInstruction(successorPC)) {
+                                    newUsage = true
+                                    o
+                                } else {
+                                    null
+                                }
+                            } else if (n subsetOf o) {
+                                o
+                            } else {
+                                newUsage = true
+                                val joinedDefLocals = n ++ o
+                                // assert(
+                                //      joinedDefLocals.size > o.size,
+                                //      s"$n ++  $o is $joinedDefLocals"
+                                // )
+                                joinedDefLocals
+                            }
+                        }
+                    )
+                if (joinedDefLocals ne oldDefLocals) {
+                    // assert(
+                    //      joinedDefLocals != oldDefLocals,
+                    //      s"$joinedDefLocals should not be equal to "+
+                    //          s"$newDefLocals join $oldDefLocals"
+                    // )
+                    // There is nothing to do if all joins are related to unused vars...
+                    forceScheduling ||= newUsage
+                    defLocals(successorPC) = joinedDefLocals
+                }
+            }
+
+            forceScheduling
+        } else {
+            defOps(successorPC) = newDefOps
+            defLocals(successorPC) = newDefLocals
+            true // <=> always schedule the execution of the next instruction
+        }
+    }
+
+    /**
+     * Returns the origins of a domain value. This method is intended to be overridden by
+     * domains that provide more precise def/use information than the default def/use analysis.
+     *
+     * E.g., the l1.ReferenceValues domain tracks alias relations can (when we inline calls)
+     * correctly identify those returned values that were passed to it.
+     *
+     * @param domainValue The domain value for which the origin information is required.
+     *                    If no information is available, `defaultOrigins` should be returned.
+     * @param defaultOrigins The default origin information.
+     * @return The origin information for the given `domainValue`.
+     */
+    protected[this] def originsOf(
+        domainValue:    DomainValue,
+        defaultOrigins: ValueOrigins
+    ): ValueOrigins = {
+        defaultOrigins
+    }
+
+    protected[this] def newDefOpsForExceptionalControlFlow(
+        currentPC:   PC,
+        successorPC: PC
+    )(
+        implicit
+        cfJoins:       BitSet,
+        operandsArray: OperandsArray
+    ): Chain[ValueOrigins] = {
+        // The stack only contains the exception (which was created before
+        // and was explicitly thrown by an athrow instruction or which resulted from
+        // a called method or which was created by the JVM).
+        // (Whether we had a join or not is irrelevant.)
+        val successorDefOps = defOps(successorPC)
+        if (successorDefOps eq null)
+            new :&:(originsOf(operandsArray(successorPC).head, ValueOrigins(successorPC)))
+        else {
+            // assert(successorDefOps.tail.isEmpty)
+            // origin information is already complete...
+            successorDefOps
+        }
+    }
+
+    /*
+     * Specifies that the given number of stack values is used/popped from
+     * the stack and that – optionally – a new value is pushed onto the stack (and
+     * associated with a new variable).
+     *
+     * The usage is independent of the question whether the usage resulted in an
+     * exceptional control flow.
+     */
+    protected[this] def stackOperation(
+        currentPC:                PC,
+        successorPC:              PC,
+        isExceptionalControlFlow: Boolean,
+        usedValues:               Int, pushesValue: Boolean
+    )(
+        implicit
+        cfJoins:                 BitSet,
+        isSubroutineInstruction: (PC) ⇒ Boolean,
+        operandsArray:           OperandsArray
+    ): Boolean = {
+        val currentDefOps = defOps(currentPC)
+        currentDefOps.forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currentPC) }
+
+        val newDefOps: Chain[ValueOrigins] =
+            if (isExceptionalControlFlow) {
+                newDefOpsForExceptionalControlFlow(currentPC, successorPC)
+            } else {
+                if (pushesValue)
+                    originsOf(operandsArray(successorPC).head, ValueOrigins(currentPC)) :&:
+                        currentDefOps.drop(usedValues)
+                else
+                    currentDefOps.drop(usedValues)
+            }
+
+        propagate(currentPC, successorPC, newDefOps, defLocals(currentPC))
+    }
+
+    protected[this] def registerReadWrite(
+        currentPC:   PC,
+        successorPC: PC,
+        index:       Int
+    )(
+        implicit
+        cfJoins:                 BitSet,
+        isSubroutineInstruction: (PC) ⇒ Boolean,
+        localsArray:             LocalsArray
+    ): Boolean = {
+        val currentDefLocals = defLocals(currentPC)
+        updateUsageInformation(currentDefLocals(index), currentPC)
+        val newOrigin = originsOf(localsArray(successorPC)(index), ValueOrigins(currentPC))
+        val newDefLocals = currentDefLocals.updated(index, newOrigin)
+        propagate(currentPC, successorPC, defOps(currentPC), newDefLocals)
+    }
+
     /**
      * Updates/computes the def/use information when the instruction with
      * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
@@ -248,13 +492,15 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     private[this] def handleFlow(
         currentPC:                PC,
         successorPC:              PC,
-        isExceptionalControlFlow: Boolean,
-        cfJoins:                  BitSet,
-        isSubroutineInstruction:  (PC) ⇒ Boolean,
-        operandsArray:            OperandsArray
+        isExceptionalControlFlow: Boolean
+    )(
+        implicit
+        cfJoins:                 BitSet,
+        isSubroutineInstruction: (PC) ⇒ Boolean,
+        operandsArray:           OperandsArray,
+        localsArray:             LocalsArray
     ): Boolean = {
 
-        var forceScheduling = false
         val instruction = code.instructions(currentPC)
 
         //
@@ -265,185 +511,25 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
-            if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null /*non-dead*/ )) {
-
-                // we now also have to perform a join...
-                @tailrec def joinDefOps(
-                    oldDefOps:     Chain[ValueOrigins],
-                    lDefOps:       Chain[ValueOrigins],
-                    rDefOps:       Chain[ValueOrigins],
-                    oldIsSuperset: Boolean             = true,
-                    joinedDefOps:  Chain[ValueOrigins] = Naught
-                ): Chain[ValueOrigins] = {
-                    if (lDefOps.isEmpty) {
-                        // assert(rDefOps.isEmpty)
-                        return if (oldIsSuperset) oldDefOps else joinedDefOps.reverse;
-                    }
-                    // assert(
-                    //     rDefOps.nonEmpty,
-                    //     s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps;"+
-                    //      s" original: $oldDefOps"
-                    // )
-
-                    val newHead = lDefOps.head
-                    val oldHead = rDefOps.head
-                    if (newHead.subsetOf(oldHead))
-                        joinDefOps(
-                            oldDefOps,
-                            lDefOps.tail, rDefOps.tail,
-                            oldIsSuperset, oldHead :&: joinedDefOps
-                        )
-                    else {
-                        val joinedHead = newHead ++ oldHead
-                        // assert(newHead.subsetOf(joinedHead))
-                        // assert(
-                        //      oldHead.subsetOf(joinedHead),
-                        //      s"$newHead ++ $oldHead is $joinedHead"
-                        // )
-                        // assert(
-                        //      joinedHead.size > oldHead.size,
-                        //      s"$newHead ++  $oldHead is $joinedHead"
-                        // )
-                        joinDefOps(
-                            oldDefOps,
-                            lDefOps.tail, rDefOps.tail,
-                            false, joinedHead :&: joinedDefOps
-                        )
-                    }
-                }
-
-                val oldDefOps = defOps(successorPC)
-                if (newDefOps ne oldDefOps) {
-                    val joinedDefOps = joinDefOps(oldDefOps, newDefOps, oldDefOps)
-                    if (joinedDefOps ne oldDefOps) {
-                        // assert(
-                        //     joinedDefOps != oldDefOps,
-                        //     s"$joinedDefOps is unexpectedly equal to $newDefOps join $oldDefOps"
-                        // )
-                        forceScheduling = true
-                        defOps(successorPC) = joinedDefOps
-                    }
-                }
-
-                val oldDefLocals = defLocals(successorPC)
-                if (newDefLocals ne oldDefLocals) {
-                    // newUsage is `true` if a new value(variable) may be used somewhere
-                    // (I)
-                    // For example:
-                    // 0: ALOAD_0
-                    // 1: INVOKEVIRTUAL com.sun.media.sound.EventDispatcher dispatchEvents (): void
-                    // 4: GOTO 0↑
-                    // 7: ASTORE_1 // exception handler for the instruction with pc 1
-                    // 8: GOTO 0↑
-                    // The last goto leads to some new information regarding the values
-                    // on the stack (e.g., Register 1 now contains an exception), but
-                    // propagating this information is useless - the value is never used...
-                    // (II)
-                    // Furthermore, whenever we have a jump back to the first instruction
-                    // (PC == 0) and the joined values are unrelated to the parameters
-                    // - i.e., we do not assign a new value to a register used by a
-                    // parameter - then we do not have to force a scheduling of the reevaluation of
-                    // the next instruction since there has to be some assignment related to the
-                    // respective variables (there is no load without a previous store).
-                    var newUsage = false
-                    val joinedDefLocals =
-                        oldDefLocals.fuse(
-                            newDefLocals,
-                            { (o, n) ⇒
-                                // In general, if n or o equals null, then
-                                // the register variable did not contain any
-                                // useful information when the current instruction was
-                                // reached for the first time, hence there will
-                                // always be an initialization before the next
-                                // use of the register value and we can drop all
-                                // information.... unless we have a JSR/RET and we are in
-                                // a subroutine!
-                                if (o eq null) {
-                                    if ((n ne null) && isSubroutineInstruction(successorPC)) {
-                                        newUsage = true
-                                        n
-                                    } else {
-                                        null
-                                    }
-                                } else if (n eq null) {
-                                    if ((o ne null) && isSubroutineInstruction(successorPC)) {
-                                        newUsage = true
-                                        o
-                                    } else {
-                                        null
-                                    }
-                                } else if (n subsetOf o) {
-                                    o
-                                } else {
-                                    newUsage = true
-                                    val joinedDefLocals = n ++ o
-                                    // assert(
-                                    //      joinedDefLocals.size > o.size,
-                                    //      s"$n ++  $o is $joinedDefLocals"
-                                    // )
-                                    joinedDefLocals
-                                }
-                            }
-                        )
-                    if (joinedDefLocals ne oldDefLocals) {
-                        // assert(
-                        //      joinedDefLocals != oldDefLocals,
-                        //      s"$joinedDefLocals should not be equal to "+
-                        //          s"$newDefLocals join $oldDefLocals"
-                        // )
-                        // There is nothing to do if all joins are related to unused vars...
-                        forceScheduling ||= newUsage
-                        defLocals(successorPC) = joinedDefLocals
-                    }
-                }
-
-                forceScheduling
-            } else {
-                defOps(successorPC) = newDefOps
-                defLocals(successorPC) = newDefLocals
-                true // <=> always schedule the execution of the next instruction
-            }
+            defUseDomain.propagate(
+                currentPC, successorPC, newDefOps, newDefLocals
+            )
         }
 
-        /*
-         * Specifies that the given number of stack values is used/popped from
-         * the stack and that – optionally – a new value is pushed onto the stack (and
-         * associated with a new variable).
-         *
-         * The usage is independent of the question whether the usage resulted in an
-         * exceptional control flow.
-         */
-        def stackOp(usedValues: Int, pushesValue: Boolean): Boolean = {
-            val currentDefOps = defOps(currentPC)
-            currentDefOps.forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currentPC) }
-
-            val newDefOps: Chain[ValueOrigins] =
-                if (isExceptionalControlFlow) {
-                    // The stack only contains the exception (which was created before
-                    // and was explicitly thrown by a throw instruction or which resulted from
-                    // a called method or which was created by the JVM).
-                    // (Whether we had a join or not is irrelevant.)
-                    val successorDefOps = defOps(successorPC)
-                    if (successorDefOps eq null)
-                        new :&:(ValueOrigins(successorPC))
-                    else {
-                        // assert(successorDefOps.tail.isEmpty)
-                        successorDefOps
-                    }
-                } else {
-                    if (pushesValue)
-                        ValueOrigins(currentPC) :&: currentDefOps.drop(usedValues)
-                    else
-                        currentDefOps.drop(usedValues)
-                }
-
-            propagate(newDefOps, defLocals(currentPC))
+        def stackOperation(usedValues: Int, pushesValue: Boolean): Boolean = {
+            defUseDomain.stackOperation(
+                currentPC,
+                successorPC,
+                isExceptionalControlFlow,
+                usedValues, pushesValue
+            )
         }
 
         def load(index: Int): Boolean = {
             // there will never be an exceptional control flow ...
             val currentLocals = defLocals(currentPC)
-            propagate(currentLocals(index) :&: defOps(currentPC), currentLocals)
+            val newDefOps = currentLocals(index) :&: defOps(currentPC)
+            propagate(newDefOps, currentLocals)
         }
 
         def store(index: Int): Boolean = {
@@ -463,76 +549,84 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 propagate(defOps(currentPC), defLocals(currentPC))
 
             case JSR.opcode | JSR_W.opcode ⇒
-                stackOp(0, pushesValue = true)
+                stackOperation(0, pushesValue = true)
 
             case RET.opcode ⇒
                 val RET(lvIndex) = instruction
-                val oldDefLocals = defLocals(currentPC)
-                val returnAddressValue = oldDefLocals(lvIndex)
+                val currentDefLocals = defLocals(currentPC)
+                val returnAddressValue = currentDefLocals(lvIndex)
                 updateUsageInformation(returnAddressValue, currentPC)
-                val scheduleNextPC = propagate(defOps(currentPC), oldDefLocals)
-                scheduleNextPC
+                propagate(defOps(currentPC), currentDefLocals)
 
             case IF_ACMPEQ.opcode | IF_ACMPNE.opcode
                 | IF_ICMPEQ.opcode | IF_ICMPNE.opcode
                 | IF_ICMPGT.opcode | IF_ICMPGE.opcode | IF_ICMPLT.opcode | IF_ICMPLE.opcode ⇒
-                stackOp(2, pushesValue = false)
+                stackOperation(2, pushesValue = false)
 
             case IFNULL.opcode | IFNONNULL.opcode
                 | IFEQ.opcode | IFNE.opcode
                 | IFGT.opcode | IFGE.opcode | IFLT.opcode | IFLE.opcode
                 | LOOKUPSWITCH.opcode | TABLESWITCH.opcode ⇒
-                stackOp(1, pushesValue = false)
+                stackOperation(1, pushesValue = false)
 
             case ATHROW.opcode ⇒
-                stackOp(1, true /* <= actually ignored; athrow has special handling downstream */ )
+                val pushesValues = true /* <= irrelevant; athrow has special handling downstream */
+                stackOperation(1, pushesValues)
 
             //
             // ARRAYS
             //
-            case NEWARRAY.opcode | ANEWARRAY.opcode ⇒ stackOp(1 /*count*/ , pushesValue = true)
+            case NEWARRAY.opcode | ANEWARRAY.opcode ⇒
+                stackOperation(1, pushesValue = true)
 
-            case ARRAYLENGTH.opcode                 ⇒ stackOp(1, pushesValue = true)
+            case ARRAYLENGTH.opcode ⇒
+                stackOperation(1, pushesValue = true)
 
             case MULTIANEWARRAY.opcode ⇒
-                val dimensions = instruction.asInstanceOf[MULTIANEWARRAY].dimensions
-                stackOp(dimensions, pushesValue = true)
+                val dims = instruction.asInstanceOf[MULTIANEWARRAY].dimensions
+                stackOperation(dims, pushesValue = true)
 
             case 50 /*aaload*/ |
                 49 /*daload*/ | 48 /*faload*/ |
                 51 /*baload*/ |
                 52 /*caload*/ | 46 /*iaload*/ | 47 /*laload*/ | 53 /*saload*/ ⇒
-                stackOp(2, pushesValue = true)
+                stackOperation(2, pushesValue = true)
 
             case 83 /*aastore*/ |
                 84 /*bastore*/ |
                 85 /*castore*/ | 79 /*iastore*/ | 80 /*lastore*/ | 86 /*sastore*/ |
                 82 /*dastore*/ | 81 /*fastore*/ ⇒
-                stackOp(3, pushesValue = false)
+                stackOperation(3, pushesValue = false)
 
             //
             // FIELD ACCESS
             //
-            case 180 /*getfield*/     ⇒ stackOp(1, pushesValue = true)
-            case 178 /*getstatic*/    ⇒ stackOp(0, pushesValue = true)
-            case 181 /*putfield*/     ⇒ stackOp(2, pushesValue = false)
-            case 179 /*putstatic*/    ⇒ stackOp(1, pushesValue = false)
+            case 180 /*getfield*/ ⇒
+                stackOperation(1, pushesValue = true)
+            case 178 /*getstatic*/ ⇒
+                stackOperation(0, pushesValue = true)
+            case 181 /*putfield*/ ⇒
+                stackOperation(2, pushesValue = false)
+            case 179 /*putstatic*/ ⇒
+                stackOperation(1, pushesValue = false)
 
             //
             // MONITOR
             //
 
-            case 194 /*monitorenter*/ ⇒ stackOp(1, pushesValue = false)
-            case 195 /*monitorexit*/  ⇒ stackOp(1, pushesValue = false)
+            case 194 /*monitorenter*/ ⇒
+                stackOperation(1, pushesValue = false)
+            case 195 /*monitorexit*/ ⇒
+                stackOperation(1, pushesValue = false)
 
             //
             // METHOD INVOCATIONS
             //
             case 184 /*invokestatic*/ | 186 /*invokedynamic*/ |
                 185 /*invokeinterface*/ | 183 /*invokespecial*/ | 182 /*invokevirtual*/ ⇒
-                val invoke = instruction.asInstanceOf[InvocationInstruction]
+                val invoke = instruction.asInvocationInstruction
                 val descriptor = invoke.methodDescriptor
-                stackOp(
+                stackOperation(
                     invoke.numberOfPoppedOperands(ComputationalTypeCategoryNotAvailable),
                     !descriptor.returnType.isVoidType
                 )
@@ -541,7 +635,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             // LOAD AND STORE INSTRUCTIONS
             //
             case 25 /*aload*/ | 24 /*dload*/ | 23 /*fload*/ | 21 /*iload*/ | 22 /*lload*/ ⇒
-                load(instruction.asInstanceOf[LoadLocalVariableInstruction].lvIndex)
+                load(instruction.asLoadLocalVariableInstruction.lvIndex)
             case 42 /*aload_0*/ |
                 38 /*dload_0*/ | 34 /*fload_0*/ | 26 /*iload_0*/ | 30 /*lload_0*/ ⇒
                 load(0)
@@ -557,7 +651,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
             case 58 /*astore*/ |
                 57 /*dstore*/ | 56 /*fstore*/ | 54 /*istore*/ | 55 /*lstore*/ ⇒
-                store(instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex)
+                store(instruction.asStoreLocalVariableInstruction.lvIndex)
             case 75 /*astore_0*/ |
                 71 /*dstore_0*/ | 67 /*fstore_0*/ | 63 /*lstore_0*/ | 59 /*istore_0*/ ⇒
                 store(0)
@@ -583,7 +677,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 14 /*dconst_0*/ | 15 /*dconst_1*/ |
                 16 /*bipush*/ | 17 /*sipush*/ |
                 18 /*ldc*/ | 19 /*ldc_w*/ | 20 /*ldc2_w*/ ⇒
-                stackOp(0, pushesValue = true)
+                stackOperation(0, pushesValue = true)
 
             //
             // RELATIONAL OPERATORS
@@ -591,26 +685,23 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             case 148 /*lcmp*/ |
                 150 /*fcmpg*/ | 149 /*fcmpl*/ |
                 152 /*dcmpg*/ | 151 /*dcmpl*/ ⇒
-                stackOp(2, pushesValue = true)
+                stackOperation(2, pushesValue = true)
 
             //
             // UNARY EXPRESSIONS
             //
             case 116 /*ineg*/ | 117 /*lneg*/ | 119 /*dneg*/ | 118 /*fneg*/ ⇒
-                stackOp(1, pushesValue = true)
+                stackOperation(1, pushesValue = true)
 
-            case NEW.opcode ⇒ stackOp(0, pushesValue = true)
+            case NEW.opcode ⇒
+                stackOperation(0, pushesValue = true)
 
             //
             // BINARY EXPRESSIONS
             //
             case IINC.opcode ⇒
                 val IINC(index, _) = instruction
-                val currentDefLocals = defLocals(currentPC)
-                updateUsageInformation(currentDefLocals(index), currentPC)
-                val newOrigin = ValueOrigins(currentPC)
-                val newDefLocals = currentDefLocals.updated(index, newOrigin)
-                propagate(defOps(currentPC), newDefLocals)
+                registerReadWrite(currentPC, successorPC, index)
 
             case 99 /*dadd*/ | 111 /*ddiv*/ | 107 /*dmul*/ | 115 /*drem*/ | 103 /*dsub*/ |
                 98 /*fadd*/ | 110 /*fdiv*/ | 106 /*fmul*/ | 114 /*frem*/ | 102 /*fsub*/ |
@@ -620,7 +711,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 127 /*land*/ | 129 /*lor*/ | 131 /*lxor*/ |
                 120 /*ishl*/ | 122 /*ishr*/ | 124 /*iushr*/ |
                 121 /*lshl*/ | 123 /*lshr*/ | 125 /*lushr*/ ⇒
-                stackOp(2, pushesValue = true)
+                stackOperation(2, pushesValue = true)
 
             //
             // GENERIC STACK MANIPULATION
@@ -696,7 +787,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 145 /*i2b*/ | 146 /*i2c*/ | 135 /*i2d*/ | 134 /*i2f*/ | 133 /*i2l*/ | 147 /*i2s*/ |
                 138 /*l2d*/ | 137 /*l2f*/ | 136 /*l2i*/ |
                 193 /*instanceof*/ ⇒
-                stackOp(1, pushesValue = true)
+                stackOperation(1, pushesValue = true)
 
             case CHECKCAST.opcode ⇒
                 // Recall that – even if the cast is successful NOW (i.e., we don't have an
@@ -712,11 +803,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 updateUsageInformation(op, currentPC)
                 val newDefOps =
                     if (isExceptionalControlFlow) {
-                        val successorDefOps = defOps(successorPC)
-                        if (successorDefOps eq null)
-                            Chain.singleton(ValueOrigins(successorPC))
-                        else
-                            successorDefOps
+                        newDefOpsForExceptionalControlFlow(currentPC, successorPC)
                     } else {
                         currentDefOps
                     }
@@ -727,7 +814,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             //
             case RETURN.opcode ⇒
                 if (isExceptionalControlFlow) {
-                    stackOp(0, pushesValue = true /*value doesn't matter - has special handling*/ )
+                    val pushesValue = true /* value doesn't matter - special handling downstream */
+                    stackOperation(0, pushesValue)
                 } else {
                     val message = s"a return instruction does not have regular successors"
                     throw BytecodeProcessingFailedException(message)
@@ -735,7 +823,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
             case 176 /*a...*/ | 175 /*d...*/ | 174 /*f...*/ | 172 /*i...*/ | 173 /*l...return*/ ⇒
                 if (isExceptionalControlFlow) {
-                    stackOp(1, pushesValue = true /*value doesn't matter - has special handling*/ )
+                    val pushesValue = true /* value doesn't matter - special handling downstream */
+                    stackOperation(1, pushesValue)
                 } else {
                     val message = s"a(n) $instruction instruction does not have regular successors"
                     throw BytecodeProcessingFailedException(message)
@@ -760,6 +849,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         val instructions = code.instructions
         val operandsArray = aiResult.operandsArray
+        val localsArray = aiResult.localsArray
         val cfJoins = aiResult.cfJoins
 
         var subroutinePCs: Set[PC] = Set.empty
@@ -839,10 +929,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
                     handleFlow(
-                        currPC, succPC, isExceptionalControlFlow,
-                        cfJoins,
-                        aiResult.subroutineInstructions.contains,
-                        operandsArray
+                        currPC, succPC, isExceptionalControlFlow
+                    )(
+                        cfJoins, aiResult.subroutineInstructions.contains,
+                        operandsArray, localsArray
                     )
                 } catch {
                     case e: Throwable ⇒
@@ -900,9 +990,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // just operates on the stack and which is not a stack management instruction (dup,
                 // ...))
                 val usedValues = instructions(currPC).numberOfPoppedOperands(NotRequired)
-                defOps(currPC).forFirstN(usedValues) { op ⇒
-                    updateUsageInformation(op, currPC)
-                }
+                defOps(currPC).forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currPC) }
             }
         }
     }
