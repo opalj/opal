@@ -63,6 +63,4 @@ class DefaultPerformInvocationsDomainWithCFGAndDefUse[Source](
         project: Project[Source],
         method:  Method
 ) extends DefaultPerformInvocationsDomainWithCFG[Source](project, method)
-    with RecordDefUse
     with RefineDefUseUsingOrigins
-    with TheMemoryLayout
