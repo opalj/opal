@@ -48,6 +48,8 @@ import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeReference
 
 /**
  * This partial domain enables tracking of a reference value's null-ness and must-alias information.
@@ -74,6 +76,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     type DomainMultipleReferenceValues <: MultipleReferenceValues with AReferenceValue
     val DomainMultipleReferenceValues: ClassTag[DomainMultipleReferenceValues]
+
+    abstract override def providesOriginInformationFor(ct : ComputationalType) : Boolean = {
+        ct == ComputationalTypeReference || super.providesOriginInformationFor(ct)
+    }
 
     /**
      * A map that contains the refined values (the map's values) of some old values (the
