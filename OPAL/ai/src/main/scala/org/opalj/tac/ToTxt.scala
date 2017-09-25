@@ -124,9 +124,6 @@ object ToTxt {
             case GetField(_, declaringClass, name, _, receiver) ⇒
                 s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
 
-            case e @ CaughtException(_, exceptionType, _) ⇒
-                val t = { exceptionType.map(_.toJava).getOrElse("<ANY>") }
-                s"caught $t /* <= ${e.exceptionLocations.mkString("{", ",", "}")}*/"
         }
     }
 
@@ -209,6 +206,11 @@ object ToTxt {
             case Checkcast.ASTID ⇒
                 val Checkcast(_, value, tpe) = stmt
                 s"$pc (${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
+
+            case CaughtException.ASTID ⇒
+                val e = stmt.asCaughtException
+                val t = { e.exceptionType.map(_.toJava).getOrElse("<ANY>") }
+                s"$pc caught $t /* <= ${e.exceptionLocations.mkString("{", ",", "}")}*/"
 
             case ExprStmt.ASTID ⇒
                 val ExprStmt(_, expr) = stmt

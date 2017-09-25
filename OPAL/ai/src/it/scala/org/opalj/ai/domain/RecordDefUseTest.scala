@@ -57,9 +57,9 @@ import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching
 @RunWith(classOf[JUnitRunner])
 class RecordDefUseTest extends FunSpec with Matchers {
 
-    object DominatorsPerformanceEvaluation extends PerformanceEvaluation
+    protected[this] object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    private[this] class DefUseDomain[I](
+    protected[this] class DefUseDomain(
             val method:  Method,
             val project: Project[URL]
     ) extends CorrelationalDomain
@@ -80,7 +80,131 @@ class RecordDefUseTest extends FunSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with RecordDefUse // <=== we are going to test!
 
-    def analyzeProject(name: String, project: Project[URL]): Unit = {
+    protected[this] class RefinedDefUseDomain(
+            method:  Method,
+            project: Project[URL]
+    ) extends DefUseDomain(method, project)
+        with RefineDefUseUsingOrigins
+
+    protected[this] def analyzeDefUse(
+        m:                Method,
+        r:                AIResult { val domain: DefUseDomain },
+        identicalOrigins: AtomicLong
+    ): Unit = {
+        val d: r.domain.type = r.domain
+        val dt = DominatorsPerformanceEvaluation.time('Dominators) { d.dominatorTree }
+        val liveInstructions = r.evaluatedInstructions
+        val code = m.body.get
+        val codeSize = code.codeSize
+
+        // (1) TEST
+        // Tests if the dominator tree information is consistent
+        //
+        liveInstructions.foreach(pc ⇒ if (pc != 0) dt.dom(pc) should be < codeSize)
+
+        val instructions = code.instructions
+        val ehs = code.exceptionHandlers
+
+        // (2) TEST
+        // Tests if the def => use information is consistent; i.e., a use lists
+        // the def site
+        //
+        for {
+            (ops, pc) ← r.operandsArray.zipWithIndex
+            if ops ne null // let's filter only the executed instructions
+            instruction = instructions(pc)
+            if !instruction.isStackManagementInstruction
+        } {
+            val usedOperands = instruction.numberOfPoppedOperands(NotRequired)
+
+            // An instruction which pushes a value, is not necessarily a "valid"
+            // def-site which creates a new value.
+            // E.g. StackManagementInstructions, Checkcasts,
+            // LoadLocalVariableInstructions, but also INVOKE instructions
+            // of functions whose return value is ignored are not "def-sites".
+            d.safeUsedBy(pc) foreach { useSite ⇒
+                // let's see if we have a corresponding use...
+                val useInstruction = instructions(useSite)
+                val poppedOperands = useInstruction.numberOfPoppedOperands(NotRequired)
+                val hasDefSite =
+                    (0 until poppedOperands).exists { poIndex ⇒
+                        d.operandOrigin(useSite, poIndex).contains(pc)
+                    } || {
+                        useInstruction.readsLocal &&
+                            d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
+                    }
+                if (!hasDefSite) {
+                    fail(s"use at $useSite has no def site $pc ($instruction)")
+                }
+            }
+            val exceptionOrigin = ValueOriginForVMLevelValue(pc)
+            d.safeUsedBy(exceptionOrigin) foreach { useSite ⇒
+                // let's see if we have a corresponding use...
+                val useInstruction = instructions(useSite)
+                val poppedOperands = useInstruction.numberOfPoppedOperands(NotRequired)
+                val hasDefSite =
+                    (0 until poppedOperands).exists { poIndex ⇒
+                        d.operandOrigin(useSite, poIndex).contains(exceptionOrigin)
+                    } || {
+                        useInstruction.readsLocal &&
+                            d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
+                    }
+                if (!hasDefSite) {
+                    fail(s"exception use at $useSite has no def site $pc ($instruction)")
+                }
+            }
+
+            for { (op, opIndex) ← ops.toIterator.zipWithIndex } {
+                // (3) TEST
+                // Tests if the def/use information for reference values corresponds to the
+                // def/use information (implicitly) collected by the corresponding domain.
+                //
+                val defUseOrigins =
+                    try {
+                        d.operandOrigin(pc, opIndex)
+                    } catch {
+                        case t: Throwable ⇒
+                            fail(s"pc=$pc[operand=$opIndex] no def/use info", t)
+                    }
+                val domainOrigins = d.origin(op).toSet
+                domainOrigins foreach { o ⇒
+                    if (!(
+                        defUseOrigins.contains(o) ||
+                        defUseOrigins.exists(duo ⇒ ehs.exists(_.handlerPC == duo))
+                    )) {
+                        val message =
+                            s"{pc=$pc[operand=$opIndex] deviating def/use info: "+
+                                s"domain=$domainOrigins vs defUse=$defUseOrigins}"
+                        fail(message)
+                    }
+                }
+                identicalOrigins.incrementAndGet
+
+                // (4) TEST
+                // Tests if the use => def information is consistent; i.e., a def lists
+                // the (current) use site
+                //
+                // Only the operands that are used by the current instruction are
+                // expected to pop-up in the def-sites... and only if the instruction
+                // is a relevant use-site
+                if (opIndex < usedOperands &&
+                    // we already tested: !instruction.isStackManagementInstruciton
+                    !instruction.isStoreLocalVariableInstruction) {
+                    defUseOrigins foreach { duo ⇒
+                        val useSites = d.usedBy(duo)
+                        if (!useSites.contains(pc)) {
+                            fail(
+                                s"a def site $duo(${instructions(duo)}) does not "+
+                                    s"contain use site: $pc(${instructions(pc)})"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    protected[this] def analyzeProject(name: String, project: Project[URL]): Unit = {
         info(s"$name contains ${project.methodsCount} methods")
 
         val identicalOrigins = new AtomicLong(0)
@@ -89,111 +213,9 @@ class RecordDefUseTest extends FunSpec with Matchers {
         val exceptions = project.parForeachMethodWithBody() { methodInfo ⇒
             val m = methodInfo.method
             try {
-                val d = new DefUseDomain(m, project)
-                val r = BaseAI(m, d)
-                val dt = DominatorsPerformanceEvaluation.time('Dominators) { d.dominatorTree }
-                val liveInstructions = r.evaluatedInstructions
-
-                val code = m.body.get
-                val instructions = code.instructions
-                val codeSize = code.codeSize
-                val ehs = code.exceptionHandlers
-
-                // (1) TEST
-                // Tests if the dominator tree information is consistent
-                //
-                liveInstructions.foreach(pc ⇒ if (pc != 0) dt.dom(pc) should be < codeSize)
-
-                for {
-                    (ops, pc) ← r.operandsArray.zipWithIndex
-                    if ops ne null
-                    instruction = instructions(pc)
-                    if !instruction.isStackManagementInstruction
-                } {
-                    val usedOperands = instruction.numberOfPoppedOperands(NotRequired)
-
-                    // (2) TEST
-                    // Tests if the def => use information is consistent; i.e., a use lists
-                    // the def site
-                    //
-                    val usedBy = d.usedBy(pc)
-                    if (usedBy != null) {
-                        // An instruction which pushes a value, is not necessarily a "valid"
-                        // def-site which creates a new value.
-                        // E.g. StackManagementInstructions, Checkcasts,
-                        // LoadLocalVariableInstructions, but also INVOKE instructions
-                        // of functions whose return value is ignored are not "def-sites".
-                        usedBy foreach { useSite ⇒
-                            // let's see if we have a corresponding use...
-                            val useInstruction = instructions(useSite)
-                            val poppedOperands = useInstruction.numberOfPoppedOperands(NotRequired)
-                            val hasDefSite =
-                                (0 until poppedOperands).exists { poIndex ⇒
-                                    d.operandOrigin(useSite, poIndex).contains(pc)
-                                } || {
-                                    useInstruction.readsLocal &&
-                                        d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
-                                }
-                            if (!hasDefSite) {
-                                fail(s"the use site $useSite does not reference the def site $pc ($instruction)")
-                            }
-                        }
-                    }
-
-                    // Note that in case of handlers, the def/use information
-                    // is slightly different when compared with the information recorded
-                    // by the reference values domain.
-                    if (ehs.forall(eh ⇒ eh.handlerPC != pc)) {
-                        for { (op, opIndex) ← ops.toIterator.zipWithIndex } {
-                            // (3) TEST
-                            // Tests if the def/use information for reference values corresponds to the
-                            // def/use information (implicitly) collected by the corresponding domain.
-                            //
-                            val domainOrigins = d.origin(op).toSet
-                            val defUseOrigins =
-                                try {
-                                    d.operandOrigin(pc, opIndex)
-                                } catch {
-                                    case t: Throwable ⇒
-                                        fail(s"pc=$pc[operand=$opIndex] no def/use info", t)
-                                }
-                            domainOrigins foreach { o ⇒
-                                if (!(
-                                    defUseOrigins.contains(o) ||
-                                    defUseOrigins.exists(duo ⇒ ehs.exists(_.handlerPC == duo))
-                                )) {
-                                    val message =
-                                        s"{pc=$pc[operand=$opIndex] deviating def/use info: "+
-                                            s"domain=$domainOrigins vs defUse=$defUseOrigins}"
-                                    fail(message)
-                                }
-                            }
-                            identicalOrigins.incrementAndGet
-
-                            // (4) TEST
-                            // Tests if the use => def information is consistent; i.e., a def lists
-                            // the (current) use site
-                            //
-                            // Only the operands that are used by the current instruction are
-                            // expected to pop-up in the def-sites... and only if the instruction
-                            // is a relevant use-site
-                            if (opIndex < usedOperands &&
-                                // we already tested: !instruction.isStackManagementInstruciton
-                                !instruction.isStoreLocalVariableInstruction) {
-                                defUseOrigins foreach { duo ⇒
-                                    val useSites = d.usedBy(duo)
-                                    if (!useSites.contains(pc)) {
-                                        fail(
-                                            s"a def site $duo(${instructions(duo)}) does not "+
-                                                s"contain use site: $pc(${instructions(pc)})"
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch { case t: Throwable ⇒ failures.add((m.toJava, t)) }
+                analyzeDefUse(m, BaseAI(m, new DefUseDomain(m, project)), identicalOrigins)
+                analyzeDefUse(m, BaseAI(m, new RefinedDefUseDomain(m, project)), identicalOrigins)
+            } catch { case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace)) }
         }
         failures.addAll(exceptions.map(ex ⇒ ("additional exception", ex)).asJavaCollection)
 

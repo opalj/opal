@@ -301,48 +301,9 @@ object TACAI {
 
             // ADD AN EXPLICIT INSTRUCTION WHICH REPRESENTS THE CATCH HANDLER
             if (addExceptionHandlerInitializer) {
-                import domain.{predecessorsOf, refIsNull, operandOrigin, isDirectRegularPredecessorOf}
-                val exception = operandsArray(pc /* the exception is already on the stack */ ).head
-                val usedBy = domain.usedBy(pc)
+                val defSites = domain.operandOrigin(pc, 0)
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
-                val predecessorsOfPC = predecessorsOf(pc)
-                val defSites =
-                    predecessorsOfPC.foldLeft(IntArraySet.empty) { (adaptedDefSites, exceptionSite) ⇒
-                        if (instructions(exceptionSite).opcode == ATHROW.opcode) {
-                            // We have to determine if the caught exception is actually the
-                            // thrown exception.... e.g., if the exception value is null,
-                            // the caught exception is a NullPointerException that is vm generated.
-                            val thrownValue = operandsArray(exceptionSite).head
-                            val exceptionIsNull = refIsNull(exceptionSite, thrownValue)
-                            var newDefSites = adaptedDefSites
-                            if (exceptionIsNull.isYesOrUnknown)
-                                newDefSites += ai.ValueOriginForVMLevelValue(exceptionSite)
-                            if (exceptionIsNull.isNoOrUnknown) {
-                                val exceptionOrigin = operandOrigin(exceptionSite, 0)
-                                newDefSites ++= normalizeParameterOrigins(exceptionOrigin)
-                            }
-                            newDefSites
-                        } else {
-                            adaptedDefSites + (
-                                if (isDirectRegularPredecessorOf(exceptionSite, pc)) {
-                                    // actually... this will never happen for "regular" code...
-                                    exceptionSite
-                                } else {
-                                    // The predecessor instruction was not an athrow instruction;
-                                    // hence, the exception was caused implicitly...
-                                    ai.ValueOriginForVMLevelValue(exceptionSite)
-                                }
-                            )
-                        }
-                    }
-                val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType, defSites)
-                if (usedBy ne null) {
-                    assert(usedBy.forall(_ >= 0))
-                    val localVal = DVar(aiResult.domain)(pc, exception, usedBy)
-                    statements(index) = Assignment(pc, localVal, expr)
-                } else {
-                    statements(index) = ExprStmt(pc, expr)
-                }
+                statements(index) = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType, defSites)
                 pcToIndex(pc) = index
                 index += 1
             }
