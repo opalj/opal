@@ -129,12 +129,11 @@ object TACTemplate {
         // 4.
         // Finish the configuration of the (underlying data-flow) analyses that will be used.
         val domainClass = Class.forName(domainName)
+        OPALLogger.info("analysis configuration", s"using $domainClass for ai")(p.logContext)
         val constructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
         p.getOrCreateProjectInformationKeyInitializationData(
             SimpleAIKey,
-            (m: Method) ⇒ {
-                constructor.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
-            }
+            (m: Method) ⇒ constructor.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
         )
         p.get(SimpleAIKey) // used by the DefaultTACAIKey
         val tac = p.get(DefaultTACAIKey)
@@ -150,9 +149,9 @@ object TACTemplate {
             if m.body.isDefined
             if methodSignature.isEmpty || m.signature.toJava.contains(methodSignature.get)
             c = tac(m)
-            VirtualFunctionCallStatement(VirtualFunctionCall(_, declaringClass: ObjectType, _, name, descriptor, receiver, _)) ← c.stmts
+            VirtualFunctionCallStatement(VirtualFunctionCall(pc, declaringClass: ObjectType, _, name, descriptor, receiver, _)) ← c.stmts
         } {
-            println(m.toJava(s"virtual function call of $receiver.${descriptor.toJava(declaringClass.toJava, name)}"))
+            println(m.toJava(s"$pc: virtual function call of $receiver.${descriptor.toJava(declaringClass.toJava, name)}"))
         }
 
         println("Done.")
