@@ -46,9 +46,9 @@ import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.fpcf.properties.MaybeMethodEscape
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.MethodEscape
 import org.opalj.fpcf.properties.GlobalEscapeViaHeapObjectAssignment
 import org.opalj.fpcf.properties.ArgEscape
+import org.opalj.fpcf.properties.MethodEscapeViaParameterAssignment
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.PutField
@@ -64,7 +64,6 @@ import org.opalj.tac.GetStatic
 import org.opalj.tac.New
 import org.opalj.tac.FunctionCall
 import org.opalj.tac.NewArray
-import org.opalj.tac.UVar
 
 /**
  * A very simple intra-procedural escape analysis, that has inter-procedural behavior for the `this`
@@ -92,20 +91,21 @@ class SimpleEntityEscapeAnalysis(
  */
 trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
-    override def handlePutField(putField: PutField[V]): Unit = {
+    override protected def handlePutField(putField: PutField[V]): Unit = {
         if (usesDefSite(putField.value))
             handleFieldLike(putField.objRef.asVar.definedBy)
     }
 
-    override def handleArrayStore(arrayStore: ArrayStore[V]): Unit = {
+    override protected def handleArrayStore(arrayStore: ArrayStore[V]): Unit = {
         if (usesDefSite(arrayStore.value))
             handleFieldLike(arrayStore.arrayRef.asVar.definedBy)
     }
 
     /**
-     * A worklist algorithm, chec todo
+     * A worklist algorithm, check the def sites of the reference of the field, or array, to which
+     * the current entity was assigned.
      */
-    def handleFieldLike(referenceDefSites: IntArraySet): Unit = {
+    private def handleFieldLike(referenceDefSites: IntArraySet): Unit = {
         // the definition sites to handle
         var worklist = referenceDefSites
 
@@ -191,44 +191,63 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
      * For non constructor calls, [[MaybeArgEscape]] of e will be returned whenever the receiver
      * or a parameter is a use of defSite.
      */
-    override def handleNonVirtualMethodCall(call: NonVirtualMethodCall[V]): Unit = {
+    override protected def handleNonVirtualMethodCall(call: NonVirtualMethodCall[V]): Unit = {
         // we only allow special (inter-procedural) handling for constructors
         if (call.name == "<init>") {
-            // the object constructor will not escape the this local
-            if (call.declaringClass != ObjectType.Object) {
-                // this is safe as we assume a flat tac hierarchy
-                val UVar(_, defSites) = call.receiver
-                if (defSites.contains(defSite)) {
-                    // resolve the constructor
-                    project.specialCall(
-                        call.declaringClass.asObjectType,
-                        call.isInterface,
-                        "<init>",
-                        call.descriptor
-                    ) match {
-                            case Success(m) ⇒
-                                val fp = propertyStore.context[FormalParameters]
-                                // check if the this local escapes in the callee
-                                val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
-                                escapeState match {
-                                    case EP(_, NoEscape)            ⇒ //NOTHING TO DO
-                                    case EP(_, state: GlobalEscape) ⇒ calcMostRestrictive(state)
-                                    case EP(_, ArgEscape)           ⇒ calcMostRestrictive(ArgEscape)
-                                    case EP(_, _: MethodEscape)     ⇒
-                                        calcMostRestrictive(MaybeNoEscape)
-                                    case EP(_, MaybeArgEscape | MaybeMethodEscape | MaybeNoEscape) ⇒
-                                        dependees += escapeState
-                                    // result not yet finished
-                                    case epk ⇒ dependees += epk
-                                }
-                            case /* unknown method */ _ ⇒ calcMostRestrictive(MaybeNoEscape)
-                        }
-                }
-                if (anyParameterUsesDefSite(call.params))
-                    calcMostRestrictive(MaybeArgEscape)
+            if (usesDefSite(call.receiver)) {
+                handleThisLocalOfConstructor(call)
             }
+            handleParameterOfConstructor(call)
         } else {
-            super.handleNonVirtualMethodCall(call)
+            handleNonVirtualAndNonConstructorCall(call)
         }
+    }
+
+    protected def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
+        assert(call.name == "<init>")
+        assert(usesDefSite(call.receiver))
+
+        // the object constructor will not escape the this local
+        if (call.declaringClass != ObjectType.Object) {
+
+            // resolve the constructor
+            project.specialCall(
+                call.declaringClass.asObjectType,
+                call.isInterface,
+                "<init>",
+                call.descriptor
+            ) match {
+                    case Success(m) ⇒
+                        val fp = propertyStore.context[FormalParameters]
+                        // check if the this local escapes in the callee
+                        val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
+                        escapeState match {
+                            case EP(_, NoEscape)            ⇒ //NOTHING TO DO
+                            case EP(_, state: GlobalEscape) ⇒ calcMostRestrictive(state)
+                            case EP(_, ArgEscape)           ⇒ calcMostRestrictive(ArgEscape)
+                            case EP(_, MethodEscapeViaParameterAssignment) ⇒
+                                calcMostRestrictive(MaybeNoEscape)
+                            case EP(_, MaybeArgEscape | MaybeMethodEscape | MaybeNoEscape) ⇒
+                                dependees += escapeState
+                            case EP(_, _) ⇒
+                                // init methods are void, so there can't be other forms of
+                                // method escapes
+                                throw new RuntimeException("not yet implemented")
+                            // result not yet finished
+                            case epk ⇒ dependees += epk
+                        }
+                    case /* unknown method */ _ ⇒ calcMostRestrictive(MaybeNoEscape)
+                }
+        }
+    }
+
+    protected def handleParameterOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
+        if (anyParameterUsesDefSite(call.params))
+            calcMostRestrictive(MaybeArgEscape)
+    }
+
+    protected def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit = {
+        assert(call.name != "<init>")
+        super.handleNonVirtualMethodCall(call)
     }
 }

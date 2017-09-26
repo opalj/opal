@@ -47,6 +47,10 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.properties.MaybeMethodEscape
+import org.opalj.fpcf.properties.GlobalEscapeViaHeapObjectAssignment
+import org.opalj.fpcf.properties.MethodEscapeViaReturn
+import org.opalj.fpcf.properties.MethodEscapeViaReturnAssignment
+import org.opalj.fpcf.properties.MethodEscapeViaParameterAssignment
 
 /**
  * A small demo that shows how to use the [[SimpleEscapeAnalysis]] and what are the results of it.
@@ -56,7 +60,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
     override def title: String = "Determine the escape information within the given project"
 
     override def description: String = {
-        "Determine the escape information within the given project, i.e. for every allocation site " +
+        "Determine the escape information within the given project, i.e. for every allocation site "+
             "and every formal parameter"
     }
 
@@ -84,6 +88,8 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         val propertyStore = project.get(PropertyStoreKey)
         val staticEscapes =
             propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
+        val heapEscapes =
+            propertyStore.entities(GlobalEscapeViaHeapObjectAssignment)
         val maybeNoEscape =
             propertyStore.entities(MaybeNoEscape)
         val maybeArgEscape =
@@ -91,23 +97,34 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         val maybeMethodEscape =
             propertyStore.entities(MaybeMethodEscape)
         val argEscapes = propertyStore.entities(ArgEscape)
+        val returnEscapes = propertyStore.entities(MethodEscapeViaReturn)
+        val returnAssignmentEscapes = propertyStore.entities(MethodEscapeViaReturnAssignment)
+        val parameterEscapes = propertyStore.entities(MethodEscapeViaParameterAssignment)
         val noEscape = propertyStore.entities(NoEscape)
 
         println("ALLOCATION SITES:")
+        println(s"# of local objects: ${sizeAsAS(noEscape)}")
+        println(s"# of arg escaping objects: ${sizeAsAS(argEscapes)}")
+        println(s"# of method escaping objects via return: ${sizeAsAS(returnEscapes)}")
+        println(s"# of method escaping objects via return assignment: ${sizeAsAS(returnAssignmentEscapes)}")
+        println(s"# of method escaping objects via parameter assignment: ${sizeAsAS(parameterEscapes)}")
         println(s"# of global escaping objects: ${sizeAsAS(staticEscapes)}")
+        println(s"# of indirect global escaping objects: ${sizeAsAS(heapEscapes)}")
         println(s"# of maybe no escaping objects: ${sizeAsAS(maybeNoEscape)}")
         println(s"# of maybe arg escaping objects: ${sizeAsAS(maybeArgEscape)}")
         println(s"# of maybe method escaping objects: ${sizeAsAS(maybeMethodEscape)}")
-        println(s"# of arg escaping objects: ${sizeAsAS(argEscapes)}")
-        println(s"# of local objects: ${sizeAsAS(noEscape)}")
 
         println("FORMAL PARAMETERS")
+        println(s"# of local objects: ${sizeAsFP(noEscape)}")
+        println(s"# of arg escaping objects: ${sizeAsFP(argEscapes)}")
+        println(s"# of method escaping objects via return: ${sizeAsFP(returnEscapes)}")
+        println(s"# of method escaping objects via return assignment: ${sizeAsFP(returnAssignmentEscapes)}")
+        println(s"# of method escaping objects via parameter assignment: ${sizeAsFP(parameterEscapes)}")
         println(s"# of global escaping objects: ${sizeAsFP(staticEscapes)}")
+        println(s"# of indirect global escaping objects: ${sizeAsFP(heapEscapes)}")
         println(s"# of maybe no escaping objects: ${sizeAsFP(maybeNoEscape)}")
         println(s"# of maybe arg escaping objects: ${sizeAsFP(maybeArgEscape)}")
         println(s"# of maybe method escaping objects: ${sizeAsFP(maybeMethodEscape)}")
-        println(s"# of arg escaping objects: ${sizeAsFP(argEscapes)}")
-        println(s"# of local objects: ${sizeAsFP(noEscape)}")
 
         def sizeAsAS(entities: Traversable[Entity]) = entities.collect { case x: AllocationSite ⇒ x }.size
         def sizeAsFP(entities: Traversable[Entity]) = entities.collect { case x: FormalParameter ⇒ x }.size
