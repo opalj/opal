@@ -294,7 +294,8 @@ public class MethodsWithExceptions {
     }
 
     // inspired by java.util.concurrent.ForkJoinWorkerThread.run()
-    public static void nestedTryFinally() throw Throwable {
+    // - standard compiler generate a lot of dead code in this example -
+    public static void nestedTryFinally() throws Throwable {
         Throwable exception = null;
         try {
             doIt();
