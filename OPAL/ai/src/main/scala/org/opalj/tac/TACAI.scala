@@ -938,13 +938,15 @@ object TACAI {
                     } else {
                         statements(defSiteIndex) = ExprStmt(pc, expr)
                     }
-                } else {
-                    // we have an obsolete parameter usage;
-                    // recall that the def-sites are already "normalized"
+                } else if (defSite > VMLevelValuesOriginOffset) {
+                    // We have an obsolete parameter usage; recall that the def-sites are
+                    // already "normalized"!
                     val TACMethodParameter(origin, useSites) = tacParams.parameter(defSite)
                     // Note that the "use sites" of the parameters are already remapped.
                     val newUseSites = useSites - pcToIndex(useSite)
                     tacParams.parameters(-defSite - 1) = new TACMethodParameter(origin, newUseSites)
+                } else {
+                    println(method.toJava(s"we have an obsolete exception usage site: $defSite"))
                 }
             }
         }
