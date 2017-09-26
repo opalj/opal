@@ -197,7 +197,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                         calcMostRestrictive(MaybeArgEscape)
                 }
             }
-            case _          ⇒ calcMostRestrictive(MaybeArgEscape)
+            case _ ⇒ calcMostRestrictive(MaybeArgEscape)
         }
     }
 
