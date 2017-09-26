@@ -138,7 +138,7 @@ sealed abstract class EscapeProperty(
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
         other match {
             case p: EscapeProperty ⇒
-                if (this lessOrEqualRestrictive p)
+                if (p lessOrEqualRestrictive this)
                     None
                 else
                     Some(s"non-monotonic refinement from $this to $p")
