@@ -31,6 +31,8 @@ package tac
 
 import scala.annotation.switch
 import scala.collection.mutable.Queue
+
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.bytecode.BytecodeProcessingFailedException
@@ -41,12 +43,12 @@ import org.opalj.br.instructions._
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.cfg.CFG
+import org.opalj.ai.VMLevelValuesOriginOffset
 import org.opalj.ai.BaseAI
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.immutable.ConstArray
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -192,8 +194,7 @@ object TACAI {
                 (aiVOs: IntArraySet) ⇒
                     {
                         aiVOs.map { aiVO ⇒
-                            assert(!ai.isVMLevelValue(aiVO))
-                            if (aiVO < 0) aiVO - 1 else aiVO
+                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
                         }
                     }
             } else {
@@ -204,7 +205,10 @@ object TACAI {
                         IntArraySet.empty
                     } else {
                         aiVOs map { aiVO ⇒
-                            if (aiVO < 0) aiVOToTACVo(-aiVO - 1) else aiVO
+                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0)
+                                aiVO
+                            else
+                                aiVOToTACVo(-aiVO - 1)
                         }
                     }
                 }
@@ -301,48 +305,9 @@ object TACAI {
 
             // ADD AN EXPLICIT INSTRUCTION WHICH REPRESENTS THE CATCH HANDLER
             if (addExceptionHandlerInitializer) {
-                import domain.{predecessorsOf, refIsNull, operandOrigin, isDirectRegularPredecessorOf}
-                val exception = operandsArray(pc /* the exception is already on the stack */ ).head
-                val usedBy = domain.usedBy(pc)
+                val normalizedDefSites = normalizeParameterOrigins(domain.operandOrigin(pc, 0))
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
-                val predecessorsOfPC = predecessorsOf(pc)
-                val defSites =
-                    predecessorsOfPC.foldLeft(IntArraySet.empty) { (adaptedDefSites, exceptionSite) ⇒
-                        if (instructions(exceptionSite).opcode == ATHROW.opcode) {
-                            // We have to determine if the caught exception is actually the
-                            // thrown exception.... e.g., if the exception value is null,
-                            // the caught exception is a NullPointerException that is vm generated.
-                            val thrownValue = operandsArray(exceptionSite).head
-                            val exceptionIsNull = refIsNull(exceptionSite, thrownValue)
-                            var newDefSites = adaptedDefSites
-                            if (exceptionIsNull.isYesOrUnknown)
-                                newDefSites += ai.ValueOriginForVMLevelValue(exceptionSite)
-                            if (exceptionIsNull.isNoOrUnknown) {
-                                val exceptionOrigin = operandOrigin(exceptionSite, 0)
-                                newDefSites ++= normalizeParameterOrigins(exceptionOrigin)
-                            }
-                            newDefSites
-                        } else {
-                            adaptedDefSites + (
-                                if (isDirectRegularPredecessorOf(exceptionSite, pc)) {
-                                    // actually... this will never happen for "regular" code...
-                                    exceptionSite
-                                } else {
-                                    // The predecessor instruction was not an athrow instruction;
-                                    // hence, the exception was caused implicitly...
-                                    ai.ValueOriginForVMLevelValue(exceptionSite)
-                                }
-                            )
-                        }
-                    }
-                val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType, defSites)
-                if (usedBy ne null) {
-                    assert(usedBy.forall(_ >= 0))
-                    val localVal = DVar(aiResult.domain)(pc, exception, usedBy)
-                    statements(index) = Assignment(pc, localVal, expr)
-                } else {
-                    statements(index) = ExprStmt(pc, expr)
-                }
+                statements(index) = CaughtException(pc, catchType, normalizedDefSites)
                 pcToIndex(pc) = index
                 index += 1
             }
@@ -965,7 +930,7 @@ object TACAI {
                                 killRegisterBasedUsages(defSite, lvIndex)
                                 statements(defSiteIndex) = Nop(pc)
                             case _ ⇒
-                                // we have to kill as many uses as the original - underlying -
+                                // we have to kill as many "uses" as the original - underlying -
                                 // bytecode instruction to handle constant propagation
                                 killOperandBasedUsages(defSite, expr.subExprCount)
                                 statements(defSiteIndex) = Nop(pc)

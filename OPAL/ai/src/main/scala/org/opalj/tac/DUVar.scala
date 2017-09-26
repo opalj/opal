@@ -33,6 +33,8 @@ import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.VMLevelValuesOriginOffset
+import org.opalj.ai.pcOfVMLevelValue
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
@@ -210,7 +212,9 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         val n =
             defSites.iterator.map { defSite ⇒
                 val n =
-                    if (defSite < 0) {
+                    if (defSite <= VMLevelValuesOriginOffset)
+                        "exception@"+pcOfVMLevelValue(defSite)
+                    else if (defSite < 0) {
                         "param"+(-defSite - 1).toHexString
                     } else
                         "lv"+defSite.toHexString

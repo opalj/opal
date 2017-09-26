@@ -935,7 +935,11 @@ trait RecordCFG
     def postDominatorTree: PostDominatorTree = {
 
         val exitPCs = theExitPCs
-        val uniqueExitNode = if (exitPCs.size == 1) Some(exitPCs.head) else None
+        val uniqueExitNode =
+            if (exitPCs.size == 1 && regularSuccessorsOf(exitPCs.head).isEmpty)
+                Some(exitPCs.head)
+            else
+                None
         // We want to keep a non-soft reference and avoid any further useless synchronization.
         val predecessors = this.predecessors
         def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {

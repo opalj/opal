@@ -27,35 +27,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package ai
+package domain
 
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.opalj.collection.immutable.IntArraySet
 
 /**
- * Tests the support for "project" related functionality.
+ * Collects the abstract interpretation time definition/use information using the domain values'
+ * origin information if available.
+ *
+ * ===Reusability===
+ * No; the underlying operands arrays is directly queried.
+ *
+ * @note ReturnAddressValues are ignored by this domain; however, the parent domain
+ *       [[RecordDefUse]] has appropriate handling.
  *
  * @author Michael Eichberg
  */
-@RunWith(classOf[JUnitRunner])
-class ProjectJDKTest extends FunSpec with Matchers {
+trait RefineDefUseUsingOrigins extends RecordDefUse {
+    defUseDomain: Domain with TheCode with Origin ⇒
 
-    describe("Project") {
-
-        it("\"methodsWithBody\" should - for a simple project - only return methods with bodies") {
-            val project = TestSupport.createJREProject
-            project.allMethodsWithBody.foreach { m ⇒ assert(m.body.isDefined) }
-        }
-
-        it("\"methodsWithBody\" should return library methods if the library methods have bodies") {
-            val project = TestSupport.biProjectWithJDK("ai.jar", jdkAPIOnly = false)
-            project.allMethodsWithBody.foreach { m ⇒ assert(m.body.isDefined) }
-            val stringClassFile = project.classFile(ObjectType.String).get
-            val toStringMethod = stringClassFile.findMethod("toString").head
-            assert(toStringMethod.body.isDefined)
+    override protected[this] def originsOf(
+        domainValue:    DomainValue,
+        defaultOrigins: ValueOrigins
+    ): ValueOrigins = {
+        domainValue match {
+            case vo: ValueWithOriginInformation ⇒ vo.origins.foldLeft(IntArraySet.empty)(_ + _)
+            case _                              ⇒ defaultOrigins
         }
     }
 

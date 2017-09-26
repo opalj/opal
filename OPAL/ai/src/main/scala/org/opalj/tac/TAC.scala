@@ -84,8 +84,8 @@ object TAC {
 
     def usage: String = {
         "Usage: java …TAC \n"+
-            "-source <JAR file/Folder containing class files> OR -sourceJDK\n"+
-            "[-sourceLib <JAR file/Folder containing library class files>] (generally required to get precise/correct type information\n"+
+            "-cp <JAR file/Folder containing class files> OR -JDK\n"+
+            "[-libcp <JAR file/Folder containing library class files>]* (generally required to get precise/correct type information\n"+
             "[-domainValueInformation] (prints detailed information about domain values)\n"+
             "[-class <class file name>] (filters the set of classes)\n"+
             "[-method <method name/signature using Java notation>] (filters the set of methods)\n"+
@@ -100,8 +100,8 @@ object TAC {
     def main(args: Array[String]): Unit = {
 
         // Parameters:
-        var source: String = null
-        var sourceLib: Option[String] = None
+        var cp: List[String] = Nil
+        var libcp: List[String] = Nil
         var doOpen: Boolean = false
         var className: Option[String] = None
         var methodSignature: Option[String] = None
@@ -133,28 +133,28 @@ object TAC {
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")
 
-                case "-sourceJDK" ⇒ source = JRELibraryFolder.toString
-                case "-source"    ⇒ source = readNextArg()
-                case "-sourceLib" ⇒ sourceLib = Some(readNextArg())
-                case "-cfg"       ⇒ printCFG = true
-                case "-open"      ⇒ doOpen = true
-                case "-class"     ⇒ className = Some(readNextArg())
-                case "-method"    ⇒ methodSignature = Some(readNextArg())
-                case "-toString"  ⇒ toString = true
-                case unknown      ⇒ handleError(s"unknown parameter: $unknown")
+                case "-JDK"      ⇒ cp ::= JRELibraryFolder.toString
+                case "-cp"       ⇒ cp ::= readNextArg()
+                case "-libcp"    ⇒ libcp ::= readNextArg()
+                case "-cfg"      ⇒ printCFG = true
+                case "-open"     ⇒ doOpen = true
+                case "-class"    ⇒ className = Some(readNextArg())
+                case "-method"   ⇒ methodSignature = Some(readNextArg())
+                case "-toString" ⇒ toString = true
+                case unknown     ⇒ handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
 
-        if (source == null) {
+        if (cp == null) {
             handleError("missing parameters")
         }
 
-        val sourceFile = new File(source)
-        val project =
-            sourceLib.map(l ⇒ Project(sourceFile, new File(l))).getOrElse(Project(sourceFile))
+        val sourceFiles = cp.map(new File(_)).toArray
+        val sourceLibFiles = libcp.map(new File(_)).toArray
+        val project = Project(sourceFiles, sourceLibFiles)
         if (project.projectMethodsCount == 0) {
-            handleError(s"no methods found: $source")
+            handleError(s"no methods found: $cp")
         }
 
         val ch = project.classHierarchy

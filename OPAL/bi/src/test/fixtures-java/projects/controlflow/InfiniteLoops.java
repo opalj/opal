@@ -44,6 +44,12 @@ public class InfiniteLoops {
         }
     }
 
+    static void unboundedLoopWhichMayThrowException(int i) {
+        while (true) {
+            i = 12122 / i;
+        }
+    }
+
     static void infiniteLoopWithMultipleExitPoints(int i) {
         while (true) {
             if (i < 0) {

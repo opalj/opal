@@ -33,6 +33,7 @@ import java.net.URL
 
 import org.opalj.util.gc
 import org.opalj.bytecode.RTJar
+import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.reader.readJREClassFiles
 import org.opalj.br.reader.readRTJarClassFiles
 import org.opalj.br.reader.{ClassFileBinding ⇒ ClassFileReader}
@@ -59,11 +60,15 @@ object TestSupport {
 
     def createRTJarProject(): Project[URL] = Project(readRTJarClassFiles(), Traversable.empty, true)
 
-    def biProjectWithFullJDK(projectJARName: String): Project[URL] = {
+    def biProjectWithJDK(projectJARName: String, jdkAPIOnly: Boolean = false): Project[URL] = {
         val resources = locateTestResources(projectJARName, "bi")
         val projectClassFiles: Seq[(ClassFile, URL)] = DefaultJava9Reader.ClassFiles(resources)
-        val jreClassFiles: Seq[(ClassFile, URL)] = readJREClassFiles()
-        Project(projectClassFiles, jreClassFiles, false)
+        val jreClassFiles: Seq[(ClassFile, URL)] =
+            if (jdkAPIOnly)
+                Java9LibraryFramework.ClassFiles(JRELibraryFolder)
+            else
+                readJREClassFiles()
+        Project(projectClassFiles, jreClassFiles, libraryClassFilesAreInterfacesOnly = jdkAPIOnly)
     }
 
     def biProject(projectJARName: String): Project[URL] = {

@@ -41,6 +41,8 @@ abstract class LoadLocalVariableInstruction extends Instruction {
 
     final override def isLoadLocalVariableInstruction: Boolean = true
 
+    final override def asLoadLocalVariableInstruction: this.type = this
+
     /**
      * The index of the local variable(register) that is loaded and put on top
      * of the operand stack.
