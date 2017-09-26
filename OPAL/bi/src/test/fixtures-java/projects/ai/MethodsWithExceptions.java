@@ -284,4 +284,31 @@ public class MethodsWithExceptions {
         }
         return z.hashCode() + o.hashCode();
     }
+
+    private static void doIt() {
+        return;
+    }
+
+    private static void processIt(Object o) {
+        return;
+    }
+
+    // inspired by java.util.concurrent.ForkJoinWorkerThread.run()
+    public static void nestedTryFinally() throw Throwable {
+        Throwable exception = null;
+        try {
+            doIt();
+        } catch (Throwable ex) {
+            exception = ex;
+        } finally {
+            try {
+                processIt(exception);
+            } catch (Throwable ex) {
+                if (exception == null)
+                    exception = ex;
+            } finally {
+                processIt(exception);
+            }
+        }
+    }
 }
