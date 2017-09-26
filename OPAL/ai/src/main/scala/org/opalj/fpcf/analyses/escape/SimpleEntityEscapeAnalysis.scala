@@ -72,17 +72,17 @@ import org.opalj.tac.NewArray
  * @author Florian Kuebler
  */
 class SimpleEntityEscapeAnalysis(
-    val e:             Entity,
-    val defSite:       ValueOrigin,
-    val uses:          IntArraySet,
-    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val params:        Parameters[TACMethodParameter],
-    val m:             Method,
-    val propertyStore: PropertyStore,
-    val project:       SomeProject
+        val e:             Entity,
+        val defSite:       ValueOrigin,
+        val uses:          IntArraySet,
+        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val params:        Parameters[TACMethodParameter],
+        val m:             Method,
+        val propertyStore: PropertyStore,
+        val project:       SomeProject
 ) extends AbstractEntityEscapeAnalysis
-        with ConstructorSensitiveEntityEscapeAnalysis
-        with SimpleFieldAwareEntityEscapeAnalysis
+    with ConstructorSensitiveEntityEscapeAnalysis
+    with SimpleFieldAwareEntityEscapeAnalysis
 
 /**
  * Very simple handling for fields and arrays. This analysis can detect global escapes via
