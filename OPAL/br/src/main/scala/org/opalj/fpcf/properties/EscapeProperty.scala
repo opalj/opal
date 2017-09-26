@@ -30,6 +30,9 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyKey.SomeEPKs
+
 import scala.annotation.switch
 
 sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
@@ -178,13 +181,29 @@ sealed abstract class EscapeProperty(
 
 object EscapeProperty extends EscapePropertyMetaInformation {
 
+    def cycleResolutionStrategy(ps: PropertyStore, epks: SomeEPKs): Iterable[PropertyComputationResult] = {
+        Iterable(
+            Result(
+                epks.head.e,
+                epks.foldLeft(MaybeNoEscape: EscapeProperty) {
+                    (escapeState, epk) ⇒
+                        epk match {
+                            case EPK(e, `key`) ⇒
+                                ps(e, key).p meet escapeState
+                            case _ ⇒ MaybeNoEscape
+                        }
+                }
+            )
+        )
+    }
+
     final val key: PropertyKey[EscapeProperty] = PropertyKey.create(
         // Name of the property
         "EscapeProperty",
         // fallback value
         MaybeNoEscape,
         // cycle-resolution strategy
-        MaybeNoEscape
+        cycleResolutionStrategy _
     )
 }
 
