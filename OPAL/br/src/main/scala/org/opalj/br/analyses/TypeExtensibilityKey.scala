@@ -32,7 +32,7 @@ package analyses
 
 /**
  * The ''key'' object to get a function that determines whether a type is extensible or not.
- * A type is extensible if a developer could have defined a subtype that is not part of the given
+ * A type is extensible if a developer could define a subtype that is not part of the given
  * application/library.
  *
  * @author Michael Eichberg
