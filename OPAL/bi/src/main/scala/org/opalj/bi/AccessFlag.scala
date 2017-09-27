@@ -115,6 +115,29 @@ object VisibilityModifier {
         }
     }
 
+/** `true` if `a` is at least as visible as `b`; for example, true if `a` is public and
+ * `b` is just protected.
+  */
+    def isAtLeastAsVisibleAs(
+        a:Option[VisibilityModifier],
+         b: Option[VisibilityModifier]
+     ) : Boolean = {
+        a match {
+            case a @ Some(ACC_PUBLIC) => true
+            case Some(ACC_PROTECTED) => b.isEmpty || b.get != ACC_PUBLIC
+            case None => b.isEmpty || b.get == ACC_PRIVATE
+            case a @ Some(ACC_PRIVATE) => b == a
+
+        }
+    }
+
+    def isLessVisibleAs(
+        a: Option[VisibilityModifier],
+        b: Option[VisibilityModifier]
+     ) : Boolean = {
+        !isAtLeastAsVisibleAs(b,a)
+     }
+
     def unapply(accessFlags: Int): Option[VisibilityModifier] = get(accessFlags)
 }
 
