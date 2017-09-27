@@ -151,8 +151,8 @@ package object graphs {
      * Function to convert a given graphviz dot file to SVG. The transformation is done using the
      * vis-js.com library which is a translated version of graphviz to JavaScript.
      *
-     * The first call, which will initialize the JavaScript engine will take some time. Afterwards,
-     * the evaluation is much faster.
+     * The first call, which will initialize the JavaScript engine, will take some time.
+     * Afterwards, the tranformation is much faster.
      */
     final lazy val dotToSVG: (String) ⇒ String = {
         import javax.script.Invocable
@@ -206,7 +206,7 @@ package object graphs {
      * Identifies closed strongly connected components in directed (multi-)graphs.
      *
      * @tparam N The type of the graph's nodes. The nodes have to correctly implements equals
-     *         and hashCode..
+     *         and hashCode.
      * @param  ns The nodes of the graph.
      * @param  es A function that, given a node, returns all successor nodes. Basically, the edges
      *         of the graph.
@@ -342,8 +342,9 @@ package object graphs {
                             case someCSCCId ⇒
                                 /*nothing to do*/
                                 assert(
-                                    nDFSNum == 0 || nCSCCId == cSCCId(path.last),
-                                    s"nDFSNum=$nDFSNum; nCSCCId=$nCSCCId; cSCCId(path.last)=${cSCCId(path.last)}"
+                                    nDFSNum == initialDFSNum || nCSCCId == cSCCId(path.last),
+                                    s"nDFSNum=$nDFSNum; nCSCCId=$nCSCCId; "+
+                                        s"cSCCId(path.last)=${cSCCId(path.last)}"
                                 )
 
                         }
