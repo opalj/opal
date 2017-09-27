@@ -36,6 +36,7 @@ import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicIntegerArray
 import java.util.concurrent.atomic.AtomicReferenceArray
+import java.lang.ref.SoftReference
 
 import scala.annotation.switch
 import scala.collection.JavaConverters._
@@ -61,7 +62,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
-import org.opalj.log.DefaultLogContext
+import org.opalj.log.StandardLogContext
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
 import org.opalj.collection.immutable.ConstArray
@@ -414,8 +415,8 @@ class Project[Source] private (
                                 declaredMethodPackageName,
                                 declaredMethod
                             ) match {
-                                case None ⇒ true
-                                case Some(overridingMethod) ⇒
+                                case _: NoResult ⇒ true
+                                case Success(overridingMethod) ⇒
                                     val nextOverridingMethods = methods.get(overridingMethod)
                                     if (nextOverridingMethods.isEmpty) {
                                         overridingMethods = nextOverridingMethods
@@ -1021,6 +1022,10 @@ class Project[Source] private (
         new ConcurrentHashMap[ProjectInformationKey[AnyRef, AnyRef], AnyRef]()
     }
 
+    /**
+     * Returns the project specific initialization information for the given project information
+     * key.
+     */
     def getProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
         key: ProjectInformationKey[T, I]
     ): Option[I] = {
@@ -1195,7 +1200,22 @@ object Project {
 
     lazy val JavaLibraryClassFileReader: Java9LibraryFramework.type = Java9LibraryFramework
 
-    private[this] def cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
+    @volatile private[this] var theCache: SoftReference[BytecodeInstructionsCache] = {
+        new SoftReference(new BytecodeInstructionsCache)
+    }
+    private[this] def cache: BytecodeInstructionsCache = {
+        var cache = theCache.get
+        if (cache == null) {
+            this.synchronized {
+                cache = theCache.get
+                if (cache == null) {
+                    cache = new BytecodeInstructionsCache
+                    theCache = new SoftReference(cache)
+                }
+            }
+        }
+        cache
+    }
 
     def JavaClassFileReader(
         theLogContext: LogContext = GlobalLogContext,
@@ -1442,7 +1462,7 @@ object Project {
         config:        Config     = GlobalConfig,
         projectLogger: OPALLogger = OPALLogger.globalLogger()
     ): Project[Source] = {
-        implicit val logContext = new DefaultLogContext()
+        implicit val logContext = new StandardLogContext()
         OPALLogger.register(logContext, projectLogger)
         this(
             projectClassFilesWithSources,

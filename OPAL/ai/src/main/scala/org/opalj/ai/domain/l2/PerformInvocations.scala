@@ -52,7 +52,7 @@ trait PerformInvocations extends MethodCallsHandling {
     callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     /**
-     * If `true` the exceptions thrown by the called method are will be used
+     * If `true` the exceptions thrown by the called method will be used
      * during the evaluation of the calling method.
      */
     def useExceptionsThrownByCalledMethod: Boolean = false
@@ -80,13 +80,8 @@ trait PerformInvocations extends MethodCallsHandling {
         parameters: calledMethodDomain.Locals
     ): AIResult { val domain: calledMethodDomain.type } = {
         val noOperands: Chain[calledMethodDomain.DomainValue] = Naught
-        val isStrict = method.isStrict
         val code = method.body.get
-        calledMethodAI.performInterpretation(
-            isStrict, code, calledMethodDomain
-        )(
-            noOperands, parameters
-        )
+        calledMethodAI.performInterpretation(code, calledMethodDomain)(noOperands, parameters)
     }
 
     /**
@@ -193,13 +188,13 @@ trait PerformInvocations extends MethodCallsHandling {
         fallback: () ⇒ MethodCallResult
     ): MethodCallResult = {
 
-        if (project.isLibraryType(method.classFile.thisType))
+        if (project.libraryClassFilesAreInterfacesOnly &&
+            project.isLibraryType(method.classFile.thisType))
             return fallback();
 
         if (method.isAbstract) {
             OPALLogger.logOnce(Error(
-                "project configuration",
-                "the resolved method on a concrete object is abstract: "+method.classFile
+                "project configuration", "resolved method is abstract: "+method.classFile
             ))
             fallback()
         } else if (!method.isNative) {

@@ -40,7 +40,7 @@ import org.opalj.collection.immutable.Chain
  */
 abstract class StackManagementInstruction extends Instruction with ConstantLengthInstruction {
 
-    def jvmExceptions: List[ObjectType] = Nil
+    final override def isStackManagementInstruction: Boolean = true
 
     final def length: Int = 1
 
@@ -69,5 +69,7 @@ abstract class StackManagementInstruction extends Instruction with ConstantLengt
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def expressionResult: NoExpression.type = NoExpression
+
+    def jvmExceptions: List[ObjectType] = Nil
 
 }

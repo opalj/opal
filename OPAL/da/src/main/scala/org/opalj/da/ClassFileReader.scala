@@ -103,12 +103,15 @@ object ClassFileReader
 
     def ClassFile(
         cp:            Constant_Pool,
-        minor_version: Int, major_version: Int,
-        access_flags: Int,
-        this_class:   Constant_Pool_Index, super_class: Constant_Pool_Index, interfaces: Interfaces,
-        fields:     Fields,
-        methods:    Methods,
-        attributes: Attributes
+        minor_version: Int,
+        major_version: Int,
+        access_flags:  Int,
+        this_class:    Constant_Pool_Index,
+        super_class:   Constant_Pool_Index,
+        interfaces:    Interfaces,
+        fields:        Fields,
+        methods:       Methods,
+        attributes:    Attributes
     ): ClassFile =
         new ClassFile(
             cp, minor_version, major_version, access_flags,

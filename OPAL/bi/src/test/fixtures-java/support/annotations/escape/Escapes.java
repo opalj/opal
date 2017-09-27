@@ -46,7 +46,7 @@ import annotations.property.EP;
 @Repeatable(EscapeProperties.class)
 public @interface Escapes {
 
-    EscapeKeys value() default EscapeKeys.No;
+    EscapeKeys value();
 
     /**
      * The algorithms, if only specific algorithms will compute this result
@@ -56,7 +56,7 @@ public @interface Escapes {
     String[] algorithms() default {};
 
     /**
-     * Other entities that must have the given property for this annotation to be correct
+     * Other entities that must have the specified property for this annotation to be correct.
      */
     EP[] eps() default {};
 }

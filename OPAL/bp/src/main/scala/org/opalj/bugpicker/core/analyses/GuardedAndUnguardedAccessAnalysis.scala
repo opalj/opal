@@ -95,7 +95,7 @@ object GuardedAndUnguardedAccessAnalysis {
         val code = result.code
 
         var origins = Map.empty[ValueOrigin, PC]
-        var timestamps = Map.empty[domain.Timestamp, PC]
+        var refIds = Map.empty[domain.RefId, PC]
 
         // TODO We should also log those that are assertions related!
 
@@ -121,14 +121,14 @@ object GuardedAndUnguardedAccessAnalysis {
                 operandsArray(pc).head match {
                     case domain.DomainSingleOriginReferenceValue(sov) ⇒
                         origins += ((sov.origin, pc))
-                        timestamps += ((sov.t, pc))
+                        refIds += ((sov.refId, pc))
                     case domain.DomainMultipleReferenceValues(mov) ⇒
-                        timestamps += ((mov.t, pc))
+                        refIds += ((mov.refId, pc))
                 }
 
         }
 
-        if (origins.isEmpty && timestamps.isEmpty)
+        if (origins.isEmpty && refIds.isEmpty)
             // we don't have any "guard instructions"
             return List.empty;
 
@@ -160,13 +160,13 @@ object GuardedAndUnguardedAccessAnalysis {
                         (pc, operandsArray(pc)(i.methodDescriptor.parametersCount))
                 }
                 if receiver.isNull.isUnknown
-                if timestamps.contains(receiver.t) ||
+                if refIds.contains(receiver.refId) ||
                     (receiver.isInstanceOf[domain.SingleOriginValue] &&
                         origins.contains(receiver.asInstanceOf[domain.SingleOriginValue].origin))
             } yield {
-                if (timestamps.contains(receiver.t))
+                if (refIds.contains(receiver.refId))
                     (
-                        timestamps(receiver.t),
+                        refIds(receiver.refId),
                         Relevance.OfUtmostRelevance,
                         pc
                     )

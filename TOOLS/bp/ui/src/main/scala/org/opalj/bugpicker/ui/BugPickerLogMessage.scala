@@ -38,10 +38,10 @@ import scalafx.beans.property.StringProperty
  * @author David Becker
  */
 class BugPickerLogMessage(
-    val timestamp: StringProperty,
-    val level:     StringProperty,
-    val category:  StringProperty,
-    val message:   StringProperty
+        val timestamp: StringProperty,
+        val level:     StringProperty,
+        val category:  StringProperty,
+        val message:   StringProperty
 )
 
 /**

@@ -29,6 +29,7 @@
 package org.opalj
 package tac
 
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br._
 
 /**
@@ -80,6 +81,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asVirtualMethodCall: VirtualMethodCall[V] = throw new ClassCastException();
     def asStaticMethodCall: StaticMethodCall[V] = throw new ClassCastException();
     def asExprStmt: ExprStmt[V] = throw new ClassCastException();
+    def asCaughtException: CaughtException[V] = throw new ClassCastException();
     def asCheckcast: Checkcast[V] = throw new ClassCastException();
 
 }
@@ -614,6 +616,126 @@ object ExprStmt {
 }
 
 /**
+ * Matches a statement which – in flat form – directly calls a virtual function; basically
+ * abstracts over [[ExprStmt]]s and [[Assignment]]s.
+ */
+object VirtualFunctionCallStatement {
+
+    def unapply[V <: Var[V]](stmt: Stmt[V]): Option[VirtualFunctionCall[V]] = {
+        stmt match {
+            case ExprStmt(_, vfc: VirtualFunctionCall[V])      ⇒ Some(vfc)
+            case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒ Some(vfc)
+            case _                                             ⇒ None
+        }
+    }
+}
+
+/**
+ * Matches a statement which – in flat form – directly calls a non-virtual function; basically
+ * abstracts over [[ExprStmt]]s and [[Assignment]]s.
+ */
+object NonVirtualFunctionCallStatement {
+
+    def unapply[V <: Var[V]](stmt: Stmt[V]): Option[NonVirtualFunctionCall[V]] = {
+        stmt match {
+            case ExprStmt(_, vfc: NonVirtualFunctionCall[V])      ⇒ Some(vfc)
+            case Assignment(_, _, vfc: NonVirtualFunctionCall[V]) ⇒ Some(vfc)
+            case _                                                ⇒ None
+        }
+    }
+}
+
+/**
+ * Matches a statement which – in flat form – directly calls a static function; basically
+ * abstracts over [[ExprStmt]]s and [[Assignment]]s.
+ */
+object StaticFunctionCallStatement {
+
+    def unapply[V <: Var[V]](stmt: Stmt[V]): Option[StaticFunctionCall[V]] = {
+        stmt match {
+            case ExprStmt(_, vfc: StaticFunctionCall[V])      ⇒ Some(vfc)
+            case Assignment(_, _, vfc: StaticFunctionCall[V]) ⇒ Some(vfc)
+            case _                                            ⇒ None
+        }
+    }
+}
+
+/**
+ * A caught exception is essential to ensure that the throw is never optimized away, even if
+ * the exception object as such is not used.
+ *
+ * @note `CaughtException` expression are only created by [[TACAI]]!
+ */
+case class CaughtException[+V <: Var[V]](
+        pc:                        PC,
+        exceptionType:             Option[ObjectType],
+        private var throwingStmts: IntArraySet
+) extends Stmt[V] {
+
+    final override def asCaughtException: CaughtException[V] = this
+    final override def astID: Int = CaughtException.ASTID
+
+    final override def isSideEffectFree: Boolean = false
+
+    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        throwingStmts = throwingStmts map { stmt ⇒
+            if (ai.isVMLevelValue(stmt))
+                ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(stmt)))
+            else if (stmt < 0)
+                stmt
+            else
+                pcToIndex(stmt)
+
+        }
+    }
+
+    /**
+     * The origin(s) of the caught exception(s). An origin identifies the instruction
+     * that ex- or implicitly created the exception:
+     *  - If the exception is created locally (`new XXXException`) and also caught within the
+     *    same method, then the origin identifies a normal variable definition site.
+     *  - If the exception is a parameter the parameter's origin (-1,... -n) is returned.
+     *  - If the exception was raised due to a sideeffect of evaluating an expression, then the
+     *    origin is smaller or equal to [[org.opalj.ai.VMLevelValuesOriginOffset]] and can be
+     *    tranformed to the index of the responsible instruction using
+     *    [[org.opalj.ai#pcOfVMLevelValue]].
+     */
+    def origins: IntArraySet = throwingStmts
+
+    /**
+     * Textual description of the sources of the caught exceptions. If the exception was
+     * thrown by the JVM due to the evaluation of an expression (e.g., NullPointerException,
+     * DivisionByZero,..) then the string will be `exception@<INDEX>` where index identifies
+     * the failing expression. In case an exception is caught that was thrown using `ATHROW`
+     * the local variable/parameter which stores the local variable is returned.
+     */
+    final def exceptionLocations: Iterator[String] = {
+        throwingStmts.iterator.map { defSite ⇒
+            if (defSite < 0) {
+                if (ai.isVMLevelValue(defSite))
+                    "exception@"+ai.pcOfVMLevelValue(defSite)
+                else
+                    "param"+(-defSite - 1).toHexString
+            } else {
+                "lv"+defSite.toHexString
+            }
+        }
+    }
+
+    override def toString: String = {
+        val exceptionType = this.exceptionType.map(_.toJava).getOrElse("<ANY>")
+        val exceptionLocations = this.exceptionLocations.mkString("{", ",", "}")
+        s"CaughtException(pc=$pc,$exceptionType,caused by=$exceptionLocations)"
+    }
+}
+
+object CaughtException {
+
+    final val ASTID = 19
+
+}
+
+/**
  * A `checkcast` as defined by the JVM specification.
  */
 case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Stmt[V] {
@@ -624,7 +746,11 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
 
     final override def isSideEffectFree: Boolean = {
-        // IMPROVE a safe checkcast (i.e., one where we statically know that it will never fail) is side-effect free
+        // IMPROVE identify (from the JVM verifiers point-of-view) truly useless checkcasts
+        // A useless checkcast is one where the static intra-procedural type information which
+        // is available in the bytecode is sufficient to determine that the type is a subtype
+        // of the tested type (i.e., only those check casts are truly usefull that would not
+        // lead to a failing validation of the bytecode by the JVM!)
         false
     }
 

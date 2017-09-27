@@ -115,7 +115,6 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
         assert(maxRecursionDepth > 1)
         assert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
 
-        val strictfp = method.isStrict
         val body = method.body.get
         val parametersCount =
             method.descriptor.parametersCount + (if (method.isStatic) 0 else 1)
@@ -150,12 +149,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                 return None;
 
             val parameters = mapOperandsToParameters(callOperands, method, domain)
-            val aiResult =
-                BaseAI.performInterpretation(
-                    strictfp, body, domain
-                )(
-                    Chain.empty, parameters
-                )
+            val aiResult = BaseAI.performInterpretation(body, domain)(Chain.empty, parameters)
             val operandsArray = aiResult.operandsArray
             val localsArray = aiResult.localsArray
             val callOperandsList =

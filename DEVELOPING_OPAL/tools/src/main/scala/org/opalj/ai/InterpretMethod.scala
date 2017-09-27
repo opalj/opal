@@ -215,16 +215,16 @@ object InterpretMethod {
                 val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".gv")
                 println("AI CFG: "+cfgFile)
 
-                val dominatorTreeAsDot = cfgDomain.dominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
-                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheAICFG", ".gv")
+                val domAsDot = cfgDomain.dominatorTree.toDot(evaluatedInstructions.contains)
+                val domFile = writeAndOpen(domAsDot, "DominatorTreeOfTheAICFG", ".gv")
                 println("AI CFG - Dominator tree: "+domFile)
 
-                val postDominatorTreeAsDot = cfgDomain.postDominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
-                val postDomFile = writeAndOpen(postDominatorTreeAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
+                val postDomAsDot = cfgDomain.postDominatorTree.toDot(evaluatedInstructions.contains)
+                val postDomFile = writeAndOpen(postDomAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
                 println("AI CFG - Post-Dominator tree: "+postDomFile)
 
-                val cdg = cfgDomain.controlDependencies
-                val rdfAsDotGraph = cdg.dominanceFrontiers.toDot(evaluatedInstructions.contains(_))
+                val cdg = cfgDomain.pdtBasedControlDependencies
+                val rdfAsDotGraph = cdg.toDot(evaluatedInstructions.contains)
                 val rdfFile = writeAndOpen(rdfAsDotGraph, "ReverseDominanceFrontiersOfAICFG", ".gv")
                 println("AI CFG - Reverse Dominance Frontiers: "+rdfFile)
             }
@@ -270,6 +270,7 @@ object InterpretMethod {
             case ife: InterpretationFailedException ⇒
 
                 def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
+                    val domain = ife.domain
                     val parameters =
                         if (nested) {
                             ife.localsArray(0).toSeq.reverse.
@@ -279,7 +280,7 @@ object InterpretMethod {
                             ""
 
                     val aiState =
-                        "<p><i>"+ife.domain.getClass.getName+"</i><b>( "+ife.domain.toString+" )"+"</b></p>"+
+                        s"<p><i>${domain.getClass.getName}</i><b>( ${domain.toString} )</b></p>"+
                             parameters+
                             "Current instruction: "+ife.pc+"<br>"+
                             XHTML.evaluatedInstructionsToXHTML(ife.evaluated) + {

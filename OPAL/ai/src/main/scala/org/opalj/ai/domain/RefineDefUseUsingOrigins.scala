@@ -27,16 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package log
+package ai
+package domain
 
-case class DefaultLogContext private ( final val startTime: Long) extends LogContext {
+import org.opalj.collection.immutable.IntArraySet
 
-    def this() {
-        this(startTime = System.currentTimeMillis())
+/**
+ * Collects the abstract interpretation time definition/use information using the domain values'
+ * origin information if available.
+ *
+ * ===Reusability===
+ * No; the underlying operands arrays is directly queried.
+ *
+ * @note ReturnAddressValues are ignored by this domain; however, the parent domain
+ *       [[RecordDefUse]] has appropriate handling.
+ *
+ * @author Michael Eichberg
+ */
+trait RefineDefUseUsingOrigins extends RecordDefUse {
+    defUseDomain: Domain with TheCode with Origin ⇒
+
+    override protected[this] def originsOf(
+        domainValue:    DomainValue,
+        defaultOrigins: ValueOrigins
+    ): ValueOrigins = {
+        domainValue match {
+            case vo: ValueWithOriginInformation ⇒ vo.origins.foldLeft(IntArraySet.empty)(_ + _)
+            case _                              ⇒ defaultOrigins
+        }
     }
-
-    override def toString: String = "log context:"+startTime.toString().drop(6)
-
-    override def newInstance: LogContext = new DefaultLogContext(this.startTime)
 
 }

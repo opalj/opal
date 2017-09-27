@@ -181,7 +181,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
                 var warningIssued = false
 
-                override def frequentEvalution(
+                override def frequentEvaluation(
                     method:      Method,
                     operandsSet: List[Array[domain.DomainValue]]
                 ): Unit = {

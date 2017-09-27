@@ -40,6 +40,8 @@ import org.opalj.collection.immutable.Chain
  */
 abstract class InvocationInstruction extends Instruction with ConstantLengthInstruction {
 
+    final override def asInvocationInstruction: this.type = this
+
     /**
      * The simple name of the called method.
      *

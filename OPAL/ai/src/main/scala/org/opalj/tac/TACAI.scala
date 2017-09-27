@@ -31,6 +31,8 @@ package tac
 
 import scala.annotation.switch
 import scala.collection.mutable.Queue
+
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.bytecode.BytecodeProcessingFailedException
@@ -41,12 +43,12 @@ import org.opalj.br.instructions._
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.cfg.CFG
+import org.opalj.ai.VMLevelValuesOriginOffset
 import org.opalj.ai.BaseAI
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.immutable.ConstArray
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -139,9 +141,9 @@ object TACAI {
             return true;
         }
 
+        import UnaryArithmeticOperators._
         import BinaryArithmeticOperators._
         import RelationalOperators._
-        import UnaryArithmeticOperators._
 
         val isStatic = method.isStatic
         val descriptor = method.descriptor
@@ -192,8 +194,7 @@ object TACAI {
                 (aiVOs: IntArraySet) ⇒
                     {
                         aiVOs.map { aiVO ⇒
-                            assert(!ai.isVMLevelValue(aiVO))
-                            if (aiVO < 0) aiVO - 1 else aiVO
+                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
                         }
                     }
             } else {
@@ -204,15 +205,18 @@ object TACAI {
                         IntArraySet.empty
                     } else {
                         aiVOs map { aiVO ⇒
-                            if (aiVO < 0) aiVOToTACVo(-aiVO - 1) else aiVO
+                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0)
+                                aiVO
+                            else
+                                aiVOToTACVo(-aiVO - 1)
                         }
                     }
                 }
             }
         }
 
-        // The list of bytecode instructions which were killed (=>NOP), and for which we now have to
-        // clear the usages.
+        // The list of bytecode instructions which were killed (=>NOP), and for which we now
+        // have to clear the usages.
         val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntArraySet /*DefSites*/ )] = Queue.empty
 
         def killOperandBasedUsages(useSite: br.PC, valuesCount: Int): Unit = {
@@ -301,48 +305,9 @@ object TACAI {
 
             // ADD AN EXPLICIT INSTRUCTION WHICH REPRESENTS THE CATCH HANDLER
             if (addExceptionHandlerInitializer) {
-                import domain.{predecessorsOf, refIsNull, operandOrigin, isDirectRegularPredecessorOf}
-                val exception = operandsArray(pc /* the exception is already on the stack */ ).head
-                val usedBy = domain.usedBy(pc)
+                val normalizedDefSites = normalizeParameterOrigins(domain.operandOrigin(pc, 0))
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
-                val predecessorsOfPC = predecessorsOf(pc)
-                val defSites =
-                    predecessorsOfPC.foldLeft(IntArraySet.empty) { (adaptedDefSites, exceptionSite) ⇒
-                        if (instructions(exceptionSite).opcode == ATHROW.opcode) {
-                            // We have to determine if the caught exception is actually the
-                            // thrown exception....
-                            // FIXME XXXX TODO
-                            val thrownValue = operandsArray(exceptionSite).head
-                            val exceptionIsNull = refIsNull(exceptionSite, thrownValue)
-                            var newDefSites = adaptedDefSites
-                            if (exceptionIsNull.isYesOrUnknown)
-                                newDefSites += ai.ValueOriginForVMLevelValue(exceptionSite)
-                            if (exceptionIsNull.isNoOrUnknown) {
-                                val exceptionOrigin = operandOrigin(exceptionSite, 0)
-                                newDefSites ++= normalizeParameterOrigins(exceptionOrigin)
-                            }
-                            newDefSites
-                        } else {
-                            adaptedDefSites + (
-                                if (isDirectRegularPredecessorOf(exceptionSite, pc)) {
-                                    // actually... this will never happen for "regular" code...
-                                    exceptionSite
-                                } else {
-                                    // The predecessor instruction was not an athrow instruction;
-                                    // hence, the exception was caused implicitly...
-                                    ai.ValueOriginForVMLevelValue(exceptionSite)
-                                }
-                            )
-                        }
-                    }
-                val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType, defSites)
-                if (usedBy ne null) {
-                    assert(usedBy.forall(_ >= 0))
-                    val localVal = DVar(aiResult.domain)(pc, exception, usedBy)
-                    statements(index) = Assignment(pc, localVal, expr)
-                } else {
-                    statements(index) = ExprStmt(pc, expr)
-                }
+                statements(index) = CaughtException(pc, catchType, normalizedDefSites)
                 pcToIndex(pc) = index
                 index += 1
             }
@@ -359,7 +324,8 @@ object TACAI {
 
             /**
              * Creates a local variable using the current pc and the type
-             * information from the domain value.
+             * information from the domain value if the local variable is used; otherwise
+             * an expression statement or a nop statement is added.
              */
             def addInitLocalValStmt(
                 pc:   PC,
@@ -432,6 +398,7 @@ object TACAI {
                 } else {
                     addStmt(ExprStmt(pc, binExpr))
                 }
+
             }
 
             @inline def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {
@@ -495,13 +462,12 @@ object TACAI {
             }
 
             @inline def ifCMPXXX(condition: RelationalOperator, branchoffset: Int): Unit = {
-                val pcBB = cfg.bb(pc)
                 val targetPC = pc + branchoffset
-                val successors = pcBB.successors
+                val successors = domain.allSuccessorsOf(pc)
                 if (successors.size == 1) {
-                    val successorPC = cfg.successors(pc).head
-                    // HERE(!), the successor can also be an ExitNode/CatchNode if the if
-                    // falls through. In this case the block may end with, e.g., a return
+                    val successorPC = successors.head
+                    // HERE(!), the successor of the bb(!) can also be an ExitNode/CatchNode if
+                    // the if falls through. In this case the block may end with, e.g., a return
                     // instruction, and therefore the successor is the ExitNode.
                     if (successorPC == nextPC || allDead(nextPC, successorPC)) {
                         // This "if" always either falls through or "jumps" to the next
@@ -525,15 +491,16 @@ object TACAI {
                 branchoffset: Int,
                 cmpVal:       ⇒ Expr[DUVar[aiResult.domain.DomainValue]]
             ): Unit = {
-                val pcBB = cfg.bb(pc)
                 val targetPC = pc + branchoffset
-                val successors = pcBB.successors
+                val successors = domain.allSuccessorsOf(pc)
                 if (successors.size == 1) {
-                    val successorPC = cfg.successors(pc).head
-                    // HERE(!), the successor can also be an ExitNode/CatchNode if the if
-                    // falls through. In this case the block may end with, e.g., a return
+                    /* ... in this case the if can be somewhere in a bb */
+                    val successorPC = successors.head
+                    // HERE(!), the successor of the bb(!) can also be an ExitNode/CatchNode if
+                    // the if falls through. In this case the block may end with, e.g., a return
                     // instruction, and therefore the successor is the ExitNode.
-                    if (successorPC == nextPC || allDead(nextPC, successorPC)) {
+                    if (successorPC == nextPC ||
+                        /*jump over a bunch of dead code */ allDead(nextPC, successorPC)) {
                         // This "if" always either falls through or "jumps" to the next
                         // instruction ... => replace it by a NOP
                         addNOPAndKillOperandBasedUsages(1)
@@ -822,11 +789,12 @@ object TACAI {
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
                     val GotoInstruction(branchoffset) = instruction
-                    if (cfg.bb(pc).endPC != pc) {
+                    val targetPC = pc + branchoffset
+                    if (targetPC == nextPC) {
                         // this goto "jumps" to the immediately succeeding instruction
                         addNOP(pc)
                     } else {
-                        addStmt(Goto(pc, pc + branchoffset))
+                        addStmt(Goto(pc, targetPC))
                     }
 
                 case br.instructions.JSR.opcode | br.instructions.JSR_W.opcode ⇒
@@ -945,7 +913,7 @@ object TACAI {
         while (obsoleteUseSites.nonEmpty) {
             val /*original - bytecode based...:*/ (useSite, defSites) = obsoleteUseSites.dequeue()
             // Now... we need to go the def site - which has to be an assignment - and kill
-            // the respective use; if no use remains...
+            // the respective use unless it is an exception...; if no use remains...
             //      and the expression is side effect free ... add it to obsoleteDefSites and
             //                                                 replace it by a nop
             //      and the expression has a side effect ... replace the Assignment by an ExprStmt
@@ -963,7 +931,7 @@ object TACAI {
                                 killRegisterBasedUsages(defSite, lvIndex)
                                 statements(defSiteIndex) = Nop(pc)
                             case _ ⇒
-                                // we have to kill as many uses as the original - underlying -
+                                // we have to kill as many "uses" as the original - underlying -
                                 // bytecode instruction to handle constant propagation
                                 killOperandBasedUsages(defSite, expr.subExprCount)
                                 statements(defSiteIndex) = Nop(pc)
@@ -971,13 +939,22 @@ object TACAI {
                     } else {
                         statements(defSiteIndex) = ExprStmt(pc, expr)
                     }
-                } else {
-                    // we have an obsolete parameter usage;
-                    // recall that the def-sites are already "normalized"
+                } else if (defSite > VMLevelValuesOriginOffset /*&& < 0*/ ) {
+                    // We have an obsolete parameter usage; recall that the def-sites are
+                    // already "normalized"!
                     val TACMethodParameter(origin, useSites) = tacParams.parameter(defSite)
                     // Note that the "use sites" of the parameters are already remapped.
                     val newUseSites = useSites - pcToIndex(useSite)
                     tacParams.parameters(-defSite - 1) = new TACMethodParameter(origin, newUseSites)
+                } else {
+                    /* IMPROVE Add support tracking def->use information for exceptions (currently we only have use->def.)
+                    val useSiteIndex = pcToIndex(useSite)
+                    val defSitePC = ai.pcOfVMLevelValue(defSite)
+                    // we have an obsolete exception usage; see
+                    //      ai.MethodsWithexceptoins.nestedTryFinally()
+                    // for an example which has dead code that leads to an obsolete exception usage
+                    */
+                    ;
                 }
             }
         }

@@ -29,7 +29,6 @@
 package org.opalj
 package tac
 
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
@@ -94,7 +93,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def isValueExpression: Boolean
     def isVar: Boolean
     def asVar: V = throw new ClassCastException();
-    def asCaughtException: CaughtException[V] = throw new ClassCastException();
+
     def asInstanceOf: InstanceOf[V] = throw new ClassCastException();
     def asCompare: Compare[V] = throw new ClassCastException();
     def asParam: Param = throw new ClassCastException();
@@ -127,66 +126,6 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asNonVirtualFunctionCall: NonVirtualFunctionCall[V] = throw new ClassCastException();
     def asVirtualFunctionCall: VirtualFunctionCall[V] = throw new ClassCastException();
     def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
-
-}
-
-/**
- * A caught exception is essential to ensure that the local variable that stores the exception
- * is reified in the ai-based 3-address code.
- */
-case class CaughtException[+V <: Var[V]](
-        pc:                        PC,
-        exceptionType:             Option[ObjectType],
-        private var throwingStmts: IntArraySet
-) extends Expr[V] {
-
-    final override def asCaughtException: this.type = this
-    final override def astID: Int = CaughtException.ASTID
-    final override def cTpe: ComputationalType = ComputationalTypeReference
-    final override def isValueExpression: Boolean = false
-    final override def isVar: Boolean = false
-    final override def isSideEffectFree: Boolean = false
-
-    /**
-     * It does not take any explicit value.
-     */
-    final override def subExprCount: Int = 0
-    final override def subExpr(index: Int): Expr[V] = throw new IndexOutOfBoundsException();
-
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        throwingStmts = throwingStmts map { stmt ⇒
-            if (ai.isVMLevelValue(stmt))
-                ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(stmt)))
-            else if (stmt < 0)
-                stmt
-            else
-                pcToIndex(stmt)
-
-        }
-    }
-
-    final def exceptionLocations: Iterator[String] = {
-        throwingStmts.iterator.map { defSite ⇒
-            if (defSite < 0) {
-                if (ai.isVMLevelValue(defSite))
-                    "exception@"+ai.pcOfVMLevelValue(defSite)
-                else
-                    "param"+(-defSite - 1).toHexString
-            } else
-                "lv"+defSite.toHexString
-        }
-    }
-
-    override def toString: String = {
-        val exceptionType = this.exceptionType.map(_.toJava).getOrElse("<ANY>")
-        val exceptionLocations = this.exceptionLocations.mkString("{", ",", "}")
-        s"CaughtException(pc=$pc,$exceptionType,caused by=$exceptionLocations)"
-    }
-}
-
-object CaughtException {
-
-    final val ASTID = -1
 
 }
 
@@ -250,9 +189,10 @@ trait ValueExpr[+V <: Var[V]] extends Expr[V] {
 }
 
 /**
- * Explicit reference to a parameter. Parameter statements '''are only used by the naive
+ * Explicit initialization of a parameter. Parameter statements '''are only used by the naive
  * representation ([[TACNaive]])''' where it is necessary to perform an initial initialization
- * of the register values.
+ * of the register values. In case of [[TACAI]], usage of parameters are implicitly encoded using
+ * parameter origins (see [[DUVar]]).
  */
 case class Param(cTpe: ComputationalType, name: String) extends ValueExpr[Nothing] {
     final override def asParam: this.type = this

@@ -52,10 +52,10 @@ import org.opalj.issues.Issue
  * @author David Becker
  */
 class AnalysisWorker(
-    doc:                    ObjectProperty[xmlNode],
-    project:                Project[URL],
-    theIssues:              ObjectProperty[Iterable[Issue]],
-    initProgressManagement: Int ⇒ ProgressManagement
+        doc:                    ObjectProperty[xmlNode],
+        project:                Project[URL],
+        theIssues:              ObjectProperty[Iterable[Issue]],
+        initProgressManagement: Int ⇒ ProgressManagement
 ) extends Service[Unit](new jService[Unit]() {
 
     protected def createTask(): jTask[Unit] = new jTask[Unit] {

@@ -1,8 +1,10 @@
 # Major Changes
 
 ## Upcomming
+**General**
+ - fixed the recording of def-use information when the execution of a regular instruction (not `athrow`) *always* results in an exception (This also affected the generation of the 3-address code; in the 3-address code this resulted in local variable usage which had no definition site.)
 
-## 0.8.15
+## 0.8.15 - Released Sep. 7th 2017
 **General**
  - the call graph construction algorithms finally completely support Java 8 (e.g., default methods, static methods in interfaces, lambda expressions)
  - ***Assertions are turned-off by default when you checkout the latest stable release of OPAL***; to turn them on rename `local.sbt.template` to `local.sbt`; assertions are still turned on, when you depend on a development snapshot from Maven Central

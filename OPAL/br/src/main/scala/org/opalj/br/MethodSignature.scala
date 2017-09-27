@@ -40,6 +40,8 @@ final case class MethodSignature(
         descriptor: MethodDescriptor
 ) {
 
+    def toJava: String = descriptor.toJava(name)
+
     override def equals(other: Any): Boolean = {
         other match {
             case that: MethodSignature ⇒

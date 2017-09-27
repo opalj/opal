@@ -33,6 +33,8 @@ import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.VMLevelValuesOriginOffset
+import org.opalj.ai.pcOfVMLevelValue
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
@@ -77,7 +79,7 @@ object DUVar {
 }
 
 /**
- * Defines an extractor to get the definition site of an expression's/statement's value.
+ * Extractor to get the definition site of an expression's/statement's value.
  *
  * This extractor may fail (i.e., throw an exception), when the expr is not a [[DVar]] or
  * a [[Const]]; this decision was made to capture programming failures as early as possible
@@ -210,7 +212,9 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         val n =
             defSites.iterator.map { defSite ⇒
                 val n =
-                    if (defSite < 0) {
+                    if (defSite <= VMLevelValuesOriginOffset)
+                        "exception@"+pcOfVMLevelValue(defSite)
+                    else if (defSite < 0) {
                         "param"+(-defSite - 1).toHexString
                     } else
                         "lv"+defSite.toHexString

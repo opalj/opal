@@ -85,33 +85,31 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
         val p: SomeProject = biProject("ai.jar")
 
-        PropertyStoreKey.addEntityDerivationFunction[Map[Method, Map[PC, AllocationSite]]](p)(
+        PropertyStoreKey.addEntityDerivationFunction[Map[Method, Map[PC, AllocationSite]]](p) {
             // Callback function which is called, when the information is actually required
-            (p: SomeProject) ⇒ {
 
-                var allAs: List[Chain[AllocationSite]] = Nil
+            var allAs: List[Chain[AllocationSite]] = Nil
 
-                // Associate every new instruction in a method with an allocation site object
-                val as = p.allMethodsWithBody flatMap { m ⇒
-                    val code = m.body.get
-                    val as = code collectWithIndex {
-                        case (pc, NEW(_)) ⇒ new ObjectAllocationSite(m, pc)
-                    }
-                    if (as.nonEmpty) allAs ::= as
-                    as
+            // Associate every new instruction in a method with an allocation site object
+            val as = p.allMethodsWithBody flatMap { m ⇒
+                val code = m.body.get
+                val as = code collectWithIndex {
+                    case (pc, NEW(_)) ⇒ new ObjectAllocationSite(m, pc)
                 }
-
-                // In the context we store a map which makes the set of allocation sites
-                // easily accessible.
-                val mToPCToAs = allAs.map { asPerMethod ⇒
-                    val pcToAs = asPerMethod.map(as ⇒ as.pc → as).toMap
-                    val m = pcToAs.head._2.method
-                    m → pcToAs
-                }.toMap
-
-                (as, mToPCToAs)
+                if (as.nonEmpty) allAs ::= as
+                as
             }
-        )
+
+            // In the context we store a map which makes the set of allocation sites
+            // easily accessible.
+            val mToPCToAs = allAs.map { asPerMethod ⇒
+                val pcToAs = asPerMethod.map(as ⇒ as.pc → as).toMap
+                val m = pcToAs.head._2.method
+                m → pcToAs
+            }.toMap
+
+            (as, mToPCToAs)
+        }
 
         // WE HAVE TO USE THE KEY TO TRIGGER THE COMPUTATION OF THE ENTITY DERIVATION FUNCTION(S)
         val ps = p.get(PropertyStoreKey)

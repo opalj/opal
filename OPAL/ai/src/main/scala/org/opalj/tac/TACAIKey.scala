@@ -27,22 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package util
+package tac
 
-import java.io.PrintStream
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKey
 
 /**
- * Overrides the default `print` and `println` methods provided by Scala such that
- * always the UTF-8 charset is used and not the platform's (the JDK's) default.
- *
  * @author Michael Eichberg
  */
-trait UTF8Println {
-
-    val out: PrintStream = new PrintStream(System.out, true, "UTF-8")
-
-    def println(s: String): Unit = { out.println(s) }
-
-    def print(s: String): Unit = { out.print(s) }
-
-}
+trait TACAIKey
+    extends ProjectInformationKey[Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]], Nothing]

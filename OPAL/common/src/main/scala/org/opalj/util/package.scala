@@ -75,7 +75,7 @@ package object util {
     final def ns2ms(nanoseconds: Long): Double = nanoseconds.toDouble / 1000.0d / 1000.0d
 
     /**
-     *  Tries it best to run the garbage collector and to wait until all objects are also
+     *  Tries its best to run the garbage collector and to wait until all objects are also
      *  finalized.
      */
     final def gc(

@@ -33,7 +33,6 @@ package l2
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
 /**
  * Performs a simple invocation of the immediately called methods.
@@ -59,3 +58,9 @@ class DefaultPerformInvocationsDomainWithCFG[Source](
         project: Project[Source],
         method:  Method
 ) extends DefaultPerformInvocationsDomain[Source](project, method) with RecordCFG
+
+class DefaultPerformInvocationsDomainWithCFGAndDefUse[Source](
+        project: Project[Source],
+        method:  Method
+) extends DefaultPerformInvocationsDomainWithCFG[Source](project, method)
+    with RefineDefUseUsingOrigins

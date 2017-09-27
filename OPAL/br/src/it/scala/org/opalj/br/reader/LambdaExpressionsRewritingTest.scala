@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.log.DefaultLogContext
+import org.opalj.log.StandardLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKESTATIC
@@ -81,7 +81,7 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
             */
         }
         if (exceptions.nonEmpty) throw new UnknownError(exceptions.mkString("\n"))
-        info(s"found ${factoryCalls.size} lambda proxy factor ymethod calls")
+        info(s"found ${factoryCalls.size} lambda proxy factory method calls")
         factoryCalls.asScala
 
     }
@@ -99,7 +99,7 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
             withValue(SynthesizedClassFiles., ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
             */
 
-        val logContext = new DefaultLogContext
+        val logContext = new StandardLogContext
         OPALLogger.register(logContext)
         val project = Project(libraryPath, logContext, config)
         val proxyFactoryCalls = this.proxyFactoryCalls(project)

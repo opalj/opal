@@ -124,9 +124,6 @@ object ToTxt {
             case GetField(_, declaringClass, name, _, receiver) ⇒
                 s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
 
-            case e @ CaughtException(_, exceptionType, _) ⇒
-                val t = { exceptionType.map(_.toJava).getOrElse("<ANY>") }
-                s"caught $t /* <= ${e.exceptionLocations.mkString("{", ",", "}")}*/"
         }
     }
 
@@ -210,6 +207,11 @@ object ToTxt {
                 val Checkcast(_, value, tpe) = stmt
                 s"$pc (${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
 
+            case CaughtException.ASTID ⇒
+                val e = stmt.asCaughtException
+                val t = { e.exceptionType.map(_.toJava).getOrElse("<ANY>") }
+                s"$pc caught $t /* <= ${e.exceptionLocations.mkString("{", ",", "}")}*/"
+
             case ExprStmt.ASTID ⇒
                 val ExprStmt(_, expr) = stmt
                 s"$pc /*expression value is ignored:*/${toTxtExpr(expr)}"
@@ -263,8 +265,10 @@ object ToTxt {
                     if (param ne null) {
                         val paramTxt = indention+"   param"+index.toHexString+": "+param.toString()
                         javaLikeCode += (param match {
-                            case v: DVar[_] ⇒ v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
-                            case _          ⇒ paramTxt
+                            case v: DVar[_] ⇒
+                                v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
+                            case _ ⇒
+                                paramTxt
                         })
                     }
                 }
@@ -293,7 +297,7 @@ object ToTxt {
                         predecessors.map {
                             case bb: BasicBlock ⇒ bb.endPC.toString
                             case cn: CatchNode  ⇒ catchTypeToString(cn.catchType)
-                        }.mkString(
+                        }.toList.sorted.mkString(
                             indention+"// "+(if (index == 0) "<start>, " else ""),
                             ", ",
                             " →"

@@ -114,7 +114,7 @@ package object graphs {
             s"\tdir=$dir;\n"+
             s"\tranksep=$ranksep;\n"+
             s"\trankdir=$rankdir;\n"+
-            s"\tnode [fontname=$fontname];\n"
+            s"\tnode [fontname=$fontname,shape=rectangle];\n"
 
         while (nodesToProcess.nonEmpty) {
             val nextNode = nodesToProcess.head
@@ -341,7 +341,10 @@ package object graphs {
 
                             case someCSCCId ⇒
                                 /*nothing to do*/
-                                assert(nDFSNum == 0 || nCSCCId == cSCCId(path.last))
+                                assert(
+                                    nDFSNum == 0 || nCSCCId == cSCCId(path.last),
+                                    s"nDFSNum=$nDFSNum; nCSCCId=$nCSCCId; cSCCId(path.last)=${cSCCId(path.last)}"
+                                )
 
                         }
                     } else {
