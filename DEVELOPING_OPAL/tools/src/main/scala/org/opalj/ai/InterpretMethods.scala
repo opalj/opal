@@ -106,11 +106,11 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
     ): BasicReport = {
         implicit val logContext = project.logContext
 
-        val verbose = parameters.size > 0 &&
-            (parameters(0) == "-verbose=true" ||
+        val verbose = parameters.nonEmpty &&
+            (parameters.head == "-verbose=true" ||
                 (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
         val (message, detailedErrorInformationFile) =
-            if (parameters.size > 0 && parameters(0).startsWith("-domain")) {
+            if (parameters.nonEmpty && parameters.head.startsWith("-domain")) {
                 InterpretMethodsAnalysis.interpret(
                     project,
                     Class.forName(parameters.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
@@ -206,8 +206,8 @@ object InterpretMethodsAnalysis {
                 if (beVerbose && naiveEvaluatedCount > evaluatedCount) {
                     val codeLength = body.instructions.length
                     val message = method.toJava(
-                        s"Evaluation steps (code length:$codeLength): "+
-                            s"${naiveEvaluatedCount} (w/o dead variables analysis) vs. $evaluatedCount"
+                        s"evaluation steps (code size:$codeLength): "+
+                            s"$naiveEvaluatedCount (w/o dead variables analysis) vs. $evaluatedCount"
                     )
                     println(message)
                 }
@@ -228,7 +228,7 @@ object InterpretMethodsAnalysis {
         val collectedExceptions = time('OVERALL) {
             val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { m ⇒
-                analyzeMethod(m.source.toString, m.method).map(results.add(_))
+                analyzeMethod(m.source.toString, m.method).map(results.add)
             }
             import scala.collection.JavaConverters._
             results.asScala
