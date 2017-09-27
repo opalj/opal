@@ -74,7 +74,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
         val directSubtypes = classHierarchy.directSubtypesOf(cf.thisType)
 
-        if (cf.isFinal || directSubtypes.isEmpty /*... the type is not extensible*/) {
+        if (cf.isFinal || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
             def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
                 p match {
@@ -278,7 +278,7 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
         // An optimization, if the analysis also includes the JDK.
         project.classFile(ObjectType.Object) foreach { ps.set(_, MutableType) }
 
-        ps.scheduleForEntities (project.allClassFiles.filter(_.thisType ne ObjectType.Object)){
+        ps.scheduleForEntities(project.allClassFiles.filter(_.thisType ne ObjectType.Object)) {
             analysis.step1(typeExtensibility)
         }
 

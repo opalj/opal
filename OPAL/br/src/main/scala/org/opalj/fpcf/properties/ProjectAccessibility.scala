@@ -39,7 +39,7 @@ import org.opalj.br.analyses.SomeProject
  * This is a common trait for all ProjectAccessibility properties which can be emitted to the
  * PropertyStore. It describes the scope where the given entity can be accessed.
  */
- // IMPROVE Transform ProjectAccessibility into standard project information.
+// IMPROVE Transform ProjectAccessibility into standard project information.
 sealed trait ProjectAccessibility extends Property {
 
     final type Self = ProjectAccessibility
@@ -54,9 +54,9 @@ object ProjectAccessibility {
     final val fallback: (PropertyStore, Entity) ⇒ ProjectAccessibility = (ps, e) ⇒ {
         // IMPROVE Query the project's Method/Type extensibility/the defining module to compute the scope in which the entity is accessible.
         e match {
-            case m: Method ⇒            if (m.isPrivate) ClassLocal                else Global
-            case cf: ClassFile ⇒             Global
-            case f: Field ⇒                if (f.isPrivate) ClassLocal                else Global
+            case m: Method     ⇒ if (m.isPrivate) ClassLocal else Global
+            case cf: ClassFile ⇒ Global
+            case f: Field      ⇒ if (f.isPrivate) ClassLocal else Global
         }
     }
 
