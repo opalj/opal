@@ -50,6 +50,8 @@ import org.opalj.tac.TACode
  * The control-flow is intended to be: Client calls determineEscape. This method extracts the
  * information for the given entity and calls doDetermineEscape.
  *
+ * @see [[AbstractEntityEscapeAnalysis]]
+ *
  * @author Florian Kuebler
  */
 trait AbstractEscapeAnalysis extends FPCFAnalysis {

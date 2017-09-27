@@ -76,7 +76,7 @@ public class EscapeTests {
 
     public static void parameterFieldGlobalEscape(ClassWithFields param) {
         param.f = new @Escapes(ViaHeapObject) @Escapes(value = MaybeMethod,
-                algorithms = "SimpleEscapeAnalysis") Object();
+                algorithms = { "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis"}) Object();
         ClassWithFields.global = param;
     }
 
@@ -97,7 +97,11 @@ public class EscapeTests {
         while (true) {
             if (System.currentTimeMillis() == 123456789)
                 break;
-            y.g = new @Escapes(ViaStaticField) ClassWithFields();
+            y.g = new
+                    @Escapes(ViaStaticField)
+                    @Escapes(value = MaybeNo, algorithms = { "SimpleEscapeAnalysis",
+                            "InterproceduralEscapeAnalysis" })
+                            ClassWithFields();
             y = y.g;
         }
         ClassWithFields.global = x.g;
@@ -110,19 +114,32 @@ public class EscapeTests {
                         algorithms = { "SimpleEscapeAnalysis" })
                         ClassWithFields();
         formalParamNoEscape(x);
-        x.f = new @Escapes(No) Object(); //a2
+        x.f = new
+                @Escapes(No)
+                @Escapes(value = MaybeNo,
+                        algorithms = { "SimpleEscapeAnalysis",
+                                "InterproceduralEscapeAnalysis" })
+                        Object(); //a2
     }
 
     public static void instanceFieldAlias() {
         ClassWithFields x = new @Escapes(No) ClassWithFields();
         ClassWithFields y = x;
-        y.f = new @Escapes(ViaStaticField) Object();
+        y.f = new
+                @Escapes(ViaStaticField)
+                @Escapes(value = MaybeNo,
+                        algorithms = { "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" })
+                        Object();
         ClassWithFields.global = x.f;
     }
 
     public static void instanceFieldNoEscape() {
         ClassWithFields c = new ClassWithFields();
-        c.f = new @Escapes(No) Object();
+        c.f = new
+                @Escapes(No)
+                @Escapes(value = MaybeNo,
+                        algorithms = { "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" })
+                        Object();
     }
 
     public static void arrayEscape(Object[] param) {

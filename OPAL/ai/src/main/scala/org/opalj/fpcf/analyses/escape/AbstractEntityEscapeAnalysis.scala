@@ -74,8 +74,9 @@ import scala.annotation.switch
 
 /**
  * An abstract escape analysis for a single entity.
- * These entity can be either a concrete [[org.opalj.br.AllocationSite]]s or [[FormalParameter]]s.
- * The other information s.a. the defSite, uses ect. correspond to this entity.
+ * These entity can be either a concrete [[org.opalj.br.AllocationSite]]s or
+ * [[org.opalj.br.analyses.FormalParameter]]s.
+ * All other information such as the defSite, uses or the code correspond to this entity.
  *
  * It is assumed that the tac code has a flat hierarchy, i.e. it is real three address code.
  *
