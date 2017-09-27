@@ -1009,11 +1009,11 @@ private object DependencyExtractor {
         "for the code's invokedynamic instructions only dependencies to the runtime are resolved"
     }
 
-    @volatile private[this]  var incompleteHandlingOfInvokedynamicWasLogged = false
+    @volatile private[this] var incompleteHandlingOfInvokedynamicWasLogged = false
 
     def warnAboutIncompleteHandlingOfInvokedynamic(): Unit = {
-        if(!incompleteHandlingOfInvokedynamicWasLogged) this.synchronized{
-            if(!incompleteHandlingOfInvokedynamicWasLogged) {
+        if (!incompleteHandlingOfInvokedynamicWasLogged) this.synchronized {
+            if (!incompleteHandlingOfInvokedynamicWasLogged) {
                 incompleteHandlingOfInvokedynamicWasLogged = true
                 implicit val logContext = GlobalLogContext
                 OPALLogger.log(BasicLogMessage(message = incompleteHandlingOfInvokedynamicMessage))

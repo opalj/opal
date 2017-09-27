@@ -32,7 +32,7 @@ package analyses
 
 import scala.collection.JavaConverters._
 
-import org.opalj.log.{ConsoleOPALLogger, DefaultLogContext, Error, GlobalLogContext, OPALLogger}
+import org.opalj.log.{ConsoleOPALLogger, StandardLogContext, Error, GlobalLogContext, OPALLogger}
 
 /**
  * Enables the querying of a project.
@@ -49,7 +49,7 @@ class JavaProject( final val project: Project[java.net.URL]) {
      */
     def this(classPath: java.util.List[java.io.File]) {
         this({
-            implicit val logCtx = new DefaultLogContext()
+            implicit val logCtx = new StandardLogContext()
             OPALLogger.register(logCtx, JavaProject.Logger)
             val cp = classPath.asScala
             Project(

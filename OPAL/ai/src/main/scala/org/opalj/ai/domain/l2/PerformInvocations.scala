@@ -194,7 +194,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
         if (method.isAbstract) {
             OPALLogger.logOnce(Error(
-                "project configuration","resolved method is abstract: "+method.classFile
+                "project configuration", "resolved method is abstract: "+method.classFile
             ))
             fallback()
         } else if (!method.isNative) {

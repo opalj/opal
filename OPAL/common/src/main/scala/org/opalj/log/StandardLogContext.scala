@@ -29,14 +29,12 @@
 package org.opalj
 package log
 
-case class DefaultLogContext private ( final val startTime: Long) extends LogContext {
+case class StandardLogContext private ( final val startTime: Long) extends LogContext {
 
-    def this() {
-        this(startTime = System.currentTimeMillis())
-    }
+    def this() { this(startTime = System.currentTimeMillis()) }
 
-    override def toString: String = "log context:"+startTime.toString().drop(6)
+    override def toString: String = s"LogContext(${startTime.toString().drop(6)})"
 
-    override def newInstance: LogContext = new DefaultLogContext(this.startTime)
+    override def newInstance: LogContext = new StandardLogContext(this.startTime)
 
 }

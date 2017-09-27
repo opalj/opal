@@ -197,7 +197,7 @@ package object ai {
      *
      * @see [[ValueOriginForVMLevelValue]] for further information.
      */
-    final def pcOfVMLevelValue(origin: ValueOrigin): PC = {//TODO Rename pcOfMethodExternalValue
+    final def pcOfVMLevelValue(origin: ValueOrigin): PC = { //TODO Rename pcOfMethodExternalValue
         assert(origin <= VMLevelValuesOriginOffset)
         -origin + VMLevelValuesOriginOffset
     }

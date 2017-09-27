@@ -62,7 +62,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
-import org.opalj.log.DefaultLogContext
+import org.opalj.log.StandardLogContext
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
 import org.opalj.collection.immutable.ConstArray
@@ -415,7 +415,7 @@ class Project[Source] private (
                                 declaredMethodPackageName,
                                 declaredMethod
                             ) match {
-                                case _ : NoResult ⇒ true
+                                case _: NoResult ⇒ true
                                 case Success(overridingMethod) ⇒
                                     val nextOverridingMethods = methods.get(overridingMethod)
                                     if (nextOverridingMethods.isEmpty) {
@@ -1462,7 +1462,7 @@ object Project {
         config:        Config     = GlobalConfig,
         projectLogger: OPALLogger = OPALLogger.globalLogger()
     ): Project[Source] = {
-        implicit val logContext = new DefaultLogContext()
+        implicit val logContext = new StandardLogContext()
         OPALLogger.register(logContext, projectLogger)
         this(
             projectClassFilesWithSources,

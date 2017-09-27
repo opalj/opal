@@ -35,13 +35,12 @@ import scala.collection.AbstractIterator
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.log.StandardLogMessage
-import org.opalj.log.Warn
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_ANNOTATION
+import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_ENUM
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_INTERFACE
@@ -473,9 +472,11 @@ final class ClassFile private (
                         //          new Listener(){                  // X$Listener$1
                         //              void event(){
                         //                  new Listener(){...}}}}}} // X$Listener$2
-                        nestedClassesOfOuterClass = directNestedClasses(nestedClassesOfOuterClass).toSeq
+                        nestedClassesOfOuterClass =
+                            directNestedClasses(nestedClassesOfOuterClass).toSeq
                     }
-                    val filteredNestedClasses = nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains(_))
+                    val filteredNestedClasses =
+                        nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains(_))
                     return filteredNestedClasses;
                 case None ⇒
                     val disclaimer = "; the inner classes information may be incomplete"
@@ -755,10 +756,10 @@ final class ClassFile private (
     }
 
     /**
-    * Returns the method which directly overrides a method with the given properties. The result
-   * is `Success(<Method>)`` if we can find a method; `Empty` if no method can be found and Failure
-   * if a method is found which supposedly overrides the specified method, but which is less
-   * visible.
+     * Returns the method which directly overrides a method with the given properties. The result
+     * is `Success(<Method>)`` if we can find a method; `Empty` if no method can be found and
+     * `Failure` if a method is found which supposedly overrides the specified method,
+     * but which is less visible.
      *
      * @note    This method is only defined for proper virtual methods. I.e., asking for
      *          overridings of a private methods is not supported.
@@ -769,24 +770,24 @@ final class ClassFile private (
         name:        String,
         descriptor:  MethodDescriptor
     )(
-        implicit logContext: LogContext
-    ): Rsesult[Method] = {
+        implicit
+        logContext: LogContext
+    ): Result[Method] = {
         assert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
 
-               findMethod(name, descriptor).filter(m ⇒ !m.isStatic) match {
+        findMethod(name, descriptor).filter(m ⇒ !m.isStatic) match {
 
-                   case Some(candidateMethod) ⇒
+            case Some(candidateMethod) ⇒
+                import VisibilityModifier.isAtLeastAsVisibleAs
+                if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName) &&
+                    isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility))
+                    Success(candidateMethod)
+                else
+                    Failure
 
-                if (
-                    Method.canDirectlyOverride (thisType.packageName, visibility, packageName) &&
-                    VisibilityModifier.isAtLeastAsVisibleAs(candidateMethod.visibilityModifier,visibility)
-             )
-               Success (candidateMethod)
-               else
-               Failure
-
-                   case None ⇒ Empty
-               }
+            case None ⇒
+                Empty
+        }
 
     }
 

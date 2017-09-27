@@ -39,7 +39,7 @@ import scala.annotation.elidable.ASSERTION
  * To use OPAL's logging facility use the companion object ([[OPALLogger$]]).
  *
  * @note   The OPALLogger framework is not intended to be used by developers to help
- *         debug analysis, but is intended to be used to inform (end)-users about the
+ *         debug analysis; it is intended to be used to inform (end)-users about the
  *         analysis progress.
  *
  * @author Michael Eichberg
@@ -57,9 +57,11 @@ trait OPALLogger {
      * it only once.
      *
      * This method should not be used if the message may only be generated at most
-     * once.
+     * once. The respective message will be cached in the log context.
      */
-    def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit
+    final def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
+        if (ctx.incrementAndGetCount(message) == 1) log(message)
+    }
 
 }
 
@@ -157,10 +159,6 @@ object OPALLogger extends OPALLogger {
         logger(ctx).log(message)
     }
 
-    def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        logger(ctx).logOnce(message)
-    }
-
     /**
      * Debug message are only included in the code if assertions are turned on. If
      * debug message are logged, then they are logged as Info-level messages.
@@ -180,7 +178,10 @@ object OPALLogger extends OPALLogger {
         p:        ⇒ Boolean,
         category: String,
         message:  ⇒ String
-    )(implicit ctx: LogContext): Unit = {
+    )(
+        implicit
+        ctx: LogContext
+    ): Unit = {
         if (p) {
             log(Info(category, message))
         }
@@ -247,7 +248,10 @@ object OPALLogger extends OPALLogger {
         category: String,
         message:  String,
         t:        Throwable
-    )(implicit ctx: LogContext): Unit = {
+    )(
+        implicit
+        ctx: LogContext
+    ): Unit = {
         log(Error(category, message, t))
     }
 }

@@ -29,11 +29,13 @@
 package org.opalj
 package log
 
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentHashMap
+
 /**
  * A log context associates log messages with a specific context and logger.
- * Using a log context
- * facilitates the suppression of recurring message in a specific context and also
- * makes it possible to direct messages to different targets.
+ * Using a log context facilitates the suppression of recurring message in a specific context
+ * and also makes it possible to direct messages to different targets.
  * Before using a `LogContext` it has to be registered with the [[OPALLogger$]].
  *
  * OPAL uses two primary log contexts:
@@ -64,16 +66,31 @@ trait LogContext {
      */
     final def logContextId: Int = id
 
-    def newInstance(): LogContext
+    def newInstance: LogContext
 
     /**
      * Creates a new log context that is the successor of this context and which will
      * automatically be associated with the same logger as this `LogContext`.
      */
     final def successor: LogContext = {
-        val newLogContext = newInstance();
+        val newLogContext = newInstance;
         val logger = OPALLogger.logger(this)
         OPALLogger.register(newLogContext, logger)
         newLogContext
     }
+
+    private[this] final val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
+
+    /**
+     * Increments the counter for the given message and returns the new value.
+     */
+    final def incrementAndGetCount(message: LogMessage): Int = {
+        val counter = new AtomicInteger(1)
+        val existingCounter = messages.putIfAbsent(message, counter)
+        if (existingCounter != null)
+            existingCounter.incrementAndGet()
+        else
+            1
+    }
+
 }
