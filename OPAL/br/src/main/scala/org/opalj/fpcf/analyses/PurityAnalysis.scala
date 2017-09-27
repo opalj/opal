@@ -233,7 +233,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
     }
 
     /**
-     * Determines the purity of the given method.
+     * Determines the purity of the given method. The given method must have a body!
      */
     def determinePurity(method: Method): PropertyComputationResult = {
         if (method.isSynchronized)
