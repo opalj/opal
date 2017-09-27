@@ -71,12 +71,12 @@ package object ai {
 
     {
         implicit val logContext = GlobalLogContext
+        import OPALLogger.info
         try {
-            scala.Predef.assert(false) // <= tests whether assertions are on or off...
-            OPALLogger.info(FrameworkName, "Production Build")
+            assert(false) // <= tests whether assertions are on or off...
+            info(FrameworkName, "Production Build")
         } catch {
-            case _: AssertionError ⇒
-                OPALLogger.info(FrameworkName, "Development Build (Assertions are enabled)")
+            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
         }
     }
 
