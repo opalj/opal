@@ -34,7 +34,7 @@ import scala.collection.mutable
 import scala.collection.BitSet
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.Code
 import org.opalj.br.LiveVariables
 
@@ -80,7 +80,8 @@ sealed abstract class AIResult {
     val worklist: List[PC]
 
     /**
-     * The list of evaluated instructions ordered by the evaluation time.
+     * The list of evaluated instructions ordered by the evaluation time; subroutines
+     * are identified using the SUBROUTINE marker ids.
      */
     val evaluated: List[PC]
 
@@ -89,7 +90,7 @@ sealed abstract class AIResult {
      * at least once.
      */
     lazy val evaluatedInstructions: BitSet = {
-        val evaluatedInstructions = new mutable.BitSet(code.instructions.size)
+        val evaluatedInstructions = new mutable.BitSet(code.instructions.length)
         evaluated.foreach(pc ⇒ if (pc >= 0) evaluatedInstructions += pc)
         evaluatedInstructions
     }
@@ -97,8 +98,8 @@ sealed abstract class AIResult {
     /**
      * Returns all instructions that belong to a subroutine.
      */
-    lazy val subroutineInstructions: IntSet = {
-        var instructions = IntSet.empty
+    lazy val subroutineInstructions: IntArraySet = {
+        var instructions = IntArraySet.empty
         var subroutineLevel = 0
         // It is possible to have a method with just JSRs and no RETs...
         // Hence, we have to iterate from the beginning.
@@ -318,7 +319,7 @@ object AIResultBuilder {
             def restartInterpretation(ai: AI[_ >: theDomain.type]): AIResult = {
 
                 // We have to extract the information about the subroutines... if we have any...
-                var subroutinePCs = IntSet.empty
+                var subroutinePCs = IntArraySet.empty
                 var subroutineCount = 0
                 var evaluated = theEvaluated
                 while (evaluated.nonEmpty) {
@@ -337,7 +338,7 @@ object AIResultBuilder {
                 var subroutinesLocalsArray: domain.LocalsArray = null
 
                 if (subroutinePCs.nonEmpty) {
-                    val codeSize = code.instructions.size
+                    val codeSize = code.instructions.length
                     subroutinesOperandsArray = new Array(codeSize)
                     subroutinesLocalsArray = new Array(codeSize)
                     subroutinePCs.foreach { pc ⇒

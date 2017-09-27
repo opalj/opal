@@ -53,8 +53,9 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+    }
 
     /*override*/ def invokeinterface(
         pc:               PC,
@@ -62,26 +63,31 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+    }
 
     /*override*/ def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull = No)
+    }
 
     /*override*/ def invokestatic(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInvoke(pc, methodDescriptor)
+    }
 
     /*override*/ def invokedynamic(
         pc:               PC,
@@ -89,8 +95,8 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInvoke(pc, methodDescriptor)
+    }
 
 }
-

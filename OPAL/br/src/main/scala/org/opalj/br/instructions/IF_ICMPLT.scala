@@ -47,7 +47,14 @@ trait IF_ICMPLTLike extends IFICMPInstructionLike {
 
 }
 
-case class IF_ICMPLT(branchoffset: Int) extends IFICMPInstruction with IF_ICMPLTLike
+case class IF_ICMPLT(branchoffset: Int) extends IFICMPInstruction[IF_ICMPLT] with IF_ICMPLTLike {
+
+    def copy(branchoffset: Int): IF_ICMPLT = new IF_ICMPLT(branchoffset)
+
+    def negate(newBranchoffset: Int = branchoffset): IF_ICMPGE = {
+        IF_ICMPGE(newBranchoffset)
+    }
+}
 
 /**
  * Defines constants and factory methods.

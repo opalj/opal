@@ -116,13 +116,13 @@ trait CalledMethodsStore { rootStore ⇒
                 val newOperandsList = adaptedOperands :: previousOperandsList
 
                 if (((previousOperandsList.size + 1) % frequentEvaluationWarningLevel) == 0)
-                    frequentEvalution(method, newOperandsList)
+                    frequentEvaluation(method, newOperandsList)
 
                 Some(updated(method, newOperandsList))
         }
     }
 
-    def frequentEvalution(method: Method, operandsSet: List[Array[domain.DomainValue]]): Unit = {
+    def frequentEvaluation(method: Method, operandsSet: List[Array[domain.DomainValue]]): Unit = {
         OPALLogger.info(
             "analysis configuration",
             method.toJava(

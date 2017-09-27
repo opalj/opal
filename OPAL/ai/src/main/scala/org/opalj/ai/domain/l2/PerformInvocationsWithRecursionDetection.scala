@@ -78,7 +78,9 @@ trait ChildPerformInvocationsWithRecursionDetection extends PerformInvocationsWi
 
     val callerDomain: PerformInvocationsWithRecursionDetection
 
-    final override val coordinatingDomain: callerDomain.coordinatingDomain.type = callerDomain.coordinatingDomain
+    final override val coordinatingDomain: callerDomain.coordinatingDomain.type = {
+        callerDomain.coordinatingDomain
+    }
 
     def frequentEvaluationWarningLevel: Int = callerDomain.frequentEvaluationWarningLevel
 

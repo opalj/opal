@@ -46,7 +46,7 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
+trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
 
     def cache: BytecodeInstructionsCache
 
@@ -226,9 +226,7 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 104 ⇒ IMUL
                 case 116 ⇒ INEG
                 case 193 ⇒
-                    cache.INSTANCEOF(
-                        cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType
-                    )
+                    cache.INSTANCEOF(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
                 case 186 ⇒ // INVOKEDYNAMIC
                     val cpEntry = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value

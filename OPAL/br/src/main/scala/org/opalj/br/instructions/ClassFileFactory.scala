@@ -547,6 +547,8 @@ object ClassFileFactory {
         invocationInstruction:    Opcode
     ): Code = {
 
+        assert(!receiverIsInterface || invocationInstruction != INVOKEVIRTUAL.opcode)
+
         val isVirtualMethodReference = this.isVirtualMethodReference(
             invocationInstruction,
             receiverType,

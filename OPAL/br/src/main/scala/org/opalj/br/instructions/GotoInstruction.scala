@@ -59,4 +59,10 @@ object GotoInstruction {
     }
 }
 
-trait GotoInstruction extends UnconditionalBranchInstruction with GotoInstructionLike
+trait GotoInstruction extends UnconditionalBranchInstruction with GotoInstructionLike {
+
+    final override def isGotoInstruction: Boolean = true
+
+    final override def asGotoInstruction: this.type = this
+
+}

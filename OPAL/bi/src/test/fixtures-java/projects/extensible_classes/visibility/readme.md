@@ -1,7 +1,8 @@
 ## Direct Class Extensibility
 
-This package contains classes/interfaces/enums/annotation that are either directly extensible or final.
-Transitive extensibility can't be tested yet.
+This package contains classes/interfaces/enums/annotations that are either directly extensible or final.
+
+___Transitive extensibility can't be tested yet.___
 
 The following table gives an overview over the types in that package and their extensibility w.r.t.
 open and closed packages.
@@ -55,7 +56,7 @@ open and closed packages.
         <td>✘</td>
     </tr>
     <tr>
-        <td>PublicClassWithPrivConstrutors</td>
+        <td>PublicClassWithPrivateConstrutor</td>
         <td>public</td>
         <td>✔ (effectively)</td>
         <td>✘</td>

@@ -559,9 +559,9 @@ class LoadProjectDialog(
 }
 
 case class LoadedFiles(
-    projectName:    String         = "",
-    projectFiles:   Seq[File]      = Seq.empty,
-    projectSources: Seq[File]      = Seq.empty,
-    libraries:      Seq[File]      = Seq.empty,
-    config:         Option[Config] = None
+        projectName:    String         = "",
+        projectFiles:   Seq[File]      = Seq.empty,
+        projectSources: Seq[File]      = Seq.empty,
+        libraries:      Seq[File]      = Seq.empty,
+        config:         Option[Config] = None
 )

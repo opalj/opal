@@ -74,8 +74,8 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
      * All values (`Class<...> c`) that represent the same type (e.g. `java.lang.String`)
      * are actually represented by the same class (object) value at runtime.
      */
-    protected class ClassValue(origin: ValueOrigin, val value: Type, t: Timestamp)
-        extends SObjectValue(origin, No, true, ObjectType.Class, t) {
+    protected class ClassValue(origin: ValueOrigin, val value: Type, refId: RefId)
+        extends SObjectValue(origin, No, true, ObjectType.Class, refId) {
         this: DomainClassValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(
@@ -90,7 +90,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
                         // String.class "is reference equal to" Class.forName("java.lang.String")
                         NoUpdate
                     else
-                        StructuralUpdate(ObjectValue(origin, No, true, ObjectType.Class, nextT()))
+                        StructuralUpdate(ObjectValue(origin, No, true, ObjectType.Class, nextRefId()))
                 case _ ⇒
                     val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
                     if (result.isStructuralUpdate) {
@@ -107,8 +107,9 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         override def adapt(
             target:       TargetDomain,
             targetOrigin: ValueOrigin
-        ): target.DomainValue =
+        ): target.DomainValue = {
             target.ClassValue(targetOrigin, this.value)
+        }
 
         override def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
@@ -131,7 +132,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
-        override def toString(): String = s"Class<${value.toJava}>[↦$origin;t=$t]"
+        override def toString(): String = s"Class<${value.toJava}>[↦$origin;refId=$refId]"
     }
 
     // Needs to be implemented since the default implementation does not make sense here
@@ -176,6 +177,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     abstract override def invokestatic(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -199,12 +201,12 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
                 case _ ⇒
                     // call default handler (the first argument is not a string)
-                    super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+                    super.invokestatic(pc, declaringClass, isInterface, name, methodDescriptor, operands)
 
             }
         } else {
             // call default handler
-            super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+            super.invokestatic(pc, declaringClass, isInterface, name, methodDescriptor, operands)
         }
     }
 

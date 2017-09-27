@@ -49,10 +49,10 @@ trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassVal
     //
 
     override def ClassValue(origin: ValueOrigin, value: Type): DomainClassValue = {
-        new ClassValue(origin, value, nextT())
+        new ClassValue(origin, value, nextRefId())
     }
 
-    def ClassValue(origin: ValueOrigin, value: Type, t: Timestamp): DomainClassValue = {
-        new ClassValue(origin, value, t)
+    def ClassValue(origin: ValueOrigin, value: Type, refId: RefId): DomainClassValue = {
+        new ClassValue(origin, value, refId)
     }
 }

@@ -57,19 +57,17 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         pc:               PC,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         refIsNull(pc, operands.last) match {
             case Yes ⇒
                 justThrows(VMNullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnMethodCall ⇒
                 val returnType = methodDescriptor.returnType
+                val exceptionValue = Set(VMNullPointerException(pc))
                 if (returnType.isVoidType)
-                    ComputationWithSideEffectOrException(Set(VMNullPointerException(pc)))
+                    ComputationWithSideEffectOrException(exceptionValue)
                 else
-                    ComputedValueOrException(
-                        TypedValue(pc, returnType),
-                        Set(NullPointerException(pc))
-                    )
+                    ComputedValueOrException(TypedValue(pc, returnType), exceptionValue)
             case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
                 val returnType = methodDescriptor.returnType
                 if (returnType.isVoidType)
@@ -77,6 +75,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
                 else
                     ComputedValue(TypedValue(pc, returnType))
         }
+    }
 
     /*override*/ def invokevirtual(
         pc:               PC,
@@ -84,8 +83,9 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+    }
 
     /*override*/ def invokeinterface(
         pc:               PC,
@@ -93,21 +93,25 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+    }
 
     /*override*/ def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+    }
 
     /*override*/ def invokestatic(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -133,4 +137,3 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
             ComputedValue(TypedValue(pc, returnType))
     }
 }
-

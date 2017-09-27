@@ -47,7 +47,7 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.graphs.ControlDependencies
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.TestSupport
+import org.opalj.br.TestSupport.createJREProject
 
 /**
  * Tests if we are able to compute the CFG as well as the dominator/post-dominator tree for
@@ -168,7 +168,7 @@ class RecordCFGTest extends FunSpec with Matchers {
 
                 val cdg =
                     terminateAfter[ControlDependencies](1000l, { method.toJava }) {
-                        dTime('ControlDependencies) { domain.controlDependencies }
+                        dTime('ControlDependencies) { domain.pdtBasedControlDependencies }
                     }
 
                 evaluatedInstructions foreach { pc ⇒
@@ -181,7 +181,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                                 s"code size=${method.body.get.instructions.length}."
                         )
                     }
-                    if (pc != postDT.startNode && // this should be always if we have an artificial start node
+                    if (pc != postDT.startNode &&
                         postDT.dom(pc) != postDT.startNode &&
                         !evaluatedInstructions.contains(postDT.dom(pc))) {
                         fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")
@@ -227,71 +227,43 @@ class RecordCFGTest extends FunSpec with Matchers {
         }
     }
 
-    describe("calculating the (post)dominator trees and the control dependence information") {
-
-        def printPerformanceData(): Unit = {
-            import DominatorsPerformanceEvaluation.getTime
-
-            info("performing AI took (CPU time) "+getTime('AI).toSeconds)
-            info("computing dominator information took (CPU time)"+getTime('Dominators).toSeconds)
-
-            val postDominatorsTime = getTime('PostDominators).toSeconds
-            info("computing post-dominator information took (CPU time) "+postDominatorsTime)
-
-            val cdgTime = getTime('ControlDependencies).toSeconds
-            info("computing control dependency information took (CPU time) "+cdgTime)
-            val cdgQueryTime = getTime('QueryingControlDependencies).toSeconds
-            info("querying control dependency information took (CPU time) "+cdgQueryTime)
-
-            val bbAICFGTime = getTime('BasicBlocksBasedAICFG).toSeconds
-            info("constructing the AI based CFGs took (CPU time) "+bbAICFGTime)
-
-            val bbBRCFGTime = getTime('BasicBlocksBasedBRCFG).toSeconds
-            info("constructing the BR based CFGs took (CPU time) "+bbBRCFGTime)
-
-        }
+    describe("computing (post)dominator trees and control dependence information") {
 
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
-        import reader.AllClassFiles
 
-        it("should be possible to calculate the information for all methods of the JDK") {
-            DominatorsPerformanceEvaluation.resetAll()
+        def evaluateProject(projectName: String, projectFactory: () ⇒ Project[URL]): Unit = {
+            it(s"should be possible for all methods of $projectName") {
+                DominatorsPerformanceEvaluation.resetAll()
+                val project = projectFactory()
+                time {
+                    analyzeProject(projectName, project)
+                } { t ⇒ info("the analysis took (real time): "+t.toSeconds) }
 
-            val project = TestSupport.createJREProject
+                import DominatorsPerformanceEvaluation.getTime
+                info("performing AI took (CPU time) "+getTime('AI).toSeconds)
+                info("computing dominator information took (CPU time)"+getTime('Dominators).toSeconds)
 
-            time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
+                val postDominatorsTime = getTime('PostDominators).toSeconds
+                info("computing post-dominator information took (CPU time) "+postDominatorsTime)
 
-            printPerformanceData()
+                val cdgTime = getTime('ControlDependencies).toSeconds
+                info("computing control dependency information took (CPU time) "+cdgTime)
+                val cdgQueryTime = getTime('QueryingControlDependencies).toSeconds
+                info("querying control dependency information took (CPU time) "+cdgQueryTime)
+
+                val bbAICFGTime = getTime('BasicBlocksBasedAICFG).toSeconds
+                info("constructing the AI based CFGs took (CPU time) "+bbAICFGTime)
+
+                val bbBRCFGTime = getTime('BasicBlocksBasedBRCFG).toSeconds
+                info("constructing the BR based CFGs took (CPU time) "+bbBRCFGTime)
+            }
         }
 
-        it("should be possible to calculate the information for all methods of the OPAL 0.3 snapshot") {
-            DominatorsPerformanceEvaluation.resetAll()
+        evaluateProject("the JDK", () ⇒ createJREProject)
 
-            val classFiles = org.opalj.bi.TestResources.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-            val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
-
-            time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
-
-            printPerformanceData()
-        }
-
-        it("should be possible to calculate the information for all methods of the OPAL-08-14-2014 snapshot") {
-            DominatorsPerformanceEvaluation.resetAll()
-
-            val classFilesFolder = org.opalj.bi.TestResources.locateTestResources("classfiles", "bi")
-            val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
-                def accept(dir: java.io.File, name: String) =
-                    name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")
-            })
-            info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
-            opalJARs.size should not be (0)
-            val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
-
-            time {
-                analyzeProject("OPAL-08-14-2014 snapshot", project)
-            } { t ⇒ info("the analysis took (real time) "+t.toSeconds) }
-
-            printPerformanceData()
+        br.TestSupport.allBIProjects(reader, None) foreach { biProject ⇒
+            val (projectName, projectFactory) = biProject
+            evaluateProject(projectName, projectFactory)
         }
 
     }

@@ -45,11 +45,10 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
+trait BytecodeReaderAndBinding extends InstructionsDeserializer {
 
     /**
-     * Transforms an array of bytes into an array of
-     * [[org.opalj.br.instructions.Instruction]]s.
+     * Transforms an array of bytes into an array of [[org.opalj.br.instructions.Instruction]]s.
      */
     def Instructions(cp: Constant_Pool, source: Array[Byte]): Instructions = {
         import java.io.DataInputStream

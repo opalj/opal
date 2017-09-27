@@ -34,10 +34,9 @@ package l2
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
 /**
- * A common that defines a common reference frame for all subsequent domains.
+ * A domain that defines a common reference frame for all subsequent domains.
  */
 trait SharedValuesDomain[Source]
     extends CorrelationalDomain

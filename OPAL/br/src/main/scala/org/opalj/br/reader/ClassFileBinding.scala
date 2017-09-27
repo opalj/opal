@@ -32,8 +32,8 @@ package reader
 
 import net.ceedubs.ficus.Ficus._
 
-import org.opalj.bi.reader.ClassFileReader
 import org.opalj.log.OPALLogger
+import org.opalj.bi.reader.ClassFileReader
 import org.opalj.br.reader.{ClassFileReaderConfiguration ⇒ BRClassFileReaderConfiguration}
 
 /**
@@ -60,7 +60,7 @@ trait ClassFileBinding extends ClassFileReader {
                 false
         }
         OPALLogger.info(
-            "project configuration",
+            "class file reader",
             if (delete) {
                 "information about class files synthesized at parsing time is removed"
             } else {

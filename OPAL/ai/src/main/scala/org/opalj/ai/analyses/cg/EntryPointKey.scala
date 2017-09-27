@@ -40,7 +40,7 @@ import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analysis.EntryPointsAnalysis
+import org.opalj.fpcf.analyses.EntryPointsAnalysis
 import org.opalj.fpcf.properties.IsEntryPoint
 import org.opalj.fpcf.properties.EntryPoint
 import org.opalj.fpcf.PropertyStore

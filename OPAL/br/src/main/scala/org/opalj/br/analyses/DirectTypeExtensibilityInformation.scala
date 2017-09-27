@@ -30,160 +30,152 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.mutable
-
 import net.ceedubs.ficus.Ficus._
 
 /**
- * An analysis that determines whether a class/interface is directly extensible by a (yet unknown)
- * client application/library.
+ * Determines whether a type (class or interface) is directly extensible by a (yet unknown)
+ * client application/library. A type is directly extensible if a developer could have
+ * defined a direct - not transitive - subtype that is not part of the given application/library.
+ *
+ * This analysis directly builds on top of the [[ClosedPackagesInformation]].
  *
  * @author Michael Reif
  */
-class DirectTypeExtensibilityInformation(
-        val project: SomeProject
-) extends (ObjectType ⇒ Answer) {
+class DirectTypeExtensibilityInformation(val project: SomeProject) extends (ObjectType ⇒ Answer) {
 
-    private[this] lazy val typeExtensibility: Map[ObjectType, Answer] = compute
+    // IMPROVE Use (not yet existing...) ImplicitUIDMap where we use a plain array to store the answer.
+    private[this] lazy val typeExtensibility: Map[ObjectType, Answer] = compute()
 
-    def compute: Map[ObjectType, Answer] = {
-        val extensibility = mutable.Map.empty[ObjectType, Answer]
+    protected[this] def compute(): Map[ObjectType, Answer] = {
+
         val isClosedPackage = project.get(ClosedPackagesKey)
 
-        project.allClassFiles.foreach { classFile ⇒
-
+        val allClassFiles = project.allClassFiles
+        val extensibility = allClassFiles.foldLeft(Map.empty[ObjectType, Answer]) { (r, classFile) ⇒
             val objectType = classFile.thisType
-
-            if (classFile.isEffectivelyFinal ||
-                classFile.isEnumDeclaration ||
-                classFile.isAnnotationDeclaration)
-                extensibility.put(objectType, No)
-            else if (classFile.isPublic)
-                extensibility.put(objectType, Yes)
-            else if (isClosedPackage(objectType.fqn))
-                extensibility.put(objectType, No)
-            else
-                extensibility.put(objectType, Yes)
+            r +
+                ((
+                    objectType,
+                    {
+                        if (classFile.isEffectivelyFinal ||
+                            classFile.isEnumDeclaration ||
+                            classFile.isAnnotationDeclaration)
+                            No
+                        else if (classFile.isPublic)
+                            Yes
+                        else if (isClosedPackage(objectType.packageName))
+                            No
+                        else
+                            Yes
+                    }
+                ))
         }
 
-        overwriteTypeExtensibility.foreach { entry ⇒
-            val (ot, ans) = entry
-            if (extensibility.get(ot).nonEmpty)
-                extensibility.update(ot, ans)
-            else
-                extensibility.put(ot, ans)
-        }
-
-        extensibility.toMap
+        configuredTypeExtensibilities.foldLeft(extensibility) { (r, entry) ⇒ r + entry }
     }
 
     /**
-     * This method allows to overwrite the computed information whether a type is extensible or not. This
-     * facilitates to use domain knowledge to set the otherwise computed property for certain classes.
+     * Enables subclasses to explicitly specify the extensibility of some types. This enables
+     * users to use domain knowledge to override the result of the base analysis.
      *
-     * @note See [[DirectTypeExtensibilityInformation.parseConfig()]] for information how to parse the
-     *      config key.
+     * @note See [[DirectTypeExtensibilityInformation#parseConfig]] for how to use OPAL's
+     *       configuration to configure sets of object types.
+     *
+     * @return  Those types for which the direct extensibility is explicit configured.
      */
-    def overwriteTypeExtensibility: Set[(ObjectType, Answer)] = Set.empty
+    protected[this] def configuredTypeExtensibilities: TraversableOnce[(ObjectType, Answer)] = {
+        Traversable.empty
+    }
 
     /**
-     * Determines whether the given type can be directly extended by a (yet unknown) library/application.
+     * Get the list of configured types using the configured config key.
      *
+     * @param   simpleKey The simple name of the config key that will be used to get a list of
+     *          configured object types. [[DirectTypeExtensibilityKey.ConfigKeyPrefix]].
+     * @return  A list of [[ObjectType]]s. The semantic of those types is encoded by the
+     *          respective analysis;
+     *          [[DirectTypeExtensibilityInformation#configuredTypeExtensibilities]].
      */
-    def apply(t: ObjectType): Answer = typeExtensibility.get(t).getOrElse(Unknown)
-
-    /**
-     *
-     * @param key Precise config key that has to be parsed. The prefix of the key is defined by
-     *            [[DirectTypeExtensibilityKey.ConfigKeyPrefix]].
-     * @return A list of ObjectTypes that fulfill a certain property. The semantic of those types
-     *         has to be encoded in [[DirectTypeExtensibilityInformation.overwriteTypeExtensibility]].
-     */
-    protected[analyses] def parseConfig(key: String): Set[ObjectType] = {
-
-        val fqns = project.config.as[Option[List[String]]](
-            DirectTypeExtensibilityKey.ConfigKeyPrefix + key
-        ).getOrElse(List.empty)
+    protected[this] def parseConfig(simpleKey: String): List[ObjectType] = {
+        val completeKey = DirectTypeExtensibilityKey.ConfigKeyPrefix + simpleKey
+        val fqns = project.config.as[Option[List[String]]](completeKey).getOrElse(List.empty)
 
         import project.classHierarchy
 
-        fqns.map { fqn ⇒
-            if (fqn.endsWith("&")) {
-                val ot = ObjectType(fqn.substring(0, fqn.length - 1))
+        fqns.flatMap { fqn ⇒
+            // We chose "/." to identify all subtypes, because we can only use a character
+            // (sequence) that contains an invalid character in a JVM identifier.
+            if (fqn.endsWith("/.")) {
+                val ot = ObjectType(fqn.substring(0, fqn.length - 2))
                 classHierarchy.allSubtypes(ot, true)
             } else {
-                Set(ObjectType(fqn))
+                List(ObjectType(fqn))
             }
-        }.toSet.flatten
+        }
     }
+
+    /**
+     * Determines whether the given type can directly be extended by a (yet unknown)
+     * library/application.
+     */
+    def apply(t: ObjectType): Answer = typeExtensibility.get(t).getOrElse(Unknown)
+
 }
 
 /**
- * An analysis that determines whether a class/interface is directly extensible by a (yet unknown)
- * client application/library. Beneath the computation it allows a user to configure additional
- * types that shall be considered as extensible. Therefore, it allows a user to integrate domain
- * knowledge into the analysis.
+ * Determines whether a type is directly extensible by a (yet unknown)
+ * client application/library using the base analysis [[DirectTypeExtensibilityInformation]]
+ * and an explicitly configured list of extensible types where the list overrides the findings of
+ * the analysis. This enables domain specific configurations.
  *
- * Additional configuration has to be done over the global project configuration. In order to configure
- * classes/interfaces as extensible the following key has to be used:
+ * Additional configuration has to be done using OPAL's configuration file. To specify
+ * extensible classes/interfaces the following key has to be used:
+ *      `[[DirectTypeExtensibilityKey.ConfigKeyPrefix]] + extensibleTypes`
  *
- * [[DirectTypeExtensibilityKey.ConfigKeyPrefix]] + extensibleTypes
- *
- * ## Example configuration ##
- *
- * The following example configuration would consider ''java/util/Math'' and ''com/exmamle/Type''
- * as extensible.
- *
- * {{{
- *   org.opalj.br.analyses.DirectTypeExtensibilityKey.extensibleTypes = ["java/util/Math", "com/example/Type"]
- * }}}
+ * @example The following example configuration would consider `java/util/Math` and
+ *          `com/example/Type` as ''extensible''.
+ *          {{{
+ *          org.opalj.br.analyses.DirectTypeExtensibilityKey.extensibleTypes =
+ *              ["java/util/Math", "com/example/Type"]
+ *          }}}
  */
 class ConfigureExtensibleTypes(
-        override val project: SomeProject
+        project: SomeProject
 ) extends DirectTypeExtensibilityInformation(project) {
 
     /**
-     * Overwrites all given types with the extensibility property.
-     *
-     * @return List of tuples where each tuple has the form: (''ObjectType'', Yes).
+     * Returns the types which are extensible.
      */
-    override def overwriteTypeExtensibility: Set[(ObjectType, Answer)] = {
-        val configuredTypes = parseConfig("extensibleTypes")
-        configuredTypes.map((_, Yes))
+    override def configuredTypeExtensibilities: TraversableOnce[(ObjectType, Yes.type)] = {
+        parseConfig("extensibleTypes").iterator.map(t ⇒ (t, Yes))
     }
 }
 
 /**
- * An analysis that determines whether a class/interface is directly extensible by a (yet unknown)
- * client application/library. Beneath the computation it allows a user to configure additional
- * types that shall not be considered as extensible. Therefore, it allows a user to integrate domain
- * knowledge into the analysis.
+ * Determines whether a type is directly extensible by a (yet unknown)
+ * client application/library using the base analysis [[DirectTypeExtensibilityInformation]]
+ * and an explicitly configured list of final (not extensible) types; the list overrides the
+ * findings of the analysis. This enables domain specific configurations.
  *
- * Additional configuration has to be done over the global project configuration. In order to configure
- * classes/interfaces not as extensible the following key has to be used:
+ * Additional configuration has to be done using OPAL's configuration file. To specify
+ * classes/interfaces that are not extensible/that are final the following key has to be used:
+ *      `[[DirectTypeExtensibilityKey.ConfigKeyPrefix]] + finalTypes`
  *
- * [[DirectTypeExtensibilityKey.ConfigKeyPrefix]] + finalTypes
- *
- * ## Example configuration ##
- *
- * The following example configuration would consider ''java/util/Math'' and ''com/exmamle/Type''
- * not as extensible.
- *
- * {{{
- *   org.opalj.br.analyses.DirectTypeExtensibilityKey.finalTypes = ["java/util/Math", "com/example/Type"]
- * }}}
+ * @example The following example configuration would consider `java/util/Math` and
+ *          `com/exmaple/Type` as ''not extensible''.
+ *          {{{
+ *          org.opalj.br.analyses.DirectTypeExtensibilityKey.finalTypes =
+ *              ["java/util/Math", "com/example/Type"]
+ *          }}}
  */
 class ConfigureFinalTypes(
         override val project: SomeProject
 ) extends DirectTypeExtensibilityInformation(project) {
 
     /**
-     * Overwrites all given types with the extensibility property.
-     *
-     * @return List of tuples where each tuple has the form: (''ObjectType'', No).
+     * Returns the types which are not extensible/which are final.
      */
-    override def overwriteTypeExtensibility: Set[(ObjectType, Answer)] = {
-        val configuredTypes = parseConfig("finalTypes")
-        configuredTypes.map((_, No))
+    override def configuredTypeExtensibilities: TraversableOnce[(ObjectType, No.type)] = {
+        parseConfig("finalTypes").iterator.map(t ⇒ (t, No))
     }
 }

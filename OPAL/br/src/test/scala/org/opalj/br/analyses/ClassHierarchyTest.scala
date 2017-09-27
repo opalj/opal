@@ -739,7 +739,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         apacheANTCH.allSupertypes(mi) should be(UIDSet(
             ObjectType("org/apache/tools/ant/Task"),
             ObjectType("org/apache/tools/ant/TaskContainer"),
-            ObjectType("org/apache/tools/ant/DynamicAttribute")
+            ObjectType("org/apache/tools/ant/DynamicAttribute"),
+            ObjectType.Object
         ))
     }
 

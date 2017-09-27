@@ -31,135 +31,144 @@ package br
 package analyses
 
 import net.ceedubs.ficus.Ficus._
+
+import org.opalj.log.OPALLogger.warn
+import org.opalj.log.LogContext
 import org.opalj.br.analyses.ClosedPackagesKey.ConfigKeyPrefix
-import org.opalj.log.OPALLogger
 
 /**
- * A common trait for all analyses that compute which packages are open or closed. A package is
- * considered open, if a developer is allowed to define a new class/interface within the package's
- * namespace. If a developer cannot define a new class/interface within the package's namespace,
- * the package is considered closed. An example for closed packages are the packages within the
- * java.* namespace of the JRE.
+ * Determines which packages are open or closed; that is, determines to which packages code
+ * - that is not yet known - can potentially be contributed to. In other words, a package is
+ * considered open, if a developer is allowed to define a new type within the package's
+ * namespace. If a developer cannot define a new type within the package's namespace,
+ * the package is considered closed.
  *
- * The outcome of this analysis influences the call-graph construction as well as other analyses.
- * Please make sure to configure the correct analysis within the configuration file. The relevant
- * configuration key is: "org.opalj.br.analyses.ClosedPackagesKey.packageContext".
+ * An example for closed packages are the packages within the java.* namespace of the JRE.
  *
- * Sub classes are reflectively instantiated within [[ClosedPackagesKey]] to provide a possibility
- * to configure an analysis-specific understanding of closed packages. Those classes can be configured
- * under the config key: "org.opalj.br.analyses.ClosedPackagesKey.{ClosedPackagesAnalysis}"
+ * The set of open/closed packages may influence call-graph construction as well as other analyses.
  *
- * @note The concept of open and closed packages - and the reason it matters - is discussed in
+ * The concrete set of open/closed packages is specified in OPAL's configuration file. The relevant
+ * configuration key is: `org.opalj.br.analyses.ClosedPackagesKey.packageContext`.
+ *
+ * The concrete analysis which determines the open/closed packages is instantiated reflectively
+ * by [[ClosedPackagesKey]]. This facilitates the configuration of project specific closed packages.
+ * The class can be configured using the config key:
+ * `org.opalj.br.analyses.ClosedPackagesKey.analysis={ClosedPackagesAnalysis}``
+ *
+ * @note The concept of open and closed packages - and the reason why it matters - is discussed in
  *       "Call Graph Construction for Java Libraries"
  *
  * @author Michael Reif
  */
-abstract class ClosedPackagesInformation(val project: SomeProject) extends (String ⇒ Boolean) {
+abstract class ClosedPackagesInformation extends (String ⇒ Boolean) {
 
+    def project: SomeProject
+
+    implicit def projectLogContext: LogContext = project.logContext
+
+    /**
+     * Returns `true` if the package with the given name is '''closed'''.
+     */
     def apply(packageName: String): Boolean
 }
 
 /**
- * A simple [[ClosedPackagesInformation]] that can be used for rather simple applications without any
- * dynamic extension points. In the context of a simple applications every package is supposed to
- * be closed since the entire code base is available at analysis time.
+ * Treats all packages as being closed. This analysis is useable, e.g., for simple applications.
+ * In this case every package is supposed to be closed since the entire code base
+ * is available at analysis time.
+ * Generally, not useable for libraries/frameworks/code which can be "freely" extended.
  *
- * Config key: "org.opalj.br.analyses.ClosedPackagesKey.[[ClosedCodeBase]]"
+ * To use this analysis set the config key:
+ *  `org.opalj.br.analyses.ClosedPackagesKey.analysis`
+ * to
+ *  `org.opalj.br.analyses.[[ClosedCodeBase]]`
  *
- * @note An application may allow reflective instantiation of unknown code, and therefore, has a
- *       well-defined extension point. Such an application is not considered "simple".
+ * @note An application that uses reflection to load functionality at runtime has a
+ *       well-defined extension point and is not a ''simple application'' in the above sense.
  */
-class ClosedCodeBase(project: SomeProject) extends ClosedPackagesInformation(project) {
+class ClosedCodeBase(val project: SomeProject) extends ClosedPackagesInformation {
 
     override def apply(packageName: String): Boolean = true
 }
 
 /**
- * A conservative [[ClosedPackagesInformation]] that can safely be used in every analysis but may result
- * in imprecise analysis results.
+ * A conservative [[ClosedPackagesInformation]] analysis which considers all packages
+ * (except of those starting with `java`) as being open. The `java.*` packages are protected
+ * by the JVM itself.
+ * This analysis can safely be used by every analysis, but - depending on the context -
+ * may result in imprecise analysis results.
  *
- * All packages are considered open, except those, where the access is strictly prohibited by the
- * JVM itself. I.e., the JVM strictly prohibits the access of all "java.*" packages.
- *
- * Config key: "org.opalj.br.analyses.ClosedPackagesKey.[[OpenCodeBase]]"
+ * To use this analysis set the config key:
+ *  `org.opalj.br.analyses.ClosedPackagesKey.analysis`
+ * to
+ *  `org.opalj.br.analyses.[[OpenCodeBase]]`
  */
-class OpenCodeBase(project: SomeProject) extends ClosedPackagesInformation(project) {
+class OpenCodeBase(val project: SomeProject) extends ClosedPackagesInformation {
 
-    override def apply(packageName: String): Boolean = {
-        packageName.startsWith("java.")
-    }
+    override def apply(packageName: String): Boolean = packageName.startsWith("java/")
+
 }
 
 /**
- * A [[org.opalj.br.analyses.ClosedPackagesInformation]] that allows to define the number of closed packages over a regular
- * expression.
+ * Determines the closed packages using a regular expression.
  *
- * The regular expression can be defined over the general configuration with the key:
- * {{{
- *   config key: "org.opalj.br.analyses.ClosedPackagesKey.closedPackages"
+ * The regular expression can be defined using the general configuration key:
+ * `org.opalj.br.analyses.ClosedPackagesKey.closedPackages`
  *
- *   example:
- *
- *   org.opalj.br.analyses.ClosedPackagesKey.closedPackages = "java/*|com/sun/*"
- *
- *   The previous example would consider all packages (incl. subpackages) under "java" and "com.sun"
- *   as closed.
- * }}}
- * */*/
+ * @example
+ *      {{{
+ *      org.opalj.br.analyses.ClosedPackagesKey.closedPackages = "java&#47;*|com/sun&#47;*"
+ *      }}}
+ *      The previous example treats all packages starting with `java` and `com.sun`
+ *      as closed.
  */
-class ClosedPackagesConfiguration(project: SomeProject) extends ClosedPackagesInformation(project) {
+class ClosedPackagesConfiguration(val project: SomeProject) extends ClosedPackagesInformation {
 
-    private[this] lazy val closedPackagesRegex = {
-        val closedPackages = project.config.as[Option[String]](
-            ConfigKeyPrefix+"closedPackages"
-        )
+    private[this] val closedPackagesRegex = {
+        val closedPackages = project.config.as[Option[String]](ConfigKeyPrefix+"closedPackages")
 
         if (closedPackages.isEmpty)
-            OPALLogger.warn(
+            warn(
                 "project configuration",
-                "'closedPackages' config key not found - all packages are considered closed."
-            )(project.logContext)
+                "config key org.opalj.br.analyses.ClosedPackagesKey.closedPackages is not set "+
+                    "- all packages are considered closed"
+            )
 
         closedPackages.getOrElse(".*")
     }
 
-    override def apply(packageName: String): Boolean = {
-        packageName matches closedPackagesRegex
-    }
+    override def apply(packageName: String): Boolean = packageName matches closedPackagesRegex
+
 }
 
 /**
- * A [[org.opalj.br.analyses.ClosedPackagesInformation]] that allows to define the number of open
- * packages over a regular expression.
+ * Determines the open packages using a regular expression.
  *
- * The regular expression can be defined over the general configuration with the key:
- * {{{
- *   config key: "org.opalj.br.analyses.ClosedPackagesKey.openPackages"
+ * The regular expression can be defined using the general configuration key:
+ * `org.opalj.br.analyses.ClosedPackagesKey.openPackages`
  *
- *   example:
+ * @example
+ *      {{{
+ *      org.opalj.br.analyses.ClosedPackagesKey.openPackages = "net/open/"
+ *      }}}
+ *      The previous example would consider the package `net/open/` as open.
  *
- *   org.opalj.br.analyses.ClosedPackagesKey.openPackages = "net/open/"
- *
- *   The previous example would consider the "net/open/" as open.
- * }}}
  */
-class OpenPackagesConfiguration(project: SomeProject) extends ClosedPackagesInformation(project) {
+class OpenPackagesConfiguration(val project: SomeProject) extends ClosedPackagesInformation {
 
-    private[this] lazy val openPackagesRegex = {
-        val openPackages = project.config.as[Option[String]](
-            ConfigKeyPrefix+"openPackages"
-        )
+    private[this] val openPackagesRegex = {
+        val openPackages = project.config.as[Option[String]](ConfigKeyPrefix+"openPackages")
 
         if (openPackages.isEmpty)
-            OPALLogger.warn(
+            warn(
                 "project configuration",
-                "'openPackages' config key not found - all packages are considered open."
-            )(project.logContext)
+                "config key org.opalj.br.analyses.ClosedPackagesKey.openPackages not found "+
+                    "- all packages are considered open."
+            )
 
         openPackages.getOrElse(".*")
     }
 
-    override def apply(packageName: String): Boolean = {
-        packageName matches openPackagesRegex
-    }
+    override def apply(packageName: String): Boolean = packageName matches openPackagesRegex
+
 }

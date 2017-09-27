@@ -58,8 +58,8 @@ trait StringValues
     protected class StringValue(
             origin:    ValueOrigin,
             val value: String,
-            t:         Timestamp
-    ) extends SObjectValue(origin, No, true, ObjectType.String, t) {
+            refId:     RefId
+    ) extends SObjectValue(origin, No, true, ObjectType.String, refId) {
         this: DomainStringValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(
@@ -70,19 +70,19 @@ trait StringValues
             other match {
                 case DomainStringValue(that) ⇒
                     if (this.value == that.value) {
-                        if (this.t == that.t)
+                        if (this.refId == that.refId)
                             NoUpdate
                         else
                             // Strings are immutable, hence, we can still keep the
                             // "reference" to the "value", but we still need to
                             // create a MetaInformationUpdate to make sure that potential
                             // future reference comparisons are reevaluated if necessary.
-                            TimestampUpdate(that)
+                            RefIdUpdate(that)
                     } else {
                         // We have to drop the concrete information...
                         // Given that the values are different we are no longer able to
                         // derive the concrete value.
-                        val newValue = ObjectValue(origin, No, true, ObjectType.String, nextT())
+                        val newValue = ObjectValue(origin, No, true, ObjectType.String, nextRefId())
                         StructuralUpdate(newValue)
                     }
 
@@ -132,9 +132,9 @@ trait StringValues
 
         override def toString(): String = {
             if (value eq null)
-                s"""String(<initialization incomplete>)[@$origin;t=$t]"""
+                s"""String(<initialization incomplete>)[@$origin;refId=$refId]"""
             else
-                s"""String("$value")[@$origin;t=$t]"""
+                s"""String("$value")[@$origin;refId=$refId]"""
         }
 
     }
@@ -175,6 +175,7 @@ trait StringValues
     abstract override def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -198,7 +199,7 @@ trait StringValues
                 if (methodDescriptor == MethodDescriptor.NoArgsAndReturnVoid) {
                     updateAfterEvaluation(
                         newStringValue,
-                        StringValue(newStringValue.origin, "", newStringValue.t)
+                        StringValue(newStringValue.origin, "", newStringValue.refId)
                     )
                     return ComputationWithSideEffectOnly;
 
@@ -208,7 +209,7 @@ trait StringValues
                         case StringValue(s) ⇒
                             updateAfterEvaluation(
                                 newStringValue,
-                                StringValue(newStringValue.origin, s, newStringValue.t)
+                                StringValue(newStringValue.origin, s, newStringValue.refId)
                             )
                             return ComputationWithSideEffectOnly
 
@@ -220,14 +221,14 @@ trait StringValues
                 updateAfterEvaluation(newStringValue, newStringValue.update())
             }
         }
-        super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
+        super.invokespecial(pc, declaringClass, isInterface, name, methodDescriptor, operands)
     }
 
     final override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue = {
-        StringValue(origin, value, nextT())
+        StringValue(origin, value, nextRefId())
     }
 
-    def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainStringValue
+    def StringValue(origin: ValueOrigin, value: String, refId: RefId): DomainStringValue
 }
 
 object StringValues {

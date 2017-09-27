@@ -223,8 +223,8 @@ object InterpretMethod {
                 val postDomFile = writeAndOpen(postDominatorTreeAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
                 println("AI CFG - Post-Dominator tree: "+postDomFile)
 
-                val cdg = cfgDomain.controlDependencies
-                val rdfAsDotGraph = cdg.dominanceFrontiers.toDot(evaluatedInstructions.contains(_))
+                val cdg = cfgDomain.pdtBasedControlDependencies
+                val rdfAsDotGraph = cdg.toDot(evaluatedInstructions.contains(_))
                 val rdfFile = writeAndOpen(rdfAsDotGraph, "ReverseDominanceFrontiersOfAICFG", ".gv")
                 println("AI CFG - Reverse Dominance Frontiers: "+rdfFile)
             }

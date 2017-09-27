@@ -424,7 +424,7 @@ final class MethodTemplate private[br] (
  * A method belonging to a class file. [[Method]] objects are created by creating a class file
  * using [[MethodTemplate]]s.
  *
- * @param classFile The declaring class file.
+ * @param declaringClassFile The declaring class file.
  */
 final class Method private[br] (
         private[br] var declaringClassFile: ClassFile, // unfortunately, Scala forces us to use this ugly approach to initialize the data structure
@@ -486,8 +486,8 @@ object Method {
 
     /**
      * Returns `true` if the method is object serialization related.
-     * That is, if the declaring class is `Externalizable` then the methods readObject and
-     * writeObject are unused.
+     * That is, if the declaring class is `Externalizable` then the methods `readObject` and
+     * `writeObject` are unused.
      * If the declaring class is '''only''' `Seralizable` then the write and read
      * external methods are not serialization related unless a subclass exists that inherits
      * these two methods and implements the interface `Externalizable`.

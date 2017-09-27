@@ -57,16 +57,16 @@ trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with Ar
         theType: ArrayType,
         values:  Array[DomainValue]
     ): DomainConcreteArrayValue = {
-        ArrayValue(origin, theType, values, nextT())
+        ArrayValue(origin, theType, values, nextRefId())
     }
 
     override def ArrayValue(
         origin:  ValueOrigin,
         theType: ArrayType,
         values:  Array[DomainValue],
-        t:       Timestamp
+        refId:   RefId
     ): DomainConcreteArrayValue = {
-        new ConcreteArrayValue(origin, theType, values, t)
+        new ConcreteArrayValue(origin, theType, values, refId)
     }
 
     final override def InitializedArrayValue(
@@ -74,17 +74,17 @@ trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with Ar
         arrayType: ArrayType,
         counts:    Chain[Int]
     ): DomainInitializedArrayValue = {
-        InitializedArrayValue(origin, arrayType, counts, nextT())
+        InitializedArrayValue(origin, arrayType, counts, nextRefId())
     }
 
     override def InitializedArrayValue(
         origin:    ValueOrigin,
         arrayType: ArrayType,
         counts:    Chain[Int],
-        t:         Timestamp
+        refId:     RefId
     ): DomainInitializedArrayValue = {
         // we currently support at most two-dimensional arrays
-        new InitializedArrayValue(origin, arrayType, counts.takeUpTo(2), t)
+        new InitializedArrayValue(origin, arrayType, counts.takeUpTo(2), refId)
     }
 
 }

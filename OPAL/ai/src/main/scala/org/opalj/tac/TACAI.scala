@@ -31,8 +31,10 @@ package tac
 
 import scala.annotation.switch
 import scala.collection.mutable.Queue
-import org.opalj.collection.immutable.IntSetBuilder
-import org.opalj.collection.immutable.IntSet
+
+import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.IntArraySetBuilder
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br
 import org.opalj.br._
@@ -41,12 +43,12 @@ import org.opalj.br.instructions._
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.cfg.CFG
+import org.opalj.ai.VMLevelValuesOriginOffset
 import org.opalj.ai.BaseAI
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.immutable.ConstArray
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -92,7 +94,7 @@ object TACAI {
         while (i < parametersCount) {
             aiVOToTACVo(-aiVO - 1) = tacVO
             tacVO -= 1
-            aiVO -= parameterTypes(0).computationalType.operandSize
+            aiVO -= parameterTypes(i).computationalType.operandSize
             i += 1
         }
 
@@ -139,9 +141,9 @@ object TACAI {
             return true;
         }
 
+        import UnaryArithmeticOperators._
         import BinaryArithmeticOperators._
         import RelationalOperators._
-        import UnaryArithmeticOperators._
 
         val isStatic = method.isStatic
         val descriptor = method.descriptor
@@ -183,35 +185,39 @@ object TACAI {
         // To get the target value the ai based vo has to be negated and we have to add -1.
         // E.g., if the ai-based vo is -1 then the index which needs to be used is -(-1)-1 ==> 0
         // which will contain (for -1 only) the value -1.
-        val normalizeParameterOrigins: IntSet ⇒ IntSet = {
+        val normalizeParameterOrigins: IntArraySet ⇒ IntArraySet = {
             if (!isStatic && simpleRemapping) {
                 // => no remapping is necessary
-                (aiVOs: IntSet) ⇒ aiVOs
+                (aiVOs: IntArraySet) ⇒ aiVOs
             } else if (isStatic && simpleRemapping) {
                 // => we have to subtract -1 from origins related to parameters
-                (aiVOs: IntSet) ⇒
+                (aiVOs: IntArraySet) ⇒
                     {
                         aiVOs.map { aiVO ⇒
-                            assert(!ai.isVMLevelValue(aiVO))
-                            if (aiVO < 0) aiVO - 1 else aiVO
+                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
                         }
                     }
             } else {
                 // => we create an array which contains the mapping information
                 val aiVOToTACVo: Array[Int] = normalizeParameterOriginsMap(descriptor, isStatic)
-                (aiVOs: IntSet) ⇒ {
+                (aiVOs: IntArraySet) ⇒ {
                     if (aiVOs eq null) {
-                        IntSet.empty
+                        IntArraySet.empty
                     } else {
-                        aiVOs.map { aiVO ⇒ if (aiVO < 0) aiVOToTACVo(-aiVO - 1) else aiVO }
+                        aiVOs map { aiVO ⇒
+                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0)
+                                aiVO
+                            else
+                                aiVOToTACVo(-aiVO - 1)
+                        }
                     }
                 }
             }
         }
 
-        // The list of bytecode instructions which were killed (=>NOP), and for which we now have to
-        // clear the usages.
-        val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntSet /*DefSites*/ )] = Queue.empty
+        // The list of bytecode instructions which were killed (=>NOP), and for which we now
+        // have to clear the usages.
+        val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntArraySet /*DefSites*/ )] = Queue.empty
 
         def killOperandBasedUsages(useSite: br.PC, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
@@ -240,8 +246,8 @@ object TACAI {
 
         // The catch handler statements which were added to the code that do not take up
         // the slot of an empty load/store statement.
-        var addedHandlerStmts: IntSet = IntSet.empty
-        val handlerPCs = (new IntSetBuilder() ++= code.exceptionHandlers.map(_.handlerPC)).result
+        var addedHandlerStmts: IntArraySet = IntArraySet.empty
+        val handlerPCs = (new IntArraySetBuilder() ++= code.exceptionHandlers.map(_.handlerPC)).result
 
         var pc: PC = 0
         var index: Int = 0
@@ -279,7 +285,7 @@ object TACAI {
                 }
             }
 
-            def addNOP(): Unit = {
+            def addNOP(pcHint: Int): Unit = {
                 if (addExceptionHandlerInitializer)
                     // We do not have to add the NOP, because the code to initialize the
                     // variable which references the exception is already added.
@@ -289,7 +295,7 @@ object TACAI {
                 // we want to ensure that we don't have to rewrite the CFG during the initial
                 // transformation
                 if (cfg.bb(pc).startPC == pc) {
-                    statements(index) = Nop(pc)
+                    statements(index) = Nop(pcHint)
                     pcToIndex(pc) = index
                     index += 1
                 } else {
@@ -299,48 +305,9 @@ object TACAI {
 
             // ADD AN EXPLICIT INSTRUCTION WHICH REPRESENTS THE CATCH HANDLER
             if (addExceptionHandlerInitializer) {
-                import domain.{predecessorsOf, refIsNull, operandOrigin, isDirectRegularPredecessorOf}
-                val exception = operandsArray(pc /* the exception is already on the stack */ ).head
-                val usedBy = domain.usedBy(pc)
+                val normalizedDefSites = normalizeParameterOrigins(domain.operandOrigin(pc, 0))
                 val catchType = code.exceptionHandlers.find(_.handlerPC == pc).get.catchType
-                val predecessorsOfPC = predecessorsOf(pc)
-                val defSites =
-                    predecessorsOfPC.foldLeft(IntSet.empty) { (adaptedDefSites, exceptionSite) ⇒
-                        if (instructions(exceptionSite).opcode == ATHROW.opcode) {
-                            // We have to determine if the caught exception is actually the
-                            // thrown exception....
-                            // FIXME XXXX TODO
-                            val thrownValue = operandsArray(exceptionSite).head
-                            val exceptionIsNull = refIsNull(exceptionSite, thrownValue)
-                            var newDefSites = adaptedDefSites
-                            if (exceptionIsNull.isYesOrUnknown)
-                                newDefSites += ai.ValueOriginForVMLevelValue(exceptionSite)
-                            if (exceptionIsNull.isNoOrUnknown) {
-                                val exceptionOrigin = operandOrigin(exceptionSite, 0)
-                                newDefSites ++= normalizeParameterOrigins(exceptionOrigin)
-                            }
-                            newDefSites
-                        } else {
-                            adaptedDefSites + (
-                                if (isDirectRegularPredecessorOf(exceptionSite, pc)) {
-                                    // actually... this will never happen for "regular" code...
-                                    exceptionSite
-                                } else {
-                                    // The predecessor instruction was not an athrow instruction;
-                                    // hence, the exception was caused implicitly...
-                                    ai.ValueOriginForVMLevelValue(exceptionSite)
-                                }
-                            )
-                        }
-                    }
-                val expr = CaughtException[DUVar[aiResult.domain.DomainValue]](pc, catchType, defSites)
-                if (usedBy ne null) {
-                    assert(usedBy.forall(_ >= 0))
-                    val localVal = DVar(aiResult.domain)(pc, exception, usedBy)
-                    statements(index) = Assignment(pc, localVal, expr)
-                } else {
-                    statements(index) = ExprStmt(pc, expr)
-                }
+                statements(index) = CaughtException(pc, catchType, normalizedDefSites)
                 pcToIndex(pc) = index
                 index += 1
             }
@@ -352,12 +319,13 @@ object TACAI {
 
             def addNOPAndKillOperandBasedUsages(valuesCount: Int): Unit = {
                 killOperandBasedUsages(pc, valuesCount)
-                addNOP()
+                addNOP(-pc - 1)
             }
 
             /**
              * Creates a local variable using the current pc and the type
-             * information from the domain value.
+             * information from the domain value if the local variable is used; otherwise
+             * an expression statement or a nop statement is added.
              */
             def addInitLocalValStmt(
                 pc:   PC,
@@ -373,7 +341,7 @@ object TACAI {
                     if (instruction.opcode == IINC.opcode) {
                         val IINC(index, _) = instruction
                         killRegisterBasedUsages(pc, index)
-                        addNOP()
+                        addNOP(-pc - 1)
                     } else {
                         addNOPAndKillOperandBasedUsages(expr.subExprCount)
                     }
@@ -430,6 +398,7 @@ object TACAI {
                 } else {
                     addStmt(ExprStmt(pc, binExpr))
                 }
+
             }
 
             @inline def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {
@@ -570,7 +539,7 @@ object TACAI {
                     LLOAD.opcode |
                     LSTORE_0.opcode | LSTORE_1.opcode | LSTORE_2.opcode | LSTORE_3.opcode |
                     LSTORE.opcode ⇒
-                    addNOP()
+                    addNOP(pc)
 
                 case IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
                     ARETURN.opcode ⇒
@@ -629,7 +598,7 @@ object TACAI {
                 case DCMPL.opcode | FCMPL.opcode ⇒ compareValues(CMPL)
                 case LCMP.opcode                 ⇒ compareValues(CMP)
 
-                case SWAP.opcode                 ⇒ addNOP()
+                case SWAP.opcode                 ⇒ addNOP(pc)
 
                 case DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode ⇒
                     binaryArithmeticOperation(Add)
@@ -822,7 +791,7 @@ object TACAI {
                     val GotoInstruction(branchoffset) = instruction
                     if (cfg.bb(pc).endPC != pc) {
                         // this goto "jumps" to the immediately succeeding instruction
-                        addNOP()
+                        addNOP(pc)
                     } else {
                         addStmt(Goto(pc, pc + branchoffset))
                     }
@@ -833,7 +802,7 @@ object TACAI {
                 case RET.opcode ⇒
                     addStmt(Ret(pc, cfg.successors(pc)))
 
-                case NOP.opcode | POP.opcode | POP2.opcode ⇒ addNOP()
+                case NOP.opcode | POP.opcode | POP2.opcode ⇒ addNOP(pc)
 
                 case INSTANCEOF.opcode ⇒
                     val value1 = operandUse(0)
@@ -874,7 +843,7 @@ object TACAI {
                     addStmt(Switch(pc, defaultTarget, index, npairs))
 
                 case DUP.opcode | DUP_X1.opcode | DUP_X2.opcode
-                    | DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode ⇒ addNOP()
+                    | DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode ⇒ addNOP(pc)
 
                 case D2F.opcode | I2F.opcode | L2F.opcode ⇒ primitiveCastOperation(FloatType)
                 case D2I.opcode | F2I.opcode | L2I.opcode ⇒ primitiveCastOperation(IntegerType)
@@ -886,7 +855,7 @@ object TACAI {
 
                 case ATHROW.opcode                        ⇒ addStmt(Throw(pc, operandUse(0)))
 
-                case WIDE.opcode                          ⇒ addNOP()
+                case WIDE.opcode                          ⇒ addNOP(pc)
 
                 case opcode ⇒
                     throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
@@ -913,7 +882,7 @@ object TACAI {
                 if (!method.isStatic) {
                     var usedBy = domain.usedBy(-1)
                     if (usedBy eq null) {
-                        usedBy = IntSet.empty
+                        usedBy = IntArraySet.empty
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
@@ -925,7 +894,7 @@ object TACAI {
                     var usedBy = domain.usedBy(defOrigin)
                     // the usedBy for parameters never refer to parameters => have negative values!
                     if (usedBy eq null) {
-                        usedBy = IntSet.empty
+                        usedBy = IntArraySet.empty
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
@@ -961,7 +930,7 @@ object TACAI {
                                 killRegisterBasedUsages(defSite, lvIndex)
                                 statements(defSiteIndex) = Nop(pc)
                             case _ ⇒
-                                // we have to kill as many uses as the original - underlying -
+                                // we have to kill as many "uses" as the original - underlying -
                                 // bytecode instruction to handle constant propagation
                                 killOperandBasedUsages(defSite, expr.subExprCount)
                                 statements(defSiteIndex) = Nop(pc)
@@ -969,13 +938,15 @@ object TACAI {
                     } else {
                         statements(defSiteIndex) = ExprStmt(pc, expr)
                     }
-                } else {
-                    // we have an obsolete parameter usage;
-                    // recall that the def-sites are already "normalized"
+                } else if (defSite > VMLevelValuesOriginOffset) {
+                    // We have an obsolete parameter usage; recall that the def-sites are
+                    // already "normalized"!
                     val TACMethodParameter(origin, useSites) = tacParams.parameter(defSite)
                     // Note that the "use sites" of the parameters are already remapped.
                     val newUseSites = useSites - pcToIndex(useSite)
                     tacParams.parameters(-defSite - 1) = new TACMethodParameter(origin, newUseSites)
+                } else {
+                    println(method.toJava(s"we have an obsolete exception usage site: $defSite"))
                 }
             }
         }

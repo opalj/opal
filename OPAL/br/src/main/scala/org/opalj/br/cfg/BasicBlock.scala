@@ -67,7 +67,8 @@ class BasicBlock(
 
     final override def isCatchNode: Boolean = false
     final override def isExitNode: Boolean = false
-
+    final override def isAbnormalReturnExitNode: Boolean = false
+    final override def isNormalReturnExitNode: Boolean = false
     final override def isBasicBlock: Boolean = true
     final override def asBasicBlock: this.type = this
 

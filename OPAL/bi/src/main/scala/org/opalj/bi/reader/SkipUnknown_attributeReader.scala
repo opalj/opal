@@ -32,6 +32,9 @@ package reader
 
 import java.io.DataInputStream
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+
 /**
  * Template method to skip an unknown attribute. I.e., the information will
  * not be represented at runtime.
@@ -41,6 +44,7 @@ import java.io.DataInputStream
 trait SkipUnknown_attributeReader
     extends Constant_PoolAbstractions
     with Unknown_attributeAbstractions {
+    this: Constant_PoolReader ⇒
 
     type Unknown_attribute = Null
 
@@ -54,11 +58,19 @@ trait SkipUnknown_attributeReader
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream
     ): Null = {
-        val size: Long = in.readInt.toLong
-        var skipped: Long = 0
+        val size: Int = in.readInt
+        var skipped: Int = 0
         while (skipped < size) {
-            val t: Long = in skip (size - skipped) // skip returns a long value...
-            if (t > 0) skipped = skipped + t
+            val actuallySkipped = in skipBytes (size - skipped) // skip returns a long value...
+            if (actuallySkipped > 0)
+                skipped += actuallySkipped
+            else {
+                OPALLogger.error(
+                    "class file reader",
+                    s"skipping over unknown attribute ${cp(attribute_name_index).asString} failed"
+                )(GlobalLogContext)
+                return null;
+            }
         }
         null
     }

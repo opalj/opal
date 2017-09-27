@@ -37,7 +37,6 @@ import org.opalj.ai.domain
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger
@@ -85,23 +84,24 @@ object TAC {
 
     def usage: String = {
         "Usage: java …TAC \n"+
-            "-source <JAR file/Folder containing class files>/-sourceJDK\n"+
-            "[-sourceLib <JAR file/Folder containing library class files (which may be required to get precise/correct type information.>\n"+
-            "[-domainValueInformation (prints detailed information about domain values)\n"+
-            "[-class <class file name> (filters the set of classes)]\n"+
+            "-cp <JAR file/Folder containing class files> OR -JDK\n"+
+            "[-libcp <JAR file/Folder containing library class files>]* (generally required to get precise/correct type information\n"+
+            "[-domainValueInformation] (prints detailed information about domain values)\n"+
+            "[-class <class file name>] (filters the set of classes)\n"+
             "[-method <method name/signature using Java notation>] (filters the set of methods)\n"+
-            "[-naive (the naive representation is generated) | -domain <class name of the domain>]\n"+
-            "[-cfg (print control-flow graph)]\n"+
-            "[-open (the generated representations will be written to disk and opened)]\n"+
-            "[-toString (uses the \"toString\" method to print the object graph)]\n"+
+            "[-naive] (the naive representation is generated)\n"+
+            "[-domain <class name of the domain>]\n"+
+            "[-cfg] (print control-flow graph)\n"+
+            "[-open] (the generated representations will be written to disk and opened)\n"+
+            "[-toString] (uses the \"toString\" method to print the object graph)\n"+
             "Example:\n\tjava …TAC -source /Library/jre/lib/rt.jar -class java.util.ArrayList -method toString"
     }
 
     def main(args: Array[String]): Unit = {
 
         // Parameters:
-        var source: String = null
-        var sourceLib: Option[String] = None
+        var cp: List[String] = Nil
+        var libcp: List[String] = Nil
         var doOpen: Boolean = false
         var className: Option[String] = None
         var methodSignature: Option[String] = None
@@ -133,28 +133,28 @@ object TAC {
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")
 
-                case "-sourceJDK" ⇒ source = JRELibraryFolder.toString
-                case "-source"    ⇒ source = readNextArg()
-                case "-sourceLib" ⇒ sourceLib = Some(readNextArg())
-                case "-cfg"       ⇒ printCFG = true
-                case "-open"      ⇒ doOpen = true
-                case "-class"     ⇒ className = Some(readNextArg())
-                case "-method"    ⇒ methodSignature = Some(readNextArg())
-                case "-toString"  ⇒ toString = true
-                case unknown      ⇒ handleError(s"unknown parameter: $unknown")
+                case "-JDK"      ⇒ cp ::= JRELibraryFolder.toString
+                case "-cp"       ⇒ cp ::= readNextArg()
+                case "-libcp"    ⇒ libcp ::= readNextArg()
+                case "-cfg"      ⇒ printCFG = true
+                case "-open"     ⇒ doOpen = true
+                case "-class"    ⇒ className = Some(readNextArg())
+                case "-method"   ⇒ methodSignature = Some(readNextArg())
+                case "-toString" ⇒ toString = true
+                case unknown     ⇒ handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
 
-        if (source == null) {
+        if (cp == null) {
             handleError("missing parameters")
         }
 
-        val sourceFile = new File(source)
-        val project =
-            sourceLib.map(l ⇒ Project(sourceFile, new File(l))).getOrElse(Project(sourceFile))
+        val sourceFiles = cp.map(new File(_)).toArray
+        val sourceLibFiles = libcp.map(new File(_)).toArray
+        val project = Project(sourceFiles, sourceLibFiles)
         if (project.projectMethodsCount == 0) {
-            handleError(s"no methods found: $source")
+            handleError(s"no methods found: $cp")
         }
 
         val ch = project.classHierarchy
@@ -191,8 +191,8 @@ object TAC {
                             // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
                             Class.
                                 forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]].
-                                getConstructor(classOf[Project[_]], classOf[ClassFile], classOf[Method]).
-                                newInstance(project, cf, m)
+                                getConstructor(classOf[Project[_]], classOf[Method]).
+                                newInstance(project, m)
                         }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
                         val aiResult = BaseAI(m, d)
