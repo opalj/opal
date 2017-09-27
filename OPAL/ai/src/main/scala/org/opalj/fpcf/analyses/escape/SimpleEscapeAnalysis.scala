@@ -38,6 +38,8 @@ import org.opalj.br.Method
 import org.opalj.br.AllocationSite
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.analyses.FormalParametersKey
+import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.tac.Stmt
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.fpcf.properties.MaybeNoEscape
@@ -119,18 +121,15 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
 object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
     type V = DUVar[Domain#DomainValue]
 
-    def entitySelector: PartialFunction[Entity, Entity] = {
-        case as: AllocationSite  ⇒ as
-        case fp: FormalParameter ⇒ fp
-    }
-
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
 
     override def usedProperties: Set[PropertyKind] = Set.empty
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new SimpleEscapeAnalysis(project)
-        propertyStore.scheduleForCollected(entitySelector)(analysis.determineEscape)
+        val fps = FormalParametersKey.entityDerivationFunction(project)._1
+        val ass = AllocationSitesKey.entityDerivationFunction(project)._1
+        propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
 }
