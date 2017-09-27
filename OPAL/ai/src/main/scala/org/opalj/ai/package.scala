@@ -153,6 +153,11 @@ package object ai {
     type ValueOrigin = Int
 
     /**
+     * Identifies the implicit `this` reference
+     */
+    final val ThisReference /*: ValueOrigin*/ = -1
+
+    /**
      * Identifies the ''upper bound for those origin values that encode origin
      * information about VM level values'' (that is, VM generated exceptions).
      */
