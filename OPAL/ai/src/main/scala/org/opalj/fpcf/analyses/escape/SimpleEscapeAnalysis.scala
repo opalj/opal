@@ -33,6 +33,7 @@ package escape
 
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.TACMethodParameter
 import org.opalj.br.Method
 import org.opalj.br.AllocationSite
@@ -71,7 +72,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         e:       Entity,
         defSite: ValueOrigin,
         uses:    IntArraySet,
-        code:    Array[Stmt[V]],
+        code:    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
         params:  Parameters[TACMethodParameter],
         m:       Method
     ): AbstractEntityEscapeAnalysis =
@@ -119,8 +120,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
  * A companion object used to start the analysis.
  */
 object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
-    type V = DUVar[Domain#DomainValue]
-
+    
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
 
     override def usedProperties: Set[PropertyKind] = Set.empty
