@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.util.control.ControlThrowable
+import scala.xml.NodeSeq
 
 import org.opalj.log.LogContext
 import org.opalj.br._
@@ -258,7 +259,7 @@ object InterpretMethodsAnalysis {
 
             val node =
                 XHTML.createXHTML(
-                    Some("Exceptions Thrown During Interpretation"), scala.xml.NodeSeq.fromSeq(body)
+                    Some("Exceptions Thrown During Interpretation"), NodeSeq.fromSeq(body)
                 )
             val file = writeAndOpen(node, "ExceptionsOfCrashedAbstractInterpretations", ".html")
 
