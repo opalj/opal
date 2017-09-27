@@ -120,7 +120,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
  * A companion object used to start the analysis.
  */
 object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
-    
+
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
 
     override def usedProperties: Set[PropertyKind] = Set.empty
