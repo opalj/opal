@@ -33,7 +33,6 @@ package properties
 import org.opalj.br.ClassFile
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
 
 /**
  * This is a common trait for all ProjectAccessibility properties which can be emitted to the

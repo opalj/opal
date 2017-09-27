@@ -1541,7 +1541,10 @@ class PropertyStore private (
                     if (results.nonEmpty) {
                         if (debug) {
                             val cycle = cSCC.mkString("", " → ", " ↺")
-                            logInfo("analysis progress", s"resolving the cycle $cycle resulted in $results")
+                            logInfo(
+                                "analysis progress",
+                                s"resolving the cycle $cycle resulted in $results"
+                            )
                         }
                         for (result ← results) {
                             // TODO validate that we have indeed changed a property!
@@ -1551,7 +1554,8 @@ class PropertyStore private (
                         // The following handles the case of a cycle which could not be resolved.
                         if (debug) {
                             val cycle = cSCC.mkString("", " → ", " ↺")
-                            val infoMessage = s"resolution of $cycle produced no results; removing observers"
+                            val infoMessage =
+                                s"resolution of $cycle produced no results; removing observers"
                             logInfo("analysis progress", infoMessage)
                         }
                         for (epk ← cSCC) { clearAllDependeeObservers(epk) }
