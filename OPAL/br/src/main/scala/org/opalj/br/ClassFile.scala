@@ -755,29 +755,39 @@ final class ClassFile private (
     }
 
     /**
-     * Returns the method which directly overrides a method with the given properties.
+    * Returns the method which directly overrides a method with the given properties. The result
+   * is `Success(<Method>)`` if we can find a method; `Empty` if no method can be found and Failure
+   * if a method is found which supposedly overrides the specified method, but which is less
+   * visible.
      *
-     * @note    This method is only defined for proper virtual methods.
+     * @note    This method is only defined for proper virtual methods. I.e., asking for
+     *          overridings of a private methods is not supported.
      */
     def findDirectlyOverridingMethod(
         packageName: String,
         visibility:  Option[VisibilityModifier],
         name:        String,
         descriptor:  MethodDescriptor
-    )(implicit logContext: LogContext): Option[Method] = {
-        findMethod(name, descriptor).filter(m ⇒ !m.isStatic).flatMap { candidateMethod ⇒
-            if (candidateMethod.isPrivate) {
-                val message =
-                    s"the private method ${candidateMethod.toJava} "+
-                        "\"overrides\" a non-private one defined by a superclass"
-                val logMessage = StandardLogMessage(Warn, Some("project configuration"), message)
-                OPALLogger.logOnce(logMessage)
-                None
-            } else if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName))
-                Some(candidateMethod)
-            else
-                None
-        }
+    )(
+        implicit logContext: LogContext
+    ): Rsesult[Method] = {
+        assert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
+
+               findMethod(name, descriptor).filter(m ⇒ !m.isStatic) match {
+
+                   case Some(candidateMethod) ⇒
+
+                if (
+                    Method.canDirectlyOverride (thisType.packageName, visibility, packageName) &&
+                    VisibilityModifier.isAtLeastAsVisibleAs(candidateMethod.visibilityModifier,visibility)
+             )
+               Success (candidateMethod)
+               else
+               Failure
+
+                   case None ⇒ Empty
+               }
+
     }
 
     final def findDirectlyOverridingMethod(
@@ -786,7 +796,7 @@ final class ClassFile private (
     )(
         implicit
         logContext: LogContext
-    ): Option[Method] = {
+    ): Result[Method] = {
         findDirectlyOverridingMethod(
             packageName,
             method.visibilityModifier,

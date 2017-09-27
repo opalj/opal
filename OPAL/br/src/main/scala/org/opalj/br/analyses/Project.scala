@@ -415,8 +415,8 @@ class Project[Source] private (
                                 declaredMethodPackageName,
                                 declaredMethod
                             ) match {
-                                case None ⇒ true
-                                case Some(overridingMethod) ⇒
+                                case _ : NoResult ⇒ true
+                                case Success(overridingMethod) ⇒
                                     val nextOverridingMethods = methods.get(overridingMethod)
                                     if (nextOverridingMethods.isEmpty) {
                                         overridingMethods = nextOverridingMethods
