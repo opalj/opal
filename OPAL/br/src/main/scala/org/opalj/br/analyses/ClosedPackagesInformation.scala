@@ -170,5 +170,4 @@ class OpenPackagesConfiguration(val project: SomeProject) extends ClosedPackages
     }
 
     override def apply(packageName: String): Boolean = packageName matches openPackagesRegex
-
 }
