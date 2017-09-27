@@ -36,8 +36,8 @@ import org.opalj.collection.immutable.IntArraySet
  * the properties).
  *
  * For information regarding issues related to using post-dominator trees for computing
- * control dependence information see "A New Foundation for Control Dependence and Slicing for Modern
- * Program Structures" (2007, Journal Version appeared in TOPLAS)
+ * control dependence information see "A New Foundation for Control Dependence and Slicing for
+ * Modern Program Structures" (2007, Journal Version appeared in TOPLAS)
  *
  * @param  startNode The (unique) exit node of the underlying CFG or the PDT's (artificial)
  *         start node.
