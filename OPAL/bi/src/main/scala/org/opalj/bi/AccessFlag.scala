@@ -29,6 +29,8 @@
 package org.opalj
 package bi
 
+import scala.annotation.switch
+
 /**
  * A class, field or method declaration's access flags. An access flag (e.g., `public`
  * or `static`) is basically just a specific bit that can be combined with other
@@ -101,16 +103,17 @@ object VisibilityModifier {
      * Returns the specified visibility modifier.
      *
      * @param accessFlags The access flags of a class or a member thereof.
-     * @return The visibility modifier of the respective element or `None` if the
-     *      element has default visibility.
+     * @return  The visibility modifier of the respective element or `None` if the
+     *          element has default visibility.
      */
-    def get(accessFlags: Int): Option[VisibilityModifier] =
-        ((accessFlags & VisibilityModifier.mask): @scala.annotation.switch) match {
+    def get(accessFlags: Int): Option[VisibilityModifier] = {
+        ((accessFlags & VisibilityModifier.mask): @switch) match {
             case 1 /*ACC_PUBLIC.mask*/    ⇒ SOME_PUBLIC
             case 2 /*ACC_PRIVATE.mask*/   ⇒ SOME_PRIVATE
             case 4 /*ACC_PROTECTED.mask*/ ⇒ SOME_PROTECTED
             case _                        ⇒ None /*DEFAULT VISIBILITY*/
         }
+    }
 
     def unapply(accessFlags: Int): Option[VisibilityModifier] = get(accessFlags)
 }
