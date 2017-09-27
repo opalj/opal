@@ -293,6 +293,10 @@ public class MethodsWithExceptions {
         return;
     }
 
+    private static void processIt(int t) {
+        return;
+    }
+
     // inspired by java.util.concurrent.ForkJoinWorkerThread.run()
     // - standard compiler generate a lot of dead code in this example -
     public static void nestedTryFinally() throws Throwable {
@@ -311,5 +315,16 @@ public class MethodsWithExceptions {
                 processIt(exception);
             }
         }
+    }
+
+    public static void exceptionAsControlFlow(int i) throws Throwable {
+        try {
+            // convoluted control flow...
+            processIt(33/i); // if i is 0 throw an exception
+        } catch (ArithmeticException ex) {
+            throw new IllegalArgumentException("");
+        }
+
+        processIt(i+1);
     }
 }
