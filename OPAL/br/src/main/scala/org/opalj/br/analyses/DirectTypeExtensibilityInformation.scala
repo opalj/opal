@@ -31,6 +31,7 @@ package br
 package analyses
 
 import net.ceedubs.ficus.Ficus._
+import org.opalj.collection.mutable.ArrayMap
 
 /**
  * Determines whether a type (class or interface) is directly extensible by a (yet unknown)
@@ -44,34 +45,34 @@ import net.ceedubs.ficus.Ficus._
 class DirectTypeExtensibilityInformation(val project: SomeProject) extends (ObjectType ⇒ Answer) {
 
     // IMPROVE Use (not yet existing...) ImplicitUIDMap where we use a plain array to store the answer.
-    private[this] lazy val typeExtensibility: Map[ObjectType, Answer] = compute()
+    private[this] lazy val typeExtensibility: ArrayMap[Answer] = compute()
 
-    protected[this] def compute(): Map[ObjectType, Answer] = {
+    protected[this] def compute(): ArrayMap[Answer] = {
 
         val isClosedPackage = project.get(ClosedPackagesKey)
 
         val allClassFiles = project.allClassFiles
-        val extensibility = allClassFiles.foldLeft(Map.empty[ObjectType, Answer]) { (r, classFile) ⇒
+        val extensibility = allClassFiles.foldLeft(ArrayMap[Answer](ObjectType.objectTypesCount)) { (r, classFile) ⇒
             val objectType = classFile.thisType
-            r +
-                ((
-                    objectType,
-                    {
-                        if (classFile.isEffectivelyFinal ||
-                            classFile.isEnumDeclaration ||
-                            classFile.isAnnotationDeclaration)
-                            No
-                        else if (classFile.isPublic)
-                            Yes
-                        else if (isClosedPackage(objectType.packageName))
-                            No
-                        else
-                            Yes
-                    }
-                ))
-        }
+            val isExtensible =
+                {
+                    if (classFile.isEffectivelyFinal ||
+                        classFile.isEnumDeclaration ||
+                        classFile.isAnnotationDeclaration)
+                        No
+                    else if (classFile.isPublic)
+                        Yes
+                    else if (isClosedPackage(objectType.packageName))
+                        No
+                    else
+                        Yes
+                }
+            r.update(objectType.id, isExtensible)
+            r
 
-        configuredTypeExtensibilities.foldLeft(extensibility) { (r, entry) ⇒ r + entry }
+        }
+        extensibility
+        //configuredTypeExtensibilities.foldLeft(extensibility) { (r, entry) ⇒ r + entry }
     }
 
     /**
@@ -118,8 +119,7 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
      * Determines whether the given type can directly be extended by a (yet unknown)
      * library/application.
      */
-    def apply(t: ObjectType): Answer = typeExtensibility.get(t).getOrElse(Unknown)
-
+    def apply(t: ObjectType): Answer = typeExtensibility.get(t.id).getOrElse(Unknown)
 }
 
 /**
