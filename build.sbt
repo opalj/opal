@@ -86,16 +86,19 @@ lazy val IntegrationTest = config("it") extend Test
 
 // Default settings without scoverage
 lazy val buildSettings =
-		Defaults.coreDefaultSettings ++
-		SbtScalariform.scalariformSettingsWithIt ++
-		Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value) ++
-		Seq(libraryDependencies ++= Dependencies.opalDefaultDependencies) ++
-		Seq(Defaults.itSettings : _*) ++
-		Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
-		Seq(unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil) ++
-		Seq(unmanagedSourceDirectories in IntegrationTest := (scalaSource in IntegrationTest).value :: Nil) ++
-		Seq(scalacOptions in (Compile, console) := Seq("-deprecation"))
+Defaults.coreDefaultSettings ++ scalariformSettings ++
+	Seq(libraryDependencies ++= Dependencies.opalDefaultDependencies) ++
+	Seq(Defaults.itSettings : _*) ++
+	Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
+	Seq(unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil) ++
+	Seq(unmanagedSourceDirectories in IntegrationTest := (scalaSource in IntegrationTest).value :: Nil) ++
+	Seq(scalacOptions in (Compile, console) := Seq("-deprecation"))
 
+lazy val scalariformSettings = scalariformSettingsWithIt(true) ++
+	Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value) ++
+	Seq(sourceDirectories.in(Compile, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value) ++
+	Seq(sourceDirectories.in(Test, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value) ++
+	Seq(sourceDirectories.in(IntegrationTest, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value)
 def getScalariformPreferences(dir: File) = {
 		val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
 		PreferencesImporterExporter.loadPreferences(file(formatterPreferencesFile).getPath)
