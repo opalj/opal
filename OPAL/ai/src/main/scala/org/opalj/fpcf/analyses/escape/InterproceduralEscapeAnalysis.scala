@@ -31,8 +31,6 @@ package fpcf
 package analyses
 package escape
 
-import java.io.File
-
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.AllocationSite
