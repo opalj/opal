@@ -289,7 +289,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
     "a graph with three cSCC and a SCC which has multiple incoming edges" should "contain three cSCCs" in {
         val g = Graph.empty[AnyRef] +=
             ("u", "a") += ("v", "c") += ("w", "c") += ("w", "e") += ("w", "g") += ("x", "g") +=
-            ("h", "z") += ("y", "b") += ("y", "d") += ("y", "f") +=  ("y", "h") +=
+            ("h", "z") += ("y", "b") += ("y", "d") += ("y", "f") += ("y", "h") +=
             ("a", "b") += ("b", "a") +=
             ("c", "d") += ("d", "c") +=
             ("e", "f") += ("f", "e") +=
