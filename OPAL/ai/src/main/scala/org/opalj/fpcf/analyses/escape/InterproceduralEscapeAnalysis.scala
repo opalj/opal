@@ -142,7 +142,7 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
         val propertyStore = project.get(PropertyStoreKey)
-        propertyStore.debug = true
+        //propertyStore.debug = true
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         time {
             analysesManager.run(InterproceduralEscapeAnalysis)
