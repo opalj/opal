@@ -71,12 +71,12 @@ package object ai {
 
     {
         implicit val logContext = GlobalLogContext
+        import OPALLogger.info
         try {
-            scala.Predef.assert(false) // <= tests whether assertions are on or off...
-            OPALLogger.info(FrameworkName, "Production Build")
+            assert(false) // <= tests whether assertions are on or off...
+            info(FrameworkName, "Production Build")
         } catch {
-            case _: AssertionError ⇒
-                OPALLogger.info(FrameworkName, "Development Build (Assertions are enabled)")
+            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
         }
     }
 
@@ -96,7 +96,7 @@ package object ai {
     final def NoPCs = org.opalj.br.NoPCs
 
     /**
-     * A `ValueOrigin` identifies the origin of a value.
+     * A `ValueOrigin` identifies the origin of a value within a method.
      * In most cases the origin is equal to the program counter of the instruction that created
      * the value. However, several negative values do have special semantics which are explained
      * in the following.
@@ -144,11 +144,10 @@ package object ai {
      *
      * Values in the range [ [[SpecialValuesOriginOffset]] (`-10,000,000`) ,
      * [[VMLevelValuesOriginOffset]] (`-100,000`) ] are used to identify values that are
-     * created by the VM (in particular exceptions) while evaluating the instruction with
-     * the `pc = -origin-100,000`.
+     * created outside of the method, but due to the evaluation of the instruction with
+     * the `pc = -origin-100,000` (in particular exceptions).
      *
-     * @see For further information see [[isVMLevelValue]],
-     *      [[ValueOriginForVMLevelValue]], [[pcOfVMLevelValue]].
+     * @see [[isVMLevelValue]], [[ValueOriginForVMLevelValue]], [[pcOfVMLevelValue]]
      */
     type ValueOrigin = Int
 
@@ -156,7 +155,7 @@ package object ai {
      * Identifies the ''upper bound for those origin values that encode origin
      * information about VM level values'' (that is, VM generated exceptions).
      */
-    final val VMLevelValuesOriginOffset /*: ValueOrigin*/ = -100000
+    final val VMLevelValuesOriginOffset /*: ValueOrigin*/ = -100000 // TODO Rename MethodExternalOriginOffset
 
     /**
      * Identifies the upper bound for those "origin values" that encode special information;
@@ -171,18 +170,18 @@ package object ai {
      *
      * @see [[ValueOriginForVMLevelValue]] for further information.
      */
-    final def isVMLevelValue(origin: ValueOrigin): Boolean = {
+    final def isVMLevelValue(origin: ValueOrigin): Boolean = { // TODO Rename isMethodExternalValue
         origin <= VMLevelValuesOriginOffset && origin > SpecialValuesOriginOffset
     }
 
     /**
-     * Creates the origin information for a VM level value (typically an exception) that
+     * Creates the origin information for a value (typically an exception) that
      * was (implicitly) created while evaluating the instruction with the given
      * program counter (`pc`).
      *
      * @see [[pcOfVMLevelValue]] for further information.
      */
-    final def ValueOriginForVMLevelValue(pc: PC): ValueOrigin = {
+    final def ValueOriginForVMLevelValue(pc: PC): ValueOrigin = { //TODO Rename valueOriginForMethodExternalValue
         val origin = VMLevelValuesOriginOffset - pc
         assert(
             origin <= VMLevelValuesOriginOffset,
@@ -194,11 +193,11 @@ package object ai {
 
     /**
      * Returns the program counter (`pc`) of the instruction that (implicitly) led to the
-     * creation of the VM level value (typically an `Exception`).
+     * creation of the (method external) value (typically an `Exception`).
      *
      * @see [[ValueOriginForVMLevelValue]] for further information.
      */
-    final def pcOfVMLevelValue(origin: ValueOrigin): PC = {
+    final def pcOfVMLevelValue(origin: ValueOrigin): PC = { //TODO Rename pcOfMethodExternalValue
         assert(origin <= VMLevelValuesOriginOffset)
         -origin + VMLevelValuesOriginOffset
     }

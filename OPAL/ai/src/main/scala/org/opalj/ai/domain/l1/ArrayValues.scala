@@ -633,7 +633,7 @@ object ArrayValues {
     //        FirstVirtualOriginAddressOfDefaultArrayValues+pc*UShort.MaxValue,
     //        FirstVirtualOriginAddressOfDefaultArrayValues+(pc+1)*UShort.MaxValue
     // ]
-    final val FirstVirtualOriginAddressOfDefaultArrayValues = (Int.MaxValue / 2)
+    final val FirstVirtualOriginAddressOfDefaultArrayValues = (Int.MaxValue / 2) // FIXME TODO XXX <= needs to be killed...
     final val MaxPossibleArraySize = (Int.MaxValue / 2) / UShort.MaxValue /*<=> max PC per method*/
 
 }

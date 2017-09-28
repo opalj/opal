@@ -258,7 +258,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         val cSCCs = closedSCCs(g).map(_.toSet)
         val expected = List(Set("e", "d"))
         if (cSCCs != expected) {
-            fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
+            fail(s"$g: cscc with $expected expected, but found $cSCCs")
         }
     }
 
@@ -270,7 +270,34 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         val cSCCs = closedSCCs(g).map(_.toSet).toSet
         val expected = Set(Set("e", "d"), Set("x", "y", "z"))
         if (cSCCs != expected) {
-            fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
+            fail(s"$g: cscc with $expected expected, but found $cSCCs")
+        }
+    }
+
+    "a graph with one cSCC which has multiple incoming edges" should "contain one cSCCs" in {
+        val g = Graph.empty[AnyRef] +=
+            ("u", "v") += ("v", "a") += ("w", "e") += ("x", "c") += ("x", "b") += ("u", "d") +=
+            ("a", "b") += ("b", "c") += ("c", "a") +=
+            ("a", "e") += ("e", "d") += ("d", "c")
+        val cSCCs = closedSCCs(g).map(_.toSet).toSet
+        val expected = Set(Set("a", "b", "c", "d", "e"))
+        if (cSCCs != expected) {
+            fail(s"$g: cscc with $expected expected, but found $cSCCs")
+        }
+    }
+
+    "a graph with three cSCC and a SCC which has multiple incoming edges" should "contain three cSCCs" in {
+        val g = Graph.empty[AnyRef] +=
+            ("u", "a") += ("v", "c") += ("w", "c") += ("w", "e") += ("w", "g") += ("x", "g") +=
+            ("h", "z") += ("y", "b") += ("y", "d") += ("y", "f") +=  ("y", "h") +=
+            ("a", "b") += ("b", "a") +=
+            ("c", "d") += ("d", "c") +=
+            ("e", "f") += ("f", "e") +=
+            ("g", "h") += ("h", "g")
+        val cSCCs = closedSCCs(g).map(_.toSet).toSet
+        val expected = Set(Set("a", "b"), Set("c", "d"), Set("e", "f"))
+        if (cSCCs != expected) {
+            fail(s"$g: cscc with $expected expected, but found $cSCCs")
         }
     }
 

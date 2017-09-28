@@ -284,4 +284,47 @@ public class MethodsWithExceptions {
         }
         return z.hashCode() + o.hashCode();
     }
+
+    private static void doIt() {
+        return;
+    }
+
+    private static void processIt(Object o) {
+        return;
+    }
+
+    private static void processIt(int t) {
+        return;
+    }
+
+    // inspired by java.util.concurrent.ForkJoinWorkerThread.run()
+    // - standard compiler generate a lot of dead code in this example -
+    public static void nestedTryFinally() throws Throwable {
+        Throwable exception = null;
+        try {
+            doIt();
+        } catch (Throwable ex) {
+            exception = ex;
+        } finally {
+            try {
+                processIt(exception);
+            } catch (Throwable ex) {
+                if (exception == null)
+                    exception = ex;
+            } finally {
+                processIt(exception);
+            }
+        }
+    }
+
+    public static void exceptionAsControlFlow(int i) throws Throwable {
+        try {
+            // convoluted control flow...
+            processIt(33/i); // if i is 0 throw an exception
+        } catch (ArithmeticException ex) {
+            throw new IllegalArgumentException("");
+        }
+
+        processIt(i+1);
+    }
 }
