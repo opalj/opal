@@ -344,7 +344,10 @@ package object graphs {
                                 assert(
                                     nDFSNum == initialDFSNum || nCSCCId == cSCCId(path.last),
                                     s"nDFSNum=$nDFSNum; nCSCCId=$nCSCCId; "+
-                                        s"cSCCId(path.last)=${cSCCId(path.last)}"
+                                        s"cSCCId(path.last)=${cSCCId(path.last)}\n"+
+                                        s"(n=$n; initialDFSNum=$initialDFSNum; "+
+                                        s"thisPathFirstDFSNum=$thisPathFirstDFSNum\n"+
+                                        cSCCs.map(_.map(_.toString)).mkString("found csccs:\n\t", "\n\t", "\n")
                                 )
 
                         }
