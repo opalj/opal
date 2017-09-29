@@ -83,7 +83,9 @@ import scala.annotation.switch
  * @author Florian Kuebler
  */
 trait AbstractEntityEscapeAnalysis {
+
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+
     val e: Entity
     val defSite: ValueOrigin
     val uses: IntArraySet

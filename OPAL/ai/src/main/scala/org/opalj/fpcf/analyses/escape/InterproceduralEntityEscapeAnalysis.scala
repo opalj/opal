@@ -213,4 +213,3 @@ class InterproceduralEntityEscapeAnalysis(
         val propertyStore: PropertyStore,
         val project:       SomeProject
 ) extends InterproceduralEntityEscapeAnalysis1 with SimpleFieldAwareEntityEscapeAnalysis
-
