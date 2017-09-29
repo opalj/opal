@@ -110,6 +110,8 @@ trait Instruction extends InstructionLike {
 
     def asInvocationInstruction: InvocationInstruction = throw new ClassCastException();
 
+    def asArithmeticInstruction: ArithmeticInstruction = throw new ClassCastException();
+
     def asTABLESWITCH: TABLESWITCH = throw new ClassCastException();
     def asLOOKUPSWITCH: LOOKUPSWITCH = throw new ClassCastException();
 }

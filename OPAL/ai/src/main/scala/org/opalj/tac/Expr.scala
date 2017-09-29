@@ -303,7 +303,8 @@ case class NullExpr(pc: PC) extends SimpleValueConst {
 object NullExpr { final val ASTID = -13 }
 
 /**
- * @param cTpe The computational type of the result of the binary expression.
+ * @param cTpe  The computational type of the result of the binary expression if the expression
+ *              succeeds.
  */
 case class BinaryExpr[+V <: Var[V]](
         pc:   PC,

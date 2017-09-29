@@ -390,7 +390,7 @@ object TACAI {
             def binaryArithmeticOperation(operator: BinaryArithmeticOperator): Unit = {
                 val value2 = operandUse(0)
                 val value1 = operandUse(1)
-                val cTpe = operandsArray(nextPC).head.computationalType
+                val cTpe = instruction.asArithmeticInstruction.computationalType
                 val binExpr = BinaryExpr(pc, cTpe, operator, value1, value2)
                 // may fail in case of a div by zero...
                 if (wasExecuted(nextPC)) {

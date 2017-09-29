@@ -327,4 +327,14 @@ public class MethodsWithExceptions {
 
         processIt(i+1);
     }
+
+    public static void onlyNewNoInitDueToException(int i) {
+        int j = 1;
+        if (i == 0)
+            j = 0;
+        else {
+            j = j-1;
+        }
+        new java.util.HashMap<Integer,Integer>(i / j);
+    }
 }
