@@ -31,6 +31,10 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.collection.immutable.IntArraySet
+
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.AllocationSite
@@ -40,7 +44,6 @@ import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
@@ -55,14 +58,18 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 import org.opalj.tac.Parameters
 import org.opalj.tac.TACMethodParameter
-import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * A very simple flow-sensitive inter-procedural escape analysis.
  *
  * @author Florian Kuebler
  */
-class InterproceduralEscapeAnalysis private ( final val project: SomeProject) extends AbstractEscapeAnalysis {
+class InterproceduralEscapeAnalysis private (
+    final val project: SomeProject
+) extends AbstractEscapeAnalysis {
+
+    private[this] tacai = project.get(DefaultTACAIKey)
+
     override def entityEscapeAnalysis(
         e:       Entity,
         defSite: ValueOrigin,
@@ -80,7 +87,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             case as @ AllocationSite(m, pc, _) ⇒
-                val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
+                val TACode(params, code, _, _, _) = tacai(m)
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
@@ -94,6 +101,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
                             throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
                     }
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
+
             case FormalParameter(m, _) if m.body.isEmpty ⇒ Result(e, MaybeNoEscape)
             case FormalParameter(m, i) ⇒
                 val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
@@ -104,6 +112,7 @@ class InterproceduralEscapeAnalysis private ( final val project: SomeProject) ex
 }
 
 object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
+
     type V = DUVar[Domain#DomainValue]
 
     def entitySelector(propertyStore: PropertyStore): PartialFunction[Entity, Entity] = {
@@ -124,20 +133,18 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
     }
 
     def main(args: Array[String]): Unit = {
-        val project = Project(org.opalj.bytecode.JRELibraryFolder)
-
-        val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
-        Project.recreate(project, testConfig)
+        val opaConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
+        val project = Project(
+            org.opalj.bytecode.JRELibraryFolder,
+            GlobalLogContext,
+            opaConfig.withFallback(Project.GlobalConfig)
+        )
 
         //SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
         time {
             val tacai = project.get(DefaultTACAIKey)
-            for {
-                m ← project.allMethodsWithBody.par
-            } {
-                tacai(m)
-            }
-        } { t ⇒ println(s"tac took ${t.toSeconds}") }
+            project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
+        } { t ⇒ println(s"computing the 3-address code took ${t.toSeconds}") }
 
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
