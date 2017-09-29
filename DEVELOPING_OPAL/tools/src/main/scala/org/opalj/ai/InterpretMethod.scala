@@ -57,13 +57,13 @@ object InterpretMethod {
 
         override def isInterrupted: Boolean = Thread.interrupted()
 
-        override val tracer = {
-            val consoleTracer = new ConsoleTracer { override val printOIDs = true }
-            val xHTMLTracer = new XHTMLTracer {}
-            //    Some(new ConsoleTracer {})
-            //Some(new ConsoleEvaluationTracer {})
-            Some(new MultiTracer(consoleTracer, xHTMLTracer))
-        }
+        val consoleTracer =
+            new ConsoleTracer { override val printOIDs = true }
+        //new ConsoleEvaluationTracer {}
+
+        val xHTMLTracer = new XHTMLTracer {}
+
+        override val tracer = Some(new MultiTracer(consoleTracer, xHTMLTracer))
     }
 
     /**
@@ -188,11 +188,13 @@ object InterpretMethod {
                         return ;
                 }
 
+        var ai: AI[Domain] = null;
         try {
             val result =
-                if (doTrace)
-                    new IMAI(doIdentifyDeadVariables)(method, createDomain(project, method))
-                else {
+                if (doTrace) {
+                    ai = new IMAI(doIdentifyDeadVariables)
+                    ai(method, createDomain(project, method))
+                } else {
                     val body = method.body.get
                     println("Starting abstract interpretation of: ")
                     println("\t"+classFile.thisType.toJava+"{")
@@ -201,8 +203,8 @@ object InterpretMethod {
                         "; #max_stack="+body.maxStack+
                         "; #locals="+body.maxLocals+"]")
                     println("\t}")
-                    val result =
-                        new BaseAI(doIdentifyDeadVariables)(method, createDomain(project, method))
+                    ai = new BaseAI(doIdentifyDeadVariables)
+                    val result = ai(method, createDomain(project, method))
                     println("Finished abstract interpretation.")
                     result
                 }
@@ -269,6 +271,11 @@ object InterpretMethod {
         } catch {
             case ife: InterpretationFailedException ⇒
 
+                ai match {
+                    case ai: IMAI ⇒ ai.xHTMLTracer.result(null);
+                    case _        ⇒ /*nothing to do*/
+                }
+
                 def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
                     val domain = ife.domain
                     val parameters =
@@ -324,6 +331,7 @@ object InterpretMethod {
                     )(ife.cfJoins, ife.operandsArray, ife.localsArray)
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife
+
         }
     }
 }

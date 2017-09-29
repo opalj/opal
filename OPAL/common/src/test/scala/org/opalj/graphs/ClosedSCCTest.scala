@@ -289,7 +289,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
     "a graph with three cSCC and a SCC which has multiple incoming edges" should "contain three cSCCs" in {
         val g = Graph.empty[AnyRef] +=
             ("u", "a") += ("v", "c") += ("w", "c") += ("w", "e") += ("w", "g") += ("x", "g") +=
-            ("h", "z") += ("y", "b") += ("y", "d") += ("y", "f") +=  ("y", "h") +=
+            ("h", "z") += ("y", "b") += ("y", "d") += ("y", "f") += ("y", "h") +=
             ("a", "b") += ("b", "a") +=
             ("c", "d") += ("d", "c") +=
             ("e", "f") += ("f", "e") +=
@@ -299,6 +299,63 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         if (cSCCs != expected) {
             fail(s"$g: cscc with $expected expected, but found $cSCCs")
         }
+    }
+
+    "a multi-graph with cSCCs and a SCCs" should "contain the correct number of cSCCs" in {
+        val seed = System.currentTimeMillis
+        val random = new java.util.Random(seed) // testing all permutations takes FAR too long...
+
+        val edges = Array(
+            ("c" -> "b"),
+            ("d" -> "e"),
+            ("e" -> "e"),
+            ("f" -> "g"),
+            ("g" -> "f"),
+            ("h" -> "i"),
+            ("j" -> "k"),
+            ("k" -> "l"),
+            ("l" -> "k"), ("l" -> "n"),
+            ("m" -> "l"),
+            ("o" -> "b"), ("o" -> "e"), ("o" -> "g"),
+            ("p" -> "r"), ("p" -> "q"),
+            ("q" -> "p"),
+            ("r" -> "q"), ("r" -> "s"),
+            ("s" -> "t"), ("s" -> "q"),
+            ("t" -> "p"),
+            ("u" -> "p"), ("u" -> "v"), ("u" -> "w"),
+            ("v" -> "w"),
+            ("w" -> "v"),
+            ("x" -> "w"),
+            ("y" -> "t")
+        )
+        val expectedCSCCs = Set(Set("e"), Set("v", "w"), Set("f", "g"), Set("s", "t", "p", "q", "r"))
+
+        var run = 0
+
+        do {
+            val g = {
+                val g = Graph.empty[AnyRef] += ("a") += ("b") += ("i") += ("n") += ("z")
+                // permutate the edges
+                var swaps = 10
+                while (swaps > 0) {
+                    val cellA = random.nextInt(edges.length)
+                    val cellB = random.nextInt(edges.length)
+                    val temp = edges(cellA)
+                    edges(cellA) = edges(cellB)
+                    edges(cellB) = temp
+                    swaps -= 1
+                }
+                // add the adges
+                edges.foreach(g.+=)
+                g
+            }
+            val cSCCs = closedSCCs(g).map(_.toSet).toSet
+            if (cSCCs != expectedCSCCs) {
+                fail(s"$g: cscc with $expectedCSCCs expected, but found $cSCCs (run=$run)")
+            }
+            run += 1
+        } while (System.currentTimeMillis - seed < 1000)
+        info(s"tested $run permutations of the graph (initial seed: $seed)")
     }
 
 }

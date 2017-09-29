@@ -40,6 +40,12 @@ package jsr_ret;
  */
 final public class Demo extends Object {
 
+    private static Object[] data = new Object[]{new Object()};
+
+    private static final Object get() throws IllegalArgumentException {
+        return new Object();
+    }
+
     private static final void check(int i) throws IllegalArgumentException {
         if (i < 0)
             throw new IllegalArgumentException();
@@ -301,6 +307,63 @@ final public class Demo extends Object {
                 i -= 1;
             } finally {
                 i += 1;
+            }
+        }
+    }
+
+    public static int[] implicitAndExplicitTryCatchFinall(int i) throws Exception {
+        synchronized(Demo.get()) {
+            String s = "";
+            if(i == -1) throw new RuntimeException();
+            Object[] data = Demo.data;
+
+            try {
+                int[] counts = null;
+                if(i == 0) {
+                    counts = new int[]{i,i+1};
+                    RuntimeException e = null;
+                    Object[] otherData = null;
+                    Object t = null;
+                    try {
+                        for (int c = 0; c < counts.length ; c++) {
+                            int count = counts[c];
+                            try {
+                                if(count == 0) {
+                                    check(count);
+                                }
+                                try {
+                                    counts[count] = m1(count);
+                                } finally {
+                                    otherData = Demo.data;
+                                }
+                                if(m1(1000*i) == 19999){
+                                    java.io.InputStream in = null;
+                                    try {
+                                        in = (java.io.InputStream) get();
+                                    } finally {
+                                        if (in != null) {
+                                            in.close();
+                                        }
+                                    }
+                                }
+                            } catch (RuntimeException re) {
+                                if(m1(66+i)== 766)
+                                    e = re;
+                                else
+                                    throw new IllegalArgumentException();
+                            }
+                        }
+                    }finally {
+                        m1(666);
+                    }
+                    if(e != null) {
+                        throw new RuntimeException(counts.toString());
+                    }
+                }
+
+                return counts;
+            } finally {
+                Demo.data = data;
             }
         }
     }
