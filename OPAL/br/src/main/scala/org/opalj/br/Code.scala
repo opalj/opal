@@ -1176,6 +1176,17 @@ final class Code private (
         vs.result()
     }
 
+    def foldLeft[T](start: T)(f: (T, PC, Instruction) ⇒ T): T = {
+        val max_pc = instructions.length
+        var pc = 0
+        var vs = start
+        while (pc < max_pc) {
+            vs = f(vs, pc, instructions(pc))
+            pc = pcOfNextInstruction(pc)
+        }
+        vs
+    }
+
     /**
      * Applies the given function to the first instruction for which the given function
      * is defined.
