@@ -78,20 +78,19 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
         val errors = p.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val m = methodInfo.method
             val code = m.body.get
-            val as = code.collectWithIndex {
-                case (pc, i) if i.opcode == instructions.NEW.opcode ⇒
-                    (pc, new ObjectAllocationSite(m, pc))
+            val as = code.foldLeft(Map.empty[PC, AllocationSite]) { (as, pc, instruction) ⇒
+                instruction.opcode match {
+                    case instructions.NEW.opcode ⇒
+                        as + ((pc, new ObjectAllocationSite(m, pc)))
+                    case instructions.NEWARRAY.opcode |
+                        instructions.ANEWARRAY.opcode |
+                        instructions.MULTIANEWARRAY.opcode ⇒
+                        as + ((pc, new ArrayAllocationSite(m, pc)))
 
-                case (pc, i) if (
-                    i.opcode match {
-                        case instructions.NEWARRAY.opcode |
-                            instructions.ANEWARRAY.opcode |
-                            instructions.MULTIANEWARRAY.opcode ⇒ true
-                        case _ ⇒ false
-                    }
-                ) ⇒
-                    (pc, new ArrayAllocationSite(m, pc))
-            }.toMap
+                    case _ ⇒
+                        as
+                }
+            }
             if (as.nonEmpty) sites.add((m, as))
         }
 
