@@ -121,11 +121,11 @@ sealed class EP[+E <: Entity, +P <: Property](
 
     override def canEqual(that: Any): Boolean = that.isInstanceOf[EP[_, _]]
 
+    override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
+
     def pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
 
     def toEPK: EPK[E, P] = EPK(e, pk)
-
-    override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
 
     override def toString: String = s"EP($e,$p)"
 }
