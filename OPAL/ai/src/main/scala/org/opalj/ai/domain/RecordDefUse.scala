@@ -544,9 +544,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
-            defUseDomain.propagate(
-                currentPC, successorPC, newDefOps, newDefLocals
-            )
+            defUseDomain.propagate(currentPC, successorPC, newDefOps, newDefLocals)
         }
 
         def stackOperation(usedValues: Int, pushesValue: Boolean): Boolean = {
