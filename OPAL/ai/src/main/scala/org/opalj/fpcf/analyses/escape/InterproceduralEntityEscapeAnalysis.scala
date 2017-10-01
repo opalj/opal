@@ -130,11 +130,24 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
             handleCall(methodO, 0)
     }
 
-    def handleStaticCall(dc: ReferenceType, isI: Boolean, name: String, descr: MethodDescriptor, params: Seq[Expr[V]]): Unit = {
+    def handleStaticCall(
+        dc:     ReferenceType,
+        isI:    Boolean,
+        name:   String,
+        descr:  MethodDescriptor,
+        params: Seq[Expr[V]]
+    ): Unit = {
         checkParams(project.staticCall(dc.asObjectType, isI, name, descr), params)
     }
 
-    def handleVirtualCall(dc: ReferenceType, isI: Boolean, name: String, descr: MethodDescriptor, receiver: Expr[V], params: Seq[Expr[V]]): Unit = {
+    def handleVirtualCall(
+        dc:       ReferenceType,
+        isI:      Boolean,
+        name:     String,
+        descr:    MethodDescriptor,
+        receiver: Expr[V],
+        params:   Seq[Expr[V]]
+    ): Unit = {
         assert(receiver.isVar)
         val value = receiver.asVar.value.asDomainReferenceValue
         if (value.isPrecise) {
