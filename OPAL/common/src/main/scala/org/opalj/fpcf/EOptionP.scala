@@ -127,7 +127,9 @@ sealed class EP[+E <: Entity, +P <: Property](
 
     def toEPK: EPK[E, P] = EPK(e, pk)
 
-    override def toString: String = s"EP($e,$p)"
+    override def toString: String = {
+        s"EP(${e}@${System.identityHashCode(e).toHexString},$p)"
+    }
 }
 
 /**
@@ -196,7 +198,11 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def hashCode: Int = e.hashCode() * 511 + pk.id
 
-    override def toString: String = s"EPK($e,pkName=${PropertyKey.name(pk.id)},pkId=${pk.id})"
+    override def toString: String = {
+        val pkId = pk.id
+        val pkName = PropertyKey.name(pkId)
+        s"EPK(${e}@${System.identityHashCode(e).toHexString},pkName=$pkName,pkId=$pkId)"
+    }
 }
 
 /**

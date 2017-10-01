@@ -1226,7 +1226,7 @@ object Project {
 
     def JavaClassFileReader(
         theLogContext: LogContext = GlobalLogContext,
-        theConfig:     Config     = org.opalj.br.Config
+        theConfig:     Config     = BaseConfig
     ): Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
@@ -1466,7 +1466,7 @@ object Project {
         handleInconsistentProject:          HandleInconsistenProject         = defaultHandlerForInconsistentProjects
     )(
         implicit
-        config:        Config     = org.opalj.br.Config,
+        config:        Config     = BaseConfig,
         projectLogger: OPALLogger = OPALLogger.globalLogger()
     ): Project[Source] = {
         implicit val logContext = new StandardLogContext()

@@ -260,6 +260,13 @@ package object graphs {
         cSCCId:    (N) ⇒ CSCCId
     ): List[Iterable[N]] = {
 
+        /* The following is not a strict requirement, more an expectation:
+        assert(
+            { val allNodes = ns.toSet; allNodes.forall { n ⇒ es(n).forall(allNodes.contains) } },
+            "the graph references nodes which are not in the set of all nodes"
+        )
+        */
+
         // IMPROVE Instead of associating every node with its cSCCID it is also conceivable to just store the respective boundary nodes where a new cSCC candidate starts!
 
         // The algorithm used to compute the closed scc is loosely inspired by:
@@ -284,8 +291,7 @@ package object graphs {
          * node that does not belong to the SCC and try to determine if it is connected to some
          * previous SCC. If so, we merge all nodes as they belong to the same SCC.
          */
-
-        def dfs(n: N, initialDFSNum: DFSNum): DFSNum = {
+        def dfs(initialDFSNum: DFSNum, n: N): DFSNum = {
             if (hasDFSNum(n))
                 return initialDFSNum;
 
@@ -325,7 +331,7 @@ package object graphs {
                     val n = worklist.pop()
                     val nDFSNum = dfsNum(n)
                     if (nDFSNum >= thisPathFirstDFSNum) {
-                        //                        println(s"visited all children of path element $n")
+                        //                        println(s"visited all children of $n")
                         val thisPathNDFSNum = nDFSNum - thisPathFirstDFSNum
                         val nCSCCId = cSCCId(n)
                         nCSCCId match {
@@ -347,7 +353,8 @@ package object graphs {
                                         s"cSCCId(path.last)=${cSCCId(path.last)}\n"+
                                         s"(n=$n; initialDFSNum=$initialDFSNum; "+
                                         s"thisPathFirstDFSNum=$thisPathFirstDFSNum\n"+
-                                        cSCCs.map(_.map(_.toString)).mkString("found csccs:\n\t", "\n\t", "\n")
+                                        cSCCs.map(_.map(_.toString)).
+                                        mkString("found csccs:\n\t", "\n\t", "\n")
                                 )
 
                         }
@@ -404,7 +411,7 @@ package object graphs {
             nextDFSNum
         }
 
-        ns.foldLeft(0)((initialDFSNum, n) ⇒ dfs(n, initialDFSNum))
+        ns.foldLeft(0)((initialDFSNum, n) ⇒ dfs(initialDFSNum, n))
 
         cSCCs
 
