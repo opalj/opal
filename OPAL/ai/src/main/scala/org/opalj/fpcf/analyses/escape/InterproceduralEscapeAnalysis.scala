@@ -65,10 +65,10 @@ import org.opalj.tac.TACMethodParameter
  * @author Florian Kuebler
  */
 class InterproceduralEscapeAnalysis private (
-    final val project: SomeProject
+        final val project: SomeProject
 ) extends AbstractEscapeAnalysis {
 
-    private[this] tacai = project.get(DefaultTACAIKey)
+    private[this] val tacaiProvider = project.get(DefaultTACAIKey)
 
     override def entityEscapeAnalysis(
         e:       Entity,
@@ -87,7 +87,7 @@ class InterproceduralEscapeAnalysis private (
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             case as @ AllocationSite(m, pc, _) ⇒
-                val TACode(params, code, _, _, _) = tacai(m)
+                val TACode(params, code, _, _, _) = tacaiProvider(m)
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
@@ -137,13 +137,16 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
         val project = Project(
             org.opalj.bytecode.JRELibraryFolder,
             GlobalLogContext,
-            opaConfig.withFallback(Project.GlobalConfig)
+            opaConfig.withFallback(org.opalj.ai.BaseConfig)
         )
 
-        //SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
         time {
             val tacai = project.get(DefaultTACAIKey)
-            project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
+            val exceptions = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
+            if (exceptions.nonEmpty) {
+                exceptions.foreach(println)
+                return ;
+            }
         } { t ⇒ println(s"computing the 3-address code took ${t.toSeconds}") }
 
         PropertyStoreKey.makeAllocationSitesAvailable(project)
@@ -155,16 +158,11 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
             analysesManager.run(InterproceduralEscapeAnalysis)
         } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
 
-        val staticEscapes =
-            propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
-        val heapEscapes =
-            propertyStore.entities(GlobalEscapeViaHeapObjectAssignment)
-        val maybeNoEscape =
-            propertyStore.entities(MaybeNoEscape)
-        val maybeArgEscape =
-            propertyStore.entities(MaybeArgEscape)
-        val maybeMethodEscape =
-            propertyStore.entities(MaybeMethodEscape)
+        val staticEscapes = propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
+        val heapEscapes = propertyStore.entities(GlobalEscapeViaHeapObjectAssignment)
+        val maybeNoEscape = propertyStore.entities(MaybeNoEscape)
+        val maybeArgEscape = propertyStore.entities(MaybeArgEscape)
+        val maybeMethodEscape = propertyStore.entities(MaybeMethodEscape)
         val argEscapes = propertyStore.entities(ArgEscape)
         val returnEscapes = propertyStore.entities(MethodEscapeViaReturn)
         val returnAssignmentEscapes = propertyStore.entities(MethodEscapeViaReturnAssignment)
