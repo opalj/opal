@@ -773,6 +773,19 @@ class Project[Source] private (
     }
 
     /**
+     * Iterates over all methods in parallel; actually, the methods belonging to a specific class
+     * are analyzed sequentially..
+     */
+    def parForeachMethod[T](
+        isInterrupted:        () ⇒ Boolean = defaultIsInterrupted,
+        parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks
+    )(
+        f: Method ⇒ T
+    ): Iterable[Throwable] = {
+        parForeachClassFile(isInterrupted) { cf ⇒ cf.methods.foreach(f) }
+    }
+
+    /**
      * Determines for all packages of this project that contain at least one class
      * the "root" packages and stores the mapping between the package and its root package.
      *
@@ -1192,12 +1205,6 @@ class Project[Source] private (
  */
 object Project {
 
-    // We want to make sure that the class loader is used which potentially can
-    // find the config files; the libraries (e.g., Typesafe Config) may have
-    // been loaded using the parent class loader and, hence, may not be able to
-    // find the config files at all.
-    lazy val GlobalConfig: Config = ConfigFactory.load(this.getClass.getClassLoader())
-
     lazy val JavaLibraryClassFileReader: Java9LibraryFramework.type = Java9LibraryFramework
 
     @volatile private[this] var theCache: SoftReference[BytecodeInstructionsCache] = {
@@ -1219,7 +1226,7 @@ object Project {
 
     def JavaClassFileReader(
         theLogContext: LogContext = GlobalLogContext,
-        theConfig:     Config     = GlobalConfig
+        theConfig:     Config     = org.opalj.br.Config
     ): Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
@@ -1459,7 +1466,7 @@ object Project {
         handleInconsistentProject:          HandleInconsistenProject         = defaultHandlerForInconsistentProjects
     )(
         implicit
-        config:        Config     = GlobalConfig,
+        config:        Config     = org.opalj.br.Config,
         projectLogger: OPALLogger = OPALLogger.globalLogger()
     ): Project[Source] = {
         implicit val logContext = new StandardLogContext()
