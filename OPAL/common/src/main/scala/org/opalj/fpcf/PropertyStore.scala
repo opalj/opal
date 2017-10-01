@@ -30,7 +30,7 @@ package org.opalj
 package fpcf
 
 import scala.language.existentials
-import java.util.{IdentityHashMap ⇒ JIDMap}
+import java.util.{HashMap ⇒ DataMap}
 import java.util.{Set ⇒ JSet}
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.TimeUnit
@@ -162,7 +162,7 @@ class PropertyStore private (
         // class PropertyAndObservers(p: Property, os: Observers)
         // type Properties = OArrayMap[PropertyAndObservers] // the content of the array may be updated
         // class EntityProperties(l: ReentrantReadWriteLock, ps: Properties) // the references are never updated
-        private[this] val data:     JIDMap[Entity, EntityProperties],
+        private[this] val data:     DataMap[Entity, EntityProperties],
         final val ctx:              Map[Type, AnyRef],
         final val ParallelismLevel: Int,
         final val isInterrupted:    () ⇒ Boolean,
@@ -413,7 +413,7 @@ class PropertyStore private (
 
         // 2. check that each observer found in observers still exists
         // observers : JCHMap[SomeEPK, Buffer[(SomeEPK, PropertyObserver)]]()
-        // data:  JIDMap[Entity, EntityProperties]
+        // data:  DataMap[Entity, EntityProperties]
         for {
             dependerEPK ← dependerEPKOpt
             dependeeOss = observers.get(dependerEPK)
