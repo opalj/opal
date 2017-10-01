@@ -2240,7 +2240,7 @@ object PropertyStore {
         assert(parallelismLevel > 0)
 
         val entitiesCount = entities.size
-        val data = new JIDMap[Entity, EntityProperties](entitiesCount)
+        val data = new DataMap[Entity, EntityProperties](entitiesCount)
         var entityId = 0
         entities foreach { e ⇒
             if (data.put(e, new EntityProperties(entityId)) ne null) {
