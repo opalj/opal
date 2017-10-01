@@ -111,7 +111,7 @@ private[fpcf] object PropertyIsBeingComputed {
  * performs the computation - decrements the CountDownLatch once the computation has succeeded.
  * All other processes just wait until the CountDownLatch is decremented.
  *
- * Recall that a direct property computation is executed by the thread that queries the thread and
+ * Recall that a direct property computation is executed by the thread that queries the property and
  * that a direct property computation is always only allowed to depend on either previously
  * computed properties or properties whose computation must not have a dependency on the currently
  * computed property.

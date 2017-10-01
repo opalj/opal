@@ -55,7 +55,7 @@ import org.opalj.tac.TACode
  * @author Florian Kuebler
  */
 trait AbstractEscapeAnalysis extends FPCFAnalysis {
-    
+
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     /**
