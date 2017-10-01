@@ -28,6 +28,9 @@
  */
 package org
 
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
@@ -94,6 +97,18 @@ package object opalj {
         } catch {
             case ae: AssertionError ⇒ info("OPAL Common", "Development Build with Assertions")
         }
+    }
+
+    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader())
+
+    /** Non-elidable version of `assert`; only to be used in a guarded context. */
+    def check(condition: Boolean) = {
+        if (!condition) throw new AssertionError();
+    }
+
+    /** Non-elidable version of `assert`; only to be used in a guarded context. */
+    def check(condition: Boolean, message: ⇒ String) = {
+        if (!condition) throw new AssertionError(message);
     }
 
     /**
