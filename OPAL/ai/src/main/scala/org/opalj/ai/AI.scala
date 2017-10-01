@@ -1431,8 +1431,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 def handleException(exceptionValue: ExceptionValue): PCs = {
-                    // iterating over the individual exceptions is potentially
-                    // more precise than just iterating over the "abstraction"
+                    // Iterating over the individual exceptions is potentially
+                    // more precise than just iterating over the "abstraction".
                     val baseValues = exceptionValue.baseValues
                     if (baseValues.isEmpty) {
                         exceptionValue.isNull match {
@@ -1443,8 +1443,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     if (theDomain.throwNullPointerExceptionOnThrow) {
                                         val npe = theDomain.VMNullPointerException(pc)
                                         doHandleTheException(npe, false)
-                                    } else
+                                    } else {
                                         IntArraySet.empty
+                                    }
                                 npeHandlerPC ++ doHandleTheException(exceptionValue, true)
                             case Yes ⇒
                                 val npe = theDomain.VMNullPointerException(pc)
