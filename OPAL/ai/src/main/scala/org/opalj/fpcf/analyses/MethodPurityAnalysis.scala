@@ -65,6 +65,7 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.BinaryExpr
+import org.opalj.tac.CaughtException
 import org.opalj.tac.Checkcast
 import org.opalj.tac.Compare
 import org.opalj.tac.DUVar
@@ -82,6 +83,7 @@ import org.opalj.tac.New
 import org.opalj.tac.NewArray
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.OriginOfThis
 import org.opalj.tac.PrefixExpr
 import org.opalj.tac.PrimitiveTypecastExpr
 import org.opalj.tac.PutField
@@ -95,7 +97,6 @@ import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.TACode
-import org.opalj.tac.CaughtException
 
 /**
  * A simple analysis for method purity based on the three address code representation.
@@ -156,7 +157,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     astID == New.ASTID || astID == NewArray.ASTID
                 } else {
                     // In initializer methods, the receiver object is fresh
-                    method.isConstructor && defSite == -1
+                    method.isConstructor && defSite == OriginOfThis
                 }
             }
         }
