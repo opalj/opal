@@ -64,6 +64,10 @@ public class MethodsWithExceptions {
         }
     }
 
+    public static void justThrow(Throwable someThrowable) throws Throwable {
+        throw someThrowable; // abnormal return due to NullPointerException or Throwable!
+    }
+
     // 0 aload_0 [t]
     // 1 ifnull 6
     // 4 aload_0 [t]
@@ -95,7 +99,8 @@ public class MethodsWithExceptions {
                 // will never be visible outside of this method.
             }
         } finally {
-            t.printStackTrace(); // <= t may be null => may throw NullPointerException
+            t.printStackTrace(); // <= t may be null => may
+            // throw NullPointerException
         }
     }
 
