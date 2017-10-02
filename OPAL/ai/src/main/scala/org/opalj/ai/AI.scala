@@ -712,13 +712,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
              *
              * @return `true` if the target instruction was (re)scheduled.
              *      Hence, if
-             *      - `doSchedule` is false and true is returned, then the
+             *      - `forceSchedule` is false and true is returned, then the
              *          instruction was already scheduled.
-             *      - `doSchedule` is false and false is returned, then the target
+             *      - `forceSchedule` is false and false is returned, then the target
              *          instruction will not be executed.
-             *      - `doSchedule` is true and false is returned, then the target
+             *      - `forceSchedule` is true and false is returned, then the target
              *          instruction was newly scheduled.
-             *      - `doSchedule` is true and true is returned, then the target
+             *      - `forceSchedule` is true and true is returned, then the target
              *          instruction was already scheduled.
              */
             def handleAbruptSubroutineTermination(forceSchedule: Boolean): Boolean = {
@@ -752,7 +752,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     return true;
                 }
 
-                val filteredRemainingWorkList = removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
+                val filteredRemainingWorkList =
+                    removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
                 val rescheduled = filteredRemainingWorkList ne remainingWorklist
                 if (rescheduled || forceSchedule) {
                     remainingWorklist = targetPC :&: filteredRemainingWorkList
@@ -826,8 +827,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         worklist = targetPC :&: worklist
                     }
 
-                    if (tracer.isDefined)
+                    if (tracer.isDefined) {
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
+                    }
 
                     /* join: */ false
 
@@ -852,7 +854,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (!containsInPrefix(worklist, targetPC, SUBROUTINE_START)) {
                         worklist = targetPC :&: worklist
                     }
-                    if (tracer.isDefined) { // IMPROVE Replace tracer.isDefined by "tracer ne None" if it is simpler!
+                    if (tracer.isDefined) {
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
                     }
 
@@ -863,7 +865,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val currentLocals = targetLocalsArray(targetPC)
                     val mergeResult =
                         theDomain.join(targetPC, currentOperands, currentLocals, operands, locals)
-                    if (tracer.isDefined) tracer.get.join(theDomain)(
+                    if (tracer.isDefined)
+                        tracer.get.join(theDomain)(
                         targetPC,
                         currentOperands, currentLocals, operands, locals,
                         mergeResult
@@ -879,6 +882,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             isTargetScheduled = Yes
                             targetOperandsArray(targetPC) = updatedOperands
                             targetLocalsArray(targetPC) = updatedLocals
+                            // We want depth-first evaluation (, but we do not want to
+                            // reschedule instructions that do not belong to the current
+                            // evaluation context/(sub-)routine.)
                             if (abruptSubroutineTerminationCount > 0) {
                                 if (handleAbruptSubroutineTermination(forceSchedule = true)) {
                                     // the instruction was just moved to the beginning
@@ -895,24 +901,17 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     }
                                 }
                             } else {
-                                // we want depth-first evaluation (, but we do not want to
-                                // reschedule instructions that do not belong to the current
-                                // evaluation context/(sub-)routine.)
                                 val updatedWorklist =
                                     insertBeforeIfNew(worklist, targetPC, SUBROUTINE_START)
                                 if (tracer.isDefined) {
-                                    if (updatedWorklist ne worklist)
-                                        // the instruction was not yet scheduled for
-                                        // another evaluation
+                                    if (updatedWorklist ne worklist) {
+                                        // the instruction was not yet scheduled (in the current
+                                        // context) for another evaluation
                                         tracer.get.flow(theDomain)(
                                             sourcePC, targetPC, isExceptionalControlFlow
                                         )
-                                    else {
-                                        // the instruction was just moved to the beginning
-                                        tracer.get.rescheduled(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow,
-                                            updatedWorklist
-                                        )
+                                    } else {
+                                        tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                                     }
                                 }
                                 worklist = updatedWorklist
@@ -948,11 +947,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 // instructions where multiple paths join...
                                 if (containsInPrefix(worklist, targetPC, SUBROUTINE)) {
                                     isTargetScheduled = Yes
-                                    if (tracer.isDefined) {
-                                        tracer.get.rescheduled(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow, worklist
-                                        )
-                                    }
                                 } else {
                                     // keep default: isTargetScheduled = Unknown
                                     // (We just know that the instruction is not
