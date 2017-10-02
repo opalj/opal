@@ -1430,34 +1430,60 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     targetPCs
                 }
 
-                def handleException(exceptionValue: ExceptionValue): PCs = {
+                /*
+                 * @param testForNullnessOfExceptionValue Required to avoid the meaningless
+                 *        generation of "NullPointerExceptions" for exceptions thrown by the
+                 *        JVM/outside the scope of the current method. In case of a domain
+                 *        which tracks nullness this issue is probably already implicitly handled
+                 *        by the domain;
+                 *        if the domain does not track null-ness, this information is
+                 *        explicitly required otherwise the assumption would be made that the
+                 *        exception value could be null – in all cases!
+                 */
+                def handleException(
+                    exceptionValue:                  ExceptionValue,
+                    testForNullnessOfExceptionValue: Boolean
+                ): PCs = {
                     // Iterating over the individual exceptions is potentially
                     // more precise than just iterating over the "abstraction".
                     val baseValues = exceptionValue.baseValues
                     if (baseValues.isEmpty) {
-                        exceptionValue.isNull match {
-                            case No ⇒ // just forward
-                                doHandleTheException(exceptionValue, establishNonNull = false)
-                            case Unknown ⇒
-                                val npeHandlerPC =
-                                    if (theDomain.throwNullPointerExceptionOnThrow) {
-                                        val npe = theDomain.VMNullPointerException(pc)
-                                        doHandleTheException(npe, false)
-                                    } else {
-                                        IntArraySet.empty
-                                    }
-                                npeHandlerPC ++ doHandleTheException(exceptionValue, true)
-                            case Yes ⇒
-                                val npe = theDomain.VMNullPointerException(pc)
-                                doHandleTheException(npe, false)
+                        if (testForNullnessOfExceptionValue) {
+                            exceptionValue.isNull match {
+                                case No ⇒ // just forward
+                                    doHandleTheException(exceptionValue, establishNonNull = false)
+                                case Unknown ⇒
+                                    val npeHandlerPC =
+                                        if (theDomain.throwNullPointerExceptionOnThrow) {
+                                            val npe = theDomain.VMNullPointerException(pc)
+                                            doHandleTheException(npe, false)
+                                        } else {
+                                            IntArraySet.empty
+                                        }
+                                    npeHandlerPC ++ doHandleTheException(exceptionValue, true)
+                                case Yes ⇒
+                                    val npe = theDomain.VMNullPointerException(pc)
+                                    doHandleTheException(npe, false)
+                            }
+                        } else {
+                            // The exception is either VM generated or is thrown in the
+                            // context of a called method; in both cases the exception is
+                            // not null; the latter can only be the case if we have a
+                            // "throw null".
+                            doHandleTheException(exceptionValue, establishNonNull = false)
                         }
                     } else {
-                        handleExceptions(baseValues)
+                        handleExceptions(baseValues, testForNullnessOfExceptionValue)
                     }
                 }
 
-                def handleExceptions(exceptions: Traversable[ExceptionValue]): PCs = {
-                    exceptions.foldLeft(IntArraySet.empty)(_ ++ handleException(_))
+                def handleExceptions(
+                    exceptions:                      Traversable[ExceptionValue],
+                    testForNullnessOfExceptionValue: Boolean
+                ): PCs = {
+                    exceptions.foldLeft(IntArraySet.empty) { (pcs, e) ⇒
+                        pcs ++ handleException(e, testForNullnessOfExceptionValue)
+                    }
                 }
 
                 def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
@@ -1481,7 +1507,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit = {
-                    if (computation.throwsException) handleException(computation.exceptions)
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleException(exceptions, testForNullnessOfExceptionValue = false)
+                    }
                 }
 
                 def computationWithException(
@@ -1491,7 +1520,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     //TODO val regPC =
                     if (computation.returnsNormally) fallThrough(rest) // else -1
                     //TODO val exPCs =
-                    if (computation.throwsException) handleException(computation.exceptions) // else IntArraySet.empty
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleException(exceptions, testForNullnessOfExceptionValue = false)
+                    } // else IntArraySet.empty
 
                     //TODO if (computation.returnsNormally != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
@@ -1503,7 +1535,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 ): Unit = {
 
                     if (computation.returnsNormally) fallThrough(rest)
-                    if (computation.throwsException) handleExceptions(computation.exceptions)
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
+                    }
                 }
 
                 def computationWithReturnValueAndException(
@@ -1513,7 +1548,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     //TODOval regPC =
                     if (computation.hasResult) fallThrough(computation.result :&: rest) // else -1
                     //TODO val exPCs =
-                    if (computation.throwsException) handleException(computation.exceptions) // else IntArraySet.empty
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleException(exceptions, testForNullnessOfExceptionValue = false)
+                    } // else IntArraySet.empty
 
                     //TODO if (computation.returnsNormally != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
@@ -1525,7 +1563,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 ): Unit = {
 
                     if (computation.hasResult) fallThrough(computation.result :&: rest)
-                    if (computation.throwsException) handleExceptions(computation.exceptions)
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
+                    }
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
@@ -1539,7 +1580,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         else
                             fallThrough(rest)
                     }
-                    if (computation.throwsException) handleExceptions(computation.exceptions)
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
+                    }
 
                     //TODOif (computation.hasResult != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH - $instruction")
@@ -1831,7 +1875,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         // the exception handlers of the current method in the order that
                         // they appear in the corresponding exception handler table.
                         val theDomain.DomainReferenceValue(exceptionValue) = operands.head
-                        handleException(exceptionValue)
+                        handleException(exceptionValue, testForNullnessOfExceptionValue = true)
 
                     //
                     // CREATE ARRAY
@@ -2026,10 +2070,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 invoke.methodDescriptor,
                                 operands.take(argsCount)
                             )
-                        computationWithReturnValueAndExceptions(
-                            computation,
-                            operands.drop(argsCount)
-                        )
+                        val newOperands = operands.drop(argsCount)
+                        computationWithReturnValueAndExceptions(computation, newOperands)
 
                     case 185 /*invokeinterface*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKEINTERFACE]
@@ -2042,10 +2084,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 invoke.methodDescriptor,
                                 operands.take(argsCount + 1)
                             )
-                        computationWithOptionalReturnValueAndExceptions(
-                            computation,
-                            operands.drop(argsCount + 1)
-                        )
+                        val newOperands = operands.drop(argsCount + 1)
+                        computationWithOptionalReturnValueAndExceptions(computation, newOperands)
 
                     case 183 /*invokespecial*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKESPECIAL]
@@ -2503,15 +2543,22 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     fallThrough()
 
                                 case No ⇒
-                                    if (isNull.isNo)
-                                        handleException(theDomain.VMClassCastException(pc))
-                                    else { // isNull is unknown
+                                    if (isNull.isNo) {
+                                        handleException(
+                                            theDomain.VMClassCastException(pc),
+                                            testForNullnessOfExceptionValue = false
+                                        )
+                                    } else { // isNull is unknown
                                         val (newOperands, newLocals) =
                                             theDomain.refTopOperandIsNull(pc, operands, locals)
                                         fallThrough(newOperands, newLocals)
 
-                                        if (theDomain.throwClassCastException)
-                                            handleException(theDomain.VMClassCastException(pc))
+                                        if (theDomain.throwClassCastException) {
+                                            handleException(
+                                                theDomain.VMClassCastException(pc),
+                                                testForNullnessOfExceptionValue = false
+                                            )
+                                        }
                                     }
 
                                 case Unknown ⇒
@@ -2535,8 +2582,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     )
                                     fallThrough(newOperands, newLocals)
 
-                                    if (theDomain.throwClassCastException)
-                                        handleException(theDomain.VMClassCastException(pc))
+                                    if (theDomain.throwClassCastException) {
+                                        handleException(
+                                            theDomain.VMClassCastException(pc),
+                                            testForNullnessOfExceptionValue = false
+                                        )
+                                    }
                             }
                         }
 
