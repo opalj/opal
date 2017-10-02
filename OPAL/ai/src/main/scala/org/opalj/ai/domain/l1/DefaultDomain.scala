@@ -83,5 +83,5 @@ class DefaultDomainWithCFG[Source](
 class DefaultDomainWithCFGAndDefUse[Source](
         project: Project[Source],
         method:  Method
-) extends DefaultDomainWithCFG[Source](project, method) with RecordDefUse 
+) extends DefaultDomainWithCFG[Source](project, method) with RecordDefUse
 // IMPROVE Consider mixing in RefineDefUseUsingOrigins - it should improve the performance if the origin information is "easily" available!
