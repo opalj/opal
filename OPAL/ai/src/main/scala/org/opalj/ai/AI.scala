@@ -1448,11 +1448,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                         case _                       ⇒ GlobalLogContext
                                     }
                                     org.opalj.bi.warnMissingLibrary(logContext)
-                                    // IMPROVE Just log type information of exception value!
+                                    val exceptionTypeAsJava =
+                                        exceptionValue.upperTypeBound.
+                                            iterator.map(_.toJava).
+                                            mkString(" & ")
                                     OPALLogger.logOnce(Warn(
                                         "precision and soundness",
-                                        "unknown type hiearchy relation between: "+
-                                            s"$exceptionValue and ${caughtType.toJava}; "+
+                                        "unknown type hierarchy relation between: "+
+                                            s"$exceptionTypeAsJava and ${caughtType.toJava}; "+
                                             "aborting exception processing"
                                     ))(logContext)
                                     true // effectively aborts the handling..

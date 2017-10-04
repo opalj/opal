@@ -1,5 +1,8 @@
-The analyzed code base is incomplete, some referenced classes/methods/fields are not available.
-This generally results in unsound, imprecise and less comprehensible results.
+AN ANALYSIS RELIED ON TYPE/METHOD/FIELD INFORMATION WHICH IS NOT AVAILABLE. That is, if this
+message is shown the project is not only incomplete, some analysis also had to make an assumption
+about a type/the relation between types, a field or a method which is not available.
+This generally results in unsound, imprecise and less comprehensible results and often in a hardly
+predictable way.
 For example, if the type hierarchy is incomplete, the identification of the "correct" exception
 handler may abort if the type hierarchy relation between a thrown and a caught exception is
 unknown; speculatively evaluating exception handlers could result in fatally failing analyses,
