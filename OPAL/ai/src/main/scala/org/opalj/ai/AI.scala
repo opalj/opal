@@ -34,6 +34,9 @@ import scala.language.existentials
 import scala.util.control.ControlThrowable
 import scala.collection.BitSet
 
+import org.opalj.log.Warn
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
@@ -564,7 +567,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         /* 2 */ var localsArray = theLocalsArray
         /* 3 */ var worklist = initialWorkList
         /* 4 */ var evaluated = alreadyEvaluated
-        /* 5 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts = theMemoryLayoutBeforeSubroutineCall
+        /* 5 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts =
+            theMemoryLayoutBeforeSubroutineCall
         /* 6 */ var subroutinesOperandsArray = theSubroutinesOperandsArray
         /* 7 */ var subroutinesLocalsArray = theSubroutinesLocalsArray
 
@@ -612,7 +616,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 theDomain.abstractInterpretationEnded(result)
             } catch {
                 case ct: ControlThrowable ⇒ throw ct
-                case t: Throwable         ⇒ throwInterpretationFailedException(t, instructions.length)
+                case t: Throwable ⇒
+                    throwInterpretationFailedException(t, instructions.length)
             }
             if (tracer.isDefined) tracer.get.result(result)
             result
@@ -706,24 +711,22 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
              * Schedules the evaluation of the exception handler in the context of the
              * (calling) subroutine to which the handler belongs.
              *
-             * @param forceSchedule If `false` the instruction will not be scheduled if
+             * @param forceScheduling If `false` the instruction will not be scheduled if
              *      it is not already scheduled. In this case we will basically just test
              *      if the instruction was scheduled.
              *
              * @return `true` if the target instruction was (re)scheduled.
              *      Hence, if
-             *      - `forceSchedule` is false and true is returned, then the
+             *      - `forceScheduling` is false and true is returned, then the
              *          instruction was already scheduled.
-             *      - `forceSchedule` is false and false is returned, then the target
+             *      - `forceScheduling` is false and false is returned, then the target
              *          instruction will not be executed.
-             *      - `forceSchedule` is true and false is returned, then the target
+             *      - `forceScheduling` is true and false is returned, then the target
              *          instruction was newly scheduled.
-             *      - `forceSchedule` is true and true is returned, then the target
+             *      - `forceScheduling` is true and true is returned, then the target
              *          instruction was already scheduled.
              */
-            def handleAbruptSubroutineTermination(forceSchedule: Boolean): Boolean = {
-                val jumpToSubroutineId = belongsToSubroutine(targetPC)
-
+            def handleAbruptSubroutineTermination(forceScheduling: Boolean): Boolean = {
                 var subroutinesToTerminate = abruptSubroutineTerminationCount
                 // We now know the number of subroutines that are terminated (at most
                 // all active real subroutines) now let's remove the elements of those
@@ -735,16 +738,20 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val pc = remainingWorklist.head
                     header = pc :&: header
                     remainingWorklist = remainingWorklist.tail
-                    if (pc == SUBROUTINE)
+                    if (pc == SUBROUTINE) {
                         subroutinesToTerminate -= 1
+                    }
                 }
 
                 if (remainingWorklist.nonEmpty && remainingWorklist.head == targetPC) {
                     // The instruction was already scheduled.
                     if (tracer.isDefined) {
                         tracer.get.abruptSubroutineTermination(theDomain)(
-                            sourcePC, targetPC, jumpToSubroutineId,
+                            "the target instruction was already scheduled",
+                            sourcePC, targetPC,
+                            belongsToSubroutine(targetPC),
                             abruptSubroutineTerminationCount,
+                            forceScheduling,
                             oldWorklist = worklist,
                             newWorklist = worklist
                         )
@@ -755,7 +762,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 val filteredRemainingWorkList =
                     removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
                 val rescheduled = filteredRemainingWorkList ne remainingWorklist
-                if (rescheduled || forceSchedule) {
+                if (rescheduled || forceScheduling) {
                     remainingWorklist = targetPC :&: filteredRemainingWorkList
                 }
                 while (header.nonEmpty) {
@@ -764,12 +771,28 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 if (tracer.isDefined) {
-                    tracer.get.abruptSubroutineTermination(theDomain)(
-                        sourcePC, targetPC, jumpToSubroutineId,
-                        abruptSubroutineTerminationCount,
-                        oldWorklist = worklist,
-                        newWorklist = remainingWorklist
-                    )
+                    if (rescheduled || forceScheduling)
+                        tracer.get.abruptSubroutineTermination(theDomain)(
+                            "adapted the worklist of the calling subroutine",
+                            sourcePC, targetPC,
+                            belongsToSubroutine(targetPC),
+                            abruptSubroutineTerminationCount,
+                            forceScheduling,
+                            oldWorklist = worklist,
+                            newWorklist = remainingWorklist
+                        )
+                    else {
+                        tracer.get.abruptSubroutineTermination(theDomain)(
+                            "the target instruction was already scheduled or "+
+                                "explicit scheduling was not necessary",
+                            sourcePC, targetPC,
+                            belongsToSubroutine(targetPC),
+                            abruptSubroutineTerminationCount,
+                            forceScheduling,
+                            oldWorklist = worklist,
+                            newWorklist = remainingWorklist
+                        )
+                    }
                 }
 
                 worklist = remainingWorklist
@@ -810,7 +833,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // IMPROVE Reconsider the scheduling of the next instruction; try to schedule such that inner loops are first completely evaluated before we continue scheduling the outer loop
 
                     if (abruptSubroutineTerminationCount > 0) {
-                        handleAbruptSubroutineTermination(forceSchedule = true)
+                        handleAbruptSubroutineTermination(forceScheduling = true)
                     } else if (worklist.nonEmpty && cfJoins.contains(targetPC)) {
                         // We Try to first finish the evaluation of the body of, e.g., a loop;
                         // Recall that a typical loop has the following bytecode:
@@ -820,7 +843,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         //      ...
                         //      ...
                         // looptest:
-                        //      <PREPARATION>           // *<= JOIN INSTRUCTION*
+                        //      <PREPARATION>           // * <= JOIN INSTRUCTION *
                         //      if (...) goto loopbody
                         worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
                     } else {
@@ -834,6 +857,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     /* join: */ false
 
                 } else if (!cfJoins.contains(targetPC)) {
+                    assert(abruptSubroutineTerminationCount == 0)
+
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
                     // E.g., imagine the following code:
@@ -867,10 +892,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         theDomain.join(targetPC, currentOperands, currentLocals, operands, locals)
                     if (tracer.isDefined)
                         tracer.get.join(theDomain)(
-                        targetPC,
-                        currentOperands, currentLocals, operands, locals,
-                        mergeResult
-                    )
+                            targetPC,
+                            currentOperands, currentLocals, operands, locals,
+                            mergeResult
+                        )
                     mergeResult match {
                         case NoUpdate ⇒ /* nothing to do*/
                             // Keep default: isTargetScheduled = Unknown
@@ -886,7 +911,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             // reschedule instructions that do not belong to the current
                             // evaluation context/(sub-)routine.)
                             if (abruptSubroutineTerminationCount > 0) {
-                                if (handleAbruptSubroutineTermination(forceSchedule = true)) {
+                                if (handleAbruptSubroutineTermination(forceScheduling = true)) {
                                     // the instruction was just moved to the beginning
                                     if (tracer.isDefined) {
                                         tracer.get.rescheduled(theDomain)(
@@ -922,7 +947,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             targetLocalsArray(targetPC) = updatedLocals
 
                             if (abruptSubroutineTerminationCount > 0) {
-                                if (handleAbruptSubroutineTermination(forceSchedule = false)) {
+                                if (handleAbruptSubroutineTermination(forceScheduling = false)) {
                                     isTargetScheduled = Yes
                                     if (tracer.isDefined) {
                                         // the instruction was just moved to the beginning
@@ -982,11 +1007,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     tracer
                 )
 
-            // assert(
-            //   abruptSubroutineTerminationCount == 0 ||
-            //      !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
-            //   "an exception handler that handles the abrupt termination of a subroutine "+
-            //      "is scheduled to be executed as part of the abruptly terminated subroutine")
+            assert(
+                abruptSubroutineTerminationCount == 0 ||
+                    !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
+                "an exception handler that handles the abrupt termination of a subroutine "+
+                    "is scheduled to be executed as part of the abruptly terminated subroutine"
+            )
         }
 
         // THIS IS THE MAIN INTERPRETER LOOP
@@ -1404,20 +1430,39 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             gotoExceptionHandler(pc, branchTarget, None)
                             true
                         } else {
-                            theDomain.isValueSubtypeOf(exceptionValue, catchTypeOption.get) match {
+                            val caughtType = catchTypeOption.get
+                            // IMPROVE Add special handling for Throwable!
+                            theDomain.isValueSubtypeOf(exceptionValue, caughtType) match {
                                 case No ⇒
                                     false
                                 case Yes ⇒
                                     gotoExceptionHandler(pc, branchTarget, None)
                                     true
                                 case Unknown ⇒
-                                    gotoExceptionHandler(pc, branchTarget, catchTypeOption)
-                                    false
+                                    // We have to abort the exception handling... otherwise
+                                    // we may end up executing a compile-time impossible handler
+                                    // which potentially results in an corrupt state.
+                                    // However, previously identified handlers remain valid.
+                                    val logContext = theDomain match {
+                                        case ctx: LogContextProvider ⇒ ctx.logContext
+                                        case _                       ⇒ GlobalLogContext
+                                    }
+                                    org.opalj.bi.warnMissingLibrary(logContext)
+                                    // IMPROVE Just log type information of exception value!
+                                    OPALLogger.logOnce(Warn(
+                                        "precision and soundness",
+                                        "unknown type hiearchy relation between: "+
+                                            s"$exceptionValue and ${caughtType.toJava}; "+
+                                            "aborting exception processing"
+                                    ))(logContext)
+                                    true // effectively aborts the handling..
                             }
                         }
                     }
                     // If "isHandled" is true, we are sure that at least one
-                    // handler caught the exception... hence this method
+                    // handler caught the exception or that the exception handling
+                    // as a whole is inconclusive which we treat as being handled
+                    // to avoid that impossible paths are taken ... hence this method
                     // invocation will not complete abruptly.
                     if (!isHandled) abruptMethodExecution(pc, exceptionValue)
 

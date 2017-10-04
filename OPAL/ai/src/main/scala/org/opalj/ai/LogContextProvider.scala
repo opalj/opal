@@ -28,7 +28,6 @@
  */
 package org.opalj
 package ai
-package domain
 
 import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
