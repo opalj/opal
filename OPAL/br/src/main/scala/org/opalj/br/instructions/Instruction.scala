@@ -84,6 +84,7 @@ trait Instruction extends InstructionLike {
     def isLoadLocalVariableInstruction: Boolean = false
     def isStoreLocalVariableInstruction: Boolean = false
     def isCheckcast: Boolean = false
+    def isInvocationInstruction: Boolean = false
     def isAthrow: Boolean = false
 
     def asATHROW: ATHROW.type = throw new ClassCastException();
