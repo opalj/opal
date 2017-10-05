@@ -39,6 +39,12 @@ import java.io.FileNotFoundException;
  */
 public class MethodsWithExceptions {
 
+    @SuppressWarnings("all")
+    public static class SuperException extends java.awt.HeadlessException {}
+
+    @SuppressWarnings("all")
+    public static class SubException extends SuperException {}
+
     // 0 new java.lang.RuntimeException [16]
     // 3 dup
     // 4 aload_0 [message]
