@@ -229,15 +229,17 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
             case StaticMethodCall.ASTID ⇒
                 val StaticMethodCall(_, declClass, interface, name, descr, params) = stmt
                 val callee = project.staticCall(declClass.asObjectType, interface, name, descr)
-                checkPurityOfCall(declClass, name, None, params, callee)
+                checkPurityOfParams(None, params) && checkPurityOfCall(declClass, name, callee)
             case NonVirtualMethodCall.ASTID ⇒
                 val NonVirtualMethodCall(_, declClass, interface, name, descr, rcvr, params) = stmt
                 val callee =
                     project.specialCall(declClass.asObjectType, interface, name, descr)
-                checkPurityOfCall(declClass, name, Some(rcvr), params, callee)
+                checkPurityOfParams(Some(rcvr), params) &&
+                    checkPurityOfCall(declClass, name, callee)
             case VirtualMethodCall.ASTID ⇒
                 val VirtualMethodCall(_, declClass, interface, name, descr, rcvr, params) = stmt
-                checkPurityOfVirtualCall(declClass, interface, name, rcvr, params, descr)
+                checkPurityOfParams(Some(rcvr), params) &&
+                    checkPurityOfVirtualCall(declClass, interface, name, rcvr, descr)
 
             case If.ASTID ⇒
                 val If(_, left, _, right, _) = stmt
@@ -295,16 +297,18 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
             case StaticFunctionCall.ASTID ⇒
                 val StaticFunctionCall(_, declClass, interface, name, descr, params) = expr
                 val callee = project.staticCall(declClass.asObjectType, interface, name, descr)
-                checkPurityOfCall(declClass, name, None, params, callee)
+                checkPurityOfParams(None, params) && checkPurityOfCall(declClass, name, callee)
             case NonVirtualFunctionCall.ASTID ⇒
                 val NonVirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) =
                     expr
                 val callee =
                     project.specialCall(declClass.asObjectType, interface, name, descr)
-                checkPurityOfCall(declClass, name, Some(rcvr), params, callee)
+                checkPurityOfParams(Some(rcvr), params) &&
+                    checkPurityOfCall(declClass, name, callee)
             case VirtualFunctionCall.ASTID ⇒
                 val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) = expr
-                checkPurityOfVirtualCall(declClass, interface, name, rcvr, params, descr)
+                checkPurityOfParams(Some(rcvr), params) &&
+                    checkPurityOfVirtualCall(declClass, interface, name, rcvr, descr)
 
             case InstanceOf.ASTID ⇒
                 val InstanceOf(_, subExpr, _) = expr
@@ -354,7 +358,6 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
             interface: Boolean,
             name:      String,
             receiver:  Expr[V],
-            params:    Seq[Expr[V]],
             descr:     MethodDescriptor
         ): Boolean = {
             if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise) {
@@ -363,7 +366,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     true // We don't have to examine calls that will result in an NPE
                 else {
                     val callee = project.instanceCall(declClass, rcvr.valueType.get, name, descr)
-                    checkPurityOfCall(rcvrClass, name, Some(receiver), params, callee)
+                    checkPurityOfCall(rcvrClass, name, callee)
                 }
             } else if (rcvrClass.isObjectType &&
                 typeExtensibility.apply(rcvrClass.asObjectType).isNotNo) {
@@ -380,52 +383,57 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     callees.forall { callee ⇒
                         /* Remember that checkPurityOfCall returns false if call is impure for
                         early termination */
-                        checkPurityOfCall(rcvrClass, name, Some(receiver), params, Success(callee))
+                        checkPurityOfCall(rcvrClass, name, Success(callee))
                     }
             }
         }
 
         /**
+         * Examines the parameters (including an optional receiver) of a call for their influence on
+         * the method purity.
+         * This method will return alse for impure expressions, so evaluation can be terminated
+         * early.
+         */
+        def checkPurityOfParams(receiver: Option[Expr[V]], params: Seq[Expr[V]]): Boolean = {
+            receiver.forall(checkPurityOfExpr(_)) && params.forall(checkPurityOfExpr(_))
+        }
+
+        /**
          * Examines a call to a given callee for its influence on the method purity.
-         * This method will return False for impure calls, so evaluation can be terminated early.
+         * This method will return false for impure calls, so evaluation can be terminated early.
          */
         def checkPurityOfCall(
             receiverClass: ReferenceType,
             name:          String,
-            receiver:      Option[Expr[V]],
-            params:        Seq[Expr[V]],
             methodResult:  org.opalj.Result[Method]
         ): Boolean = {
-
             if (receiverClass == ObjectType.Object && name == "<init>") {
                 true // The java.lang.Object constructor is pure
             } else {
-                receiver.forall(checkPurityOfExpr(_)) && params.forall(checkPurityOfExpr(_)) && {
-                    methodResult match {
-                        case Success(callee) ⇒
-                            if (callee == method) true // Self-recursive don't need to be checked
-                            else {
-                                val calleePurity = propertyStore(callee, Purity.key)
-                                calleePurity match {
-                                    case EP(_, Pure) ⇒ true
-                                    case EP(_, SideEffectFree) ⇒
-                                        purity = SideEffectFree
-                                        true
-                                    case ep @ EP(_, ConditionallySideEffectFree) ⇒
-                                        dependees += ep
-                                        purity = SideEffectFree
-                                        true
-                                    case ep @ EP(_, ConditionallyPure) ⇒
-                                        dependees += ep
-                                        true
-                                    case EP(_, _) ⇒ false // Impure or unknown purity level
-                                    case epk ⇒
-                                        dependees += epk
-                                        true
-                                }
+                methodResult match {
+                    case Success(callee) ⇒
+                        if (callee == method) true // Self-recursive don't need to be checked
+                        else {
+                            val calleePurity = propertyStore(callee, Purity.key)
+                            calleePurity match {
+                                case EP(_, Pure) ⇒ true
+                                case EP(_, SideEffectFree) ⇒
+                                    purity = SideEffectFree
+                                    true
+                                case ep@EP(_, ConditionallySideEffectFree) ⇒
+                                    dependees += ep
+                                    purity = SideEffectFree
+                                    true
+                                case ep@EP(_, ConditionallyPure) ⇒
+                                    dependees += ep
+                                    true
+                                case EP(_, _) ⇒ false // Impure or unknown purity level
+                                case epk ⇒
+                                    dependees += epk
+                                    true
                             }
-                        case _ ⇒ false // Target method unknown (not in scope of current project)
-                    }
+                        }
+                    case _ ⇒ false // Target method unknown (not in scope of current project)
                 }
             }
         }
@@ -482,7 +490,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                                 propertyStore(cfo.get, ClassImmutability.key) match {
                                     case EP(_, ImmutableObject) ⇒
                                     // Returning immutable objects is pure
-                                    case ep @ EP(_, AtLeastConditionallyImmutableObject) ⇒
+                                    case ep@EP(_, AtLeastConditionallyImmutableObject) ⇒
                                         dependees += ep
                                     case EP(_, _) ⇒ purity = SideEffectFree
                                     case epk      ⇒ dependees += epk
@@ -498,7 +506,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                                     propertyStore(cfo.get, TypeImmutability.key) match {
                                         case EP(_, ImmutableType) ⇒
                                             true // Returning immutable objects is pure
-                                        case ep @ EP(_, AtLeastConditionallyImmutableType) ⇒
+                                        case ep@EP(_, AtLeastConditionallyImmutableType) ⇒
                                             dependees += ep
                                             true
                                         case EP(_, _) ⇒
