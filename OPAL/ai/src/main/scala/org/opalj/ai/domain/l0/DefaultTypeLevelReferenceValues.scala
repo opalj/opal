@@ -307,7 +307,7 @@ trait DefaultTypeLevelReferenceValues
                         ) ⇒
                     No
                 case _ if isPrecise &&
-                    // Note "reflexivity is already captured by the first isSubtypeOf call
+                    // Note "reflexivity" is already captured by the first isSubtypeOf call
                     domain.isSubtypeOf(supertype, theUpperTypeBound).isYes ⇒
                     No
                 case _ ⇒
