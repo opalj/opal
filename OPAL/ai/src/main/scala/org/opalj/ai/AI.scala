@@ -1431,40 +1431,64 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             true
                         } else {
                             val caughtType = catchTypeOption.get
-                            // IMPROVE Add special handling for Throwable!
-                            theDomain.isValueSubtypeOf(exceptionValue, caughtType) match {
-                                case No ⇒
-                                    false
-                                case Yes ⇒
-                                    gotoExceptionHandler(pc, branchTarget, None)
-                                    true
-                                case Unknown ⇒
-                                    // We have to abort the exception handling... otherwise
-                                    // we may end up executing a compile-time impossible handler
-                                    // which potentially results in an corrupt state.
-                                    // However, previously identified handlers remain valid.
-                                    val logContext = theDomain match {
-                                        case ctx: LogContextProvider ⇒ ctx.logContext
-                                        case _                       ⇒ GlobalLogContext
-                                    }
-                                    org.opalj.bi.warnMissingLibrary(logContext)
-                                    val exceptionTypeAsJava =
-                                        exceptionValue.upperTypeBound.
-                                            iterator.map(_.toJava).
-                                            mkString(" & ")
-                                    OPALLogger.logOnce(Warn(
-                                        "precision and soundness",
-                                        "unknown type hierarchy relation between: "+
-                                            s"$exceptionTypeAsJava and ${caughtType.toJava}; "+
-                                            "aborting exception processing"
-                                    ))(logContext)
-                                    true // effectively aborts the handling..
+                            if (caughtType eq ObjectType.Throwable) {
+                                // Special handling to improve the overall precision if the
+                                // domain is very imprecise or if the type hierarchy is incomplete.
+                                gotoExceptionHandler(pc, branchTarget, None)
+                                true
+                            } else {
+                                theDomain.isValueSubtypeOf(exceptionValue, caughtType) match {
+                                    case No  ⇒ false
+                                    case Yes ⇒
+                                        gotoExceptionHandler(pc, branchTarget, None); true
+
+                                    case _ ⇒ /*Unknown*/
+                                        // In general, we have to abort the exception handling...
+                                        // otherwise we may end up executing a compile-time
+                                        // impossible handler which potentially results in an
+                                        // fatally failing analysis.
+                                        // I.e., we have to ensure to never folllow paths the
+                                        // bytecode verifier would not follow!
+                                        // However, previously identified handlers remain valid and
+                                        // in case of called methods/athrow we can still continue,
+                                        // because the VM/bytecode verifier also has to make the
+                                        // assumption that "all" exceptions are (transitively) thrown.
+
+                                        if (instruction.isInvocationInstruction &&
+                                            !theDomain.abortProcessingExceptionsOfCalledMethodsOnUnknownException
+                                            ||
+                                            instruction.isAthrow &&
+                                            !theDomain.abortProcessingThrownExceptionsOnUnknownException) {
+                                            gotoExceptionHandler(pc, branchTarget, catchTypeOption)
+                                            false
+                                        } else {
+                                            val logContext = theDomain match {
+                                                case ctx: LogContextProvider ⇒ ctx.logContext
+                                                case _                       ⇒ GlobalLogContext
+                                            }
+                                            org.opalj.bi.warnMissingLibrary(logContext)
+                                            var exceptionTypeAsJava =
+                                                exceptionValue.upperTypeBound.
+                                                    iterator.map(_.toJava).
+                                                    mkString(" & ")
+                                            if (!exceptionValue.isPrecise)
+                                                exceptionTypeAsJava = "_ <: "+exceptionTypeAsJava
+                                            val warning = Warn(
+                                                "precision and soundness",
+                                                "unknown type hierarchy relation between: "+
+                                                    s"$exceptionTypeAsJava and ${caughtType.toJava}; "+
+                                                    "aborting exception processing"
+                                            )
+                                            OPALLogger.logOnce(warning)(logContext)
+                                            true // effectively aborts the handling..
+                                        }
+                                }
                             }
                         }
                     }
                     // If "isHandled" is true, we are sure that at least one
                     // handler caught the exception or that the exception handling
-                    // as a whole is inconclusive which we treat as being handled
+                    // as a whole is inconclusive. The latter is treated as being handled
                     // to avoid that impossible paths are taken ... hence this method
                     // invocation will not complete abruptly.
                     if (!isHandled) abruptMethodExecution(pc, exceptionValue)
