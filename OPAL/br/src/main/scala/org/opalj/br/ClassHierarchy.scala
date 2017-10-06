@@ -1215,7 +1215,7 @@ class ClassHierarchy private (
         if (theSupertype eq Object)
             return Yes;
 
-        if (subtype eq Object /* && theSupertype != ObjectType.Object*/ )
+        if (subtype eq Object /* && theSupertype != ObjectType.Object is already handled */ )
             return No;
 
         if (isUnknown(subtype)) {
@@ -1257,7 +1257,6 @@ class ClassHierarchy private (
                 No
             } else {
                 var answer: Answer = No
-                // TODO Use/Implement something like "foldLeftWhile for UIDSets"
                 val supertypesIterator = superinterfaceTypes.toIterator
                 while (supertypesIterator.hasNext) {
                     val intermediateType = supertypesIterator.next()
