@@ -56,15 +56,14 @@ import org.opalj.log.OPALLogger.error
 package object bi {
 
     {
-        // Log the information whether a production build or a development build is
-        // used.
+        // Log the information whether a production build or a development build is used.
         implicit val logContext = GlobalLogContext
         try {
             assert(false)
-            info("OPAL", "Bytecode Infrastructure - Production Build")
+            info("OPAL Bytecode Infrastructure", "Production Build")
         } catch {
             case ae: AssertionError ⇒
-                info("OPAL", "Bytecode Infrastructure - Development Build (Assertions are enabled)")
+                info("OPAL Bytecode Infrastructure", "Development Build with Assertions")
         }
     }
 
