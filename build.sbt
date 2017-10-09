@@ -25,7 +25,7 @@ licenses        in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
 scalaVersion    in ThisBuild := "2.11.11"
-//scalaVersion  in ThisBuild := "2.12.2"
+//scalaVersion  in ThisBuild := "2.12.3"
 
 scalacOptions 	in ThisBuild ++= Seq(
     "-target:jvm-1.8",
@@ -90,8 +90,8 @@ Defaults.coreDefaultSettings ++ scalariformSettings ++
 	Seq(libraryDependencies ++= Dependencies.opalDefaultDependencies) ++
 	Seq(Defaults.itSettings : _*) ++
 	Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
-	Seq(unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil) ++
-	Seq(unmanagedSourceDirectories in IntegrationTest := (scalaSource in IntegrationTest).value :: Nil) ++
+	Seq(unmanagedSourceDirectories in Test := (javaSource in Test).value :: (scalaSource in Test).value :: Nil) ++
+	Seq(unmanagedSourceDirectories in IntegrationTest := (javaSource in Test).value :: (scalaSource in IntegrationTest).value :: Nil) ++
 	Seq(scalacOptions in (Compile, console) := Seq("-deprecation"))
 
 lazy val scalariformSettings = scalariformSettingsWithIt(true) ++
@@ -259,7 +259,6 @@ lazy val ai = Project(
 		Seq(
 			name := "Abstract Interpretation Framework",
 			scalacOptions in (Compile, doc) := (Opts.doc.title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
-			unmanagedSourceDirectories in Test := ((javaSource in Test).value :: (scalaSource in Test).value :: Nil),
 			fork in run := true
 		)
 ).dependsOn(br % "it->it;it->test;test->test;compile->compile")
@@ -331,15 +330,15 @@ lazy val DeveloperTools = Project(
 // contains overall integration tests; hence
 // it is not a "project" in the classical sense!
 lazy val Validate = Project(
-		id = "OPAL-Validate",
-		base = file("DEVELOPING_OPAL/validate"),
-		settings = buildSettings ++ Seq(
-      publishArtifact := false,
-      name := "OPAL-Validate",
-      scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Validate")
+	id = "OPAL-Validate",
+	base = file("DEVELOPING_OPAL/validate"),
+	settings = buildSettings ++ Seq(
+      	publishArtifact := false,
+    	name := "OPAL-Validate",
+      	scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Validate"),
+		compileOrder in Test := CompileOrder.Mixed
     )
-).dependsOn(
-		DeveloperTools % "compile->compile;test->test;it->it;it->test")
+).dependsOn(DeveloperTools % "compile->compile;test->test;it->it;it->test")
  .configs(IntegrationTest)
 
 lazy val demos = Project(
