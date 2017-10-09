@@ -1438,7 +1438,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 true
                             } else {
                                 theDomain.isValueSubtypeOf(exceptionValue, caughtType) match {
-                                    case No  ⇒ false
+                                    case No ⇒ false
                                     case Yes ⇒
                                         gotoExceptionHandler(pc, branchTarget, None); true
 
