@@ -32,7 +32,6 @@ package br
 import java.net.URL
 import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.ThrownExceptionsFallbackAnalysis
 import org.opalj.fpcf.properties.AllThrownExceptions
 import org.opalj.fpcf.properties.NoExceptionsAreThrown.MethodIsAbstract

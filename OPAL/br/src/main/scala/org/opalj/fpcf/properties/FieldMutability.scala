@@ -119,7 +119,7 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
  */
 sealed trait FinalField extends FieldMutability {
 
-    /** `true` if the field is already declared as `final`.
+    /** `true` if the field is already declared as `final`. */
     val byDefinition: Boolean
 
     final def isEffectivelyFinal: Boolean = true

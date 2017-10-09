@@ -26,40 +26,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package fixture.field_mutability;
+package org.opalj.fpcf.properties.field_mutability;
 
-import fixture.P;
-import org.opalj.fpcf.properties.FieldMutability;
+import java.lang.annotation.*;
 
-public class Singleton {
+@PropertyValidator(IsEffectivelyFinal.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface EffectivelyFinal{
 
-    @P(
-    k=FieldMutability.PropertyKeyName,
-    v=,
-    description="written by static initializer after the field becomes (indirectly) readable"
-    )
-    private String name;
-
-    private Singleton() {
-        this.name = "";
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    // STATIC FUNCTIONALITY
-
-    @P(k=FieldMutability.class,v=)
-    private static Singleton theInstance;
-
-    static{
-        theInstance = new Base();
-        theInstance.name = "The Singleton Instance";
-    }
-
-    public static Base getInstance() {
-        return theInstance;
-    }
-
+    /**
+     * A short reasoning of this property.
+     */
+    String value() ; // default = "N/A";
 }

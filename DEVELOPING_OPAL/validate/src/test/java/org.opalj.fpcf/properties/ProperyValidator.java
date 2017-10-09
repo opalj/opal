@@ -26,15 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package fixture;
+package org.opalj.fpcf.properties;
 
 import java.lang.annotation.*;
 
-@Retention(RetentionPolicy.CLASS)
+/**
+ * Meta-annotation that specifies which class will check an entity's property.
+ */
 @Documented
-public @interface P {
+@Target(ElementType.ANNOTATION_TYPE)
+@Retention(RetentionPolicy.CLASS)
+public @interface PropertyValidator{
 
-    String k();
+    /**
+     * The key (name) of the respective property kind.
+     *
+     * The name is used to find the property validator that will be used to validate the property.
+     */
+    String key();
 
-
+    /**
+     * The concrete class which can check if a given element has a property.
+     */
+    Class<? extends PropertyMatcher> validator();
 }

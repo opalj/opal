@@ -68,10 +68,10 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
         val fields = classFile.fields
         val pnfFields = fields.filter(f ⇒ f.isPrivate && !f.isFinal).toSet
 
-        if(pnfFields.isEmpty)
-        return NoResult;
+        if (pnfFields.isEmpty)
+            return NoResult;
 
-/*
+        /*
  We now have to analyze the static initializer as the static initializer
  can be used to initialize a private field of an instance of the class file
  after the reference to the class file and (an indirect) reference to the
@@ -87,13 +87,13 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
             instance = new X();
             Z.register(instance);
             // when we reach this point o is now (via getO) publically accessible and
-            // X is properly initialized!    
+            // X is properly initialized!
             o = new Object(); // o is mutated...
         }
     }
 */
 
-// IMPROVE Implement special handling for those methods that are always (guaranteed) only called by the constructor. (Note: filtering is not possible as the reference to this object may leak!)
+        // IMPROVE Implement special handling for those methods that are always (guaranteed) only called by the constructor. (Note: filtering is not possible as the reference to this object may leak!)
 
         var effectivelyFinalFields = pnfFields
         for {
@@ -131,7 +131,7 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
             }
         }
 
-        val pnfFieldsEPs = pnfFields. map { f ⇒
+        val pnfFieldsEPs = pnfFields.map { f ⇒
             if (effectivelyFinalFields.contains(f))
                 EP(f, EffectivelyFinalField)
             else
@@ -151,12 +151,12 @@ object AdvancedFieldMutabilityAnalysis extends FPCFAnalysisRunner {
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new AdvancedFieldMutabilityAnalysis(project)
         val classFileCandidates =
-            if(project.libraryClassFilesAreInterfacesOnly)
-        project.allProjectClassFiles
-        else
-            project.allClassFiles
+            if (project.libraryClassFilesAreInterfacesOnly)
+                project.allProjectClassFiles
+            else
+                project.allClassFiles
 
-val classFiles = classFileCandidates.filter(cf => cf.methods.forall(m => !m.isNative))
+        val classFiles = classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative))
 
         propertyStore.scheduleForEntities(classFiles)(analysis.determineFieldMutabilities)
         analysis

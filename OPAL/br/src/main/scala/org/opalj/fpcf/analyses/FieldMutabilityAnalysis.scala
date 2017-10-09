@@ -40,17 +40,23 @@ import org.opalj.fpcf.properties.FieldMutability
 
 /**
  * Determines if a private static non-final field is always initialized at most once or
- * if a field is or can be mutated after (lazy) initialization.
+ * if a field is or can be mutated after (lazy) initialization. Field read and writes at
+ * initialization time (e.g., if the current class object is registered in some publically
+ * available data-store) are not considered. This is in-line with the semantics of final,
+ * which also does not prevent reads of partially initialized objects.
  */
-class FieldMutabilityAnalysis private(val project: SomeProject) extends FPCFAnalysis {
+class FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * Analyzes the mutability of private static non-final fields.
      *
      * This analysis is only ''defined and soundy'' if the class file does not contain native
      * methods and the method body of all non-abstract methods is available.
-     * (If the analysis is schedulued using its companion object all class files with
+     * (If the analysis is scheduled using its companion object all class files with
      * native methods are filtered.)
+     *
+     * @param classFile A ClassFile without native methods and where the method body of all
+     *                  non-abstract methods is available.
      */
     def determineFieldMutabilities(classFile: ClassFile): PropertyComputationResult = {
         val thisType = classFile.thisType
@@ -60,23 +66,23 @@ class FieldMutabilityAnalysis private(val project: SomeProject) extends FPCFAnal
         if (psnfFields.isEmpty)
             return NoResult;
 
-        val finalFields = fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinalField)
+        val finalFields = fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinalField) }
 
         var effectivelyFinalFields = psnfFields
         val allMethodsIterator = classFile.methods.iterator
         val methodsIterator =
-            allMethodsIterator.filter(m =>  !m.isStaticInitializer && !method.isAbstract )
+            allMethodsIterator.filter(m ⇒ !m.isStaticInitializer && !m.isAbstract)
 
-        var continue : Boolean = true
-        while (methodsIterator.hasNext && continue) {
+        var continue: Boolean = true
+        while (methodsIterator.hasNext && continue) {
             val m = methodsIterator.next
-            val code = method.body.get
-            val allFieldsNonFinal = code.exists { (pc, instruction) =>
+            val code = m.body.get
+            val allFieldsNonFinal = code.exists { (pc, instruction) ⇒
                 instruction match {
 
                     case PUTSTATIC(`thisType`, fieldName, fieldType) ⇒
-                        // we don't need to lookup the field in the
-                        // class hierarchy since we are only concerned about private
+                        // We don't need to lookup the field in the class
+                        // hierarchy since we are only concerned about private
                         // fields so far... so we don't have to do a full
                         // resolution of the field reference.
                         val field = classFile.findField(fieldName, fieldType)
@@ -101,7 +107,7 @@ class FieldMutabilityAnalysis private(val project: SomeProject) extends FPCFAnal
                 EP(f, NonFinalFieldByAnalysis)
         }
 
-        ImmediateMultiResult(            psnfFieldsAnalysisResult ++  finalFields        )
+        ImmediateMultiResult(psnfFieldsAnalysisResult ++ finalFields)
     }
 }
 
@@ -115,12 +121,12 @@ object FieldMutabilityAnalysis extends FPCFAnalysisRunner {
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new FieldMutabilityAnalysis(project)
         val classFileCandidates =
-            if(project.libraryClassFilesAreInterfacesOnly)
-        project.allProjectClassFiles
-        else
-            project.allClassFiles
+            if (project.libraryClassFilesAreInterfacesOnly)
+                project.allProjectClassFiles
+            else
+                project.allClassFiles
 
-        val classFiles = classFileCandidates.filter(cf => cf.methods.forall(m => !m.isNative))
+        val classFiles = classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative))
 
         propertyStore.scheduleForEntities(classFiles)(analysis.determineFieldMutabilities)
         analysis
