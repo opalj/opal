@@ -49,7 +49,7 @@ parallelExecution in Global := false
 
 logBuffered in ThisBuild := false
 
-javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
+javacOptions in ThisBuild ++= Seq("-encoding", "utf8", "-source", "1.8")
 
 testOptions in ThisBuild := {
 		baseDirectory.map(bd =>
