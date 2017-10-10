@@ -26,27 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties;
+package org.opalj.fpcf.properties.field_mutability;
+
+import org.opalj.fpcf.FPCFAnalysis;
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.FieldMutabilityAnalysis;
+import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
 
 /**
- * Meta-annotation that specifies which class will check an entity's property.
+ * Annotation to state that the annotated field is effectively final (if a proper analysis
+ * was scheduled).
+ *
+ * @author Michael Eichberg
  */
+@PropertyValidator(key="FieldMutability",validator=EffectivelyFinalMatcher.class)
 @Documented
-@Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.CLASS)
-public @interface PropertyValidator{
+public @interface EffectivelyFinal{
 
     /**
-     * The key (name) of the respective property kind.
-     *
-     * The name is used to find the property validator that will be used to validate the property.
+     * A short reasoning of this property.
      */
-    String key();
+    String value() ; // default = "N/A";
 
-    /**
-     * The concrete class which can check if a given element has a property.
-     */
-    Class<? extends PropertyMatcher> validator();
+    Class<? extends FPCFAnalysis>[] analyses() default {FieldMutabilityAnalysis.class, AdvancedFieldMutabilityAnalysis.class};
 }

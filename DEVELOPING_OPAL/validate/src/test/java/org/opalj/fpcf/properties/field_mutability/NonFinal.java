@@ -26,43 +26,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf.properties.field_mutability;
 
-import org.opalj.log.LogContext
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
-import AnalysisModes._
+import org.opalj.fpcf.properties.PropertyValidator;
+
+import java.lang.annotation.*;
 
 /**
- * Common super trait of all analyses that use the fixpoint
- * computations framework. In general, an analysis computes a
- * [[org.opalj.fpcf.Property]] by processing some entities, e.g.: ´classes´, ´methods´
- * or ´fields´.
+ * Annotation to state that the annotated field is not final.
  *
- * @author Michael Reif
  * @author Michael Eichberg
  */
-trait FPCFAnalysis {
+@PropertyValidator(key = "FieldMutability",validator = NonFinalMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface NonFinal{
 
-    implicit val project: SomeProject
-    final def p = project
-
-    final implicit val classHierarchy = project.classHierarchy
-    final def ch = classHierarchy
-
-    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    final def ps = propertyStore
-
-    final implicit val logContext: LogContext = project.logContext
-
-    // The project type:
-    /** @migration won't be available in the near future*/
-    final def isOpenLibrary: Boolean = project.analysisMode eq OPA
-    /** @migration won't be available in the near future*/
-    final def isClosedLibrary: Boolean = project.analysisMode eq CPA
-    /** @migration won't be available in the near future*/
-    final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
-    /** @migration won't be available in the near future*/
-    final def isJEEApplication: Boolean = project.analysisMode eq JEE6WebApplication
+    /**
+     * A short reasoning of this property.
+     */
+    String value();// default = "N/A";
 }

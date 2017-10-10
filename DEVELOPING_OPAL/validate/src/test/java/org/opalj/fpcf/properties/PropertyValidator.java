@@ -26,17 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.field_mutability;
+package org.opalj.fpcf.properties;
 
 import java.lang.annotation.*;
 
-@PropertyValidator(IsEffectivelyFinal.class)
+/**
+ * Meta-annotation that specifies which class will check an entity's property.
+ *
+ * @author Michael Eichberg
+ */
 @Documented
+@Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.CLASS)
-public @interface EffectivelyFinal{
+public @interface PropertyValidator{
 
     /**
-     * A short reasoning of this property.
+     * The key (name) of the respective property kind.
+     *
+     * The name is used to find the property validator that will be used to validate the property.
      */
-    String value() ; // default = "N/A";
+    String key();
+
+    /**
+     * The concrete class which can check if a given element has a property.
+     */
+    Class<? extends PropertyMatcher> validator();
 }

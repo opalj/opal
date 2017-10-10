@@ -28,41 +28,34 @@
  */
 package org.opalj
 package fpcf
+package properties
+package field_mutability
 
-import org.opalj.log.LogContext
+import org.opalj.br.Annotation
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
-import AnalysisModes._
 
 /**
- * Common super trait of all analyses that use the fixpoint
- * computations framework. In general, an analysis computes a
- * [[org.opalj.fpcf.Property]] by processing some entities, e.g.: ´classes´, ´methods´
- * or ´fields´.
+ * Matches a field's `FieldMutability` property. The match is successful if the field either
+ * does not have a corresponding property (in which case the fallback property will be
+ * `NonFinalField`) or if the property is an instance of `NonFinalField`.
  *
- * @author Michael Reif
  * @author Michael Eichberg
  */
-trait FPCFAnalysis {
+class NonFinalMatcher extends PropertyMatcher {
 
-    implicit val project: SomeProject
-    final def p = project
+    def hasProperty(
+        p:          SomeProject,
+        as:         Set[ObjectType],
+        entity:     Entity,
+        a:          Annotation,
+        properties: List[Property]
+    ): Option[String] = {
+        if (properties.forall(p ⇒ p.isInstanceOf[NonFinalField] || p.key != FieldMutability.key))
+            None
+        else {
+            Some(a.elementValuePairs.head.value.toString)
+        }
+    }
 
-    final implicit val classHierarchy = project.classHierarchy
-    final def ch = classHierarchy
-
-    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    final def ps = propertyStore
-
-    final implicit val logContext: LogContext = project.logContext
-
-    // The project type:
-    /** @migration won't be available in the near future*/
-    final def isOpenLibrary: Boolean = project.analysisMode eq OPA
-    /** @migration won't be available in the near future*/
-    final def isClosedLibrary: Boolean = project.analysisMode eq CPA
-    /** @migration won't be available in the near future*/
-    final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
-    /** @migration won't be available in the near future*/
-    final def isJEEApplication: Boolean = project.analysisMode eq JEE6WebApplication
 }

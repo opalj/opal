@@ -28,33 +28,30 @@
  */
 package org.opalj.fpcf.fixtures.field_mutability;
 
-import org.opalj.fpcf.properties.FieldMutability;
+import org.opalj.fpcf.properties.field_mutability.NonFinal;
 
-public class Singleton {
+public class PrivateFieldUpdater {
 
     @NonFinal("written by static initializer after the field becomes (indirectly) readable")
     private String name;
 
-    private Singleton() {
-        this.name = "";
+    @NonFinal("incremented whenever `this` object is passed to another `NonFinal` object")
+    private int i;
+
+    private PrivateFieldUpdater(PrivateFieldUpdater s) {
+        if (s != null) {
+            s.i += 1;
+            this.i = s.i;
+            this.name = s.name + s.i;
+        }
     }
 
     public String getName() {
         return name;
     }
 
-    // STATIC FUNCTIONALITY
-
-    @EffectivelyFinal("only set in the static initializer")
-    private static Singleton theInstance;
-
-    static{
-        theInstance = new Base();
-        theInstance.name = "The Singleton Instance";
-    }
-
-    public static Base getInstance() {
-        return theInstance;
+    public int getI() {
+        return i;
     }
 
 }

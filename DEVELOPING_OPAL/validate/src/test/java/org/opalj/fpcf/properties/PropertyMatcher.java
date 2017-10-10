@@ -26,17 +26,40 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.field_mutability;
+package org.opalj.fpcf.properties;
 
-import java.lang.annotation.*;
+import scala.Option;
+import scala.collection.immutable.List;
+import scala.collection.immutable.Set;
 
-@PropertyValidator(IsNonFinal.class)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface NonFinal{
+import org.opalj.fpcf.Property;
+import org.opalj.br.Annotation;
+import org.opalj.br.ObjectType;
+import org.opalj.br.analyses.Project;
+
+/**
+ * Defines a class that given a specific entity and property validates if the property is
+ * as expected. The class implicitly defines the expectation.
+ *
+ * @author Michael Eichberg
+ */
+public interface PropertyMatcher {
 
     /**
-     * A short reasoning of this property.
+     * Tests if the computed property is matched by this matcher.
+     *
+     * @param p The project.
+     * @param as The OPAL `ObjectType`'s of the executed analyses.
+     * @param entity The annotated entity.
+     * @param a The annotation.
+     * @param properties '''All''' properties associated with the given entity.
+     *
+     * @return 'None' if the property was successfully matched; 'Some(<String>)' if the
+     *          property was not successfully matched; the String describes the reason
+     *          why the analysis failed.
      */
-    String value();// default = "N/A";
+    Option<String> hasProperty(
+            Project<?> p, Set<ObjectType> as,
+            Object entity, Annotation a, List<Property> properties);
+
 }

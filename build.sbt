@@ -178,7 +178,7 @@ lazy val bi = Project(
         DEVELOPING_OPAL/plugins/sbt-java-fixture-compiler/Readme.md */
 
         inConfig(Test)(
-            JavaFixtureCompiler.baseJavafixtureSettings ++
+            JavaFixtureCompiler.baseJavaFixtureSettings ++
                 Seq(
                     unmanagedResourceDirectories ++= Seq(
                         (javaFixtureProjectsDir in javaFixtureDiscovery).value,

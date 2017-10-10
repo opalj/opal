@@ -210,7 +210,7 @@ class Project[Source] private (
     }
 
     /**
-     * All fields defined by this project as well as the visible fields defined by the libraries.
+     * All fields defined by this project as well as the reified fields defined in libraries.
      */
     val allFields: Iterable[Field] = {
         new Iterable[Field] {
@@ -228,10 +228,9 @@ class Project[Source] private (
      */
     val allSourceElements: Iterable[SourceElement] = allMethods ++ allFields ++ allClassFiles
 
-    final val virtualMethodsCount: Int = {
-        allMethods.count(m ⇒ m.isVirtualMethodDeclaration)
-    }
+    final val virtualMethodsCount: Int = allMethods.count(m ⇒ m.isVirtualMethodDeclaration)
 
+    // IMPROVE To support an efficient project reset move the initialization to an auxiliary constructor and add this field to the list of fields defined by "Project"
     final val instanceMethods: Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
 
         // IMPROVE Instead of an Array/Chain use a sorted trie (set) or something similar which is always sorted.
@@ -359,6 +358,7 @@ class Project[Source] private (
         //new AnyRefMap[ObjectType, Chain[MethodDeclarationContext]](methods.size) ++ methods.asScala
     } { t ⇒ info("project setup", s"computing defined methods took ${t.toSeconds}") }
 
+    // IMPROVE To support an efficient project reset move the initialization to an auxiliary constructor and add this field to the list of fields defined by "Project"
     /**
      * Returns for a given virtual method the set of all non-abstract virtual methods which
      * overrides it.

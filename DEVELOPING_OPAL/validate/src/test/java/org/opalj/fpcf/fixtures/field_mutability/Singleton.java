@@ -26,43 +26,45 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf.fixtures.field_mutability;
 
-import org.opalj.log.LogContext
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
-import AnalysisModes._
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis;
+import org.opalj.fpcf.properties.field_mutability.EffectivelyFinal;
+import org.opalj.fpcf.properties.field_mutability.NonFinal;
 
-/**
- * Common super trait of all analyses that use the fixpoint
- * computations framework. In general, an analysis computes a
- * [[org.opalj.fpcf.Property]] by processing some entities, e.g.: ´classes´, ´methods´
- * or ´fields´.
- *
- * @author Michael Reif
- * @author Michael Eichberg
- */
-trait FPCFAnalysis {
+public class Singleton {
 
-    implicit val project: SomeProject
-    final def p = project
+    @NonFinal("written by static initializer after the field becomes (indirectly) readable")
+    private String name;
 
-    final implicit val classHierarchy = project.classHierarchy
-    final def ch = classHierarchy
+    @EffectivelyFinal(
+            value = "only initialized once by the constructor",
+            analyses = { AdvancedFieldMutabilityAnalysis.class }
+    )
+    private Object mutex = new Object();
 
-    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    final def ps = propertyStore
+    private Singleton() {
+        this.name = "";
+    }
 
-    final implicit val logContext: LogContext = project.logContext
+    public String getName() {
+        synchronized (mutex) {
+            return name;
+        }
+    }
 
-    // The project type:
-    /** @migration won't be available in the near future*/
-    final def isOpenLibrary: Boolean = project.analysisMode eq OPA
-    /** @migration won't be available in the near future*/
-    final def isClosedLibrary: Boolean = project.analysisMode eq CPA
-    /** @migration won't be available in the near future*/
-    final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
-    /** @migration won't be available in the near future*/
-    final def isJEEApplication: Boolean = project.analysisMode eq JEE6WebApplication
+    // STATIC FUNCTIONALITY
+
+    @EffectivelyFinal("only set in the static initializer")
+    private static Singleton theInstance;
+
+    static {
+        theInstance = new Singleton();
+        theInstance.name = "The Singleton Instance";
+    }
+
+    public static Singleton getInstance() {
+        return theInstance;
+    }
+
 }
