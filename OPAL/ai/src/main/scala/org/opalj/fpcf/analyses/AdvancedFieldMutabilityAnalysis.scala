@@ -101,6 +101,10 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
             tacai(method).stmts exists {
 
                 case PutStatic(_, `thisType`, fieldName, fieldType, _) ⇒
+            tacai(method).stmts exists {
+                case PutStatic(_, `thisType`, fieldName, fieldType, _) if (
+                    !method.isStaticInitializer
+                ) ⇒
                     val field = classFile.findField(fieldName, fieldType)
                     field.foreach(effectivelyFinalFields -= _)
                     effectivelyFinalFields.isEmpty // <=> true will abort the querying of the code
