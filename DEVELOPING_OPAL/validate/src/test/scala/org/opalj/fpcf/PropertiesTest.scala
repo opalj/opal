@@ -129,7 +129,7 @@ class PropertiesTest extends FunSpec with Matchers {
             val annotationTypeName = annotation.annotationType.asObjectType.simpleName
             it(f.toJava(s"@$annotationTypeName").substring(24)) {
                 val matcherClass = Class.forName(matcherType.toJava)
-                info(s"using matcher: "+matcherClass.toString.substring(32))
+                info(s"validator: "+matcherClass.toString.substring(32))
                 val matcherInstance = matcherClass.newInstance()
                 val m = matcherClass.getMethod(
                     "hasProperty",
