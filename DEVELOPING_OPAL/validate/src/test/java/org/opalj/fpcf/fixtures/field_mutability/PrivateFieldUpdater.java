@@ -28,11 +28,19 @@
  */
 package org.opalj.fpcf.fixtures.field_mutability;
 
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis;
+import org.opalj.fpcf.properties.field_mutability.EffectivelyFinal;
 import org.opalj.fpcf.properties.field_mutability.NonFinal;
 
+/**
+ * Simple demo class which updates the private field of another instance of this class.
+ */
 public class PrivateFieldUpdater {
 
-    @NonFinal("written by static initializer after the field becomes (indirectly) readable")
+    @EffectivelyFinal(
+            value = "only initialized by the constructor",
+            analyses = { AdvancedFieldMutabilityAnalysis.class }
+            )
     private String name;
 
     @NonFinal("incremented whenever `this` object is passed to another `NonFinal` object")
