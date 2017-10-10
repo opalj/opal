@@ -71,26 +71,25 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
         if (pnfFields.isEmpty)
             return NoResult;
 
-
-// We now have to analyze the static initializer as the static initializer
-// can be used to initialize a private field of an instance of the class file
-// after the reference to the class file and (an indirect) reference to the
-// field has become available. Consider the following example:
-//    class X implementes Y{
-//
-//        private Object o;
-//
-//        public Object getO() { return o; }
-//
-//        private static X instance;
-//        static {
-//            instance = new X();
-//            Z.register(instance);
-//            // when we reach this point o is now (via getO) publically accessible and
-//            // X is properly initialized!
-//            o = new Object(); // o is mutated...
-//        }
-//    }
+        // We now have to analyze the static initializer as the static initializer
+        // can be used to initialize a private field of an instance of the class file
+        // after the reference to the class file and (an indirect) reference to the
+        // field has become available. Consider the following example:
+        //    class X implementes Y{
+        //
+        //        private Object o;
+        //
+        //        public Object getO() { return o; }
+        //
+        //        private static X instance;
+        //        static {
+        //            instance = new X();
+        //            Z.register(instance);
+        //            // when we reach this point o is now (via getO) publically accessible and
+        //            // X is properly initialized!
+        //            o = new Object(); // o is mutated...
+        //        }
+        //    }
 
         // IMPROVE Implement special handling for those methods that are always (guaranteed) only called by the constructor. (Note: filtering is not possible as the reference to this object may leak!)
 
