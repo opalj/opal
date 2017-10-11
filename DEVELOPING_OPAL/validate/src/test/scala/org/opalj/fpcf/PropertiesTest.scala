@@ -42,17 +42,16 @@ import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.bytecode.RTJar
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
 
 /**
- * Tests if the properties specified in test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ * Framework to test if the properties specified in the test project (the classes in the
+ * (sub-)package of org.opalj.fpcf.fixture) and the computed ones match. The actual matching
+ * is delegated to `PropertyMatcher`s to facilitate matching arbitrary complex property
+ * specifications.
  *
  * @author Michael Eichberg
  */
-class PropertiesTest extends FunSpec with Matchers {
+abstract class PropertiesTest extends FunSpec with Matchers {
 
     final val FixtureProject: Project[URL] = {
         val classFileReader = Project.JavaClassFileReader()
@@ -156,21 +155,4 @@ class PropertiesTest extends FunSpec with Matchers {
         ps.waitOnPropertyComputationCompletion(true, true)
         (p, ps, as)
     }
-
-    //
-    //
-    // THE TESTS
-    //
-    //
-
-    describe("analyzing the fixture project using the most primitive 'Field Mutability Analysis'") {
-        val as = executeAnalyses(Set(FieldMutabilityAnalysis))
-        validateProperties(as, Set("FieldMutability"))
-    }
-
-    describe("analyzing the fixture project using the ai based 'Field Mutability Analysis'") {
-        val as = executeAnalyses(Set(AdvancedFieldMutabilityAnalysis))
-        validateProperties(as, Set("FieldMutability"))
-    }
-
 }
