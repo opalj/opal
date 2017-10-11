@@ -41,46 +41,48 @@ sealed abstract class NEWARRAY extends CreateNewOneDimensionalArrayInstruction {
 
     def elementType: BaseType
 
-    final def mnemonic: String = "newarray"
+    final override val arrayType: ArrayType = ArrayType(elementType)
 
-    final def opcode: Opcode = NEWARRAY.opcode
+    final override def mnemonic: String = "newarray"
 
-    final def length: Int = 2
+    final override def opcode: Opcode = NEWARRAY.opcode
+
+    final override def length: Int = 2
 
     final override def toString: String = "NEWARRAY("+elementType.toJava+"[])"
 
 }
 
 private object NEWARRAY_Boolean extends NEWARRAY {
-    final val elementType = BooleanType
+    final override def elementType: BaseType = BooleanType
 }
 
 private object NEWARRAY_Char extends NEWARRAY {
-    final val elementType = CharType
+    final override def elementType: BaseType = CharType
 }
 
 private object NEWARRAY_Float extends NEWARRAY {
-    final val elementType = FloatType
+    final override def elementType: BaseType = FloatType
 }
 
 private object NEWARRAY_Double extends NEWARRAY {
-    final val elementType = DoubleType
+    final override def elementType: BaseType = DoubleType
 }
 
 private object NEWARRAY_Byte extends NEWARRAY {
-    final val elementType = ByteType
+    final override def elementType: BaseType = ByteType
 }
 
 private object NEWARRAY_Short extends NEWARRAY {
-    final val elementType = ShortType
+    final override def elementType: BaseType = ShortType
 }
 
 private object NEWARRAY_Integer extends NEWARRAY {
-    final val elementType = IntegerType
+    final override def elementType: BaseType = IntegerType
 }
 
 private object NEWARRAY_Long extends NEWARRAY {
-    final val elementType = LongType
+    final override def elementType: BaseType = LongType
 }
 
 object NEWARRAY {
