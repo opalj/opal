@@ -1163,6 +1163,7 @@ object ObjectType {
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
     // Types related to the invokedynamic instruction
+    final val VarHandle = ObjectType("java/lang/invoke/VarHandle")
     final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
     final val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
     final val MethodHandles$Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
