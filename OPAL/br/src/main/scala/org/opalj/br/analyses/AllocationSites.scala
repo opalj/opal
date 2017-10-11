@@ -43,12 +43,13 @@ import org.opalj.collection.immutable.ConstArray
  * @author Michael Eichberg
  */
 class AllocationSites private[analyses] (
-        val data:  Map[Method, Map[PC, AllocationSite]],
+        val data:              Map[Method, Map[PC, AllocationSite]],
         val allocationsByType: Map[ReferenceType, ConstArray[AllocationSite]]
 ) {
 
     def apply(m: Method): Map[PC, AllocationSite] = data.getOrElse(m, Map.empty)
-    def apply(tpe: ReferenceType) = allocationsByType.getOrElse(tpe, Map.empty)
+    def apply(tpe: ReferenceType): ConstArray[AllocationSite] =
+        allocationsByType.getOrElse(tpe, ConstArray.empty)
 
     def allocationSites: Iterable[AllocationSite] = data.values.flatMap(_.values)
 }
