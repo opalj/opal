@@ -103,6 +103,12 @@ class InterproceduralEscapeAnalysis private (
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
 
             case FormalParameter(m, _) if m.body.isEmpty ⇒ Result(e, MaybeNoEscape)
+            case FormalParameter(m, -1) =>
+                val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
+                val param = params.thisParameter
+                doDetermineEscape(e, param.origin, param.useSites, code, params, m)
+            case FormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
+                Result(e, MaybeNoEscape)
             case FormalParameter(m, i) ⇒
                 val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)

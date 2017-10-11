@@ -37,6 +37,7 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ReferenceType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntArraySet
@@ -183,10 +184,18 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
 
     def handleCall(methodO: org.opalj.Result[Method], param: Int): Unit = {
         methodO match {
-            case Success(m) ⇒ {
-                try {
+            case Success(method) ⇒ {
+                if (method.isNativeAndVarargs &&
+                    method.descriptor.parametersCount == 1 &&
+                    method.descriptor.parameterType(0).isArrayType &&
+                    method.descriptor.parameterType(0).asArrayType.componentType == ObjectType.Object &&
+                    (method.classFile.fqn == "java/lang/invoke/MethodHandle" ||
+                        method.classFile.fqn == "java/lang/invoke/VarHandle")) {
+                    //IMPROVE
+                    calcMostRestrictive(MaybeArgEscape)
+                } else {
                     val fps = propertyStore.context[FormalParameters]
-                    val fp = fps(m)(param)
+                    val fp = fps(method)(param)
                     if (fp != e) {
                         val escapeState = propertyStore(fp, EscapeProperty.key)
                         escapeState match {
@@ -204,16 +213,11 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                                 calcMostRestrictive(ArgEscape)
                         }
                     }
-                } catch {
-                    case _: ArrayIndexOutOfBoundsException ⇒
-                        //TODO params to array
-                        calcMostRestrictive(MaybeArgEscape)
                 }
             }
             case _ ⇒ calcMostRestrictive(MaybeArgEscape)
         }
     }
-
 }
 
 class InterproceduralEntityEscapeAnalysis(
