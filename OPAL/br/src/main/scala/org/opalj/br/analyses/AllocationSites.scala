@@ -30,6 +30,8 @@ package org.opalj
 package br
 package analyses
 
+import org.opalj.collection.immutable.ConstArray
+
 /**
  * A set of all allocation sites.
  *
@@ -40,9 +42,13 @@ package analyses
  *
  * @author Michael Eichberg
  */
-class AllocationSites private[analyses] (val data: Map[Method, Map[PC, AllocationSite]]) {
+class AllocationSites private[analyses] (
+        val data:  Map[Method, Map[PC, AllocationSite]],
+        val allocationsByType: Map[ReferenceType, ConstArray[AllocationSite]]
+) {
 
     def apply(m: Method): Map[PC, AllocationSite] = data.getOrElse(m, Map.empty)
+    def apply(tpe: ReferenceType) = allocationsByType.getOrElse(tpe, Map.empty)
 
     def allocationSites: Iterable[AllocationSite] = data.values.flatMap(_.values)
 }
