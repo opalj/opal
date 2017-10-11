@@ -185,12 +185,13 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
     def handleCall(methodO: org.opalj.Result[Method], param: Int): Unit = {
         methodO match {
             case Success(method) ⇒ {
+                // handle signature polymorphic methods
                 if (method.isNativeAndVarargs &&
                     method.descriptor.parametersCount == 1 &&
                     method.descriptor.parameterType(0).isArrayType &&
                     method.descriptor.parameterType(0).asArrayType.componentType == ObjectType.Object &&
-                    (method.classFile.fqn == "java/lang/invoke/MethodHandle" ||
-                        method.classFile.fqn == "java/lang/invoke/VarHandle")) {
+                    ((method.classFile.thisType eq ObjectType.VarHandle) ||
+                        (method.classFile.thisType eq ObjectType.MethodHandle))) {
                     //IMPROVE
                     calcMostRestrictive(MaybeArgEscape)
                 } else {
@@ -221,12 +222,12 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
 }
 
 class InterproceduralEntityEscapeAnalysis(
-        val e:             Entity,
-        val defSite:       ValueOrigin,
-        val uses:          IntArraySet,
-        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:        Parameters[TACMethodParameter],
-        val m:             Method,
-        val propertyStore: PropertyStore,
-        val project:       SomeProject
+    val e:             Entity,
+    val defSite:       ValueOrigin,
+    val uses:          IntArraySet,
+    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:        Parameters[TACMethodParameter],
+    val m:             Method,
+    val propertyStore: PropertyStore,
+    val project:       SomeProject
 ) extends InterproceduralEntityEscapeAnalysis1 with SimpleFieldAwareEntityEscapeAnalysis
