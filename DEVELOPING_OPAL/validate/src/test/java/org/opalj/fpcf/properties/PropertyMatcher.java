@@ -40,6 +40,9 @@ import org.opalj.br.analyses.Project;
 /**
  * Defines a class that, when given a specific entity and its properties, validates if the
  * property is as expected. The class implicitly defines the expectation.
+ * <p>
+ * Concrete implementations should inherit from <code>AbstractPropertyMatcher</code>.
+ * </p>
  *
  * @author Michael Eichberg
  */
