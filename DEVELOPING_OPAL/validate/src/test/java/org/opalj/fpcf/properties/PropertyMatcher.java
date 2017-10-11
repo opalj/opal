@@ -38,8 +38,8 @@ import org.opalj.br.ObjectType;
 import org.opalj.br.analyses.Project;
 
 /**
- * Defines a class that given a specific entity and property validates if the property is
- * as expected. The class implicitly defines the expectation.
+ * Defines a class that, when given a specific entity and its properties, validates if the
+ * property is as expected. The class implicitly defines the expectation.
  *
  * @author Michael Eichberg
  */

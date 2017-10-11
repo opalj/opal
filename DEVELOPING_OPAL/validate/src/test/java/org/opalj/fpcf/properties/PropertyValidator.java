@@ -31,7 +31,8 @@ package org.opalj.fpcf.properties;
 import java.lang.annotation.*;
 
 /**
- * Meta-annotation that specifies which class will check an entity's property.
+ * Meta-annotation that specifies which class will check an entity's property. This annotation
+ * is always used to annotate the custom annotations that specify the expected property.
  *
  * @author Michael Eichberg
  */
@@ -48,7 +49,7 @@ public @interface PropertyValidator{
     String key();
 
     /**
-     * The concrete class which can check if a given element has a property.
+     * The concrete class which will check if given element's computed property.
      */
     Class<? extends PropertyMatcher> validator();
 }
