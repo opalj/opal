@@ -72,6 +72,8 @@ sealed abstract class AllocationSite {
      */
     def kind: AllocationType
 
+    def allocatedType: ReferenceType
+
     final override def equals(other: Any): Boolean = {
         other match {
             case that: AllocationSite ⇒
@@ -100,6 +102,7 @@ object AllocationSite {
 final class ObjectAllocationSite(val method: Method, val pc: PC) extends AllocationSite {
     final def kind: AllocationType = ObjectAllocation
 
+    def allocatedType: ObjectType = method.body.get.instructions(pc).asNEW.objectType
 }
 
 object ObjectAllocationSite {
@@ -113,7 +116,12 @@ object ObjectAllocationSite {
 }
 
 final class ArrayAllocationSite(val method: Method, val pc: PC) extends AllocationSite {
+
     final def kind: AllocationType = ArrayAllocation
+
+    def allocatedType: ArrayType = {
+        method.body.get.instructions(pc).asCreateNewArrayInstruction.arrayType
+    }
 }
 
 object ArrayAllocationSite {
