@@ -542,7 +542,7 @@ final class Code private (
      * Performs a live variable analysis restricted to a method's locals.
      *
      * @return  For each instruction (identified by its pc) the set of variables (register values)
-     *          which are live (identified by their index.) is determined.
+     *          which are live (identified by their index) is determined.
      *          I.e., if you need to know if the variable with the index 5 is
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.

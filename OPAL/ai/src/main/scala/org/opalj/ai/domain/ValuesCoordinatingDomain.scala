@@ -57,11 +57,13 @@ import org.opalj.br.BootstrapMethod
  */
 trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
 
+    def throwClassCastException: Boolean = true
+    def throwNullPointerExceptionOnThrow: Boolean = true
+    def abortProcessingExceptionsOfCalledMethodsOnUnknownException: Boolean = false
+    def abortProcessingThrownExceptionsOnUnknownException: Boolean = false
     def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
         ExceptionsRaisedByCalledMethods.Any
     }
-
-    def throwNullPointerExceptionOnThrow: Boolean = true
     def throwNullPointerExceptionOnMethodCall: Boolean = true
     def throwNullPointerExceptionOnFieldAccess: Boolean = true
     def throwArithmeticExceptions: Boolean = true
@@ -71,7 +73,6 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     def throwArrayIndexOutOfBoundsException: Boolean = true
     def throwArrayStoreException: Boolean = true
     def throwNegativeArraySizeException: Boolean = true
-    def throwClassCastException: Boolean = true
     def throwClassNotFoundException: Boolean = true
 
     /*override*/ def invokevirtual(

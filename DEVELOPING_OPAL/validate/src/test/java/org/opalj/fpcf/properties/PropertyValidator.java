@@ -26,25 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package domain
+package org.opalj.fpcf.properties;
 
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
+import java.lang.annotation.*;
 
 /**
- * Provides log context information.
+ * Meta-annotation that specifies which class will check an entity's property. This annotation
+ * is always used to annotate the custom annotations that specify the expected property.
  *
  * @author Michael Eichberg
  */
-trait LogContextProvider {
+@Documented
+@Target(ElementType.ANNOTATION_TYPE)
+@Retention(RetentionPolicy.CLASS)
+public @interface PropertyValidator{
 
-    implicit def logContext: LogContext
-}
+    /**
+     * The key (name) of the respective property kind.
+     *
+     * The name is used to find the property validator that will be used to validate the property.
+     */
+    String key();
 
-trait GlobalLogContextProvider extends LogContextProvider {
-
-    implicit def logContext: LogContext = GlobalLogContext
-
+    /**
+     * The concrete class which will check if given element's computed property.
+     */
+    Class<? extends PropertyMatcher> validator();
 }

@@ -39,41 +39,46 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
 }
 
 /**
- * Identifies those fields that are immutable from the perspective of a client of a class/object -
- * that is, whenever a field is (directly or indirectly (for example via a method call))
- * accessed after initialization it will see the same value.
- * From this description it follows that direct field read
- * accesses are possible as long as the value is already finally initialized. In general it is
- * even possible that the initializing field write is not done by the class itself but done by
+ * Identifies those fields which are effectively final; that is, those fields which are not
+ * read before the final value is set. Field reads which are just done to test if the field
+ * still contains the default JVM value are ignored if no other field read can bypass the test.
+ * As in case of `final` fields, field writes done by (static) initializers w.r.t. the currently
+ * constructed (class) object generally do not prevent the field from being effectively final.
+ *
+ * Hence, a user of the respective class/object will always see the same value, It is
+ * also possible that the initializing field write is not done by the class itself but done by
  * a specific caller that is guaranteed to be always executed before the field is (read)
  * accessed elsewhere.
  * Here, the initialization phase for a specific field always starts with the call of a
  * constructor and ends when the field is set to some value (in a thread-safe manner)
  * or the field is potentially read.
  *
+ * == Property Extensions ==
  *
- * == Property manifestations ==
- *
- * 1. declared final
+ * - declared final
  *   - actually directly declared as final
  *
- * 1. lazy initialized
- *   - all field writes and reads have to be known
- *     - OPA: all private fields
- *     - CPA: all private and package private fields and all protected and public fields that are not accessible by a client
- *     - APP: all fields
+ * - lazy initialized
+ *   - all field writes and reads are known, i.e., in case of ...
+ *     - ... open package assumption: all private fields
+ *     - ... closed package assumption: all private and package private fields and all
+ *       protected and public fields that are not accessible by clients of the package
+ *     - ... applications: all fields
  *   - all writes have to be guarded by a test if the field still has the default value
- *   - all reads happen after initialization of the field and are either also guarded by test or happen directly after a field write
- *   - the field is set at most once to a value that is not the default value (`0`, `0l`, `0f`, `0d`, `null`)
+ *   - all reads happen after initialization of the field and are either also guarded by
+ *     a test or happen directly after a field write
+ *   - if the field is set to a value that is not the default value, the field is in all
+ *     cases (even in case of concurrent execution!) set to the same value (`0`, `0l`,
+ *     `0f`, `0d`, `null`)
  *
- * 1. effectively final
- *   - all criteria of the lazy initialized field have to hold (see previous section)
- *   - all reads and writes have to be guarded by the same (synchronization) lock.
+ * - effectively final
+ *   - all field writes are known (see above)
+ *   - all writes happen unconditionally at initialization time
+ *   - as soon as the field is read no more writes will ever occur
  *
- * 1. non-final
+ * - non-final
  *   - a field is non final if non of the the previous cases holds
  *   - e.g. not all reads and writes of the field are known
- *
  *
  * @author Michael Eichberg
  * @author Michael Reif
@@ -82,23 +87,22 @@ sealed trait FieldMutability extends Property with FieldMutabilityPropertyMetaIn
 
     final def key = FieldMutability.key // All instances have to share the SAME key!
 
-    final val isRefineable: Boolean = false
+    final def isRefineable: Boolean = false
 
     def isEffectivelyFinal: Boolean
 }
 
 object FieldMutability extends FieldMutabilityPropertyMetaInformation {
 
+    final val PropertyKeyName = "FieldMutability"
+
     final val key: PropertyKey[FieldMutability] = {
         PropertyKey.create(
-            "FieldMutability",
+            PropertyKeyName,
             (p: PropertyStore, e: Entity) ⇒ {
                 e match {
                     case f: Field ⇒
-                        if (f.isFinal)
-                            DeclaredFinalField
-                        else
-                            NonFinalFieldByAnalysis
+                        if (f.isFinal) DeclaredFinalField else NonFinalFieldByAnalysis
                     case x ⇒
                         val m = x.getClass.getSimpleName+" is not an org.opalj.br.Field"
                         throw new IllegalArgumentException(m)
@@ -115,6 +119,7 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
  */
 sealed trait FinalField extends FieldMutability {
 
+    /** `true` if the field is already declared as `final`. */
     val byDefinition: Boolean
 
     final def isEffectivelyFinal: Boolean = true

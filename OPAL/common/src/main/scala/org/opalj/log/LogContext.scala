@@ -92,5 +92,4 @@ trait LogContext {
         else
             1
     }
-
 }

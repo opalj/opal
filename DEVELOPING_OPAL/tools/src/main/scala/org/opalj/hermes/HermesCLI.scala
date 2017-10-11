@@ -45,34 +45,48 @@ object HermesCLI {
         override def reportProgress(f: ⇒ Double): Unit = Hermes.synchronized { f }
     }
 
-    def main(args: Array[String]): Unit = {
+    private def showUsage(): Unit = {
+        println("OPAL - Hermes")
+        println("Parameters:")
+        println("   -config <FileName> the configuration which lists a corpus' projects")
+        println("   -csv <FileName> the file to which the results should be exported")
+        println("   [-noProjectStatistics project statistics are not exported]")
+        println()
+        println("java org.opalj.hermes.HermesCLI -config <ConfigFile.json> -csv <FileName>")
+    }
 
+    def main(args: Array[String]): Unit = {
         var configFile: String = null
         var csvFile: String = null
+        var noProjectStatistics: Boolean = false
 
         var i = 0
         while (i < args.length) {
             args(i) match {
                 case "-csv" ⇒
                     i += 1; csvFile = args(i)
-                case s ⇒ configFile = s
+                case "-config" ⇒
+                    i += 1; configFile = args(i)
+                case "-noProjectStatistics" ⇒ noProjectStatistics = true
+
+                case arg ⇒
+                    Console.err.println(s"Unknown parameter $arg.")
+                    showUsage()
+                    System.exit(2)
             }
             i += 1
         }
         if (configFile == null || csvFile == null) {
-            import Console.err
-            err.println("OPAL - Hermes")
-            err.println("Parameters 1) the configuration which lists a corpus' projects")
-            err.println("           2) the file to which the results should be exported")
-            err.println("              -csv <FileName>")
-            err.println()
-            err.println("java org.opalj.hermes.HermesCLI <ConfigFile.json> -csv <FileName>")
+            Console.err.println("Missing config file and/or csv file.")
+            showUsage()
             System.exit(1)
         }
 
         Hermes.analysesFinished onChange { (_, _, isFinished) ⇒
             if (isFinished) {
-                Hermes.exportCSV(new File(csvFile))
+                val exportFile = new File(csvFile).getAbsoluteFile()
+                Hermes.exportCSV(exportFile, !noProjectStatistics)
+                println("Wrote: "+exportFile)
                 System.exit(0)
             }
         }
