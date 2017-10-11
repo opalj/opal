@@ -29,33 +29,47 @@
 package org.opalj
 package fpcf
 package properties
-package field_mutability
 
-import org.opalj.br.Annotation
 import org.opalj.br.ObjectType
+import org.opalj.br.ElementValue
+import org.opalj.br.ElementValuePair
+import org.opalj.br.ElementValuePairs
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Matches a field's `FieldMutability` property. The match is successful if the field either
- * does not have a corresponding property (in which case the fallback property will be
- * `NonFinalField`) or if the property is an instance of `NonFinalField`.
+ * @inheritedDoc
+ *
+ * Defines commonly useful helper methods.
  *
  * @author Michael Eichberg
  */
-class NonFinalMatcher extends AbstractPropertyMatcher {
+abstract class AbstractPropertyMatcher extends org.opalj.fpcf.properties.PropertyMatcher {
 
-    def hasProperty(
-        p:          SomeProject,
-        as:         Set[ObjectType],
-        entity:     Entity,
-        a:          Annotation,
-        properties: List[Property]
-    ): Option[String] = {
-        if (properties.forall(p ⇒ p.isInstanceOf[NonFinalField] || p.key != FieldMutability.key))
-            None
-        else {
-            Some(a.elementValuePairs.head.value.toString)
-        }
+    /**
+     * Gets the value of the named element (`elementName`) of an annotation's element value pairs.
+     * If the element values pairs do not contain the named element. The default values will
+     * be looked up. This requires that the class file defining the annotation is part of the
+     * analyzed code base.
+     *
+     * @param p The current project.
+     * @param annotationType The type of the annotation.
+     * @param evps The element value pairs of a concrete annotation of the given type.
+     *          (Recall that elements with default values need not be specified and are also
+     *          not stored; they need to be looked up in the defining class file if required.)
+     * @param elementName The name of the element-value-pair.
+     */
+    def getValue(
+        p:              SomeProject,
+        annotationType: ObjectType,
+        evps:           ElementValuePairs,
+        elementName:    String
+    ): ElementValue = {
+        evps.collectFirst {
+            case ElementValuePair(`elementName`, value) ⇒ value
+        }.orElse {
+            // get default value ...
+            p.classFile(annotationType).get.findMethod(elementName).head.annotationDefault
+        }.get
     }
 
 }
