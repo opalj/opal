@@ -32,8 +32,9 @@ package analyses
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import org.opalj.collection.immutable.ConstArray
 
+import scala.collection.JavaConverters._
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.log.OPALLogger.error
 
@@ -74,6 +75,7 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
     override protected def compute(p: SomeProject): AllocationSites = {
         implicit val logContext = p.logContext
         val sites = new ConcurrentLinkedQueue[(Method, Map[PC, AllocationSite])]
+        val sitesByType = new ConcurrentLinkedQueue[(ReferenceType, AllocationSite)]
 
         val errors = p.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val m = methodInfo.method
@@ -81,12 +83,17 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
             val as = code.foldLeft(Map.empty[PC, AllocationSite]) { (as, pc, instruction) ⇒
                 instruction.opcode match {
                     case instructions.NEW.opcode ⇒
-                        as + ((pc, new ObjectAllocationSite(m, pc)))
+                        val tpe = instruction.asNEW.objectType
+                        val nas = new ObjectAllocationSite(m, pc)
+                        sitesByType.add((tpe, nas))
+                        as + ((pc, nas))
                     case instructions.NEWARRAY.opcode |
                         instructions.ANEWARRAY.opcode |
                         instructions.MULTIANEWARRAY.opcode ⇒
-                        as + ((pc, new ArrayAllocationSite(m, pc)))
-
+                        val tpe = instruction.asCreateNewArrayInstruction.arrayType
+                        val nas = new ArrayAllocationSite(m, pc)
+                        sitesByType.add((tpe, nas))
+                        as + ((pc, nas))
                     case _ ⇒
                         as
                 }
@@ -96,7 +103,10 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
 
         errors foreach { e ⇒ error("identifying allocation sites", "unexpected error", e) }
 
-        new AllocationSites(Map.empty ++ sites.asScala)
+        val sitesByTypeMap = sitesByType.asScala.groupBy(_._1) map {
+            case (k, v) ⇒ (k, ConstArray(v.map(_._2)))
+        }
+        new AllocationSites(Map.empty ++ sites.asScala, sitesByTypeMap)
     }
 
     //

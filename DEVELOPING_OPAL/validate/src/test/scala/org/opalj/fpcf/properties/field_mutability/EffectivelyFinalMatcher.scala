@@ -33,36 +33,18 @@ package field_mutability
 
 import org.opalj.br.Annotation
 import org.opalj.br.ObjectType
-import org.opalj.br.ElementValuePairs
-import org.opalj.br.ElementValue
-import org.opalj.br.ElementValuePair
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Matches a field's `FieldMutability` property. The match is successful if the field either
- * does not have a corresponding property (in which case the fallback property will be
- * `NonFinalField`) or if the property is an instance of `NonFinalField`.
+ * Matches a field's `FieldMutability` property. The match is successful if the field has the
+ * property [[EffectivelyFinalField]] and a sufficiently capable analysis was scheduled.
  *
  * @author Michael Eichberg
  */
-class EffectivelyFinalMatcher extends PropertyMatcher {
+class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
 
-    def getValue(
-        p:              SomeProject,
-        annotationType: ObjectType,
-        evps:           ElementValuePairs,
-        elementName:    String
-    ): ElementValue = {
-        evps.collectFirst {
-            case ElementValuePair(`elementName`, value) ⇒ value
-        }.orElse {
-            // get default value ...
-            p.classFile(annotationType).get.findMethod(elementName).head.annotationDefault
-        }.get
-    }
-
-    final val PropertyReasonID = 0
-    final val AnalysesValueId = 1 // the index of the "analyses" key of the effectively final analysis
+    private final val PropertyReasonID = 0
+    private final val AnalysesValueId = 1 // the index of the "analyses" key
 
     def hasProperty(
         p:          SomeProject,
@@ -71,8 +53,10 @@ class EffectivelyFinalMatcher extends PropertyMatcher {
         a:          Annotation,
         properties: List[Property]
     ): Option[String] = {
+        val annotationType = a.annotationType.asObjectType
+
         val analysesElementValues =
-            getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
+            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
         if (analyses.exists(as.contains) && !properties.contains(EffectivelyFinalField)) {
             // ... when we reach this point the expected property was not found.
