@@ -86,8 +86,10 @@ trait Instruction extends InstructionLike {
     def isCheckcast: Boolean = false
     def isInvocationInstruction: Boolean = false
     def isAthrow: Boolean = false
+    def isIINC: Boolean = false
 
     def asATHROW: ATHROW.type = throw new ClassCastException();
+    def asIINC: IINC = throw new ClassCastException();
 
     def asNEW: NEW = throw new ClassCastException();
     def asCreateNewArrayInstruction: CreateNewArrayInstruction = throw new ClassCastException();
