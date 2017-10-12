@@ -103,10 +103,12 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
 
         errors foreach { e ⇒ error("identifying allocation sites", "unexpected error", e) }
 
-        val sitesByTypeMap = sitesByType.asScala.groupBy(_._1) map {
-            case (k, v) ⇒ (k, ConstArray(v.map(_._2)))
-        }
-        new AllocationSites(Map.empty ++ sites.asScala, sitesByTypeMap)
+        new AllocationSites(
+            Map.empty ++ sites.asScala,
+            sitesByType.asScala.groupBy(_._1).map {
+                case (k, v) ⇒ (k, ConstArray.from(v.map(_._2).toArray))
+            }
+        )
     }
 
     //
