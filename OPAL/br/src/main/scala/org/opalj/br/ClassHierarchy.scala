@@ -2529,7 +2529,7 @@ object ClassHierarchy {
                         "internal - class hierarchy",
                         "loading the predefined class hierarchy failed; "+
                             "make sure that all resources are found in the correct folders and "+
-                            "try to rebuild the project using \"sbt copy-resources\""
+                            "try to rebuild the project using \"sbt copyResources\""
                     )
                     return Iterator.empty;
                 }
