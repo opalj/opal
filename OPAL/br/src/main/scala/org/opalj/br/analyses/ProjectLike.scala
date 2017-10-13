@@ -170,7 +170,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * a specific method. If the given method is a concrete method, this method is also
      * included in the set of `overridingMethods`.
      */
-    protected[this] val overridingMethods: SomeMap[Method, Set[Method]]
+    protected[this] val overridingMethods: SomeMap[Method, SomeSet[Method]]
 
     /**
      * Returns the set of methods which directly override the given method. Note that
@@ -189,7 +189,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * }
      * }}}
      */
-    def overriddenBy(m: Method): Set[Method] = {
+    def overriddenBy(m: Method): SomeSet[Method] = {
         assert(!m.isPrivate, s"private methods $m cannot be overridden")
         assert(!m.isStatic, s"static methods $m cannot be overridden")
         assert(!m.isInitializer, s"initializers $m cannot be overridden")
@@ -831,7 +831,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         methods
     }
 
-    def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): Set[Method] = {
+    def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): SomeSet[Method] = {
         virtualCall(callerPackageName, i.declaringClass, i.name, i.methodDescriptor)
     }
 
@@ -844,7 +844,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         declaringType:     ReferenceType, // an interface, class or array type to be precise
         name:              String,
         descriptor:        MethodDescriptor
-    ): Set[Method] = {
+    ): SomeSet[Method] = {
         if (declaringType.isArrayType) {
             return instanceCall(ObjectType.Object, ObjectType.Object, name, descriptor).toSet
         }
@@ -855,7 +855,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // of the set of methods (vs. using a very generic approach)!
 
         val declaringClassType = declaringType.asObjectType
-        var methods = Set.empty[Method]
+        var methods = SomeSet.empty[Method]
 
         val initialMethods = instanceMethods.get(declaringClassType)
         if (initialMethods.isEmpty)

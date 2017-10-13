@@ -34,16 +34,13 @@ import java.net.URL
 import java.io.File
 import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicIntegerArray
 import java.util.concurrent.atomic.AtomicReferenceArray
 import java.lang.ref.SoftReference
 
 import scala.annotation.switch
-import scala.collection.JavaConverters._
 import scala.collection.Set
 import scala.collection.Map
 import scala.collection.SortedMap
-import scala.collection.immutable
 import scala.collection.mutable.{AnyRefMap, OpenHashMap}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
@@ -54,7 +51,7 @@ import net.ceedubs.ficus.Ficus._
 
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.concurrent.Tasks
-import org.opalj.concurrent.OPALExecutionContext
+import org.opalj.concurrent.SequentialTasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
@@ -233,7 +230,7 @@ class Project[Source] private (
     // IMPROVE To support an efficient project reset move the initialization to an auxiliary constructor and add this field to the list of fields defined by "Project"
     final val instanceMethods: Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
 
-        // IMPROVE Instead of an Array/Chain use a sorted trie (set) or something similar which is always sorted.
+        // IMPROVE Instead of a Chain => Array (for the value) use a sorted trie (set) or something similar which is always sorted.
 
         // IDEA
         // Process the type hierarchy starting with the root type(s) to ensure that all method
@@ -243,22 +240,22 @@ class Project[Source] private (
         //      interface A; interface B extends A; interface C extends A, B,
         // we postpone the processing of C until the information is available.
 
-        val methods: ConcurrentHashMap[ObjectType, Chain[MethodDeclarationContext]] = {
-            new ConcurrentHashMap(ObjectType.objectTypesCount)
+        val methods: AnyRefMap[ObjectType, Chain[MethodDeclarationContext]] = {
+            new AnyRefMap(ObjectType.objectTypesCount)
         }
 
         /* Returns `true` if the potentially available information is actually available. */
         @inline def isAvailable(
             objectType: ObjectType,
-            methods:    Chain[MethodDeclarationContext]
+            methods:    Option[Chain[MethodDeclarationContext]]
         ): Boolean = {
-            (methods ne null) || !objectTypeToClassFile.contains(objectType)
+            methods.nonEmpty || !objectTypeToClassFile.contains(objectType)
         }
 
         def computeDefinedMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
             // Due to the fact that we may inherit from multiple interfaces,
             // the computation may have been scheduled multiple times.
-            if (methods.get(objectType) ne null)
+            if (methods.get(objectType).nonEmpty)
                 return ;
 
             var inheritedClassMethods: Chain[MethodDeclarationContext] = null
@@ -272,9 +269,11 @@ class Project[Source] private (
                     tasks.submit(objectType)
                     return ;
                 }
-                inheritedClassMethods = superclassTypeMethods
-            }
-            if (inheritedClassMethods eq null) {
+                if (superclassTypeMethods.nonEmpty)
+                    inheritedClassMethods = superclassTypeMethods.get
+                else
+                    inheritedClassMethods = Naught
+            } else {
                 inheritedClassMethods = Naught
             }
 
@@ -288,8 +287,8 @@ class Project[Source] private (
                     tasks.submit(objectType)
                     return ;
                 }
-                if ((superinterfaceTypeMethods ne null) && superinterfaceTypeMethods.nonEmpty) {
-                    inheritedInterfacesMethods :&:= superinterfaceTypeMethods
+                if (superinterfaceTypeMethods.nonEmpty) {
+                    inheritedInterfacesMethods :&:= superinterfaceTypeMethods.get
                 }
             }
 
@@ -312,8 +311,9 @@ class Project[Source] private (
                 if (!definedMethods.exists { definedMethod ⇒
                     definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                         definedMethod.name == inheritedInterfaceMethod.name
-                })
+                }) {
                     definedMethods :&:= inheritedInterfaceMethod
+                }
             }
 
             classFile(objectType) match {
@@ -335,27 +335,24 @@ class Project[Source] private (
                     }
                 case None ⇒ // ... reached only in case of a rather incomplete projects...
             }
-            methods.put(objectType, definedMethods)
+            methods += ((objectType, definedMethods))
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
         }
 
-        val tasks = Tasks[ObjectType](computeDefinedMethods)(OPALExecutionContext)
+        val tasks = new SequentialTasks[ObjectType](computeDefinedMethods)
         classHierarchy.rootTypes foreach { t ⇒ tasks.submit(t) }
         val exceptions = tasks.join()
         exceptions foreach { e ⇒
             OPALLogger.error("project setup", "computing the defined methods failed", e)
         }
 
-        val result = new AnyRefMap[ObjectType, ConstArray[MethodDeclarationContext]](methods.size)
-        methods.asScala.foreach { e ⇒
-            val (objectType, methods) = e
-            val sortedMethods = methods.toArray
+        val result = methods.mapValuesNow { mdcs ⇒
+            val sortedMethods = mdcs.toArray
             sortArray(sortedMethods, MethodDeclarationContextOrdering)
-            result.+=(objectType, ConstArray.from(sortedMethods))
+            ConstArray.from(sortedMethods)
         }
         result.repack
         result
-        //new AnyRefMap[ObjectType, Chain[MethodDeclarationContext]](methods.size) ++ methods.asScala
     } { t ⇒ info("project setup", s"computing defined methods took ${t.toSeconds}") }
 
     // IMPROVE To support an efficient project reset move the initialization to an auxiliary constructor and add this field to the list of fields defined by "Project"
@@ -369,12 +366,12 @@ class Project[Source] private (
      * @note    The map only contains those methods which have at least one concrete
      *          implementation.
      */
-    final val overridingMethods: Map[Method, immutable.Set[Method]] = time {
+    final val overridingMethods: Map[Method, Set[Method]] = time {
         // IDEA
         // 0.   We start with the leaf nodes of the class hierarchy and store for each method
         //      the set of overriding methods (recall that the overrides relation is reflexive).
-        //      Hence, initially the set of overriding methods for a method contains the method it
-        //      self.
+        //      Hence, initially the set of overriding methods for a method contains the method
+        //      itself.
         //
         // 1.   After that the direct superclass is scheduled to be analyzed if all subclasses
         //      are analyzed. The superclass then tests for each overridable method if it is
@@ -386,13 +383,13 @@ class Project[Source] private (
         // 2.   Continue with 1.
 
         // Stores foreach type the number of subtypes that still need to be processed.
-        val subtypesToProcessCounts = new AtomicIntegerArray(ObjectType.objectTypesCount)
+        val subtypesToProcessCounts = new Array[Int](ObjectType.objectTypesCount)
         classHierarchy.foreachKnownType { objectType ⇒
             val oid = objectType.id
-            subtypesToProcessCounts.set(oid, classHierarchy.directSubtypesCount(oid))
+            subtypesToProcessCounts(oid) = classHierarchy.directSubtypesCount(oid)
         }
 
-        val methods = new ConcurrentHashMap[Method, immutable.HashSet[Method]](virtualMethodsCount)
+        val methods = new AnyRefMap[Method, Set[Method]](virtualMethodsCount)
 
         def computeOverridingMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
             val declaredMethodPackageName = objectType.packageName
@@ -406,9 +403,9 @@ class Project[Source] private (
                     if declaredMethod.isVirtualMethodDeclaration
                 } {
                     if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
-                        methods.put(declaredMethod, immutable.HashSet(declaredMethod))
+                        methods += ((declaredMethod, Set(declaredMethod)))
                     } else {
-                        var overridingMethods = immutable.HashSet.empty[Method]
+                        var overridingMethods = Set.empty[Method]
                         // let's join the results of all subtypes
                         classHierarchy.foreachSubtypeCF(objectType) { subtypeClassFile ⇒
                             subtypeClassFile.findDirectlyOverridingMethod(
@@ -417,10 +414,8 @@ class Project[Source] private (
                             ) match {
                                 case _: NoResult ⇒ true
                                 case Success(overridingMethod) ⇒
-                                    val nextOverridingMethods = methods.get(overridingMethod)
-                                    if (nextOverridingMethods.isEmpty) {
-                                        overridingMethods = nextOverridingMethods
-                                    } else {
+                                    val nextOverridingMethods = methods.get(overridingMethod).get
+                                    if (nextOverridingMethods.nonEmpty) {
                                         overridingMethods ++= nextOverridingMethods
                                     }
                                     false // we don't have to analyze subsequent subtypes.
@@ -436,24 +431,24 @@ class Project[Source] private (
                 // The try-finally is a safety net to ensure that this method at least
                 // terminates and that exceptions can be reported!
                 classHierarchy.foreachDirectSupertype(objectType) { supertype ⇒
-                    if (subtypesToProcessCounts.decrementAndGet(supertype.id) == 0) {
+                    val sid = supertype.id
+                    val newCount = subtypesToProcessCounts(sid) - 1
+                    subtypesToProcessCounts(sid) = newCount
+                    if (newCount == 0) {
                         tasks.submit(supertype)
                     }
                 }
             }
         }
 
-        val tasks = Tasks[ObjectType](computeOverridingMethods)(OPALExecutionContext)
+        val tasks = new SequentialTasks[ObjectType](computeOverridingMethods)
         classHierarchy.leafTypes foreach { t ⇒ tasks.submit(t) }
         val exceptions = tasks.join()
         exceptions foreach { e ⇒
             OPALLogger.error("project configuration", "computing the overriding methods failed", e)
         }
-
-        val result = new AnyRefMap[Method, immutable.Set[Method]](methods.size)
-        result ++= methods.asScala
-        result.repack
-        result
+        methods.repack
+        methods
     } { t ⇒
         info("project setup", s"computing overriding information took ${t.toSeconds}")
     }
