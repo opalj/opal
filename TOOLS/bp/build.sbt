@@ -15,14 +15,18 @@ licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/lice
 version 		in ThisBuild := "1.3.0-Snapshot"
 scalaVersion 	in ThisBuild := "2.11.11"
 
+
+EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.ManagedClasses
+EclipseKeys.eclipseOutput := Some(".target")
+EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18)
+EclipseKeys.withSource := true
+EclipseKeys.withJavadoc := true
+
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
 scalacOptions in ThisBuild ++= Seq(
 	"-deprecation", "-feature", "-unchecked", "-Xlint", "-Xfuture",
 	"-Ywarn-numeric-widen", "-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-nullary-unit", "-Ywarn-nullary-override", "-Ywarn-dead-code", "-Xfatal-warnings" )
-
-
-crossPaths in ThisBuild := false
 
 fork in run := true
 
