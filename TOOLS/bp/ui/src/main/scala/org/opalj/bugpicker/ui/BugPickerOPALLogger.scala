@@ -48,7 +48,7 @@ import scalafx.collections.ObservableBuffer
  */
 class BugPickerOPALLogger(
         val messages: ObservableBuffer[BugPickerLogMessage]
-)    extends OPALLogger {
+) extends OPALLogger {
 
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
         Platform.runLater {
