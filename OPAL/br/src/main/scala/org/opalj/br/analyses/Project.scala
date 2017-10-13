@@ -200,7 +200,7 @@ class Project[Source] private (
     /**
      * All methods defined by this project as well as the visible methods defined by the libraries.
      */
-    val allMethods: Iterable[Method] = {
+    final val allMethods: Iterable[Method] = {
         new Iterable[Method] {
             def iterator: Iterator[Method] = {
                 projectClassFiles.toIterator.flatMap { cf ⇒ cf.methods } ++
@@ -212,7 +212,7 @@ class Project[Source] private (
     /**
      * All fields defined by this project as well as the reified fields defined in libraries.
      */
-    val allFields: Iterable[Field] = {
+    final val allFields: Iterable[Field] = {
         new Iterable[Field] {
             def iterator: Iterator[Field] = {
                 projectClassFiles.toIterator.flatMap { cf ⇒ cf.fields } ++
@@ -226,7 +226,7 @@ class Project[Source] private (
      * of all source elements consists of (in this order): all methods + all fields +
      * all class files.
      */
-    val allSourceElements: Iterable[SourceElement] = allMethods ++ allFields ++ allClassFiles
+    final val allSourceElements: Iterable[SourceElement] = allMethods ++ allFields ++ allClassFiles
 
     final val virtualMethodsCount: Int = allMethods.count(m ⇒ m.isVirtualMethodDeclaration)
 
@@ -1237,6 +1237,124 @@ object Project {
     }
 
     /**
+     * Performs some fundamental validations to make sure that subsequent analyses don't have
+     * to deal with completely broken projects/that the user is aware of the issues!
+     */
+    private[this] def validate(project: SomeProject): Seq[InconsistentProjectException] = {
+
+        implicit val logContext = project.logContext
+
+        val disclaimer = "(this inconsistency may lead to useless/wrong results)"
+
+        import project.classHierarchy
+        import classHierarchy.isInterface
+
+        var exs = List.empty[InconsistentProjectException]
+        val exsMutex = new Object
+        def addException(ex: InconsistentProjectException): Unit = {
+            exsMutex.synchronized { exs = ex :: exs }
+        }
+
+        val exceptions = project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { mi ⇒
+            val m: Method = mi.method
+            val cf = m.classFile
+
+            def completeSupertypeInformation =
+                classHierarchy.isSupertypeInformationComplete(cf.thisType)
+
+            def missingSupertypeClassFile =
+                classHierarchy.allSupertypes(cf.thisType, false).find { t ⇒
+                    project.classFile(t).isEmpty
+                }.map { ot ⇒
+                    (classHierarchy.isInterface(ot) match {
+                        case Yes     ⇒ "interface "
+                        case No      ⇒ "class "
+                        case Unknown ⇒ "interface/class "
+                    }) + ot.toJava
+                }.getOrElse("<None>")
+
+            m.body.get.iterate { (pc, instruction) ⇒
+                (instruction.opcode: @switch) match {
+
+                    case NEW.opcode ⇒
+                        val NEW(objectType) = instruction
+                        if (isInterface(objectType).isYes) {
+                            val ex = InconsistentProjectException(
+                                s"cannot create an instance of interface ${objectType.toJava} in "+
+                                    m.toJava(s"pc=$pc $disclaimer"),
+                                Error
+                            )
+                            addException(ex)
+                        }
+
+                    case INVOKESTATIC.opcode ⇒
+                        val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
+                        project.staticCall(invokestatic) match {
+                            case _: Success[_] ⇒ /*OK*/
+                            case Empty         ⇒ /*OK - partial project*/
+                            case Failure ⇒
+                                val ex = InconsistentProjectException(
+                                    s"target method of invokestatic call in "+
+                                        m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
+                                        "cannot be resolved; supertype information is complete="+
+                                        completeSupertypeInformation+
+                                        "; missing supertype class file: "+missingSupertypeClassFile,
+                                    Error
+                                )
+                                addException(ex)
+                        }
+
+                    case INVOKESPECIAL.opcode ⇒
+                        val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
+                        project.specialCall(invokespecial) match {
+                            case _: Success[_] ⇒ /*OK*/
+                            case Empty         ⇒ /*OK - partial project*/
+                            case Failure ⇒
+                                val ex = InconsistentProjectException(
+                                    s"target method of invokespecial call in "+
+                                        m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
+                                        "cannot be resolved; supertype information is complete="+
+                                        completeSupertypeInformation+
+                                        "; missing supertype class file: "+missingSupertypeClassFile,
+                                    Error
+                                )
+                                addException(ex)
+                        }
+
+                    case _ ⇒ // Nothing special is checked (so far)
+                }
+            }
+        }
+        if (exceptions.nonEmpty) {
+            exceptions.foreach(ex ⇒ error("internal - ignored", "project validation failed", ex))
+        }
+
+        exs
+    }
+
+    /**
+     * The type of the function that is called if an inconsistent project is detected.
+     */
+    type HandleInconsistentProject = (LogContext, InconsistentProjectException) ⇒ Unit
+
+    /**
+     * This default handler just "logs" inconsistent project exceptions at the
+     * [[org.opalj.log.Warn]] level.
+     */
+    def defaultHandlerForInconsistentProjects(
+        logContext: LogContext,
+        ex:         InconsistentProjectException
+    ): Unit = {
+        OPALLogger.log(ex.severity("project configuration", ex.message))(logContext)
+    }
+
+    //
+    //
+    // FACTORY METHODS
+    //
+    //
+
+    /**
      * Given a reference to a class file, jar file or a folder containing jar and class
      * files, all class files will be loaded and a project will be returned.
      *
@@ -1412,22 +1530,6 @@ object Project {
     }
 
     /**
-     * The type of the function that is called if an inconsistent project is detected.
-     */
-    type HandleInconsistenProject = (LogContext, InconsistentProjectException) ⇒ Unit
-
-    /**
-     * This default handler just "logs" inconsistent project exceptions at the
-     * [[org.opalj.log.Warn]] level.
-     */
-    def defaultHandlerForInconsistentProjects(
-        logContext: LogContext,
-        ex:         InconsistentProjectException
-    ): Unit = {
-        OPALLogger.log(ex.severity("project configuration", ex.message))(logContext)
-    }
-
-    /**
      * Creates a new Project.
      *
      * @param projectClassFilesWithSources The list of class files of this project that are considered
@@ -1463,7 +1565,7 @@ object Project {
         libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
         libraryClassFilesAreInterfacesOnly: Boolean,
         virtualClassFiles:                  Traversable[ClassFile]           = Traversable.empty,
-        handleInconsistentProject:          HandleInconsistenProject         = defaultHandlerForInconsistentProjects
+        handleInconsistentProject:          HandleInconsistentProject        = defaultHandlerForInconsistentProjects
     )(
         implicit
         config:        Config     = BaseConfig,
@@ -1487,7 +1589,7 @@ object Project {
         libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
         libraryClassFilesAreInterfacesOnly: Boolean,
         virtualClassFiles:                  Traversable[ClassFile],
-        handleInconsistentProject:          HandleInconsistenProject,
+        handleInconsistentProject:          HandleInconsistentProject,
         config:                             Config,
         logContext:                         LogContext
     ): Project[Source] = time {
@@ -1575,8 +1677,8 @@ object Project {
                 processProjectClassFile(classFile, None)
             }
 
-            // The Set `libraryTypes` is only used to improve the identification of
-            // inconsistent projects while loading libraries
+            // The set `libraryTypes` is only used to improve the identification of
+            // inconsistent projects while loading libraries.
             val libraryTypes = Set.empty[ObjectType]
             for ((libClassFile, source) ← libraryClassFilesWithSources) {
                 val libraryType = libClassFile.thisType
@@ -1612,7 +1714,7 @@ object Project {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
-                            s"${libraryType.toJava} is defined multiple times in the project's lbraries: "+
+                            s"${libraryType.toJava} is defined multiple times in the libraries: "+
                                 sources.getOrElse(libraryType, "<VIRTUAL>")+" and "+
                                 source.toString+"; keeping the first one."
                         )
@@ -1632,16 +1734,17 @@ object Project {
             }
 
             val methodsWithBodySortedBySizeWithContext =
-                // IMPROVE compute methodsWithBodyCount and then directly initialize the "final" array
                 (projectClassFiles.iterator.flatMap(_.methods) ++
                     libraryClassFiles.iterator.flatMap(_.methods)).
                     filter(m ⇒ m.body.isDefined).
                     map(m ⇒ MethodInfo(sources(m.classFile.thisType), m)).
                     toArray.
-                    sortWith { (v1, v2) ⇒ v1.method.body.get.codeSize > v2.method.body.get.codeSize }
+                    sortWith { (v1, v2) ⇒ v1.method.body.codeSize > v2.method.body.codeSize }
 
             val methodsWithBodySortedBySize: Array[Method] =
                 methodsWithBodySortedBySizeWithContext.map(mi ⇒ mi.method)
+
+            val classHierarchy = Await.result(classHierarchyFuture, Duration.Inf)
 
             val project = new Project(
                 projectClassFiles.toArray,
@@ -1658,14 +1761,14 @@ object Project {
                 libraryMethodsCount,
                 libraryFieldsCount,
                 codeSize,
-                Await.result(classHierarchyFuture, Duration.Inf),
+                classHierarchy,
                 AnalysisModes.withName(config.as[String](AnalysisMode.ConfigKey)),
                 libraryClassFilesAreInterfacesOnly
             )
 
             time {
                 val issues = validate(project)
-                issues foreach { handleInconsistentProject(logContext, _) }
+                issues.foreach { handleInconsistentProject(logContext, _) }
                 info(
                     "project configuration",
                     s"project validation revealed ${issues.size} significant issues"+
@@ -1688,99 +1791,4 @@ object Project {
         info("project setup", s"creating the project took ${t.toSeconds}")(lc)
     }
 
-    /**
-     * Performs some fundamental validations to make sure that subsequent analyses don't have
-     * to deal with completely broken projects/that the user is aware of the issues!
-     */
-    private[this] def validate(project: SomeProject): Seq[InconsistentProjectException] = {
-
-        implicit val logContext = project.logContext
-
-        val disclaimer = "(this inconsistency may lead to useless/wrong results)"
-
-        import project.classHierarchy
-        import classHierarchy.isInterface
-
-        var exs = List.empty[InconsistentProjectException]
-        val exsMutex = new Object
-        def addException(ex: InconsistentProjectException): Unit = {
-            exsMutex.synchronized { exs = ex :: exs }
-        }
-
-        val exceptions = project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { mi ⇒
-            val m: Method = mi.method
-            val cf = m.classFile
-
-            def completeSupertypeInformation =
-                classHierarchy.isSupertypeInformationComplete(cf.thisType)
-
-            def missingSupertypeClassFile =
-                classHierarchy.allSupertypes(cf.thisType, false).find { t ⇒
-                    project.classFile(t).isEmpty
-                }.map { ot ⇒
-                    (classHierarchy.isInterface(ot) match {
-                        case Yes     ⇒ "interface "
-                        case No      ⇒ "class "
-                        case Unknown ⇒ "interface/class "
-                    }) + ot.toJava
-                }.getOrElse("<None>")
-
-            m.body.get.iterate { (pc, instruction) ⇒
-                (instruction.opcode: @switch) match {
-
-                    case NEW.opcode ⇒
-                        val NEW(objectType) = instruction
-                        if (isInterface(objectType).isYes) {
-                            val ex = InconsistentProjectException(
-                                s"cannot create an instance of interface ${objectType.toJava} in "+
-                                    m.toJava(s"pc=$pc $disclaimer"),
-                                Error
-                            )
-                            addException(ex)
-                        }
-
-                    case INVOKESTATIC.opcode ⇒
-                        val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
-                        project.staticCall(invokestatic) match {
-                            case _: Success[_] ⇒ /*OK*/
-                            case Empty         ⇒ /*OK - partial project*/
-                            case Failure ⇒
-                                val ex = InconsistentProjectException(
-                                    s"target method of invokestatic call in "+
-                                        m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
-                                        "cannot be resolved; supertype information is complete="+
-                                        completeSupertypeInformation+
-                                        "; missing supertype class file: "+missingSupertypeClassFile,
-                                    Error
-                                )
-                                addException(ex)
-                        }
-
-                    case INVOKESPECIAL.opcode ⇒
-                        val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
-                        project.specialCall(invokespecial) match {
-                            case _: Success[_] ⇒ /*OK*/
-                            case Empty         ⇒ /*OK - partial project*/
-                            case Failure ⇒
-                                val ex = InconsistentProjectException(
-                                    s"target method of invokespecial call in "+
-                                        m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
-                                        "cannot be resolved; supertype information is complete="+
-                                        completeSupertypeInformation+
-                                        "; missing supertype class file: "+missingSupertypeClassFile,
-                                    Error
-                                )
-                                addException(ex)
-                        }
-
-                    case _ ⇒ // Nothing special is checked (so far)
-                }
-            }
-        }
-        if (exceptions.nonEmpty) {
-            exceptions.foreach(ex ⇒ error("internal - ignored", "project validation failed", ex))
-        }
-
-        exs
-    }
 }

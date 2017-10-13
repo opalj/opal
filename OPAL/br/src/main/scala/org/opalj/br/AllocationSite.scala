@@ -29,6 +29,9 @@
 package org.opalj
 package br
 
+/**
+ * Enumeration of all allocation types.
+ */
 sealed abstract class AllocationType {
     def name: String
 }

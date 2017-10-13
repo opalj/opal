@@ -30,6 +30,9 @@ package org.opalj
 package br
 package analyses
 
+import scala.collection.AbstractIterator
+import scala.collection.AbstractIterable
+
 import org.opalj.collection.immutable.ConstArray
 
 /**
@@ -41,15 +44,49 @@ import org.opalj.collection.immutable.ConstArray
  * to the underlying method.
  *
  * @author Michael Eichberg
+ * @author Florian Kübler
  */
 class AllocationSites private[analyses] (
-        val data:              Map[Method, Map[PC, AllocationSite]],
-        val allocationsByType: Map[ReferenceType, ConstArray[AllocationSite]]
-) {
+        val allocationsPerMethod: Map[Method, Map[PC, AllocationSite]],
+        val allocationsByType:    Map[ReferenceType, ConstArray[AllocationSite]]
+) extends AbstractIterable[AllocationSite] {
 
-    def apply(m: Method): Map[PC, AllocationSite] = data.getOrElse(m, Map.empty)
-    def apply(tpe: ReferenceType): ConstArray[AllocationSite] =
-        allocationsByType.getOrElse(tpe, ConstArray.empty)
+    // let's check if the data is as expected
+    assert(allocationsByType.values.forall(_.nonEmpty))
+    // let's check the inner consistency of the data
+    assert(
+        allocationsPerMethod.values.forall(_.values.forall { as ⇒
+            allocationsByType(as.allocatedType).contains(as)
+        })
+    )
 
-    def allocationSites: Iterable[AllocationSite] = data.values.flatMap(_.values)
+    def apply(m: Method): Map[PC, AllocationSite] = allocationsPerMethod.getOrElse(m, Map.empty)
+
+    def apply(t: ReferenceType): ConstArray[AllocationSite] = {
+        allocationsByType.getOrElse(t, ConstArray.empty)
+    }
+
+    def iterator: Iterator[AllocationSite] = {
+        new AbstractIterator[AllocationSite] {
+
+            private val typeBasedIterator: Iterator[ConstArray[AllocationSite]] = {
+                allocationsByType.values.iterator
+            }
+
+            private var siteBasedIterator: Iterator[AllocationSite] = null
+
+            def hasNext: Boolean = {
+                typeBasedIterator.hasNext ||
+                    (siteBasedIterator != null && siteBasedIterator.hasNext)
+            }
+
+            def next: AllocationSite = {
+                if (siteBasedIterator == null || !siteBasedIterator.hasNext) {
+                    siteBasedIterator = typeBasedIterator.next.toIterator
+                }
+                siteBasedIterator.next
+            }
+        }
+
+    }
 }
