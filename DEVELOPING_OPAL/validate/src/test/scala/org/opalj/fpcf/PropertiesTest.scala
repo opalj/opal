@@ -121,7 +121,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         for {
             // TODO Define a parameter to pass in the entities which we want to analyze.
-            f ← p.allFields.par
+            f ← p.allFields // cannot be effectivley parallelized since "it" is not thread safe
             annotations = f.runtimeInvisibleAnnotations.flatMap(getPropertyMatcher(p, propertyKinds))
             (annotation, propertyKind, matcherType) ← annotations
         } {
