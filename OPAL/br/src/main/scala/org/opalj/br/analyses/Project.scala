@@ -1739,7 +1739,7 @@ object Project {
                     filter(m ⇒ m.body.isDefined).
                     map(m ⇒ MethodInfo(sources(m.classFile.thisType), m)).
                     toArray.
-                    sortWith { (v1, v2) ⇒ v1.method.body.codeSize > v2.method.body.codeSize }
+                    sortWith { (v1, v2) ⇒ v1.method.body.get.codeSize > v2.method.body.get.codeSize }
 
             val methodsWithBodySortedBySize: Array[Method] =
                 methodsWithBodySortedBySizeWithContext.map(mi ⇒ mi.method)
