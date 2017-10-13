@@ -46,7 +46,18 @@ class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
     private final val PropertyReasonID = 0
     private final val AnalysesValueId = 1 // the index of the "analyses" key
 
-    def hasProperty(
+    final val SupportedAnalyses: Set[ObjectType] = {
+        Set(
+            ObjectType("org/opalj/fpcf/analyses/FieldMutabilityAnalysis"),
+            ObjectType("org/opalj/fpcf/analyses/AdvancedFieldMutabilityAnalysis")
+        )
+    }
+
+    override def isRelevant(p: SomeProject, as: Set[ObjectType]): Boolean = {
+        as.exists(SupportedAnalyses.contains)
+    }
+
+    def validateProperty(
         p:          SomeProject,
         as:         Set[ObjectType],
         entity:     Entity,

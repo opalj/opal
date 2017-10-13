@@ -41,12 +41,17 @@ import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
  */
 class FieldMutabilityTests extends PropertiesTest {
 
-    describe("properties derived by org.opalj.fpcf.analyses.FieldMutabilityAnalysis") {
+    describe("no analysis is scheduled") {
+        val as = executeAnalyses(Set.empty)
+        validateProperties(as, Set("FieldMutability"))
+    }
+
+    describe("the org.opalj.fpcf.analyses.FieldMutabilityAnalysis is executed") {
         val as = executeAnalyses(Set(FieldMutabilityAnalysis))
         validateProperties(as, Set("FieldMutability"))
     }
 
-    describe("properties derived by org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis") {
+    describe("the org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis is executed") {
         val as = executeAnalyses(Set(AdvancedFieldMutabilityAnalysis))
         validateProperties(as, Set("FieldMutability"))
     }
