@@ -38,6 +38,7 @@ import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.Domain
@@ -45,9 +46,11 @@ import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 
 /**
- * Tests that all methods of the JDK can be converted to the ai-based three address representation.
+ * Tests that all methods of OPAL's test projects + the JDK can be converted to the ai-based
+ * three address representation.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -120,38 +123,51 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
     protected def domainFactories = {
         Seq(
             (
-                "DefaultDomainWithCFGAndDefUse",
+                "l0.PrimitiveTACAIDomain",
+                (p: SomeProject, m: Method) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, m)
+            ),
+            (
+                "l1.DefaultDomainWithCFGAndDefUse",
                 (p: SomeProject, m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(p, m)
             ),
             (
-                "PrimitiveTACAIDomain",
-                (p: SomeProject, m: Method) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, m)
+                "l2.DefaultPerformInvocationsDomainWithCFGAndDefUse",
+                (p: SomeProject, m: Method) ⇒ {
+                    new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
+                }
             )
         )
     }
 
     // TESTS
 
-    domainFactories foreach { domainInformation ⇒
+    describe(s"creating the 3-address code") {
 
-        val (domainName, domainFactory) = domainInformation
+        allBIProjects().foreach { biProject ⇒
+            val (name, projectFactory) = biProject
 
-        describe(s"creating the 3-address code using $domainName") {
+            it(s"for $name") {
+        var p = projectFactory()
+                domainFactories foreach { domainInformation ⇒
+                    val (domainName, domainFactory) = domainInformation
+                        time {
+                            checkProject(p, domainFactory)
+                        } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
+                        p = Project.recreate(p) // IMPROVE Use p.reset when available
+                    }
+            }
+        }
 
-            allBIProjects() foreach { biProject ⇒
-                val (name, projectFactory) = biProject
-                it(s"it should be able to create the TAC for $name using $domainName") {
+        it(s"for the (current) JDK") {
+            var p = createJREProject()
+            domainFactories foreach { domainInformation ⇒
+                val (domainName, domainFactory) = domainInformation
                     time {
-                        checkProject(projectFactory(), domainFactory)
-                    } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+                        checkProject(p, domainFactory)
+                    } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
+                    p = Project.recreate(p) // IMPROVE Use p.reset when available
                 }
             }
 
-            it(s"it should be able to create the TAC for the JDK using $domainName") {
-                time {
-                    checkProject(createJREProject(), domainFactory)
-                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
-            }
-        }
     }
 }
