@@ -34,13 +34,12 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
+
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
-
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.Domain
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.RecordDefUse
@@ -153,7 +152,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                         time {
                             checkProject(p, domainFactory)
                         } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
-                        p = Project.recreate(p) // IMPROVE Use p.reset when available
+                        p = p.recreate()
                     }
             }
         }
@@ -165,7 +164,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                     time {
                         checkProject(p, domainFactory)
                     } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
-                    p = Project.recreate(p) // IMPROVE Use p.reset when available
+                    p = p.recreate()
                 }
             }
 

@@ -34,8 +34,8 @@ import scala.annotation.tailrec
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import scala.collection.AbstractIterator
 import scala.io.BufferedSource
+import scala.collection.AbstractIterator
 import scala.collection.mutable
 import scala.collection.generic.Growable
 import scala.concurrent.Future
@@ -58,7 +58,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
-import org.opalj.collection.QualifiedCollection
 import org.opalj.collection.QualifiedCollection
 import org.opalj.collection.CompleteCollection
 import org.opalj.collection.IncompleteCollection
@@ -2553,7 +2552,7 @@ object ClassHierarchy {
         }
         // We have to make sure that we have seen all types before we can generate
         // the arrays to store the information about the types!
-        val typeDeclarations = typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition(_))
+        val typeDeclarations = typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition)
 
         val objectTypesCount = ObjectType.objectTypesCount
         val knownTypesMap = new Array[ObjectType](objectTypesCount)
@@ -2701,13 +2700,13 @@ object ClassHierarchy {
         assert(knownTypesMap.length == subclassTypesMap.length)
         assert(knownTypesMap.length == subinterfaceTypesMap.length)
         assert(
-            (0 until knownTypesMap.length) forall { i ⇒
+            knownTypesMap.indices forall { i ⇒
                 (knownTypesMap(i) ne null) ||
                     ((subclassTypesMap(i) eq null) && (subinterfaceTypesMap(i) eq null))
             }
         )
         assert(
-            (0 until knownTypesMap.length) forall { i ⇒
+            knownTypesMap.indices forall { i ⇒
                 (knownTypesMap(i) eq null) ||
                     ((subclassTypesMap(i) ne null) && (subinterfaceTypesMap(i) ne null))
             }

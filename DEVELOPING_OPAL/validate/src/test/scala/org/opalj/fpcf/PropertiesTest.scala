@@ -148,8 +148,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def executeAnalyses(
         analysisRunners: Set[FPCFAnalysisRunner]
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
-        // IMPROVE Implement Project.recreate which gives a new independent project, but which share all immutable/analysis unspecific information.
-        val p = Project.recreate(FixtureProject) // to ensure that this project is not "polluted"
+        val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
         val ps = p.get(org.opalj.br.analyses.PropertyStoreKey)
         val as = analysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPropertyComputationCompletion(true, true)
