@@ -34,7 +34,6 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -146,14 +145,14 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
             val (name, projectFactory) = biProject
 
             it(s"for $name") {
-        var p = projectFactory()
+                var p = projectFactory()
                 domainFactories foreach { domainInformation ⇒
                     val (domainName, domainFactory) = domainInformation
-                        time {
-                            checkProject(p, domainFactory)
-                        } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
-                        p = p.recreate()
-                    }
+                    time {
+                        checkProject(p, domainFactory)
+                    } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
+                    p = p.recreate()
+                }
             }
         }
 
@@ -161,12 +160,12 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
             var p = createJREProject()
             domainFactories foreach { domainInformation ⇒
                 val (domainName, domainFactory) = domainInformation
-                    time {
-                        checkProject(p, domainFactory)
-                    } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
-                    p = p.recreate()
-                }
+                time {
+                    checkProject(p, domainFactory)
+                } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
+                p = p.recreate()
             }
+        }
 
     }
 }

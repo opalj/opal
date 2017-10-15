@@ -274,7 +274,7 @@ trait HermesCore {
     //
     // ---------------------------------------------------------------------------------------------
 
-    def exportCSV(file: File, exportProjectStatistics: Boolean = true): Unit = {
+    def exportStatistics(file: File, exportProjectStatistics: Boolean = true): Unit = {
         // Create the set of all names of all project-wide statistics
         var projectStatisticsIDs = Set.empty[String]
         featureMatrix.foreach { pf ⇒
@@ -312,6 +312,35 @@ trait HermesCore {
             csvGenerator.writeEndArray()
         }
         csvGenerator.close()
+    }
+
+    /**
+     * Exports the mapping between a feature query class and its feature queries.
+     *
+     * For the feature ids the following substitution scheme is used:
+     *  - \\ is replaced by \\\\
+     *  - new line ('\\n') is replaced by \\n
+     *  - , is replaced by \\,
+     *
+     * @param file The file to which the mapping will be written.
+     */
+    def exportMapping(file: File): Unit = {
+
+        val writer = new BufferedWriter(new FileWriter(file))
+
+        registeredQueries.iterator.filter(_.isEnabled).foreach { q ⇒
+            val fq = q.reify.get
+            writer.write(q.query)
+            writer.write("=")
+            writer.write(
+                fq.featureIDs.map { fid ⇒
+                    fid.replace("\\", "\\\\").replace("\n", "\\n").replace(",", "\\,")
+                }.mkString(",")
+            )
+            writer.newLine()
+        }
+
+        writer.close()
     }
 
 }
