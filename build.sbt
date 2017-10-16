@@ -93,7 +93,7 @@ lazy val buildSettings =
         Seq(unmanagedSourceDirectories in IntegrationTest := (javaSource in Test).value :: (scalaSource in IntegrationTest).value :: Nil) ++
         Seq(scalacOptions in(Compile, console) := Seq("-deprecation"))
 
-lazy val scalariformSettings = scalariformSettingsWithIt(true) ++
+lazy val scalariformSettings = scalariformItSettings ++
     Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value) ++
     Seq(sourceDirectories.in(Compile, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value) ++
     Seq(sourceDirectories.in(Test, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value) ++
