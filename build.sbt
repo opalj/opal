@@ -143,8 +143,8 @@ lazy val common = Project(
         //library dependencies
         libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-        libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.2",
-        libraryDependencies += "com.iheart" %% "ficus" % "1.4.1"
+        libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.6",
+        libraryDependencies += "com.iheart" %% "ficus" % "1.4.2"
     ))
     .configs(IntegrationTest)
 
@@ -298,7 +298,7 @@ lazy val DeveloperTools = Project(
         libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.144-R12" withSources() withJavadoc(),
         libraryDependencies += "org.controlsfx" % "controlsfx" % "8.40.14" withJavadoc(),
         libraryDependencies += "es.nitaur.markdown" % "txtmark" % "0.16" withJavadoc(),
-        libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % "2.9.0" withJavadoc(),
+        libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % "2.9.2" withJavadoc(),
         libraryDependencies += "org.choco-solver" % "choco-solver" % "4.0.5" withSources() withJavadoc(),
         // Required by Java/ScalaFX
         fork := true
