@@ -40,7 +40,7 @@ def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPrefe
 	(file("./../../Scalariform Formatter Preferences.properties").getPath))
 
 lazy val buildSettings = Defaults.coreDefaultSettings ++
-	SbtScalariform.scalariformSettingsWithIt ++
+	scalariformItSettings ++
 	Seq(ScalariformKeys.preferences := baseDirectory.apply(getScalariformPreferences).value) ++
 	Seq(Defaults.itSettings : _*) ++
 	Seq(libraryDependencies ++= Seq(
@@ -69,7 +69,7 @@ lazy val ui = Project(
 			JFX.addJfxrtToClasspath := true
 		) ++
 		Seq(mainClass in (Compile, run) := Some("org.opalj.bugpicker.ui.BugPicker")) ++
-		Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "8.0.102-R11") ++
+		Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "8.0.144-R12") ++
 		Seq(
 			resourceGenerators in Compile += resGenerator.taskValue
 		)
