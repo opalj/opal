@@ -294,7 +294,6 @@ class ProjectExplorer(
         val domain: Domain = DomainRegistry.newDomain(
             chosenDomain,
             project,
-            classFile,
             method
         )
         val aiResult = BaseAI(method, domain)
@@ -371,7 +370,7 @@ class ProjectExplorer(
             method.map { method ⇒ method.name + method.descriptor.toJVMDescriptor }
         val classFile = decompileClassFile(project, cf.thisType)
 
-        val content = classFile.map(_.toXHTML().toString).getOrElse(Messages.NO_BYTECODE_FOUND)
+        val content = classFile.map(_.toXHTML(project.source(cf)).toString).getOrElse(Messages.NO_BYTECODE_FOUND)
         byteView.engine.loadContent(content)
 
         new JumpToProblemListener(
@@ -380,7 +379,7 @@ class ProjectExplorer(
             pcOption = None, lineOption = None
         )
 
-        val title = "Byte Code for "+method.map(_.toJava(cf)).getOrElse(cf.thisType.toJava)
+        val title = "Byte Code for "+method.map(_.toJava).getOrElse(cf.thisType.toJava)
         WebViewStage.showWebView(title, byteView, 175d, 100d)
     }
 
@@ -402,17 +401,17 @@ class ProjectExplorer(
                 s"class <b>${cf.thisType.toJava}</b> {<br/>"+
                     methods.
                     map { m ⇒
-                        val method = scala.xml.Text(m.toJava())
+                        val method = scala.xml.Text(m.toJava)
                         s"<i>${method.toString}</i><pre>{\n${
                             val tac = TACAI(project, m)()
-                            scala.xml.Text(ToTxt(tac.stmts, cfg = Some(tac.cfg), true, true).mkString("\n")).toString
+                            scala.xml.Text(ToTxt(tac).mkString("\n")).toString
                         }\n}</pre>"
                     }.
                     mkString("<br/>")+
                     "\n}"
             )
         }
-        val title = "3-Address Code for "+method.map(_.toJava(cf)).getOrElse(cf.thisType.toJava)
+        val title = "3-Address Code for "+method.map(_.toJava).getOrElse(cf.thisType.toJava)
         WebViewStage.showWebView(title, tacView, 175d, 100d)
     }
 
@@ -434,7 +433,7 @@ class ProjectExplorer(
         } else {
             val header = classMember match {
                 case Some(method: Method) ⇒
-                    val methodAsJava = scala.xml.Text(method.toJava())
+                    val methodAsJava = scala.xml.Text(method.toJava)
                     s"class <b>${cf.thisType.toJava}</b> <i>${methodAsJava}</i>{<br/>"
                 case Some(field: Field) ⇒
                     val fieldAsJava = scala.xml.Text(field.toJava)
@@ -456,8 +455,8 @@ class ProjectExplorer(
         }
 
         val title = "Computed properties for "+classMember.collectFirst {
-            case m: Method ⇒ m.toJava(cf)
-            case f: Field  ⇒ f.toJava(cf)
+            case m: Method ⇒ m.toJava
+            case f: Field  ⇒ f.toJava
         }.getOrElse(cf.thisType.toJava)
 
         WebViewStage.showWebView(title, propView, 175d, 100d)

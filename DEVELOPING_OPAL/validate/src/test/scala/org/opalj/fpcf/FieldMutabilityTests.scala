@@ -27,36 +27,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package hermes
+package fpcf
 
-import scala.reflect.runtime.universe
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.GlobalLogContext
+import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
 
 /**
- * Container for feature queries.
- *
- * @note   Used to represent the corresponding information in the general configuration file.
- * @param  query The name of a concrete class which inherits from `FeatureQuery` and implements
- *         a default constructor.
+ * Tests if the properties specified in the test project (the classes in the (sub-)package of
+ * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
+ * PropertyMatchers to facilitate matching arbitrary complex property specifications.
  *
  * @author Michael Eichberg
  */
-case class Query(query: String, activate: Boolean = true) {
+class FieldMutabilityTests extends PropertiesTest {
 
-    def isEnabled: Boolean = activate
+    describe("no analysis is scheduled") {
+        val as = executeAnalyses(Set.empty)
+        validateProperties(as, Set("FieldMutability"))
+    }
 
-    lazy val reify: Option[FeatureQuery] = {
-        try {
-            val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
-            val module = runtimeMirror.staticModule(query)
-            val companionObject = runtimeMirror.reflectModule(module)
-            Some(companionObject.instance.asInstanceOf[FeatureQuery])
-        } catch {
-            case t: Throwable ⇒
-                error("application configuration", s"failed to load: $query", t)(GlobalLogContext)
-                None
-        }
+    describe("the org.opalj.fpcf.analyses.FieldMutabilityAnalysis is executed") {
+        val as = executeAnalyses(Set(FieldMutabilityAnalysis))
+        validateProperties(as, Set("FieldMutability"))
+    }
+
+    describe("the org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis is executed") {
+        val as = executeAnalyses(Set(AdvancedFieldMutabilityAnalysis))
+        validateProperties(as, Set("FieldMutability"))
     }
 
 }

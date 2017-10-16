@@ -1690,7 +1690,7 @@ object Code {
     def computeMaxLocalsRequiredByCode(instructions: Array[Instruction]): Int = {
         val instructionsLength = instructions.length
         var pc = 0
-        var maxRegisters = 0
+        var maxRegisterIndex = -1
         var modifiedByWide = false
         do {
             val i: Instruction = instructions(pc)
@@ -1698,14 +1698,23 @@ object Code {
                 modifiedByWide = true
                 pc += 1
             } else {
-                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters) {
-                    maxRegisters = i.indexOfWrittenLocal
+                if (i.writesLocal) {
+                    var lastRegisterIndex = i.indexOfWrittenLocal
+                    if (i.isStoreLocalVariableInstruction &&
+                        i.asStoreLocalVariableInstruction.computationalType.operandSize == 2) {
+                        // i.e., not IINC...
+                        lastRegisterIndex += 1
+                    }
+                    if (lastRegisterIndex > maxRegisterIndex) {
+                        maxRegisterIndex = lastRegisterIndex
+                    }
                 }
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
                 modifiedByWide = false
             }
         } while (pc < instructionsLength)
-        maxRegisters
+
+        maxRegisterIndex + 1 /* the first register has index 0 */
     }
 
     def computeMaxLocals(

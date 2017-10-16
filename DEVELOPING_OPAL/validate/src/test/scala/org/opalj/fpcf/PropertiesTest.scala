@@ -42,17 +42,17 @@ import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.bytecode.RTJar
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
+import org.opalj.fpcf.properties.PropertyMatcher
 
 /**
- * Tests if the properties specified in test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ * Framework to test if the properties specified in the test project (the classes in the
+ * (sub-)package of org.opalj.fpcf.fixture) and the computed ones match. The actual matching
+ * is delegated to `PropertyMatcher`s to facilitate matching arbitrary complex property
+ * specifications.
  *
  * @author Michael Eichberg
  */
-class PropertiesTest extends FunSpec with Matchers {
+abstract class PropertiesTest extends FunSpec with Matchers {
 
     final val FixtureProject: Project[URL] = {
         val classFileReader = Project.JavaClassFileReader()
@@ -122,25 +122,24 @@ class PropertiesTest extends FunSpec with Matchers {
 
         for {
             // TODO Define a parameter to pass in the entities which we want to analyze.
-            f ← p.allFields.par
+            f ← p.allFields // cannot be effectivley parallelized since "it" is not thread safe
             annotations = f.runtimeInvisibleAnnotations.flatMap(getPropertyMatcher(p, propertyKinds))
             (annotation, propertyKind, matcherType) ← annotations
         } {
             val annotationTypeName = annotation.annotationType.asObjectType.simpleName
-            it(f.toJava(s"@$annotationTypeName").substring(24)) {
-                val matcherClass = Class.forName(matcherType.toJava)
-                info(s"validator: "+matcherClass.toString.substring(32))
-                val matcherInstance = matcherClass.newInstance()
-                val m = matcherClass.getMethod(
-                    "hasProperty",
-                    classOf[Project[_]], classOf[Set[_]], classOf[Object], classOf[Annotation], classOf[List[_]]
-                )
-                val properties = ps.properties(f)
-                m.invoke(matcherInstance, p, ats, f, annotation, properties) match {
-                    case Some(error: String) ⇒
-                        fail(properties.map(_.toString).mkString("actual: ", ", ", "\nerror: ") + error)
-                    case None   ⇒ /* OK */
-                    case result ⇒ fail("matcher returned unexpected result: "+result)
+            val matcherClass = Class.forName(matcherType.toJava)
+            val matcher = matcherClass.newInstance().asInstanceOf[PropertyMatcher]
+            if (matcher.isRelevant(p, ats)) {
+                it(f.toJava(s"@$annotationTypeName").substring(24)) {
+                    info(s"validator: "+matcherClass.toString.substring(32))
+                    val properties = ps.properties(f)
+                    matcher.validateProperty(p, ats, f, annotation, properties) match {
+                        case Some(error: String) ⇒
+                            val propertiesAsStrings = properties.map(_.toString)
+                            fail(propertiesAsStrings.mkString("actual: ", ", ", "\nerror: "+error))
+                        case None   ⇒ /* OK */
+                        case result ⇒ fail("matcher returned unexpected result: "+result)
+                    }
                 }
             }
         }
@@ -149,28 +148,10 @@ class PropertiesTest extends FunSpec with Matchers {
     def executeAnalyses(
         analysisRunners: Set[FPCFAnalysisRunner]
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
-        // IMPROVE Implement Project.recreate which gives a new independent project, but which share all immutable/analysis unspecific information.
-        val p = Project.recreate(FixtureProject) // to ensure that this project is not "polluted"
+        val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
         val ps = p.get(org.opalj.br.analyses.PropertyStoreKey)
         val as = analysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPropertyComputationCompletion(true, true)
         (p, ps, as)
     }
-
-    //
-    //
-    // THE TESTS
-    //
-    //
-
-    describe("analyzing the fixture project using the most primitive 'Field Mutability Analysis'") {
-        val as = executeAnalyses(Set(FieldMutabilityAnalysis))
-        validateProperties(as, Set("FieldMutability"))
-    }
-
-    describe("analyzing the fixture project using the ai based 'Field Mutability Analysis'") {
-        val as = executeAnalyses(Set(AdvancedFieldMutabilityAnalysis))
-        validateProperties(as, Set("FieldMutability"))
-    }
-
 }

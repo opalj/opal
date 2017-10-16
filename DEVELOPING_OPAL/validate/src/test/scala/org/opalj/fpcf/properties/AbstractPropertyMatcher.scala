@@ -47,7 +47,7 @@ abstract class AbstractPropertyMatcher extends org.opalj.fpcf.properties.Propert
 
     /**
      * Gets the value of the named element (`elementName`) of an annotation's element value pairs.
-     * If the element values pairs do not contain the named element. The default values will
+     * If the element values pairs do not contain the named element, the default values will
      * be looked up. This requires that the class file defining the annotation is part of the
      * analyzed code base.
      *

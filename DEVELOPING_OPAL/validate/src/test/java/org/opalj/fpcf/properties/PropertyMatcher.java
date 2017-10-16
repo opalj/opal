@@ -49,6 +49,15 @@ import org.opalj.br.analyses.Project;
 public interface PropertyMatcher {
 
     /**
+     * Called by the framework to test if executing the matcher - given the set of
+     * actual analyses that are executed - is meaningful.
+     *
+     * @param p The project.
+     * @param as The OPAL `ObjectType`'s of the executed analyses.
+     */
+    default boolean isRelevant(Project<?> p,Set<ObjectType> as) {return true;}
+
+    /**
      * Tests if the computed property is matched by this matcher.
      *
      * @param p The project.
@@ -61,7 +70,7 @@ public interface PropertyMatcher {
      *          property was not successfully matched; the String describes the reason
      *          why the analysis failed.
      */
-    Option<String> hasProperty(
+    Option<String> validateProperty(
             Project<?> p, Set<ObjectType> as,
             Object entity, Annotation a, List<Property> properties);
 

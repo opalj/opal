@@ -44,7 +44,7 @@ import org.opalj.br.analyses.SomeProject
  */
 class NonFinalMatcher extends AbstractPropertyMatcher {
 
-    def hasProperty(
+    def validateProperty(
         p:          SomeProject,
         as:         Set[ObjectType],
         entity:     Entity,
