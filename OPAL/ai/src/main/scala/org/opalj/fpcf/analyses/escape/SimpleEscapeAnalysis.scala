@@ -56,9 +56,11 @@ import org.opalj.tac.NewArray
 import org.opalj.tac.DUVar
 
 /**
- * A simple escape analysis that can handle [[AllocationSite]]s and [[FormalParameter]]s (the this
- * parameter of a constructor). All other [[FormalParameter]]s are marked as [[MaybeNoEscape]].
- * It uses [[SimpleEntityEscapeAnalysis]] to handle a specific entity.
+ * A simple escape analysis that can handle [[org.opalj.br.AllocationSite]]s and
+ * [[org.opalj.br.analyses.FormalParameter]]s (the this parameter of a constructor). All other
+ * [[org.opalj.br.analyses.FormalParameter]]s are marked as
+ * [[org.opalj.fpcf.properties.MaybeNoEscape]]. It uses
+ * [[org.opalj.fpcf.analyses.escape.SimpleEntityEscapeAnalysis]] to handle a specific entity.
  *
  *
  * @author Florian Kuebler
@@ -66,7 +68,7 @@ import org.opalj.tac.DUVar
 class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEscapeAnalysis {
 
     /**
-     * Creates a [[SimpleEntityEscapeAnalysis]] for the analysis.
+     * Creates a [[org.opalj.fpcf.analyses.escape.SimpleEntityEscapeAnalysis]] for the analysis.
      */
     override def entityEscapeAnalysis(
         e:       Entity,
@@ -79,11 +81,12 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         new SimpleEntityEscapeAnalysis(e, defSite, uses, code, params, m, propertyStore, project)
 
     /**
-     * Calls [[doDetermineEscape]] with the definition site, the use sites, the [[TACode]], the
-     * [[Parameters]] and the method in which the entity is defined.
-     * Allocation sites that are part of dead code are immediately returned as [[NoEscape]].
-     * [[FormalParameter]]s that are not the this local of a constructor are flagged as
-     * [[MaybeNoEscape]].
+     * Calls [[doDetermineEscape]] with the definition site, the use sites, the
+     * [[org.opalj.tac.TACode]], the [[org.opalj.tac.Parameters]] and the method in which the entity
+     * is defined. Allocation sites that are part of dead code are immediately returned as
+     * [[org.opalj.fpcf.properties.NoEscape]].
+     * [[org.opalj.br.analyses.FormalParameter]]s that are not the this local of a constructor are
+     * flagged as [[org.opalj.fpcf.properties.MaybeNoEscape]].
      *
      * @param e The entity whose escape state has to be determined.
      */

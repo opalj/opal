@@ -87,7 +87,7 @@ class SimpleEntityEscapeAnalysis(
 /**
  * Very simple handling for fields and arrays. This analysis can detect global escapes via
  * assignments to heap objects. Due to the lack of simple may-alias analysis, this analysis can not
- * determine [[NoEscape]] states.
+ * determine [[org.opalj.fpcf.properties.NoEscape]] states.
  */
 trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
@@ -188,8 +188,8 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
      * constructor or escapes. Is this the case, leastRestrictiveProperty will be set to the lower bound
      * of the current value and the calculated escape state.
      *
-     * For non constructor calls, [[MaybeArgEscape]] of e will be returned whenever the receiver
-     * or a parameter is a use of defSite.
+     * For non constructor calls, [[org.opalj.fpcf.properties.MaybeArgEscape]] of e will be returned
+     * whenever the receiver or a parameter is a use of defSite.
      */
     override protected def handleNonVirtualMethodCall(call: NonVirtualMethodCall[V]): Unit = {
         // we only allow special (inter-procedural) handling for constructors
