@@ -148,8 +148,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
          *       impure anyways if anything escapes the method.
          */
         def isFreshReference(expr: Expr[V]): Boolean = {
-            // We only examine vars for now
-            // TODO [FlatTAC] Can we do better?
+            // Only examine vars
             expr.isVar && expr.asVar.definedBy.forall { defSite ⇒
                 if (defSite >= 0) {
                     assert(code(defSite).astID == Assignment.ASTID, "defSite should be assignment")
@@ -174,8 +173,6 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                 (stmt.astID: @switch) match {
                     case Throw.ASTID | StaticMethodCall.ASTID ⇒
                         false // We are looking for implicit exceptions only
-
-                    // TODO [FlatTAC] We only check for Vars and calls in Assignment and ExprStmt, can we do better?
 
                     // For calls, we only care for NullPointerExceptions
                     case NonVirtualMethodCall.ASTID ⇒
@@ -281,7 +278,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                 checkPurityOfExpr(subExpr)
             case CaughtException.ASTID ⇒
                 // Creating implicit exceptions is side-effect free (for the fillInStackTrace)
-                if (stmt.asCaughtException.origins.exists(raisesImplicitExceptions(_)))
+                if (stmt.asCaughtException.origins.exists(raisesImplicitExceptions))
                     purity = SideEffectFree
                 true
 
@@ -340,11 +337,21 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                 checkPurityOfExpr(arrayRef) && checkPurityOfExpr(index)
             case NewArray.ASTID ⇒
                 val NewArray(_, counts, _) = expr
-                counts.forall(checkPurityOfExpr(_))
+                counts.forall(checkPurityOfExpr)
             case ArrayLength.ASTID   ⇒ true // The array length is immutable
             case Invokedynamic.ASTID ⇒ false // We don't handle Invokedynamic for now
 
             case _                   ⇒ true // Other expressions don't influence purity
+        }
+
+        /**
+         * Examines the parameters (including an optional receiver) of a call for their influence on
+         * the method purity.
+         * This method will return alse for impure expressions, so evaluation can be terminated
+         * early.
+         */
+        def checkPurityOfParams(receiver: Option[Expr[V]], params: Seq[Expr[V]]): Boolean = {
+            receiver.forall(checkPurityOfExpr) && params.forall(checkPurityOfExpr)
         }
 
         /**
@@ -369,7 +376,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     checkPurityOfCall(rcvrClass, name, callee)
                 }
             } else if (rcvrClass.isObjectType &&
-                typeExtensibility.apply(rcvrClass.asObjectType).isNotNo) {
+                typeExtensibility(rcvrClass.asObjectType).isNotNo) {
                 false // We don't know all overrides, so we are impure
             } else {
                 val callees =
@@ -386,16 +393,6 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                         checkPurityOfCall(rcvrClass, name, Success(callee))
                     }
             }
-        }
-
-        /**
-         * Examines the parameters (including an optional receiver) of a call for their influence on
-         * the method purity.
-         * This method will return alse for impure expressions, so evaluation can be terminated
-         * early.
-         */
-        def checkPurityOfParams(receiver: Option[Expr[V]], params: Seq[Expr[V]]): Boolean = {
-            receiver.forall(checkPurityOfExpr(_)) && params.forall(checkPurityOfExpr(_))
         }
 
         /**
@@ -420,11 +417,11 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                                 case EP(_, SideEffectFree) ⇒
                                     purity = SideEffectFree
                                     true
-                                case ep@EP(_, ConditionallySideEffectFree) ⇒
+                                case ep @ EP(_, ConditionallySideEffectFree) ⇒
                                     dependees += ep
                                     purity = SideEffectFree
                                     true
-                                case ep@EP(_, ConditionallyPure) ⇒
+                                case ep @ EP(_, ConditionallyPure) ⇒
                                     dependees += ep
                                     true
                                 case EP(_, _) ⇒ false // Impure or unknown purity level
@@ -473,9 +470,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
             // Only non-primitive return values influence purity
             // Also, we don't have to do costly dependee checks if we are already side-effect free
             if (returnValue.cTpe == ComputationalTypeReference && purity != SideEffectFree) {
-                if (!returnValue.isVar) {
-                    // For now, we only examine the types of Vars
-                    // TODO [FlatTAC] Can we do better?
+                if (!returnValue.isVar) { // We only examine the types of Vars
                     purity = SideEffectFree
                 } else {
                     val value = returnValue.asVar.value.asDomainReferenceValue
@@ -490,7 +485,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                                 propertyStore(cfo.get, ClassImmutability.key) match {
                                     case EP(_, ImmutableObject) ⇒
                                     // Returning immutable objects is pure
-                                    case ep@EP(_, AtLeastConditionallyImmutableObject) ⇒
+                                    case ep @ EP(_, AtLeastConditionallyImmutableObject) ⇒
                                         dependees += ep
                                     case EP(_, _) ⇒ purity = SideEffectFree
                                     case epk      ⇒ dependees += epk
@@ -506,7 +501,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                                     propertyStore(cfo.get, TypeImmutability.key) match {
                                         case EP(_, ImmutableType) ⇒
                                             true // Returning immutable objects is pure
-                                        case ep@EP(_, AtLeastConditionallyImmutableType) ⇒
+                                        case ep @ EP(_, AtLeastConditionallyImmutableType) ⇒
                                             dependees += ep
                                             true
                                         case EP(_, _) ⇒
