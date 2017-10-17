@@ -26,25 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package domain
+package org.opalj.fpcf.properties.field_mutability;
 
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
+import org.opalj.fpcf.FPCFAnalysis;
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.FieldMutabilityAnalysis;
+import org.opalj.fpcf.properties.PropertyValidator;
+
+import java.lang.annotation.*;
 
 /**
- * Provides log context information.
+ * Annotation to state that the annotated field is effectively final (if a proper analysis
+ * was scheduled).
  *
  * @author Michael Eichberg
  */
-trait LogContextProvider {
+@PropertyValidator(key="FieldMutability",validator=EffectivelyFinalMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface EffectivelyFinal{
 
-    implicit def logContext: LogContext
-}
+    /**
+     * A short reasoning of this property.
+     */
+    String value() ; // default = "N/A";
 
-trait GlobalLogContextProvider extends LogContextProvider {
-
-    implicit def logContext: LogContext = GlobalLogContext
-
+    Class<? extends FPCFAnalysis>[] analyses() default {FieldMutabilityAnalysis.class, AdvancedFieldMutabilityAnalysis.class};
 }

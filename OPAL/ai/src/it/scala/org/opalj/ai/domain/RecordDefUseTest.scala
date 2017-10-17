@@ -84,7 +84,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
             method:  Method,
             project: Project[URL]
     ) extends DefUseDomain(method, project)
-        with RefineDefUseUsingOrigins
+        with RefineDefUseUsingOrigins // this should not really affect the results...
 
     protected[this] def analyzeDefUse(
         m:                Method,
@@ -163,8 +163,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     try {
                         d.operandOrigin(pc, opIndex)
                     } catch {
-                        case t: Throwable ⇒
-                            fail(s"pc=$pc[operand=$opIndex] no def/use info", t)
+                        case t: Throwable ⇒ fail(s"pc=$pc[operand=$opIndex] no def/use info", t)
                     }
                 val domainOrigins = d.origin(op).toSet
                 domainOrigins foreach { o ⇒
@@ -213,9 +212,23 @@ class RecordDefUseTest extends FunSpec with Matchers {
         val exceptions = project.parForeachMethodWithBody() { methodInfo ⇒
             val m = methodInfo.method
             try {
-                analyzeDefUse(m, BaseAI(m, new DefUseDomain(m, project)), identicalOrigins)
-                analyzeDefUse(m, BaseAI(m, new RefinedDefUseDomain(m, project)), identicalOrigins)
-            } catch { case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace)) }
+                time {
+                    analyzeDefUse(m, BaseAI(m, new DefUseDomain(m, project)), identicalOrigins)
+                } { t ⇒
+                    if (t.toSeconds.timeSpan > 1d) {
+                        info(m.toJava("evaluation using DefUseDomain took: "+t.toSeconds))
+                    }
+                }
+                time {
+                    analyzeDefUse(m, BaseAI(m, new RefinedDefUseDomain(m, project)), identicalOrigins)
+                } { t ⇒
+                    if (t.toSeconds.timeSpan > 1d) {
+                        info(m.toJava("evaluation using RefinedDefUseDomain took: "+t.toSeconds))
+                    }
+                }
+            } catch {
+                case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
+            }
         }
         failures.addAll(exceptions.map(ex ⇒ ("additional exception", ex)).asJavaCollection)
 

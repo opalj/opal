@@ -76,7 +76,7 @@ object JavaFixtureCompiler extends AutoPlugin {
 
     import autoImport._
 
-    lazy val baseJavafixtureSettings: Seq[Def.Setting[_]] = Seq(
+    lazy val baseJavaFixtureSettings: Seq[Def.Setting[_]] = Seq(
         javaFixtureProjectsDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "projects",
         javaFixtureSupportDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "support",
         javaFixtureTargetDir in javaFixtureDiscovery := resourceManaged.value,
@@ -105,7 +105,7 @@ object JavaFixtureCompiler extends AutoPlugin {
 
     )
 
-    override lazy val projectSettings = inConfig(Compile)(baseJavafixtureSettings)
+    override lazy val projectSettings = inConfig(Compile)(baseJavaFixtureSettings)
 
     /**
      * Object that contains the task implementations for the fixture compilation

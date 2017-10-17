@@ -28,8 +28,16 @@
  */
 package org.opalj
 
+import java.lang.Integer.parseInt
+import scala.io.Source
+
+import org.opalj.io.process
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.error
 
 /**
  * Implementation of a library for parsing Java bytecode and creating arbitrary
@@ -48,16 +56,14 @@ import org.opalj.log.OPALLogger
 package object bi {
 
     {
-        // Log the information whether a production build or a development build is
-        // used.
+        // Log the information whether a production build or a development build is used.
         implicit val logContext = GlobalLogContext
-        import OPALLogger.info
         try {
-            scala.Predef.assert(false)
-            info("OPAL", "Bytecode Infrastructure - Production Build")
+            assert(false)
+            info("OPAL Bytecode Infrastructure", "Production Build")
         } catch {
             case ae: AssertionError ⇒
-                info("OPAL", "Bytecode Infrastructure - Development Build (Assertions are enabled)")
+                info("OPAL Bytecode Infrastructure", "Development Build with Assertions")
         }
     }
 
@@ -101,25 +107,33 @@ package object bi {
      * @note This method makes some assumptions how the version numbers will evolve.
      */
     final lazy val isCurrentJREAtLeastJava8: Boolean = {
+        implicit val logContext = org.opalj.log.GlobalLogContext
         val versionString = System.getProperty("java.version")
         try {
             val splittedVersionString = versionString.split('.')
-            if (Integer.parseInt(splittedVersionString(0)) > 1 /*up until Java 8, the first number is "1" */ ||
-                (splittedVersionString.length > 1 && Integer.parseInt(splittedVersionString(1)) >= 8)) {
+            if (parseInt(splittedVersionString(0)) > 1 /*for Java <=8, the first number is "1" */ ||
+                (splittedVersionString.length > 1 && parseInt(splittedVersionString(1)) >= 8)) {
 
-                OPALLogger.info("system configuration", s"current JRE is at least Java 8")(GlobalLogContext)
+                info("system configuration", s"current JRE is at least Java 8")
                 true
             } else {
-                OPALLogger.info("system configuration", s"current JRE is older than Java 8")(GlobalLogContext)
+                info("system configuration", s"current JRE is older than Java 8")
                 false // we were not able to detect/derive enough information!
             }
         } catch {
             case t: Throwable ⇒
-                OPALLogger.error(
-                    "system configuration", s"could not interpret JRE version: $versionString"
-                )(GlobalLogContext)
+                error("system configuration", s"could not interpret JRE version: $versionString")
                 false
         }
     }
 
+    val MissingLibraryWarning: String = {
+        process(this.getClass.getResourceAsStream("MissingLibraryWarning.txt")) { in ⇒
+            Source.fromInputStream(in).getLines.mkString("\n")
+        }
+    }
+
+    final def warnMissingLibrary(implicit ctx: LogContext): Unit = {
+        OPALLogger.logOnce(Warn("project configuration", MissingLibraryWarning))
+    }
 }

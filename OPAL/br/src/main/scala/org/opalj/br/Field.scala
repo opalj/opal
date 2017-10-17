@@ -220,6 +220,10 @@ final class Field private[br] (
     final def classFile: ClassFile = declaringClassFile
 
     def toJava: String = s"${declaringClassFile.thisType.toJava}{ ${signatureToJava(true)} }"
+
+    def toJava(message: String): String = {
+        s"${declaringClassFile.thisType.toJava}{ ${signatureToJava(true)} $message }"
+    }
 }
 
 /**

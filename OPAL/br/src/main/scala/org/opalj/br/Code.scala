@@ -542,7 +542,7 @@ final class Code private (
      * Performs a live variable analysis restricted to a method's locals.
      *
      * @return  For each instruction (identified by its pc) the set of variables (register values)
-     *          which are live (identified by their index.) is determined.
+     *          which are live (identified by their index) is determined.
      *          I.e., if you need to know if the variable with the index 5 is
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.
@@ -1176,6 +1176,17 @@ final class Code private (
         vs.result()
     }
 
+    def foldLeft[T](start: T)(f: (T, PC, Instruction) ⇒ T): T = {
+        val max_pc = instructions.length
+        var pc = 0
+        var vs = start
+        while (pc < max_pc) {
+            vs = f(vs, pc, instructions(pc))
+            pc = pcOfNextInstruction(pc)
+        }
+        vs
+    }
+
     /**
      * Applies the given function to the first instruction for which the given function
      * is defined.
@@ -1679,7 +1690,7 @@ object Code {
     def computeMaxLocalsRequiredByCode(instructions: Array[Instruction]): Int = {
         val instructionsLength = instructions.length
         var pc = 0
-        var maxRegisters = 0
+        var maxRegisterIndex = -1
         var modifiedByWide = false
         do {
             val i: Instruction = instructions(pc)
@@ -1687,14 +1698,23 @@ object Code {
                 modifiedByWide = true
                 pc += 1
             } else {
-                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters) {
-                    maxRegisters = i.indexOfWrittenLocal
+                if (i.writesLocal) {
+                    var lastRegisterIndex = i.indexOfWrittenLocal
+                    if (i.isStoreLocalVariableInstruction &&
+                        i.asStoreLocalVariableInstruction.computationalType.operandSize == 2) {
+                        // i.e., not IINC...
+                        lastRegisterIndex += 1
+                    }
+                    if (lastRegisterIndex > maxRegisterIndex) {
+                        maxRegisterIndex = lastRegisterIndex
+                    }
                 }
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
                 modifiedByWide = false
             }
         } while (pc < instructionsLength)
-        maxRegisters
+
+        maxRegisterIndex + 1 /* the first register has index 0 */
     }
 
     def computeMaxLocals(

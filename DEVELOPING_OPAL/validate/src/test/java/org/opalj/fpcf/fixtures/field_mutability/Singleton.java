@@ -26,23 +26,45 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package util
+package org.opalj.fpcf.fixtures.field_mutability;
 
-import java.io.PrintStream
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis;
+import org.opalj.fpcf.properties.field_mutability.EffectivelyFinal;
+import org.opalj.fpcf.properties.field_mutability.NonFinal;
 
-/**
- * Overrides the default `print` and `println` methods provided by Scala such that
- * always the UTF-8 charset is used and not the platform's (the JDK's) default.
- *
- * @author Michael Eichberg
- */
-trait UTF8Println {
+public class Singleton {
 
-    val out: PrintStream = new PrintStream(System.out, true, "UTF-8")
+    @NonFinal("written by static initializer after the field becomes (indirectly) readable")
+    private String name;
 
-    def println(s: String): Unit = { out.println(s) }
+    @EffectivelyFinal(
+            value = "only initialized once by the constructor",
+            analyses = { AdvancedFieldMutabilityAnalysis.class }
+    )
+    private Object mutex = new Object();
 
-    def print(s: String): Unit = { out.print(s) }
+    private Singleton() {
+        this.name = "";
+    }
+
+    public String getName() {
+        synchronized (mutex) {
+            return name;
+        }
+    }
+
+    // STATIC FUNCTIONALITY
+
+    @EffectivelyFinal("only set in the static initializer")
+    private static Singleton theInstance;
+
+    static {
+        theInstance = new Singleton();
+        theInstance.name = "The Singleton Instance";
+    }
+
+    public static Singleton getInstance() {
+        return theInstance;
+    }
 
 }

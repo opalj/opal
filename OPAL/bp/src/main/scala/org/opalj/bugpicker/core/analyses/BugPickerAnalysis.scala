@@ -139,14 +139,18 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val configuredAnalyses = analysisParameters.as[List[String]]("fpcfAnalyses")
         val fpcfAnalyses = configuredAnalyses.map { a ⇒ FPCFAnalysesRegistry.factory(a) }
         val maxCallChainLength = theProject.config.as[Int](
-            "org.opalj.bugpicker.analyses.RootBugPickerAnalysisDomain.maxCallChainLength"
+            "org.opalj.bugpicker.analysis.RootBugPickerAnalysisDomain.maxCallChainLength"
         )
 
         val debug = parameters.contains("-debug")
         if (debug) {
             val cp = System.getProperty("java.class.path")
             val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
-            val renderingOptions = ConfigRenderOptions.defaults().setOriginComments(false).setComments(true).setJson(false);
+            val renderingOptions =
+                ConfigRenderOptions.defaults().
+                    setOriginComments(false).
+                    setComments(true).
+                    setJson(false)
             val bugpickerConf = theProject.config.withOnlyPath("org.opalj")
             val settings = bugpickerConf.root().render(renderingOptions)
             OPALLogger.info(

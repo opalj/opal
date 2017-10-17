@@ -27,29 +27,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package log
+package fpcf
 
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
+import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
 
 /**
- * Basic implementation of the `OPALLogger` trait.
+ * Tests if the properties specified in the test project (the classes in the (sub-)package of
+ * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
+ * PropertyMatchers to facilitate matching arbitrary complex property specifications.
  *
  * @author Michael Eichberg
  */
-abstract class AbstractOPALLogger extends OPALLogger {
+class FieldMutabilityTests extends PropertiesTest {
 
-    private[this] val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
-
-    final def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        val counter = new AtomicInteger(0)
-        val existingCounter = messages.putIfAbsent(message, counter)
-        if (existingCounter != null)
-            existingCounter.incrementAndGet()
-        else {
-            counter.incrementAndGet()
-            log(message)
-        }
+    describe("no analysis is scheduled") {
+        val as = executeAnalyses(Set.empty)
+        validateProperties(as, Set("FieldMutability"))
     }
-}
 
+    describe("the org.opalj.fpcf.analyses.FieldMutabilityAnalysis is executed") {
+        val as = executeAnalyses(Set(FieldMutabilityAnalysis))
+        validateProperties(as, Set("FieldMutability"))
+    }
+
+    describe("the org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis is executed") {
+        val as = executeAnalyses(Set(AdvancedFieldMutabilityAnalysis))
+        validateProperties(as, Set("FieldMutability"))
+    }
+
+}

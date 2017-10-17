@@ -84,9 +84,15 @@ trait Instruction extends InstructionLike {
     def isLoadLocalVariableInstruction: Boolean = false
     def isStoreLocalVariableInstruction: Boolean = false
     def isCheckcast: Boolean = false
+    def isInvocationInstruction: Boolean = false
     def isAthrow: Boolean = false
+    def isIINC: Boolean = false
 
     def asATHROW: ATHROW.type = throw new ClassCastException();
+    def asIINC: IINC = throw new ClassCastException();
+
+    def asNEW: NEW = throw new ClassCastException();
+    def asCreateNewArrayInstruction: CreateNewArrayInstruction = throw new ClassCastException();
 
     def asLoadLocalVariableInstruction: LoadLocalVariableInstruction = {
         throw new ClassCastException();
@@ -109,6 +115,8 @@ trait Instruction extends InstructionLike {
     }
 
     def asInvocationInstruction: InvocationInstruction = throw new ClassCastException();
+
+    def asArithmeticInstruction: ArithmeticInstruction = throw new ClassCastException();
 
     def asTABLESWITCH: TABLESWITCH = throw new ClassCastException();
     def asLOOKUPSWITCH: LOOKUPSWITCH = throw new ClassCastException();

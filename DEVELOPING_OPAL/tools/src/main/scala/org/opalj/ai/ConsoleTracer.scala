@@ -175,9 +175,10 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         worklist:                 List[PC]
     ): Unit = {
         println(
-            CYAN_B + RED+"rescheduled the evaluation of instruction: "+
+            CYAN_B + RED + sourcePC + line(domain, sourcePC)+
+                ": rescheduled the evaluation of instruction "+
                 targetPC + line(domain, targetPC) + RESET+
-                "; new worklist: "+worklist.mkString(", ")
+                " => new worklist: "+worklist.mkString(", ")
         )
     }
 
@@ -345,17 +346,23 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def abruptSubroutineTermination(
         domain: Domain
     )(
-        sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+        details:  String,
+        sourcePC: PC, targetPC: PC,
+        jumpToSubroutineId:         Int,
         terminatedSubroutinesCount: Int,
+        forceScheduling:            Boolean,
         oldWorklist:                List[PC],
         newWorklist:                List[PC]
     ): Unit = {
         println(
             RED_B + WHITE + sourcePC + line(domain, sourcePC)+
-                ":ABRUPT RETURN FROM SUBROUTINE: target="+targetPC+
-                " : number of terminated subroutines="+terminatedSubroutinesCount + RESET+
-                "\n"+RED_B + WHITE+"\t\told worklist: "+oldWorklist.mkString(",") + RESET+
-                "\n"+RED_B + WHITE+"\t\tnew worklist: "+newWorklist.mkString(",") + RESET
+                ":ABRUPT RETURN FROM SUBROUTINE: target="+targetPC +
+                s"\n$RED_B$WHITE\t\tdetails                = $details$RESET"+
+                "\n"+RED_B + WHITE+"\t\ttarget subroutine id   = "+jumpToSubroutineId + RESET +
+                s"\n$RED_B$WHITE\t\t#terminated subroutines= $terminatedSubroutinesCount$RESET"+
+                "\n"+RED_B + WHITE+"\t\tforceScheduling        = "+forceScheduling + RESET+
+                "\n"+RED_B + WHITE+"\t\told worklist           : "+oldWorklist.mkString(",") + RESET+
+                "\n"+RED_B + WHITE+"\t\tnew worklist           : "+newWorklist.mkString(",") + RESET
         )
     }
 

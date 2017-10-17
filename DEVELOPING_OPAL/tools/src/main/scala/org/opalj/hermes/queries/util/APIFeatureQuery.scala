@@ -118,7 +118,7 @@ trait APIFeatureQuery extends FeatureQuery {
             size = subtypes.size
             if size > 0
         } {
-            val count = occurrencesCount.get(featureID).get + size
+            val count = occurrencesCount(featureID) + size
             occurrencesCount += ((featureID, count))
 
             for {
@@ -151,7 +151,7 @@ trait APIFeatureQuery extends FeatureQuery {
                 case APIMethod() ⇒
                     val l = InstructionLocation(source, m, pc)
                     locations += ((featureID, l :&: locations.getOrElse(featureID, Naught)))
-                    val count = occurrencesCount.get(featureID).get + 1
+                    val count = occurrencesCount(featureID) + 1
                     occurrencesCount = occurrencesCount + ((featureID, count))
 
                 case _ ⇒ /* irrelevant method */
@@ -162,7 +162,7 @@ trait APIFeatureQuery extends FeatureQuery {
             val featureID = apiFeature.featureID
             Feature(
                 featureID,
-                occurrencesCount.get(featureID).get,
+                occurrencesCount(featureID),
                 locations.getOrElse(featureID, Naught)
             )
         }

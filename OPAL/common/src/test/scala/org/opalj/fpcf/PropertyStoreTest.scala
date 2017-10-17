@@ -71,7 +71,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     def initPSStrings(): PropertyStore = {
         val contextObject = "StringEntities"
         implicit val logContext = GlobalLogContext
-        val ps = PropertyStore(stringEntities, () ⇒ false, debug = false, context = contextObject)
+        val ps = PropertyStore(stringEntities, () ⇒ false, context = contextObject)
         assert(ps.context[String] === contextObject)
         ps
     }
@@ -86,12 +86,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         val contextObject = "StringAndSetOfStringsEntities"
         implicit val logContext = GlobalLogContext
 
-        val ps = PropertyStore(
-            stringsAndSetsOfStrings,
-            () ⇒ false,
-            debug = false,
-            context = contextObject
-        )
+        val ps = PropertyStore(stringsAndSetsOfStrings, () ⇒ false, context = contextObject)
         assert(ps.context[String] === contextObject)
         ps
     }
@@ -233,7 +228,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
     var psNodes: PropertyStore = initPSNodes
     def initPSNodes(): PropertyStore = {
-        psNodes = PropertyStore(nodeEntities, () ⇒ false, debug = false)(GlobalLogContext)
+        psNodes = PropertyStore(nodeEntities, () ⇒ false)(GlobalLogContext)
         psNodes
     }
 
@@ -282,7 +277,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     val treeEntities = List[Node](nodeRoot, nodeLRoot, nodeLLRoot, nodeRRoot, nodeLRRoot, nodeRRRoot)
     var treeNodes: PropertyStore = initTreeNodes
     def initTreeNodes(): PropertyStore = {
-        treeNodes = PropertyStore(treeEntities, () ⇒ false, debug = false)(GlobalLogContext)
+        treeNodes = PropertyStore(treeEntities, () ⇒ false)(GlobalLogContext)
         treeNodes
     }
 
@@ -365,7 +360,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
         val triggeredComputations = new java.util.concurrent.atomic.AtomicInteger(0)
         @volatile var doInterrupt = false
-        val ps = PropertyStore(entities, () ⇒ doInterrupt, debug = false)(GlobalLogContext)
+        val ps = PropertyStore(entities, () ⇒ doInterrupt)(GlobalLogContext)
         ps schedule { e: Entity ⇒
             triggeredComputations.incrementAndGet()
             Thread.sleep(50)
@@ -707,7 +702,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     prevNode.targets += firstNode
 
                     // 2. we create the store
-                    val store = PropertyStore(allNodes, () ⇒ false, debug = false)(GlobalLogContext)
+                    val store = PropertyStore(allNodes, () ⇒ false)(GlobalLogContext)
 
                     // 3. lets add the analysis
                     def onUpdate(

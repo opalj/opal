@@ -31,7 +31,7 @@ package ai
 package domain
 
 /**
- * A configuration that forces abstract interpretation to never create an exception
+ * A configuration that forces the abstract interpretor to never create an exception
  * if it is not possible to deduce that the specific exception is guaranteed to be thrown.
  *
  * ==Usage==
@@ -50,7 +50,35 @@ trait ThrowNoPotentialExceptionsConfiguration extends Configuration {
     /**
      * @inheritdoc
      *
+     * @return `false`
+     */
+    /*implements(not override!)*/ def throwNullPointerExceptionOnThrow: Boolean = false
+
+    /**
+     * @inheritdoc
+     *
+     * @return `false`
+     */
+    /*implements(not override!)*/ def throwClassCastException: Boolean = false
+
+    /**
+     * @inheritdoc
+     *
      * @return `true`
+     */
+    def abortProcessingExceptionsOfCalledMethodsOnUnknownException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    def abortProcessingThrownExceptionsOnUnknownException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `ExceptionsRaisedByCalledMethods.Known`
      */
     /*implements(not override!)*/ def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
         ExceptionsRaisedByCalledMethods.Known
@@ -59,84 +87,70 @@ trait ThrowNoPotentialExceptionsConfiguration extends Configuration {
     /**
      * @inheritdoc
      *
-     * @return `true`
-     */
-    /*implements(not override!)*/ def throwNullPointerExceptionOnThrow: Boolean = false
-
-    /**
-     * @inheritdoc
-     *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwNullPointerExceptionOnMethodCall: Boolean = false
 
     /**
      * @inheritdoc
      *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwNullPointerExceptionOnFieldAccess: Boolean = false
 
     /**
      * @inheritdoc
      *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwArithmeticExceptions: Boolean = false
 
     /**
      * @inheritdoc
      *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwIllegalMonitorStateException: Boolean = false
 
     /**
      * @inheritdoc
      *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwNullPointerExceptionOnMonitorAccess: Boolean = false
 
     /**
      * @inheritdoc
      *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwNullPointerExceptionOnArrayAccess: Boolean = false
 
     /**
      * @inheritdoc
      *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwArrayIndexOutOfBoundsException: Boolean = false
 
     /**
      * @inheritdoc
      *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwArrayStoreException: Boolean = false
 
     /**
      * @inheritdoc
      *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwNegativeArraySizeException: Boolean = false
 
     /**
      * @inheritdoc
      *
-     * @return `true`
-     */
-    /*implements(not override!)*/ def throwClassCastException: Boolean = false
-
-    /**
-     * @inheritdoc
-     *
-     * @return `true`
+     * @return `false`
      */
     /*implements(not override!)*/ def throwClassNotFoundException: Boolean = false
 

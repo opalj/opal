@@ -43,7 +43,7 @@ import org.opalj.de.DependencyType
 
 /**
  * Calculates the transitive closure of all classes referred to by a given class.
- * Here, referred to means that the type is explicitly used in the implementation
+ * Here, "referred to" means that the type is explicitly used in the implementation
  * of the class.
  *
  * @author Michael Eichberg

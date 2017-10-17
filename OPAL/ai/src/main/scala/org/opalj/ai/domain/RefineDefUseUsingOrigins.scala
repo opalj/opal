@@ -36,9 +36,6 @@ import org.opalj.collection.immutable.IntArraySet
  * Collects the abstract interpretation time definition/use information using the domain values'
  * origin information if available.
  *
- * ===Reusability===
- * No; the underlying operands arrays is directly queried.
- *
  * @note ReturnAddressValues are ignored by this domain; however, the parent domain
  *       [[RecordDefUse]] has appropriate handling.
  *

@@ -117,9 +117,10 @@ trait DefaultTypeLevelIntegerValues
 
     case object AnIntegerValue extends super.IntegerValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
             // the other value also has computational type Int
             NoUpdate
+        }
 
         override def abstractsOver(other: DomainValue): Boolean =
             (other ne TheIllegalValue) &&
@@ -145,4 +146,3 @@ trait DefaultTypeLevelIntegerValues
         AnIntegerValue
     }
 }
-

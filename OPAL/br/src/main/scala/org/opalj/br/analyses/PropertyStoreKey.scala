@@ -37,7 +37,6 @@ import scala.reflect.runtime.universe.typeOf
 
 import scala.collection.JavaConverters._
 
-import net.ceedubs.ficus.Ficus._
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.fpcf.PropertyStore
@@ -53,8 +52,6 @@ import org.opalj.fpcf.PropertyStoreContext
  */
 object PropertyStoreKey
     extends ProjectInformationKey[PropertyStore, ConcurrentLinkedQueue[EntityDerivationFunction]] {
-
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.PropertyStoreKey."
 
     /**
      * Used to specify the number of threads the property store should use. This
@@ -142,7 +139,6 @@ object PropertyStoreKey
      * Creates a new empty property store using the current [[parallelismLevel]].
      */
     override protected def compute(project: SomeProject): PropertyStore = {
-        val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
         implicit val logContext = project.logContext
 
         val entityDerivationFunctions = project.
@@ -157,6 +153,6 @@ object PropertyStoreKey
             }
             entities
         }
-        PropertyStore(entities, defaultIsInterrupted, parallelismLevel, debug, context: _*)
+        PropertyStore(entities, defaultIsInterrupted, parallelismLevel, context: _*)
     }
 }
