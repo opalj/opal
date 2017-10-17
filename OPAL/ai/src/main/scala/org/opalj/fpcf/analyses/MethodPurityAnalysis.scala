@@ -154,6 +154,8 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     assert(code(defSite).astID == Assignment.ASTID, "defSite should be assignment")
                     val astID = code(defSite).asAssignment.expr.astID
                     astID == New.ASTID || astID == NewArray.ASTID
+                } else if(isVMLevelValue(defSite)){
+                    true // VMLevelValues are freshly created
                 } else {
                     // In initializer methods, the receiver object is fresh
                     method.isConstructor && defSite == OriginOfThis
