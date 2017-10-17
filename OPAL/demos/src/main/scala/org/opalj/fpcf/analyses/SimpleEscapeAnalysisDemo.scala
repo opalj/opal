@@ -55,7 +55,8 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
 /**
- * A small demo that shows how to use the [[SimpleEscapeAnalysis]] and what are the results of it.
+ * A small demo that shows how to use the [[org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis]]
+ * and what are the results of it.
  *
  * @author Florian Kübler
  */

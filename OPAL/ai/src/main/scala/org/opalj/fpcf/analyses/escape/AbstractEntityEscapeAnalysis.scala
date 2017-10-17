@@ -72,7 +72,6 @@ import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.Invokedynamic
 import org.opalj.tac.StaticFunctionCall
 
-
 /**
  * An abstract escape analysis for a single entity.
  * These entity can be either a concrete [[org.opalj.br.AllocationSite]]s or
@@ -145,7 +144,7 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * If there exists a [[UVar]] in the params of a method call that is a use of the
+     * If there exists a [[org.opalj.tac.UVar]] in the params of a method call that is a use of the
      * current entity's defsite return true.
      */
     protected final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
@@ -207,7 +206,8 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * Thrown exceptions that are not caught would lead to a [[MethodEscapeViaReturn]].
+     * Thrown exceptions that are not caught would lead to a
+     * [[org.opalj.fpcf.properties.MethodEscapeViaReturn]].
      * This analysis does not check whether the exception is caught or not.
      *
      * TODO Why - determining if an exception is caught is straight forward; you can use the CFG to check if this athrow leads to an abnormal return.
@@ -218,7 +218,8 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * Passing an entity as argument to a call, will make the entity at most [[ArgEscape]].
+     * Passing an entity as argument to a call, will make the entity at most
+     * [[org.opalj.fpcf.properties.ArgEscape]].
      *
      * $JustIntraProcedural
      */
@@ -228,7 +229,8 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * Passing an entity as argument to a call, will make the entity at most [[ArgEscape]].
+     * Passing an entity as argument to a call, will make the entity at most
+     * [[org.opalj.fpcf.properties.ArgEscape]].
      *
      * $JustIntraProcedural
      */
@@ -238,9 +240,9 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * Passing an entity as argument to a call, will make the entity at most [[ArgEscape]].
-     * An exception for this are the receiver objects of a constructor. Here [[NoEscape]] is still
-     * possible.
+     * Passing an entity as argument to a call, will make the entity at most
+     * [[org.opalj.fpcf.properties.ArgEscape]]. An exception for this are the receiver objects of a
+     * constructor. Here [[org.opalj.fpcf.properties.NoEscape]] is still possible.
      *
      * $JustIntraProcedural
      */
@@ -255,14 +257,14 @@ trait AbstractEntityEscapeAnalysis {
             calcMostRestrictive(MaybeNoEscape)
 
     /**
-     * [[ExprStmt]] can contain function calls, so they have to handle them.
+     * [[org.opalj.tac.ExprStmt]] can contain function calls, so they have to handle them.
      */
     protected def handleExprStmt(exprStmt: ExprStmt[V]): Unit = {
         handleExpression(exprStmt.expr)
     }
 
     /**
-     * [[Assignment]]s can contain function calls, so they have to handle them.
+     * [[org.opalj.tac.Assignment]]s can contain function calls, so they have to handle them.
      */
     protected def handleAssignment(assignment: Assignment[V]): Unit = {
         handleExpression(assignment.expr)
@@ -271,7 +273,8 @@ trait AbstractEntityEscapeAnalysis {
     /**
      * Currently, the only expressions that can lead to an escape are the different kinds of
      * function calls. So this method delegates to them. In the case of another expression
-     * [[handleOtherKindsOfExpressions()]] will be called.
+     * [[org.opalj.fpcf.analyses.escape.AbstractEntityEscapeAnalysis.handleOtherKindsOfExpressions()]]
+     * will be called.
      */
     protected def handleExpression(expr: Expr[V]): Unit = {
         (expr.astID: @switch) match {
@@ -289,7 +292,8 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * Passing an entity as argument to a call, will make the entity at most [[ArgEscape]].
+     * Passing an entity as argument to a call, will make the entity at most
+     * [[org.opalj.fpcf.properties.ArgEscape]].
      *
      * $JustIntraProcedural
      */
@@ -299,7 +303,8 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * Passing an entity as argument to a call, will make the entity at most [[ArgEscape]].
+     * Passing an entity as argument to a call, will make the entity at most
+     * [[org.opalj.fpcf.properties.ArgEscape]].
      *
      * $JustIntraProcedural
      */
@@ -309,7 +314,8 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * Passing an entity as argument to a call, will make the entity at most [[ArgEscape]].
+     * Passing an entity as argument to a call, will make the entity at most
+     * [[org.opalj.fpcf.properties.ArgEscape]].
      *
      * $JustIntraProcedural
      */
@@ -319,7 +325,8 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * Passing an entity as argument to a call, will make the entity at most [[ArgEscape]].
+     * Passing an entity as argument to a call, will make the entity at most
+     * [[org.opalj.fpcf.properties.ArgEscape]].
      *
      * $JustIntraProcedural
      */
@@ -329,14 +336,14 @@ trait AbstractEntityEscapeAnalysis {
     }
 
     /**
-     * All basic analyses only care about function calls for [[Assignment]] or [[ExprStmt]], but
-     * if a future analysis requires handling other expressions, it can override
-     * this method.
+     * All basic analyses only care about function calls for [[org.opalj.tac.Assignment]] or
+     * [[org.opalj.tac.ExprStmt]], but if a future analysis requires handling other expressions, it
+     * can override this method.
      */
     protected[this] def handleOtherKindsOfExpressions(expr: Expr[V]): Unit = {}
 
     /**
-     * Sets `mostRestrictiveProperty` to the lower bound of p and the current most restrictive and
+     * Sets mostRestrictiveProperty to the lower bound of p and the current most restrictive and
      * remove entity `other` from dependees. If this entity does not depend on any more results it
      * has associated property of mostRestrictiveProperty, otherwise build a continuation.
      */
