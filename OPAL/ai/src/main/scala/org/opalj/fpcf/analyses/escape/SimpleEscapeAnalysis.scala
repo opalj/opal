@@ -37,10 +37,12 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.TACMethodParameter
 import org.opalj.br.Method
 import org.opalj.br.AllocationSite
+import org.opalj.br.ExceptionHandlers
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.AllocationSitesKey
+import org.opalj.br.cfg.CFG
 import org.opalj.tac.Stmt
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.fpcf.properties.MaybeNoEscape
@@ -71,14 +73,16 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
      * Creates a [[org.opalj.fpcf.analyses.escape.SimpleEntityEscapeAnalysis]] for the analysis.
      */
     override def entityEscapeAnalysis(
-        e:       Entity,
-        defSite: ValueOrigin,
-        uses:    IntArraySet,
-        code:    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        params:  Parameters[TACMethodParameter],
-        m:       Method
+        e:        Entity,
+        defSite:  ValueOrigin,
+        uses:     IntArraySet,
+        code:     Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        params:   Parameters[TACMethodParameter],
+        cfg:      CFG,
+        handlers: ExceptionHandlers,
+        m:        Method
     ): AbstractEntityEscapeAnalysis =
-        new SimpleEntityEscapeAnalysis(e, defSite, uses, code, params, m, propertyStore, project)
+        new SimpleEntityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, m, propertyStore, project)
 
     /**
      * Calls [[doDetermineEscape]] with the definition site, the use sites, the
@@ -94,7 +98,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         e match {
             // for allocation sites, find the code containing the allocation site
             case as @ AllocationSite(m, pc, _) ⇒
-                val TACode(params, code, _, _, _) = tacai(m)
+                val TACode(params, code, cfg, handlers, _) = tacai(m)
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
@@ -102,7 +106,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
                 if (index != -1)
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, params, m)
+                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, m)
                         case ExprStmt(`pc`, NewArray(`pc`, _, _)) ⇒
                             ImmediateResult(e, NoEscape)
                         case stmt ⇒
@@ -111,9 +115,9 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
             case FormalParameter(m, _) if m.body.isEmpty ⇒ ImmediateResult(e, MaybeNoEscape)
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
-                val TACode(params, code, _, _, _) = tacai(m)
+                val TACode(params, code, cfg, handlers, _) = tacai(m)
                 val useSites = params.thisParameter.useSites
-                doDetermineEscape(e, -1, useSites, code, params, m)
+                doDetermineEscape(e, -1, useSites, code, params, cfg, handlers, m)
             case FormalParameter(_, _) ⇒ ImmediateResult(e, MaybeNoEscape)
         }
     }

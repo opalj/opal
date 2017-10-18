@@ -35,6 +35,8 @@ import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
+import org.opalj.br.ExceptionHandlers
+import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
@@ -63,12 +65,14 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * analysis must define its corresponding entity analysis.
      */
     protected def entityEscapeAnalysis(
-        e:       Entity,
-        defSite: ValueOrigin,
-        uses:    IntArraySet,
-        code:    Array[Stmt[V]],
-        params:  Parameters[TACMethodParameter],
-        m:       Method
+        e:        Entity,
+        defSite:  ValueOrigin,
+        uses:     IntArraySet,
+        code:     Array[Stmt[V]],
+        params:   Parameters[TACMethodParameter],
+        cfg:      CFG,
+        handlers: ExceptionHandlers,
+        m:        Method
     ): AbstractEntityEscapeAnalysis
 
     /**
@@ -77,14 +81,16 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * compute the escape state.
      */
     protected final def doDetermineEscape(
-        e:       Entity,
-        defSite: ValueOrigin,
-        uses:    IntArraySet,
-        code:    Array[Stmt[V]],
-        params:  Parameters[TACMethodParameter],
-        m:       Method
+        e:        Entity,
+        defSite:  ValueOrigin,
+        uses:     IntArraySet,
+        code:     Array[Stmt[V]],
+        params:   Parameters[TACMethodParameter],
+        cfg:      CFG,
+        handlers: ExceptionHandlers,
+        m:        Method
     ): PropertyComputationResult = {
-        entityEscapeAnalysis(e, defSite, uses, code, params, m).doDetermineEscape()
+        entityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, m).doDetermineEscape()
     }
 
     /**

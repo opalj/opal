@@ -76,7 +76,7 @@ public class EscapeTests {
 
     public static void parameterFieldGlobalEscape(ClassWithFields param) {
         param.f = new @Escapes(ViaHeapObject) @Escapes(value = MaybeMethod,
-                algorithms = { "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis"}) Object();
+                algorithms = { "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" }) Object();
         ClassWithFields.global = param;
     }
 
@@ -162,22 +162,30 @@ public class EscapeTests {
     }
 
     public static void exceptionEscape() {
-        throw new @Escapes(ViaReturn) @Escapes(value = MaybeNo,
-                algorithms = { "SimpleEscapeAnalysis",
-                        "InterproceduralEscapeAnalysis" }) RuntimeException();
+        throw new @Escapes(ViaReturn) RuntimeException();
     }
 
     public static void exceptionNoEscape() {
         try {
-            throw new
-                    @Escapes(No)
-                    @Escapes(value = MaybeNo, algorithms = { "SimpleEscapeAnalysis",
-                            "InterproceduralEscapeAnalysis" })
-                            RuntimeException();
+            throw new @Escapes(No) RuntimeException();
         } catch (Exception e) {
             System.out.println("catched the error");
         }
+    }
 
+    public static int exceptionMultiNoEscape(boolean b) throws Exception {
+        Exception e = null;
+        try {
+            if (b)
+                e = new @Escapes(No) ArrayIndexOutOfBoundsException("");
+            else
+                e = new @Escapes(No) IllegalArgumentException("");
+            throw e;
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            return 1;
+        } catch (IllegalArgumentException ex) {
+            return 2;
+        }
     }
 
     public static void staticMethodEscape() {
@@ -307,7 +315,8 @@ public class EscapeTests {
         ClassWithFields.global = new
                 @Escapes(No)
                 @Escapes(value = ViaStaticField,
-                        algorithms = { "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" })
+                        algorithms = { "SimpleEscapeAnalysis",
+                                "InterproceduralEscapeAnalysis" })
                         Object();
         ClassWithFields.global = null;
     }

@@ -39,6 +39,7 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
@@ -98,6 +99,7 @@ trait AbstractEntityEscapeAnalysis {
     val m: Method
     val params: Parameters[TACMethodParameter]
     val code: Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]]
+    val cfg: CFG
 
     val e: Entity
     val defSite: ValueOrigin
@@ -210,7 +212,8 @@ trait AbstractEntityEscapeAnalysis {
      * [[org.opalj.fpcf.properties.MethodEscapeViaReturn]].
      * This analysis does not check whether the exception is caught or not.
      *
-     * TODO Why - determining if an exception is caught is straight forward; you can use the CFG to check if this athrow leads to an abnormal return.
+     * @see [[org.opalj.fpcf.analyses.escape.ExceptionAwareEntitiyEscapeAnalysis]] which overrides
+     *     this very simple behavior.
      */
     protected def handleThrow(aThrow: Throw[V]): Unit = {
         if (usesDefSite(aThrow.exception))

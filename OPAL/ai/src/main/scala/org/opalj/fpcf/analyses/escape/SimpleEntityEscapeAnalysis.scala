@@ -36,8 +36,10 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.ExceptionHandlers
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.EmptyIntArraySet
 import org.opalj.fpcf.properties.MaybeNoEscape
@@ -49,6 +51,7 @@ import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.GlobalEscapeViaHeapObjectAssignment
 import org.opalj.fpcf.properties.ArgEscape
 import org.opalj.fpcf.properties.MethodEscapeViaParameterAssignment
+import org.opalj.fpcf.properties.MethodEscapeViaReturn
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.PutField
@@ -64,6 +67,7 @@ import org.opalj.tac.GetStatic
 import org.opalj.tac.New
 import org.opalj.tac.FunctionCall
 import org.opalj.tac.NewArray
+import org.opalj.tac.Throw
 
 /**
  * A very simple intra-procedural escape analysis, that has inter-procedural behavior for the `this`
@@ -77,12 +81,35 @@ class SimpleEntityEscapeAnalysis(
         val uses:          IntArraySet,
         val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
         val params:        Parameters[TACMethodParameter],
+        val cfg:           CFG,
+        val handlers:      ExceptionHandlers,
         val m:             Method,
         val propertyStore: PropertyStore,
         val project:       SomeProject
 ) extends AbstractEntityEscapeAnalysis
     with ConstructorSensitiveEntityEscapeAnalysis
     with SimpleFieldAwareEntityEscapeAnalysis
+    with ExceptionAwareEntitiyEscapeAnalysis
+
+/**
+ * Handling for exceptions, that are allocated within the current method.
+ * Only if the throw stmt leads to an abnormal return in the cfg, the escape state is decreased
+ * down to [[org.opalj.fpcf.properties.MethodEscapeViaReturn]]. Otherwise (the exception is caught)
+ * the escape state remains the same.
+ */
+trait ExceptionAwareEntitiyEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+    override protected def handleThrow(aThrow: Throw[V]): Unit = {
+        if (usesDefSite(aThrow.exception)) {
+            val index = code indexWhere { _ == aThrow }
+            val successors = cfg.bb(index).successors
+            for (pc ← successors) {
+                if (pc.isAbnormalReturnExitNode) {
+                    calcMostRestrictive(MethodEscapeViaReturn)
+                }
+            }
+        }
+    }
+}
 
 /**
  * Very simple handling for fields and arrays. This analysis can detect global escapes via
