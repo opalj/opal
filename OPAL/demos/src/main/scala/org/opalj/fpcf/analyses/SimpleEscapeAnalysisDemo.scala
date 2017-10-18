@@ -86,11 +86,15 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
+        val propertyStore = project.get(PropertyStoreKey)
         time {
             SimpleEscapeAnalysis.start(project)
+            propertyStore.waitOnPropertyComputationCompletion(
+                resolveCycles = true,
+                useFallbacksForIncomputableProperties = false
+            )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
-        val propertyStore = project.get(PropertyStoreKey)
         val staticEscapes = propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
         val heapEscapes = propertyStore.entities(GlobalEscapeViaHeapObjectAssignment)
         val maybeNoEscape = propertyStore.entities(MaybeNoEscape)
