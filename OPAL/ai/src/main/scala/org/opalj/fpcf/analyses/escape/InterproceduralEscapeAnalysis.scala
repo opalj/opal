@@ -31,23 +31,17 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.log.GlobalLogContext
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.AllocationSite
 import org.opalj.br.Method
 import org.opalj.br.ExceptionHandlers
-import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.FormalParameter
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.cfg.CFG
-import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
 import org.opalj.tac.Assignment
