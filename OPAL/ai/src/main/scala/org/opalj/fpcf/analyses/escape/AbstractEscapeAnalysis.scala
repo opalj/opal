@@ -73,7 +73,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
 
     /**
      * Creates a new entity escape analysis using [[entityEscapeAnalysis]] and calls
-     * [[org.opalj.fpcf.analyses.escape.AbstractEntityEscapeAnalysis.doDetermineEscape()]] to
+     * [[org.opalj.fpcf.analyses.escape.AbstractEntityEscapeAnalysis.doDetermineEscape]] to
      * compute the escape state.
      */
     protected final def doDetermineEscape(

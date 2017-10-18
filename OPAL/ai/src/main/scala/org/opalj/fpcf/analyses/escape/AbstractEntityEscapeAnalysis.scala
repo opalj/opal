@@ -273,7 +273,7 @@ trait AbstractEntityEscapeAnalysis {
     /**
      * Currently, the only expressions that can lead to an escape are the different kinds of
      * function calls. So this method delegates to them. In the case of another expression
-     * [[org.opalj.fpcf.analyses.escape.AbstractEntityEscapeAnalysis.handleOtherKindsOfExpressions()]]
+     * [[org.opalj.fpcf.analyses.escape.AbstractEntityEscapeAnalysis.handleOtherKindsOfExpressions]]
      * will be called.
      */
     protected def handleExpression(expr: Expr[V]): Unit = {
