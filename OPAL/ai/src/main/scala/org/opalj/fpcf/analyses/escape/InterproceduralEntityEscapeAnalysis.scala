@@ -38,8 +38,11 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
+import org.opalj.br.ExceptionHandlers
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.TypeExtensibilityKey
+import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.tac.Expr
 import org.opalj.fpcf.properties.MaybeArgEscape
@@ -62,6 +65,8 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 
 trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEscapeAnalysis {
+
+    val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
 
     override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
         handleStaticCall(
@@ -161,6 +166,8 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
             } else {
                 // todo throw new NullPointerException()
             }
+        } else if (dc.isObjectType && typeExtensibility(dc.asObjectType).isNotNo) {
+            calcMostRestrictive(MaybeArgEscape)
         } else {
             //TODO
             val packageName = m.classFile.thisType.packageName
@@ -222,12 +229,16 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
 }
 
 class InterproceduralEntityEscapeAnalysis(
-    val e:             Entity,
-    val defSite:       ValueOrigin,
-    val uses:          IntArraySet,
-    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val params:        Parameters[TACMethodParameter],
-    val m:             Method,
-    val propertyStore: PropertyStore,
-    val project:       SomeProject
-) extends InterproceduralEntityEscapeAnalysis1 with SimpleFieldAwareEntityEscapeAnalysis
+        val e:             Entity,
+        val defSite:       ValueOrigin,
+        val uses:          IntArraySet,
+        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val params:        Parameters[TACMethodParameter],
+        val cfg:           CFG,
+        val handlers:      ExceptionHandlers,
+        val m:             Method,
+        val propertyStore: PropertyStore,
+        val project:       SomeProject
+) extends InterproceduralEntityEscapeAnalysis1
+    with SimpleFieldAwareEntityEscapeAnalysis
+    with ExceptionAwareEntitiyEscapeAnalysis

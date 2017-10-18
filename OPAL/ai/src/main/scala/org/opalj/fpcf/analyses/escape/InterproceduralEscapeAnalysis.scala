@@ -34,16 +34,19 @@ package escape
 import org.opalj.log.GlobalLogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.IntArraySet
-
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.AllocationSite
 import org.opalj.br.Method
+import org.opalj.br.ExceptionHandlers
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.AllocationSitesKey
+import org.opalj.br.analyses.FormalParametersKey
+import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
@@ -71,14 +74,16 @@ class InterproceduralEscapeAnalysis private (
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
 
     override def entityEscapeAnalysis(
-        e:       Entity,
-        defSite: ValueOrigin,
-        uses:    IntArraySet,
-        code:    Array[Stmt[V]],
-        params:  Parameters[TACMethodParameter],
-        m:       Method
+        e:        Entity,
+        defSite:  ValueOrigin,
+        uses:     IntArraySet,
+        code:     Array[Stmt[V]],
+        params:   Parameters[TACMethodParameter],
+        cfg:      CFG,
+        handlers: ExceptionHandlers,
+        m:        Method
     ): AbstractEntityEscapeAnalysis =
-        new InterproceduralEntityEscapeAnalysis(e, defSite, uses, code, params, m, propertyStore, project)
+        new InterproceduralEntityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, m, propertyStore, project)
 
     /**
      * Determine whether the given entity ([[AllocationSite]] or [[FormalParameter]]) escapes
@@ -87,14 +92,14 @@ class InterproceduralEscapeAnalysis private (
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             case as @ AllocationSite(m, pc, _) ⇒
-                val TACode(params, code, _, _, _) = tacaiProvider(m)
+                val TACode(params, code, cfg, handlers, _) = tacaiProvider(m)
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
                 if (index != -1)
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, params, m)
+                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, m)
                         case ExprStmt(`pc`, NewArray(`pc`, _, _)) ⇒
                             ImmediateResult(e, NoEscape)
                         case stmt ⇒
@@ -103,16 +108,16 @@ class InterproceduralEscapeAnalysis private (
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
 
             case FormalParameter(m, _) if m.body.isEmpty ⇒ Result(e, MaybeNoEscape)
-            case FormalParameter(m, -1) =>
-                val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
+            case FormalParameter(m, -1) ⇒
+                val TACode(params, code, cfg, handlers, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
-                doDetermineEscape(e, param.origin, param.useSites, code, params, m)
+                doDetermineEscape(e, param.origin, param.useSites, code, params, cfg, handlers, m)
             case FormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
                 Result(e, MaybeNoEscape)
             case FormalParameter(m, i) ⇒
-                val TACode(params, code, _, _, _) = project.get(DefaultTACAIKey)(m)
+                val TACode(params, code, cfg, handlers, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
-                doDetermineEscape(e, param.origin, param.useSites, code, params, m)
+                doDetermineEscape(e, param.origin, param.useSites, code, params, cfg, handlers, m)
         }
     }
 }
@@ -131,75 +136,11 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
     override def usedProperties: Set[PropertyKind] = Set.empty
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        //val analysesManager = project.get(FPCFAnalysesManagerKey)
-        //analysesManager.run(SimpleEscapeAnalysis)
         val analysis = new InterproceduralEscapeAnalysis(project)
-        propertyStore.scheduleForCollected(entitySelector(propertyStore))(analysis.determineEscape)
+
+        val fps = FormalParametersKey.entityDerivationFunction(project)._1
+        val ass = AllocationSitesKey.entityDerivationFunction(project)._1
+        propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
-    }
-
-    def main(args: Array[String]): Unit = {
-        val opaConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
-        val project = Project(
-            org.opalj.bytecode.JRELibraryFolder,
-            GlobalLogContext,
-            opaConfig.withFallback(org.opalj.ai.BaseConfig)
-        )
-
-        time {
-            val tacai = project.get(DefaultTACAIKey)
-            val exceptions = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-            if (exceptions.nonEmpty) {
-                exceptions.foreach(println)
-                return ;
-            }
-        } { t ⇒ println(s"computing the 3-address code took ${t.toSeconds}") }
-
-        PropertyStoreKey.makeAllocationSitesAvailable(project)
-        PropertyStoreKey.makeFormalParametersAvailable(project)
-        val propertyStore = project.get(PropertyStoreKey)
-        //propertyStore.debug = true
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
-        time {
-            analysesManager.run(InterproceduralEscapeAnalysis)
-        } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
-
-        val staticEscapes = propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
-        val heapEscapes = propertyStore.entities(GlobalEscapeViaHeapObjectAssignment)
-        val maybeNoEscape = propertyStore.entities(MaybeNoEscape)
-        val maybeArgEscape = propertyStore.entities(MaybeArgEscape)
-        val maybeMethodEscape = propertyStore.entities(MaybeMethodEscape)
-        val argEscapes = propertyStore.entities(ArgEscape)
-        val returnEscapes = propertyStore.entities(MethodEscapeViaReturn)
-        val returnAssignmentEscapes = propertyStore.entities(MethodEscapeViaReturnAssignment)
-        val parameterEscapes = propertyStore.entities(MethodEscapeViaParameterAssignment)
-        val noEscape = propertyStore.entities(NoEscape)
-
-        println("ALLOCATION SITES:")
-        println(s"# of local objects: ${sizeAsAS(noEscape)}")
-        println(s"# of arg escaping objects: ${sizeAsAS(argEscapes)}")
-        println(s"# of method escaping objects via return: ${sizeAsAS(returnEscapes)}")
-        println(s"# of method escaping objects via return assignment: ${sizeAsAS(returnAssignmentEscapes)}")
-        println(s"# of method escaping objects via parameter assignment: ${sizeAsAS(parameterEscapes)}")
-        println(s"# of global escaping objects: ${sizeAsAS(staticEscapes)}")
-        println(s"# of indirect global escaping objects: ${sizeAsAS(heapEscapes)}")
-        println(s"# of maybe no escaping objects: ${sizeAsAS(maybeNoEscape)}")
-        println(s"# of maybe arg escaping objects: ${sizeAsAS(maybeArgEscape)}")
-        println(s"# of maybe method escaping objects: ${sizeAsAS(maybeMethodEscape)}")
-
-        println("FORMAL PARAMETERS")
-        println(s"# of local objects: ${sizeAsFP(noEscape)}")
-        println(s"# of arg escaping objects: ${sizeAsFP(argEscapes)}")
-        println(s"# of method escaping objects via return: ${sizeAsFP(returnEscapes)}")
-        println(s"# of method escaping objects via return assignment: ${sizeAsFP(returnAssignmentEscapes)}")
-        println(s"# of method escaping objects via parameter assignment: ${sizeAsFP(parameterEscapes)}")
-        println(s"# of global escaping objects: ${sizeAsFP(staticEscapes)}")
-        println(s"# of indirect global escaping objects: ${sizeAsFP(heapEscapes)}")
-        println(s"# of maybe no escaping objects: ${sizeAsFP(maybeNoEscape)}")
-        println(s"# of maybe arg escaping objects: ${sizeAsFP(maybeArgEscape)}")
-        println(s"# of maybe method escaping objects: ${sizeAsFP(maybeMethodEscape)}")
-
-        def sizeAsAS(entities: Traversable[Entity]) = entities.collect { case x: AllocationSite ⇒ x }.size
-        def sizeAsFP(entities: Traversable[Entity]) = entities.collect { case x: FormalParameter ⇒ x }.size
     }
 }
