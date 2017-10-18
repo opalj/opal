@@ -32,8 +32,9 @@ package analyses
 
 import scala.collection.AbstractIterator
 import scala.collection.AbstractIterable
-
 import org.opalj.collection.immutable.ConstArray
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * A set of all allocation sites.
@@ -49,6 +50,9 @@ import org.opalj.collection.immutable.ConstArray
 class AllocationSites private[analyses] (
         val allocationsPerMethod: Map[Method, Map[PC, AllocationSite]],
         val allocationsByType:    Map[ReferenceType, ConstArray[AllocationSite]]
+)(
+        implicit
+        val logContext: LogContext
 ) extends AbstractIterable[AllocationSite] {
 
     // let's check if the data is as expected
@@ -58,6 +62,11 @@ class AllocationSites private[analyses] (
         allocationsPerMethod.values.forall(_.values.forall { as ⇒
             allocationsByType(as.allocatedType).contains(as)
         })
+    )
+
+    OPALLogger.info(
+        "project",
+        "allocation sites: "+allocationsPerMethod.values.map(_.size).sum
     )
 
     def apply(m: Method): Map[PC, AllocationSite] = allocationsPerMethod.getOrElse(m, Map.empty)
